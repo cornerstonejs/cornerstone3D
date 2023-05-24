@@ -176,23 +176,33 @@ async function run() {
     // Skip the first and last items in data
     const slicedData = data.slice(1, -1);
 
-    // Get count of items in slicedData
-    const count = slicedData.length;
-
-    // Map each item in slicedData to their original scale and RGBA string
-    const mapped = slicedData.map(([scaledValue, color]) => {
+    // Map each item in slicedData to their original scale and color & opacity strings
+    const colorMapped = slicedData.map(([scaledValue, color]) => {
       const originalValue = scaledValue * (maxValue - minValue) + minValue;
-      const colorString = `${color.r / 255} ${color.g / 255} ${color.b / 255}`;
-      return `${originalValue} ${colorString}`;
+      const colorString = `${originalValue} ${color.r / 255} ${color.g / 255} ${
+        color.b / 255
+      }`;
+      return colorString;
     });
 
-    // Convert mapped array to single string with space as separator
-    const finalString = mapped.reduce(
+    const opacityMapped = slicedData.map(([scaledValue, color]) => {
+      const originalValue = scaledValue * (maxValue - minValue) + minValue;
+      const opacityString = `${originalValue} ${color.a}`;
+      return opacityString;
+    });
+
+    // Convert mapped arrays to single strings with space as separators
+    // Count of values is 4 times the count of array elements for colorString, and 2 times for opacityString
+    const colorString = colorMapped.reduce(
       (prev, curr) => `${prev} ${curr}`,
-      `${count}`
+      `${4 * slicedData.length}`
+    );
+    const opacityString = opacityMapped.reduce(
+      (prev, curr) => `${prev} ${curr}`,
+      `${2 * slicedData.length}`
     );
 
-    return finalString;
+    return { colorString, opacityString };
   }
 
   const tf_panel = new TF_Panel(options);
@@ -207,6 +217,12 @@ async function run() {
       .getScalars()
       .getRange();
 
+    const { colorString, opacityString } = convertArrayToString(
+      tfValues,
+      range[0],
+      range[1]
+    );
+
     const newPreset = {
       name: 'custom',
       gradientOpacity: '4 0 1 255 1',
@@ -216,7 +232,7 @@ async function run() {
       specular: '0.2',
       shade: '1',
       ambient: '0.1',
-      colorTransfer: convertArrayToString(tfValues, range[0], range[1]),
+      colorTransfer: colorString,
       // diffuse: '0.9',
       interpolation: '1',
     };
