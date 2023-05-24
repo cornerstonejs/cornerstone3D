@@ -18,7 +18,6 @@ export default function applyPreset(
     .split(' ')
     .splice(1)
     .map(parseFloat);
-
   const { shiftRange } = getShiftRange(colorTransferArray);
   const min = shiftRange[0];
   const width = shiftRange[1] - shiftRange[0];
@@ -59,33 +58,33 @@ export default function applyPreset(
 
   actor.getProperty().setScalarOpacity(0, ofun);
 
-  const [
-    gradientMinValue,
-    gradientMinOpacity,
-    gradientMaxValue,
-    gradientMaxOpacity,
-  ] = preset.gradientOpacity.split(' ').splice(1).map(parseFloat);
+  // const [
+  //   gradientMinValue,
+  //   gradientMinOpacity,
+  //   gradientMaxValue,
+  //   gradientMaxOpacity,
+  // ] = preset.gradientOpacity.split(' ').splice(1).map(parseFloat);
 
-  actor.getProperty().setUseGradientOpacity(0, true);
-  actor.getProperty().setGradientOpacityMinimumValue(0, gradientMinValue);
-  actor.getProperty().setGradientOpacityMinimumOpacity(0, gradientMinOpacity);
-  actor.getProperty().setGradientOpacityMaximumValue(0, gradientMaxValue);
-  actor.getProperty().setGradientOpacityMaximumOpacity(0, gradientMaxOpacity);
+  // actor.getProperty().setUseGradientOpacity(0, true);
+  // actor.getProperty().setGradientOpacityMinimumValue(0, gradientMinValue);
+  // actor.getProperty().setGradientOpacityMinimumOpacity(0, gradientMinOpacity);
+  // actor.getProperty().setGradientOpacityMaximumValue(0, gradientMaxValue);
+  // actor.getProperty().setGradientOpacityMaximumOpacity(0, gradientMaxOpacity);
 
-  if (preset.interpolation === '1') {
-    actor.getProperty().setInterpolationTypeToFastLinear();
-    //actor.getProperty().setInterpolationTypeToLinear()
-  }
+  // if (preset.interpolation === '1') {
+  //   actor.getProperty().setInterpolationTypeToFastLinear();
+  //   //actor.getProperty().setInterpolationTypeToLinear()
+  // }
 
-  const ambient = parseFloat(preset.ambient);
-  const diffuse = parseFloat(preset.diffuse);
-  const specular = parseFloat(preset.specular);
-  const specularPower = parseFloat(preset.specularPower);
+  // const ambient = parseFloat(preset.ambient);
+  // const diffuse = parseFloat(preset.diffuse);
+  // const specular = parseFloat(preset.specular);
+  // const specularPower = parseFloat(preset.specularPower);
 
-  actor.getProperty().setAmbient(ambient);
-  actor.getProperty().setDiffuse(diffuse);
-  actor.getProperty().setSpecular(specular);
-  actor.getProperty().setSpecularPower(specularPower);
+  // actor.getProperty().setAmbient(ambient);
+  // actor.getProperty().setDiffuse(diffuse);
+  // actor.getProperty().setSpecular(specular);
+  // actor.getProperty().setSpecularPower(specularPower);
 }
 
 function getShiftRange(colorTransferArray) {

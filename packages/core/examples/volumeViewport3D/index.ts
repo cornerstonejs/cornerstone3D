@@ -170,16 +170,66 @@ async function run() {
     },
   };
 
+  let volumeActor;
+
+  function convertArrayToString(data, minValue, maxValue) {
+    // Skip the first and last items in data
+    const slicedData = data.slice(1, -1);
+
+    // Get count of items in slicedData
+    const count = slicedData.length;
+
+    // Map each item in slicedData to their original scale and RGBA string
+    const mapped = slicedData.map(([scaledValue, color]) => {
+      const originalValue = scaledValue * (maxValue - minValue) + minValue;
+      const colorString = `${color.r / 255} ${color.g / 255} ${color.b / 255}`;
+      return `${originalValue} ${colorString}`;
+    });
+
+    // Convert mapped array to single string with space as separator
+    const finalString = mapped.reduce(
+      (prev, curr) => `${prev} ${curr}`,
+      `${count}`
+    );
+
+    return finalString;
+  }
+
   const tf_panel = new TF_Panel(options);
   tf_panel.registerCallback(() => {
-    console.debug('changed');
+    const tfValues = tf_panel.getTF();
+    const viewport = renderingEngine.getViewport(viewportId);
+    const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
+
+    const range = viewport
+      .getImageData()
+      .imageData.getPointData()
+      .getScalars()
+      .getRange();
+
+    const newPreset = {
+      name: 'custom',
+      gradientOpacity: '4 0 1 255 1',
+      specularPower: '10',
+      scalarOpacity:
+        '12 -3024 0 143.556 0 166.222 0.686275 214.389 0.696078 419.736 0.833333 3071 0.803922',
+      specular: '0.2',
+      shade: '1',
+      ambient: '0.1',
+      colorTransfer: convertArrayToString(tfValues, range[0], range[1]),
+      // diffuse: '0.9',
+      interpolation: '1',
+    };
+
+    utilities.applyPreset(volumeActor, newPreset);
+
+    viewport.render();
   });
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
-      const volumeActor = renderingEngine
-        .getViewport(viewportId)
-        .getDefaultActor().actor as Types.VolumeActor;
+      volumeActor = renderingEngine.getViewport(viewportId).getDefaultActor()
+        .actor as Types.VolumeActor;
 
       utilities.applyPreset(
         volumeActor,
