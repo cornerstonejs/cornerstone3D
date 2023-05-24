@@ -16,6 +16,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import { TF_Panel } from './tf_ui/TF_panel';
+import { Statistics } from './tf_ui/ui';
 
 // This is for debugging purposes
 console.warn(
@@ -141,7 +142,6 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ];
@@ -168,13 +168,17 @@ async function run() {
       position: 'bottom',
       background: '#090c29',
     },
+    histogram: {
+      // style: 'bars',
+    },
   };
 
   let volumeActor;
 
   function convertArrayToString(data, minValue, maxValue) {
     // Skip the first and last items in data
-    const slicedData = data.slice(1, -1);
+    // const slicedData = data.slice(1, -1);
+    const slicedData = data;
 
     // Map each item in slicedData to their original scale and color & opacity strings
     const colorMapped = slicedData.map(([scaledValue, color]) => {
@@ -205,10 +209,11 @@ async function run() {
     return { colorString, opacityString };
   }
 
+  const viewport = renderingEngine.getViewport(viewportId);
+
   const tf_panel = new TF_Panel(options);
   tf_panel.registerCallback(() => {
     const tfValues = tf_panel.getTF();
-    const viewport = renderingEngine.getViewport(viewportId);
     const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
 
     const range = viewport
@@ -227,8 +232,7 @@ async function run() {
       name: 'custom',
       gradientOpacity: '4 0 1 255 1',
       specularPower: '10',
-      scalarOpacity:
-        '12 -3024 0 143.556 0 166.222 0.686275 214.389 0.696078 419.736 0.833333 3071 0.803922',
+      scalarOpacity: opacityString,
       specular: '0.2',
       shade: '1',
       ambient: '0.1',
@@ -244,8 +248,7 @@ async function run() {
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
-      volumeActor = renderingEngine.getViewport(viewportId).getDefaultActor()
-        .actor as Types.VolumeActor;
+      volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
 
       utilities.applyPreset(
         volumeActor,
@@ -253,10 +256,23 @@ async function run() {
       );
 
       viewport.render();
+
+      setTimeout(() => {
+        const { scalarData, imageData } = viewport.getImageData();
+
+        const range = imageData.getPointData().getScalars().getRange();
+
+        const histogram = Statistics.calcHistogram(scalarData, {
+          numBins: 64,
+          min: range[0],
+          max: range[1],
+        });
+        tf_panel.setHistogram(histogram);
+        tf_panel.draw();
+      }, 3000);
     }
   );
 
-  const viewport = renderingEngine.getViewport(viewportId);
   renderingEngine.render();
 }
 

@@ -551,7 +551,11 @@ export class TF_Panel {
 
         this.histogramTooltip.innerHTML =
           'value: ' +
-          Math.floor((mouse.x / this.canvas.width) * 255) +
+          Math.floor(
+            (mouse.x / this.canvas.width) *
+              (this.histogram.range.max - this.histogram.range.min) +
+              this.histogram.range.min
+          ) +
           '<br>' +
           'count: ' +
           this.histogram.bins[bin];
@@ -652,13 +656,14 @@ export class TF_Panel {
     if (overlayUnscaled) {
       context.globalAlpha = 0.6;
     }
+
     if (style === 'polygon') {
-      drawPolygonHistogram.call(this, scale);
+      // drawPolygonHistogram.call(this, scale);
       if (overlayUnscaled) {
         drawPolygonHistogram.call(this, identityFunction);
       }
     } else if (style === 'bars') {
-      drawBarHistogram.call(this, scale);
+      // drawBarHistogram.call(this, scale);
       if (overlayUnscaled) {
         drawBarHistogram.call(this, identityFunction);
       }

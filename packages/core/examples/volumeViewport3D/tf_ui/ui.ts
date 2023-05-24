@@ -39,21 +39,29 @@ export class Statistics {
     const histogram = {};
     histogram.numBins = options.numBins || 256;
 
-    let min = Infinity;
-    let max = -Infinity;
-    let index = data.length;
+    const minToUse = options.min;
+    const maxToUse = options.max;
 
-    while (index--) {
-      const value = data[index];
-      if (value < min) {
-        min = value;
+    if (minToUse === undefined || maxToUse === undefined) {
+      let min = Infinity;
+      let max = -Infinity;
+      let index = data.length;
+
+      while (index--) {
+        const value = data[index];
+        if (value < min) {
+          min = value;
+        }
+        if (value > max) {
+          max = value;
+        }
       }
-      if (value > max) {
-        max = value;
-      }
+
+      minToUse = min;
+      maxToUse = max;
     }
 
-    histogram.range = { min: min, max: max };
+    histogram.range = { min: minToUse, max: maxToUse };
 
     const bins = new Int32Array(histogram.numBins);
     const binScale =
