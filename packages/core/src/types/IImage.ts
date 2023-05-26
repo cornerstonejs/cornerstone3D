@@ -1,14 +1,7 @@
 import CPUFallbackLUT from './CPUFallbackLUT';
 import CPUFallbackColormap from './CPUFallbackColormap';
 import CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-
-type PixelDataTypedArray =
-  | Float32Array
-  | Int16Array
-  | Uint16Array
-  | Uint8Array
-  | Int8Array
-  | Uint8ClampedArray;
+import { PixelDataTypedArray } from './PixelDataTypedArray';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering

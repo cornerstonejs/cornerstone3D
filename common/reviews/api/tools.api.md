@@ -838,6 +838,19 @@ declare namespace color {
 // @public (undocumented)
 type ColorLUT = Array<Color>;
 
+// @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: OpacityMapping[];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: RGB[];
+};
+
 declare namespace config {
     export {
         getState,
@@ -997,40 +1010,8 @@ interface CPUFallbackEnabledElement {
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
-        imagePlaneModule?: {
-            frameOfReferenceUID: string;
-            rows: number;
-            columns: number;
-            imageOrientationPatient: number[];
-            rowCosines: Point3;
-            columnCosines: Point3;
-            imagePositionPatient: number[];
-            sliceThickness?: number;
-            sliceLocation?: number;
-            pixelSpacing: Point2;
-            rowPixelSpacing: number;
-            columnPixelSpacing: number;
-        };
-        imagePixelModule?: {
-            samplesPerPixel: number;
-            photometricInterpretation: string;
-            rows: number;
-            columns: number;
-            bitsAllocated: number;
-            bitsStored: number;
-            highBit: number;
-            pixelRepresentation: number;
-            planarConfiguration?: number;
-            pixelAspectRatio?: number;
-            smallestPixelValue?: number;
-            largestPixelValue?: number;
-            redPaletteColorLookupTableDescriptor?: number[];
-            greenPaletteColorLookupTableDescriptor?: number[];
-            bluePaletteColorLookupTableDescriptor?: number[];
-            redPaletteColorLookupTableData: number[];
-            greenPaletteColorLookupTableData: number[];
-            bluePaletteColorLookupTableData: number[];
-        };
+        imagePlaneModule?: ImagePlaneModule;
+        imagePixelModule?: ImagePixelModule;
     };
     // (undocumented)
     needsRedraw?: boolean;
@@ -1178,7 +1159,7 @@ type CPUIImageData = {
     origin: Point3;
     imageData: CPUImageData;
     metadata: { Modality: string };
-    scalarData: number[];
+    scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
     preScale?: {
@@ -1200,7 +1181,7 @@ type CPUImageData = {
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
     getDirection?: () => Mat3;
-    getScalarData?: () => number[];
+    getScalarData?: () => PixelDataTypedArray;
     getDimensions?: () => Point3;
 };
 
@@ -2634,6 +2615,58 @@ class ImageMouseCursor extends MouseCursor {
     static getUniqueInstanceName(prefix: string): string;
 }
 
+// @public (undocumented)
+interface ImagePixelModule {
+    // (undocumented)
+    bitsAllocated: number;
+    // (undocumented)
+    bitsStored: number;
+    // (undocumented)
+    highBit: number;
+    // (undocumented)
+    modality: string;
+    // (undocumented)
+    photometricInterpretation: string;
+    // (undocumented)
+    pixelRepresentation: string;
+    // (undocumented)
+    samplesPerPixel: number;
+    // (undocumented)
+    voiLUTFunction: VOILUTFunctionType;
+    // (undocumented)
+    windowCenter: number | number[];
+    // (undocumented)
+    windowWidth: number | number[];
+}
+
+// @public (undocumented)
+interface ImagePlaneModule {
+    // (undocumented)
+    columnCosines?: Point3;
+    // (undocumented)
+    columnPixelSpacing?: number;
+    // (undocumented)
+    columns: number;
+    // (undocumented)
+    frameOfReferenceUID: string;
+    // (undocumented)
+    imageOrientationPatient?: Float32Array;
+    // (undocumented)
+    imagePositionPatient?: Point3;
+    // (undocumented)
+    pixelSpacing?: Point2;
+    // (undocumented)
+    rowCosines?: Point3;
+    // (undocumented)
+    rowPixelSpacing?: number;
+    // (undocumented)
+    rows: number;
+    // (undocumented)
+    sliceLocation?: number;
+    // (undocumented)
+    sliceThickness?: number;
+}
+
 // @public
 type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
@@ -2788,6 +2821,7 @@ interface IStackViewport extends IViewport {
         renderingEngineId: string;
     };
     getCamera(): ICamera;
+    getCornerstoneImage: () => IImage;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
     getFrameOfReferenceUID: () => string;
@@ -2804,7 +2838,7 @@ interface IStackViewport extends IViewport {
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData): void;
+    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
         { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
@@ -2877,6 +2911,10 @@ interface IToolGroup {
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
         (): undefined | string;
+    };
+    // (undocumented)
+    getDefaultMousePrimary: {
+        (): MouseBindings;
     };
     // (undocumented)
     getToolConfiguration: {
@@ -3547,6 +3585,15 @@ export class PanTool extends BaseTool {
     touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
+// @public (undocumented)
+type PixelDataTypedArray =
+| Float32Array
+| Int16Array
+| Uint16Array
+| Uint8Array
+| Int8Array
+| Uint8ClampedArray;
+
 declare namespace planar {
     export {
         _default as default,
@@ -3588,6 +3635,7 @@ interface PlanarFreehandROIAnnotation extends Annotation {
                 };
             };
         };
+        cachedStats?: ROICachedStats;
     };
     // (undocumented)
     metadata: {
@@ -3608,11 +3656,15 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[];
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -3625,6 +3677,8 @@ export class PlanarFreehandROITool extends AnnotationTool {
     mouseDragCallback: any;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _renderStats: (annotation: any, viewport: any, enabledElement: any, svgDrawingHelper: any) => void;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3804,6 +3858,9 @@ export class ProbeTool extends AnnotationTool {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -4278,6 +4335,9 @@ function resetAnnotationManager(): void;
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
 
+// @public
+type RGB = [number, number, number];
+
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
     // (undocumented)
@@ -4741,10 +4801,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -5326,7 +5383,7 @@ declare namespace viewportFilters {
 
 // @public
 type ViewportInputOptions = {
-    background?: [number, number, number];
+    background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
     displayArea?: DisplayArea;
     suppressEvents?: boolean;
@@ -5356,6 +5413,13 @@ interface ViewportPreset {
     // (undocumented)
     specularPower: string;
 }
+
+// @public
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
 
 declare namespace visibility {
     export {
@@ -5390,6 +5454,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -5492,9 +5557,9 @@ type VolumeScrollOutOfBoundsEventDetail = {
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
 // @public
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
+type VolumeViewportProperties = ViewportProperties & {
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 // @public (undocumented)
@@ -5520,11 +5585,14 @@ export class WindowLevelTool extends BaseTool {
         upper: number;
     };
     // (undocumented)
-    getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }: {
+    getPTScaledNewRange({ deltaPointsCanvas, lower, upper, clientHeight, viewport, volumeId, isPreScaled, }: {
         deltaPointsCanvas: any;
         lower: any;
         upper: any;
         clientHeight: any;
+        viewport: any;
+        volumeId: any;
+        isPreScaled: any;
     }): {
         lower: any;
         upper: any;

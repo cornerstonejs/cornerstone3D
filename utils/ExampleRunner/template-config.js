@@ -90,7 +90,7 @@ module.exports = {
   devServer: {
     hot: true,
     open: false,
-    port: 3001,
+    port: 3000,
     historyApiFallback: true,
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",

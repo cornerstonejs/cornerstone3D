@@ -6,6 +6,65 @@ import type { Types } from '@cornerstonejs/core';
  * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
  */
 
+function getAllIntersectionsWithPolyline(
+  points: Types.Point2[],
+  p1: Types.Point2,
+  q1: Types.Point2,
+  closed = true
+): Types.Point2[] {
+  let initialI;
+  let j;
+  const intersections: Types.Point2[] = [];
+
+  if (closed) {
+    j = points.length - 1;
+    initialI = 0;
+  } else {
+    j = 0;
+    initialI = 1;
+  }
+
+  for (let i = initialI; i < points.length; i++) {
+    const p2 = points[j];
+    const q2 = points[i];
+
+    if (doesIntersect(p1, q1, p2, q2)) {
+      intersections.push([j, i]);
+    }
+
+    j = i;
+  }
+
+  return intersections;
+}
+
+/**
+ * Returns all intersections points
+ * between a line and a polyline
+ */
+function getIntersectionCoordinatesWithPolyline(
+  points: Types.Point2[],
+  p1: Types.Point2,
+  q1: Types.Point2,
+  closed = true
+): Types.Point2[] {
+  const result = [];
+  const polylineIndexes = getAllIntersectionsWithPolyline(
+    points,
+    p1,
+    q1,
+    closed
+  );
+
+  for (let i = 0; i < polylineIndexes.length; i++) {
+    const p2 = points[polylineIndexes[i][0]];
+    const q2 = points[polylineIndexes[i][1]];
+    const intersection = getIntersection(p1, q1, p2, q2);
+    result.push(intersection);
+  }
+  return result;
+}
+
 /**
  * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
  * `points`, and returns the first value.
@@ -179,4 +238,38 @@ function onSegment(p: Types.Point2, q: Types.Point2, r: Types.Point2): boolean {
   return false;
 }
 
-export { getFirstIntersectionWithPolyline, getClosestIntersectionWithPolyline };
+/**
+ * Gets the intersection between the line (`p1`,`q1`) and the line (`p2`,`q2`)
+ * http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
+ * https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+ */
+function getIntersection(
+  p1: Types.Point2,
+  q1: Types.Point2,
+  p2: Types.Point2,
+  q2: Types.Point2
+): Types.Point2 {
+  const denominator =
+    (q2[1] - p2[1]) * (q1[0] - p1[0]) - (q2[0] - p2[0]) * (q1[1] - p1[1]);
+  if (denominator == 0) {
+    return;
+  }
+  let a = p1[1] - p2[1];
+  let b = p1[0] - p2[0];
+  const numerator1 = (q2[0] - p2[0]) * a - (q2[1] - p2[1]) * b;
+  const numerator2 = (q1[0] - p1[0]) * a - (q1[1] - p1[1]) * b;
+  a = numerator1 / denominator;
+  b = numerator2 / denominator;
+
+  const resultX = p1[0] + a * (q1[0] - p1[0]);
+  const resultY = p1[1] + a * (q1[1] - p1[1]);
+
+  return [resultX, resultY];
+}
+
+export {
+  getAllIntersectionsWithPolyline,
+  getFirstIntersectionWithPolyline,
+  getClosestIntersectionWithPolyline,
+  getIntersectionCoordinatesWithPolyline,
+};
