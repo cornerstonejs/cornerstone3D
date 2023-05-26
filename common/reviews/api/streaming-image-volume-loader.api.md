@@ -10,6 +10,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type { GetGPUTier } from 'detect-gpu';
 
 // @public (undocumented)
 type Actor = vtkActor;
@@ -94,6 +95,7 @@ enum ContourType {
 // @public (undocumented)
 type Cornerstone3DConfig = {
     detectGPU: any;
+    getGPUTierConfig: GetGPUTier;
     rendering: {
         // vtk.js supports 8bit integer textures and 32bit float textures.
         // However, if the client has norm16 textures (it can be seen by visiting

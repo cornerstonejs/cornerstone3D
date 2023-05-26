@@ -10,6 +10,7 @@ import { Cornerstone3DConfig } from './types';
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig = {
   detectGPU: {},
+  getGPUTierConfig: {},
   rendering: {
     useCPURendering: false,
     // GPU rendering options
@@ -23,6 +24,7 @@ const defaultConfig = {
 
 let config = {
   detectGPU: {},
+  getGPUTierConfig: {},
   rendering: {
     useCPURendering: false,
     // GPU rendering options
@@ -112,7 +114,7 @@ async function init(configuration = {}): Promise<boolean> {
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    const gpuTier = await getGPUTier();
+    const gpuTier = await getGPUTier(config.getGPUTierConfig);
     config.detectGPU = gpuTier;
     console.log(
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',

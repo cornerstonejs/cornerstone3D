@@ -14,6 +14,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type { GetGPUTier } from 'detect-gpu';
 
 // @public (undocumented)
 type Actor = vtkActor;
@@ -210,6 +211,7 @@ enum ContourType {
 // @public (undocumented)
 type Cornerstone3DConfig = {
     detectGPU: any;
+    getGPUTierConfig: GetGPUTier;
     rendering: {
         preferSizeOverAccuracy: boolean;
         useNorm16Texture: boolean;
