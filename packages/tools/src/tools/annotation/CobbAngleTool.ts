@@ -48,6 +48,7 @@ import {
 } from '../../types';
 import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { vec3 } from 'gl-matrix';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName;
@@ -775,20 +776,40 @@ class CobbAngleTool extends AnnotationTool {
       return;
     }
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
-    const worldPos3 = data.handles.points[2];
-    const worldPos4 = data.handles.points[3];
+    const seg1: [Types.Point3, Types.Point3] = [null, null];
+    const seg2: [Types.Point3, Types.Point3] = [null, null];
+    let minDist = Number.MAX_VALUE;
+
+    // Order the endpoints of each line segment such that seg1[1] and seg2[0]
+    // are the closest (Euclidean distance-wise) to each other. Thus
+    // the angle formed between the vectors seg1[1]->seg1[0] and seg2[0]->seg[1]
+    // is calculated.
+    // The assumption here is that the Cobb angle line segments are drawn
+    // such that the segments intersect nearest the segment endpoints
+    // that are closest AND those closest endpoints are the tails of the
+    // vectors used to calculate the angle between the vectors/line segments.
+    for (let i = 0; i < 2; i += 1) {
+      for (let j = 2; j < 4; j += 1) {
+        const dist = vec3.distance(
+          data.handles.points[i],
+          data.handles.points[j]
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          seg1[1] = data.handles.points[i];
+          seg1[0] = data.handles.points[(i + 1) % 2];
+          seg2[0] = data.handles.points[j];
+          seg2[1] = data.handles.points[2 + ((j - 1) % 2)];
+        }
+      }
+    }
 
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const angle = angleBetweenLines(
-        [worldPos1, worldPos2],
-        [worldPos3, worldPos4]
-      );
+      const angle = angleBetweenLines(seg1, seg2);
 
       cachedStats[targetId] = {
         angle,
