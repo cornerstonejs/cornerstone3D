@@ -572,8 +572,12 @@ export class TF_Panel {
   draw = function () {
     for (let index = 0; index < this.widgets.length; index++) {
       const widget = this.widgets[index];
-      widget.drawWidget(false);
+      widget.suppressCallbacks = this.suppressCallbacks;
+      widget.drawWidget(this.suppressCallbacks);
+      widget.suppressCallbacks = false;
     }
+
+    this.suppressCallbacks = false;
   };
 
   /*
@@ -674,6 +678,40 @@ export class TF_Panel {
     return this.tf_values;
   };
 
+  setTF = function (tf) {
+    this.tf_values = tf;
+    this.suppressCallbacks = true;
+    this.updateFirstWidgetFromTF();
+    this.draw();
+  };
+
+  updateFirstWidgetFromTF = function () {
+    // Get the first widget
+    const tf_values = this.tf_values;
+    const widget = this.widgets[0];
+    widget.destructor();
+
+    // Calculate the number of control points in the widget
+    const controlPoints = [];
+
+    // Distribute the control points evenly across the range of the transfer function
+    for (let i = 0; i < tf_values.length; i++) {
+      // Update the value, color, and alpha of the control point
+      const controlPoint = {};
+      controlPoint.value = tf_values[i][0];
+      controlPoint.color = tf_values[i][1];
+      controlPoint.alpha = tf_values[i][1].a;
+
+      controlPoints.push(controlPoint);
+    }
+
+    const options = {
+      controlPoints: controlPoints,
+    };
+
+    this.addWidget(options);
+  };
+
   updateTF = function () {
     const eps = 1e-4;
     const values = [];
@@ -684,7 +722,7 @@ export class TF_Panel {
       const start = controlPoints[0].value;
       const end = controlPoints[controlPoints.length - 1].value;
 
-      //add additional controlpoints with very small offset to simulate vertical borders of tf widget
+      //add additional control points with very small offset to simulate vertical borders of tf widget
       values.push(start < end ? start - eps : start + eps);
       values.push(start < end ? end + eps : end - eps);
 
@@ -911,7 +949,11 @@ export class TF_widget {
     if (options.controlPoints.length > 0) {
       for (let index = 0; index < options.controlPoints.length; index++) {
         const controlPoint = options.controlPoints[index];
-        this.addControlPoint(controlPoint);
+        this.addControlPoint({
+          value: controlPoint.value,
+          color: controlPoint.color,
+          alpha: controlPoint.alpha,
+        });
       }
     } else if (this.controlPoints.length === 0) {
       this.addControlPoints(default_colors, { x: 0.5, y: 0.25 }); // 0.3, 0.5, options.location.x, 0.25 ); //add one default widget
@@ -1041,7 +1083,7 @@ export class TF_widget {
 
       this.updateHandles();
 
-      drawWidgetBound();
+      drawWidgetBound(true);
       return false;
     }
 
@@ -1153,7 +1195,7 @@ export class TF_widget {
 
       const color = Color.RGBtoHEX(rgb[0], rgb[1], rgb[2]);
 
-      self.addControlPoint(value, alpha, color);
+      self.addControlPoint({ value, alpha, color });
     }
 
     function onOutlineMouseDown(e) {
@@ -1309,15 +1351,15 @@ export class TF_widget {
     //colors.map( ( color, index ) => { this.addControlPoint( startValues + index * stepValues, startAlpha + index * stepAlpha, color ); } );
     const self = this;
     colors.map(function (color, index) {
-      self.addControlPoint(
-        startValues + index * stepValues,
-        startAlpha + index * stepAlpha,
-        color
-      );
+      self.addControlPoint({
+        value: startValues + index * stepValues,
+        alpha: startAlpha + index * stepAlpha,
+        color,
+      });
     });
   };
 
-  addControlPoint = function (value, alpha, color) {
+  addControlPoint = function ({ value, alpha, color }) {
     if (color === undefined) color = '#000';
     const parent = this.parent;
     const container = this.container;
@@ -1610,8 +1652,7 @@ export class TF_widget {
    * create polygon path for widget tracing positions of controlpoints
    * create gradient and draw polygon
    */
-  drawWidget = function (notifyCallback) {
-    notifyCallback = notifyCallback || true;
+  drawWidget = function () {
     const controlPoints = this.controlPoints;
     const canvas = this.canvas;
 
@@ -1668,7 +1709,7 @@ export class TF_widget {
     context.fillStyle = gradient;
     context.fill();
 
-    if (notifyCallback) {
+    if (!this.suppressCallbacks) {
       this.fireChange();
     }
     //propagate change to callbacks

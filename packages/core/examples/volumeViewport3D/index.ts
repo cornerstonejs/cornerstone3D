@@ -5,7 +5,6 @@ import {
   RenderingEngine,
   setVolumesForViewports,
   Types,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -22,6 +21,8 @@ import { Statistics } from './tf_ui/ui';
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const { Events } = Enums;
 
 const {
   ToolGroupManager,
@@ -205,23 +206,44 @@ async function run() {
     return { colorString, opacityString };
   }
 
+  function convertArrayToNested(cfunVals, ofunVals, minValue, maxValue) {
+    // Map each item in data to the desired format
+    const mapped = cfunVals.map(([originalValue, r, g, b], index) => {
+      const scaledValue = (originalValue - minValue) / (maxValue - minValue);
+      return [
+        scaledValue,
+        {
+          r: Math.round(r * 255),
+          g: Math.round(g * 255),
+          b: Math.round(b * 255),
+          a: ofunVals[index][1],
+        },
+      ];
+    });
+
+    return mapped;
+  }
+
+  let minimum, maximum;
+
   viewport = renderingEngine.getViewport(viewportId);
 
   const tf_panel = new TF_Panel(options);
   tf_panel.registerCallback(() => {
     const tfValues = tf_panel.getTF();
-    const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
 
-    const range = viewport
-      .getImageData()
-      .imageData.getPointData()
-      .getScalars()
-      .getRange();
+    if (!tfValues || tfValues.length === 0) {
+      return;
+    }
+
+    if (!minimum || !maximum) {
+      return;
+    }
 
     const { colorString, opacityString } = convertArrayToString(
       tfValues,
-      range[0],
-      range[1]
+      minimum,
+      maximum
     );
 
     const newPreset = {
@@ -238,8 +260,45 @@ async function run() {
     };
 
     viewport.setProperties({ preset: newPreset });
-
     viewport.render();
+  });
+
+  let presetName;
+  element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
+    const volumeActor = e.detail.actor as Types.VolumeActor;
+    if (presetName === e.detail.presetName) {
+      return;
+    }
+
+    presetName = e.detail.presetName;
+
+    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+
+    const cfunValues = [];
+
+    for (let i = 0; i < cfun.getSize(); i++) {
+      const value = [];
+      cfun.getNodeValue(i, value);
+      cfunValues.push(value);
+    }
+
+    const ofun = volumeActor.getProperty().getScalarOpacity(0);
+
+    const ofunValues = [];
+    for (let i = 0; i < ofun.getSize(); i++) {
+      const value = [];
+      ofun.getNodeValue(i, value);
+      ofunValues.push(value);
+    }
+
+    const { imageData } = viewport.getImageData();
+
+    if (!imageData) {
+      return;
+    }
+
+    const converted = convertArrayToNested(cfunValues, ofunValues, -3024, 1402);
+    tf_panel.setTF(converted);
   });
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
@@ -255,12 +314,14 @@ async function run() {
       setTimeout(() => {
         const { scalarData, imageData } = viewport.getImageData();
 
-        const range = imageData.getPointData().getScalars().getRange();
+        const range = imageData.computeHistogram(imageData.getBounds());
+        minimum = range.minimum;
+        maximum = range.maximum;
 
         const histogram = Statistics.calcHistogram(scalarData, {
           numBins: 64,
-          min: range[0],
-          max: range[1],
+          min: minimum,
+          max: maximum,
         });
         tf_panel.setHistogram(histogram);
         tf_panel.draw();
