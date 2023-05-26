@@ -230,76 +230,71 @@ async function run() {
 
   const tf_panel = new TF_Panel(options);
   tf_panel.registerCallback(() => {
-    const tfValues = tf_panel.getTF();
-
-    if (!tfValues || tfValues.length === 0) {
-      return;
-    }
-
-    if (!minimum || !maximum) {
-      return;
-    }
-
-    const { colorString, opacityString } = convertArrayToString(
-      tfValues,
-      minimum,
-      maximum
-    );
-
-    const newPreset = {
-      name: 'custom',
-      gradientOpacity: '4 0 1 255 1',
-      specularPower: '10',
-      scalarOpacity: opacityString,
-      specular: '0.2',
-      shade: '1',
-      ambient: '0.1',
-      colorTransfer: colorString,
-      // diffuse: '0.9',
-      interpolation: '1',
-    };
-
-    viewport.setProperties({ preset: newPreset });
-    viewport.render();
+    // const tfValues = tf_panel.getTF();
+    // if (!tfValues || tfValues.length === 0) {
+    //   return;
+    // }
+    // if (!minimum || !maximum) {
+    //   return;
+    // }
+    // const { colorString, opacityString } = convertArrayToString(
+    //   tfValues,
+    //   minimum,
+    //   maximum
+    // );
+    // const newPreset = {
+    //   name: 'custom',
+    //   gradientOpacity: '4 0 1 255 1',
+    //   specularPower: '10',
+    //   scalarOpacity: opacityString,
+    //   specular: '0.2',
+    //   shade: '1',
+    //   ambient: '0.1',
+    //   colorTransfer: colorString,
+    //   // diffuse: '0.9',
+    //   interpolation: '1',
+    // };
+    // viewport.setProperties({ preset: newPreset });
+    // viewport.render();
   });
 
   let presetName;
-  element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
-    const volumeActor = e.detail.actor as Types.VolumeActor;
-    if (presetName === e.detail.presetName) {
-      return;
-    }
+  // element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
+  //   const volumeActor = e.detail.actor as Types.VolumeActor;
+  //   if (presetName === e.detail.presetName) {
+  //     return;
+  //   }
 
-    presetName = e.detail.presetName;
+  //   presetName = e.detail.presetName;
 
-    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+  //   const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
 
-    const cfunValues = [];
+  //   const cfunValues = [];
 
-    for (let i = 0; i < cfun.getSize(); i++) {
-      const value = [];
-      cfun.getNodeValue(i, value);
-      cfunValues.push(value);
-    }
+  //   for (let i = 0; i < cfun.getSize(); i++) {
+  //     const value = [];
+  //     cfun.getNodeValue(i, value);
+  //     cfunValues.push(value);
+  //   }
 
-    const ofun = volumeActor.getProperty().getScalarOpacity(0);
+  //   const ofun = volumeActor.getProperty().getScalarOpacity(0);
 
-    const ofunValues = [];
-    for (let i = 0; i < ofun.getSize(); i++) {
-      const value = [];
-      ofun.getNodeValue(i, value);
-      ofunValues.push(value);
-    }
+  //   const ofunValues = [];
+  //   for (let i = 0; i < ofun.getSize(); i++) {
+  //     const value = [];
+  //     ofun.getNodeValue(i, value);
+  //     ofunValues.push(value);
+  //   }
 
-    const { imageData } = viewport.getImageData();
+  //   const { imageData } = viewport.getImageData();
 
-    if (!imageData) {
-      return;
-    }
+  //   if (!imageData) {
+  //     return;
+  //   }
 
-    const converted = convertArrayToNested(cfunValues, ofunValues, -3024, 1402);
-    tf_panel.setTF(converted);
-  });
+  //   const converted = convertArrayToNested(cfunValues, ofunValues, -3024, 1402);
+  //   tf_panel.setTF(converted);
+  // });
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
