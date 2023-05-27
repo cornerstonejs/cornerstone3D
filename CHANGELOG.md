@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.4...v1.1.5) (2023-05-23)
+
+### Bug Fixes
+
+- **event:** Interactions between double click and multi mouse button ([#616](https://github.com/cornerstonejs/cornerstone3D-beta/issues/616)) ([3be68c1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/3be68c166ade016793ae8d8c6dbe7bd15dfd07ac))
+
+## [1.1.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.3...v1.1.4) (2023-05-23)
+
+### Bug Fixes
+
+- **windowLevel:** should not double scale for window level ([#619](https://github.com/cornerstonejs/cornerstone3D-beta/issues/619)) ([479eba7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/479eba77cb050b90984e2b1f51d63b29854a6d40))
+
+## [1.1.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.2...v1.1.3) (2023-05-23)
+
+### Bug Fixes
+
+- **expose:** api default mouse primary ([#622](https://github.com/cornerstonejs/cornerstone3D-beta/issues/622)) ([94be45b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/94be45b501c57435f1a451517200624e32187a02))
+
+## [1.1.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.1...v1.1.2) (2023-05-23)
+
+**Note:** Version bump only for package root
+
+## [1.1.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.0...v1.1.1) (2023-05-23)
+
+### Bug Fixes
+
+- **husky:** husky config ([#627](https://github.com/cornerstonejs/cornerstone3D-beta/issues/627)) ([d99d77e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d99d77e3d612ba24936d430a8e5a29ee4fefeb9c))
+
 # [1.1.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v0.103.0...v1.1.0) (2023-05-22)
 
 ### Features
