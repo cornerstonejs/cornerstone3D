@@ -54,6 +54,7 @@ function activateOpenContourEdit(
     spacing,
     xDir,
     yDir,
+    movingTextBox: false,
   };
 
   state.isInteractingWithTool = true;
@@ -230,7 +231,7 @@ function openContourEditOverwriteEnd(
 
   // Jump to a normal line edit now.
   this.deactivateOpenContourEdit(element);
-  this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
+  this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender, null);
 }
 
 /**

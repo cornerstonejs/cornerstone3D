@@ -33,6 +33,7 @@ import {
   getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
+  setPreferSizeOverAccuracy,
   setUseSharedArrayBuffer,
   resetUseCPURendering,
   resetUseSharedArrayBuffer,
@@ -70,7 +71,7 @@ export {
   // enums
   Enums,
   CONSTANTS,
-  Events as EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
+  Events as EVENTS, // CornerstoneDICOMImageLoader uses this, Todo: remove it after fixing wado
   //
   Settings,
   // Rendering Engine
@@ -113,6 +114,7 @@ export {
   // CPU Rendering
   getShouldUseCPURendering,
   setUseCPURendering,
+  setPreferSizeOverAccuracy,
   resetUseCPURendering,
   // SharedArrayBuffer
   getShouldUseSharedArrayBuffer,

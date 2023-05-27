@@ -11,10 +11,8 @@ function getVolumeViewportScrollInfo(
   viewport: IVolumeViewport,
   volumeId: string
 ) {
-  const { sliceRange, spacingInNormalDirection } = getVolumeSliceRangeInfo(
-    viewport,
-    volumeId
-  );
+  const { sliceRange, spacingInNormalDirection, camera } =
+    getVolumeSliceRangeInfo(viewport, volumeId);
 
   const { min, max, current } = sliceRange;
 
@@ -26,7 +24,15 @@ function getVolumeViewportScrollInfo(
   const floatingStepNumber = fraction * numScrollSteps;
   const currentStepIndex = Math.round(floatingStepNumber);
 
-  return { numScrollSteps, currentStepIndex };
+  return {
+    numScrollSteps,
+    currentStepIndex,
+    sliceRangeInfo: {
+      sliceRange,
+      spacingInNormalDirection,
+      camera,
+    },
+  };
 }
 
 export default getVolumeViewportScrollInfo;

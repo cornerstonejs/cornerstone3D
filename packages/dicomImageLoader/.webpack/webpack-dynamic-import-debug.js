@@ -9,6 +9,7 @@ const prodConfig = {
   stats: {
     children: true,
   },
+  devtool: 'eval-source-map',
   output: {
     /*library: {
       //name: '[name]',
@@ -17,6 +18,7 @@ const prodConfig = {
     libraryTarget: 'umd',
     globalObject: 'this',
     filename: '[name].min.js',
+    clean: true,
   },
   optimization: {
     minimize: false,

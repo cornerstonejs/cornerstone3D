@@ -579,7 +579,10 @@ describe('renderingCore -- Stack', () => {
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const imageRenderedCallback = () => {
-        calibratedPixelSpacingMetadataProvider.add(imageId1, [2, 2]);
+        calibratedPixelSpacingMetadataProvider.add(imageId1, {
+          rowPixelSpacing: 2,
+          columnPixelSpacing: 2,
+        });
 
         vp.calibrateSpacing(imageId1);
         element.removeEventListener(
@@ -810,35 +813,6 @@ describe('renderingCore -- Stack', () => {
       } catch (e) {
         done.fail(e);
       }
-    });
-  });
-
-  describe('Calibration ', () => {
-    beforeEach(function () {
-      cache.purgeCache();
-      this.DOMElements = [];
-
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
-      metaData.addProvider(
-        calibratedPixelSpacingMetadataProvider.get.bind(
-          calibratedPixelSpacingMetadataProvider
-        ),
-        11000
-      );
-    });
-
-    afterEach(function () {
-      cache.purgeCache();
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      imageLoader.unregisterAllImageLoaders();
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
     });
 
     it('Should be able to fire imageCalibrated event with expected data', function (done) {

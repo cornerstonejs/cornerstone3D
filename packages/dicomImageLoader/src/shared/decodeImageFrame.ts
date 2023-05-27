@@ -12,7 +12,10 @@ import decodeJPEGLS from './decoders/decodeJPEGLS';
 import decodeJPEG2000 from './decoders/decodeJPEG2000';
 import decodeHTJ2K from './decoders/decodeHTJ2K';
 import scaleArray from './scaling/scaleArray';
-import { ImageFrame, LoaderDecodeOptions } from '../types';
+import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
+import getMinMax from './getMinMax';
+import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
+import isColorImage from './isColorImage';
 
 /**
  * Decodes the provided image frame.
@@ -90,7 +93,7 @@ async function decodeImageFrame(
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
       opts = {
-        signed: false, // imageFrame.signed,
+        signed: imageFrame.pixelRepresentation === 1, // imageFrame.signed,
         // shouldn't need...
         bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
         ...imageFrame,
@@ -186,108 +189,186 @@ function postProcessDecodedPixels(
 
   // Cache the pixelData reference quickly incase we want to set a targetBuffer _and_ scale.
   let pixelDataArray = imageFrame.pixelData;
-
   imageFrame.pixelDataLength = imageFrame.pixelData.length;
+  const { min: minBeforeScale, max: maxBeforeScale } = getMinMax(
+    imageFrame.pixelData
+  );
 
-  if (options.targetBuffer) {
-    let offset, length;
-    // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+  const typedArrayConstructors = {
+    Uint8Array,
+    Uint16Array: use16BitDataType ? Uint16Array : undefined,
+    Int16Array: use16BitDataType ? Int16Array : undefined,
+    Float32Array,
+  };
 
-    ({ offset, length } = options.targetBuffer);
-    const { arrayBuffer, type } = options.targetBuffer;
-
-    let TypedArrayConstructor;
-
-    if (offset === null || offset === undefined) {
-      offset = 0;
-    }
-
-    if ((length === null || length === undefined) && offset !== 0) {
-      length = imageFrame.pixelDataLength - offset;
-    } else if (length === null || length === undefined) {
-      length = imageFrame.pixelDataLength;
-    }
-
-    switch (type) {
-      case 'Uint8Array':
-        TypedArrayConstructor = Uint8Array;
-        break;
-      case use16BitDataType && 'Uint16Array':
-        TypedArrayConstructor = Uint16Array;
-        break;
-      case use16BitDataType && 'Int16Array':
-        TypedArrayConstructor = Int16Array;
-        break;
-      case 'Float32Array':
-        TypedArrayConstructor = Float32Array;
-        break;
-      default:
-        throw new Error('target array for image does not have a valid type.');
-    }
-
-    const imageFramePixelData = imageFrame.pixelData;
-
-    if (length !== imageFramePixelData.length) {
-      throw new Error(
-        `target array for image does not have the same length (${length}) as the decoded image length (${imageFramePixelData.length}).`
-      );
-    }
-
-    // TypedArray.Set is api level and ~50x faster than copying elements even for
-    // Arrays of different types, which aren't simply memcpy ops.
-    let typedArray;
-
-    if (arrayBuffer) {
-      typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
-    } else {
-      typedArray = new TypedArrayConstructor(length);
-    }
-
-    typedArray.set(imageFramePixelData, 0);
-
-    // If need to scale, need to scale correct array.
-    pixelDataArray = typedArray;
+  if (
+    options.targetBuffer &&
+    options.targetBuffer.type &&
+    !isColorImage(imageFrame.photometricInterpretation)
+  ) {
+    pixelDataArray = _handleTargetBuffer(
+      options,
+      imageFrame,
+      typedArrayConstructors,
+      pixelDataArray
+    );
+  } else if (options.preScale.enabled) {
+    pixelDataArray = _handlePreScaleSetup(
+      options,
+      minBeforeScale,
+      maxBeforeScale,
+      imageFrame
+    );
+  } else {
+    pixelDataArray = _getDefaultPixelDataArray(
+      minBeforeScale,
+      maxBeforeScale,
+      imageFrame
+    );
   }
+
+  let minAfterScale = minBeforeScale;
+  let maxAfterScale = maxBeforeScale;
 
   if (options.preScale.enabled) {
     const scalingParameters = options.preScale.scalingParameters;
+    _validateScalingParameters(scalingParameters);
 
-    if (!scalingParameters) {
-      throw new Error(
-        'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
-      );
-    }
+    const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
+    const isSlopeAndInterceptNumbers =
+      typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
 
-    const { rescaleSlope, rescaleIntercept } = scalingParameters;
+    if (isSlopeAndInterceptNumbers) {
+      scaleArray(pixelDataArray, scalingParameters);
+      imageFrame.preScale = {
+        ...options.preScale,
+        scaled: true,
+      };
 
-    if (
-      typeof rescaleSlope === 'number' &&
-      typeof rescaleIntercept === 'number'
-    ) {
-      // @ts-ignore
-      if (scaleArray(pixelDataArray, scalingParameters)) {
-        imageFrame.preScale = {
-          ...options.preScale,
-          scaled: true,
-        };
+      // calculate the min and max after scaling
+      const { rescaleIntercept, rescaleSlope, suvbw } = scalingParameters;
+      minAfterScale = rescaleSlope * minBeforeScale + rescaleIntercept;
+      maxAfterScale = rescaleSlope * maxBeforeScale + rescaleIntercept;
+
+      if (suvbw) {
+        minAfterScale = minAfterScale * suvbw;
+        maxAfterScale = maxAfterScale * suvbw;
       }
     }
   }
 
-  // Handle cases where the targetBuffer is not backed by a SharedArrayBuffer
-  if (
-    options.targetBuffer &&
-    (!options.targetBuffer.arrayBuffer ||
-      options.targetBuffer.arrayBuffer instanceof ArrayBuffer)
-  ) {
+  // assign the array buffer to the pixelData only if it is not a SharedArrayBuffer
+  // since we can't transfer ownership of a SharedArrayBuffer to another thread
+  // in the workers
+  const hasTargetBuffer = options.targetBuffer !== undefined;
+  const isNotSharedArrayBuffer =
+    hasTargetBuffer &&
+    !(options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer);
+
+  if (!hasTargetBuffer || isNotSharedArrayBuffer) {
     imageFrame.pixelData = pixelDataArray;
   }
 
-  const end = new Date().getTime();
+  imageFrame.minAfterScale = minAfterScale;
+  imageFrame.maxAfterScale = maxAfterScale;
 
+  const end = new Date().getTime();
   imageFrame.decodeTimeInMS = end - start;
 
   return imageFrame;
+}
+
+function _handleTargetBuffer(
+  options: any,
+  imageFrame: ImageFrame,
+  typedArrayConstructors: {
+    Uint8Array: Uint8ArrayConstructor;
+    Uint16Array: Uint16ArrayConstructor;
+    Int16Array: Int16ArrayConstructor;
+    Float32Array: Float32ArrayConstructor;
+  },
+  pixelDataArray: PixelDataTypedArray
+) {
+  const {
+    arrayBuffer,
+    type,
+    offset: rawOffset = 0,
+    length: rawLength,
+  } = options.targetBuffer;
+
+  const imageFrameLength = imageFrame.pixelDataLength;
+
+  const offset = rawOffset;
+  const length =
+    rawLength !== null && rawLength !== undefined
+      ? rawLength
+      : imageFrameLength - offset;
+
+  const TypedArrayConstructor = typedArrayConstructors[type];
+
+  if (!TypedArrayConstructor) {
+    throw new Error(`target array ${type} is not supported`);
+  }
+
+  const imageFramePixelData = imageFrame.pixelData;
+
+  if (length !== imageFramePixelData.length) {
+    throw new Error(
+      `target array for image does not have the same length (${length}) as the decoded image length (${imageFramePixelData.length}).`
+    );
+  }
+
+  // TypedArray.Set is api level and ~50x faster than copying elements even for
+  // Arrays of different types, which aren't simply memcpy ops.
+  const typedArray = arrayBuffer
+    ? new TypedArrayConstructor(arrayBuffer, offset, length)
+    : new TypedArrayConstructor(length);
+
+  typedArray.set(imageFramePixelData, 0);
+
+  // If need to scale, need to scale correct array.
+  pixelDataArray = typedArray;
+  return pixelDataArray;
+}
+
+function _handlePreScaleSetup(
+  options,
+  minBeforeScale,
+  maxBeforeScale,
+  imageFrame
+) {
+  const scalingParameters = options.preScale.scalingParameters;
+  _validateScalingParameters(scalingParameters);
+
+  const { rescaleSlope, rescaleIntercept } = scalingParameters;
+  const areSlopeAndInterceptNumbers =
+    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+
+  let scaledMin = minBeforeScale;
+  let scaledMax = maxBeforeScale;
+
+  if (areSlopeAndInterceptNumbers) {
+    scaledMin = rescaleSlope * minBeforeScale + rescaleIntercept;
+    scaledMax = rescaleSlope * maxBeforeScale + rescaleIntercept;
+  }
+
+  return _getDefaultPixelDataArray(scaledMin, scaledMax, imageFrame);
+}
+
+function _getDefaultPixelDataArray(min, max, imageFrame) {
+  const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
+  const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
+  typedArray.set(imageFrame.pixelData, 0);
+
+  return typedArray;
+}
+
+function _validateScalingParameters(scalingParameters) {
+  if (!scalingParameters) {
+    throw new Error(
+      'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
+    );
+  }
 }
 
 export default decodeImageFrame;

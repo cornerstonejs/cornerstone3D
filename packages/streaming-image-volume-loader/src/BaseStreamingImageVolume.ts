@@ -19,6 +19,7 @@ const { getMinMax } = csUtils;
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
  * It implements load method to load the imageIds and insert them into the volume.
+ *
  */
 export default class BaseStreamingImageVolume extends ImageVolume {
   private framesLoaded = 0;
@@ -545,6 +546,24 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         }
       }
 
+      const isSlopeAndInterceptNumbers =
+        typeof scalingParameters.rescaleSlope === 'number' &&
+        typeof scalingParameters.rescaleIntercept === 'number';
+
+      /**
+       * So this is has limitation right now, but we need to somehow indicate
+       * whether the volume has been scaled with the scaling parameters or not.
+       * However, each slice can have different scaling parameters but it is rare
+       * that rescale slope and intercept be unknown for one slice and known for
+       * another. So we can just check the first slice and assume that the rest
+       * of the slices have the same scaling parameters. Basically it is important
+       * that these two are numbers and that means the volume has been scaled (
+       * we do that automatically in the loader). For the suvbw, we need to
+       * somehow indicate whether the PT image has been corrected with suvbw or
+       * not, which we store it in the this.scaling.PT.suvbw.
+       */
+      this.isPrescaled = isSlopeAndInterceptNumbers;
+
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -744,8 +763,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       petScaling.suvbwToSuvbsa = suvbsa / suvbw;
     }
 
+    if (suvbw) {
+      petScaling.suvbw = suvbw;
+    }
+
     this.scaling = { PET: petScaling };
-    this.isPrescaled = true;
   }
 
   private _removeFromCache() {
@@ -896,9 +918,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       );
 
       // 3. Caching the image
-      cache.putImageLoadObject(imageId, imageLoadObject).catch((err) => {
-        console.error(err);
-      });
+      if (!cache.getImageLoadObject(imageId)) {
+        cache.putImageLoadObject(imageId, imageLoadObject).catch((err) => {
+          console.error(err);
+        });
+      }
 
       // 4. If we know we won't be able to add another Image to the cache
       //    without breaching the limit, stop here.

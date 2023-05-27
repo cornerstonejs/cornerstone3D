@@ -4,6 +4,8 @@ import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_scrolled from './groundTruth/volumeURI_100_100_10_1_1_1_0_scrolled.png';
 import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_64_0_20_1_1_0_scrolled.png';
+import * as imageURI_64_64_15_5_3_2_0 from './groundTruth/imageURI_64_64_15_5_3_2_0.png';
+import * as imageURI_64_64_10_5_3_2_0 from './groundTruth/imageURI_64_64_10_5_3_2_0.png';
 
 const {
   cache,
@@ -18,7 +20,7 @@ const {
 const { Events, ViewportType, InterpolationType } = Enums;
 
 const { registerVolumeLoader } = volumeLoader;
-const { StackScrollMouseWheelTool, ToolGroupManager } = csTools3d;
+const { StackScrollMouseWheelTool, ZoomTool, ToolGroupManager } = csTools3d;
 
 const {
   fakeImageLoader,
@@ -65,6 +67,8 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   beforeEach(function () {
     csTools3d.init();
     csTools3d.addTool(StackScrollMouseWheelTool);
+    csTools3d.addTool(ZoomTool);
+
     cache.purgeCache();
     this.DOMElements = [];
 
@@ -236,6 +240,158 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
             image,
             imageURI_64_64_0_20_1_1_0_scrolled,
             'imageURI_64_64_0_20_1_1_0_scrolled'
+          ).then(done, done.fail);
+        }
+      );
+    }
+
+    element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
+
+    try {
+      vp.setStack([imageId1, imageId2], 0).then(() => {
+        vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+        vp.render();
+      });
+    } catch (e) {
+      done.fail(e);
+    }
+  });
+
+  it('Should successfully scroll through stack of images and then go back', function (done) {
+    const element = createViewport(
+      this.renderingEngine,
+      ViewportType.STACK,
+      256,
+      256
+    );
+    this.DOMElements.push(element);
+
+    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_3_2_0';
+    const imageId2 = 'fakeImageLoader:imageURI_64_64_15_5_3_2_0';
+    const vp = this.renderingEngine.getViewport(viewportId);
+
+    let handlerRun = false;
+    let pageX1;
+    let pageY1;
+    function renderEventHandler() {
+      if (handlerRun) return;
+      handlerRun = true;
+
+      // First render is the actual image render
+      const index1 = [0, 0, 4];
+      const index2 = [10, 10, 4];
+
+      const { imageData } = vp.getImageData();
+
+      const {
+        pageX,
+        pageY,
+        clientX: clientX1,
+        clientY: clientY1,
+      } = createNormalizedMouseEvent(imageData, index1, element, vp);
+
+      pageX1 = pageX;
+      pageY1 = pageY;
+
+      const {
+        pageX: pageX2,
+        pageY: pageY2,
+        clientX: clientX2,
+        clientY: clientY2,
+      } = createNormalizedMouseEvent(imageData, index2, element, vp);
+
+      let evt = new MouseEvent('mousedown', {
+        target: element,
+        buttons: 2,
+        clientX: clientX1,
+        clientY: clientY1,
+        pageX: pageX1,
+        pageY: pageY1,
+      });
+      element.dispatchEvent(evt);
+
+      // Mouse move to put the end somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: element,
+        buttons: 2,
+        clientX: clientX2,
+        clientY: clientY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      });
+      document.dispatchEvent(evt);
+
+      setTimeout(() => {
+        evt = new WheelEvent('wheel', {
+          target: element,
+          pageX: pageX1,
+          pageY: pageY1,
+          deltaX: 0,
+          deltaY: 12,
+          deltaMode: 0,
+          wheelDelta: -36,
+          wheelDeltaX: 0,
+          wheelDeltaY: -36,
+        });
+
+        attachEventHandler();
+
+        element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+        element.dispatchEvent(evt);
+      }, 500);
+    }
+
+    function attachEventHandler() {
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        function secondImageRendered() {
+          // Second render is as a result of scrolling
+          element.removeEventListener(
+            Events.IMAGE_RENDERED,
+            secondImageRendered
+          );
+
+          // Scroll back
+          setTimeout(() => {
+            const evt = new WheelEvent('wheel', {
+              target: element,
+              pageX: pageX1,
+              pageY: pageY1,
+              deltaX: 0,
+              deltaY: -12,
+              deltaMode: 0,
+              wheelDelta: 36,
+              wheelDeltaX: 0,
+              wheelDeltaY: 36,
+            });
+
+            attachThirdImageRenderedHandler();
+
+            element.dispatchEvent(evt);
+          }, 500);
+        }
+      );
+    }
+
+    function attachThirdImageRenderedHandler() {
+      const canvas = vp.getCanvas();
+
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        function thirdImageRendered() {
+          // Third render is as a result of scrolling back
+          const image = canvas.toDataURL('image/png');
+          element.removeEventListener(
+            Events.IMAGE_RENDERED,
+            thirdImageRendered
+          );
+
+          compareImages(
+            image,
+            imageURI_64_64_10_5_3_2_0,
+            'imageURI_64_64_10_5_3_2_0'
           ).then(done, done.fail);
         }
       );

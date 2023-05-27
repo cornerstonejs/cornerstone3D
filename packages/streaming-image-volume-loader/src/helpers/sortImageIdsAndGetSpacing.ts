@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { metaData } from '@cornerstonejs/core';
+import { metaData, getConfiguration } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 type SortedImageIdsItem = {
@@ -28,7 +28,7 @@ export default function sortImageIdsAndGetSpacing(
   const refIppVec = vec3.create();
 
   // Check if we are using wadouri scheme
-  const usingWadoUri = imageIds[0].split(':')[0] === 'wadouri'
+  const usingWadoUri = imageIds[0].split(':')[0] === 'wadouri';
 
   vec3.set(
     refIppVec,
@@ -126,11 +126,28 @@ export default function sortImageIdsAndGetSpacing(
       Math.floor(imageIds.length / 2);
   }
 
-  const { imagePositionPatient: origin } = metaData.get(
+  const { imagePositionPatient: origin, sliceThickness } = metaData.get(
     'imagePlaneModule',
     sortedImageIds[0]
   );
 
+  const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
+
+  // We implemented these lines for multiframe dicom files that does not have
+  // position for each frame, leading to incorrect calculation of zSpacing = 0
+  // If possible, we use the sliceThickness, but we warn about this dicom file
+  // weirdness. If sliceThickness is not available, we set to 1 just to render
+  if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
+    if (sliceThickness) {
+      console.log('Could not calculate zSpacing. Using sliceThickness');
+      zSpacing = sliceThickness;
+    } else {
+      console.log(
+        'Could not calculate zSpacing. The VolumeViewport visualization is compromised. Setting zSpacing to 1 to render'
+      );
+      zSpacing = 1;
+    }
+  }
   const result: SortedImageIdsItem = {
     zSpacing,
     origin,

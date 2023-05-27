@@ -25,6 +25,16 @@ type Cornerstone3DConfig = {
     // https://bugs.webkit.org/show_bug.cgi?id=252039
     useNorm16Texture: boolean;
     useCPURendering: boolean;
+    /**
+     * flag to control whether to use fallback behavior for z-spacing calculation in
+     * volume viewports when the necessary metadata is missing. If enabled,
+     * we will fall back to using slice thickness or a default value of 1 to render
+     * the volume viewport when z-spacing cannot be calculated from images
+     * This can help improve the usability and robustness of the visualization
+     * in scenarios where the metadata is incomplete or missing, but
+     * it might be wrong assumption in certain scenarios.
+     */
+    strictZSpacingForVolumeViewport: boolean;
   };
 };
 

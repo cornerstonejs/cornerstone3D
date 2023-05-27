@@ -101,9 +101,30 @@ addToggleButtonToToolbar({
 });
 
 addToggleButtonToToolbar({
-  title: 'Hide Segment',
+  title: 'Hide Red Segment',
   onClick: (toggle) => {
     const segmentIndex = 1;
+    [
+      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
+      {
+        representationUID: volumeSegmentationRepresentationUID,
+        toolGroupId: toolGroupId3d,
+      },
+    ].forEach(({ representationUID, toolGroupId }) => {
+      segmentation.config.visibility.setSegmentVisibility(
+        toolGroupId,
+        representationUID,
+        segmentIndex,
+        !toggle
+      );
+    });
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Hide Green Segment',
+  onClick: (toggle) => {
+    const segmentIndex = 2;
     [
       { representationUID: planarSegmentationRepresentationUID, toolGroupId },
       {

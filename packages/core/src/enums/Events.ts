@@ -39,6 +39,13 @@ enum Events {
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
   /**
+   * Triggers on the HTML element when viewport modifies its display area
+   *
+   * Make use of {@link EventTypes.DisplayAreaModifiedEvent | DisplayAreaModified Event Type } for typing your event listeners for DISPLAY_AREA_MODIFIED event,
+   * and see what event detail is included in {@link EventTypes.DisplayAreaModifiedEventDetail | DisplayAreaModified Event Detail }
+   */
+  DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
+  /**
    * Triggers on the eventTarget when the element is disabled
    *
    * Make use of {@link EventTypes.ElementDisabledEvent | ElementDisabled Event Type } for typing your event listeners for ELEMENT_DISABLED event,
@@ -188,6 +195,11 @@ enum Events {
    */
   GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
 
+  /**
+   * Triggers when the scroll function is called with a delta that is out of bounds.
+   * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
+   */
+  VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',

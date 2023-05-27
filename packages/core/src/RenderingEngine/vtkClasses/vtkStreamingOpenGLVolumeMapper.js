@@ -285,6 +285,18 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     return [lowerLeftU, lowerLeftV];
   };
+
+  // TODO: it seems like this may be needed to reset the GPU memory associated
+  // with a volume
+  // publicAPI.hardReset = () => {
+  //   model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow);
+  //   model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow);
+  //   model.scalarTexture.setOglNorm16Ext(
+  //     model.context.getExtension('EXT_texture_norm16')
+  //   );
+  //   model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
+  //   model.scalarTexture.resetFormatAndType();
+  // };
 }
 
 // ----------------------------------------------------------------------------

@@ -504,7 +504,18 @@ class ProbeTool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const textLines = this._getTextLines(data, targetId, isPreScaled);
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
+
+      const textLines = this._getTextLines(
+        data,
+        targetId,
+        isPreScaled,
+        isSuvScaled
+      );
       if (textLines) {
         const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
@@ -529,7 +540,8 @@ class ProbeTool extends AnnotationTool {
   _getTextLines(
     data,
     targetId: string,
-    isPreScaled: boolean
+    isPreScaled: boolean,
+    isSuvScaled: boolean
   ): string[] | undefined {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats;
@@ -539,7 +551,7 @@ class ProbeTool extends AnnotationTool {
     }
 
     const textLines = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
+    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
@@ -567,7 +579,7 @@ class ProbeTool extends AnnotationTool {
     // Check if we have scaling for the other 2 SUV types for the PET.
     if (
       modality === 'PT' &&
-      imageVolume.scaling.PET &&
+      imageVolume.scaling?.PET &&
       (imageVolume.scaling.PET.suvbwToSuvbsa ||
         imageVolume.scaling.PET.suvbwToSuvlbm)
     ) {

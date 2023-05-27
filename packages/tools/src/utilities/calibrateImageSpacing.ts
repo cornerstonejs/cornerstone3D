@@ -24,10 +24,10 @@ export default function calibrateImageSpacing(
     columnPixelSpacing = rowPixelSpacing;
   }
 
-  calibratedPixelSpacingMetadataProvider.add(imageId, [
+  calibratedPixelSpacingMetadataProvider.add(imageId, {
     rowPixelSpacing,
     columnPixelSpacing,
-  ]);
+  });
 
   // 2. Update the actor for stackViewports
   const viewports = renderingEngine.getStackViewports();

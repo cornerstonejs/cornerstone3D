@@ -65,7 +65,8 @@ class WindowLevelTool extends BaseTool {
       modality = viewport.modality;
       ({ lower, upper } = properties.voiRange);
       const { preScale } = viewport.getImageData();
-      isPreScaled = preScale.scaled;
+      isPreScaled =
+        preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
     } else {
       throw new Error('Viewport is not a valid type');
     }
@@ -74,12 +75,15 @@ class WindowLevelTool extends BaseTool {
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT && isPreScaled) {
-      newRange = this.getPTNewRange({
+    if (modality === PT) {
+      newRange = this.getPTScaledNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,
         upper,
         clientHeight: element.clientHeight,
+        isPreScaled,
+        viewport,
+        volumeId,
       });
     } else {
       newRange = this.getNewRange({
@@ -112,13 +116,30 @@ class WindowLevelTool extends BaseTool {
     }
   }
 
-  getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }) {
+  getPTScaledNewRange({
+    deltaPointsCanvas,
+    lower,
+    upper,
+    clientHeight,
+    viewport,
+    volumeId,
+    isPreScaled,
+  }) {
+    let multiplier = DEFAULT_MULTIPLIER;
+
+    if (isPreScaled) {
+      multiplier = 5 / clientHeight;
+    } else {
+      multiplier =
+        this._getMultiplierFromDynamicRange(viewport, volumeId) ||
+        DEFAULT_MULTIPLIER;
+    }
+
     const deltaY = deltaPointsCanvas[1];
-    const multiplier = 5 / clientHeight;
     const wcDelta = deltaY * multiplier;
 
     upper -= wcDelta;
-    upper = Math.max(upper, 0.1);
+    upper = isPreScaled ? Math.max(upper, 0.1) : upper;
 
     return { lower, upper };
   }

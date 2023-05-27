@@ -4,6 +4,7 @@ import Point3 from './Point3';
 import ViewportInputOptions from './ViewportInputOptions';
 import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
+import DisplayArea from './displayArea';
 
 /**
  * Viewport interface for cornerstone viewports
@@ -73,6 +74,14 @@ interface IViewport {
   render(): void;
   /** set options for the viewport */
   setOptions(options: ViewportInputOptions, immediate: boolean): void;
+  /** set displayArea for the viewport */
+  setDisplayArea(
+    displayArea: DisplayArea,
+    callResetCamera?: boolean,
+    suppressEvents?: boolean
+  );
+  /** returns the displayArea */
+  getDisplayArea(): DisplayArea | undefined;
   /** reset camera and options*/
   reset(immediate: boolean): void;
   /** returns the canvas */
@@ -92,6 +101,7 @@ interface IViewport {
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
+  updateRenderingPipeline: () => void;
 }
 
 /**

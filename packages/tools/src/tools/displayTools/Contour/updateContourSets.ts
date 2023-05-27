@@ -1,6 +1,4 @@
 import { cache, Types } from '@cornerstonejs/core';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
 import {
@@ -8,7 +6,7 @@ import {
   ToolGroupSpecificContourRepresentation,
 } from '../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getPolyData } from './utils';
+import { getSegmentSpecificConfig } from './utils';
 
 export function updateContourSets(
   viewport: Types.IVolumeViewport,
@@ -36,7 +34,9 @@ export function updateContourSets(
   const newOutlineWithActive = newContourConfig.outlineWidthActive;
 
   if (cachedConfig?.outlineWidthActive !== newOutlineWithActive) {
-    (actor as vtkActor).getProperty().setLineWidth(newOutlineWithActive);
+    (actor as unknown as vtkActor)
+      .getProperty()
+      .setLineWidth(newOutlineWithActive);
 
     setConfigCache(
       segmentationRepresentationUID,
@@ -46,14 +46,14 @@ export function updateContourSets(
     );
   }
 
-  const mapper = (actor as vtkActor).getMapper();
+  const mapper = (actor as unknown as vtkActor).getMapper();
   const lut = mapper.getLookupTable();
 
   const segmentsToSetToInvisible = [];
   const segmentsToSetToVisible = [];
 
   for (const segmentIndex of segmentsHidden) {
-    if (!cachedConfig?.segmentsHidden.has(segmentIndex)) {
+    if (!cachedConfig.segmentsHidden.has(segmentIndex)) {
       segmentsToSetToInvisible.push(segmentIndex);
     }
   }
@@ -64,38 +64,82 @@ export function updateContourSets(
       segmentsToSetToVisible.push(segmentIndex);
     }
   }
-  if (segmentsToSetToInvisible.length || segmentsToSetToVisible.length) {
-    const appendPolyData = vtkAppendPolyData.newInstance();
 
-    geometryIds.forEach((geometryId) => {
+  const mergedInvisibleSegments = Array.from(cachedConfig.segmentsHidden)
+    .filter((segmentIndex) => !segmentsToSetToVisible.includes(segmentIndex))
+    .concat(segmentsToSetToInvisible);
+
+  const { contourSets, segmentSpecificConfigs } = geometryIds.reduce(
+    (acc, geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const color = contourSet.getColor();
-      const visibility = segmentsToSetToInvisible.includes(segmentIndex)
-        ? 0
-        : 255;
-      const polyData = getPolyData(contourSet);
+      const segmentSpecificConfig = getSegmentSpecificConfig(
+        contourRepresentation,
+        geometryId,
+        segmentIndex
+      );
 
-      const size = polyData.getPoints().getNumberOfPoints();
+      acc.contourSets.push(contourSet);
+      acc.segmentSpecificConfigs[segmentIndex] = segmentSpecificConfig ?? {};
 
-      const scalars = vtkDataArray.newInstance({
-        size: size * 4,
-        numberOfComponents: 4,
-        dataType: 'Uint8Array',
-      });
-      for (let i = 0; i < size; ++i) {
-        scalars.setTuple(i, [...color, visibility]);
+      return acc;
+    },
+    { contourSets: [], segmentSpecificConfigs: {} }
+  );
+
+  const affectedSegments = [
+    ...mergedInvisibleSegments,
+    ...segmentsToSetToVisible,
+  ];
+
+  const hasCustomSegmentSpecificConfig = Object.values(
+    segmentSpecificConfigs
+  ).some((config) => Object.keys(config).length > 0);
+
+  let polyDataModified = false;
+
+  if (affectedSegments.length || hasCustomSegmentSpecificConfig) {
+    const appendPolyData = mapper.getInputData();
+    const appendScalars = appendPolyData.getPointData().getScalars();
+    const appendScalarsData = appendScalars.getData();
+    // below we will only manipulate the polyData of the contourSets that are affected
+    // by picking the correct offset in the scalarData array
+    let offset = 0;
+    contourSets.forEach((contourSet) => {
+      const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
+      const size = contourSet.getTotalNumberOfPoints();
+
+      if (
+        affectedSegments.includes(segmentIndex) ||
+        segmentSpecificConfigs[segmentIndex]?.fillAlpha // Todo: add others
+      ) {
+        const color = contourSet.getColor();
+        let visibility = mergedInvisibleSegments.includes(segmentIndex)
+          ? 0
+          : 255;
+
+        const segmentConfig = segmentSpecificConfigs[segmentIndex];
+        if (segmentConfig.fillAlpha !== undefined) {
+          visibility = segmentConfig.fillAlpha * 255;
+        }
+
+        for (let i = 0; i < size; ++i) {
+          appendScalarsData[offset + i * 4] = color[0];
+          appendScalarsData[offset + i * 4 + 1] = color[1];
+          appendScalarsData[offset + i * 4 + 2] = color[2];
+          appendScalarsData[offset + i * 4 + 3] = visibility;
+        }
+
+        polyDataModified = true;
       }
-      polyData.getPointData().setScalars(scalars);
 
-      segmentIndex === 0
-        ? appendPolyData.setInputData(polyData)
-        : appendPolyData.addInputData(polyData);
+      offset = offset + size * 4;
     });
 
-    const polyDataOutput = appendPolyData.getOutputData();
-    mapper.setInputData(polyDataOutput);
+    if (polyDataModified) {
+      appendPolyData.modified();
+    }
 
     setConfigCache(
       segmentationRepresentationUID,

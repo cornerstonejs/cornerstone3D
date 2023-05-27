@@ -83,11 +83,11 @@ function _getTimePointDataCoordinate(frames, coordinate, volume) {
   const allScalarData = volume.getScalarDataArrays();
   const value = [];
 
-  for (let i = frames[0]; i < frames[0] + frames.length; i++) {
-    const activeScalarData = allScalarData[i];
+  frames.forEach((frame) => {
+    const activeScalarData = allScalarData[frame];
     const scalarIndex = index[2] * zMultiple + index[1] * yMultiple + index[0];
     value.push(activeScalarData[scalarIndex]);
-  }
+  });
 
   return value;
 }
@@ -98,10 +98,10 @@ function _getTimePointDataMask(frames, indexArray, volume) {
 
   for (let i = 0; i < indexArray.length; i++) {
     const indexValues = [];
-    for (let j = frames[0]; j < frames[0] + frames.length; j++) {
-      const activeScalarData = allScalarData[j];
+    frames.forEach((frame) => {
+      const activeScalarData = allScalarData[frame];
       indexValues.push(activeScalarData[indexArray[i]]);
-    }
+    });
     value.push(indexValues);
   }
   return value;

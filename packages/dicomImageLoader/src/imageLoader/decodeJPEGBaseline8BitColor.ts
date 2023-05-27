@@ -63,7 +63,7 @@ function decodeJPEGBaseline8BitColor(
         const imageData = context.getImageData(0, 0, img.width, img.height);
         const end = new Date().getTime();
 
-        imageFrame.pixelData = imageData.data;
+        imageFrame.pixelData = new Uint8Array(imageData.data.buffer);
         imageFrame.imageData = imageData;
         imageFrame.decodeTimeInMS = end - start;
 
@@ -72,6 +72,7 @@ function decodeJPEGBaseline8BitColor(
 
         imageFrame.smallestPixelValue = minMax.min;
         imageFrame.largestPixelValue = minMax.max;
+        imageFrame.pixelDataLength = imageFrame.pixelData.length;
 
         resolve(imageFrame);
       };

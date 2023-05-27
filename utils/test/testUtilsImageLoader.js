@@ -49,8 +49,8 @@ const fakeImageLoader = (imageId) => {
     windowWidth: 400,
     maxPixelValue: 255,
     minPixelValue: 0,
-    rowPixelSpacing: 1,
-    columnPixelSpacing: 1,
+    rowPixelSpacing: y_spacing,
+    columnPixelSpacing: x_spacing,
     getPixelData: () => pixelData,
     sizeInBytes: rows * columns * 1, // 1 byte for now
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
@@ -77,6 +77,11 @@ const fakeImageLoader = (imageId) => {
  * @returns metadata based on the imageId and type
  */
 function fakeMetaDataProvider(type, imageId) {
+  if (typeof imageId !== 'string') {
+    throw new Error(
+      `Expected imageId to be of type string, but received ${imageId}`
+    );
+  }
   const imageURI = imageId.split(':')[1];
   const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
     imageURI.split('_').map((v) => parseFloat(v));
@@ -119,8 +124,8 @@ function fakeMetaDataProvider(type, imageId) {
       columnCosines: [0, 1, 0],
       imagePositionPatient: [0, 0, 0],
       pixelSpacing: [x_spacing, y_spacing],
-      rowPixelSpacing: x_spacing,
-      columnPixelSpacing: y_spacing,
+      rowPixelSpacing: y_spacing,
+      columnPixelSpacing: x_spacing,
     };
 
     return imagePlaneModule;

@@ -20,6 +20,11 @@
 export default function invertRgbTransferFunction(
   rgbTransferFunction: any
 ): void {
+  // cut in case there is no function at all
+  if (!rgbTransferFunction) {
+    return;
+  }
+
   const size = rgbTransferFunction.getSize();
 
   for (let index = 0; index < size; index++) {

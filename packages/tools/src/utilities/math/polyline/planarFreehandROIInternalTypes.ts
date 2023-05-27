@@ -27,6 +27,7 @@ type PlanarFreehandROICommonData = {
   spacing: Types.Point2;
   xDir: Types.Point3;
   yDir: Types.Point3;
+  movingTextBox?: boolean;
 };
 
 export {

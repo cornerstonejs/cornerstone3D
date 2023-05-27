@@ -109,8 +109,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
-        viewPlaneNormal,
-        viewUp
+        viewPlaneNormal
       );
     }
 
@@ -257,8 +256,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const imageId = csUtils.getClosestImageId(
         imageVolume,
         RectanglePoints[0],
-        viewPlaneNormal,
-        metadata.viewUp
+        viewPlaneNormal
       );
       projectionPointsImageIds.push(imageId);
     }
