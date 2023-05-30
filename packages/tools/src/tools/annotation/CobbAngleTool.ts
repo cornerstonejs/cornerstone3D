@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
 import {
   getEnabledElement,
@@ -48,7 +49,6 @@ import {
 } from '../../types';
 import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { vec3 } from 'gl-matrix';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName;
