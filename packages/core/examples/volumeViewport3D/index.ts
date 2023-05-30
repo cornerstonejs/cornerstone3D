@@ -208,11 +208,11 @@ async function run() {
   function convertArrayToNested(cfunVals, ofunVals, minValue, maxValue) {
     // if the length of control points in the cfun and ofun are not the same, we can't map them
     // to the UI so we throw an error
-    if (cfunVals.length !== ofunVals.length) {
-      throw new Error(
-        'The length of the color and opacity control points must be the same'
-      );
-    }
+    // if (cfunVals.length !== ofunVals.length) {
+    //   throw new Error(
+    //     'The length of the color and opacity control points must be the same'
+    //   );
+    // }
 
     const mapped = cfunVals.map(([originalValue, r, g, b], index) => {
       const scaledValue = (originalValue - minValue) / (maxValue - minValue);
@@ -246,7 +246,7 @@ async function run() {
     }
 
     const { colorString, opacityString } = convertArrayToString(
-      tfValues,
+      tfValues.splice(1, tfValues.length - 2),
       minimum,
       maximum
     );
@@ -266,9 +266,18 @@ async function run() {
     viewport.render();
   };
 
-  tf_panel.registerUIEditCallback(UpdateTF);
+  let isModifiedViaUI = false;
+  tf_panel.registerUIEditCallback(() => {
+    isModifiedViaUI = true;
+    UpdateTF();
+    isModifiedViaUI = false;
+  });
 
   const UpdateUI = (volumeActor) => {
+    if (isModifiedViaUI) {
+      return;
+    }
+
     const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
 
     const cfunValues = [];

@@ -689,30 +689,33 @@ export class TF_Panel {
   };
 
   setTF = function (tf) {
-    this.tf_values = tf;
-    this.updateFirstWidgetFromTF();
+    this.updateFirstWidgetFromTF(tf);
     const suppressUICallbacks = true;
     this.draw(suppressUICallbacks);
   };
 
-  updateFirstWidgetFromTF = function () {
+  updateFirstWidgetFromTF = function (tf) {
     // Get the first widget
     const suppressUICallbacks = true;
 
-    const tf_values = this.tf_values;
     const widget = this.widgets[0];
     widget.destructor(suppressUICallbacks);
+    // widget.removeControlPoints();
+    const eps = 1e-4;
+
+    tf.unshift([tf[0] - eps, tf[0]]);
+    tf.push([tf[tf.length - 1] + eps, tf[tf.length - 1]]);
+    this.tf_values = tf;
 
     // Calculate the number of control points in the widget
     const controlPoints = [];
-
     // Distribute the control points evenly across the range of the transfer function
-    for (let i = 0; i < tf_values.length; i++) {
+    for (let i = 1; i < this.tf_values.length - 1; i++) {
       // Update the value, color, and alpha of the control point
       const controlPoint = {};
-      controlPoint.value = tf_values[i][0];
-      controlPoint.color = tf_values[i][1];
-      controlPoint.alpha = tf_values[i][1].a;
+      controlPoint.value = this.tf_values[i][0];
+      controlPoint.color = this.tf_values[i][1];
+      controlPoint.alpha = this.tf_values[i][1].a;
 
       controlPoints.push(controlPoint);
     }
@@ -1008,7 +1011,7 @@ export class TF_widget {
     return options;
   };
 
-  destructor = function (suppressUICallbacks) {
+  removeControlPoints = function () {
     while (this.controlPoints.length > 0) {
       const deletedPoint = this.controlPoints.pop();
       this.parent.svgContext.removeChild(deletedPoint.handle);
@@ -1017,8 +1020,12 @@ export class TF_widget {
     this.parent.svgContext.removeChild(this.handles.left);
     this.parent.svgContext.removeChild(this.handles.right);
     this.parent.svgContext.removeChild(this.anchor);
+  };
+
+  destructor = function () {
+    this.removeControlPoints();
     this.parent.dom.removeChild(this.canvas);
-    this.destroyCallback(this, suppressUICallbacks);
+    this.destroyCallback(this);
   };
 
   registerCallback = function (callback) {
