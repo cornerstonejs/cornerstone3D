@@ -1,6 +1,7 @@
 import {
   CONSTANTS,
   Enums,
+  eventTarget,
   getOrCreateCanvas,
   RenderingEngine,
   setVolumesForViewports,
@@ -170,8 +171,6 @@ async function run() {
     },
   };
 
-  let volumeActor;
-
   function convertArrayToString(data, minValue, maxValue) {
     // Skip the first and last items in data
     // const slicedData = data.slice(1, -1);
@@ -228,99 +227,139 @@ async function run() {
 
   viewport = renderingEngine.getViewport(viewportId);
 
+  let isUserInteraction = true; // Flag to track preset modification source
+
   const tf_panel = new TF_Panel(options);
+
+  const UpdateTF = () => {
+    const tfValues = tf_panel.getTF();
+    if (!tfValues || tfValues.length === 0) {
+      return;
+    }
+    if (!minimum || !maximum) {
+      return;
+    }
+
+    if (!isUserInteraction) {
+      return;
+    }
+
+    const { colorString, opacityString } = convertArrayToString(
+      tfValues,
+      minimum,
+      maximum
+    );
+    const newPreset = {
+      name: 'custom',
+      gradientOpacity: '4 0 1 255 1',
+      specularPower: '10',
+      scalarOpacity: opacityString,
+      specular: '0.2',
+      shade: '1',
+      ambient: '0.1',
+      colorTransfer: colorString,
+      // diffuse: '0.9',
+      interpolation: '1',
+    };
+    viewport.setProperties({ preset: newPreset });
+    viewport.render();
+  };
+
   tf_panel.registerCallback(() => {
-    // const tfValues = tf_panel.getTF();
-    // if (!tfValues || tfValues.length === 0) {
-    //   return;
-    // }
-    // if (!minimum || !maximum) {
-    //   return;
-    // }
-    // const { colorString, opacityString } = convertArrayToString(
-    //   tfValues,
-    //   minimum,
-    //   maximum
-    // );
-    // const newPreset = {
-    //   name: 'custom',
-    //   gradientOpacity: '4 0 1 255 1',
-    //   specularPower: '10',
-    //   scalarOpacity: opacityString,
-    //   specular: '0.2',
-    //   shade: '1',
-    //   ambient: '0.1',
-    //   colorTransfer: colorString,
-    //   // diffuse: '0.9',
-    //   interpolation: '1',
-    // };
-    // viewport.setProperties({ preset: newPreset });
-    // viewport.render();
+    if (!isUserInteraction) {
+      return;
+    }
+
+    UpdateTF();
   });
 
-  let presetName;
-  // element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
-  //   const volumeActor = e.detail.actor as Types.VolumeActor;
-  //   if (presetName === e.detail.presetName) {
-  //     return;
-  //   }
+  const UpdateUI = (volumeActor) => {
+    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
 
-  //   presetName = e.detail.presetName;
+    const cfunValues = [];
 
-  //   const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    for (let i = 0; i < cfun.getSize(); i++) {
+      const value = [];
+      cfun.getNodeValue(i, value);
+      cfunValues.push(value);
+    }
 
-  //   const cfunValues = [];
+    const ofun = volumeActor.getProperty().getScalarOpacity(0);
 
-  //   for (let i = 0; i < cfun.getSize(); i++) {
-  //     const value = [];
-  //     cfun.getNodeValue(i, value);
-  //     cfunValues.push(value);
-  //   }
+    const ofunValues = [];
+    for (let i = 0; i < ofun.getSize(); i++) {
+      const value = [];
+      ofun.getNodeValue(i, value);
+      ofunValues.push(value);
+    }
 
-  //   const ofun = volumeActor.getProperty().getScalarOpacity(0);
+    const { imageData } = viewport.getImageData();
 
-  //   const ofunValues = [];
-  //   for (let i = 0; i < ofun.getSize(); i++) {
-  //     const value = [];
-  //     ofun.getNodeValue(i, value);
-  //     ofunValues.push(value);
-  //   }
+    if (!imageData) {
+      return;
+    }
 
-  //   const { imageData } = viewport.getImageData();
+    const converted = convertArrayToNested(
+      cfunValues,
+      ofunValues,
+      minimum,
+      maximum
+    );
 
-  //   if (!imageData) {
-  //     return;
-  //   }
+    isUserInteraction = false;
+    tf_panel.setTF(converted);
+    isUserInteraction = true;
+  };
 
-  //   const converted = convertArrayToNested(cfunValues, ofunValues, -3024, 1402);
-  //   tf_panel.setTF(converted);
-  // });
+  element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
+    const volumeActor = e.detail.actor as Types.VolumeActor;
+
+    if (!minimum || !maximum) {
+      return;
+    }
+
+    if (isUserInteraction) {
+      return;
+    }
+
+    isUserInteraction = false;
+    UpdateUI(volumeActor);
+  });
+
+  eventTarget.addEventListener(Events.IMAGE_VOLUME_LOADING_COMPLETED, (e) => {
+    if (e.detail.volumeId !== volumeId) {
+      return;
+    }
+
+    const viewport = renderingEngine.getViewport(viewportId);
+    const { scalarData, imageData } = viewport.getImageData();
+
+    const range = imageData.computeHistogram(imageData.getBounds());
+    minimum = range.minimum;
+    maximum = range.maximum;
+
+    const histogram = Statistics.calcHistogram(scalarData, {
+      numBins: 64,
+      min: minimum,
+      max: maximum,
+    });
+    tf_panel.setHistogram(histogram);
+    tf_panel.draw();
+
+    // find the viewport that is instance of volumeviewport3d and grab the volume Actor
+    const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
+
+    isUserInteraction = false;
+    UpdateUI(volumeActor);
+  });
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
-      volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
-
       viewport.setProperties({
         preset: 'CT-Bone',
       });
 
       viewport.render();
-
-      setTimeout(() => {
-        const { scalarData, imageData } = viewport.getImageData();
-
-        const range = imageData.computeHistogram(imageData.getBounds());
-        minimum = range.minimum;
-        maximum = range.maximum;
-
-        const histogram = Statistics.calcHistogram(scalarData, {
-          numBins: 64,
-          min: minimum,
-          max: maximum,
-        });
-        tf_panel.setHistogram(histogram);
-        tf_panel.draw();
-      }, 3000);
     }
   );
 
