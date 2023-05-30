@@ -383,7 +383,7 @@ class CobbAngleTool extends AnnotationTool {
   };
 
   /**
-   * Handles the mouse down for all points the follow the very first mouse down.
+   * Handles the mouse down for all points that follow the very first mouse down.
    * The very first mouse down is handled by addAnnotation.
    * This method ensures that the state of the tool is correct for the drawing of the second line segment.
    * In particular it ensures that the second segment can be created via a mouse down and drag.
