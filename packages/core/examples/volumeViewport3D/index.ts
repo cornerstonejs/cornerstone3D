@@ -331,6 +331,8 @@ async function run() {
       return;
     }
 
+    isUserInteraction = false;
+
     const viewport = renderingEngine.getViewport(viewportId);
     const { scalarData, imageData } = viewport.getImageData();
 
@@ -349,7 +351,6 @@ async function run() {
     // find the viewport that is instance of volumeviewport3d and grab the volume Actor
     const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
 
-    isUserInteraction = false;
     UpdateUI(volumeActor);
   });
 

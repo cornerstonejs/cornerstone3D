@@ -680,7 +680,6 @@ export class TF_Panel {
 
   setTF = function (tf) {
     this.tf_values = tf;
-    this.suppressCallbacks = true;
     this.updateFirstWidgetFromTF();
     this.draw();
   };
