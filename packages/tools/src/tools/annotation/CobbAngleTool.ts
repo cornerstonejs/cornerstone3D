@@ -383,14 +383,14 @@ class CobbAngleTool extends AnnotationTool {
   };
 
   /**
-   * Handles the mouse down for all points after the very first. The first is is handled by addAnnotation.
+   * Handles the mouse down for all points the follow the very first mouse down.
+   * The very first mouse down is handled by addAnnotation.
    * This method ensures that the state of the tool is correct for the drawing of the second line segment.
    * In particular it ensures that the second segment can be created via a mouse down and drag.
    */
   _mouseDownCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    console.warn('mouse down');
     const { annotation, handleIndex } = this.editData;
     const eventDetail = evt.detail;
     const { element, currentPoints } = eventDetail;
