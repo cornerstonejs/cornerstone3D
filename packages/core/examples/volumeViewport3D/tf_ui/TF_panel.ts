@@ -20,6 +20,7 @@ export class TF_Panel {
     this.tf_values = [];
 
     this.callbacks = [];
+    this.uiEditCallbacks = [];
 
     const container = options.container || parent.parentElement || null;
     const positionToUse = this.options.panel.position || 'bottom';
@@ -436,7 +437,7 @@ export class TF_Panel {
 
     this.widgets.push(widget);
 
-    this.draw();
+    this.draw(options.suppressUICallbacks);
   };
 
   /**
@@ -471,12 +472,12 @@ export class TF_Panel {
    * removes widget from array
    * swaps dom position
    */
-  deleteWidget = function (widget) {
+  deleteWidget = function (widget, suppressUICallbacks) {
     const index = this.widgets.indexOf(widget);
     this.widgets.splice(index, 1);
 
     this.draw();
-    this.fireChange();
+    this.fireChange(suppressUICallbacks);
   };
 
   /**
@@ -490,12 +491,25 @@ export class TF_Panel {
     }
   };
 
-  fireChange = function () {
+  registerUIEditCallback = function (callback) {
+    if (this.uiEditCallbacks.indexOf(callback) < 0) {
+      this.uiEditCallbacks.push(callback);
+    }
+  };
+
+  fireChange = function (suppressUICallbacks) {
     this.updateTF();
 
     for (let index = 0; index < this.callbacks.length; index++) {
       const callback = this.callbacks[index];
-      callback();
+      callback.call(this, suppressUICallbacks);
+    }
+
+    if (!suppressUICallbacks) {
+      for (let index = 0; index < this.uiEditCallbacks.length; index++) {
+        const callback = this.uiEditCallbacks[index];
+        callback.call(this, suppressUICallbacks);
+      }
     }
   };
 
@@ -569,15 +583,11 @@ export class TF_Panel {
   };
 
   //redraw
-  draw = function () {
+  draw = function (suppressUICallbacks) {
     for (let index = 0; index < this.widgets.length; index++) {
       const widget = this.widgets[index];
-      widget.suppressCallbacks = this.suppressCallbacks;
-      widget.drawWidget(this.suppressCallbacks);
-      widget.suppressCallbacks = false;
+      widget.drawWidget(suppressUICallbacks);
     }
-
-    this.suppressCallbacks = false;
   };
 
   /*
@@ -681,14 +691,17 @@ export class TF_Panel {
   setTF = function (tf) {
     this.tf_values = tf;
     this.updateFirstWidgetFromTF();
-    this.draw();
+    const suppressUICallbacks = true;
+    this.draw(suppressUICallbacks);
   };
 
   updateFirstWidgetFromTF = function () {
     // Get the first widget
+    const suppressUICallbacks = true;
+
     const tf_values = this.tf_values;
     const widget = this.widgets[0];
-    widget.destructor();
+    widget.destructor(suppressUICallbacks);
 
     // Calculate the number of control points in the widget
     const controlPoints = [];
@@ -706,6 +719,7 @@ export class TF_Panel {
 
     const options = {
       controlPoints: controlPoints,
+      suppressUICallbacks,
     };
 
     this.addWidget(options);
@@ -891,6 +905,7 @@ export class TF_widget {
     this.parent = parent;
     this.container = container;
     this.callbacks = [];
+    this.uiEditCallbacks = [];
 
     options.location = options.location || null;
     options.controlPoints = options.controlPoints || [];
@@ -993,7 +1008,7 @@ export class TF_widget {
     return options;
   };
 
-  destructor = function () {
+  destructor = function (suppressUICallbacks) {
     while (this.controlPoints.length > 0) {
       const deletedPoint = this.controlPoints.pop();
       this.parent.svgContext.removeChild(deletedPoint.handle);
@@ -1003,7 +1018,7 @@ export class TF_widget {
     this.parent.svgContext.removeChild(this.handles.right);
     this.parent.svgContext.removeChild(this.anchor);
     this.parent.dom.removeChild(this.canvas);
-    this.destroyCallback(this);
+    this.destroyCallback(this, suppressUICallbacks);
   };
 
   registerCallback = function (callback) {
@@ -1012,10 +1027,23 @@ export class TF_widget {
     }
   };
 
-  fireChange = function () {
+  registerUIEditCallback = function (callback) {
+    if (this.uiEditCallbacks.indexOf(callback) < 0) {
+      this.uiEditCallbacks.push(callback);
+    }
+  };
+
+  fireChange = function (suppressUICallbacks) {
     for (let index = 0; index < this.callbacks.length; index++) {
       const callback = this.callbacks[index];
-      callback();
+      callback.call(this, suppressUICallbacks);
+    }
+
+    if (!suppressUICallbacks) {
+      for (let index = 0; index < this.uiEditCallbacks.length; index++) {
+        const callback = this.uiEditCallbacks[index];
+        callback.call(this, suppressUICallbacks);
+      }
     }
   };
 
@@ -1082,7 +1110,7 @@ export class TF_widget {
 
       this.updateHandles();
 
-      drawWidgetBound(true);
+      drawWidgetBound();
       return false;
     }
 
@@ -1651,7 +1679,7 @@ export class TF_widget {
    * create polygon path for widget tracing positions of controlpoints
    * create gradient and draw polygon
    */
-  drawWidget = function () {
+  drawWidget = function (suppressUICallbacks) {
     const controlPoints = this.controlPoints;
     const canvas = this.canvas;
 
@@ -1708,10 +1736,7 @@ export class TF_widget {
     context.fillStyle = gradient;
     context.fill();
 
-    if (!this.suppressCallbacks) {
-      this.fireChange();
-    }
-    //propagate change to callbacks
+    this.fireChange(suppressUICallbacks);
   };
 }
 

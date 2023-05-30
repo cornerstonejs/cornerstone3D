@@ -206,7 +206,14 @@ async function run() {
   }
 
   function convertArrayToNested(cfunVals, ofunVals, minValue, maxValue) {
-    // Map each item in data to the desired format
+    // if the length of control points in the cfun and ofun are not the same, we can't map them
+    // to the UI so we throw an error
+    if (cfunVals.length !== ofunVals.length) {
+      throw new Error(
+        'The length of the color and opacity control points must be the same'
+      );
+    }
+
     const mapped = cfunVals.map(([originalValue, r, g, b], index) => {
       const scaledValue = (originalValue - minValue) / (maxValue - minValue);
       return [
@@ -227,8 +234,6 @@ async function run() {
 
   viewport = renderingEngine.getViewport(viewportId);
 
-  let isUserInteraction = true; // Flag to track preset modification source
-
   const tf_panel = new TF_Panel(options);
 
   const UpdateTF = () => {
@@ -237,10 +242,6 @@ async function run() {
       return;
     }
     if (!minimum || !maximum) {
-      return;
-    }
-
-    if (!isUserInteraction) {
       return;
     }
 
@@ -265,13 +266,7 @@ async function run() {
     viewport.render();
   };
 
-  tf_panel.registerCallback(() => {
-    if (!isUserInteraction) {
-      return;
-    }
-
-    UpdateTF();
-  });
+  tf_panel.registerUIEditCallback(UpdateTF);
 
   const UpdateUI = (volumeActor) => {
     const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
@@ -299,16 +294,18 @@ async function run() {
       return;
     }
 
-    const converted = convertArrayToNested(
-      cfunValues,
-      ofunValues,
-      minimum,
-      maximum
-    );
-
-    isUserInteraction = false;
-    tf_panel.setTF(converted);
-    isUserInteraction = true;
+    try {
+      const converted = convertArrayToNested(
+        cfunValues,
+        ofunValues,
+        minimum,
+        maximum
+      );
+      tf_panel.setTF(converted);
+    } catch (e) {
+      console.error(e);
+      return;
+    }
   };
 
   element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
@@ -318,11 +315,6 @@ async function run() {
       return;
     }
 
-    if (isUserInteraction) {
-      return;
-    }
-
-    isUserInteraction = false;
     UpdateUI(volumeActor);
   });
 
@@ -330,8 +322,6 @@ async function run() {
     if (e.detail.volumeId !== volumeId) {
       return;
     }
-
-    isUserInteraction = false;
 
     const viewport = renderingEngine.getViewport(viewportId);
     const { scalarData, imageData } = viewport.getImageData();
@@ -346,7 +336,7 @@ async function run() {
       max: maximum,
     });
     tf_panel.setHistogram(histogram);
-    tf_panel.draw();
+    tf_panel.draw(true);
 
     // find the viewport that is instance of volumeviewport3d and grab the volume Actor
     const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
