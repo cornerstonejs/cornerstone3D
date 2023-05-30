@@ -382,6 +382,52 @@ class CobbAngleTool extends AnnotationTool {
     this.isDrawing = false;
   };
 
+  /**
+   * Handles the mouse down for all points after the very first. The first is is handled by addAnnotation.
+   * This method ensures that the state of the tool is correct for the drawing of the second line segment.
+   * In particular it ensures that the second segment can be created via a mouse down and drag.
+   */
+  _mouseDownCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
+    console.warn('mouse down');
+    const { annotation, handleIndex } = this.editData;
+    const eventDetail = evt.detail;
+    const { element, currentPoints } = eventDetail;
+    const worldPos = currentPoints.world;
+    const { data } = annotation;
+
+    if (handleIndex === 1) {
+      // This is the mouse down for the second point of the first segment.
+      // The mouse up takes care of adding the first point of the second segment.
+      data.handles.points[1] = worldPos;
+      this.editData.hasMoved =
+        data.handles.points[1][0] !== data.handles.points[0][0] ||
+        data.handles.points[1][1] !== data.handles.points[0][0];
+      return;
+    }
+
+    if (handleIndex === 3) {
+      // This is the mouse down for the second point of the second segment (i.e. the last point)
+      data.handles.points[3] = worldPos;
+      this.editData.hasMoved =
+        data.handles.points[3][0] !== data.handles.points[2][0] ||
+        data.handles.points[3][1] !== data.handles.points[2][0];
+
+      this.angleStartedNotYetCompleted = false;
+      return;
+    }
+
+    // This is the first mouse down of the first point of the second line segment.
+    // It is as if we have not moved yet because Cobb Angle has two, disjoint sections, each with its own move.
+    this.editData.hasMoved = false;
+    hideElementCursor(element);
+
+    // Add the last segment points for the subsequent drag/mouse move.
+    data.handles.points[2] = data.handles.points[3] = worldPos;
+    this.editData.handleIndex = data.handles.points.length - 1;
+  };
+
   _mouseDragCallback = (
     evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
   ) => {
@@ -533,6 +579,10 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._mouseUpCallback as EventListener
     );
+    element.addEventListener(
+      Events.MOUSE_DOWN,
+      this._mouseDownCallback as EventListener
+    );
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
@@ -556,6 +606,10 @@ class CobbAngleTool extends AnnotationTool {
     element.removeEventListener(
       Events.MOUSE_CLICK,
       this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DOWN,
+      this._mouseDownCallback as EventListener
     );
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)

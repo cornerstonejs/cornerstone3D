@@ -595,7 +595,9 @@ describe('Cornerstone Tools: ', () => {
         element,
         evt,
         mouseUpEvt,
-        addEventListenerForAnnotationRendered
+        addEventListenerForAnnotationRendered,
+        null,
+        false
       );
     });
 

@@ -570,7 +570,9 @@ describe('Rectangle ROI Tool: ', () => {
           element,
           mouseDownEvt,
           mouseUpEvt,
-          addEventListenerForAnnotationRendered
+          addEventListenerForAnnotationRendered,
+          null,
+          false
         );
       });
 
