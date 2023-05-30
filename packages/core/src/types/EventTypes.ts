@@ -110,7 +110,7 @@ type ImageVolumeModifiedEventDetail = {
  */
 type ImageVolumeLoadingCompletedEventDetail = {
   /** the loaded volume */
-  imageVolume: IImageVolume;
+  volumeId: string;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
 };

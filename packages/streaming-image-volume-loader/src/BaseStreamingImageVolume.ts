@@ -306,7 +306,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         loadStatus.callbacks.forEach((callback) => callback(evt));
         const eventDetail = {
           FrameOfReferenceUID,
-          imageVolume: this,
+          volumeId: volumeId,
         };
 
         triggerEvent(
