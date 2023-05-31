@@ -148,7 +148,6 @@ export class Panel {
   }
 
   hide() {
-    console.log('hide');
     this.dom.style.visibility = 'hidden';
   }
 

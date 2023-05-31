@@ -233,10 +233,14 @@ async function run() {
   let minimum, maximum;
 
   viewport = renderingEngine.getViewport(viewportId);
+  const disableAll = false;
 
   const tf_panel = new TF_Panel(options);
 
   const UpdateTF = () => {
+    if (disableAll) {
+      return;
+    }
     const tfValues = tf_panel.getTF();
     if (!tfValues || tfValues.length === 0) {
       return;
@@ -250,17 +254,36 @@ async function run() {
       minimum,
       maximum
     );
+
+    const viewport = renderingEngine.getViewport(viewportId);
+    const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
+    const property = volumeActor.getProperty();
+    const specularPower = property.getSpecularPower();
+    const specular = property.getSpecular();
+    const shade = property.getShade();
+    const ambient = property.getAmbient();
+    const diffuse = property.getDiffuse();
+    const interpolationType = property.getInterpolationType();
+    const gradientOpacityMinimumValue =
+      property.getGradientOpacityMinimumValue(0);
+    const gradientOpacityMaximumValue =
+      property.getGradientOpacityMaximumValue(0);
+    const gradientOpacityMinimumOpacity =
+      property.getGradientOpacityMinimumOpacity(0);
+    const gradientOpacityMaximumOpacity =
+      property.getGradientOpacityMaximumOpacity(0);
+
     const newPreset = {
       name: 'custom',
-      gradientOpacity: '4 0 1 255 1',
-      specularPower: '10',
+      gradientOpacity: `4 ${gradientOpacityMinimumValue} ${gradientOpacityMinimumOpacity} ${gradientOpacityMaximumValue} ${gradientOpacityMaximumOpacity}`,
+      specularPower: `${specularPower}`,
       scalarOpacity: opacityString,
-      specular: '0.2',
-      shade: '1',
-      ambient: '0.1',
+      specular: `${specular}`,
+      shade: `${shade === true ? '1' : '0'}`,
+      ambient: `${ambient}`,
       colorTransfer: colorString,
-      // diffuse: '0.9',
-      interpolation: '1',
+      diffuse: `${diffuse}`,
+      interpolation: `${interpolationType}`,
     };
     viewport.setProperties({ preset: newPreset });
     viewport.render();
@@ -274,6 +297,9 @@ async function run() {
   });
 
   const UpdateUI = (volumeActor) => {
+    if (disableAll) {
+      return;
+    }
     if (isModifiedViaUI) {
       return;
     }
@@ -318,6 +344,9 @@ async function run() {
   };
 
   element1.addEventListener(Events.PRESET_MODIFIED, (e) => {
+    if (disableAll) {
+      return;
+    }
     const volumeActor = e.detail.actor as Types.VolumeActor;
 
     if (!minimum || !maximum) {
@@ -328,6 +357,9 @@ async function run() {
   });
 
   eventTarget.addEventListener(Events.IMAGE_VOLUME_LOADING_COMPLETED, (e) => {
+    if (disableAll) {
+      return;
+    }
     if (e.detail.volumeId !== volumeId) {
       return;
     }
@@ -347,7 +379,7 @@ async function run() {
     tf_panel.setHistogram(histogram);
     tf_panel.draw(true);
 
-    // find the viewport that is instance of volumeviewport3d and grab the volume Actor
+    // find the viewport that is instance of volumeViewport3d and grab the volume Actor
     const volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
 
     UpdateUI(volumeActor);
