@@ -694,28 +694,22 @@ export class TF_Panel {
     this.draw(suppressUICallbacks);
   };
 
-  updateFirstWidgetFromTF = function (tf) {
+  updateFirstWidgetFromTF = function (controlPointsToBeSet) {
     // Get the first widget
     const suppressUICallbacks = true;
 
     const widget = this.widgets[0];
     widget.destructor(suppressUICallbacks);
-    // widget.removeControlPoints();
-    const eps = 1e-4;
-
-    tf.unshift([tf[0] - eps, tf[0]]);
-    tf.push([tf[tf.length - 1] + eps, tf[tf.length - 1]]);
-    this.tf_values = tf;
 
     // Calculate the number of control points in the widget
     const controlPoints = [];
     // Distribute the control points evenly across the range of the transfer function
-    for (let i = 1; i < this.tf_values.length - 1; i++) {
+    for (let i = 0; i < controlPointsToBeSet.length; i++) {
       // Update the value, color, and alpha of the control point
       const controlPoint = {};
-      controlPoint.value = this.tf_values[i][0];
-      controlPoint.color = this.tf_values[i][1];
-      controlPoint.alpha = this.tf_values[i][1].a;
+      controlPoint.value = controlPointsToBeSet[i][0];
+      controlPoint.color = controlPointsToBeSet[i][1];
+      controlPoint.alpha = controlPointsToBeSet[i][1].a;
 
       controlPoints.push(controlPoint);
     }
