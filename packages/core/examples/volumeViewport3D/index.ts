@@ -164,7 +164,8 @@ async function run() {
     panel: {
       isCollapsible: true,
       position: 'bottom',
-      background: '#090c29',
+      background: '#0f0f0f',
+      border: '1px solid #090c29',
     },
     histogram: {
       // style: 'bars',

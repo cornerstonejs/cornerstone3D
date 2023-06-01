@@ -90,6 +90,10 @@
       cursor: pointer;
     }
 
+    #tf-panel {
+      overflow: hidden;
+    }
+
     #tf-panel .handle {
       opacity: 0.8;
       cursor: pointer;
@@ -130,19 +134,28 @@
     #tf-panel .tooltip {
       visibility: hidden;
       display: inline-block;
-      min-width: 52px;
+      min-width: 56px;
       font-size: 10px;
       /* color: #fff;*/
       text-align: left;
       padding: 5px 8px;
-      margin: 5px;
       border-radius: 6px;
       position: absolute;
       z-index: 10;
+      white-space: nowrap;
+    }
+
+    #tf-panel .histogram-tooltip {
+      min-width: 24px;
     }
 
     .dark {
       background-color: #333;
+      color: #fff !important;
+    }
+
+    .dark-transparent {
+      background-color: #333333a6;
       color: #fff !important;
     }
 
@@ -195,7 +208,14 @@
     }
 
     /* Show the tooltip text when you mouse over the tooltip container */
-    #tf-panel:hover .tooltip {
+    #tf-panel:hover .histogram-tooltip {
+      visibility: visible;
+    }
+
+    #tf-panel .control-point-tooltip-parent.anchor-move .control-endpoint-tooltip,
+    #tf-panel .control-point-tooltip-parent.anchor-hover:not(.control-point-move) .control-endpoint-tooltip,
+    #tf-panel .control-point-tooltip-parent.control-point-move .control-point-tooltip,
+    #tf-panel .control-point-tooltip-parent.control-point-hover:not(.anchor-move) .control-point-tooltip {
       visibility: visible;
     }
 

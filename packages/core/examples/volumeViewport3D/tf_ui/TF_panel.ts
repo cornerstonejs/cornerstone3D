@@ -188,8 +188,8 @@ export class TF_Panel {
      * overlayUnscaled:	boolean				whether the histogram (scaled by the 'scale' function should be overlayed with an unscaled version
      */
     options.histogram = options.histogram || {};
-    options.histogram.fillColor = options.histogram.fillColor || '#333333';
-    options.histogram.lineColor = options.histogram.lineColor || '#666666';
+    options.histogram.fillColor = options.histogram.fillColor || '#3f3f3f';
+    options.histogram.lineColor = options.histogram.lineColor || '#707070';
     options.histogram.style = options.histogram.style || 'polygon';
     options.histogram.scale = options.histogram.scale || Math.log;
     if (options.histogram.overlayUnscaled === undefined)
@@ -368,7 +368,7 @@ export class TF_Panel {
   addContextMenu = function (options) {
     if (options === undefined) options = {};
     const self = this;
-    const container = options.container || document.body;
+    const container = document.body;
     const colorScheme = this.options.panel.colorScheme || 'dark';
     const panelContextMenu = new ContextMenu({
       container: container,
@@ -435,6 +435,9 @@ export class TF_Panel {
     widget.bringToFront = this.bringToFront.bind(self);
     widget.sendToBack = this.sendToBack.bind(self);
 
+    if (this.histogram) {
+      widget.setHistogram(this.histogram);
+    }
     this.widgets.push(widget);
 
     this.draw(options.suppressUICallbacks);
@@ -517,6 +520,8 @@ export class TF_Panel {
     const self = this;
     this.histogram = histogram;
 
+    this.widgets.forEach((widget) => widget.setHistogram(histogram));
+
     //small indicator for histogram tracing
     if (!this.histogramHover) {
       this.histogramHover = SVG.createCircle(
@@ -533,11 +538,14 @@ export class TF_Panel {
 
     //tooltip for displaying value of histogram trace
     if (!this.histogramTooltip) {
-      this.histogramTooltip = document.createElement('div');
+      this.histogramTooltip = addTooltipElement(
+        `histogram-tooltip ${this.options.panel.colorScheme}-transparent`,
+        this.panel.dom,
+        this.panel.svgContext
+      );
 
-      this.histogramTooltip.className =
-        'tooltip unselectable ' + this.options.panel.colorScheme;
-      this.panel.dom.insertBefore(this.histogramTooltip, this.panel.svgContext);
+      this.histogramTooltip.style.left = '0px';
+      this.histogramTooltip.style.top = '0px';
     }
 
     //show tooltips on hover over tf panel
@@ -564,17 +572,12 @@ export class TF_Panel {
         if (!isNaN(yHover)) this.histogramHover.setAttribute('cy', yHover);
 
         this.histogramTooltip.innerHTML =
-          'value: ' +
+          'x: ' +
           Math.floor(
             (mouse.x / this.canvas.width) *
               (this.histogram.range.max - this.histogram.range.min) +
               this.histogram.range.min
-          ) +
-          '<br>' +
-          'count: ' +
-          this.histogram.bins[bin];
-        this.histogramTooltip.style.left = xHover + 'px';
-        this.histogramTooltip.style.top = yHover + 'px';
+          );
       }.bind(self),
       true
     );
@@ -929,6 +932,8 @@ export class TF_widget {
 
     this.controlPoints = [];
 
+    this.addControlPointTooltips();
+
     this.controlPoints.sortPoints = function () {
       this.sort(function (a, b) {
         return a.value - b.value;
@@ -991,6 +996,11 @@ export class TF_widget {
     this.updateWidget();
   };
 
+  setHistogram = function (histogram) {
+    this.histogram = histogram;
+    this.updateControlPointTooltips();
+  };
+
   getOptions = function () {
     const options = {};
     options.controlPoints = [];
@@ -1014,12 +1024,18 @@ export class TF_widget {
     this.parent.svgContext.removeChild(this.handles.left);
     this.parent.svgContext.removeChild(this.handles.right);
     this.parent.svgContext.removeChild(this.anchor);
+    this.updateControlPointTooltips();
+  };
+
+  isControlPointDeletionAllowed = function (): boolean {
+    return this.controlPoints.length > 2;
   };
 
   destructor = function () {
     this.removeControlPoints();
     this.parent.dom.removeChild(this.canvas);
     this.destroyCallback(this);
+    this.removeControlPointTooltips();
   };
 
   registerCallback = function (callback) {
@@ -1050,6 +1066,7 @@ export class TF_widget {
 
   createAnchor = function () {
     const parent = this.parent;
+    const controlPointTooltipParent = this.controlPointTooltipParent;
     const container = this.container;
     const anchor = SVG.createRect(
       this.parent.svgContext,
@@ -1079,10 +1096,19 @@ export class TF_widget {
       //todo this is not handled very well yet
       //if( mouse.x < 0 || mouse.x > this.canvas.width || mouse.y < 0 || mouse.y > this.canvas.height ) return;
 
-      mouse.x = clamp(mouse.x, 0, this.canvas.width);
-      mouse.y = clamp(mouse.y, 0, this.canvas.height);
+      mouse.x = clamp(
+        mouse.x,
+        0,
+        this.canvas.width - this.options.handle.size - 1
+      );
+      mouse.y = clamp(
+        mouse.y,
+        0,
+        this.canvas.height - this.options.handle.size - 1
+      );
 
       parent.addClass('move');
+      controlPointTooltipParent.classList.add('anchor-move');
 
       let offsetX = anchor.data.x - mouse.x;
       let offsetY = anchor.data.y - mouse.y;
@@ -1118,7 +1144,16 @@ export class TF_widget {
     function onMouseUp() {
       this.anchor.moveLock = 'N';
       parent.removeClass('move');
+      controlPointTooltipParent.classList.remove('anchor-move');
       document.removeEventListener('mousemove', moveAnchorBound);
+    }
+
+    function onMouseEnter() {
+      controlPointTooltipParent.classList.add('anchor-hover');
+    }
+
+    function onMouseLeave() {
+      controlPointTooltipParent.classList.remove('anchor-hover');
     }
 
     function onMouseDown(e) {
@@ -1134,13 +1169,13 @@ export class TF_widget {
     }
 
     function showContextMenu(e) {
-      const mouse = UI.getRelativePosition(e.clientX, e.clientY, container);
+      const mouse = UI.getRelativePosition(e.clientX, e.clientY, document.body);
 
       //create context menus for rightclick interaction
 
       const colorScheme = self.options.colorScheme || 'dark';
       const widgetContextMenu = new ContextMenu({
-        container: container,
+        container: document.body,
         colorScheme: colorScheme,
       });
       const menuItems = [
@@ -1174,6 +1209,9 @@ export class TF_widget {
 
     //add mouse move event when mouse is pressed
     anchor.addEventListener('mousedown', onMouseDown);
+
+    anchor.addEventListener('mouseenter', onMouseEnter);
+    anchor.addEventListener('mouseleave', onMouseLeave);
 
     this.updateAnchor();
   };
@@ -1452,6 +1490,8 @@ export class TF_widget {
 
     function onMouseUp() {
       document.removeEventListener('mousemove', moveHandleBound);
+      self.controlPointTooltipParent.classList.remove('control-point-move');
+      self.controlPointWithTooltip = null;
     }
 
     function onMouseDown(e) {
@@ -1466,6 +1506,9 @@ export class TF_widget {
       //remove mouse move event on mouseup
       //document.addEventListener( 'mouseup', onMouseUp, { once: true } );
       document.addEventListener('mouseup', onMouseUp);
+
+      self.controlPointTooltipParent.classList.add('control-point-move');
+      self.controlPointWithTooltip = controlPoint;
     }
 
     //add mouse move event when mouse is pressed
@@ -1494,48 +1537,63 @@ export class TF_widget {
 
     //modify cursor on hover and shift-hold to indicate deletePoint functionality
     handle.addEventListener('mousemove', function (e) {
-      if (e.shiftKey) {
+      if (e.shiftKey && self.isControlPointDeletionAllowed()) {
         handle.addClass('deleteCursor');
+        return;
       }
+      self.controlPointTooltipParent.classList.add('control-point-hover');
+      self.controlPointWithTooltip = controlPoint;
+      self.updateControlPointTooltips();
     });
 
     //remove cursor on mouseout
     handle.addEventListener('mouseleave', function () {
       handle.removeClass('deleteCursor');
+      self.controlPointTooltipParent.classList.remove('control-point-hover');
+      self.controlPointWithTooltip = null;
     });
 
     function showContextMenu(e) {
-      const mouse = UI.getRelativePosition(e.clientX, e.clientY, container);
+      //disable default context menu
+      e.preventDefault();
+      e.stopPropagation();
 
-      const colorScheme = self.options.colorScheme || 'dark';
-      const handleContextMenu = new ContextMenu({
-        container: container,
-        colorScheme: colorScheme,
-      });
-      const menuItems = [
-        {
+      const menuItems = [];
+
+      if (self.isControlPointDeletionAllowed()) {
+        menuItems.push({
           name: 'Remove point',
           callback: function () {
             self.deleteControlPoint(controlPoint);
             updateWidgetBound();
           },
-        },
-      ];
+        });
+      }
+
+      if (menuItems.length === 0) {
+        return false;
+      }
+      const mouse = UI.getRelativePosition(e.clientX, e.clientY, document.body);
+
+      const colorScheme = self.options.colorScheme || 'dark';
+      const handleContextMenu = new ContextMenu({
+        container: document.body,
+        colorScheme: colorScheme,
+      });
       handleContextMenu.addItems(menuItems);
       handleContextMenu.showAt(mouse.x, mouse.y);
 
       document.addEventListener('mousedown', handleContextMenu.destroyMenu);
       //document.addEventListener( 'mousedown', handleContextMenu.destroyMenu, { once: true } );
 
-      //disable default context menu
-      e.preventDefault();
-      e.stopPropagation();
       return false;
     }
+
     handle.addEventListener('contextmenu', showContextMenu);
 
     controlPoint.handle = handle;
     this.controlPoints.addPoint(controlPoint);
+    this.updateControlPointTooltips();
   };
 
   updateControlPoint = function (controlPoint, params) {
@@ -1571,6 +1629,108 @@ export class TF_widget {
     }
 
     controlPoint.handle.set(params.x, params.y);
+
+    this.updateControlPointTooltips();
+  };
+
+  addControlPointTooltips = function () {
+    this.removeControlPointTooltips();
+
+    this.controlPointTooltipParent = document.createElement('div');
+    this.controlPointTooltipParent.classList.add(
+      'control-point-tooltip-parent'
+    );
+
+    this.parent.dom.insertBefore(
+      this.controlPointTooltipParent,
+      this.parent.svgContext
+    );
+
+    this.leftControlEndpointTooltip = addTooltipElement(
+      `control-endpoint-tooltip ${this.options.colorScheme}-transparent`,
+      this.controlPointTooltipParent
+    );
+
+    this.rightControlEndpointTooltip = addTooltipElement(
+      `control-endpoint-tooltip ${this.options.colorScheme}-transparent`,
+      this.controlPointTooltipParent
+    );
+
+    this.controlPointTooltip = addTooltipElement(
+      `control-point-tooltip ${this.options.colorScheme}-transparent`,
+      this.controlPointTooltipParent
+    );
+  };
+
+  removeControlPointTooltips = function () {
+    removeTooltipElement(
+      this.leftControlEndpointTooltip,
+      this.controlPointTooltipParent
+    );
+    removeTooltipElement(
+      this.rightControlEndpointTooltip,
+      this.controlPointTooltipParent
+    );
+    removeTooltipElement(
+      this.controlPointTooltip,
+      this.controlPointTooltipParent
+    );
+    if (this.controlPointTooltipParent) {
+      this.parent.dom.removeChild(this.controlPointTooltipParent);
+    }
+    this.leftControlEndpointTooltip = null;
+    this.rightControlEndpointTooltip = null;
+    this.controlPointTooltip = null;
+  };
+
+  updateControlPointTooltips = function () {
+    if (this.controlPoints.length === 0) {
+      return;
+    }
+
+    const leftControlEndpoint = this.controlPoints[0];
+    const rightControlEndpoint =
+      this.controlPoints.length === 1
+        ? leftControlEndpoint
+        : this.controlPoints[this.controlPoints.length - 1];
+
+    this.updateControlPointTooltip(
+      this.leftControlEndpointTooltip,
+      leftControlEndpoint
+    );
+    this.updateControlPointTooltip(
+      this.rightControlEndpointTooltip,
+      rightControlEndpoint
+    );
+
+    if (this.controlPointWithTooltip) {
+      this.updateControlPointTooltip(
+        this.controlPointTooltip,
+        this.controlPointWithTooltip
+      );
+    }
+  };
+
+  updateControlPointTooltip = function (controlPointTooltip, controlPoint) {
+    const controlPointValue = this.histogram
+      ? Math.floor(
+          controlPoint.value *
+            (this.histogram.range.max - this.histogram.range.min) +
+            this.histogram.range.min
+        )
+      : '';
+
+    controlPointTooltip.innerHTML = `x: ${controlPointValue}<br>alpha: ${
+      Math.round(controlPoint.alpha * 1000) / 1000
+    }`;
+
+    const controlPointHandleBBox = controlPoint.handle.getBBox();
+    controlPointTooltip.style.left = `${
+      controlPointHandleBBox.x + controlPointHandleBBox.width
+    }px`;
+    controlPointTooltip.style.top = `${
+      controlPointHandleBBox.y - controlPointTooltip.offsetHeight
+    }px`;
   };
 
   findControlPoint = function (value, remove) {
@@ -1594,9 +1754,15 @@ export class TF_widget {
   };
 
   deleteControlPoint = function (controlPoint) {
+    if (!this.isControlPointDeletionAllowed()) {
+      return;
+    }
+
     this.parent.svgContext.removeChild(controlPoint.handle);
 
     this.findControlPoint(controlPoint.value, true);
+    this.updateControlPointTooltips();
+    this.updateAnchor();
   };
 
   /**
@@ -1649,8 +1815,12 @@ export class TF_widget {
       2;
     const w = this.anchor.data.width,
       h = this.anchor.data.height;
-    const x = anchorValue * this.canvas.width - w / 2,
+    let x = anchorValue * this.canvas.width - w / 2,
       y = this.canvas.height - anchorAlpha * this.canvas.height - h / 2;
+
+    x = clamp(x, 0, this.canvas.width - this.options.handle.size - 1);
+    y = clamp(y, 0, this.canvas.height - this.options.handle.size - 1);
+
     this.anchor.set(x, y);
   };
 
@@ -1905,3 +2075,23 @@ export class ContextMenu {
     this.panel.hide();
   };
 }
+
+const addTooltipElement = function (
+  tooltipClassName,
+  parentNode,
+  relativeSibling = null
+) {
+  const tooltipElement = document.createElement('div');
+
+  tooltipElement.className = `tooltip unselectable ${tooltipClassName}`;
+  parentNode.insertBefore(tooltipElement, relativeSibling);
+
+  return tooltipElement;
+};
+
+const removeTooltipElement = function (tooltipElement, parentNode) {
+  if (!tooltipElement) {
+    return;
+  }
+  parentNode.removeChild(tooltipElement);
+};
