@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.5...v1.1.6) (2023-06-01)
+
+### Bug Fixes
+
+- **Cobb Angle:** use the two closest line segment points as the tail of each respectful vector ([#634](https://github.com/cornerstonejs/cornerstone3D-beta/issues/634)) ([8311de3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8311de3baf4f1f759406a3cac3fe0077d818bdbb))
+
 ## [1.1.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.4...v1.1.5) (2023-05-23)
 
 ### Bug Fixes
