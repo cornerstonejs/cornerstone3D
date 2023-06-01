@@ -14,6 +14,7 @@ class TrackballRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  cleanUp: () => void;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -43,19 +44,17 @@ class TrackballRotateTool extends BaseTool {
 
     mapper.setSampleDistance(originalSampleDistance * 2);
 
-    const cleanUp = () => {
+    if (this.cleanUp !== null) {
+      // Clean up previous event listener
+      element.removeEventListener('mouseup', this.cleanUp);
+    }
+
+    this.cleanUp = () => {
       mapper.setSampleDistance(originalSampleDistance);
       viewport.render();
     };
 
-    element.addEventListener(
-      Events.MOUSE_UP,
-      () => {
-        cleanUp();
-      },
-      { once: true }
-    );
-
+    element.addEventListener('mouseup', this.cleanUp, { once: true });
     return true;
   };
 

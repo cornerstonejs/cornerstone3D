@@ -121,11 +121,9 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095438.5',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095501.12',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -163,6 +161,7 @@ async function run() {
     container: canvas.parentElement,
     panel: {
       isCollapsible: true,
+      defaultClosed: true,
       position: 'bottom',
       background: '#0f0f0f',
       border: '1px solid #090c29',
@@ -373,7 +372,7 @@ async function run() {
     maximum = range.maximum;
 
     const histogram = Statistics.calcHistogram(scalarData, {
-      numBins: 64,
+      numBins: 256,
       min: minimum,
       max: maximum,
     });
@@ -391,7 +390,6 @@ async function run() {
       viewport.setProperties({
         preset: 'CT-Bone',
       });
-
       viewport.render();
     }
   );

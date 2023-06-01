@@ -63,6 +63,10 @@ export class TF_Panel {
     const panel = new Panel({ container: container });
 
     if (this.options.panel.isCollapsible) {
+      // if (this.options.panel.defaultClosed) {
+      //   panel.dom.style.visibility = 'hidden';
+      // }
+
       collapsiblePanel.dom.onclick = panel.toggle.bind(panel);
     }
 
@@ -137,7 +141,7 @@ export class TF_Panel {
       this.addWidget({ ...widgetOptions, position: positionToUse });
     }
     if (this.options.widgets.length === 0) {
-      this.addWidget(); //add one default widget
+      // this.addWidget(); //add one default widget
     }
 
     //add color picker
@@ -702,7 +706,10 @@ export class TF_Panel {
     const suppressUICallbacks = true;
 
     const widget = this.widgets[0];
-    widget.destructor(suppressUICallbacks);
+
+    if (widget) {
+      widget.destructor(suppressUICallbacks);
+    }
 
     // Calculate the number of control points in the widget
     const controlPoints = [];
