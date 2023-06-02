@@ -466,7 +466,9 @@ describe('RectangleROITool (CPU):', () => {
         element,
         mouseDownEvt,
         mouseUpEvt,
-        addEventListenerForAnnotationRendered
+        addEventListenerForAnnotationRendered,
+        null,
+        false
       );
     });
 
