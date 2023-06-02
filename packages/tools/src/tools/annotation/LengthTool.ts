@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { Events, CalibrationTypes } from '../../enums';
 import {
   getEnabledElement,
   triggerEvent,
@@ -50,6 +50,23 @@ import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
+
+const lengthUnits = (handles, image) => {
+  const { calibration, hasPixelSpacing } = image;
+  const units = hasPixelSpacing ? 'mm' : 'px;';
+  if (!calibration) return units;
+  if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
+  if (!CalibrationTypes) {
+    console.warn('Calibration types undefined');
+    return `${units} CT Undef`;
+  }
+  if (calibration.types === CalibrationTypes.USER) {
+    return `${units} User Calibration`;
+  }
+  if (calibration.type === CalibrationTypes.ERMF) return `${units} ERMF`;
+  if (calibration.type === CalibrationTypes.PROJECTION) return `${units} PROJ`;
+  return units;
+};
 
 /**
  * LengthTool let you draw annotations that measures the length of two drawing
@@ -812,7 +829,8 @@ class LengthTool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, dimensions, hasPixelSpacing } = image;
+      const { imageData, dimensions } = image;
+      console.log('imageData=', image, imageData);
 
       const length = this._calculateLength(worldPos1, worldPos2);
 
@@ -830,7 +848,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
-        unit: hasPixelSpacing ? 'mm' : 'px',
+        unit: lengthUnits(null, image),
       };
     }
 

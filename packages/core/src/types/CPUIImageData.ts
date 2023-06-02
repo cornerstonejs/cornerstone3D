@@ -1,4 +1,5 @@
 import { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
+import IImageCalibration from './IImageCalibration';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;
@@ -24,6 +25,8 @@ type CPUIImageData = {
   scaling: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
+  calibration?: IImageCalibration;
+
   /** preScale object */
   preScale?: {
     /** boolean flag to indicate whether the image has been scaled */

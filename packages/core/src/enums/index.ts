@@ -9,10 +9,12 @@ import GeometryType from './GeometryType';
 import ContourType from './ContourType';
 import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
+import CalibrationTypes from './CalibrationTypes';
 
 export {
   Events,
   BlendModes,
+  CalibrationTypes,
   InterpolationType,
   RequestType,
   ViewportType,

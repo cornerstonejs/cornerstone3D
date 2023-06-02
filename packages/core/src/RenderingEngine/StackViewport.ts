@@ -410,6 +410,7 @@ class StackViewport extends Viewport implements IStackViewport {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
+      calibration: this.calibration,
       preScale: {
         ...this.csImage.preScale,
       },
@@ -451,6 +452,7 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
+      calibration: this.calibration,
       preScale: {
         ...this.csImage.preScale,
       },
@@ -2697,6 +2699,9 @@ class StackViewport extends Viewport implements IStackViewport {
       'calibratedPixelSpacing',
       imageId
     );
+
+    this.calibration = imagePlaneModule.calibration;
+    console.log('this.calibration', this.calibration, imagePlaneModule);
 
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,

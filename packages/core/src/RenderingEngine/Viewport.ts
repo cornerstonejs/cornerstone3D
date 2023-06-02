@@ -26,6 +26,7 @@ import type {
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
+import IImageCalibration from '../types/IImageCalibration';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -69,6 +70,7 @@ class Viewport implements IViewport {
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
+  protected calibration: IImageCalibration;
   /** The camera that is initially defined on the reset for
    * the relative pan/zoom
    */
