@@ -2,7 +2,6 @@ const { merge } = require('webpack-merge');
 const path = require('path');
 const webpackCommon = require('./../../../.webpack/webpack.common.js');
 const webpackBundleAnalyzer = require('webpack-bundle-analyzer');
-const pkg = require('./../package.json');
 
 module.exports = (env, argv) => {
   const commonConfig = webpackCommon(env, argv);
