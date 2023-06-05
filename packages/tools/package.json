@@ -4,11 +4,10 @@
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
-  "module": "src/index.ts",
+  "module": "dist/cjs/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "files": [
-    "dist/",
-    "src/"
+    "dist/"
   ],
   "directories": {
     "test": "test"
