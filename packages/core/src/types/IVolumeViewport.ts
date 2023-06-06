@@ -5,7 +5,7 @@ import { IVolumeInput } from './IVolumeInput';
 import FlipDirection from './FlipDirection';
 import IImageData from './IImageData';
 import { BlendModes, OrientationAxis } from '../enums';
-import { VolumeViewportProperties } from '.';
+import { ColormapPublic, VolumeViewportProperties } from '.';
 
 /**
  * Interface for the Volume Viewport
@@ -17,6 +17,10 @@ export default interface IVolumeViewport extends IViewport {
    * Retrieve the viewport properties
    */
   getProperties: () => VolumeViewportProperties;
+  /**
+   *Retrieve applied colormaps in the viewport (volumeId as index)
+   */
+  getColormaps(): { [volumeId: string]: ColormapPublic };
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
    * projected onto the plane defined by the `Viewport`'s `vtkCamera`'s focal point

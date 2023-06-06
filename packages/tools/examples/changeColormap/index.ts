@@ -115,6 +115,7 @@ addButtonToToolbar({
           {
             volumeId: ptVolumeId,
             callback: () => {
+              console.log(viewport.getProperties());
               viewport.setProperties(
                 {
                   colormap: {
@@ -136,9 +137,8 @@ addButtonToToolbar({
   },
 });
 
-let colormapName = '';
 addButtonToToolbar({
-  title: 'Fusion',
+  title: 'Apply ',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -149,13 +149,13 @@ addButtonToToolbar({
     );
     const randomIndex = Math.floor(Math.random() * getColormapNames().length);
 
-    colormapName = getColormapNames()[randomIndex];
+    const colormapName = getColormapNames()[randomIndex];
 
+    console.log(getColormapNames(), colormapName);
     viewport.setProperties({
-      colormap: { name: colormapName },
+      colormap: { name: 'blue2cyan' },
     });
     viewport.render();
-    console.log(viewport.getProperties());
   },
 });
 addSliderToToolbar({
@@ -174,10 +174,12 @@ addSliderToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
+    const colormaps = viewport.getColormaps();
+    const ptColormap = colormaps?.[ptVolumeId] ?? { name: 'default' };
     viewport.setProperties(
       {
         colormap: {
-          name: 'hsv',
+          name: ptColormap.name,
           opacityMapping: [{ value: 0.01, opacity: valueAsNumber }],
         },
       },

@@ -66,6 +66,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   use16BitTexture = false;
   private _FrameOfReferenceUID: string;
   private inverted = false;
+  private colormaps: { [volumeId: string]: ColormapPublic } = {};
 
   // Viewport Properties
   // TODO: similar to setVoi, this is only applicable to first volume
@@ -238,6 +239,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
 
+    this.colormaps[volumeId] = colormap;
+
     const { volumeActor } = applicableVolumeActorInfo;
 
     const mapper = volumeActor.getMapper();
@@ -278,6 +281,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     opacityMapping.forEach(({ opacity, value }) => {
       ofun.addPoint(value, opacity);
     });
+  }
+
+  public getColormaps(): { [volumeId: string]: ColormapPublic } {
+    return this.colormaps;
   }
 
   /**
@@ -497,11 +504,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         const volume = cache.getVolume(volumeId);
         if (!volume) return null;
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
-        const [lower, upper] =
-          this.VOILUTFunction === 'SIGMOID'
-            ? getVoiFromSigmoidRGBTransferFunction(cfun)
-            : // @ts-ignore
-              cfun.getRange();
+        this.VOILUTFunction === 'SIGMOID'
+          ? getVoiFromSigmoidRGBTransferFunction(cfun)
+          : // @ts-ignore
+            cfun.getRange();
         return { volumeId, voiRange: { lower, upper } };
       })
       .filter(Boolean);
