@@ -244,7 +244,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     mapper.setSampleDistance(1.0);
 
     const cfun = vtkColorTransferFunction.newInstance();
-    let colormapObj = colormapUtils.getColormap(colormap);
+    let colormapObj = colormapUtils.getColormap(colormap.name);
 
     const { name, opacityMapping } = colormap;
 
