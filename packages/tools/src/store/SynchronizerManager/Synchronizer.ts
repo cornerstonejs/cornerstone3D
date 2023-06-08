@@ -219,13 +219,7 @@ class Synchronizer {
     } catch (ex) {
       console.warn(`Synchronizer, for: ${this._eventName}`, ex);
     } finally {
-      if (promises.length) {
-        Promise.allSettled(promises).then(() => {
-          this._ignoreFiredEvents = false;
-        });
-      } else {
-        this._ignoreFiredEvents = false;
-      }
+      this._ignoreFiredEvents = false;
     }
   }
 
