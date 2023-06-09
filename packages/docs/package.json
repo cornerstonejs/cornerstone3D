@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "private": true,
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
@@ -28,14 +28,14 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.1.7",
-    "@cornerstonejs/dicom-image-loader": "^1.1.7",
-    "@cornerstonejs/streaming-image-volume-loader": "^1.1.7",
-    "@cornerstonejs/tools": "^1.1.7",
+    "@cornerstonejs/core": "^1.1.8",
+    "@cornerstonejs/dicom-image-loader": "^1.1.8",
+    "@cornerstonejs/streaming-image-volume-loader": "^1.1.8",
+    "@cornerstonejs/tools": "^1.1.8",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",
-    "@docusaurus/preset-classic": "2.3.1",
     "@docusaurus/plugin-google-gtag": "2.3.1",
+    "@docusaurus/preset-classic": "2.3.1",
     "@kitware/vtk.js": "27.3.1",
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^6.2.1",
