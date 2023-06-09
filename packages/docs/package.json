@@ -35,6 +35,7 @@
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",
     "@docusaurus/preset-classic": "2.3.1",
+    "@docusaurus/plugin-google-gtag": "2.3.1",
     "@kitware/vtk.js": "27.3.1",
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^6.2.1",
