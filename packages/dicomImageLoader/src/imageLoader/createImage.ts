@@ -125,7 +125,7 @@ function createImage(
   // to say if it is a SharedArrayBuffer or not with instanceof
   options.isSharedArrayBuffer =
     options.targetBuffer?.arrayBuffer &&
-    options.targetBuffer?.arrayBuffer instanceof SharedArrayBuffer;
+    options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
   const decodePromise = decodeImageFrame(
