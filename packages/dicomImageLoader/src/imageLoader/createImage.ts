@@ -124,6 +124,7 @@ function createImage(
   // since inside the webworker we don't have access to the window
   // to say if it is a SharedArrayBuffer or not with instanceof
   options.isSharedArrayBuffer =
+    options.targetBuffer?.arrayBuffer &&
     options.targetBuffer?.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
