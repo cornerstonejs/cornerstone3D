@@ -6,8 +6,6 @@ let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
-import colormaps from './constants/colormaps';
-import { registerColormap } from './utilities/colormap';
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig = {
@@ -104,8 +102,6 @@ async function init(configuration = {}): Promise<boolean> {
   if (csRenderInitialized) {
     return csRenderInitialized;
   }
-
-  colormaps.forEach(registerColormap);
 
   // merge configs
   config = deepMerge(defaultConfig, configuration);

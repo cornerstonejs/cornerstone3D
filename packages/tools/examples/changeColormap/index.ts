@@ -15,7 +15,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-import { getColormapNames } from '../../../core/src/utilities/colormap';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 // This is for debugging purposes
 console.warn(
@@ -53,48 +53,12 @@ content.appendChild(element);
 // TODO -> Maybe some of these implementations should be pushed down to some API
 
 // Buttons
-// addButtonToToolbar({
-//   title: 'Set CT VOI Range',
-//   onClick: () => {
-//     // Get the rendering engine
-//     const renderingEngine = getRenderingEngine(renderingEngineId);
-//
-//     // Get the stack viewport
-//     const viewport = <Types.IVolumeViewport>(
-//       renderingEngine.getViewport(viewportId)
-//     );
-//
-//     viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
-//     viewport.render();
-//   },
-// });
 
-addButtonToToolbar({
-  title: 'log Viwport',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-    console.log(viewport);
-    console.log(viewport.getProperties());
-
-    // Resets the viewport's camera
-    // viewport.reset(true);
-    // viewport.resetCamera();
-    // TODO reset the viewport properties, we don't have API for this.
-
-    // viewport.render();
-  },
-});
 let fused = false;
 
 addButtonToToolbar({
   title: 'toggle PET',
-  onClick: () => {
+  onClick: async () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -103,42 +67,51 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     if (fused) {
-      // Removes the PT actor from the scene
       viewport.removeVolumeActors([ptVolumeId], true);
 
       fused = false;
     } else {
-      // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
-      // If it was in a different frame of reference, you would need to register it first.
-      viewport.addVolumes(
+      // () => {
+      //   viewport.setProperties(
+      //       {
+      //         colormap: {
+      //           name: colormapName,
+      //           opacityMapping: [{ value: 0, opacity: 0 }],
+      //         },
+      //       },
+      //       ptVolumeId
+      //   );
+      //   viewport.render();
+      // },
+      await viewport.addVolumes(
         [
           {
             volumeId: ptVolumeId,
-            callback: () => {
-              console.log(viewport.getProperties());
-              viewport.setProperties(
-                {
-                  colormap: {
-                    name: 'hsv',
-                    opacityMapping: [{ value: 0.01, opacity: 100 }],
-                  },
-                },
-                ptVolumeId
-              );
-              viewport.render();
-            },
           },
         ],
         true
       );
 
+      viewport.setProperties(
+        {
+          colormap: {
+            name: 'hsv',
+            opacity: opacity,
+          },
+          voiRange: {
+            upper: 5,
+            lower: 0,
+          },
+        },
+        ptVolumeId
+      );
       fused = true;
     }
   },
 });
-
+let opacity = 0;
 addButtonToToolbar({
-  title: 'Apply ',
+  title: 'Change Colomap',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -147,25 +120,32 @@ addButtonToToolbar({
     const viewport = <Types.IVolumeViewport>(
       renderingEngine.getViewport(viewportId)
     );
-    const randomIndex = Math.floor(Math.random() * getColormapNames().length);
+    const randomIndex = Math.floor(
+      Math.random() * vtkColorMaps.rgbPresetNames.length
+    );
 
-    const colormapName = getColormapNames()[randomIndex];
+    const colormapName = vtkColorMaps.rgbPresetNames[randomIndex];
 
-    console.log(getColormapNames(), colormapName);
-    viewport.setProperties({
-      colormap: { name: 'blue2cyan' },
-    });
+    viewport.setProperties(
+      {
+        colormap: {
+          name: colormapName,
+        },
+      },
+      ptVolumeId
+    );
     viewport.render();
   },
 });
 addSliderToToolbar({
   title: 'opacity',
   step: 0.001,
-  range: [0, 1],
+  range: [0, 255],
   defaultValue: 0,
   onSelectedValueChange: (value) => {
-    const valueAsNumber = Number(value);
+    const valueAsNumber = Number(value) / 255;
 
+    opacity = valueAsNumber;
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -174,13 +154,10 @@ addSliderToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    const colormaps = viewport.getColormaps();
-    const ptColormap = colormaps?.[ptVolumeId] ?? { name: 'default' };
     viewport.setProperties(
       {
         colormap: {
-          name: ptColormap.name,
-          opacityMapping: [{ value: 0.01, opacity: valueAsNumber }],
+          opacity: opacity,
         },
       },
       ptVolumeId
@@ -188,90 +165,23 @@ addSliderToToolbar({
     viewport.render();
   },
 });
-// addButtonToToolbar({
-//   title: 'toggle PET',
-//   onClick: () => {
-//     // Get the rendering engine
-//     const renderingEngine = getRenderingEngine(renderingEngineId);
-//
-//     // Get the volume viewport
-//     const viewport = <Types.IVolumeViewport>(
-//       renderingEngine.getViewport(viewportId)
-//     );
-//     if (fused) {
-//       // Removes the PT actor from the scene
-//       viewport.removeVolumeActors([ptVolumeId], true);
-//
-//       fused = false;
-//     } else {
-//       // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
-//       // If it was in a different frame of reference, you would need to register it first.
-//       viewport.addVolumes(
-//         [
-//           {
-//             volumeId: ptVolumeId,
-//             callback: setPetColorMapTransferFunctionForVolumeActor,
-//           },
-//         ],
-//         true
-//       );
-//
-//       fused = true;
-//     }
-//   },
-// });
-// const orientationOptions = {
-//   axial: 'axial',
-//   sagittal: 'sagittal',
-//   coronal: 'coronal',
-//   oblique: 'oblique',
-// };
-//
-// addDropdownToToolbar({
-//   options: {
-//     values: ['axial', 'sagittal', 'coronal', 'oblique'],
-//     defaultValue: 'sagittal',
-//   },
-//   onSelectedValueChange: (selectedValue) => {
-//     // Get the rendering engine
-//     const renderingEngine = getRenderingEngine(renderingEngineId);
-//
-//     // Get the volume viewport
-//     const viewport = <Types.IVolumeViewport>(
-//       renderingEngine.getViewport(viewportId)
-//     );
-//
-//     let viewUp;
-//     let viewPlaneNormal;
-//
-//     switch (selectedValue) {
-//       case orientationOptions.axial:
-//         viewport.setOrientation(Enums.OrientationAxis.AXIAL);
-//
-//         break;
-//       case orientationOptions.sagittal:
-//         viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
-//
-//         break;
-//       case orientationOptions.coronal:
-//         viewport.setOrientation(Enums.OrientationAxis.CORONAL);
-//
-//         break;
-//       case orientationOptions.oblique:
-//         // Some random oblique value for this dataset
-//         viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
-//         viewPlaneNormal = [
-//           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-//         ];
-//
-//         viewport.setCamera({ viewUp, viewPlaneNormal });
-//         viewport.resetCamera();
-//         break;
-//     }
-//
-//     viewport.render();
-//   },
-// });
+addDropdownToToolbar({
+  options: {
+    values: ['axial', 'sagittal', 'coronal', 'acquisition'],
+    defaultValue: 'axial',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    viewport.setOrientation(selectedValue as Enums.OrientationAxis);
+  },
+});
 
 /**
  * Runs the demo
@@ -346,5 +256,4 @@ async function run() {
   // Set the volume to load
   ptVolume.load();
 }
-
 run();
