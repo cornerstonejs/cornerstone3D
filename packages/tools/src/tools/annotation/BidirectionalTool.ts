@@ -1,4 +1,4 @@
-import { vec2, vec3, mat2, mat3, mat2d } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   triggerEvent,
@@ -7,6 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import lengthUnits from '../../utilities/lengthUnits';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -1310,7 +1311,7 @@ class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
-        unit: hasPixelSpacing ? 'mm' : 'px',
+        unit: lengthUnits(null, image),
       };
     }
 

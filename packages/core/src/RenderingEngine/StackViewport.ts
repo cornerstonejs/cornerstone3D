@@ -74,6 +74,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
+import { CalibrationTypes } from '../enums';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -559,6 +560,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
+    this.calibration = null;
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     if (!this.useCPURendering) {
@@ -628,6 +630,12 @@ class StackViewport extends Viewport implements IStackViewport {
       return imagePlaneModule;
     }
 
+    this.calibration = {
+      type: CalibrationTypes.USER,
+      PixelSpacing: [calibratedColumnSpacing, calibratedRowSpacing],
+    };
+    this.hasPixelSpacing = calibratedRowSpacing && calibratedColumnSpacing;
+
     // If no actor (first load) and calibration doesn't match headers
     // -> needs calibration
     if (
@@ -648,6 +656,7 @@ class StackViewport extends Viewport implements IStackViewport {
       // This updates the render copy
       imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
       imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
+      imagePlaneModule.calibration = this.calibration;
       return imagePlaneModule;
     }
 
@@ -659,6 +668,7 @@ class StackViewport extends Viewport implements IStackViewport {
     calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
     imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
     imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
+    imagePlaneModule.calibration = this.calibration;
 
     // If current actor spacing matches the calibrated spacing
     if (
@@ -2700,8 +2710,7 @@ class StackViewport extends Viewport implements IStackViewport {
       imageId
     );
 
-    this.calibration = imagePlaneModule.calibration;
-    console.log('this.calibration', this.calibration, imagePlaneModule);
+    this.calibration ||= imagePlaneModule.calibration;
 
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,

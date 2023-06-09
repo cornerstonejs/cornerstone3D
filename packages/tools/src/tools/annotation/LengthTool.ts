@@ -1,4 +1,4 @@
-import { Events, CalibrationTypes } from '../../enums';
+import { Events } from '../../enums';
 import {
   getEnabledElement,
   triggerEvent,
@@ -7,6 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import lengthUnits from '../../utilities/lengthUnits';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -50,23 +51,6 @@ import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
-
-const lengthUnits = (handles, image) => {
-  const { calibration, hasPixelSpacing } = image;
-  const units = hasPixelSpacing ? 'mm' : 'px;';
-  if (!calibration) return units;
-  if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
-  if (!CalibrationTypes) {
-    console.warn('Calibration types undefined');
-    return `${units} CT Undef`;
-  }
-  if (calibration.types === CalibrationTypes.USER) {
-    return `${units} User Calibration`;
-  }
-  if (calibration.type === CalibrationTypes.ERMF) return `${units} ERMF`;
-  if (calibration.type === CalibrationTypes.PROJECTION) return `${units} PROJ`;
-  return units;
-};
 
 /**
  * LengthTool let you draw annotations that measures the length of two drawing
@@ -830,7 +814,6 @@ class LengthTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      console.log('imageData=', image, imageData);
 
       const length = this._calculateLength(worldPos1, worldPos2);
 

@@ -9,6 +9,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import { lengthUnits, areaUnits } from '../../utilities/lengthUnits';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -886,7 +887,7 @@ class CircleROITool extends AnnotationTool {
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
+        : `Area: ${area.toFixed(2)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
@@ -1044,9 +1045,9 @@ class CircleROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          areaUnit: areaUnits(null, image),
           radius: worldWidth / 2,
-          radiusUnit: hasPixelSpacing ? 'mm' : 'px',
+          radiusUnit: lengthUnits(null, image),
           perimeter: 2 * Math.PI * (worldWidth / 2),
         };
       } else {
