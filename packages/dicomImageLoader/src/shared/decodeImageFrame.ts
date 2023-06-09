@@ -263,7 +263,10 @@ function postProcessDecodedPixels(
   const hasTargetBuffer = options.targetBuffer !== undefined;
   const isNotSharedArrayBuffer =
     hasTargetBuffer &&
-    !(options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer);
+    !(
+      SharedArrayBuffer &&
+      options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer
+    );
 
   if (!hasTargetBuffer || isNotSharedArrayBuffer) {
     imageFrame.pixelData = pixelDataArray;
