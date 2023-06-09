@@ -266,6 +266,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
   }
 
+  /**
+   * Sets the opacity for the volume with the given ID.
+   *
+   * @param colormap -  An object containing opacity or opacityMapping properties.
+   * @param volumeId - The ID of the volume to set the opacity for for.
+   *
+   * @returns void
+   */
   private setOpacity(colormap: ColormapPublic, volumeId: string) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
     if (!applicableVolumeActorInfo) {
@@ -273,6 +281,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     const { volumeActor } = applicableVolumeActorInfo;
     const ofun = vtkPiecewiseFunction.newInstance();
+
+    // Set opacity using colormap.opacity if provided
     if (colormap.opacity) {
       const range = volumeActor
         .getProperty()
@@ -280,7 +290,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         .getRange();
       ofun.addPoint(range[0], colormap.opacity);
       ofun.addPoint(range[1], colormap.opacity);
-    } else if (colormap.opacityMapping) {
+    }
+    // Set opacity using colormap.opacityMapping if provided
+    else if (colormap.opacityMapping) {
       colormap.opacityMapping.forEach(({ opacity, value }) => {
         ofun.addPoint(value, opacity);
       });

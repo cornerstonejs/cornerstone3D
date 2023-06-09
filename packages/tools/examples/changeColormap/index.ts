@@ -55,7 +55,7 @@ content.appendChild(element);
 // Buttons
 
 let fused = false;
-
+let opacity = 0;
 addButtonToToolbar({
   title: 'toggle PET',
   onClick: async () => {
@@ -71,18 +71,6 @@ addButtonToToolbar({
 
       fused = false;
     } else {
-      // () => {
-      //   viewport.setProperties(
-      //       {
-      //         colormap: {
-      //           name: colormapName,
-      //           opacityMapping: [{ value: 0, opacity: 0 }],
-      //         },
-      //       },
-      //       ptVolumeId
-      //   );
-      //   viewport.render();
-      // },
       await viewport.addVolumes(
         [
           {
@@ -109,7 +97,7 @@ addButtonToToolbar({
     }
   },
 });
-let opacity = 0;
+
 addButtonToToolbar({
   title: 'Change Colomap',
   onClick: () => {
