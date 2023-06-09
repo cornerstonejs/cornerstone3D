@@ -10,7 +10,7 @@
     "imaging"
   ],
   "author": "@cornerstonejs (previously Chris Hafey)",
-  "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta",
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
   "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
   "module": "dist/esm/src/imageLoader/index.js",
@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/cornerstonejs/cornerstone3D-beta.git"
+    "url": "https://github.com/cornerstonejs/cornerstone3D.git"
   },
   "publishConfig": {
     "access": "public"
