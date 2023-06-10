@@ -1,11 +1,11 @@
 {
   "name": "root",
-  "description": "Cornerstone.js Monorepo Root - Beta",
+  "description": "Cornerstone.js Monorepo Root",
   "private": true,
   "workspaces": [
     "packages/*"
   ],
-  "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
   "engines": {
     "node": ">=12",

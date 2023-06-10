@@ -24,4 +24,4 @@ in this situation and in need of assistance, it may be in your best interest to
 persue paid support.
 
 
-[gh-issues]: https://github.com/cornerstonejs/cornerstone3D-beta/issues/
+[gh-issues]: https://github.com/cornerstonejs/cornerstone3D/issues/
