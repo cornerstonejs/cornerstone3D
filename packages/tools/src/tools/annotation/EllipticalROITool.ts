@@ -9,6 +9,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import { areaUnits } from '../../utilities/lengthUnits';
+import roundMeasurement from '../../utilities/roundMeasurement';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -998,20 +1000,20 @@ class EllipticalROITool extends AnnotationTool {
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
+        : `Area: ${roundMeasurement(area)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
     if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+      textLines.push(`Mean: ${roundMeasurement(mean)} ${unit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+      textLines.push(`Max: ${roundMeasurement(max)} ${unit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+      textLines.push(`Std Dev: ${roundMeasurement(stdDev)} ${unit}`);
     }
 
     return textLines;
@@ -1156,7 +1158,7 @@ class EllipticalROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          areaUnit: areaUnits(null, image),
         };
       } else {
         this.isHandleOutsideImage = true;

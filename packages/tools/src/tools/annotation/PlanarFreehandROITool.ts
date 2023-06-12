@@ -9,6 +9,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+
+import { lengthUnits, areaUnits } from '../../utilities/lengthUnits';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {
@@ -722,7 +724,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, metadata, hasPixelSpacing } = image;
+      const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
       const area = polyline.calculateAreaOfPoints(canvasCoordinates);
 
@@ -847,7 +849,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         mean,
         max,
         stdDev,
-        areaUnit: hasPixelSpacing ? 'mm' : 'px',
+        areaUnit: areaUnits(null, image),
       };
     }
 

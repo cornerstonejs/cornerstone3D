@@ -8,6 +8,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import lengthUnits from '../../utilities/lengthUnits';
+import roundMeasurement from '../../utilities/roundMeasurement';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -777,7 +778,7 @@ class LengthTool extends AnnotationTool {
       return;
     }
 
-    const textLines = [`${length.toFixed(2)} ${unit}`];
+    const textLines = [`${roundMeasurement(length)} ${unit}`];
 
     return textLines;
   }
