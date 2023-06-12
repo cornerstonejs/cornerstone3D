@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.9...v1.2.0) (2023-06-12)
+
+### Features
+
+- **agnleTool:** link textbox to vertex unless moved by user ([#651](https://github.com/cornerstonejs/cornerstone3D/issues/651)) ([d77dff3](https://github.com/cornerstonejs/cornerstone3D/commit/d77dff3c339d46db52a2868feaf12501838e9b96))
+
 ## [1.1.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.8...v1.1.9) (2023-06-12)
 
 ### Bug Fixes
