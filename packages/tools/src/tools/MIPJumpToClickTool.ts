@@ -41,8 +41,6 @@ class MIPJumpToClickTool extends BaseTool {
   mouseClickCallback(evt): void {
     const { element, currentPoints } = evt.detail;
 
-    console.log('MIPjumpToClick event', evt);
-
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
