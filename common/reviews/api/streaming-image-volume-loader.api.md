@@ -4,7 +4,6 @@
 
 ```ts
 
-import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -38,6 +37,24 @@ enum BlendModes {
     COMPOSITE = BlendMode.COMPOSITE_BLEND,
     MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
     MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
+}
+
+// @public (undocumented)
+enum CalibrationTypes {
+    // (undocumented)
+    ERMF = 'ERMF',
+    // (undocumented)
+    ERROR = 'Error',
+    // (undocumented)
+    NOT_APPLICABLE = '',
+    // (undocumented)
+    PROJECTION = 'Proj',
+    // (undocumented)
+    REGION = 'Region',
+    // (undocumented)
+    UNKNOWN = 'Unknown',
+    // (undocumented)
+    USER = 'User',
 }
 
 // @public
@@ -349,6 +366,8 @@ type CPUIImageData = {
     scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    calibration?: IImageCalibration;
+
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -784,7 +803,23 @@ interface IImage {
 }
 
 // @public
+interface IImageCalibration {
+    // (undocumented)
+    hasPixelSpacing?: boolean;
+    // (undocumented)
+    isProjection?: boolean;
+    // (undocumented)
+    PixelSpacing: [number, number];
+    // (undocumented)
+    SequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    // (undocumented)
+    type: CalibrationTypes;
+}
+
+// @public
 interface IImageData {
+    // (undocumented)
+    calibration?: IImageCalibration;
     dimensions: Point3;
     direction: Mat3;
     hasPixelSpacing?: boolean;
@@ -1505,7 +1540,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
             };
         };
         priority: number;
-        requestType: default_2;
+        requestType: RequestType_2;
         additionalDetails: {
             volumeId: string;
         };

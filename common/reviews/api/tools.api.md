@@ -549,6 +549,14 @@ export class BidirectionalTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
+// @public
+enum BlendModes {
+    AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
+    COMPOSITE = BlendMode.COMPOSITE_BLEND,
+    MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
+    MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
+}
+
 declare namespace boundingBox {
     export {
         extend2DBoundingBoxInViewAxis,
@@ -586,6 +594,27 @@ function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 // @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, rowPixelSpacing: number, columnPixelSpacing: number): void;
 
+// @public (undocumented)
+enum CalibrationTypes {
+    // (undocumented)
+    ERMF = 'ERMF',
+    // (undocumented)
+    ERROR = 'Error',
+    // (undocumented)
+    NOT_APPLICABLE = '',
+    // (undocumented)
+    PROJECTION = 'Proj',
+    // (undocumented)
+    REGION = 'Region',
+    // (undocumented)
+    UNKNOWN = 'Unknown',
+    // (undocumented)
+    USER = 'User',
+}
+
+// @public (undocumented)
+const CalibrationTypes_2: typeof Enums_2.CalibrationTypes;
+
 // @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 
@@ -612,7 +641,7 @@ declare namespace cine {
     export {
         playClip,
         stopClip,
-        Events_2 as Events,
+        Events_3 as Events,
         getToolState,
         addToolState
     }
@@ -908,6 +937,14 @@ type ContourSetData = {
 };
 
 // @public (undocumented)
+enum ContourType {
+    // (undocumented)
+    CLOSED_PLANAR = 'CLOSED_PLANAR',
+    // (undocumented)
+    OPEN_PLANAR = 'OPEN_PLANAR',
+}
+
+// @public (undocumented)
 function copyPoints(points: ITouchPoints): ITouchPoints;
 
 // @public (undocumented)
@@ -1164,6 +1201,8 @@ type CPUIImageData = {
     scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    calibration?: IImageCalibration;
+
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -1563,6 +1602,13 @@ function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rec
 // @public (undocumented)
 function drawTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
 
+// @public
+enum DynamicOperatorType {
+    AVERAGE = 'AVERAGE',
+    SUBTRACT = 'SUBTRACT',
+    SUM = 'SUM',
+}
+
 declare namespace dynamicVolume {
     export {
         getDataInTime,
@@ -1703,19 +1749,63 @@ function enable(element: any): void;
 
 declare namespace Enums {
     export {
+        CalibrationTypes_2 as CalibrationTypes,
         MouseBindings,
         KeyboardBindings,
         ToolModes,
         AnnotationStyleStates,
-        Events,
+        Events_2 as Events,
         SegmentationRepresentations,
         Swipe
     }
 }
 export { Enums }
 
-// @public (undocumented)
+// @public
 enum Events {
+    CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
+    CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
+
+    CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+    DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
+    ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
+    ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
+    GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
+    IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
+    IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
+    IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
+    IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+    IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
+    IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+
+    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
+    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
+    IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
+    STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+    STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+    STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
+
+    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+
+    VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
+    VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+    VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+
+    VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+
+    VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
+
+    VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
+
+    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+    // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
+    // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
+    // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+}
+
+// @public (undocumented)
+enum Events_2 {
     // (undocumented)
     ANNOTATION_ADDED = "CORNERSTONE_TOOLS_ANNOTATION_ADDED",
     // (undocumented)
@@ -1781,7 +1871,7 @@ enum Events {
 }
 
 // @public (undocumented)
-enum Events_2 {
+enum Events_3 {
     // (undocumented)
     CLIP_STARTED = "CORNERSTONE_CINE_TOOL_STARTED",
     // (undocumented)
@@ -1994,6 +2084,12 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
 // @public (undocumented)
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
+
+// @public (undocumented)
+enum GeometryType {
+    // (undocumented)
+    CONTOUR = 'contour',
+}
 
 // @public (undocumented)
 function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
@@ -2485,7 +2581,23 @@ interface IImage {
 }
 
 // @public
+interface IImageCalibration {
+    // (undocumented)
+    hasPixelSpacing?: boolean;
+    // (undocumented)
+    isProjection?: boolean;
+    // (undocumented)
+    PixelSpacing: [number, number];
+    // (undocumented)
+    SequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    // (undocumented)
+    type: CalibrationTypes;
+}
+
+// @public
 interface IImageData {
+    // (undocumented)
+    calibration?: IImageCalibration;
     dimensions: Point3;
     direction: Mat3;
     hasPixelSpacing?: boolean;
@@ -2731,6 +2843,14 @@ type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
 function interpolateAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
+
+// @public
+enum InterpolationType {
+    // (undocumented)
+    FAST_LINEAR,
+    LINEAR,
+    NEAREST,
+}
 
 // @public (undocumented)
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
@@ -3559,6 +3679,18 @@ declare namespace orientation_2 {
     }
 }
 
+// @public (undocumented)
+enum OrientationAxis {
+    // (undocumented)
+    ACQUISITION = 'acquisition',
+    // (undocumented)
+    AXIAL = 'axial',
+    // (undocumented)
+    CORONAL = 'coronal',
+    // (undocumented)
+    SAGITTAL = 'sagittal',
+}
+
 // @public
 type OrientationVectors = {
     viewPlaneNormal: Point3;
@@ -4331,6 +4463,13 @@ type RepresentationPublicInput = {
     type: Enums.SegmentationRepresentations;
 };
 
+// @public
+enum RequestType {
+    Interaction = 'interaction',
+    Prefetch = 'prefetch',
+    Thumbnail = 'thumbnail',
+}
+
 // @public (undocumented)
 function resetAnnotationManager(): void;
 
@@ -4339,6 +4478,9 @@ function resetElementCursor(element: HTMLDivElement): void;
 
 // @public
 type RGB = [number, number, number];
+
+// @public (undocumented)
+function roundMeasurement(value: any, scaling?: number): string | number;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -4689,6 +4831,15 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 
 // @public (undocumented)
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
+
+// @public
+enum SharedArrayBufferModes {
+    AUTO = 'auto',
+    // (undocumented)
+    FALSE = 'false',
+    // (undocumented)
+    TRUE = 'true',
+}
 
 // @public (undocumented)
 function showAllAnnotations(): void;
@@ -5354,7 +5505,8 @@ declare namespace utilities {
         rectangleROITool,
         planarFreehandROITool,
         stackPrefetch,
-        scroll_2 as scroll
+        scroll_2 as scroll,
+        roundMeasurement
     }
 }
 export { utilities }
@@ -5423,6 +5575,15 @@ type ViewportProperties = {
     invert?: boolean;
 };
 
+// @public
+enum ViewportType {
+    ORTHOGRAPHIC = 'orthographic',
+    PERSPECTIVE = 'perspective',
+    STACK = 'stack',
+    // (undocumented)
+    VOLUME_3D = 'volume3d',
+}
+
 declare namespace visibility {
     export {
         setAnnotationVisibility,
@@ -5446,6 +5607,15 @@ type VOI = {
     windowWidth: number;
     windowCenter: number;
 };
+
+// @public
+enum VOILUTFunctionType {
+    // (undocumented)
+    LINEAR = 'LINEAR',
+    // (undocumented)
+    SAMPLED_SIGMOID = 'SIGMOID', // SIGMOID is sampled in 1024 even steps so we call it SAMPLED_SIGMOID
+    // EXACT_LINEAR = 'EXACT_LINEAR', TODO: Add EXACT_LINEAR option from DICOM NEMA
+}
 
 // @public
 type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
