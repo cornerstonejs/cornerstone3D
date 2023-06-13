@@ -92,6 +92,10 @@
       "renderToCanvas": {
         "name": "Render To Canvas",
         "description": "Demonstrates how to use the api to render to a canvas directly"
+      },
+      "changeColorMap": {
+        "name": "Change the colormap and adjusting the opacity",
+        "description": "Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity."
       }
     },
     "core-advanced": {
