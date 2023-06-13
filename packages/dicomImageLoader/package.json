@@ -13,7 +13,7 @@
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
   "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
-  "module": "dist/esm/src/imageLoader/index.js",
+  "module": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
   "files": [
     "dist/"
   ],
