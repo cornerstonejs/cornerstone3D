@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.0...v1.2.1) (2023-06-13)
+
+### Bug Fixes
+
+- **multiframe:** transfer only portion of data for multiframe to worker ([#652](https://github.com/cornerstonejs/cornerstone3D/issues/652)) ([aaf94ea](https://github.com/cornerstonejs/cornerstone3D/commit/aaf94eace6064f6b952a0e7c077653b5b6dc8c99))
+
 # [1.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.9...v1.2.0) (2023-06-12)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
