@@ -157,8 +157,8 @@ declare namespace colormap {
 
 // @public (undocumented)
 type ColormapPublic = {
-    name: string;
-    opacityMapping?: OpacityMapping[];
+    name?: string;
+    opacity?: OpacityMapping[] | number;
 };
 
 // @public (undocumented)
