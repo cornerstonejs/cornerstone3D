@@ -632,7 +632,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.calibration = {
       type: CalibrationTypes.USER,
-      PixelSpacing: [calibratedColumnSpacing, calibratedRowSpacing],
+      pixelSpacing: [calibratedColumnSpacing, calibratedRowSpacing],
     };
     this.hasPixelSpacing = calibratedRowSpacing && calibratedColumnSpacing;
 

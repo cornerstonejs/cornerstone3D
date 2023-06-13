@@ -9,8 +9,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { lengthUnits, areaUnits } from '../../utilities/lengthUnits';
-import roundMeasurement from '../../utilities/roundMeasurement';
+import {
+  calibratedLengthUnits,
+  calibratedAreaUnits,
+} from '../../utilities/calibratedLengthUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -881,27 +884,27 @@ class CircleROITool extends AnnotationTool {
     if (radius) {
       const radiusLine = isEmptyArea
         ? `Radius: Oblique not supported`
-        : `Radius: ${roundMeasurement(radius)} ${radiusUnit}`;
+        : `Radius: ${roundNumber(radius)} ${radiusUnit}`;
       textLines.push(radiusLine);
     }
 
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${roundMeasurement(area)} ${areaUnit}`;
+        : `Area: ${roundNumber(area)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
     if (mean) {
-      textLines.push(`Mean: ${roundMeasurement(mean)} ${unit}`);
+      textLines.push(`Mean: ${roundNumber(mean)} ${unit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${roundMeasurement(max)} ${unit}`);
+      textLines.push(`Max: ${roundNumber(max)} ${unit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${roundMeasurement(stdDev)} ${unit}`);
+      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${unit}`);
     }
 
     return textLines;
@@ -1046,9 +1049,9 @@ class CircleROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: areaUnits(null, image),
+          areaUnit: calibratedAreaUnits(null, image),
           radius: worldWidth / 2,
-          radiusUnit: lengthUnits(null, image),
+          radiusUnit: calibratedLengthUnits(null, image),
           perimeter: 2 * Math.PI * (worldWidth / 2),
         };
       } else {

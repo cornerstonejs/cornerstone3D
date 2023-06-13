@@ -9,8 +9,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { areaUnits } from '../../utilities/lengthUnits';
-import roundMeasurement from '../../utilities/roundMeasurement';
+import { calibratedAreaUnits } from '../../utilities/calibratedLengthUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -867,10 +867,10 @@ class RectangleROITool extends AnnotationTool {
     const textLines: string[] = [];
     const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
-    textLines.push(`Area: ${roundMeasurement(area)} ${areaUnit}`);
-    textLines.push(`Mean: ${roundMeasurement(mean)} ${unit}`);
-    textLines.push(`Max: ${roundMeasurement(max)} ${unit}`);
-    textLines.push(`Std Dev: ${roundMeasurement(stdDev)} ${unit}`);
+    textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
+    textLines.push(`Mean: ${roundNumber(mean)} ${unit}`);
+    textLines.push(`Max: ${roundNumber(max)} ${unit}`);
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${unit}`);
 
     return textLines;
   };
@@ -1005,7 +1005,7 @@ class RectangleROITool extends AnnotationTool {
           mean,
           stdDev,
           max,
-          areaUnit: areaUnits(null, image),
+          areaUnit: calibratedAreaUnits(null, image),
         };
       } else {
         this.isHandleOutsideImage = true;

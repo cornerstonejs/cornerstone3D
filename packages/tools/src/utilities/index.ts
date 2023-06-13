@@ -16,7 +16,7 @@ import jumpToSlice from './viewport/jumpToSlice';
 import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import scroll from './scroll';
-import roundMeasurement from './roundMeasurement';
+import roundNumber from './roundNumber';
 
 // name spaces
 import * as segmentation from './segmentation';
@@ -66,5 +66,5 @@ export {
   planarFreehandROITool,
   stackPrefetch,
   scroll,
-  roundMeasurement,
+  roundNumber as roundMeasurement,
 };

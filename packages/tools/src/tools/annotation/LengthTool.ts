@@ -7,8 +7,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import lengthUnits from '../../utilities/lengthUnits';
-import roundMeasurement from '../../utilities/roundMeasurement';
+import calibratedLengthUnits from '../../utilities/calibratedLengthUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -778,7 +778,7 @@ class LengthTool extends AnnotationTool {
       return;
     }
 
-    const textLines = [`${roundMeasurement(length)} ${unit}`];
+    const textLines = [`${roundNumber(length)} ${unit}`];
 
     return textLines;
   }
@@ -832,7 +832,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
-        unit: lengthUnits(null, image),
+        unit: calibratedLengthUnits(null, image),
       };
     }
 

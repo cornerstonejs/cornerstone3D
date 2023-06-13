@@ -7,8 +7,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import lengthUnits from '../../utilities/lengthUnits';
-import roundMeasurement from '../../utilities/roundMeasurement';
+import calibratedLengthUnits from '../../utilities/calibratedLengthUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -1254,8 +1254,8 @@ class BidirectionalTool extends AnnotationTool {
     // spaceBetweenSlices & pixelSpacing &
     // magnitude in each direction? Otherwise, this is "px"?
     const textLines = [
-      `L: ${roundMeasurement(length)} ${unit}`,
-      `W: ${roundMeasurement(width)} ${unit}`,
+      `L: ${roundNumber(length)} ${unit}`,
+      `W: ${roundNumber(width)} ${unit}`,
     ];
 
     return textLines;
@@ -1312,7 +1312,7 @@ class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
-        unit: lengthUnits(null, image),
+        unit: calibratedLengthUnits(null, image),
       };
     }
 

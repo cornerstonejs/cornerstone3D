@@ -10,8 +10,8 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { lengthUnits, areaUnits } from '../../utilities/lengthUnits';
-import roundMeasurement from '../../utilities/roundMeasurement';
+import { calibratedAreaUnits } from '../../utilities/calibratedLengthUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {
@@ -850,7 +850,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         mean,
         max,
         stdDev,
-        areaUnit: areaUnits(null, image),
+        areaUnit: calibratedAreaUnits(null, image),
       };
     }
 
@@ -935,20 +935,20 @@ class PlanarFreehandROITool extends AnnotationTool {
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${roundMeasurement(area)} ${areaUnit}`;
+        : `Area: ${roundNumber(area)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
     if (mean) {
-      textLines.push(`Mean: ${roundMeasurement(mean)} ${unit}`);
+      textLines.push(`Mean: ${roundNumber(mean)} ${unit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${roundMeasurement(max)} ${unit}`);
+      textLines.push(`Max: ${roundNumber(max)} ${unit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${roundMeasurement(stdDev)} ${unit}`);
+      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${unit}`);
     }
 
     return textLines;
