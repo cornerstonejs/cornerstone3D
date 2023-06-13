@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "1.1.6",
+  "version": "1.2.1",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -10,7 +10,7 @@
     "imaging"
   ],
   "author": "@cornerstonejs (previously Chris Hafey)",
-  "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta",
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
   "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
   "module": "dist/esm/src/imageLoader/index.js",
@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/cornerstonejs/cornerstone3D-beta.git"
+    "url": "https://github.com/cornerstonejs/cornerstone3D.git"
   },
   "publishConfig": {
     "access": "public"
@@ -67,7 +67,7 @@
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.2",
-    "@cornerstonejs/core": "^1.1.6",
+    "@cornerstonejs/core": "^1.2.1",
     "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"

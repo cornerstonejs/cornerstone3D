@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.0...v1.2.1) (2023-06-13)
+
+### Bug Fixes
+
+- **multiframe:** transfer only portion of data for multiframe to worker ([#652](https://github.com/cornerstonejs/cornerstone3D/issues/652)) ([aaf94ea](https://github.com/cornerstonejs/cornerstone3D/commit/aaf94eace6064f6b952a0e7c077653b5b6dc8c99))
+
+# [1.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.9...v1.2.0) (2023-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.1.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.8...v1.1.9) (2023-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.1.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.7...v1.1.8) (2023-06-09)
+
+### Bug Fixes
+
+- **sab:** check for sab before using it ([#648](https://github.com/cornerstonejs/cornerstone3D/issues/648)) ([f4d60a2](https://github.com/cornerstonejs/cornerstone3D/commit/f4d60a283e3d52fbba3e2b482359a1482b1c38e9))
+
+## [1.1.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.6...v1.1.7) (2023-06-09)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [1.1.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.5...v1.1.6) (2023-06-01)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader

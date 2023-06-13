@@ -36,7 +36,7 @@ Touch events natively support multitouch which is provided as a list of [`ITouch
 In order for touch events to be compatiable with mouse events, these `ITouchPoints[]` need to be reduced into a single
 `ITouchPoint`. The current strategy for array reduction is taking the mean coordinate values. Other strategies can be
 implemented such as first point, median point, etc. This can be implemented in the
-[`touch` utilities codebase](https://github.com/cornerstonejs/cornerstone3D-beta/main/packages/tools/src/utilities/touch/index.ts)
+[`touch` utilities codebase](https://github.com/cornerstonejs/cornerstone3D/main/packages/tools/src/utilities/touch/index.ts)
 
 The structure of `ITouchPoints` are the following:
 
@@ -117,7 +117,7 @@ cornerstone
 ```
 
 A full example can be found by running
-`yarn run example stackManipulationToolsTouch` whose source is [here](https://github.com/gradienthealth/cornerstone3D-beta/blob/gradienthealth/added_touch_events/packages/tools/examples/stackManipulationToolsTouch/index.ts)
+`yarn run example stackManipulationToolsTouch` whose source is [here](https://github.com/gradienthealth/cornerstone3D/blob/gradienthealth/added_touch_events/packages/tools/examples/stackManipulationToolsTouch/index.ts)
 
 ## Binding
 
