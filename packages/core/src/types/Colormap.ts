@@ -16,7 +16,7 @@ type OpacityMapping = {
 type ColormapPublic = {
   /** name of the colormap */
   name?: string;
-  opacity?: number;
+  opacity?: OpacityMapping[] | number;
   /** midpoint mapping between values to opacity if the colormap
    * is getting used for fusion, this is an array of arrays which
    * each array containing 2 values, the first value is the value
@@ -26,7 +26,6 @@ type ColormapPublic = {
    * the points in the middle to be mapped to different opacities
    * instead of a linear mapping from 0 to 1.
    */
-  opacityMapping?: OpacityMapping[];
 };
 
 export type { ColormapRegistration, ColormapPublic, OpacityMapping };

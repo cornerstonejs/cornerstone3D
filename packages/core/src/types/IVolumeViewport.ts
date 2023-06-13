@@ -18,7 +18,6 @@ export default interface IVolumeViewport extends IViewport {
    * Retrieve the viewport properties
    */
   getProperties: () => VolumeViewportProperties;
-
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
    * projected onto the plane defined by the `Viewport`'s `vtkCamera`'s focal point

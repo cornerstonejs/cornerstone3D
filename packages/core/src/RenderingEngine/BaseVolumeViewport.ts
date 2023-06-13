@@ -269,8 +269,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Sets the opacity for the volume with the given ID.
    *
-   * @param colormap -  An object containing opacity or opacityMapping properties.
-   * @param volumeId - The ID of the volume to set the opacity for for.
+   * @param colormap - An object containing opacity that can be a number or an array of OpacityMapping
+   * @param volumeId - The ID of the volume to set the opacity for.
    *
    * @returns void
    */
@@ -281,19 +281,16 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     const { volumeActor } = applicableVolumeActorInfo;
     const ofun = vtkPiecewiseFunction.newInstance();
-
-    // Set opacity using colormap.opacity if provided
-    if (colormap.opacity) {
+    if (typeof colormap.opacity === 'number') {
       const range = volumeActor
         .getProperty()
         .getRGBTransferFunction(0)
         .getRange();
+
       ofun.addPoint(range[0], colormap.opacity);
       ofun.addPoint(range[1], colormap.opacity);
-    }
-    // Set opacity using colormap.opacityMapping if provided
-    else if (colormap.opacityMapping) {
-      colormap.opacityMapping.forEach(({ opacity, value }) => {
+    } else {
+      colormap.opacity.forEach(({ opacity, value }) => {
         ofun.addPoint(value, opacity);
       });
     }
@@ -459,7 +456,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
     }
-    if (colormap?.opacity || colormap?.opacityMapping) {
+    if (colormap?.opacity != null) {
       this.setOpacity(colormap, volumeId);
     }
 
@@ -523,8 +520,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         this.VOILUTFunction === 'SIGMOID'
           ? getVoiFromSigmoidRGBTransferFunction(cfun)
-          : // @ts-ignore
-            cfun.getRange();
+          : cfun.getRange();
         return { volumeId, voiRange: { lower, upper } };
       })
       .filter(Boolean);

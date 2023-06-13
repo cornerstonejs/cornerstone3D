@@ -1,19 +1,17 @@
 import {
+  Enums,
   RenderingEngine,
   Types,
-  Enums,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
-  initDemo,
-  createImageIdsAndCacheMetaData,
-  setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
   addSliderToToolbar,
+  createImageIdsAndCacheMetaData,
+  initDemo,
+  setCtTransferFunctionForVolumeActor,
+  setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
@@ -37,8 +35,8 @@ const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume Viewport API With Multiple Volumes',
-  'Demonstrates how to interact with a Volume viewport when using fusion.'
+  'Change the colormap and adjusting the opacity',
+  'Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity.'
 );
 
 const content = document.getElementById('content');
@@ -50,22 +48,15 @@ element.style.height = '500px';
 content.appendChild(element);
 // ============================= //
 
-// TODO -> Maybe some of these implementations should be pushed down to some API
-
 // Buttons
 
 let fused = false;
 let opacity = 0;
+let renderingEngine;
+let viewport;
 addButtonToToolbar({
   title: 'toggle PET',
   onClick: async () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
     if (fused) {
       viewport.removeVolumeActors([ptVolumeId], true);
 
@@ -101,19 +92,13 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Change Colomap',
   onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
     const randomIndex = Math.floor(
       Math.random() * vtkColorMaps.rgbPresetNames.length
     );
 
     const colormapName = vtkColorMaps.rgbPresetNames[randomIndex];
 
+    // Set the colormap of the fusion viewport by specifying the desired colormap name using the 'name' property inside the 'colormap' object.
     viewport.setProperties(
       {
         colormap: {
@@ -127,21 +112,13 @@ addButtonToToolbar({
 });
 addSliderToToolbar({
   title: 'opacity',
-  step: 0.001,
+  step: 1,
   range: [0, 255],
   defaultValue: 0,
   onSelectedValueChange: (value) => {
-    const valueAsNumber = Number(value) / 255;
+    opacity = Number(value) / 255;
 
-    opacity = valueAsNumber;
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
+    // Adjust the opacity of the colormap by specifying the desired opacity value and passing it inside the 'colormap' object.
     viewport.setProperties(
       {
         colormap: {
@@ -153,20 +130,13 @@ addSliderToToolbar({
     viewport.render();
   },
 });
+
 addDropdownToToolbar({
   options: {
     values: ['axial', 'sagittal', 'coronal', 'acquisition'],
     defaultValue: 'axial',
   },
   onSelectedValueChange: (selectedValue) => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
     viewport.setOrientation(selectedValue as Enums.OrientationAxis);
   },
 });
@@ -198,9 +168,9 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
+  // Init Cornerstone and related libraries
+
   const viewportInput = {
     viewportId,
     type: ViewportType.ORTHOGRAPHIC,
@@ -211,12 +181,11 @@ async function run() {
     },
   };
 
+  renderingEngine = new RenderingEngine(renderingEngineId);
+
   renderingEngine.enableElement(viewportInput);
 
-  // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -243,5 +212,8 @@ async function run() {
 
   // Set the volume to load
   ptVolume.load();
+
+  // Set the volume to load
+  ctVolume.load();
 }
 run();
