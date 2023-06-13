@@ -92,6 +92,10 @@
       "renderToCanvas": {
         "name": "Render To Canvas",
         "description": "Demonstrates how to use the api to render to a canvas directly"
+      },
+      "changeColorMap": {
+        "name": "Change the colormap and adjusting the opacity",
+        "description": "Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity."
       }
     },
     "core-advanced": {
@@ -220,13 +224,7 @@
       "dynamicPetCt": {
         "name": "Load a petCT data where PT series is 4D",
         "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
-      },
-      "changeColorMap": {
-        "name": "Change the colormap and adjusting the opacity",
-        "description": "Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity."
-      },
-
-
+      }
     },
     "tools-advanced": {
       "mipJumpToClick": {
