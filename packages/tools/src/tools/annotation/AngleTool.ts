@@ -738,7 +738,8 @@ class AngleTool extends AnnotationTool {
       const textLines = this._getTextLines(data, targetId);
 
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        // linked to the vertex by default
+        const canvasTextBoxCoords = canvasCoordinates[1];
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);

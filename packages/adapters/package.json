@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "1.1.6",
+    "version": "1.2.1",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "src": "src/index.ts",
     "main": "./dist/@cornerstonejs/adapters.es.js",
@@ -36,9 +36,9 @@
     "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/cornerstonejs/cornerstone3D-beta/issues"
+        "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
     },
-    "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages/adapters/README.md",
+    "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "dcmjs": "^0.29.5",

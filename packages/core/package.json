@@ -1,11 +1,11 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "1.1.6",
+  "version": "1.2.1",
   "description": "",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
   "module": "dist/esm/index.js",
-  "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
     "dist/",
     "src/"
@@ -19,6 +19,7 @@
     "build:esm": "tsc --project ./tsconfig.esm.json",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
+    "clean": "shx rm -rf dist",
     "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/cjs && copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
     "build": "yarn run build:all && yarn run copy-dts",
     "api-check": "api-extractor --debug run",

@@ -57,9 +57,7 @@ function getUncompressedImageFrame(
     }
 
     return new Uint8Array(
-      dataSet.byteArray.buffer,
-      frameOffset,
-      pixelsPerFrame
+      dataSet.byteArray.buffer.slice(frameOffset, frameOffset + pixelsPerFrame)
     );
   } else if (bitsAllocated === 16) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
@@ -68,9 +66,10 @@ function getUncompressedImageFrame(
     }
 
     return new Uint8Array(
-      dataSet.byteArray.buffer,
-      frameOffset,
-      pixelsPerFrame * 2
+      dataSet.byteArray.buffer.slice(
+        frameOffset,
+        frameOffset + pixelsPerFrame * 2
+      )
     );
   } else if (bitsAllocated === 1) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 0.125;
@@ -86,9 +85,10 @@ function getUncompressedImageFrame(
     }
 
     return new Uint8Array(
-      dataSet.byteArray.buffer,
-      frameOffset,
-      pixelsPerFrame * 4
+      dataSet.byteArray.buffer.slice(
+        frameOffset,
+        frameOffset + pixelsPerFrame * 4
+      )
     );
   }
 
