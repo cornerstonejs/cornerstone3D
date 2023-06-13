@@ -518,9 +518,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         const volume = cache.getVolume(volumeId);
         if (!volume) return null;
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
-        this.VOILUTFunction === 'SIGMOID'
-          ? getVoiFromSigmoidRGBTransferFunction(cfun)
-          : cfun.getRange();
+        const [lower, upper] =
+          this.VOILUTFunction === 'SIGMOID'
+            ? getVoiFromSigmoidRGBTransferFunction(cfun)
+            : cfun.getRange();
         return { volumeId, voiRange: { lower, upper } };
       })
       .filter(Boolean);
