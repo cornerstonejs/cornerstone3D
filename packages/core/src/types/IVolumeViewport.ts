@@ -5,8 +5,7 @@ import { IVolumeInput } from './IVolumeInput';
 import FlipDirection from './FlipDirection';
 import IImageData from './IImageData';
 import { BlendModes, OrientationAxis } from '../enums';
-import { ColormapPublic, VolumeViewportProperties } from '.';
-import { OpacityMapping } from './Colormap';
+import { VolumeViewportProperties } from '.';
 
 /**
  * Interface for the Volume Viewport
