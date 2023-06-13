@@ -10,7 +10,6 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
-import Events from '../enums/Events';
 import {
   triggerEvent,
   isEqual,
@@ -48,8 +47,13 @@ import { getColormap } from './helpers/cpuFallback/colors/index';
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import InterpolationType from '../enums/InterpolationType';
-import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import {
+  InterpolationType,
+  RequestType,
+  Events,
+  CalibrationTypes,
+  VOILUTFunctionType,
+} from '../enums';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
@@ -59,7 +63,6 @@ import resize from './helpers/cpuFallback/rendering/resize';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
-import RequestType from '../enums/RequestType';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
@@ -74,7 +77,6 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
-import { CalibrationTypes } from '../enums';
 
 const EPSILON = 1; // Slice Thickness
 
