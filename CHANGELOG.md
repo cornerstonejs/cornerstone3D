@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.5...v1.2.6) (2023-06-14)
+
+### Bug Fixes
+
+- **stack:** invalidate stack if the next image is different PI ([#631](https://github.com/cornerstonejs/cornerstone3D/issues/631)) ([24ae3c9](https://github.com/cornerstonejs/cornerstone3D/commit/24ae3c975f25eaf91f0eccba69983ddd20e98ac0))
+- **types:** fix the signature of resize method ([#630](https://github.com/cornerstonejs/cornerstone3D/issues/630)) ([7b6f855](https://github.com/cornerstonejs/cornerstone3D/commit/7b6f8556bc160ae63e9069baed83fb9082d7e719))
+
 ## [1.2.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.4...v1.2.5) (2023-06-14)
 
 ### Bug Fixes
