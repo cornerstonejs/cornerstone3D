@@ -1064,7 +1064,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
+    resize(immediate?: boolean, keepCamera?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
