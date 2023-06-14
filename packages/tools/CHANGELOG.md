@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.4...v1.2.5) (2023-06-14)
+
+### Bug Fixes
+
+- **PlanarFreehandROITool:** recalculate stats upon edit ([#607](https://github.com/cornerstonejs/cornerstone3D/issues/607)) ([f193701](https://github.com/cornerstonejs/cornerstone3D/commit/f1937010c982d57aec93e66a2e3e308f851eceec))
+
 ## [1.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.3...v1.2.4) (2023-06-13)
 
 **Note:** Version bump only for package @cornerstonejs/tools
