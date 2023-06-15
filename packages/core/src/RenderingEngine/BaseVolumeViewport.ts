@@ -280,6 +280,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
     const { volumeActor } = applicableVolumeActorInfo;
+    const vtkImageData = volumeActor.getMapper().getInputData();
+    const interval = vtkImageData.getSpacing()[2];
+    /*
+     Opacity of a volume is nonlinear. Specifically in volume rendering opacity is interpreted in terms of opacity per unit distance.
+     When you need to take an interval of a volume (say 3mm of a ray) and convert that to opacity you use a power function to accumulate the opacity over the interval.
+     For example if your opacity is 0.5/mm and the interval is 3mm long then the opacity is 1.0 - pow(1.0 - 0.5, 3) or 0.875
+     https://github.com/Kitware/vtk-js/pull/2093
+     */
+    const convertOpacityToVTKOPacity = (opacity: number, interval: number) => {
+      return 1.0 - Math.pow(1.0 - opacity, interval);
+    };
     const ofun = vtkPiecewiseFunction.newInstance();
     if (typeof colormap.opacity === 'number') {
       const range = volumeActor
@@ -287,16 +298,21 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         .getRGBTransferFunction(0)
         .getRange();
 
-      ofun.addPoint(range[0], colormap.opacity);
-      ofun.addPoint(range[1], colormap.opacity);
+      ofun.addPoint(
+        range[0],
+        convertOpacityToVTKOPacity(colormap.opacity, interval)
+      );
+      ofun.addPoint(
+        range[1],
+        convertOpacityToVTKOPacity(colormap.opacity, interval)
+      );
     } else {
       colormap.opacity.forEach(({ opacity, value }) => {
-        ofun.addPoint(value, opacity);
+        ofun.addPoint(value, convertOpacityToVTKOPacity(opacity, interval));
       });
     }
     volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
-
   /**
    * Sets the inversion for the volume transfer function
    *
