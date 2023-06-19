@@ -22,6 +22,9 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 //
 const DOUBLE_CLICK_TOLERANCE_MS = 400;
 
+// This tolerance is how long to accept a secondary button down
+const MULTI_BUTTON_TOLERANCE_MS = 150;
+
 // A drag (projected distance) during the double click timeout that is greater than this
 // value will cancel the timeout and suppress any double click that might occur.
 // This tolerance is particularly important on touch devices where some movement
@@ -124,17 +127,28 @@ const doubleClickState: IDoubleClickState = {
  * @private
  */
 function mouseDownListener(evt: MouseEvent) {
-  // Ignore any mouse down during the double click timeout because only
-  // the first mouse down has the potential of being handled.
   if (doubleClickState.doubleClickTimeout) {
+    // A second identical click will be a double click event, so ignore it
+    if (evt.buttons === doubleClickState.mouseDownEvent.buttons) return;
+
+    // Record the second button or the changed button event as the initial
+    // button down state so that the multi-button event can be detected
+    doubleClickState.mouseDownEvent = evt;
+
+    // If second button is added, then ensure double click timeout is terminated
+    // and do not handle three or more button gestures.
+    _doStateMouseDownAndUp();
     return;
   }
 
-  // Only left single button click can be doubled up, so fire immediately
-  // on anything except left double click.
+  // Handle multi-button clicks by adding a delay before handling them.
+  // Double clicks (left button only) physically take the user longer, so
+  // use a longer timeout, and for multi-button at the same time, the clicks
+  // are done at the same time by the user, just the system perceives them
+  // separately, so have a short timeout to allow catching both buttons.
   doubleClickState.doubleClickTimeout = setTimeout(
     _doStateMouseDownAndUp,
-    evt.buttons === 1 ? DOUBLE_CLICK_TOLERANCE_MS : 0
+    evt.buttons === 1 ? DOUBLE_CLICK_TOLERANCE_MS : MULTI_BUTTON_TOLERANCE_MS
   );
 
   // First mouse down of a potential double click. So save it and start

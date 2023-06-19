@@ -36,6 +36,7 @@ export default function getActiveToolForKeyboardEvent(
   }
 
   const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
+  const defaultMousePrimary = toolGroup.getDefaultMousePrimary();
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];
@@ -47,7 +48,7 @@ export default function getActiveToolForKeyboardEvent(
       toolOptions.bindings.length &&
       toolOptions.bindings.some(
         (binding) =>
-          binding.mouseButton === (mouseButton ?? MouseBindings.Primary) &&
+          binding.mouseButton === (mouseButton ?? defaultMousePrimary) &&
           binding.modifierKey === modifierKey
       );
 

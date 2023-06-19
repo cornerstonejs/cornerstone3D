@@ -1343,32 +1343,29 @@
   integrity sha512-lgdvBvvNezleY+4pIe2ceUsJzlZe/0PipdeubQ3vZZOz3xxtHHMR1XFCl4fgd8gosR8COHuD7h6q+MwgrwBsng==
 
 "@cornerstonejs/core@file:packages/core":
-  version "0.44.0"
+  version "1.2.6"
   dependencies:
-    detect-gpu "^4.0.45"
+    "@kitware/vtk.js" "27.3.1"
+    detect-gpu "^5.0.22"
+    gl-matrix "^3.4.3"
     lodash.clonedeep "4.5.0"
 
 "@cornerstonejs/streaming-image-volume-loader@file:packages/streaming-image-volume-loader":
-  version "0.19.0"
+  version "1.2.6"
   dependencies:
-    "@cornerstonejs/core" "file:../../../../Library/Caches/Yarn/v6/npm-@cornerstonejs-streaming-image-volume-loader-0.19.0-56b3ab26-1faf-4ae4-a47b-7898ee629cce-1682989432248/node_modules/@cornerstonejs/core"
+    "@cornerstonejs/core" "^1.2.6"
 
 "@cornerstonejs/tools@file:packages/tools":
-  version "0.66.0"
+  version "1.2.6"
   dependencies:
-    "@cornerstonejs/core" "file:../../../../Library/Caches/Yarn/v6/npm-@cornerstonejs-tools-0.66.0-c5173da7-dda7-4e1d-bfda-01f2304936a3-1682989432249/node_modules/@cornerstonejs/core"
+    "@cornerstonejs/core" "^1.2.6"
     lodash.clonedeep "4.5.0"
     lodash.get "^4.4.2"
 
-"@cspotcode/source-map-consumer@0.8.0":
-  version "0.8.0"
-  resolved "https://registry.npmjs.org/@cspotcode/source-map-consumer/-/source-map-consumer-0.8.0.tgz#33bf4b7b39c178821606f669bbc447a6a629786b"
-  integrity sha512-41qniHzTU8yAGbCp04ohlmSrZf8bkf/iJsl3V0dRGsQN/5GFfx+LbCSsCpp2gqrqjTVg/K6O8ycoV35JIwAzAg==
-
-"@cspotcode/source-map-support@0.7.0":
-  version "0.7.0"
-  resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.7.0.tgz#4789840aa859e46d2f3173727ab707c66bf344f5"
-  integrity sha512-X4xqRHqN8ACt2aHVe51OxeA2HjbcL4MqFqXkrmQszJ1NOUuUu5u6Vqx/0lZSVNku7velL5FC/s5uEAj1lsBMhA==
+"@cspotcode/source-map-support@^0.8.0":
+  version "0.8.1"
+  resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
+  integrity sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 

@@ -85,7 +85,6 @@ function triggerVOIModified(
   const voiRange = volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
-    // @ts-ignore: vtk d ts problem
     .getRange();
 
   const voiModifiedEventDetail: VoiModifiedEventDetail = {

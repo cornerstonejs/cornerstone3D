@@ -583,7 +583,9 @@ describe('LengthTool:', () => {
           element,
           mouseDownEvt,
           mouseUpEvt,
-          addEventListenerForAnnotationRendered
+          addEventListenerForAnnotationRendered,
+          null,
+          false
         );
       });
 

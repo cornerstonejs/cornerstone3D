@@ -12,10 +12,10 @@ function isViewportPreScaled(
   if (viewport instanceof BaseVolumeViewport) {
     const volumeId = targetId.split('volumeId:')[1];
     const volume = cache.getVolume(volumeId);
-    return volume.scaling && Object.keys(volume.scaling).length > 0;
+    return !!volume?.scaling && Object.keys(volume.scaling).length > 0;
   } else if (viewport instanceof StackViewport) {
-    const { preScale } = viewport.getImageData();
-    return preScale.scaled;
+    const { preScale } = viewport.getImageData() || {};
+    return !!preScale?.scaled;
   } else {
     throw new Error('Viewport is not a valid type');
   }

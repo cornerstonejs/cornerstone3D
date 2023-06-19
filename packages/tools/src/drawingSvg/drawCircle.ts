@@ -15,11 +15,12 @@ function drawCircle(
   options = {},
   dataId = ''
 ): void {
-  const { color, fill, width, lineWidth } = Object.assign(
+  const { color, fill, width, lineWidth, lineDash } = Object.assign(
     {
       color: 'dodgerblue',
       fill: 'transparent',
       width: '2',
+      lineDash: undefined,
       lineWidth: undefined,
     },
     options
@@ -40,6 +41,7 @@ function drawCircle(
     stroke: color,
     fill,
     'stroke-width': strokeWidth,
+    'stroke-dasharray': lineDash,
   };
 
   if (existingCircleElement) {

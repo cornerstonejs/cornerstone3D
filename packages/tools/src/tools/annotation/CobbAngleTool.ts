@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
 import {
   getEnabledElement,
@@ -381,6 +382,52 @@ class CobbAngleTool extends AnnotationTool {
     this.isDrawing = false;
   };
 
+  /**
+   * Handles the mouse down for all points that follow the very first mouse down.
+   * The very first mouse down is handled by addAnnotation.
+   * This method ensures that the state of the tool is correct for the drawing of the second line segment.
+   * In particular it ensures that the second segment can be created via a mouse down and drag.
+   */
+  _mouseDownCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
+    const { annotation, handleIndex } = this.editData;
+    const eventDetail = evt.detail;
+    const { element, currentPoints } = eventDetail;
+    const worldPos = currentPoints.world;
+    const { data } = annotation;
+
+    if (handleIndex === 1) {
+      // This is the mouse down for the second point of the first segment.
+      // The mouse up takes care of adding the first point of the second segment.
+      data.handles.points[1] = worldPos;
+      this.editData.hasMoved =
+        data.handles.points[1][0] !== data.handles.points[0][0] ||
+        data.handles.points[1][1] !== data.handles.points[0][0];
+      return;
+    }
+
+    if (handleIndex === 3) {
+      // This is the mouse down for the second point of the second segment (i.e. the last point)
+      data.handles.points[3] = worldPos;
+      this.editData.hasMoved =
+        data.handles.points[3][0] !== data.handles.points[2][0] ||
+        data.handles.points[3][1] !== data.handles.points[2][0];
+
+      this.angleStartedNotYetCompleted = false;
+      return;
+    }
+
+    // This is the first mouse down of the first point of the second line segment.
+    // It is as if we have not moved yet because Cobb Angle has two, disjoint sections, each with its own move.
+    this.editData.hasMoved = false;
+    hideElementCursor(element);
+
+    // Add the last segment points for the subsequent drag/mouse move.
+    data.handles.points[2] = data.handles.points[3] = worldPos;
+    this.editData.handleIndex = data.handles.points.length - 1;
+  };
+
   _mouseDragCallback = (
     evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
   ) => {
@@ -532,6 +579,10 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._mouseUpCallback as EventListener
     );
+    element.addEventListener(
+      Events.MOUSE_DOWN,
+      this._mouseDownCallback as EventListener
+    );
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
@@ -555,6 +606,10 @@ class CobbAngleTool extends AnnotationTool {
     element.removeEventListener(
       Events.MOUSE_CLICK,
       this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DOWN,
+      this._mouseDownCallback as EventListener
     );
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
@@ -775,20 +830,40 @@ class CobbAngleTool extends AnnotationTool {
       return;
     }
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
-    const worldPos3 = data.handles.points[2];
-    const worldPos4 = data.handles.points[3];
+    const seg1: [Types.Point3, Types.Point3] = [null, null];
+    const seg2: [Types.Point3, Types.Point3] = [null, null];
+    let minDist = Number.MAX_VALUE;
+
+    // Order the endpoints of each line segment such that seg1[1] and seg2[0]
+    // are the closest (Euclidean distance-wise) to each other. Thus
+    // the angle formed between the vectors seg1[1]->seg1[0] and seg2[0]->seg[1]
+    // is calculated.
+    // The assumption here is that the Cobb angle line segments are drawn
+    // such that the segments intersect nearest the segment endpoints
+    // that are closest AND those closest endpoints are the tails of the
+    // vectors used to calculate the angle between the vectors/line segments.
+    for (let i = 0; i < 2; i += 1) {
+      for (let j = 2; j < 4; j += 1) {
+        const dist = vec3.distance(
+          data.handles.points[i],
+          data.handles.points[j]
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          seg1[1] = data.handles.points[i];
+          seg1[0] = data.handles.points[(i + 1) % 2];
+          seg2[0] = data.handles.points[j];
+          seg2[1] = data.handles.points[2 + ((j - 1) % 2)];
+        }
+      }
+    }
 
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const angle = angleBetweenLines(
-        [worldPos1, worldPos2],
-        [worldPos3, worldPos4]
-      );
+      const angle = angleBetweenLines(seg1, seg2);
 
       cachedStats[targetId] = {
         angle,

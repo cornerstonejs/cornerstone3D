@@ -201,7 +201,7 @@ function _stopClip(element: HTMLDivElement, stopDynamicCine: boolean): void {
     _stopClipWithData(cineToolData);
   }
 
-  if (stopDynamicCine) {
+  if (stopDynamicCine && viewport instanceof BaseVolumeViewport) {
     _stopDynamicVolumeCine(element);
   }
 }

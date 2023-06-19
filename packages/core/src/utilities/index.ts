@@ -24,7 +24,8 @@ import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContain
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
 import loadImageToCanvas from './loadImageToCanvas';
-import renderToCanvas from './renderToCanvas';
+import renderToCanvasCPU from './renderToCanvasCPU';
+import renderToCanvasGPU from './renderToCanvasGPU';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
 import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
@@ -43,10 +44,13 @@ import applyPreset from './applyPreset';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
+import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
+import getImageLegacy from './getImageLegacy';
 
 // name spaces
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
+import * as colormap from './colormap';
 
 export {
   csUtils as invertRgbTransferFunction,
@@ -77,7 +81,8 @@ export {
   getViewportsWithVolumeId,
   transformWorldToIndex,
   loadImageToCanvas,
-  renderToCanvas,
+  renderToCanvasCPU,
+  renderToCanvasGPU,
   worldToImageCoords,
   imageToWorldCoords,
   getVolumeSliceRangeInfo,
@@ -86,6 +91,7 @@ export {
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
   isImageActor,
+  isPTPrescaledWithSUV,
   actorIsA,
   getViewportsWithImageURI,
   getClosestStackImageIndexForPoint,
@@ -97,4 +103,6 @@ export {
   deepMerge,
   getScalingParameters,
   getScalarDataType,
+  colormap,
+  getImageLegacy,
 };
