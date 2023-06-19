@@ -159,5 +159,8 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "dependencies": {}
+  "dependencies": {},
+  "resolutions": {
+    "canvas": "2.11.2"
+  }
 }

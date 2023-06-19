@@ -138,8 +138,6 @@ enum CalibrationTypes {
     // (undocumented)
     REGION = "Region",
     // (undocumented)
-    UNKNOWN = "Unknown",
-    // (undocumented)
     USER = "User"
 }
 
@@ -1152,9 +1150,11 @@ interface IImageCalibration {
     // (undocumented)
     isProjection?: boolean;
     // (undocumented)
-    PixelSpacing: [number, number];
+    pixelSpacing: [number, number];
     // (undocumented)
-    SequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    // (undocumented)
+    tooltip?: string;
     // (undocumented)
     type: CalibrationTypes;
 }
