@@ -244,9 +244,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     mapper.setSampleDistance(1.0);
 
     const cfun = vtkColorTransferFunction.newInstance();
-    let colormapObj = colormapUtils.getColormap(colormap);
+    let colormapObj = colormapUtils.getColormap(colormap.name);
 
-    const { name, opacityMapping } = colormap;
+    const { name } = colormap;
 
     if (!colormapObj) {
       colormapObj = vtkColorMaps.getPresetByName(name);
@@ -264,20 +264,37 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     cfun.applyColorMap(colormapObj);
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+  }
 
-    const ofun = vtkPiecewiseFunction.newInstance();
-    ofun.addPoint(range[0], 0.0);
-    ofun.addPoint(range[1], 1.0);
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
-
-    if (!opacityMapping) {
+  /**
+   * Sets the opacity for the volume with the given ID.
+   *
+   * @param colormap - An object containing opacity that can be a number or an array of OpacityMapping
+   * @param volumeId - The ID of the volume to set the opacity for.
+   *
+   * @returns void
+   */
+  private setOpacity(colormap: ColormapPublic, volumeId: string) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+    if (!applicableVolumeActorInfo) {
       return;
     }
+    const { volumeActor } = applicableVolumeActorInfo;
+    const ofun = vtkPiecewiseFunction.newInstance();
+    if (typeof colormap.opacity === 'number') {
+      const range = volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        .getRange();
 
-    // add custom opacity points
-    opacityMapping.forEach(({ opacity, value }) => {
-      ofun.addPoint(value, opacity);
-    });
+      ofun.addPoint(range[0], colormap.opacity);
+      ofun.addPoint(range[1], colormap.opacity);
+    } else {
+      colormap.opacity.forEach(({ opacity, value }) => {
+        ofun.addPoint(value, opacity);
+      });
+    }
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
 
   /**
@@ -435,8 +452,12 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   ): void {
     // Note: colormap should always be done first, since we can then
     // modify the voiRange
-    if (colormap !== undefined) {
+
+    if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
+    }
+    if (colormap?.opacity != null) {
+      this.setOpacity(colormap, volumeId);
     }
 
     if (voiRange !== undefined) {
@@ -500,8 +521,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         const [lower, upper] =
           this.VOILUTFunction === 'SIGMOID'
             ? getVoiFromSigmoidRGBTransferFunction(cfun)
-            : // @ts-ignore
-              cfun.getRange();
+            : cfun.getRange();
         return { volumeId, voiRange: { lower, upper } };
       })
       .filter(Boolean);
@@ -599,7 +619,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
       );
     }
-
     const volumeActors = [];
 
     await this._isValidVolumeInputArray(

@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.5...v1.2.6) (2023-06-14)
+
+### Bug Fixes
+
+- **stack:** invalidate stack if the next image is different PI ([#631](https://github.com/cornerstonejs/cornerstone3D/issues/631)) ([24ae3c9](https://github.com/cornerstonejs/cornerstone3D/commit/24ae3c975f25eaf91f0eccba69983ddd20e98ac0))
+- **types:** fix the signature of resize method ([#630](https://github.com/cornerstonejs/cornerstone3D/issues/630)) ([7b6f855](https://github.com/cornerstonejs/cornerstone3D/commit/7b6f8556bc160ae63e9069baed83fb9082d7e719))
+
+## [1.2.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.4...v1.2.5) (2023-06-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.3...v1.2.4) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.2...v1.2.3) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.1...v1.2.2) (2023-06-13)
+
+### Bug Fixes
+
+- **colormap:** adding new Method to set the opacity of the colormap ([#649](https://github.com/cornerstonejs/cornerstone3D/issues/649)) ([d7e5430](https://github.com/cornerstonejs/cornerstone3D/commit/d7e54301e6e4e7cde6b3a087543b772943884bfa))
+
 ## [1.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.0...v1.2.1) (2023-06-13)
 
 **Note:** Version bump only for package @cornerstonejs/core

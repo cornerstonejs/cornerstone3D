@@ -229,8 +229,11 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
 
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = false;
+  const { textBox } = annotation.data.handles;
 
-  this.triggerAnnotationCompleted(annotation);
+  if (!textBox.hasMoved) {
+    this.triggerAnnotationCompleted(annotation);
+  }
 
   this.isDrawing = false;
   this.drawData = undefined;
@@ -296,6 +299,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
 
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = true;
+  const { textBox } = annotation.data.handles;
 
   // Add the first and last points to the list of handles. These means they
   // will render handles on mouse hover.
@@ -310,7 +314,9 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
       findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
   }
 
-  this.triggerAnnotationCompleted(annotation);
+  if (!textBox.hasMoved) {
+    this.triggerAnnotationCompleted(annotation);
+  }
 
   this.isDrawing = false;
   this.drawData = undefined;

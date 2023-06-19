@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.5...v1.2.6) (2023-06-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.2.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.4...v1.2.5) (2023-06-14)
+
+### Bug Fixes
+
+- **PlanarFreehandROITool:** recalculate stats upon edit ([#607](https://github.com/cornerstonejs/cornerstone3D/issues/607)) ([f193701](https://github.com/cornerstonejs/cornerstone3D/commit/f1937010c982d57aec93e66a2e3e308f851eceec))
+
+## [1.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.3...v1.2.4) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.2...v1.2.3) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.1...v1.2.2) (2023-06-13)
+
+### Bug Fixes
+
+- **colormap:** adding new Method to set the opacity of the colormap ([#649](https://github.com/cornerstonejs/cornerstone3D/issues/649)) ([d7e5430](https://github.com/cornerstonejs/cornerstone3D/commit/d7e54301e6e4e7cde6b3a087543b772943884bfa))
+
 ## [1.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.0...v1.2.1) (2023-06-13)
 
 **Note:** Version bump only for package @cornerstonejs/tools
