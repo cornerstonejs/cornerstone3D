@@ -288,9 +288,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      For example if your opacity is 0.5/mm and the interval is 3mm long then the opacity is 1.0 - pow(1.0 - 0.5, 3) or 0.875
      https://github.com/Kitware/vtk-js/pull/2093
      */
-    const convertOpacityToVTKOPacity = (opacity: number, interval: number) => {
-      return 1.0 - Math.pow(1.0 - opacity, interval);
-    };
+
     const ofun = vtkPiecewiseFunction.newInstance();
     if (typeof colormap.opacity === 'number') {
       const range = volumeActor
@@ -300,19 +298,26 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
       ofun.addPoint(
         range[0],
-        convertOpacityToVTKOPacity(colormap.opacity, interval)
+        this.convertOpacityToVTKOPacity(colormap.opacity, interval)
       );
       ofun.addPoint(
         range[1],
-        convertOpacityToVTKOPacity(colormap.opacity, interval)
+        this.convertOpacityToVTKOPacity(colormap.opacity, interval)
       );
     } else {
       colormap.opacity.forEach(({ opacity, value }) => {
-        ofun.addPoint(value, convertOpacityToVTKOPacity(opacity, interval));
+        ofun.addPoint(
+          value,
+          this.convertOpacityToVTKOPacity(opacity, interval)
+        );
       });
     }
     volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
+
+  private convertOpacityToVTKOPacity = (opacity: number, interval: number) => {
+    return 1.0 - Math.pow(1.0 - opacity, interval);
+  };
   /**
    * Sets the inversion for the volume transfer function
    *
