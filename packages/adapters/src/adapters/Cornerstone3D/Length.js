@@ -77,13 +77,14 @@ class Length {
         const point1 = { x: start[0], y: start[1] };
         const point2 = { x: end[0], y: end[1] };
 
-        const { length: distance } =
+        const { length: distance, unit } =
             cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             point1,
             point2,
             distance,
+            unit,
             trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []

@@ -7,6 +7,7 @@
         "streaming-image-volume-loader/src"
       ],
       "@cornerstonejs/core": ["core/src"],
+      "@cornerstonejs/adapters": ["adapters/src"],
       "@cornerstonejs/tools": ["tools/src"],
       "@cornerstonejs/dicomImageLoader": ["dicomImageLoader/src"],
     }

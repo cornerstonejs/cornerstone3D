@@ -97,13 +97,20 @@ class CircleROI {
         points.push({ x: center[0], y: center[1] });
         points.push({ x: end[0], y: end[1] });
 
-        const { area, radius } =
-            cachedStats[`imageId:${referencedImageId}`] || {};
+        const {
+            area,
+            radius,
+            areaUnit = "mm\xB2"
+        } = cachedStats[`imageId:${referencedImageId}`] || {};
         const perimeter = 2 * Math.PI * radius;
+
+        const unit = areaUnit !== "mm\xB2" ? "px" : "mm";
 
         return {
             area,
+            areaUnit,
             perimeter,
+            unit,
             radius,
             points,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
