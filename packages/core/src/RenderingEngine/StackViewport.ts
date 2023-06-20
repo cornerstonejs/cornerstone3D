@@ -1810,7 +1810,10 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
-        if (this.csImage?.imageFrame.photometricInterpretation !== image.imageFrame.photometricInterpretation) {
+        if (
+          this.csImage?.imageFrame?.photometricInterpretation !==
+          image?.imageFrame?.photometricInterpretation
+        ) {
           this.stackInvalidated = true;
         }
 
@@ -2077,6 +2080,10 @@ class StackViewport extends Viewport implements IStackViewport {
     const actor = this.createActorMapper(this._imageData);
     const actors = [];
     actors.push({ uid: this.id, actor });
+    const oldActors = this.getActors();
+    for (let i = 1; i < oldActors.length; i++) {
+      actors.push(oldActors[i]);
+    }
     this.setActors(actors);
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)

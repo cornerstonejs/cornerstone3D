@@ -1,3 +1,4 @@
+import cache from '../cache';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
@@ -1071,6 +1072,12 @@ class Viewport implements IViewport {
     } else {
       const renderer = this.getRenderer();
       renderer.resetCameraClippingRange();
+      const actors = this.getActors();
+      if (actors.length > 1) {
+        for (let i = 1; i < actors.length; i++) {
+          this.updateVolumeActors(updatedCamera, actors[i]);
+        }
+      }
     }
 
     if (storeAsInitialCamera) {
@@ -1103,6 +1110,65 @@ class Viewport implements IViewport {
       };
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+    }
+  }
+
+  /**
+   * Updates the volume actors actors clipping planes orientation from the
+   * volume normal vector direction
+   * @param updatedCamera
+   * @param actorEntry
+   * @returns
+   */
+  protected updateVolumeActors(
+    updatedCamera: ICamera,
+    actorEntry: ActorEntry
+  ): void {
+    // we assume that the first two clipping plane of the mapper are always
+    // the 'camera' clipping. Update clipping planes only if the actor is
+    // a vtkVolume
+    if (!actorEntry.actor) {
+      return;
+    }
+
+    const mapper = actorEntry.actor.getMapper();
+    const vtkPlanes = mapper.getClippingPlanes();
+    let slabThickness = undefined; //RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+    if (actorEntry.slabThickness) {
+      slabThickness = actorEntry.slabThickness;
+    }
+
+    if (slabThickness) {
+      const { viewPlaneNormal, focalPoint } = updatedCamera;
+      const volume = cache.getVolume(actorEntry.uid);
+      const direction = volume?.direction;
+
+      const normal = direction ? direction.slice(6, 9) : viewPlaneNormal;
+
+      if (vtkPlanes.length === 0) {
+        const clipPlane1 = vtkPlane.newInstance();
+        const clipPlane2 = vtkPlane.newInstance();
+        const newVtkPlanes = [clipPlane1, clipPlane2];
+
+        this.setOrientationOfClippingPlanes(
+          newVtkPlanes,
+          slabThickness,
+          normal,
+          focalPoint
+        );
+
+        mapper.addClippingPlane(clipPlane1);
+        mapper.addClippingPlane(clipPlane2);
+      } else {
+        this.setOrientationOfClippingPlanes(
+          vtkPlanes,
+          slabThickness,
+          normal,
+          focalPoint
+        );
+      }
+    } else {
+      mapper.removeAllClippingPlanes();
     }
   }
 

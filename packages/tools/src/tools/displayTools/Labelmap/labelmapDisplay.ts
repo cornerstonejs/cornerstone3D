@@ -176,7 +176,7 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
  * @param configuration - The configuration object for the labelmap.
  */
 async function render(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
   representation: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {
@@ -487,7 +487,7 @@ function _removeLabelmapFromToolGroupViewports(
 }
 
 async function _addLabelmapToViewport(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {
