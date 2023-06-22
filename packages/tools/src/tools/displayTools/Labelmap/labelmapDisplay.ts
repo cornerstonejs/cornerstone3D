@@ -6,6 +6,7 @@ import {
   getEnabledElementByIds,
   Types,
   utilities,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
@@ -229,6 +230,7 @@ async function render(
     toolGroupConfig.renderInactiveSegmentations;
 
   _setLabelmapColorAndOpacity(
+    viewport instanceof VolumeViewport,
     viewport.id,
     actorEntry,
     cfun,
@@ -243,6 +245,7 @@ async function render(
 }
 
 function _setLabelmapColorAndOpacity(
+  isVolumeViewport: boolean,
   viewportId: string,
   actorEntry: Types.ActorEntry,
   cfun: vtkColorTransferFunction,
@@ -331,8 +334,9 @@ function _setLabelmapColorAndOpacity(
 
   volumeActor.getProperty().setInterpolationTypeToNearest();
 
-  volumeActor.getProperty().setUseLabelOutline(renderOutline);
-
+  if (isVolumeViewport) {
+    volumeActor.getProperty().setUseLabelOutline(renderOutline);
+  }
   // @ts-ignore: setLabelOutlineWidth is not in the vtk.d.ts apparently
   volumeActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
   volumeActor.getProperty().setLabelOutlineThickness(outlineWidth);
