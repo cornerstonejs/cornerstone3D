@@ -1,4 +1,4 @@
-import { ByteArray, DataSet } from 'dicom-parser';
+import { ByteArray, DataSet, ByteStream, readSequenceItem } from 'dicom-parser';
 import external from '../../externalModules';
 
 /**
@@ -46,9 +46,44 @@ export default function getEncapsulatedImageFrame(
     );
   }
 
-  return dicomParser.readEncapsulatedPixelDataFromFragments(
-    dataSet,
-    dataSet.elements.x7fe00010,
-    frameIndex
+  // Here it means numFragments = 1;
+  const fragments = dataSet.elements.x7fe00010.fragments;
+
+  // the following code is pretty much a duplicate of the logic here
+  // https://github.com/cornerstonejs/dicomParser/blob/master/src/readEncapsulatedPixelDataFromFragments.js
+
+  // create byte stream on the data for this pixel data element
+  const byteStream = new ByteStream(
+    dataSet.byteArrayParser,
+    dataSet.byteArray,
+    dataSet.elements.x7fe00010.dataOffset
+  );
+
+  // seek past the basic offset table (no need to parse it again since we already have)
+  const basicOffsetTable = readSequenceItem(byteStream);
+
+  if (basicOffsetTable.tag !== 'xfffee000') {
+    throw 'dicomParser.readEncapsulatedPixelData: missing basic offset table xfffee000';
+  }
+
+  byteStream.seek(basicOffsetTable.length);
+
+  const fragmentZeroPosition = byteStream.position;
+
+  // tag + length
+  const fragmentHeaderSize = 8;
+  const byteOffset =
+    fragmentZeroPosition + fragments[frameIndex].offset + fragmentHeaderSize;
+  const length = fragments[frameIndex].length;
+
+  // Grab ONLY the portion of the byteArray containing the frame for decoding since
+  // it will be impossible to decode the entire image everytime (this return will go
+  // to the decodeImageFrame function in cornerstoneWADOImageLoader which runs in a
+  // web worker)
+  return new Uint8Array(
+    byteStream.byteArray.buffer.slice(
+      byteStream.byteArray.byteOffset + byteOffset,
+      byteStream.byteArray.byteOffset + byteOffset + length
+    )
   );
 }
