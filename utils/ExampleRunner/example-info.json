@@ -92,12 +92,20 @@
       "renderToCanvas": {
         "name": "Render To Canvas",
         "description": "Demonstrates how to use the api to render to a canvas directly"
+      },
+      "changeColorMap": {
+        "name": "Change the colormap and adjusting the opacity",
+        "description": "Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity."
       }
     },
     "core-advanced": {
       "volumePriorityLoading": {
         "name": "Prioritizing Slices during Volume Loading",
         "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
+      },
+      "programaticPanZoom": {
+        "name": "Programmatic Pan/Zoom",
+        "description": "Demonstrates how to programmatically pan/zoom a stack viewport. It can be used for setting initial display area and presentation state."
       }
     },
     "tools-basic": {

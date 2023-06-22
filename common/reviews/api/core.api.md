@@ -157,8 +157,8 @@ declare namespace colormap {
 
 // @public (undocumented)
 type ColormapPublic = {
-    name: string;
-    opacityMapping?: OpacityMapping[];
+    name?: string;
+    opacity?: OpacityMapping[] | number;
 };
 
 // @public (undocumented)
@@ -283,40 +283,8 @@ interface CPUFallbackEnabledElement {
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
-        imagePlaneModule?: {
-            frameOfReferenceUID: string;
-            rows: number;
-            columns: number;
-            imageOrientationPatient: number[];
-            rowCosines: Point3;
-            columnCosines: Point3;
-            imagePositionPatient: number[];
-            sliceThickness?: number;
-            sliceLocation?: number;
-            pixelSpacing: Point2;
-            rowPixelSpacing: number;
-            columnPixelSpacing: number;
-        };
-        imagePixelModule?: {
-            samplesPerPixel: number;
-            photometricInterpretation: string;
-            rows: number;
-            columns: number;
-            bitsAllocated: number;
-            bitsStored: number;
-            highBit: number;
-            pixelRepresentation: number;
-            planarConfiguration?: number;
-            pixelAspectRatio?: number;
-            smallestPixelValue?: number;
-            largestPixelValue?: number;
-            redPaletteColorLookupTableDescriptor?: number[];
-            greenPaletteColorLookupTableDescriptor?: number[];
-            bluePaletteColorLookupTableDescriptor?: number[];
-            redPaletteColorLookupTableData: number[];
-            greenPaletteColorLookupTableData: number[];
-            bluePaletteColorLookupTableData: number[];
-        };
+        imagePlaneModule?: ImagePlaneModule;
+        imagePixelModule?: ImagePixelModule;
     };
     // (undocumented)
     needsRedraw?: boolean;
@@ -466,7 +434,7 @@ type CPUIImageData = {
     metadata: {
         Modality: string;
     };
-    scalarData: number[];
+    scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
     preScale?: {
@@ -488,7 +456,7 @@ type CPUImageData = {
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
     getDirection?: () => Mat3;
-    getScalarData?: () => number[];
+    getScalarData?: () => PixelDataTypedArray;
     getDimensions?: () => Point3;
 };
 
@@ -742,7 +710,7 @@ enum GeometryType {
 }
 
 // @public (undocumented)
-function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3, viewUp: Point3): string;
+function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
 
 // @public (undocumented)
 function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
@@ -764,6 +732,9 @@ export function getEnabledElementByIds(viewportId: string, renderingEngineId: st
 
 // @public (undocumented)
 export function getEnabledElements(): IEnabledElement[];
+
+// @public (undocumented)
+function getImageLegacy(element: HTMLDivElement): Types.IImage | undefined;
 
 // @public (undocumented)
 function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
@@ -1342,6 +1313,58 @@ type ImageLoadProgressEventDetail = {
 };
 
 // @public (undocumented)
+interface ImagePixelModule {
+    // (undocumented)
+    bitsAllocated: number;
+    // (undocumented)
+    bitsStored: number;
+    // (undocumented)
+    highBit: number;
+    // (undocumented)
+    modality: string;
+    // (undocumented)
+    photometricInterpretation: string;
+    // (undocumented)
+    pixelRepresentation: string;
+    // (undocumented)
+    samplesPerPixel: number;
+    // (undocumented)
+    voiLUTFunction: VOILUTFunctionType;
+    // (undocumented)
+    windowCenter: number | number[];
+    // (undocumented)
+    windowWidth: number | number[];
+}
+
+// @public (undocumented)
+interface ImagePlaneModule {
+    // (undocumented)
+    columnCosines?: Point3;
+    // (undocumented)
+    columnPixelSpacing?: number;
+    // (undocumented)
+    columns: number;
+    // (undocumented)
+    frameOfReferenceUID: string;
+    // (undocumented)
+    imageOrientationPatient?: Float32Array;
+    // (undocumented)
+    imagePositionPatient?: Point3;
+    // (undocumented)
+    pixelSpacing?: Point2;
+    // (undocumented)
+    rowCosines?: Point3;
+    // (undocumented)
+    rowPixelSpacing?: number;
+    // (undocumented)
+    rows: number;
+    // (undocumented)
+    sliceLocation?: number;
+    // (undocumented)
+    sliceThickness?: number;
+}
+
+// @public (undocumented)
 type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public (undocumented)
@@ -1509,7 +1532,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
+    resize(immediate?: boolean, keepCamera?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
@@ -1545,6 +1568,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
+    getCornerstoneImage: () => IImage;
+    // (undocumented)
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
@@ -1575,7 +1600,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setCamera(cameraInterface: ICamera): void;
     // (undocumented)
-    setColormap(colormap: CPUFallbackColormapData): void;
+    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
@@ -1908,6 +1933,9 @@ type OrientationVectors = {
     viewUp: Point3;
 };
 
+// @public (undocumented)
+type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
+
 declare namespace planar {
     export {
         linePlaneIntersection,
@@ -2189,6 +2217,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getCamera: () => ICamera;
     // (undocumented)
+    getCornerstoneImage: () => IImage;
+    // (undocumented)
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
@@ -2233,7 +2263,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setCamera: (cameraInterface: ICamera, storeAsInitialCamera?: boolean) => void;
     // (undocumented)
-    setColormap: (colormap: CPUFallbackColormapData) => void;
+    setColormap: (colormap: CPUFallbackColormapData | ColormapRegistration) => void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
@@ -2383,7 +2413,10 @@ declare namespace Types {
         IContour,
         RGB,
         ColormapPublic,
-        ColormapRegistration
+        ColormapRegistration,
+        PixelDataTypedArray,
+        ImagePixelModule,
+        ImagePlaneModule
     }
 }
 export { Types }
@@ -2443,7 +2476,8 @@ declare namespace utilities {
         deepMerge,
         getScalingParameters,
         getScalarDataType,
-        colormap
+        colormap,
+        getImageLegacy
     }
 }
 export { utilities }

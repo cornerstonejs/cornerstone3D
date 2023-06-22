@@ -729,7 +729,7 @@ class LengthTool extends AnnotationTool {
 
       const textLines = this._getTextLines(data, targetId);
 
-      // Need to update to sync w/ annotation while unlinked/not moved
+      // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
         const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
 

@@ -7,6 +7,8 @@ import Point2 from './Point2';
 import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
+import { ColormapRegistration } from './Colormap';
+import IImage from './IImage';
 
 /**
  * Interface for Stack Viewport
@@ -84,6 +86,10 @@ export default interface IStackViewport extends IViewport {
    */
   getImageData(): IImageData | CPUIImageData;
   /**
+   * Returns the raw/loaded image being shown inside the stack viewport.
+   */
+  getCornerstoneImage: () => IImage;
+  /**
    * Reset the viewport properties to the default values
    */
   resetProperties(): void;
@@ -130,7 +136,7 @@ export default interface IStackViewport extends IViewport {
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  setColormap(colormap: CPUFallbackColormapData): void;
+  setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
   /**
    * It sets the colormap to the default colormap.
    */

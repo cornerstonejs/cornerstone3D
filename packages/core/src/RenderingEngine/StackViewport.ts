@@ -6,6 +6,7 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -39,6 +40,7 @@ import {
   IStackViewport,
   VolumeActor,
   Mat3,
+  ColormapRegistration,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -67,21 +69,13 @@ import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+import {
+  PixelDataTypedArray,
+  ImagePixelModule,
+  ImagePlaneModule,
+} from '../types';
 
 const EPSILON = 1; // Slice Thickness
-
-interface ImagePixelModule {
-  bitsAllocated: number;
-  bitsStored: number;
-  samplesPerPixel: number;
-  highBit: number;
-  photometricInterpretation: string;
-  pixelRepresentation: string;
-  windowWidth: number | number[];
-  windowCenter: number | number[];
-  voiLUTFunction: VOILUTFunctionType;
-  modality: string;
-}
 
 interface ImageDataMetaData {
   bitsAllocated: number;
@@ -91,25 +85,9 @@ interface ImageDataMetaData {
   dimensions: Point3;
   spacing: Point3;
   numVoxels: number;
-  imagePlaneModule: unknown;
+  imagePlaneModule: ImagePlaneModule;
   imagePixelModule: ImagePixelModule;
 }
-
-interface ImagePlaneModule {
-  columnCosines?: Point3;
-  columnPixelSpacing?: number;
-  imageOrientationPatient?: Float32Array;
-  imagePositionPatient?: Point3;
-  pixelSpacing?: Point2;
-  rowCosines?: Point3;
-  rowPixelSpacing?: number;
-  sliceLocation?: number;
-  sliceThickness?: number;
-  frameOfReferenceUID: string;
-  columns: number;
-  rows: number;
-}
-
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
   rowScale: number;
@@ -162,7 +140,7 @@ class StackViewport extends Viewport implements IStackViewport {
   // yet widely supported in all hardwares. This feature can be turned on
   // by setting useNorm16Texture or preferSizeOverAccuracy in the configuration
   private useNativeDataType = false;
-  private cpuImagePixelData: number[];
+  private cpuImagePixelData: PixelDataTypedArray;
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
 
@@ -267,7 +245,9 @@ class StackViewport extends Viewport implements IStackViewport {
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  public setColormap: (colormap: CPUFallbackColormapData) => void;
+  public setColormap: (
+    colormap: CPUFallbackColormapData | ColormapRegistration
+  ) => void;
 
   /**
    * If the user has selected CPU rendering, return the CPU camera, otherwise
@@ -502,6 +482,13 @@ class StackViewport extends Viewport implements IStackViewport {
     // annotations made on VolumeViewports back to StackViewports
     // and vice versa
     return imagePlaneModule.frameOfReferenceUID;
+  };
+
+  /**
+   * Returns the raw/loaded image being shown inside the stack viewport.
+   */
+  public getCornerstoneImage = (): IImage => {
+    return this.csImage;
   };
 
   /**
@@ -1494,6 +1481,8 @@ class StackViewport extends Viewport implements IStackViewport {
     imageIds: Array<string>,
     currentImageIdIndex = 0
   ): Promise<string> {
+    this._throwIfDestroyed();
+
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
@@ -1525,6 +1514,19 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
 
     return imageId;
+  }
+
+  /**
+   * Throws an error if you are using a destroyed instance of the stack viewport
+   */
+  private _throwIfDestroyed() {
+    if (this.isDisabled) {
+      throw new Error(
+        'The stack viewport has been destroyed and is no longer usable. Renderings will not be performed. If you ' +
+          'are using the same viewportId and have re-enabled the viewport, you need to grab the new viewport instance ' +
+          'using renderingEngine.getViewport(viewportId), instead of using your lexical scoped reference to the viewport instance.'
+      );
+    }
   }
 
   /**
@@ -1724,49 +1726,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
-        const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
-
-        const viewport = getDefaultViewport(
-          this.canvas,
-          image,
-          this.modality,
-          this._cpuFallbackEnabledElement.viewport.colormap
-        );
-
-        const { windowCenter, windowWidth } = viewport.voi;
-        this.voiRange = windowLevelUtil.toLowHighRange(
-          windowWidth,
-          windowCenter
-        );
-
-        this._cpuFallbackEnabledElement.image = image;
-        this._cpuFallbackEnabledElement.metadata = {
-          ...metadata,
-        };
-        this.cpuImagePixelData = image.getPixelData();
-
-        const viewportSettingToUse = Object.assign(
-          {},
-          viewport,
-          this._cpuFallbackEnabledElement.viewport
-        );
-
-        // Important: this.stackInvalidated is different than cpuRenderingInvalidated. The
-        // former is being used to maintain the previous state of the viewport
-        // in the same stack, the latter is used to trigger drawImageSync
-        this._cpuFallbackEnabledElement.viewport = this.stackInvalidated
-          ? viewport
-          : viewportSettingToUse;
-
-        // used the previous state of the viewport, then stackInvalidated is set to false
-        this.stackInvalidated = false;
-
-        // new viewport is set to the current viewport, then cpuRenderingInvalidated is set to true
-        this.cpuRenderingInvalidated = true;
-
-        this._cpuFallbackEnabledElement.transform = calculateTransform(
-          this._cpuFallbackEnabledElement
-        );
+        this._updateToDisplayImageCPU(image);
 
         // Todo: trigger an event to allow applications to hook into END of loading state
         // Currently we use loadHandlerManagers for this
@@ -1847,6 +1807,11 @@ class StackViewport extends Viewport implements IStackViewport {
         // In that case, do not render this image.
         if (this.currentImageIdIndex !== imageIdIndex) {
           return;
+        }
+
+        //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
+        if (this.csImage?.imageFrame.photometricInterpretation !== image.imageFrame.photometricInterpretation) {
+          this.stackInvalidated = true;
         }
 
         this._setCSImage(image);
@@ -1949,13 +1914,61 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public renderImageObject = (image) => {
     this._setCSImage(image);
-    this._updateActorToDisplayImageId(image);
+
+    const renderFn = this.useCPURendering
+      ? this._updateToDisplayImageCPU
+      : this._updateActorToDisplayImageId;
+
+    renderFn.call(this, image);
   };
 
   private _setCSImage = (image) => {
     image.isPreScaled = image.preScale?.scaled;
     this.csImage = image;
   };
+
+  private _updateToDisplayImageCPU(image: IImage) {
+    const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
+
+    const viewport = getDefaultViewport(
+      this.canvas,
+      image,
+      this.modality,
+      this._cpuFallbackEnabledElement.viewport.colormap
+    );
+
+    const { windowCenter, windowWidth } = viewport.voi;
+    this.voiRange = windowLevelUtil.toLowHighRange(windowWidth, windowCenter);
+
+    this._cpuFallbackEnabledElement.image = image;
+    this._cpuFallbackEnabledElement.metadata = {
+      ...metadata,
+    };
+    this.cpuImagePixelData = image.getPixelData();
+
+    const viewportSettingToUse = Object.assign(
+      {},
+      viewport,
+      this._cpuFallbackEnabledElement.viewport
+    );
+
+    // Important: this.stackInvalidated is different than cpuRenderingInvalidated. The
+    // former is being used to maintain the previous state of the viewport
+    // in the same stack, the latter is used to trigger drawImageSync
+    this._cpuFallbackEnabledElement.viewport = this.stackInvalidated
+      ? viewport
+      : viewportSettingToUse;
+
+    // used the previous state of the viewport, then stackInvalidated is set to false
+    this.stackInvalidated = false;
+
+    // new viewport is set to the current viewport, then cpuRenderingInvalidated is set to true
+    this.cpuRenderingInvalidated = true;
+
+    this._cpuFallbackEnabledElement.transform = calculateTransform(
+      this._cpuFallbackEnabledElement
+    );
+  }
 
   /**
    * It updates the volume actor with the retrieved cornerstone image.
@@ -2278,6 +2291,8 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
+    this._throwIfDestroyed();
+
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
       return this.getCurrentImageId();
@@ -2653,10 +2668,24 @@ class StackViewport extends Viewport implements IStackViewport {
     this.render();
   }
 
-  private setColormapGPU(colormap: CPUFallbackColormapData) {
-    // TODO -> vtk has full colormaps which are piecewise and frankly better?
-    // Do we really want a pre defined 256 color map just for the sake of harmonization?
-    throw new Error('setColorMapGPU not implemented.');
+  private setColormapGPU(colormap: ColormapRegistration) {
+    const ActorEntry = this.getDefaultActor();
+    const actor = ActorEntry.actor as ImageActor;
+    const actorProp = actor.getProperty();
+    const rgbTransferFunction = actorProp.getRGBTransferFunction();
+
+    if (!rgbTransferFunction) {
+      const cfun = vtkColorTransferFunction.newInstance();
+      const voiRange = this._getVOIRangeForCurrentImage();
+      cfun.applyColorMap(colormap);
+      cfun.setMappingRange(voiRange.lower, voiRange.upper);
+      actorProp.setRGBTransferFunction(0, cfun);
+    } else {
+      rgbTransferFunction.applyColorMap(colormap);
+      actorProp.setRGBTransferFunction(0, rgbTransferFunction);
+    }
+
+    this.render();
   }
 
   private unsetColormapGPU() {

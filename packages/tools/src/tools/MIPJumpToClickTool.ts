@@ -4,6 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import jumpToWorld from '../utilities/viewport/jumpToWorld';
 import { PublicToolProps, ToolProps } from '../types';
+import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
@@ -76,14 +77,19 @@ class MIPJumpToClickTool extends BaseTool {
       return;
     }
 
-    const { targetViewportIds } = this.configuration;
+    const { targetViewportIds, toolGroupId } = this.configuration;
+    // TODO - consider making this a utility
+    const viewports = renderingEngine.getViewports().filter((vp) => {
+      if (targetViewportIds?.indexOf(vp.id) >= 0) return true;
+      const foundToolGroup = getToolGroupForViewport(vp.id, renderingEngine.id);
+      if (toolGroupId && toolGroupId === foundToolGroup?.id) return true;
+      return false;
+    });
 
     // 6. Update all the targetedViewports to jump
-    targetViewportIds.forEach((viewportId) => {
+    viewports.forEach((viewport) => {
       // Todo: current limitation is that we cannot jump in viewports
       // that don't belong to the renderingEngine of the source clicked viewport
-      const viewport = renderingEngine.getViewport(viewportId);
-
       if (viewport instanceof VolumeViewport) {
         jumpToWorld(viewport, brightestPoint);
       } else {

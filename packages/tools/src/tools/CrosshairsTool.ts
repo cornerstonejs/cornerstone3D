@@ -1793,9 +1793,9 @@ class CrosshairsTool extends AnnotationTool {
     for (let i = 0; i < otherViewportAnnotations.length; ++i) {
       const annotation = otherViewportAnnotations[i];
       if (
-        otherViewportsAnnotationsWithUniqueCameras.find(
+        otherViewportsAnnotationsWithUniqueCameras.some(
           (element) => element === annotation
-        ) === true
+        )
       ) {
         continue;
       }

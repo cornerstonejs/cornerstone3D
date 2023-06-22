@@ -5,6 +5,8 @@ type Line = [Types.Point3, Types.Point3];
 
 /**
  * It returns the angle between two lines in degrees.
+ * The angle measured is that between the vectors
+ * line1[1]->line1[0] AND line2[0]->line2[1].
  * @param line1 - Line = [p1, p2]
  * @param line2 - Line = [p3, p4]
  * @returns The angle between two lines in degrees.

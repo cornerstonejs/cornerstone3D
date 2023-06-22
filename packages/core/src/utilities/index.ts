@@ -45,6 +45,7 @@ import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
+import getImageLegacy from './getImageLegacy';
 
 // name spaces
 import * as planar from './planar';
@@ -103,4 +104,5 @@ export {
   getScalingParameters,
   getScalarDataType,
   colormap,
+  getImageLegacy,
 };

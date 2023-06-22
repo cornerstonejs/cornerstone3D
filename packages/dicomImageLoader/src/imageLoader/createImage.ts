@@ -120,6 +120,13 @@ function createImage(
     }
   }
 
+  // we need to identify if the target buffer is a SharedArrayBuffer
+  // since inside the webworker we don't have access to the window
+  // to say if it is a SharedArrayBuffer or not with instanceof
+  options.isSharedArrayBuffer =
+    options.targetBuffer?.arrayBuffer &&
+    options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
+
   const { decodeConfig } = getOptions();
   const decodePromise = decodeImageFrame(
     imageFrame,
@@ -393,8 +400,8 @@ function createImage(
 
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
       if (image.windowCenter === undefined || image.windowWidth === undefined) {
-        const maxVoi = image.maxPixelValue * image.slope + image.intercept;
-        const minVoi = image.minPixelValue * image.slope + image.intercept;
+        const minVoi = image.imageFrame.minAfterScale;
+        const maxVoi = image.imageFrame.maxAfterScale;
 
         image.windowWidth = maxVoi - minVoi;
         image.windowCenter = (maxVoi + minVoi) / 2;

@@ -54,6 +54,9 @@ const fakeImageLoader = (imageId) => {
     getPixelData: () => pixelData,
     sizeInBytes: rows * columns * 1, // 1 byte for now
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
+    imageFrame: {
+      photometricInterpretation: rgb ? 'RGB' : 'MONOCHROME2',
+    },
   };
 
   return {

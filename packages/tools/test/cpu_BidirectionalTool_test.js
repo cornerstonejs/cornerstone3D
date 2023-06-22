@@ -489,7 +489,9 @@ describe('Bidirectional Tool (CPU): ', () => {
         element,
         evt,
         mouseUpEvt,
-        addEventListenerForAnnotationRendered
+        addEventListenerForAnnotationRendered,
+        null,
+        false
       );
     });
 
