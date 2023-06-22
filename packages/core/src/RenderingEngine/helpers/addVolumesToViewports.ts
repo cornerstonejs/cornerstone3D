@@ -28,19 +28,10 @@ async function addVolumesToViewports(
     if (!viewport) {
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
     }
-
-    // if not instance of BaseVolumeViewport, throw
-    if (!(viewport instanceof BaseVolumeViewport)) {
-      console.warn(
-        `Viewport with Id ${viewportId} is not a BaseVolumeViewport. Cannot add volume to this viewport.`
-      );
-
-      return;
-    }
   }
 
   const addVolumePromises = viewportIds.map(async (viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId) as VolumeViewport;
+    const viewport = renderingEngine.getViewport(viewportId);
 
     await viewport.addVolumes(volumeInputs, immediateRender, suppressEvents);
   });

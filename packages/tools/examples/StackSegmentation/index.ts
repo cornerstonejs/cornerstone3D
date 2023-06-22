@@ -48,7 +48,8 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = '3D_VIEWPORT';
+const viewportId_VOLUME = 'VOLUME_VIEWPORT';
+const viewportId_STACK = 'STACK_VIEWPORT';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -72,6 +73,14 @@ element1.style.height = size;
 
 viewportGrid.appendChild(element1);
 
+const element2 = document.createElement('div');
+element2.oncontextmenu = () => false;
+
+element2.style.width = size;
+element2.style.height = size;
+
+viewportGrid.appendChild(element2);
+
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
@@ -85,7 +94,7 @@ addDropdownToToolbar({
     defaultValue: 'CT-Bone',
   },
   onSelectedValueChange: (presetName) => {
-    const actors = renderingEngine.getViewport(viewportId).getActors();
+    const actors = renderingEngine.getViewport(viewportId_STACK).getActors();
     const volumeActor = actors[1].actor as Types.VolumeActor;
 
     utilities.applyPreset(
@@ -98,9 +107,18 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Copy Actors',
+  onClick: () => {
+    const stackViewport = renderingEngine.getViewport(viewportId_STACK);
+    const actors = stackViewport.getActors();
+    console.log(actors);
+  },
+});
+
+addButtonToToolbar({
   title: 'Full volume',
   onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportId_STACK);
     const actors = viewport.getActors();
     actors[1].slabThickness = undefined;
     viewport.render();
@@ -111,7 +129,7 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Slice view',
   onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportId_STACK);
     const actors = viewport.getActors();
     actors[1].slabThickness = 1.0;
     viewport.render();
@@ -254,7 +272,11 @@ async function convertNiftiToLabelMapData(toolGroupId, imageData) {
 }
 
 async function addVolumeToStackViewport(viewport) {
-  const actor = await createVolumeActor({ volumeId }, element1, viewportId);
+  const actor = await createVolumeActor(
+    { volumeId },
+    element1,
+    viewportId_STACK
+  );
   const actorUID = volumeId;
 
   const volumeActorEntry = {
@@ -373,56 +395,103 @@ async function run() {
 
   // Create the viewports
 
-  const viewType = 3;
-  if (viewType === 1) {
+  const copyFunction = true;
+  if (copyFunction) {
     const viewportInputArray = [
       {
-        viewportId: viewportId,
-        type: ViewportType.ORTHOGRAPHIC,
+        viewportId: viewportId_STACK,
+        type: ViewportType.STACK,
         element: element1,
         defaultOptions: {
           orientation: Enums.OrientationAxis.AXIAL,
           background: <Types.Point3>[0.2, 0, 0.2],
         },
       },
+      // {
+      //   viewportId: viewportId_VOLUME,
+      //   type: ViewportType.ORTHOGRAPHIC,
+      //   element: element2,
+      //   defaultOptions: {
+      //     orientation: Enums.OrientationAxis.AXIAL,
+      //     background: <Types.Point3>[0.2, 0, 0.2],
+      //   },
+      // },
     ];
     renderingEngine.setViewports(viewportInputArray);
-
-    // Set the tool group on the viewports
-    toolGroup.addViewport(viewportId, renderingEngineId);
+    toolGroup.addViewport(viewportId_STACK, renderingEngineId);
+    // toolGroup.addViewport(viewportId_VOLUME, renderingEngineId);
     // Set volumes on the viewports
-    await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
-
-    renderingEngine.renderViewports([viewportId]);
+    // await setVolumesForViewports(
+    //   renderingEngine,
+    //   [{ volumeId }],
+    //   [viewportId_VOLUME]
+    // );
+    const viewport = renderingEngine.getViewport(viewportId_STACK);
+    const middleImage = Math.floor(sortedImageIds.length / 2);
+    await viewport.setStack(sortedImageIds, middleImage);
+    //await viewport.setImageIdIndex(middleImage);
     createLabelMapData(toolGroupId);
-  } else if (viewType > 1) {
-    const viewportInputArray = [
-      {
-        viewportId: viewportId,
-        type: ViewportType.STACK,
-        element: element1,
-        defaultOptions: {
-          orientation: Enums.OrientationAxis.AXIAL,
-          background: <Types.Point3>[0, 0, 0],
+
+    // renderingEngine.renderViewports([viewportId_STACK, viewportId_VOLUME]);
+  } else {
+    const viewType = 3;
+    if (viewType === 1) {
+      const viewportInputArray = [
+        {
+          viewportId: viewportId_STACK,
+          type: ViewportType.ORTHOGRAPHIC,
+          element: element1,
+          defaultOptions: {
+            orientation: Enums.OrientationAxis.AXIAL,
+            background: <Types.Point3>[0.2, 0, 0.2],
+          },
         },
-      },
-    ];
+      ];
+      renderingEngine.setViewports(viewportInputArray);
 
-    renderingEngine.setViewports(viewportInputArray);
+      // Set the tool group on the viewports
+      toolGroup.addViewport(viewportId_STACK, renderingEngineId);
+      // Set volumes on the viewports
+      await setVolumesForViewports(
+        renderingEngine,
+        [{ volumeId }],
+        [viewportId_STACK]
+      );
 
-    // Set the tool group on the viewports
-    toolGroup.addViewport(viewportId, renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
-    await viewport.setStack(sortedImageIds);
-
-    if (viewType === 3) {
-      renderingEngine.renderViewports([viewportId]);
+      renderingEngine.renderViewports([viewportId_STACK]);
       createLabelMapData(toolGroupId);
-    } else {
-      addVolumeToStackViewport(viewport);
-      setTimeout(() => {
-        setInitialPreset(viewport);
-      }, 300);
+    } else if (viewType > 1) {
+      const viewportInputArray = [
+        {
+          viewportId: viewportId_STACK,
+          type: ViewportType.STACK,
+          element: element1,
+          defaultOptions: {
+            orientation: Enums.OrientationAxis.AXIAL,
+            background: <Types.Point3>[0, 0, 0],
+          },
+        },
+      ];
+
+      renderingEngine.setViewports(viewportInputArray);
+
+      // Set the tool group on the viewports
+      toolGroup.addViewport(viewportId_STACK, renderingEngineId);
+      const viewport = renderingEngine.getViewport(viewportId_STACK);
+      const middleImage = Math.floor(sortedImageIds.length / 2);
+      await viewport.setStack(sortedImageIds, middleImage);
+      await viewport.setImageIdIndex(middleImage);
+      alert(middleImage);
+
+      if (viewType === 3) {
+        renderingEngine.renderViewports([viewportId_STACK]);
+        createLabelMapData(toolGroupId);
+      } else {
+        addVolumeToStackViewport(viewport);
+        setTimeout(() => {
+          setInitialPreset(viewport);
+        }, 300);
+      }
     }
   }
   renderingEngine.render();
