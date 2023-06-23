@@ -2083,10 +2083,10 @@ class StackViewport extends Viewport implements IStackViewport {
     actors.push({ uid: this.id, actor });
 
     // also adds all  volume actors in the scene
-    const remainingVolumeActors = this.getActors();
-    for (let i = 0; i < remainingVolumeActors.length; i++) {
-      if (actorIsA(remainingVolumeActors[i], 'vtkVolume')) {
-        actors.push(remainingVolumeActors[i]);
+    const remainingActors = this.getActors();
+    for (let i = 0; i < remainingActors.length; i++) {
+      if (actorIsA(remainingActors[i], 'vtkVolume')) {
+        actors.push(remainingActors[i]);
       }
     }
     this.setActors(actors);
