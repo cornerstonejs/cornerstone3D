@@ -74,21 +74,6 @@ export default interface IVolumeViewport extends IViewport {
     suppressEvents?: boolean
   ): Promise<void>;
   /**
-   * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
-   * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
-   */
-  addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean,
-    suppressEvents?: boolean
-  ): Promise<void>;
-  /**
-   * It removes the volume actor from the Viewport. If the volume actor is not in
-   * the viewport, it does nothing.
-   */
-  removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-
-  /**
    * Given a point in world coordinates, return the intensity at that point
    */
   getIntensityFromWorld(point: Point3): number;

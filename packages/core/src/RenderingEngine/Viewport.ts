@@ -29,6 +29,7 @@ import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import { createVolumeActor } from './helpers';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -120,16 +121,30 @@ class Viewport implements IViewport {
     return false;
   }
 
+  /**
+   * Checks if a volumeInput array is valid
+   * @param volumeInputArray
+   * @returns
+   */
   public async isValidVolumeInputArray(
     volumeInputArray: Array<IVolumeInput>
   ): Promise<boolean> {
     return true;
   }
 
+  /**
+   * Tells if we create volumeActors with 16 bit textures
+   * @returns
+   */
   public canUse16BitTexture() {
     return false;
   }
 
+  /**
+   * Fix, if needed, the value of the slabThickness
+   * @param slabThickness
+   * @returns
+   */
   protected fixSlabThickness(slabThickness: number) {
     if (slabThickness) {
       return slabThickness;
@@ -1175,9 +1190,10 @@ class Viewport implements IViewport {
     } else {
       const renderer = this.getRenderer();
       renderer.resetCameraClippingRange();
+      // update the clipping plane of the vtkVolume actors
       const actors = this.getActors();
-      if (actors.length > 1) {
-        for (let i = 1; i < actors.length; i++) {
+      for (let i = 0; i < actors.length; i++) {
+        if (actorIsA(actors[i], 'vtkVolume')) {
           this.updateVolumeActors(updatedCamera, actors[i]);
         }
       }
@@ -1230,7 +1246,7 @@ class Viewport implements IViewport {
     // we assume that the first two clipping plane of the mapper are always
     // the 'camera' clipping. Update clipping planes only if the actor is
     // a vtkVolume
-    if (!actorEntry.actor) {
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 

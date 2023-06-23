@@ -667,10 +667,19 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return true;
   }
 
+  /**
+   * Tells if we create volumeActors with 16 bit textures
+   * @returns
+   */
   public canUse16BitTexture() {
     return this.use16BitTexture;
   }
 
+  /**
+   * Checks if a volumeInput array is valid
+   * @param volumeInputArray
+   * @returns
+   */
   public async isValidVolumeInputArray(
     volumeInputArray: Array<IVolumeInput>
   ): Promise<boolean> {
@@ -680,6 +689,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     );
   }
 
+  /**
+   * Fix, if needed, the value of the slabThickness
+   * @param slabThickness
+   * @returns
+   */
   protected fixSlabThickness(slabThickness: number) {
     return slabThickness;
   }

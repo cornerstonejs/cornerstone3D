@@ -5,6 +5,7 @@ import ViewportInputOptions from './ViewportInputOptions';
 import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import DisplayArea from './displayArea';
+import { IVolumeInput } from './IVolumeInput';
 
 /**
  * Viewport interface for cornerstone viewports
@@ -102,6 +103,20 @@ interface IViewport {
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
   updateRenderingPipeline: () => void;
+  /**
+   * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
+   * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
+   */
+  addVolumes(
+    volumeInputArray: Array<IVolumeInput>,
+    immediate?: boolean,
+    suppressEvents?: boolean
+  ): Promise<void>;
+  /**
+   * It removes the volume actor from the Viewport. If the volume actor is not in
+   * the viewport, it does nothing.
+   */
+  removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
 }
 
 /**

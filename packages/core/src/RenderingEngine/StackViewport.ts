@@ -2081,9 +2081,13 @@ class StackViewport extends Viewport implements IStackViewport {
     const actor = this.createActorMapper(this._imageData);
     const actors = [];
     actors.push({ uid: this.id, actor });
-    const oldActors = this.getActors();
-    for (let i = 1; i < oldActors.length; i++) {
-      actors.push(oldActors[i]);
+
+    // also adds all  volume actors in the scene
+    const remainingVolumeActors = this.getActors();
+    for (let i = 0; i < remainingVolumeActors.length; i++) {
+      if (actorIsA(remainingVolumeActors[i], 'vtkVolume')) {
+        actors.push(remainingVolumeActors[i]);
+      }
     }
     this.setActors(actors);
     // Adjusting the camera based on slice axis. this is required if stack

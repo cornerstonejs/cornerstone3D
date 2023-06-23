@@ -334,6 +334,8 @@ function _setLabelmapColorAndOpacity(
 
   volumeActor.getProperty().setInterpolationTypeToNearest();
 
+  // StackViewports could not activate renderOutline because it causes
+  // shader compiler error
   if (isVolumeViewport) {
     volumeActor.getProperty().setUseLabelOutline(renderOutline);
   }

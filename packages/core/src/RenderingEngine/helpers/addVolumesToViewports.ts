@@ -21,7 +21,7 @@ async function addVolumesToViewports(
   immediateRender = false,
   suppressEvents = false
 ): Promise<void> {
-  // Check if all viewports are volumeViewports
+  // Check if all viewports exists
   for (const viewportId of viewportIds) {
     const viewport = renderingEngine.getViewport(viewportId);
 
