@@ -52,11 +52,13 @@ function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
 export abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
-    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
-    // (undocumented)
     protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors): void;
     // (undocumented)
+    canUse16BitTexture(): boolean;
+    // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
+    // (undocumented)
+    protected fixSlabThickness(slabThickness: number): number;
     // (undocumented)
     flip(flipDirection: FlipDirection): void;
     // (undocumented)
@@ -82,7 +84,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     hasVolumeId(volumeId: string): boolean;
     // (undocumented)
-    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
+    isValidVolumeInputArray(volumeInputArray: Array<IVolumeInput>): Promise<boolean>;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
@@ -1646,6 +1648,8 @@ interface IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>): void;
     // (undocumented)
+    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
     canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -1695,6 +1699,8 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
+    // (undocumented)
+    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     render(): void;
     // (undocumented)
@@ -1801,8 +1807,6 @@ interface IVolumeLoadObject {
 // @public (undocumented)
 interface IVolumeViewport extends IViewport {
     // (undocumented)
-    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
-    // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
     flip(flipDirection: FlipDirection): void;
@@ -1826,8 +1830,6 @@ interface IVolumeViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     hasVolumeId: (volumeId: string) => boolean;
-    // (undocumented)
-    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
@@ -2495,6 +2497,10 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
+    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
+    canUse16BitTexture(): boolean;
+    // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -2504,6 +2510,8 @@ export class Viewport implements IViewport {
     readonly defaultOptions: any;
     // (undocumented)
     readonly element: HTMLDivElement;
+    // (undocumented)
+    protected fixSlabThickness(slabThickness: number): number;
     // (undocumented)
     protected flip({ flipHorizontal, flipVertical }: FlipDirection): void;
     // (undocumented)
@@ -2562,6 +2570,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
+    isValidVolumeInputArray(volumeInputArray: Array<IVolumeInput>): Promise<boolean>;
+    // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
     _removeActor(actorUID: string): void;
@@ -2569,6 +2579,8 @@ export class Viewport implements IViewport {
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
+    // (undocumented)
+    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     render(): void;
     // (undocumented)
@@ -2621,6 +2633,8 @@ export class Viewport implements IViewport {
     protected updateClippingPlanesForActors(updatedCamera: ICamera): void;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    // (undocumented)
+    protected updateVolumeActors(updatedCamera: ICamera, actorEntry: ActorEntry): void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)

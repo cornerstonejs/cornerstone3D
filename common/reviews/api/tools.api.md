@@ -2997,6 +2997,11 @@ interface IViewport {
     _actors: Map<string, any>;
     addActor(actorEntry: ActorEntry): void;
     addActors(actors: Array<ActorEntry>): void;
+    addVolumes(
+    volumeInputArray: Array<IVolumeInput>,
+    immediate?: boolean,
+    suppressEvents?: boolean
+    ): Promise<void>;
     canvas: HTMLCanvasElement;
     canvasToWorld: (canvasPos: Point2) => Point3;
     customRenderViewportToCanvas: () => unknown;
@@ -3023,6 +3028,7 @@ interface IViewport {
     options: ViewportInputOptions;
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
+    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     render(): void;
     renderingEngineId: string;
     reset(immediate: boolean): void;
@@ -3109,11 +3115,6 @@ interface IVolumeLoadObject {
 
 // @public
 interface IVolumeViewport extends IViewport {
-    addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean,
-    suppressEvents?: boolean
-    ): Promise<void>;
     canvasToWorld: (canvasPos: Point2) => Point3;
     flip(flipDirection: FlipDirection): void;
     getBounds(): any;
@@ -3127,7 +3128,6 @@ interface IVolumeViewport extends IViewport {
     getSlabThickness(): number;
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
-    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(
     resetPan?: boolean,
     resetZoom?: boolean,
