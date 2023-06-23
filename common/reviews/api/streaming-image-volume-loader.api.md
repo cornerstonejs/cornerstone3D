@@ -4,7 +4,6 @@
 
 ```ts
 
-import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -1512,9 +1511,10 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
+            transferPixelData: boolean;
         };
         priority: number;
-        requestType: default_2;
+        requestType: RequestType_2;
         additionalDetails: {
             volumeId: string;
         };
