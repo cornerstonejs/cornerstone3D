@@ -46,11 +46,15 @@ export default function getEncapsulatedImageFrame(
     );
   }
 
-  // Here it means numFragments = 1;
-  const fragments = dataSet.elements.x7fe00010.fragments;
-
   // the following code is pretty much a duplicate of the logic here
   // https://github.com/cornerstonejs/dicomParser/blob/master/src/readEncapsulatedPixelDataFromFragments.js
+  // but it takes care of slicing the array buffer to be sent to the worker. We can't
+  // get a view of the buffer because the buffer since it will still have the
+  // array buffer, which can be in some cases huge to be sent to the worker.
+  // Todo: a better approach would be to transfer the buffer to the worker by having the
+  // transferPixelData option set to true, but for some reason it is giving an error
+  // in the dicomParser library.
+  const fragments = dataSet.elements.x7fe00010.fragments;
 
   // create byte stream on the data for this pixel data element
   const byteStream = new ByteStream(
