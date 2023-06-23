@@ -1810,7 +1810,10 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
-        if (this.csImage?.imageFrame.photometricInterpretation !== image.imageFrame.photometricInterpretation) {
+        if (
+          this.csImage?.imageFrame.photometricInterpretation !==
+          image.imageFrame.photometricInterpretation
+        ) {
           this.stackInvalidated = true;
         }
 
@@ -2098,10 +2101,13 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    this.setVOI(this._getInitialVOIRange(image));
-    this.setInvertColor(
-      imagePixelModule.photometricInterpretation === 'MONOCHROME1'
-    );
+    const monochrome1 =
+      imagePixelModule.photometricInterpretation === 'MONOCHROME1';
+
+    this.setVOI(this._getInitialVOIRange(image), {
+      forceRecreateLUTFunction: !!monochrome1,
+    });
+    this.setInvertColor(!!monochrome1);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
