@@ -601,93 +601,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
-   * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
-   * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
-   *
-   * @param volumeInputArray - The array of `VolumeInput`s which define the volumes to add.
-   * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
-   */
-  public async addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
-    immediate = false,
-    suppressEvents = false
-  ): Promise<void> {
-    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
-
-    if (!firstImageVolume) {
-      throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
-      );
-    }
-    const volumeActors = [];
-
-    await this._isValidVolumeInputArray(
-      volumeInputArray,
-      this._FrameOfReferenceUID
-    );
-
-    // One actor per volume
-    for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, visibility, actorUID, slabThickness } =
-        volumeInputArray[i];
-
-      const actor = await createVolumeActor(
-        volumeInputArray[i],
-        this.element,
-        this.id,
-        suppressEvents,
-        this.use16BitTexture
-      );
-
-      if (visibility === false) {
-        actor.setVisibility(false);
-      }
-
-      // We cannot use only volumeId since then we cannot have for instance more
-      // than one representation of the same volume (since actors would have the
-      // same name, and we don't allow that) AND We cannot use only any uid, since
-      // we rely on the volume in the cache for mapper. So we prefer actorUID if
-      // it is defined, otherwise we use volumeId for the actor name.
-      const uid = actorUID || volumeId;
-      volumeActors.push({
-        uid,
-        actor,
-        slabThickness,
-        // although the actor UID is defined, we need to use the volumeId for the
-        // referenceId, since the actor UID is used to reference the actor in the
-        // viewport, however, the actor is created from its volumeId
-        // and if later we need to grab the referenced volume from cache,
-        // we can use the referenceId to get the volume from the cache
-        referenceId: volumeId,
-      });
-    }
-
-    this.addActors(volumeActors);
-
-    if (immediate) {
-      // render
-      this.render();
-    }
-  }
-
-  /**
-   * It removes the volume actor from the Viewport. If the volume actor is not in
-   * the viewport, it does nothing.
-   * @param actorUIDs - Array of actor UIDs to remove. In case of simple volume it will
-   * be the volume Id, but in case of Segmentation it will be `{volumeId}-{representationType}`
-   * since the same volume can be rendered in multiple representations.
-   * @param immediate - If true, the Viewport will be rendered immediately
-   */
-  public removeVolumeActors(actorUIDs: Array<string>, immediate = false): void {
-    // Todo: This is actually removeActors
-    this.removeActors(actorUIDs);
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
    * It sets the orientation for the camera, the orientation can be one of the
    * following: axial, sagittal, coronal, default. Use the Enums.OrientationAxis
    * to set the orientation. The "default" orientation is the orientation that
@@ -752,6 +665,23 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     return true;
+  }
+
+  public canUse16BitTexture() {
+    return this.use16BitTexture;
+  }
+
+  public async isValidVolumeInputArray(
+    volumeInputArray: Array<IVolumeInput>
+  ): Promise<boolean> {
+    return this._isValidVolumeInputArray(
+      volumeInputArray,
+      this._FrameOfReferenceUID
+    );
+  }
+
+  protected fixSlabThickness(slabThickness: number) {
+    return slabThickness;
   }
 
   /**
