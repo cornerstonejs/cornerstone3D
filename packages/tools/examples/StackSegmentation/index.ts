@@ -1,12 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import * as nifti from './nifti/src/nifti';
 import {
   metaData,
   CONSTANTS,
   Enums,
   RenderingEngine,
-  setVolumesForViewports,
-  createVolumeActor,
   Types,
   utilities,
   volumeLoader,
@@ -32,8 +29,8 @@ const {
   TrackballRotateTool,
   StackScrollMouseWheelTool,
   ZoomTool,
-  Enums: csToolsEnums,
   segmentation,
+  Enums: csToolsEnums,
 } = cornerstoneTools;
 
 import sortImageIdsAndGetSpacing from '../../../streaming-image-volume-loader/src/helpers/sortImageIdsAndGetSpacing';
@@ -46,10 +43,9 @@ let renderingEngine;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const segmentationId = 'MY_SEGMENTATION_ID';
 const renderingEngineId = 'myRenderingEngine';
-const viewportId_VOLUME = 'VOLUME_VIEWPORT';
-const viewportId_STACK = 'STACK_VIEWPORT';
+const segmentationId = 'MY_SEGMENTATION_ID';
+const viewportId = 'STACK_VIEWPORT';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -94,7 +90,7 @@ addDropdownToToolbar({
     defaultValue: 'CT-Bone',
   },
   onSelectedValueChange: (presetName) => {
-    const actors = renderingEngine.getViewport(viewportId_STACK).getActors();
+    const actors = renderingEngine.getViewport(viewportId).getActors();
     const volumeActor = actors[1].actor as Types.VolumeActor;
 
     utilities.applyPreset(
@@ -107,18 +103,9 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Copy Actors',
-  onClick: () => {
-    const stackViewport = renderingEngine.getViewport(viewportId_STACK);
-    const actors = stackViewport.getActors();
-    console.log(actors);
-  },
-});
-
-addButtonToToolbar({
   title: 'Full volume',
   onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId_STACK);
+    const viewport = renderingEngine.getViewport(viewportId);
     const actors = viewport.getActors();
     actors[1].slabThickness = undefined;
     viewport.render();
@@ -129,25 +116,13 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Slice view',
   onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId_STACK);
+    const viewport = renderingEngine.getViewport(viewportId);
     const actors = viewport.getActors();
     actors[1].slabThickness = 1.0;
     viewport.render();
     renderingEngine.render();
   },
 });
-
-function setInitialPreset(viewport, initialPreset = 'CT-Bone') {
-  const actors = viewport.getActors();
-  const volumeActor = actors[1].actor as Types.VolumeActor;
-
-  utilities.applyPreset(
-    volumeActor,
-    CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === initialPreset)
-  );
-  viewport.resetCamera();
-  viewport.render();
-}
 
 function sortImageIds(imageIds) {
   const { rowCosines, columnCosines } = metaData.get(
@@ -165,138 +140,6 @@ function sortImageIds(imageIds) {
   return sortedImageIds;
 }
 
-function openNiftiArrayBuffer(arrayBuffer, flipSlice = true) {
-  // parse nifti
-  if (nifti.isCompressed(arrayBuffer)) {
-    arrayBuffer = nifti.decompress(arrayBuffer);
-  }
-  if (nifti.isNIFTI(arrayBuffer)) {
-    const niftiHeader = nifti.readHeader(arrayBuffer);
-    const niftiImage = nifti.readImage(niftiHeader, arrayBuffer);
-
-    // convert raw data to typed array based on nifti datatype
-    let typedData;
-
-    if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT8) {
-      typedData = new Uint8Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_INT16) {
-      typedData = new Int16Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_INT32) {
-      typedData = new Int32Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_FLOAT32) {
-      typedData = new Float32Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_FLOAT64) {
-      typedData = new Float64Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_INT8) {
-      typedData = new Int8Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT16) {
-      typedData = new Uint16Array(niftiImage);
-    } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT32) {
-      typedData = new Uint32Array(niftiImage);
-    }
-
-    let minI, maxI;
-    for (let i = 0; i < typedData.length; i++) {
-      typedData[i] =
-        typedData[i] * niftiHeader.scl_slope + niftiHeader.scl_inter;
-      if (i === 0) {
-        minI = typedData[i];
-        maxI = typedData[i];
-      } else {
-        if (minI > typedData[i]) minI = typedData[i];
-
-        if (maxI < typedData[i]) maxI = typedData[i];
-      }
-    }
-    if (flipSlice) {
-      const cols = niftiHeader.dims[1];
-      const rows = niftiHeader.dims[2];
-      const slices = niftiHeader.dims[3];
-      const sliceSize = cols * rows;
-      const middleRow = Math.floor(rows / 2);
-
-      for (let s = 0; s < slices; s++) {
-        for (let r = 0; r < middleRow; r++) {
-          for (let c = 0; c < cols; c++) {
-            const value = typedData[s * sliceSize + (rows - r - 1) * cols + c];
-            typedData[s * sliceSize + (rows - r - 1) * cols + c] =
-              typedData[s * sliceSize + r * cols + c];
-            typedData[s * sliceSize + r * cols + c] = value;
-          }
-        }
-      }
-      console.log(cols, rows, middleRow, slices);
-    }
-    return typedData;
-  }
-}
-async function convertNiftiToLabelMapData(toolGroupId, imageData) {
-  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: segmentationId,
-    }
-  );
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: segmentationId,
-        },
-      },
-    },
-  ]);
-  const scalarData = segmentationVolume.getScalarData();
-  const { dimensions } = segmentationVolume;
-  let voxelIndex = 0;
-  for (let z = 0; z < dimensions[2]; z++) {
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        scalarData[voxelIndex] = imageData[voxelIndex];
-        voxelIndex++;
-      }
-    }
-  }
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-}
-
-async function addVolumeToStackViewport(viewport) {
-  const actor = await createVolumeActor(
-    { volumeId },
-    element1,
-    viewportId_STACK
-  );
-  const actorUID = volumeId;
-
-  const volumeActorEntry = {
-    uid: actorUID,
-    actor,
-    slabThickness: undefined,
-  };
-
-  viewport.addActor(volumeActorEntry);
-}
-
-function createLabelMapData(toolGroupId) {
-  fetch('/lungs.nii.gz')
-    .then((res) => res.arrayBuffer())
-    .then((arrayBuffer) => {
-      const imageData = openNiftiArrayBuffer(arrayBuffer);
-      convertNiftiToLabelMapData(toolGroupId, imageData);
-    });
-}
-
 async function getImageIds() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -307,15 +150,7 @@ async function getImageIds() {
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
   });
 
-  const imageIds2 = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-  });
-
-  return { imageIds, imageIds2 };
+  return imageIds;
 }
 
 function setupTools(toolGroupId) {
@@ -371,6 +206,69 @@ function setupTools(toolGroupId) {
 // ============================= //
 
 /**
+ * Adds two concentric circles to each axial slice of the demo segmentation.
+ */
+function createMockEllipsoidSegmentation(segmentationVolume) {
+  const scalarData = segmentationVolume.scalarData;
+  const { dimensions } = segmentationVolume;
+
+  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
+  const outerRadius = 50;
+  const innerRadius = 10;
+
+  let voxelIndex = 0;
+
+  for (let z = 0; z < dimensions[2]; z++) {
+    for (let y = 0; y < dimensions[1]; y++) {
+      for (let x = 0; x < dimensions[0]; x++) {
+        const distanceFromCenter = Math.sqrt(
+          (x - center[0]) * (x - center[0]) +
+            (y - center[1]) * (y - center[1]) +
+            (z - center[2]) * (z - center[2])
+        );
+        if (distanceFromCenter < innerRadius) {
+          scalarData[voxelIndex] = 1;
+        } else if (distanceFromCenter < outerRadius) {
+          scalarData[voxelIndex] = 2;
+        }
+
+        voxelIndex++;
+      }
+    }
+  }
+}
+
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  // using volumeLoader.createAndCacheDerivedVolume.
+  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
+    volumeId,
+    {
+      volumeId: segmentationId,
+    }
+  );
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+
+  // Add some data to the segmentations
+  createMockEllipsoidSegmentation(segmentationVolume);
+}
+
+/**
  * Runs the demo
  */
 async function run() {
@@ -380,8 +278,8 @@ async function run() {
   const toolGroupId = 'TOOL_GROUP_ID';
   const toolGroup = setupTools(toolGroupId);
 
-  const { imageIds, imageIds2 } = await getImageIds();
-  const sortedImageIds = sortImageIds(imageIds2);
+  const imageIds = await getImageIds();
+  const sortedImageIds = sortImageIds(imageIds);
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -394,107 +292,34 @@ async function run() {
   renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-
-  const copyFunction = true;
-  if (copyFunction) {
-    const viewportInputArray = [
-      {
-        viewportId: viewportId_STACK,
-        type: ViewportType.STACK,
-        element: element1,
-        defaultOptions: {
-          orientation: Enums.OrientationAxis.AXIAL,
-          background: <Types.Point3>[0.2, 0, 0.2],
-        },
+  const viewportInputArray = [
+    {
+      viewportId: viewportId,
+      type: ViewportType.STACK,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
-      // {
-      //   viewportId: viewportId_VOLUME,
-      //   type: ViewportType.ORTHOGRAPHIC,
-      //   element: element2,
-      //   defaultOptions: {
-      //     orientation: Enums.OrientationAxis.AXIAL,
-      //     background: <Types.Point3>[0.2, 0, 0.2],
-      //   },
-      // },
-    ];
-    renderingEngine.setViewports(viewportInputArray);
-    toolGroup.addViewport(viewportId_STACK, renderingEngineId);
-    // toolGroup.addViewport(viewportId_VOLUME, renderingEngineId);
-    // Set volumes on the viewports
-    // await setVolumesForViewports(
-    //   renderingEngine,
-    //   [{ volumeId }],
-    //   [viewportId_VOLUME]
-    // );
-    const viewport = renderingEngine.getViewport(viewportId_STACK);
-    const middleImage = Math.floor(sortedImageIds.length / 2);
-    await viewport.setStack(sortedImageIds, middleImage);
-    //await viewport.setImageIdIndex(middleImage);
-    createLabelMapData(toolGroupId);
+    },
+  ];
+  renderingEngine.setViewports(viewportInputArray);
+  toolGroup.addViewport(viewportId, renderingEngineId);
+  const viewport = renderingEngine.getViewport(viewportId);
+  const middleImage = Math.floor(sortedImageIds.length / 2);
+  await viewport.setStack(sortedImageIds, middleImage);
 
-    // renderingEngine.renderViewports([viewportId_STACK, viewportId_VOLUME]);
-  } else {
-    const viewType = 3;
-    if (viewType === 1) {
-      const viewportInputArray = [
-        {
-          viewportId: viewportId_STACK,
-          type: ViewportType.ORTHOGRAPHIC,
-          element: element1,
-          defaultOptions: {
-            orientation: Enums.OrientationAxis.AXIAL,
-            background: <Types.Point3>[0.2, 0, 0.2],
-          },
-        },
-      ];
-      renderingEngine.setViewports(viewportInputArray);
+  addSegmentationsToState();
+  // // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
-      // Set the tool group on the viewports
-      toolGroup.addViewport(viewportId_STACK, renderingEngineId);
-      // Set volumes on the viewports
-      await setVolumesForViewports(
-        renderingEngine,
-        [{ volumeId }],
-        [viewportId_STACK]
-      );
-
-      renderingEngine.renderViewports([viewportId_STACK]);
-      createLabelMapData(toolGroupId);
-    } else if (viewType > 1) {
-      const viewportInputArray = [
-        {
-          viewportId: viewportId_STACK,
-          type: ViewportType.STACK,
-          element: element1,
-          defaultOptions: {
-            orientation: Enums.OrientationAxis.AXIAL,
-            background: <Types.Point3>[0, 0, 0],
-          },
-        },
-      ];
-
-      renderingEngine.setViewports(viewportInputArray);
-
-      // Set the tool group on the viewports
-      toolGroup.addViewport(viewportId_STACK, renderingEngineId);
-      const viewport = renderingEngine.getViewport(viewportId_STACK);
-      const middleImage = Math.floor(sortedImageIds.length / 2);
-      await viewport.setStack(sortedImageIds, middleImage);
-      await viewport.setImageIdIndex(middleImage);
-      alert(middleImage);
-
-      if (viewType === 3) {
-        renderingEngine.renderViewports([viewportId_STACK]);
-        createLabelMapData(toolGroupId);
-      } else {
-        addVolumeToStackViewport(viewport);
-        setTimeout(() => {
-          setInitialPreset(viewport);
-        }, 300);
-      }
-    }
-  }
-  renderingEngine.render();
+  // Render the image
+  renderingEngine.renderViewports([viewportId]);
 }
 
 run();

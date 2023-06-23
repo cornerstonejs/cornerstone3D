@@ -149,7 +149,7 @@ class Viewport implements IViewport {
     if (slabThickness) {
       return slabThickness;
     } else {
-      slabThickness = 1.0;
+      return 1.0;
     }
   }
   /**
