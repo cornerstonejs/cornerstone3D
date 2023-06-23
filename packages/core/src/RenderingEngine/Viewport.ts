@@ -1252,10 +1252,7 @@ class Viewport implements IViewport {
 
     const mapper = actorEntry.actor.getMapper();
     const vtkPlanes = mapper.getClippingPlanes();
-    let slabThickness = undefined; //RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-    if (actorEntry.slabThickness) {
-      slabThickness = actorEntry.slabThickness;
-    }
+    const slabThickness = actorEntry.slabThickness;
 
     if (slabThickness) {
       const { viewPlaneNormal, focalPoint } = updatedCamera;
@@ -1272,7 +1269,7 @@ class Viewport implements IViewport {
         this.setOrientationOfClippingPlanes(
           newVtkPlanes,
           slabThickness,
-          normal,
+          normal as Point3,
           focalPoint
         );
 
@@ -1282,7 +1279,7 @@ class Viewport implements IViewport {
         this.setOrientationOfClippingPlanes(
           vtkPlanes,
           slabThickness,
-          normal,
+          normal as Point3,
           focalPoint
         );
       }
