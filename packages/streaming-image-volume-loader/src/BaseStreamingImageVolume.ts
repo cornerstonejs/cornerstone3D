@@ -586,6 +586,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // and therefore doesn't have the scalingParameters
           scalingParameters,
         },
+        transferPixelData: true,
       };
 
       // Use loadImage because we are skipping the Cornerstone Image cache
