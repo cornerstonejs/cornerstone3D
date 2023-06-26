@@ -431,7 +431,11 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
+    static baseToolName: any;
+    // (undocumented)
     configuration: Record<string, any>;
+    // (undocumented)
+    getBaseToolName(): string;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
@@ -584,7 +588,7 @@ export class BrushTool extends BaseTool {
 function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
-function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, rowPixelSpacing: number, columnPixelSpacing: number): void;
+function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, scale: number): void;
 
 // @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
@@ -2498,12 +2502,19 @@ interface IImage {
 // @public
 interface IImageCalibration {
     hasPixelSpacing?: boolean;
+
     isProjection?: boolean;
-    pixelSpacing: [number, number];
+
+    pixelSpacing?: [number, number];
+
+    scale?: number;
+
     // (undocumented)
     sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+
     // (undocumented)
     tooltip?: string;
+
     type: CalibrationTypes;
 }
 
@@ -2721,8 +2732,7 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    rowScale: number;
-    columnScale: number;
+    scale: number;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
