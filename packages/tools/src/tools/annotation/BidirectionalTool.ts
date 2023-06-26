@@ -7,7 +7,10 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import calibratedLengthUnits from '../../utilities/calibratedLengthUnits';
+import {
+  calibratedLengthUnits,
+  getScale,
+} from '../../utilities/calibratedLengthUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
@@ -1293,10 +1296,10 @@ class BidirectionalTool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, dimensions, hasPixelSpacing } = image;
-
-      const dist1 = this._calculateLength(worldPos1, worldPos2);
-      const dist2 = this._calculateLength(worldPos3, worldPos4);
+      const { imageData, dimensions } = image;
+      const scale = getScale(image);
+      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale;
+      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 

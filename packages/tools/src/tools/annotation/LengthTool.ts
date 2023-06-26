@@ -188,7 +188,6 @@ class LengthTool extends AnnotationTool {
       },
     };
 
-    console.log('Adding annotation in length', annotation);
     addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -372,10 +371,6 @@ class LengthTool extends AnnotationTool {
     if (newAnnotation) {
       const eventType = Events.ANNOTATION_COMPLETED;
 
-      console.log(
-        '* Firing annotation completed event Length annotation',
-        annotation
-      );
       const eventDetail: AnnotationCompletedEventDetail = {
         annotation,
       };
@@ -826,7 +821,6 @@ class LengthTool extends AnnotationTool {
       const scale = getScale(image);
 
       const length = this._calculateLength(worldPos1, worldPos2) / scale;
-      console.log('length = ', length, scale);
 
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
