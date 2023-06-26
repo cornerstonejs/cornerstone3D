@@ -404,7 +404,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const { actor } = defaultActor;
     const vtkImageData = actor.getMapper().getInputData();
-    console.log('^ getImageDataGPU', this.calibration, this.hasPixelSpacing);
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
@@ -603,10 +602,7 @@ class StackViewport extends Viewport implements IStackViewport {
       imageId
     );
 
-    if (!calibratedPixelSpacing?.scale) {
-      console.log('^ Not calibrated');
-      return imagePlaneModule;
-    }
+    if (!calibratedPixelSpacing?.scale) return imagePlaneModule;
 
     const { scale } = calibratedPixelSpacing;
     const existingScale = imagePlaneModule.calibration?.scale;
@@ -615,10 +611,6 @@ class StackViewport extends Viewport implements IStackViewport {
     // is calibrated to some other spacing, and it gets calibrated BACK to the
     // original spacing.
     if ((scale === 1 && !existingScale) || scale === existingScale) {
-      console.log(
-        '^ Returning to existing imagePlaneModule spacing',
-        imagePlaneModule
-      );
       return imagePlaneModule;
     }
 
@@ -636,13 +628,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this._publishCalibratedEvent = true;
 
     imagePlaneModule.calibration = this.calibration;
-    console.log(
-      '^ primary calibration changed',
-      imageId,
-      scale,
-      this.hasPixelSpacing,
-      this.calibration
-    );
 
     return imagePlaneModule;
   }

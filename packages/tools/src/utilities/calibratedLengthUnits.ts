@@ -15,7 +15,6 @@
  */
 const calibratedLengthUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
-  console.log('^ calibratedLengthUnits', calibration, hasPixelSpacing, image);
   const units = hasPixelSpacing ? 'mm' : 'px';
   if (!calibration || !calibration.type) return units;
   if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
@@ -33,15 +32,7 @@ const calibratedAreaUnits = (handles, image): string => {
   return `${units} ${calibration.type}`;
 };
 
-const getScale = (image) => {
-  const { calibration } = image;
-  if (calibration) {
-    console.log('getScale returning', calibration);
-    return calibration.scale || 1;
-  }
-  console.log('No calibraiton, returning 1 for scale', image);
-  return 1;
-};
+const getScale = (image) => image.calibration?.scale || 1;
 
 export default calibratedLengthUnits;
 

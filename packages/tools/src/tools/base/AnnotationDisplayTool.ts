@@ -87,12 +87,6 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const imageURI = utilities.imageIdToURI(imageId);
     const annotationManager = getAnnotationManager();
     const framesOfReference = annotationManager.getFramesOfReference();
-    console.log(
-      '^ Iterating',
-      framesOfReference,
-      this.getToolName(),
-      this.getBaseToolName()
-    );
 
     // For each frame Of Reference
     framesOfReference.forEach((frameOfReference) => {
@@ -113,20 +107,9 @@ abstract class AnnotationDisplayTool extends BaseTool {
           annotation.metadata.referencedImageId
         );
 
-        if (referencedImageURI !== imageURI) {
-          console.log(
-            '^ referencedImageURI not imageURI',
-            referencedImageURI,
-            imageURI
-          );
-        } else {
+        if (referencedImageURI === imageURI) {
           // make them invalid since the image has been calibrated so that
           // we can update the cachedStats and also rendering
-          console.log(
-            '^ Invalidating annotations',
-            imageURI,
-            this.getBaseToolName()
-          );
           annotation.invalidated = true;
           annotation.data.cachedStats = {};
         }

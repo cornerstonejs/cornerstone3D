@@ -91,9 +91,6 @@ class Length {
         const start = worldToImageCoords(referencedImageId, handles.points[0]);
         const end = worldToImageCoords(referencedImageId, handles.points[1]);
 
-        console.log("handles.points", handles.points, start, end);
-        // throw new Error("Stop Save");
-
         const point1 = { x: start[0], y: start[1] };
         const point2 = { x: end[0], y: end[1] };
 

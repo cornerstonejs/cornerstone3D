@@ -7,11 +7,6 @@ const { Calibration: TID300Calibration } = utilities.TID300;
 const CALIBRATION = "CalibrationLine";
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${CALIBRATION}`;
 
-console.log(
-    "********* Loading calibration adapter",
-    trackingIdentifierTextValue
-);
-
 class Calibration {
     static toolType = CALIBRATION;
     static utilityToolType = CALIBRATION;
@@ -59,10 +54,6 @@ class Calibration {
 
         const state = defaultState;
 
-        console.log(
-            "*********** Calibration adapter.getMeasurementData",
-            NUMGroup?.MeasuredValueSequence?.NumericValue
-        );
         state.annotation.data = {
             handles: {
                 points: [worldCoords[0], worldCoords[1]],
