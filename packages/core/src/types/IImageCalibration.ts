@@ -6,7 +6,14 @@ import CalibrationTypes from '../enums/CalibrationTypes';
  */
 export interface IImageCalibration {
   /** The pixel spacing for the image, in mm between pixel centers */
-  pixelSpacing: [number, number];
+  pixelSpacing?: [number, number];
+
+  /**
+   * Scaling to convert pixelSpacing units to actual measured values.
+   * This is a divisor in order to conform with the ERMF notation.
+   */
+  scale?: number;
+
   /** The type of the pixel spacing, distinguishing between various
    * types projection (CR/DX/MG) spacing and volumetric spacing ('')
    */

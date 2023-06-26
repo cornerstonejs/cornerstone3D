@@ -93,8 +93,9 @@ interface ImageDataMetaData {
 }
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
-  rowScale: number;
-  columnScale: number;
+  // The scale is the image pixel distance divisor to create unit values
+  scale: number;
+  // TODO - handle non square (affine) transform calibrations
 };
 
 type SetVOIOptions = {
@@ -403,6 +404,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const { actor } = defaultActor;
     const vtkImageData = actor.getMapper().getInputData();
+    console.log('^ getImageDataGPU', this.calibration, this.hasPixelSpacing);
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
@@ -601,23 +603,18 @@ class StackViewport extends Viewport implements IStackViewport {
       imageId
     );
 
-    if (!calibratedPixelSpacing) {
+    if (!calibratedPixelSpacing?.scale) {
       console.log('^ Not calibrated');
       return imagePlaneModule;
     }
 
-    const {
-      rowPixelSpacing: calibratedRowSpacing,
-      columnPixelSpacing: calibratedColumnSpacing,
-    } = calibratedPixelSpacing;
+    const { scale } = calibratedPixelSpacing;
+    const existingScale = imagePlaneModule.calibration?.scale;
 
     // Todo: This is necessary in general, but breaks an edge case when an image
     // is calibrated to some other spacing, and it gets calibrated BACK to the
     // original spacing.
-    if (
-      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
-      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
-    ) {
+    if ((scale === 1 && !existingScale) || scale === existingScale) {
       console.log(
         '^ Returning to existing imagePlaneModule spacing',
         imagePlaneModule
@@ -625,83 +622,27 @@ class StackViewport extends Viewport implements IStackViewport {
       return imagePlaneModule;
     }
 
-    // Check if there is already an actor
-    const imageDataMetadata = this.getImageData();
-
-    // If no actor (first load) and calibration matches the dicom header
-    if (
-      !imageDataMetadata &&
-      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
-      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
-    ) {
-      console.log('^ first load, not apply calibration matches dicom header');
-      return imagePlaneModule;
-    }
-
     this.calibration = {
       type: CalibrationTypes.USER,
-      pixelSpacing: [calibratedColumnSpacing, calibratedRowSpacing],
+      // Ratio is the calibrated spacing factor to multiple to get calibrated data
+      // A specific instance is ERMF values.
+      scale,
     };
-    this.hasPixelSpacing = calibratedRowSpacing && calibratedColumnSpacing;
+    this.hasPixelSpacing = true;
+    this._publishCalibratedEvent = true;
+    this._calibrationEvent = <CalibrationEvent>{
+      scale,
+    };
+    this._publishCalibratedEvent = true;
 
-    // If no actor (first load) and calibration doesn't match headers
-    // -> needs calibration
-    if (
-      !imageDataMetadata &&
-      (imagePlaneModule.rowPixelSpacing !== calibratedRowSpacing ||
-        imagePlaneModule.columnPixelSpacing !== calibratedColumnSpacing)
-    ) {
-      this._publishCalibratedEvent = true;
-
-      this._calibrationEvent = <CalibrationEvent>{
-        rowScale: calibratedRowSpacing / imagePlaneModule.rowPixelSpacing,
-        columnScale:
-          calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
-      };
-
-      // modify the calibration object to store the actual updated values applied
-      calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
-      // This updates the render copy
-      imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
-      imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
-      imagePlaneModule.calibration = this.calibration;
-      console.log('^ First load calibration applied');
-      return imagePlaneModule;
-    }
-
-    // If there is already an actor, check if calibration is needed for the current actor
-    const { imageData } = imageDataMetadata;
-    const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
-
-    // modify the calibration object to store the actual updated values applied
-    calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
-    imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
-    imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
     imagePlaneModule.calibration = this.calibration;
-
-    // If current actor spacing matches the calibrated spacing
-    if (
-      rowPixelSpacing === calibratedRowSpacing &&
-      columnPixelSpacing === calibratedPixelSpacing
-    ) {
-      // No calibration is required
-      console.log('^ secondary window, calibration unchanged');
-      return imagePlaneModule;
-    }
-
     console.log(
       '^ primary calibration changed',
       imageId,
-      calibratedRowSpacing,
-      rowPixelSpacing
+      scale,
+      this.hasPixelSpacing,
+      this.calibration
     );
-    // Calibration is required
-    this._publishCalibratedEvent = true;
-
-    this._calibrationEvent = <CalibrationEvent>{
-      rowScale: calibratedRowSpacing / rowPixelSpacing,
-      columnScale: calibratedColumnSpacing / columnPixelSpacing,
-    };
 
     return imagePlaneModule;
   }
@@ -2752,12 +2693,12 @@ class StackViewport extends Viewport implements IStackViewport {
 
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
-      this.hasPixelSpacing = false;
+      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.rowPixelSpacing) {
       newImagePlaneModule.rowPixelSpacing = 1;
-      this.hasPixelSpacing = false;
+      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.columnCosines) {

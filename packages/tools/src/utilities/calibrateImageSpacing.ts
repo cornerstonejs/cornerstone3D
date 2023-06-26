@@ -15,18 +15,10 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default function calibrateImageSpacing(
   imageId: string,
   renderingEngine: Types.IRenderingEngine,
-  rowPixelSpacing: number,
-  columnPixelSpacing: number
+  scale: number
 ): void {
-  // 1. Add the calibratedPixelSpacing metadata to the metadata provider
-  // If no column spacing provided, assume square pixels
-  if (!columnPixelSpacing) {
-    columnPixelSpacing = rowPixelSpacing;
-  }
-
   calibratedPixelSpacingMetadataProvider.add(imageId, {
-    rowPixelSpacing,
-    columnPixelSpacing,
+    scale,
   });
 
   // 2. Update the actor for stackViewports

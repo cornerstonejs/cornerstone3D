@@ -1,10 +1,8 @@
 import imageIdToURI from './imageIdToURI';
 
 export type CalibratedPixelValue = {
-  rowPixelSpacing: number;
-  columnPixelSpacing: number;
-  // These values get updated by the viewport after the change to record the applied value
-  appliedSpacing?: CalibratedPixelValue;
+  scale: number;
+  // Eventually various transforms might be applicable, but not now
 };
 
 const state: Record<string, CalibratedPixelValue> = {}; // Calibrated pixel spacing per imageId
