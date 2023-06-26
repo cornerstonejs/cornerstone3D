@@ -10,6 +10,7 @@ import CircleROI from "./CircleROI";
 import EllipticalROI from "./EllipticalROI";
 import RectangleROI from "./RectangleROI";
 import Length from "./Length";
+import Calibration from "./Calibration";
 import PlanarFreehandROI from "./PlanarFreehandROI";
 import Probe from "./Probe";
 
@@ -18,6 +19,7 @@ const Cornerstone3D = {
     CobbAngle,
     Angle,
     Length,
+    Calibration,
     CircleROI,
     EllipticalROI,
     RectangleROI,

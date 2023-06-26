@@ -11,6 +11,23 @@ const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ARROW_ANNOTATE}`;
 const { codeValues, CodingSchemeDesignator } = CodingScheme;
 
 class ArrowAnnotate {
+    static toolType = ARROW_ANNOTATE;
+    static utilityToolType = ARROW_ANNOTATE;
+    static TID300Representation = TID300Point;
+    static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+        if (!TrackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
+
+        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
+            return false;
+        }
+
+        return toolType === ARROW_ANNOTATE;
+    };
+
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -115,7 +132,8 @@ class ArrowAnnotate {
                 }
             ],
             trackingIdentifierTextValue,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            finding: null,
         };
 
         // If freetext finding isn't present, add it from the tool text.
@@ -132,23 +150,6 @@ class ArrowAnnotate {
         return TID300RepresentationArguments;
     }
 }
-
-ArrowAnnotate.toolType = ARROW_ANNOTATE;
-ArrowAnnotate.utilityToolType = ARROW_ANNOTATE;
-ArrowAnnotate.TID300Representation = TID300Point;
-ArrowAnnotate.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === ARROW_ANNOTATE;
-};
 
 MeasurementReport.registerTool(ArrowAnnotate);
 

@@ -17,6 +17,10 @@ function worldToImageCoords(
   worldCoords: Point3
 ): Point2 | undefined {
   const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+  const calibratedPixelSpacing = metaData.get(
+    'calibratedPixelSpacing',
+    imageId
+  );
 
   if (!imagePlaneModule) {
     throw new Error(`No imagePlaneModule found for imageId: ${imageId}`);
@@ -27,13 +31,14 @@ function worldToImageCoords(
 
   const {
     columnCosines,
-    columnPixelSpacing,
     rowCosines,
-    rowPixelSpacing,
     imagePositionPatient: origin,
-    rows,
-    columns,
   } = imagePlaneModule;
+
+  let { columnPixelSpacing, rowPixelSpacing } =
+    calibratedPixelSpacing || imagePlaneModule;
+  columnPixelSpacing ||= 1;
+  rowPixelSpacing ||= 1;
 
   // The origin is the image position patient, but since image coordinates start
   // from [0,0] for the top left hand of the first pixel, and the origin is at the

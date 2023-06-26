@@ -8,6 +8,23 @@ const PROBE = "Probe";
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${PROBE}`;
 
 class Probe {
+    static toolType = PROBE;
+    static utilityToolType = PROBE;
+    static TID300Representation = TID300Point;
+    static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+        if (!TrackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
+
+        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
+            return false;
+        }
+
+        return toolType === PROBE;
+    };
+
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -83,23 +100,6 @@ class Probe {
         return TID300RepresentationArguments;
     }
 }
-
-Probe.toolType = PROBE;
-Probe.utilityToolType = PROBE;
-Probe.TID300Representation = TID300Point;
-Probe.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === PROBE;
-};
 
 MeasurementReport.registerTool(Probe);
 

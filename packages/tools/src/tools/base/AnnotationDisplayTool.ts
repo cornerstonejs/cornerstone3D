@@ -30,6 +30,7 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
  */
 abstract class AnnotationDisplayTool extends BaseTool {
   static toolName;
+
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
@@ -101,16 +102,22 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const calibratedIndexToWorld = calibratedImageData.getIndexToWorld();
 
     const imageURI = utilities.imageIdToURI(imageId);
-    const stateManager = getAnnotationManager();
-    const framesOfReference = stateManager.getFramesOfReference();
+    const annotationManager = getAnnotationManager();
+    const framesOfReference = annotationManager.getFramesOfReference();
+    console.log(
+      '^ Iterating',
+      framesOfReference,
+      this.getToolName(),
+      this.getBaseToolName()
+    );
 
     // For each frame Of Reference
     framesOfReference.forEach((frameOfReference) => {
       const frameOfReferenceSpecificAnnotations =
-        stateManager.getAnnotations(frameOfReference);
+        annotationManager.getAnnotations(frameOfReference);
 
       const toolSpecificAnnotations =
-        frameOfReferenceSpecificAnnotations[this.getToolName()];
+        frameOfReferenceSpecificAnnotations[this.getBaseToolName()];
 
       if (!toolSpecificAnnotations || !toolSpecificAnnotations.length) {
         return;
@@ -123,11 +130,31 @@ abstract class AnnotationDisplayTool extends BaseTool {
           annotation.metadata.referencedImageId
         );
 
-        if (referencedImageURI === imageURI) {
+        if (referencedImageURI !== imageURI) {
+          console.log(
+            '^ referencedImageURI not imageURI',
+            referencedImageURI,
+            imageURI
+          );
+        } else {
           // make them invalid since the image has been calibrated so that
           // we can update the cachedStats and also rendering
           annotation.invalidated = true;
           annotation.data.cachedStats = {};
+
+          // This happens during rehydration
+          // TODO - fix  this so it never happens.  It can cause a calibration
+          // on one viewport to corrupt DICOM SR viewports
+          if (!annotation.data.handles.points) {
+            console.warn('No annotation points', JSON.stringify(annotation));
+            return;
+          }
+
+          console.log(
+            '^ Converting for spacing',
+            annotation.metadata.toolName,
+            JSON.stringify(annotation)
+          );
 
           // Update annotation points to the new calibrated points. Basically,
           // using the worldToIndex function we get the index on the non-calibrated

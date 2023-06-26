@@ -602,6 +602,7 @@ class StackViewport extends Viewport implements IStackViewport {
     );
 
     if (!calibratedPixelSpacing) {
+      console.log('^ Not calibrated');
       return imagePlaneModule;
     }
 
@@ -617,6 +618,10 @@ class StackViewport extends Viewport implements IStackViewport {
       imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
       imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
     ) {
+      console.log(
+        '^ Returning to existing imagePlaneModule spacing',
+        imagePlaneModule
+      );
       return imagePlaneModule;
     }
 
@@ -629,6 +634,7 @@ class StackViewport extends Viewport implements IStackViewport {
       imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
       imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
     ) {
+      console.log('^ first load, not apply calibration matches dicom header');
       return imagePlaneModule;
     }
 
@@ -659,6 +665,7 @@ class StackViewport extends Viewport implements IStackViewport {
       imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
       imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
       imagePlaneModule.calibration = this.calibration;
+      console.log('^ First load calibration applied');
       return imagePlaneModule;
     }
 
@@ -678,9 +685,16 @@ class StackViewport extends Viewport implements IStackViewport {
       columnPixelSpacing === calibratedPixelSpacing
     ) {
       // No calibration is required
+      console.log('^ secondary window, calibration unchanged');
       return imagePlaneModule;
     }
 
+    console.log(
+      '^ primary calibration changed',
+      imageId,
+      calibratedRowSpacing,
+      rowPixelSpacing
+    );
     // Calibration is required
     this._publishCalibratedEvent = true;
 
@@ -1824,7 +1838,10 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
-        if (this.csImage?.imageFrame.photometricInterpretation !== image.imageFrame.photometricInterpretation) {
+        if (
+          this.csImage?.imageFrame.photometricInterpretation !==
+          image.imageFrame.photometricInterpretation
+        ) {
           this.stackInvalidated = true;
         }
 

@@ -185,6 +185,7 @@ class LengthTool extends AnnotationTool {
       },
     };
 
+    console.log('Adding annotation in length', annotation);
     addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -368,6 +369,10 @@ class LengthTool extends AnnotationTool {
     if (newAnnotation) {
       const eventType = Events.ANNOTATION_COMPLETED;
 
+      console.log(
+        '* Firing annotation completed event Length annotation',
+        annotation
+      );
       const eventDetail: AnnotationCompletedEventDetail = {
         annotation,
       };

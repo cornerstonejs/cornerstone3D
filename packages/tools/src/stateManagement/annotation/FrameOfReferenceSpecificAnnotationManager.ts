@@ -231,6 +231,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
 
     toolSpecificAnnotations.push(annotation);
+    console.log('^ CS3D.addAnnotation', groupKey, toolName);
     checkAndDefineIsLockedProperty(annotation);
     checkAndDefineIsVisibleProperty(annotation);
   };

@@ -31,6 +31,8 @@ export interface IBaseTool {
  */
 abstract class BaseTool implements IBaseTool {
   static toolName;
+  static baseToolName;
+
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
   public configuration: Record<string, any>;
@@ -69,6 +71,15 @@ abstract class BaseTool implements IBaseTool {
   public getToolName(): string {
     // Since toolName is static we get it from the class constructor
     return (<typeof BaseTool>this.constructor).toolName;
+  }
+
+  /** Gets the base tool name or the tool name if no base.
+   * Used to call child listeners correctly.
+   */
+  public getBaseToolName(): string {
+    const baseType = <typeof BaseTool>this.constructor;
+    // Since toolName is static we get it from the class constructor
+    return baseType.baseToolName || baseType.toolName;
   }
 
   /**

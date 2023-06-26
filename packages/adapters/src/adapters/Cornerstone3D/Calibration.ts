@@ -2,13 +2,34 @@ import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
 
-const { Length: TID300Length } = utilities.TID300;
+const { Calibration: TID300Calibration } = utilities.TID300;
 
-const LENGTH = "Length";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${LENGTH}`;
+const CALIBRATION = "CalibrationLine";
+const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${CALIBRATION}`;
 
-class Length {
-    // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
+console.log(
+    "********* Loading calibration adapter",
+    trackingIdentifierTextValue
+);
+
+class Calibration {
+    static toolType = CALIBRATION;
+    static utilityToolType = CALIBRATION;
+    static TID300Representation = TID300Calibration;
+    static isValidCornerstoneTrackingIdentifier(TrackingIdentifier) {
+        if (!TrackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
+
+        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
+            return false;
+        }
+
+        return toolType === CALIBRATION;
+    }
+
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -20,7 +41,7 @@ class Length {
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
-                Length.toolType
+                Calibration.toolType
             );
 
         const referencedImageId =
@@ -38,6 +59,10 @@ class Length {
 
         const state = defaultState;
 
+        console.log(
+            "*********** Calibration adapter.getMeasurementData",
+            NUMGroup?.MeasuredValueSequence?.NumericValue
+        );
         state.annotation.data = {
             handles: {
                 points: [worldCoords[0], worldCoords[1]],
@@ -48,9 +73,7 @@ class Length {
             },
             cachedStats: {
                 [`imageId:${referencedImageId}`]: {
-                    length: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : 0
+                    length: NUMGroup?.MeasuredValueSequence?.NumericValue
                 }
             },
             frameNumber: ReferencedFrameNumber
@@ -92,23 +115,6 @@ class Length {
     }
 }
 
-Length.toolType = LENGTH;
-Length.utilityToolType = LENGTH;
-Length.TID300Representation = TID300Length;
-Length.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
+MeasurementReport.registerTool(Calibration);
 
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === LENGTH;
-};
-
-MeasurementReport.registerTool(Length);
-
-export default Length;
+export default Calibration;
