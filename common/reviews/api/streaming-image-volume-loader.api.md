@@ -40,21 +40,13 @@ enum BlendModes {
     MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
 }
 
-// @public (undocumented)
+// @public
 enum CalibrationTypes {
-    // (undocumented)
     ERMF = 'ERMF',
-    // (undocumented)
     ERROR = 'Error',
-    // (undocumented)
     NOT_APPLICABLE = '',
-    // (undocumented)
     PROJECTION = 'Proj',
-    // (undocumented)
     REGION = 'Region',
-    // (undocumented)
-    UNKNOWN = 'Unknown',
-    // (undocumented)
     USER = 'User',
 }
 
@@ -814,15 +806,20 @@ interface IImage {
 
 // @public
 interface IImageCalibration {
-    // (undocumented)
     hasPixelSpacing?: boolean;
-    // (undocumented)
+
     isProjection?: boolean;
+
+    pixelSpacing?: [number, number];
+
+    scale?: number;
+
     // (undocumented)
-    PixelSpacing: [number, number];
+    sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+
     // (undocumented)
-    SequenceOfUltrasoundRegions?: Record<string, unknown>[];
-    // (undocumented)
+    tooltip?: string;
+
     type: CalibrationTypes;
 }
 
@@ -1031,8 +1028,7 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    rowScale: number;
-    columnScale: number;
+    scale: number;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
