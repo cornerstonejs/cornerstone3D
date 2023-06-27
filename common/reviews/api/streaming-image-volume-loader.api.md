@@ -807,19 +807,12 @@ interface IImage {
 // @public
 interface IImageCalibration {
     hasPixelSpacing?: boolean;
-
     isProjection?: boolean;
-
-    pixelSpacing?: [number, number];
-
-    scale?: number;
-
+    pixelSpacing: [number, number];
     // (undocumented)
     sequenceOfUltrasoundRegions?: Record<string, unknown>[];
-
     // (undocumented)
     tooltip?: string;
-
     type: CalibrationTypes;
 }
 
@@ -1028,7 +1021,8 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    scale: number;
+    rowScale: number;
+    columnScale: number;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
