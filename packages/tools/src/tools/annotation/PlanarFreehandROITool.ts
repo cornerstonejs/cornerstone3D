@@ -859,6 +859,8 @@ class PlanarFreehandROITool extends AnnotationTool {
       };
     }
 
+    this.triggerAnnotationModified(annotation, enabledElement);
+
     annotation.invalidated = false;
 
     return cachedStats;
