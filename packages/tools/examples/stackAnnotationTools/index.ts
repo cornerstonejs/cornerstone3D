@@ -213,18 +213,19 @@ const calibrations = [
     },
   },
   {
-    value: 'Projected',
+    value: 'Projected 1.02',
     selected: 'userCalibration',
     calibration: {
-      scale: 1,
+      // Bug right now in StackViewport that fails to reset
+      scale: 1.02,
       type: Enums.CalibrationTypes.PROJECTION,
     },
   },
   {
-    value: 'Error',
+    value: 'Error 0.98',
     selected: 'userCalibration',
     calibration: {
-      scale: 1,
+      scale: 0.98,
       type: Enums.CalibrationTypes.ERROR,
     },
   },

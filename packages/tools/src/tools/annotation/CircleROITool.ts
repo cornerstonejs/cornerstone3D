@@ -12,7 +12,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   calibratedLengthUnits,
   calibratedAreaUnits,
-} from '../../utilities/calibratedLengthUnits';
+} from '../../utilities/calibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {

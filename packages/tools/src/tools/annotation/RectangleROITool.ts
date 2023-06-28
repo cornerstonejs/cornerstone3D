@@ -9,7 +9,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { calibratedAreaUnits } from '../../utilities/calibratedLengthUnits';
+import { calibratedAreaUnits } from '../../utilities/calibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {

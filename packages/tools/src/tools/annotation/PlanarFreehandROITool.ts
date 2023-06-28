@@ -10,7 +10,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { calibratedAreaUnits } from '../../utilities/calibratedLengthUnits';
+import { calibratedAreaUnits } from '../../utilities/calibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';

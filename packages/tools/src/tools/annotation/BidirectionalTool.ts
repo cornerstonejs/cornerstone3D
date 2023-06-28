@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import calibratedLengthUnits from '../../utilities/calibratedLengthUnits';
+import calibratedLengthUnits from '../../utilities/calibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
