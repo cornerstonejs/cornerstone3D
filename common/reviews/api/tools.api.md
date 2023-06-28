@@ -584,7 +584,7 @@ export class BrushTool extends BaseTool {
 function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
-function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, spacing: Types_2.IImageCalibration | number, columnPixelSpacing?: number): void;
+function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, spacing: Types_2.IImageCalibration | number): void;
 
 // @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
