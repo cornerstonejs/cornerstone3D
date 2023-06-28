@@ -22,8 +22,7 @@ export default function calibrateImageSpacing(
   if (typeof spacing === 'number') {
     spacing = {
       type: Enums.CalibrationTypes.USER,
-      rowPixelSpacing: spacing,
-      columnPixelSpacing: columnPixelSpacing || spacing,
+      scale: 1 / spacing,
     };
   }
   // 1. Add the calibratedPixelSpacing metadata to the metadata

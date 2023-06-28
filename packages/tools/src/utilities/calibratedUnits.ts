@@ -32,6 +32,8 @@ const calibratedAreaUnits = (handles, image): string => {
   return `${units} ${calibration.type}`;
 };
 
+const getScale = (image) => image.calibration?.scale || 1;
+
 export default calibratedLengthUnits;
 
-export { calibratedAreaUnits, calibratedLengthUnits };
+export { calibratedAreaUnits, calibratedLengthUnits, getScale };
