@@ -12,11 +12,14 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const { wadors } = dicomImageLoader;
 
 const {
   LengthTool,
@@ -30,6 +33,7 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   Enums: csToolsEnums,
+  utilities,
 } = cornerstoneTools;
 
 const { ViewportType, Events } = Enums;
@@ -185,6 +189,65 @@ addButtonToToolbar({
   },
 });
 
+const calibrationFunctions: Record<string, unknown> = {};
+
+const calibrations = [
+  {
+    value: 'Default',
+    selected: 'clearCalibration',
+  },
+  {
+    value: 'User Calibration 0.5',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 0.5,
+      type: Enums.CalibrationTypes.USER,
+    },
+  },
+  {
+    value: 'Uncalibrated',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': null,
+    },
+  },
+  {
+    value: 'Uncalibrated',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': null,
+    },
+  },
+  {
+    value: 'Aspect 1:2',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': { Value: [0.5, 1] },
+    },
+  },
+  {
+    value: 'Aspect 1:1',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': { Value: [0.5, 0.5] },
+    },
+  },
+];
+const calibrationNames = calibrations.map((it) => it.value);
+
+addDropdownToToolbar({
+  options: { values: calibrationNames },
+  onSelectedValueChange: (newCalibrationValue) => {
+    const calibration = calibrations.find(
+      (it) => it.value === newCalibrationValue
+    );
+    if (!calibration) return;
+    const f = calibrationFunctions[calibration.selected];
+    if (!f) return;
+    f.apply(calibration);
+  },
+});
+
 /**
  * Runs the demo
  */
@@ -249,6 +312,19 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  calibrationFunctions.userCalibration = function calibrationSelected() {
+    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, 2, 2);
+  };
+  calibrationFunctions.clearCalibration = function clearCalibration() {
+    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null, null);
+  };
+  calibrationFunctions.applyMetadata = function applyMetadata() {
+    const instance = wadors.metaDataManager.get(imageIds[0]);
+    console.log('Applying', this.metadata);
+    Object.assign(instance, this.metadata);
+    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null, null);
+  };
 
   // Create a stack viewport
   const viewportInput = {
