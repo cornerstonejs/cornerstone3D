@@ -9,7 +9,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { calibratedAreaUnits } from '../../utilities/calibratedUnits';
+import { calibratedAreaUnits, getScale } from '../../utilities/calibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
@@ -953,8 +953,9 @@ class RectangleROITool extends AnnotationTool {
           worldPos1,
           worldPos2
         );
+        const scale = getScale(image);
 
-        const area = Math.abs(worldWidth * worldHeight);
+        const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
 
         let count = 0;
         let mean = 0;

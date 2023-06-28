@@ -32,6 +32,7 @@ const {
   CobbAngleTool,
   ToolGroupManager,
   ArrowAnnotateTool,
+  PlanarFreehandROITool,
   Enums: csToolsEnums,
   utilities,
 } = cornerstoneTools;
@@ -109,6 +110,7 @@ const toolsNames = [
   AngleTool.toolName,
   CobbAngleTool.toolName,
   ArrowAnnotateTool.toolName,
+  PlanarFreehandROITool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -213,19 +215,19 @@ const calibrations = [
     },
   },
   {
-    value: 'Projected 1.02',
+    value: 'Projected 1',
     selected: 'userCalibration',
     calibration: {
       // Bug right now in StackViewport that fails to reset
-      scale: 1.02,
+      scale: 1,
       type: Enums.CalibrationTypes.PROJECTION,
     },
   },
   {
-    value: 'Error 0.98',
+    value: 'Error 1',
     selected: 'userCalibration',
     calibration: {
-      scale: 0.98,
+      scale: 1,
       type: Enums.CalibrationTypes.ERROR,
     },
   },
@@ -283,6 +285,7 @@ async function run() {
   cornerstoneTools.addTool(AngleTool);
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -298,6 +301,7 @@ async function run() {
   toolGroup.addTool(AngleTool.toolName);
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
+  toolGroup.addTool(PlanarFreehandROITool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
