@@ -15,14 +15,13 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default function calibrateImageSpacing(
   imageId: string,
   renderingEngine: Types.IRenderingEngine,
-  spacing: Types.IImageCalibration | number,
-  columnPixelSpacing?: number
+  spacing: Types.IImageCalibration | number
 ): void {
-  // Handle prior change versions
+  // Handle simple parameter version
   if (typeof spacing === 'number') {
     spacing = {
       type: Enums.CalibrationTypes.USER,
-      scale: 1 / spacing,
+      scale: spacing,
     };
   }
   // 1. Add the calibratedPixelSpacing metadata to the metadata
