@@ -17,16 +17,18 @@ const calibratedLengthUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
   const units = hasPixelSpacing ? 'mm' : 'px';
   if (!calibration || !calibration.type) return units;
+  // TODO - handle US regions properly
   if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
   return `${units} ${calibration.type}`;
 };
 
+const SQUARE = '\xb2';
 /**
  *  Extracts the area units, including the squared sign plus calibration type.
  */
 const calibratedAreaUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
-  const units = hasPixelSpacing ? 'mm\xb2' : 'px\xb2';
+  const units = (hasPixelSpacing ? 'mm' : 'px') + SQUARE;
   if (!calibration || !calibration.type) return units;
   if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
   return `${units} ${calibration.type}`;
