@@ -806,9 +806,12 @@ interface IImage {
 
 // @public
 interface IImageCalibration {
+    // (undocumented)
+    columnPixelSpacing?: number;
     hasPixelSpacing?: boolean;
     isProjection?: boolean;
-    pixelSpacing: [number, number];
+    rowPixelSpacing?: number;
+    scale?: number;
     // (undocumented)
     sequenceOfUltrasoundRegions?: Record<string, unknown>[];
     // (undocumented)

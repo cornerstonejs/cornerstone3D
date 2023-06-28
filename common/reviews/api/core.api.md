@@ -1146,11 +1146,15 @@ interface IImage {
 // @public (undocumented)
 interface IImageCalibration {
     // (undocumented)
+    columnPixelSpacing?: number;
+    // (undocumented)
     hasPixelSpacing?: boolean;
     // (undocumented)
     isProjection?: boolean;
     // (undocumented)
-    pixelSpacing: [number, number];
+    rowPixelSpacing?: number;
+    // (undocumented)
+    scale?: number;
     // (undocumented)
     sequenceOfUltrasoundRegions?: Record<string, unknown>[];
     // (undocumented)
@@ -1944,8 +1948,8 @@ export { metaData }
 
 // @public (undocumented)
 const metadataProvider: {
-    add: (imageId: string, payload: CalibratedPixelValue) => void;
-    get: (type: string, imageId: string) => CalibratedPixelValue;
+    add: (imageId: string, payload: IImageCalibration) => void;
+    get: (type: string, imageId: string) => IImageCalibration;
 };
 
 // @public (undocumented)

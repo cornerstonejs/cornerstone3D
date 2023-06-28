@@ -40,6 +40,7 @@ import {
   VolumeActor,
   Mat3,
   ColormapRegistration,
+  IImageCalibration,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -95,6 +96,7 @@ interface ImageDataMetaData {
 type CalibrationEvent = {
   rowScale: number;
   columnScale: number;
+  calibration: IImageCalibration;
 };
 
 type SetVOIOptions = {
@@ -596,19 +598,25 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns modified imagePlaneModule with the calibrated spacings
    */
   private calibrateIfNecessary(imageId, imagePlaneModule) {
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
+    const calibration = metaData.get('calibratedPixelSpacing', imageId);
+    this.calibration = calibration;
+    imagePlaneModule.calibration = calibration;
 
-    if (!calibratedPixelSpacing) {
-      return imagePlaneModule;
-    }
+    if (!calibration) return imagePlaneModule;
 
-    const {
+    let {
       rowPixelSpacing: calibratedRowSpacing,
       columnPixelSpacing: calibratedColumnSpacing,
-    } = calibratedPixelSpacing;
+    } = calibration;
+    const { scale } = calibration;
+
+    if (scale && !calibratedRowSpacing) {
+      calibratedRowSpacing = (imagePlaneModule.rowPixelSpacing || 1) / scale;
+      calibratedColumnSpacing =
+        (imagePlaneModule.columnPixelSpacing || 1) / scale;
+    }
+
+    if (!scale && !calibratedRowSpacing) return imagePlaneModule;
 
     // Todo: This is necessary in general, but breaks an edge case when an image
     // is calibrated to some other spacing, and it gets calibrated BACK to the
@@ -620,45 +628,28 @@ class StackViewport extends Viewport implements IStackViewport {
       return imagePlaneModule;
     }
 
+    this.hasPixelSpacing = calibratedRowSpacing && calibratedColumnSpacing;
+
     // Check if there is already an actor
     const imageDataMetadata = this.getImageData();
 
-    // If no actor (first load) and calibration matches the dicom header
-    if (
-      !imageDataMetadata &&
-      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
-      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
-    ) {
-      return imagePlaneModule;
-    }
-
-    this.calibration = {
-      type: CalibrationTypes.USER,
-      pixelSpacing: [calibratedColumnSpacing, calibratedRowSpacing],
-    };
-    this.hasPixelSpacing = calibratedRowSpacing && calibratedColumnSpacing;
-
     // If no actor (first load) and calibration doesn't match headers
     // -> needs calibration
-    if (
-      !imageDataMetadata &&
-      (imagePlaneModule.rowPixelSpacing !== calibratedRowSpacing ||
-        imagePlaneModule.columnPixelSpacing !== calibratedColumnSpacing)
-    ) {
+    if (!imageDataMetadata) {
       this._publishCalibratedEvent = true;
 
       this._calibrationEvent = <CalibrationEvent>{
         rowScale: calibratedRowSpacing / imagePlaneModule.rowPixelSpacing,
         columnScale:
           calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
+        calibration,
       };
 
       // modify the calibration object to store the actual updated values applied
-      calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
+      calibration.appliedSpacing = calibration;
       // This updates the render copy
       imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
       imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
-      imagePlaneModule.calibration = this.calibration;
       return imagePlaneModule;
     }
 
@@ -667,15 +658,13 @@ class StackViewport extends Viewport implements IStackViewport {
     const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
 
     // modify the calibration object to store the actual updated values applied
-    calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
     imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
     imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
-    imagePlaneModule.calibration = this.calibration;
 
     // If current actor spacing matches the calibrated spacing
     if (
       rowPixelSpacing === calibratedRowSpacing &&
-      columnPixelSpacing === calibratedPixelSpacing
+      columnPixelSpacing === calibratedColumnSpacing
     ) {
       // No calibration is required
       return imagePlaneModule;
@@ -687,6 +676,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this._calibrationEvent = <CalibrationEvent>{
       rowScale: calibratedRowSpacing / rowPixelSpacing,
       columnScale: calibratedColumnSpacing / columnPixelSpacing,
+      calibration,
     };
 
     return imagePlaneModule;

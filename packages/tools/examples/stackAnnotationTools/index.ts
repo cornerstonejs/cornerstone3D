@@ -194,7 +194,7 @@ const calibrationFunctions: Record<string, unknown> = {};
 const calibrations = [
   {
     value: 'Default',
-    selected: 'clearCalibration',
+    selected: 'userCalibration',
   },
   {
     value: 'User Calibration 0.5',
@@ -205,14 +205,31 @@ const calibrations = [
     },
   },
   {
-    value: 'Uncalibrated',
-    selected: 'applyMetadata',
-    metadata: {
-      '00280030': null,
+    value: 'ERMF 2',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 2,
+      type: Enums.CalibrationTypes.ERMF,
     },
   },
   {
-    value: 'Uncalibrated',
+    value: 'Projected',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 1,
+      type: Enums.CalibrationTypes.PROJECTION,
+    },
+  },
+  {
+    value: 'Error',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 1,
+      type: Enums.CalibrationTypes.ERROR,
+    },
+  },
+  {
+    value: 'px units',
     selected: 'applyMetadata',
     metadata: {
       '00280030': null,
@@ -314,16 +331,16 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   calibrationFunctions.userCalibration = function calibrationSelected() {
-    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, 2, 2);
-  };
-  calibrationFunctions.clearCalibration = function clearCalibration() {
-    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null, null);
+    utilities.calibrateImageSpacing(
+      imageIds[0],
+      renderingEngine,
+      this.calibration
+    );
   };
   calibrationFunctions.applyMetadata = function applyMetadata() {
     const instance = wadors.metaDataManager.get(imageIds[0]);
-    console.log('Applying', this.metadata);
     Object.assign(instance, this.metadata);
-    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null, null);
+    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null);
   };
 
   // Create a stack viewport

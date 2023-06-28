@@ -6,11 +6,17 @@ import CalibrationTypes from '../enums/CalibrationTypes';
  */
 export interface IImageCalibration {
   /** The pixel spacing for the image, in mm between pixel centers */
-  pixelSpacing: [number, number];
+  rowPixelSpacing?: number;
+  columnPixelSpacing?: number;
+
+  /** The scaling of this image - new spacing = original pixelSpacing/scale */
+  scale?: number;
+
   /** The type of the pixel spacing, distinguishing between various
    * types projection (CR/DX/MG) spacing and volumetric spacing ('')
    */
   type: CalibrationTypes;
+
   // A tooltip which can be used to explain the calibration information
   tooltip?: string;
   /** Indication that the image has some spacing information (the pixelSpacing

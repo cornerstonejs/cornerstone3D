@@ -584,7 +584,7 @@ export class BrushTool extends BaseTool {
 function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
-function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, rowPixelSpacing: number, columnPixelSpacing: number): void;
+function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, spacing: Types_2.IImageCalibration | number, columnPixelSpacing?: number): void;
 
 // @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
@@ -2497,9 +2497,12 @@ interface IImage {
 
 // @public
 interface IImageCalibration {
+    // (undocumented)
+    columnPixelSpacing?: number;
     hasPixelSpacing?: boolean;
     isProjection?: boolean;
-    pixelSpacing: [number, number];
+    rowPixelSpacing?: number;
+    scale?: number;
     // (undocumented)
     sequenceOfUltrasoundRegions?: Record<string, unknown>[];
     // (undocumented)

@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 const { calibratedPixelSpacingMetadataProvider } = utilities;
@@ -15,23 +15,19 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default function calibrateImageSpacing(
   imageId: string,
   renderingEngine: Types.IRenderingEngine,
-  rowPixelSpacing: number,
-  columnPixelSpacing: number
+  spacing: Types.IImageCalibration | number,
+  columnPixelSpacing?: number
 ): void {
-  // 1. Add the calibratedPixelSpacing metadata to the metadata provider
-  // If no column spacing provided, assume square pixels
-  if (!columnPixelSpacing) {
-    columnPixelSpacing = rowPixelSpacing;
+  // Handle prior change versions
+  if (typeof spacing === 'number') {
+    spacing = {
+      type: Enums.CalibrationTypes.USER,
+      rowPixelSpacing: spacing,
+      columnPixelSpacing: columnPixelSpacing || spacing,
+    };
   }
-
-  if (!rowPixelSpacing) {
-    calibratedPixelSpacingMetadataProvider.add(imageId, null);
-  } else {
-    calibratedPixelSpacingMetadataProvider.add(imageId, {
-      rowPixelSpacing,
-      columnPixelSpacing,
-    });
-  }
+  // 1. Add the calibratedPixelSpacing metadata to the metadata
+  calibratedPixelSpacingMetadataProvider.add(imageId, spacing);
 
   // 2. Update the actor for stackViewports
   const viewports = renderingEngine.getStackViewports();
