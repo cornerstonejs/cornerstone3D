@@ -5386,7 +5386,7 @@ declare namespace utilities {
         planarFreehandROITool,
         stackPrefetch,
         scroll_2 as scroll,
-        roundNumber as roundMeasurement
+        roundNumber
     }
 }
 export { utilities }

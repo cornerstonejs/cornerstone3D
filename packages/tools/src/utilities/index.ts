@@ -66,5 +66,5 @@ export {
   planarFreehandROITool,
   stackPrefetch,
   scroll,
-  roundNumber as roundMeasurement,
+  roundNumber,
 };
