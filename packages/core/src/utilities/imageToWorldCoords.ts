@@ -16,10 +16,6 @@ export default function imageToWorldCoords(
   imageCoords: Point2
 ): Point3 | undefined {
   const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-  const calibratedPixelSpacing = metaData.get(
-    'calibratedPixelSpacing',
-    imageId
-  );
 
   if (!imagePlaneModule) {
     throw new Error(`No imagePlaneModule found for imageId: ${imageId}`);
@@ -31,10 +27,7 @@ export default function imageToWorldCoords(
     imagePositionPatient: origin,
   } = imagePlaneModule;
 
-  let { columnPixelSpacing, rowPixelSpacing } =
-    calibratedPixelSpacing || imagePlaneModule;
-  columnPixelSpacing ||= 1;
-  rowPixelSpacing ||= 1;
+  const { columnPixelSpacing = 1, rowPixelSpacing = 1 } = imagePlaneModule;
 
   // calculate the image coordinates in the world space
   const imageCoordsInWorld = vec3.create();
