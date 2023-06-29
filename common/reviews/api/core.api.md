@@ -1433,8 +1433,6 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    rowScale?: number;
-    columnScale?: number;
     scale?: number;
     imageData: vtkImageData;
     worldToIndex: mat4;

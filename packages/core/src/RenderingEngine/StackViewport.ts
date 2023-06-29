@@ -2654,16 +2654,6 @@ class StackViewport extends Viewport implements IStackViewport {
       ...imagePlaneModule,
     };
 
-    if (calibratedPixelSpacing?.appliedSpacing) {
-      // Over-ride the image plane module spacing, as the measurement data
-      // has already been created with the calibrated spacing provided from
-      // down below inside calibrateIfNecessary
-      const { rowPixelSpacing, columnPixelSpacing } =
-        calibratedPixelSpacing.appliedSpacing;
-      newImagePlaneModule.rowPixelSpacing = rowPixelSpacing;
-      newImagePlaneModule.columnPixelSpacing = columnPixelSpacing;
-    }
-
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
       this.hasPixelSpacing = this.calibration?.scale > 0;
