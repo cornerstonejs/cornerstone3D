@@ -114,13 +114,13 @@ async function init(configuration = {}): Promise<boolean> {
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    const gpuTier =
+    config.gpuTier =
       config.gpuTier || (await getGPUTier(config.detectGPUConfig));
     console.log(
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
-      gpuTier
+      config.gpuTier
     );
-    if (gpuTier.tier < 1) {
+    if (config.gpuTier.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );
