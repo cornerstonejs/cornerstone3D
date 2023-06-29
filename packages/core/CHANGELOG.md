@@ -3,6 +3,67 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.7...v1.2.8) (2023-06-27)
+
+### Bug Fixes
+
+- **monochrome1:** fix bug for monochrom1 inverted color ([#668](https://github.com/cornerstonejs/cornerstone3D/issues/668)) ([0864049](https://github.com/cornerstonejs/cornerstone3D/commit/0864049b4d7c9846e715af70c8ef26e13b7be2dc))
+
+## [1.2.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.6...v1.2.7) (2023-06-20)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.5...v1.2.6) (2023-06-14)
+
+### Bug Fixes
+
+- **stack:** invalidate stack if the next image is different PI ([#631](https://github.com/cornerstonejs/cornerstone3D/issues/631)) ([24ae3c9](https://github.com/cornerstonejs/cornerstone3D/commit/24ae3c975f25eaf91f0eccba69983ddd20e98ac0))
+- **types:** fix the signature of resize method ([#630](https://github.com/cornerstonejs/cornerstone3D/issues/630)) ([7b6f855](https://github.com/cornerstonejs/cornerstone3D/commit/7b6f8556bc160ae63e9069baed83fb9082d7e719))
+
+## [1.2.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.4...v1.2.5) (2023-06-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.3...v1.2.4) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.2...v1.2.3) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.1...v1.2.2) (2023-06-13)
+
+### Bug Fixes
+
+- **colormap:** adding new Method to set the opacity of the colormap ([#649](https://github.com/cornerstonejs/cornerstone3D/issues/649)) ([d7e5430](https://github.com/cornerstonejs/cornerstone3D/commit/d7e54301e6e4e7cde6b3a087543b772943884bfa))
+
+## [1.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.0...v1.2.1) (2023-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.9...v1.2.0) (2023-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.1.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.8...v1.1.9) (2023-06-12)
+
+### Bug Fixes
+
+- **mipJump:** MIP jump to image click ([#645](https://github.com/cornerstonejs/cornerstone3D/issues/645)) ([d81d583](https://github.com/cornerstonejs/cornerstone3D/commit/d81d583d645e69c5d52d4d03a713c0c43d33867f))
+
+## [1.1.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.7...v1.1.8) (2023-06-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.1.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.1.6...v1.1.7) (2023-06-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.1.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.5...v1.1.6) (2023-06-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [1.1.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.4...v1.1.5) (2023-05-23)
 
 **Note:** Version bump only for package @cornerstonejs/core

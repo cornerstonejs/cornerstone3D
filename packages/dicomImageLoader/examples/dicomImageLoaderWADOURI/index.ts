@@ -249,7 +249,7 @@ function handleImageSelection(event) {
 
   if (selectedFile) {
     downloadAndView(
-      'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D-beta/main/packages/dicomImageLoader/testImages/' +
+      'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/' +
         selectedFile
     );
   }

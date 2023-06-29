@@ -158,8 +158,8 @@ declare namespace colormap {
 
 // @public (undocumented)
 type ColormapPublic = {
-    name: string;
-    opacityMapping?: OpacityMapping[];
+    name?: string;
+    opacity?: OpacityMapping[] | number;
 };
 
 // @public (undocumented)
@@ -1534,7 +1534,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
+    resize(immediate?: boolean, keepCamera?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }

@@ -1,11 +1,11 @@
 {
   "name": "root",
-  "description": "Cornerstone.js Monorepo Root - Beta",
+  "description": "Cornerstone.js Monorepo Root",
   "private": true,
   "workspaces": [
     "packages/*"
   ],
-  "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
   "engines": {
     "node": ">=12",
@@ -21,6 +21,7 @@
     "build:update-api:adapters": "cd packages/adapters && npm run build:update-api",
     "build:update-api:streaming": "cd packages/streaming-image-volume-loader && npm run build:update-api",
     "build:update-api": "npm run build:update-api:core && npm run build:update-api:tools && npm run build:update-api:streaming",
+    "clean": "npx lerna run clean --stream",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
