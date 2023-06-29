@@ -1,8 +1,8 @@
-import type { GetGPUTier } from 'detect-gpu';
+import type { TierResult, GetGPUTier } from 'detect-gpu';
 
 type Cornerstone3DConfig = {
-  detectGPU: any;
-  getGPUTierConfig: GetGPUTier;
+  gpuTier?: TierResult;
+  detectGPUConfig: GetGPUTier;
   rendering: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting
