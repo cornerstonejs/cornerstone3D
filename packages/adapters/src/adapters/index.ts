@@ -5,7 +5,7 @@ import VTKjs from "./VTKjs";
 const adapters = {
     Cornerstone,
     Cornerstone3D,
-    VTKjs,
+    VTKjs
 };
 
 export default adapters;
