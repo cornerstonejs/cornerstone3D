@@ -27,7 +27,9 @@ export default function imageToWorldCoords(
     imagePositionPatient: origin,
   } = imagePlaneModule;
 
-  const { columnPixelSpacing = 1, rowPixelSpacing = 1 } = imagePlaneModule;
+  let { columnPixelSpacing, rowPixelSpacing } = imagePlaneModule;
+  columnPixelSpacing ||= 1;
+  rowPixelSpacing ||= 1;
 
   // calculate the image coordinates in the world space
   const imageCoordsInWorld = vec3.create();

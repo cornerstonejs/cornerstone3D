@@ -31,7 +31,9 @@ function worldToImageCoords(
     imagePositionPatient: origin,
   } = imagePlaneModule;
 
-  const { columnPixelSpacing = 1, rowPixelSpacing = 1 } = imagePlaneModule;
+  let { columnPixelSpacing, rowPixelSpacing } = imagePlaneModule;
+  columnPixelSpacing ||= 1;
+  rowPixelSpacing ||= 1;
 
   // The origin is the image position patient, but since image coordinates start
   // from [0,0] for the top left hand of the first pixel, and the origin is at the
