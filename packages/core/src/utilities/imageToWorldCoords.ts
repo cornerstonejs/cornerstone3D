@@ -28,6 +28,7 @@ export default function imageToWorldCoords(
   } = imagePlaneModule;
 
   let { columnPixelSpacing, rowPixelSpacing } = imagePlaneModule;
+  // Use ||= to convert null and 0 as well as undefined to 1
   columnPixelSpacing ||= 1;
   rowPixelSpacing ||= 1;
 
