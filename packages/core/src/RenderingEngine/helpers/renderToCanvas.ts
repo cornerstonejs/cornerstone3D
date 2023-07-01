@@ -82,7 +82,6 @@ export default function renderToCanvas(
       type: ViewportType.STACK,
       element,
       defaultOptions: {
-        orientation: ORIENTATION.AXIAL,
         suppressEvents,
       },
     };

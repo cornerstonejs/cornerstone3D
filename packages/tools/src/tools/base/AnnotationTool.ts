@@ -368,8 +368,17 @@ abstract class AnnotationTool extends BaseTool {
     property: string,
     annotation?: Annotation
   ): unknown {
+    const toolGroupSettings = Settings.getCustomSettings(this.toolGroupId);
+
+    const toolStyleProperty = `tool.style.${property}`;
+    const settingsToUse =
+      toolGroupSettings.hasOwn(toolStyleProperty) &&
+      !settings.hasOwn(toolStyleProperty)
+        ? toolGroupSettings
+        : settings;
+
     return getStyleProperty(
-      settings,
+      settingsToUse,
       property,
       getState(annotation),
       this.mode

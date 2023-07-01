@@ -5,6 +5,7 @@
 const DEFAULT_SETTINGS = Symbol('DefaultSettings');
 const RUNTIME_SETTINGS = Symbol('RuntimeSettings');
 const OBJECT_SETTINGS_MAP = Symbol('ObjectSettingsMap');
+const CUSTOM_SETTINGS_MAP = Symbol('CustomSettingsMap');
 const DICTIONARY = Symbol('Dictionary');
 
 /**
@@ -26,8 +27,16 @@ export default class Settings {
     return set(this[DICTIONARY], key, value, null);
   }
 
+  // checks in all prototypes of the given object if the given key is set
   get(key: string): unknown {
     return get(this[DICTIONARY], key);
+  }
+
+  // a method to check if a given key is set on the settings object and not the
+  // prototype chain
+  hasOwn(key: string): unknown {
+    const ownKeys = Object.keys(this[DICTIONARY]);
+    return ownKeys.includes(key);
   }
 
   /**
@@ -115,6 +124,24 @@ export default class Settings {
       Settings[RUNTIME_SETTINGS] = runtimeSettings;
     }
     return runtimeSettings;
+  }
+
+  static getCustomSettings(subject: unknown): Settings {
+    let settings = null;
+    if (subject !== null) {
+      let customSettingsMap = Settings[CUSTOM_SETTINGS_MAP];
+      if (!(customSettingsMap instanceof Map)) {
+        customSettingsMap = new Map();
+        Settings[CUSTOM_SETTINGS_MAP] = customSettingsMap;
+      }
+      settings = customSettingsMap.get(subject);
+      if (!(settings instanceof Settings)) {
+        settings = new Settings();
+        customSettingsMap.set(subject, settings);
+        Settings[CUSTOM_SETTINGS_MAP] = customSettingsMap;
+      }
+    }
+    return settings;
   }
 
   static getObjectSettings(subject: unknown, from?: unknown): Settings {

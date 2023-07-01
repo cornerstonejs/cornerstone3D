@@ -635,6 +635,8 @@ function getAllSettings() {
 function setStyleProperty(name: string, value: unknown): void {
   const settings = getTargetSettings();
   if (settings.set(name, value)) {
+    debugger;
+    Settings.getObjectSettings();
     displayToolStyleValues();
     getRenderingEngines().forEach((renderEngine) => renderEngine.render());
     console.info('Style property "%s" successfully set!', name);

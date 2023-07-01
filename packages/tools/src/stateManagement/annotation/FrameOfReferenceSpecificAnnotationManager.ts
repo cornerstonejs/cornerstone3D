@@ -402,4 +402,5 @@ export default class FrameOfReferenceSpecificAnnotationManager {
 const defaultFrameOfReferenceSpecificAnnotationManager =
   new FrameOfReferenceSpecificAnnotationManager('DEFAULT');
 
+window.state = defaultFrameOfReferenceSpecificAnnotationManager;
 export { defaultFrameOfReferenceSpecificAnnotationManager };

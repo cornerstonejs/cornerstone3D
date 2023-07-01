@@ -550,6 +550,7 @@ class LengthTool extends AnnotationTool {
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as LengthAnnotation;
       const settings = Settings.getObjectSettings(annotation, LengthTool);
+
       const annotationUID = annotation.annotationUID;
       const data = annotation.data;
       const { points, activeHandleIndex } = data.handles;

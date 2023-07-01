@@ -1,4 +1,5 @@
 import * as csTools3d from '@cornerstonejs/tools';
+import { Settings } from '@cornerstonejs/core';
 
 const { MouseBindings } = csTools3d.Enums;
 
@@ -287,6 +288,11 @@ function initToolGroups() {
   const ctTestSceneToolGroup = ToolGroupManager.createToolGroup('ctTestVolume');
 
   const ptTestSceneToolGroup = ToolGroupManager.createToolGroup('ptTestVolume');
+
+  Settings.getCustomSettings('ptSceneToolGroup', null).set('tool.style', {
+    lineWidth: '10',
+    lineDash: '',
+  });
 
   return {
     stackCTViewportToolGroup,
