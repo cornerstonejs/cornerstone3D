@@ -561,7 +561,9 @@ var JpegImage = (function jpegImage() {
     return a <= 0 ? 0 : a >= 255 ? 255 : a | 0;
   }
 
-  constructor.prototype = {
+  class JpegImage {}
+
+  Object.setPrototypeOf(JpegImage.prototype, {
     load: function load(path) {
       var handleData = function (data) {
         this.parse(data);
@@ -1088,7 +1090,7 @@ var JpegImage = (function jpegImage() {
       }
       return data;
     },
-  };
+  });
 
-  return constructor;
+  return JpegImage
 })();
