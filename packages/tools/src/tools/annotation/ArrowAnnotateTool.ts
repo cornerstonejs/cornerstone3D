@@ -778,7 +778,8 @@ class ArrowAnnotateTool extends AnnotationTool {
 
       // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        // linked to the point that doesn't have the arrowhead by default
+        const canvasTextBoxCoords = canvasCoordinates[1];
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
