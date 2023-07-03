@@ -579,11 +579,11 @@ class ProbeTool extends AnnotationTool {
     // Check if we have scaling for the other 2 SUV types for the PET.
     if (
       modality === 'PT' &&
-      imageVolume.scaling?.PET &&
-      (imageVolume.scaling.PET.suvbwToSuvbsa ||
-        imageVolume.scaling.PET.suvbwToSuvlbm)
+      imageVolume.scaling?.PT &&
+      (imageVolume.scaling.PT.suvbwToSuvbsa ||
+        imageVolume.scaling.PT.suvbwToSuvlbm)
     ) {
-      const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET;
+      const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PT;
 
       values['SUVBw'] = value;
 
