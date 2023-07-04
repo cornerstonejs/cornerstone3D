@@ -2703,6 +2703,7 @@ type VoiModifiedEventDetail = {
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    invertStateChanged?: boolean;
 };
 
 // @public (undocumented)
