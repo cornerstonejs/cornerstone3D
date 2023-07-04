@@ -1,21 +1,22 @@
 import { vec3 } from 'gl-matrix';
 import {
   metaData,
-  CONSTANTS,
   Enums,
   RenderingEngine,
   Types,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  addDropdownToToolbar,
-  addButtonToToolbar,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+
+import {
+  makeVolumeMetadata,
+  sortImageIdsAndGetSpacing,
+} from '../../../streaming-image-volume-loader/src/helpers';
 
 // This is for debugging purposes
 console.warn(
@@ -26,31 +27,25 @@ const {
   ToolGroupManager,
   SegmentationDisplayTool,
   WindowLevelTool,
-  TrackballRotateTool,
   StackScrollMouseWheelTool,
   ZoomTool,
   segmentation,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-import sortImageIdsAndGetSpacing from '../../../streaming-image-volume-loader/src/helpers/sortImageIdsAndGetSpacing';
-
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 let renderingEngine;
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
 const segmentationId = 'MY_SEGMENTATION_ID';
 const viewportId = 'STACK_VIEWPORT';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  '3D Volume Rendering',
-  'Here we demonstrate how to 3D render a volume.'
+  'Segmentation in StackViewport',
+  'Here we demonstrate how to render a segmentation with stack viewport using CT images.'
 );
 
 const size = '500px';
@@ -80,49 +75,9 @@ viewportGrid.appendChild(element2);
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
-instructions.innerText = 'Click the image to rotate it.';
+instructions.innerText = '';
 
 content.append(instructions);
-
-addDropdownToToolbar({
-  options: {
-    values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
-    defaultValue: 'CT-Bone',
-  },
-  onSelectedValueChange: (presetName) => {
-    const actors = renderingEngine.getViewport(viewportId).getActors();
-    const volumeActor = actors[1].actor as Types.VolumeActor;
-
-    utilities.applyPreset(
-      volumeActor,
-      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === presetName)
-    );
-
-    renderingEngine.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Full volume',
-  onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId);
-    const actors = viewport.getActors();
-    actors[1].slabThickness = undefined;
-    viewport.render();
-    renderingEngine.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Slice view',
-  onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId);
-    const actors = viewport.getActors();
-    actors[1].slabThickness = 1.0;
-    viewport.render();
-    renderingEngine.render();
-  },
-});
 
 function sortImageIds(imageIds) {
   const { rowCosines, columnCosines } = metaData.get(
@@ -156,7 +111,6 @@ async function getImageIds() {
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
@@ -166,25 +120,12 @@ function setupTools(toolGroupId) {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(TrackballRotateTool.toolName, {
-    configuration: { volumeId },
-  });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: true });
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
-  toolGroup.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Left Click
-      },
-    ],
-  });
 
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
@@ -213,8 +154,8 @@ function createMockEllipsoidSegmentation(segmentationVolume) {
   const { dimensions } = segmentationVolume;
 
   const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
-  const outerRadius = 50;
-  const innerRadius = 10;
+  const outerRadius = 100;
+  const innerRadius = 50;
 
   let voxelIndex = 0;
 
@@ -238,15 +179,69 @@ function createMockEllipsoidSegmentation(segmentationVolume) {
   }
 }
 
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: segmentationId,
-    }
+/** This function creates an uint8 segmentation volume using an array of imageIds */
+async function createSegmentationVolume(imageIds) {
+  // creating volume metadata from imageIds
+  const metadata = makeVolumeMetadata(imageIds);
+
+  // Its a segmentation volume so use 8 bits
+  metadata.BitsAllocated = 8;
+  metadata.BitsStored = 8;
+  metadata.HighBit = 7;
+
+  const { ImageOrientationPatient, PixelSpacing, Columns, Rows } = metadata;
+
+  const rowCosineVec = vec3.fromValues(
+    ImageOrientationPatient[0],
+    ImageOrientationPatient[1],
+    ImageOrientationPatient[2]
   );
+  const colCosineVec = vec3.fromValues(
+    ImageOrientationPatient[3],
+    ImageOrientationPatient[4],
+    ImageOrientationPatient[5]
+  );
+
+  const scanAxisNormal = vec3.create();
+  vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+  const direction = [
+    ...rowCosineVec,
+    ...colCosineVec,
+    ...scanAxisNormal,
+  ] as Types.Mat3;
+
+  const { zSpacing, origin } = sortImageIdsAndGetSpacing(
+    imageIds,
+    scanAxisNormal
+  );
+
+  const numFrames = imageIds.length;
+  const spacing = <Types.Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing];
+  const dimensions = <Types.Point3>[Columns, Rows, numFrames];
+  const length = dimensions[0] * dimensions[1] * dimensions[2];
+  const scalarData = new Uint8Array(length);
+  const options = {
+    scalarData,
+    metadata,
+    spacing,
+    origin,
+    direction,
+    dimensions,
+    sizeInBytes: length,
+  };
+
+  const preventCache = false;
+  const segmentationVolume = await volumeLoader.createLocalVolume(
+    options,
+    segmentationId,
+    preventCache
+  );
+  return { segmentationVolume, options };
+}
+
+async function addSegmentationsToState(imageIds) {
+  // create a segmentation volume based on imageIds
+  const { segmentationVolume } = await createSegmentationVolume(imageIds);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -280,13 +275,6 @@ async function run() {
 
   const imageIds = await getImageIds();
   const sortedImageIds = sortImageIds(imageIds);
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
-
-  // Set the volume to load
-  volume.load();
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -309,7 +297,7 @@ async function run() {
   const middleImage = Math.floor(sortedImageIds.length / 2);
   await viewport.setStack(sortedImageIds, middleImage);
 
-  addSegmentationsToState();
+  addSegmentationsToState(imageIds);
   // // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
