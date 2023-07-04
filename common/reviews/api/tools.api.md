@@ -4,7 +4,9 @@
 
 ```ts
 
+import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
+import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -924,7 +926,8 @@ function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
 
 // @public (undocumented)
 type Cornerstone3DConfig = {
-    detectGPU: any;
+    gpuTier?: TierResult;
+    detectGPUConfig: GetGPUTier;
     rendering: {
         // vtk.js supports 8bit integer textures and 32bit float textures.
         // However, if the client has norm16 textures (it can be seen by visiting
