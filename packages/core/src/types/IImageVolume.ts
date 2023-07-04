@@ -23,10 +23,10 @@ interface IImageVolume {
   /** volume origin - set to the imagePositionPatient of the last image in the volume */
   origin: Point3;
   /** Whether preScaling has been performed on the volume */
-  isPrescaled: boolean;
+  isPreScaled: boolean;
   /** volume scaling metadata */
   scaling?: {
-    PET?: {
+    PT?: {
       SUVlbmFactor?: number;
       SUVbsaFactor?: number;
       suvbwToSuvlbm?: number;

@@ -1092,7 +1092,7 @@ interface IImage {
     rows: number;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -1199,7 +1199,7 @@ interface IImageVolume {
     // (undocumented)
     isDynamicVolume(): boolean;
     // (undocumented)
-    isPrescaled: boolean;
+    isPreScaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
@@ -1212,7 +1212,7 @@ interface IImageVolume {
     referencedVolumeId?: string;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -1432,7 +1432,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     isDynamicVolume(): boolean;
     // (undocumented)
-    isPrescaled: boolean;
+    isPreScaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
@@ -1447,7 +1447,7 @@ export class ImageVolume implements IImageVolume {
     protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -1760,7 +1760,7 @@ interface IVolume {
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -2104,7 +2104,7 @@ function scaleRGBTransferFunction(rgbTransferFunction: any, scalingFactor: numbe
 
 // @public (undocumented)
 type Scaling = {
-    PET?: PTScaling;
+    PT?: PTScaling;
 };
 
 // @public (undocumented)
