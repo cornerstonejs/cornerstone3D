@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.3.0...v1.4.0) (2023-07-04)
+
+### Features
+
+- **detectGPU:** Add config for getGPUTier method in cornerstone.init ([#633](https://github.com/cornerstonejs/cornerstone3D/issues/633)) ([b5ea0e2](https://github.com/cornerstonejs/cornerstone3D/commit/b5ea0e2c1e337759062ff22c5c7db545fc8be745)), closes [#570](https://github.com/cornerstonejs/cornerstone3D/issues/570)
+
 # [1.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.9...v1.3.0) (2023-07-04)
 
 ### Features
