@@ -3,6 +3,7 @@ import {
   addVolumesToViewports,
   Types,
   Enums,
+  StackViewport,
 } from '@cornerstonejs/core';
 
 /**
@@ -41,6 +42,7 @@ async function addLabelmapToElement(
       actorUID: segmentationRepresentationUID,
       visibility,
       blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+      slabThickness: viewport instanceof StackViewport ? 1.0 : undefined,
     },
   ];
 

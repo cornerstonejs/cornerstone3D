@@ -146,11 +146,7 @@ class Viewport implements IViewport {
    * @returns
    */
   protected fixSlabThickness(slabThickness: number) {
-    if (slabThickness) {
-      return slabThickness;
-    } else {
-      return 1.0;
-    }
+    return slabThickness;
   }
   /**
    * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
