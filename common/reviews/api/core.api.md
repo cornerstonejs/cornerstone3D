@@ -4,7 +4,9 @@
 
 ```ts
 
+import type { GetGPUTier } from 'detect-gpu';
 import { mat4 } from 'gl-matrix';
+import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -14,7 +16,6 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type { GetGPUTier } from 'detect-gpu';
 
 // @public (undocumented)
 type Actor = vtkActor;
@@ -210,8 +211,8 @@ enum ContourType {
 
 // @public (undocumented)
 type Cornerstone3DConfig = {
-    detectGPU: any;
-    getGPUTierConfig: GetGPUTier;
+    gpuTier?: TierResult;
+    detectGPUConfig: GetGPUTier;
     rendering: {
         preferSizeOverAccuracy: boolean;
         useNorm16Texture: boolean;
