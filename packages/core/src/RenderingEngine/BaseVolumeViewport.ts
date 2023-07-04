@@ -233,7 +233,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     volumeId: string,
     suppressEvents?: boolean
   ) {
-    console.debug(this);
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {
@@ -747,9 +746,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       }
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
-        // throw new Error(
-        //   `Volumes being added to viewport ${this.id} do not share the same FrameOfReferenceUID. This is not yet supported`
-        // );
+        throw new Error(
+          `Volumes being added to viewport ${this.id} do not share the same FrameOfReferenceUID. This is not yet supported`
+        );
       }
     }
 
