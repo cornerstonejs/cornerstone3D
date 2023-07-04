@@ -333,6 +333,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeId: volumeIdToUse,
         VOILUTFunction: this.VOILUTFunction,
         invert: this.inverted,
+        invertStateChanged: true,
       };
 
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
