@@ -14,6 +14,7 @@ import {
   setPetTransferFunctionForVolumeActor,
   setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -28,6 +29,7 @@ const {
   MIPJumpToClickTool,
   VolumeRotateMouseWheelTool,
   CrosshairsTool,
+  TrackballRotateTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -37,6 +39,9 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;
 
 let renderingEngine;
+const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+const StudyInstanceUID =
+  '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -301,6 +306,7 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(MIPJumpToClickTool);
   cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -503,26 +509,27 @@ function setUpSynchronizers() {
     });
   });
 }
-
-async function setUpDisplay() {
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
-  const StudyInstanceUID =
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const ctImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot,
-  });
-
-  const ptImageIds = await createImageIdsAndCacheMetaData({
+async function getPtImageIds() {
+  return await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
   });
+}
+async function getCtImageIds() {
+  return await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot,
+  });
+}
+async function setUpDisplay() {
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const ctImageIds = await getCtImageIds();
+
+  const ptImageIds = await getPtImageIds();
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -698,7 +705,119 @@ async function setUpDisplay() {
   // Render the viewports
   renderingEngine.render();
 }
+addButtonToToolbar({
+  title: 'toggle volume3d',
+  onClick: async () => {
+    const ptImageIds = await getPtImageIds();
+    // Define a volume in memory
+    const volume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+      imageIds: ptImageIds,
+    });
+    volume.load();
 
+    const viewportInput = {
+      viewportId: viewportIds.PETMIP.CORONAL,
+      type: ViewportType.VOLUME_3D,
+      element: element_mip,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[1, 1, 1],
+      },
+    };
+    renderingEngine.enableElement(viewportInput);
+
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportIds.PETMIP.CORONAL)
+    );
+
+    const ptVolumeDimensions = volume.dimensions;
+
+    // Only make the MIP as large as it needs to be.
+    const slabThickness = Math.sqrt(
+      ptVolumeDimensions[0] * ptVolumeDimensions[0] +
+        ptVolumeDimensions[1] * ptVolumeDimensions[1] +
+        ptVolumeDimensions[2] * ptVolumeDimensions[2]
+    );
+
+    viewport.setVolumes([
+      {
+        volumeId: ptVolumeId,
+        callback: setPetTransferFunctionForVolumeActor,
+        slabThickness: slabThickness,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      },
+    ]);
+
+    const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID2';
+    const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
+
+    [
+      viewportIds.PT.AXIAL,
+      viewportIds.PT.SAGITTAL,
+      viewportIds.PT.CORONAL,
+      viewportIds.FUSION.AXIAL,
+      viewportIds.FUSION.SAGITTAL,
+      viewportIds.FUSION.CORONAL,
+      viewportIds.PETMIP.CORONAL,
+    ].forEach((viewportId) => {
+      ptVoiSynchronizer.add({
+        renderingEngineId,
+        viewportId,
+      });
+    });
+    const volume3dToolGroup =
+      ToolGroupManager.createToolGroup('mipToolGroupUID');
+
+    volume3dToolGroup.addTool('VolumeRotateMouseWheel');
+    volume3dToolGroup.addTool('MIPJumpToClickTool', {
+      targetViewportIds: [
+        viewportIds.CT.AXIAL,
+        viewportIds.CT.SAGITTAL,
+        viewportIds.CT.CORONAL,
+        viewportIds.PT.AXIAL,
+        viewportIds.PT.SAGITTAL,
+        viewportIds.PT.CORONAL,
+        viewportIds.FUSION.AXIAL,
+        viewportIds.FUSION.SAGITTAL,
+        viewportIds.FUSION.CORONAL,
+      ],
+    });
+    volume3dToolGroup.addTool(PanTool.toolName);
+    volume3dToolGroup.addTool(TrackballRotateTool.toolName);
+    // Set the initial state of the tools, here we set one tool active on left click.
+    // This means left click will draw that tool.
+    volume3dToolGroup.setToolActive('MIPJumpToClickTool', {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+      ],
+    });
+    volume3dToolGroup.setToolActive(PanTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Secondary,
+        },
+      ],
+    });
+    volume3dToolGroup.setToolActive(TrackballRotateTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Auxiliary,
+        },
+      ],
+    });
+
+    volume3dToolGroup.setToolActive('VolumeRotateMouseWheel');
+
+    volume3dToolGroup.addViewport(
+      viewportIds.PETMIP.CORONAL,
+      renderingEngineId
+    );
+    renderingEngine.render();
+    console.debug(renderingEngine);
+  },
+});
 function initializeCameraSync(renderingEngine) {
   // The fusion scene is the target as it is scaled to both volumes.
   // TODO -> We should have a more generic way to do this,
