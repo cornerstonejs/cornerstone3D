@@ -274,10 +274,6 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
-      },
-      "mprVolume3d": {
-          "name": "volume-3d tools",
-          "description": "PT-CT fusion layout with Crosshairs, jump to click, synchronized cameras and voi"
       }
     },
     "dicom-image-loader": {
