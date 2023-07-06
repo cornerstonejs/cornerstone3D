@@ -663,6 +663,13 @@ class PlanarFreehandROITool extends AnnotationTool {
       )
         return;
 
+      const isPreScaled = isViewportPreScaled(viewport, targetId);
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
+
       if (!this.commonData?.movingTextBox) {
         const { data } = annotation;
         if (
@@ -682,14 +689,18 @@ class PlanarFreehandROITool extends AnnotationTool {
             annotation,
             viewport,
             renderingEngine,
-            enabledElement
+            enabledElement,
+            isPreScaled,
+            isSuvScaled
           );
         } else if (annotation.invalidated) {
           this._throttledCalculateCachedStats(
             annotation,
             viewport,
             renderingEngine,
-            enabledElement
+            enabledElement,
+            isPreScaled,
+            isSuvScaled
           );
         }
       }
@@ -704,7 +715,9 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    isPreScaled,
+    isSuvScaled
   ) => {
     const data = annotation.data;
     const { cachedStats, polyline: points } = data;
@@ -841,6 +854,13 @@ class PlanarFreehandROITool extends AnnotationTool {
       let stdDev = sumSquares / count - mean ** 2;
       stdDev = Math.sqrt(stdDev);
 
+      const modalityUnit = getModalityUnit(
+        metadata.Modality,
+        isPreScaled,
+        isSuvScaled,
+        annotation.metadata.referencedImageId
+      );
+
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
@@ -848,6 +868,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         max,
         stdDev,
         areaUnit: hasPixelSpacing ? 'mm' : 'px',
+        modalityUnit,
       };
     }
 
@@ -861,19 +882,8 @@ class PlanarFreehandROITool extends AnnotationTool {
   _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
-    const isPreScaled = isViewportPreScaled(viewport, targetId);
-    const isSuvScaled = this.isSuvScaled(
-      viewport,
-      targetId,
-      annotation.metadata.referencedImageId
-    );
 
-    const textLines = this._getTextLines(
-      data,
-      targetId,
-      isPreScaled,
-      isSuvScaled
-    );
+    const textLines = this._getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) return;
 
     const canvasCoordinates = data.polyline.map((p) =>
@@ -918,18 +928,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     };
   };
 
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] => {
+  _getTextLines = (data, targetId: string): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
+    const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
       cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     if (area) {
       const areaLine = isEmptyArea
@@ -939,15 +943,15 @@ class PlanarFreehandROITool extends AnnotationTool {
     }
 
     if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+      textLines.push(`Mean: ${mean.toFixed(2)} ${modalityUnit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+      textLines.push(`Max: ${max.toFixed(2)} ${modalityUnit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${modalityUnit}`);
     }
 
     return textLines;

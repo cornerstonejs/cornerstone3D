@@ -787,6 +787,14 @@ class EllipticalROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
+      const isPreScaled = isViewportPreScaled(viewport, targetId);
+
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -806,14 +814,18 @@ class EllipticalROITool extends AnnotationTool {
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          isPreScaled,
+          isSuvScaled
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          isPreScaled,
+          isSuvScaled
         );
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -925,20 +937,7 @@ class EllipticalROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
-
-      const textLines = this._getTextLines(
-        data,
-        targetId,
-        isPreScaled,
-        isSuvScaled
-      );
+      const textLines = this._getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -982,18 +981,12 @@ class EllipticalROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] => {
+  _getTextLines = (data, targetId: string): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
+    const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
       cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     if (area) {
       const areaLine = isEmptyArea
@@ -1003,15 +996,15 @@ class EllipticalROITool extends AnnotationTool {
     }
 
     if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+      textLines.push(`Mean: ${mean.toFixed(2)} ${modalityUnit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+      textLines.push(`Max: ${max.toFixed(2)} ${modalityUnit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${modalityUnit}`);
     }
 
     return textLines;
@@ -1021,7 +1014,9 @@ class EllipticalROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    isPreScaled,
+    isSuvScaled
   ) => {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -1149,6 +1144,13 @@ class EllipticalROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
+        const modalityUnit = getModalityUnit(
+          metadata.Modality,
+          isPreScaled,
+          isSuvScaled,
+          annotation.metadata.referencedImageId
+        );
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -1157,6 +1159,7 @@ class EllipticalROITool extends AnnotationTool {
           stdDev,
           isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
