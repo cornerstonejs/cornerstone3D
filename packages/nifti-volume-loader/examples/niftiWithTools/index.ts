@@ -2,13 +2,15 @@ import {
   RenderingEngine,
   Enums,
   init as csInit,
-  Types,
   volumeLoader,
   setVolumesForViewports,
   eventTarget,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { cornerstoneNiftiImageVolumeLoader } from '@cornerstonejs/nifti-volume-loader';
+import {
+  cornerstoneNiftiImageVolumeLoader,
+  Enums as NiftiEnums,
+} from '@cornerstonejs/nifti-volume-loader';
 
 import {
   addDropdownToToolbar,
@@ -132,7 +134,7 @@ async function setup() {
   volumeLoader.registerVolumeLoader('nifti', cornerstoneNiftiImageVolumeLoader);
 
   const niftiURL =
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii';
+    'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
   const volumeId = 'nifti:' + niftiURL;
 
   // Add tools to Cornerstone3D
@@ -208,8 +210,6 @@ async function setup() {
   toolGroup.setToolPassive(CobbAngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
-  const volume = await volumeLoader.createAndCacheVolume(volumeId);
-
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -247,14 +247,28 @@ async function setup() {
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  // update the progress bar
+  const updateProgress = (evt) => {
+    const { data } = evt.detail;
 
-  const updateProgress = (progress) => {
-  }
+    if (!data) return;
 
-  eventTarget.addEventListener(.VOLUME_LOADING, (evt) => {
+    const { total, loaded } = data;
 
-  volume.load();
+    if (!total) return;
+
+    const progress = Math.round((loaded / total) * 100);
+
+    const element = document.querySelector('progress');
+    element.value = progress;
+  };
+
+  eventTarget.addEventListener(
+    NiftiEnums.Events.NIFTI_VOLUME_PROGRESS,
+    updateProgress
+  );
+
+  // This will load the nifti file, no need to call .load again for nifti
+  await volumeLoader.createAndCacheVolume(volumeId);
 
   setVolumesForViewports(
     renderingEngine,

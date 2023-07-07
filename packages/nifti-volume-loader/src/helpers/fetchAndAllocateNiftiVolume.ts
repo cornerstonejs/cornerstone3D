@@ -78,15 +78,15 @@ export default async function fetchAndAllocateNiftiVolume(
 
   const progress = (loaded, total) => {
     const data = { volumeId, loaded, total };
-    triggerEvent(eventTarget, Events.NIFTI_LOAD_PROGRESS, {
-      detail: data,
+    triggerEvent(eventTarget, Events.NIFTI_VOLUME_PROGRESS, {
+      data,
     });
   };
 
   const onLoad = () => {
     const data = { volumeId };
-    triggerEvent(eventTarget, Events.NIFTI_LOAD_COMPLETED, {
-      detail: data,
+    triggerEvent(eventTarget, Events.NIFTI_VOLUME_LOADED, {
+      data,
     });
   };
 
