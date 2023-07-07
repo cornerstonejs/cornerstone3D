@@ -77,6 +77,10 @@ const configuration = {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',
     },
+    {
+      path: 'packages/nifti-volume-loader/examples',
+      regexp: 'index.ts',
+    },
   ],
 };
 

@@ -80,6 +80,7 @@ import type { ViewportProperties } from './ViewportProperties';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { AffineMatrix } from './AffineMatrix';
 
 export type {
   // config
@@ -171,4 +172,5 @@ export type {
   PixelDataTypedArray,
   ImagePixelModule,
   ImagePlaneModule,
+  AffineMatrix,
 };

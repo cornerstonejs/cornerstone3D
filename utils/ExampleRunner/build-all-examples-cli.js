@@ -63,6 +63,10 @@ if (options.fromRoot === true) {
         path: 'packages/dicomImageLoader/examples',
         regexp: 'index.ts',
       },
+      {
+        path: 'packages/nifti-volume-loader/examples',
+        regexp: 'index.ts',
+      },
     ],
   };
 } else {

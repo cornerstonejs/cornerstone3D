@@ -9994,6 +9994,11 @@ fetch-node-website@^7.3.0:
     got "^12.3.1"
     is-plain-obj "^4.1.0"
 
+fflate@*:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.0.tgz#f93ad1dcbe695a25ae378cf2386624969a7cda32"
+  integrity sha512-FAdS4qMuFjsJj6XHbBaZeXOgaypXp8iw/Tpyuq/w3XA41jjLHT8NPA+n7czH/DDhdncq0nAyDZmPeWXh2qmdIg==
+
 fflate@0.7.3:
   version "0.7.3"
   resolved "https://registry.npmjs.org/fflate/-/fflate-0.7.3.tgz#288b034ff0e9c380eaa2feff48c787b8371b7fa5"
@@ -15282,6 +15287,13 @@ netlify@^13.1.5:
     omit.js "^2.0.2"
     p-wait-for "^4.0.0"
     qs "^6.9.6"
+
+nifti-reader-js@^0.6.6:
+  version "0.6.6"
+  resolved "https://registry.yarnpkg.com/nifti-reader-js/-/nifti-reader-js-0.6.6.tgz#c1c66f4b89bcd0da2b5d2ed8150ce7391e4d0b27"
+  integrity sha512-MsqoX2MxZ7wkRPgLMNNRY3IrbMijfTtnirfhe7laR/YuqSOJytUV4BbKCmynKylbLz5JNjdLi86NRvrOEp0zuQ==
+  dependencies:
+    fflate "*"
 
 nise@^5.1.4:
   version "5.1.4"
