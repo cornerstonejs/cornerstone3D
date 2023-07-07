@@ -233,6 +233,12 @@ instructions.innerText = `
   PET MIP:
   - Mouse Wheel: Rotate PET
   - Left click: Jump all views to the point of highest SUV in the region clicked.
+  
+  Volume_3D Controls:
+  - Middle click : Rotate the image
+  - Mouse Wheel: Rotate PET
+  - Right click : Pan
+  - Left click: Jump all views to the point of highest SUV in the region clicked.
   `;
 
 instructions.style.gridColumnStart = '5';
