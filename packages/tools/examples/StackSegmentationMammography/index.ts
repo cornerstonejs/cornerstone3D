@@ -340,13 +340,6 @@ async function run() {
   const actor = createActorMapper(imageIds[0]);
   const actorUID = 'segmentationMG';
   viewport.addActor({ actor, uid: actorUID });
-
-  // const actorEntries = viewport.getActors();
-  // actorEntries.forEach((actorEntry) => {
-  //   const mapper = actorEntry.actor.getMapper();
-  //   mapper.setBlendMode(3);
-  // });
-
   // Render the image
   renderingEngine.renderViewports([viewportId]);
 }
