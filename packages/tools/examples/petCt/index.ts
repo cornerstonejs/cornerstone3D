@@ -52,7 +52,21 @@ const ctToolGroupId = 'CT_TOOLGROUP_ID';
 const ptToolGroupId = 'PT_TOOLGROUP_ID';
 const fusionToolGroupId = 'FUSION_TOOLGROUP_ID';
 const mipToolGroupUID = 'MIP_TOOLGROUP_ID';
-
+let ctImageIds;
+let ptImageIds;
+let ctVolume;
+let ptVolume;
+const axialCameraSynchronizerId = 'AXIAL_CAMERA_SYNCHRONIZER_ID';
+const sagittalCameraSynchronizerId = 'SAGITTAL_CAMERA_SYNCHRONIZER_ID';
+const coronalCameraSynchronizerId = 'CORONAL_CAMERA_SYNCHRONIZER_ID';
+const ctVoiSynchronizerId = 'CT_VOI_SYNCHRONIZER_ID';
+const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID';
+let axialCameraPositionSynchronizer;
+let sagittalCameraPositionSynchronizer;
+let coronalCameraPositionSynchronizer;
+let ctVoiSynchronizer;
+let ptVoiSynchronizer;
+let mipToolGroup;
 const viewportIds = {
   CT: { AXIAL: 'CT_AXIAL', SAGITTAL: 'CT_SAGITTAL', CORONAL: 'CT_CORONAL' },
   PT: { AXIAL: 'PT_AXIAL', SAGITTAL: 'PT_SAGITTAL', CORONAL: 'PT_CORONAL' },
@@ -387,21 +401,10 @@ function setUpToolGroups() {
   });
 
   // MIP Tool Groups
-  const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
-
+  mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
   mipToolGroup.addTool('VolumeRotateMouseWheel');
   mipToolGroup.addTool('MIPJumpToClickTool', {
-    targetViewportIds: [
-      viewportIds.CT.AXIAL,
-      viewportIds.CT.SAGITTAL,
-      viewportIds.CT.CORONAL,
-      viewportIds.PT.AXIAL,
-      viewportIds.PT.SAGITTAL,
-      viewportIds.PT.CORONAL,
-      viewportIds.FUSION.AXIAL,
-      viewportIds.FUSION.SAGITTAL,
-      viewportIds.FUSION.CORONAL,
-    ],
+    toolGroupId: ptToolGroupId,
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -418,27 +421,21 @@ function setUpToolGroups() {
   mipToolGroup.setToolActive('VolumeRotateMouseWheel');
 
   mipToolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
+  console.debug(mipToolGroup);
 }
 
 function setUpSynchronizers() {
-  const axialCameraSynchronizerId = 'AXIAL_CAMERA_SYNCHRONIZER_ID';
-  const sagittalCameraSynchronizerId = 'SAGITTAL_CAMERA_SYNCHRONIZER_ID';
-  const coronalCameraSynchronizerId = 'CORONAL_CAMERA_SYNCHRONIZER_ID';
-  const ctVoiSynchronizerId = 'CT_VOI_SYNCHRONIZER_ID';
-  const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID';
-
-  const axialCameraPositionSynchronizer = createCameraPositionSynchronizer(
+  axialCameraPositionSynchronizer = createCameraPositionSynchronizer(
     axialCameraSynchronizerId
   );
-  const sagittalCameraPositionSynchronizer = createCameraPositionSynchronizer(
+  sagittalCameraPositionSynchronizer = createCameraPositionSynchronizer(
     sagittalCameraSynchronizerId
   );
-  const coronalCameraPositionSynchronizer = createCameraPositionSynchronizer(
+  coronalCameraPositionSynchronizer = createCameraPositionSynchronizer(
     coronalCameraSynchronizerId
   );
-  const ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId);
-  const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
-
+  ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId);
+  ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
   // Add viewports to camera synchronizers
   [
     viewportIds.CT.AXIAL,
@@ -525,21 +522,8 @@ async function getCtImageIds() {
     wadoRsRoot,
   });
 }
+
 async function setUpDisplay() {
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const ctImageIds = await getCtImageIds();
-
-  const ptImageIds = await getPtImageIds();
-
-  // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
-    imageIds: ctImageIds,
-  });
-  // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
-    imageIds: ptImageIds,
-  });
-
   // Create the viewports
 
   const viewportInputArray = [
@@ -705,16 +689,10 @@ async function setUpDisplay() {
   // Render the viewports
   renderingEngine.render();
 }
+
 addButtonToToolbar({
   title: 'toggle volume3d',
   onClick: async () => {
-    const ptImageIds = await getPtImageIds();
-    // Define a volume in memory
-    const volume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
-      imageIds: ptImageIds,
-    });
-    volume.load();
-
     const viewportInput = {
       viewportId: viewportIds.PETMIP.CORONAL,
       type: ViewportType.VOLUME_3D,
@@ -724,100 +702,66 @@ addButtonToToolbar({
         background: <Types.Point3>[1, 1, 1],
       },
     };
-    renderingEngine.enableElement(viewportInput);
+    const volume3dToolGroup = mipToolGroup;
+    toggleVolume(viewportInput);
+    setupVolume3dSynchronizer(viewportInput);
+    setUpVolume3dToolGroup(volume3dToolGroup);
 
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportIds.PETMIP.CORONAL)
-    );
-
-    const ptVolumeDimensions = volume.dimensions;
-
-    // Only make the MIP as large as it needs to be.
-    const slabThickness = Math.sqrt(
-      ptVolumeDimensions[0] * ptVolumeDimensions[0] +
-        ptVolumeDimensions[1] * ptVolumeDimensions[1] +
-        ptVolumeDimensions[2] * ptVolumeDimensions[2]
-    );
-
-    viewport.setVolumes([
-      {
-        volumeId: ptVolumeId,
-        callback: setPetTransferFunctionForVolumeActor,
-        slabThickness: slabThickness,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-      },
-    ]);
-
-    const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID2';
-    const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
-
-    [
-      viewportIds.PT.AXIAL,
-      viewportIds.PT.SAGITTAL,
-      viewportIds.PT.CORONAL,
-      viewportIds.FUSION.AXIAL,
-      viewportIds.FUSION.SAGITTAL,
-      viewportIds.FUSION.CORONAL,
-      viewportIds.PETMIP.CORONAL,
-    ].forEach((viewportId) => {
-      ptVoiSynchronizer.add({
-        renderingEngineId,
-        viewportId,
-      });
-    });
-    const volume3dToolGroup =
-      ToolGroupManager.createToolGroup('mipToolGroupUID');
-
-    volume3dToolGroup.addTool('VolumeRotateMouseWheel');
-    volume3dToolGroup.addTool('MIPJumpToClickTool', {
-      targetViewportIds: [
-        viewportIds.CT.AXIAL,
-        viewportIds.CT.SAGITTAL,
-        viewportIds.CT.CORONAL,
-        viewportIds.PT.AXIAL,
-        viewportIds.PT.SAGITTAL,
-        viewportIds.PT.CORONAL,
-        viewportIds.FUSION.AXIAL,
-        viewportIds.FUSION.SAGITTAL,
-        viewportIds.FUSION.CORONAL,
-      ],
-    });
-    volume3dToolGroup.addTool(PanTool.toolName);
-    volume3dToolGroup.addTool(TrackballRotateTool.toolName);
-    // Set the initial state of the tools, here we set one tool active on left click.
-    // This means left click will draw that tool.
-    volume3dToolGroup.setToolActive('MIPJumpToClickTool', {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
-    volume3dToolGroup.setToolActive(PanTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Secondary,
-        },
-      ],
-    });
-    volume3dToolGroup.setToolActive(TrackballRotateTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Auxiliary,
-        },
-      ],
-    });
-
-    volume3dToolGroup.setToolActive('VolumeRotateMouseWheel');
-
-    volume3dToolGroup.addViewport(
-      viewportIds.PETMIP.CORONAL,
-      renderingEngineId
-    );
     renderingEngine.render();
-    console.debug(renderingEngine);
   },
 });
+
+function toggleVolume(viewportInput) {
+  renderingEngine.enableElement(viewportInput);
+
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportIds.PETMIP.CORONAL)
+  );
+
+  const ptVolumeDimensions = ptVolume.dimensions;
+
+  // Only make the MIP as large as it needs to be.
+  const slabThickness = Math.sqrt(
+    ptVolumeDimensions[0] * ptVolumeDimensions[0] +
+      ptVolumeDimensions[1] * ptVolumeDimensions[1] +
+      ptVolumeDimensions[2] * ptVolumeDimensions[2]
+  );
+
+  viewport.setVolumes([
+    {
+      volumeId: ptVolumeId,
+      callback: setPetTransferFunctionForVolumeActor,
+      slabThickness: slabThickness,
+      blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+    },
+  ]);
+}
+function setupVolume3dSynchronizer(viewportInput) {
+  ptVoiSynchronizer.addTarget({
+    renderingEngineId,
+    viewportId: viewportInput.viewportId,
+  });
+}
+function setUpVolume3dToolGroup(toolGroup) {
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(TrackballRotateTool.toolName);
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  toolGroup.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+  toolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
+}
 function initializeCameraSync(renderingEngine) {
   // The fusion scene is the target as it is scaled to both volumes.
   // TODO -> We should have a more generic way to do this,
@@ -875,9 +819,23 @@ async function run() {
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  ctImageIds = await getCtImageIds();
+
+  ptImageIds = await getPtImageIds();
+
+  // Define a volume in memory
+  ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+    imageIds: ctImageIds,
+  });
+  // Define a volume in memory
+  ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+    imageIds: ptImageIds,
+  });
 
   // Display needs to be set up first so that we have viewport to reference for tools and synchronizers.
   await setUpDisplay();
+
   // Tools and synchronizers can be set up in any order.
   setUpToolGroups();
   setUpSynchronizers();

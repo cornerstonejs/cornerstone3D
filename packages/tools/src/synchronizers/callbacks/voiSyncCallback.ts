@@ -1,9 +1,8 @@
 import {
+  BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
   Types,
-  VolumeViewport,
-  VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 /**
@@ -33,10 +32,7 @@ export default function voiSyncCallback(
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
-  if (
-    tViewport instanceof VolumeViewport ||
-    tViewport instanceof VolumeViewport3D
-  ) {
+  if (tViewport instanceof BaseVolumeViewport) {
     tViewport.setProperties(
       {
         voiRange: range,
