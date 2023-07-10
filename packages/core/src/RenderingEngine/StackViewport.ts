@@ -1,6 +1,7 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import _cloneDeep from 'lodash.clonedeep';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
@@ -2686,7 +2687,11 @@ class StackViewport extends Viewport implements IStackViewport {
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
 
-    const colormapObj = colormapUtils.getColormap(colormap.name);
+    let colormapObj = colormapUtils.getColormap(colormap.name);
+
+    if (!colormapObj) {
+      colormapObj = vtkColorMaps.getPresetByName(colormap.name);
+    }
 
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();

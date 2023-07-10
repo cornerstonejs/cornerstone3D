@@ -320,6 +320,7 @@ addButtonToToolbar({
     viewport.resetCamera();
     // Resets the viewport's properties
     viewport.resetProperties();
+    viewport.setProperties({ colormap: { name: 'Grayscale' } });
     viewport.render();
   },
 });
