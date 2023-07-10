@@ -12,11 +12,14 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const { wadors } = dicomImageLoader;
 
 const {
   LengthTool,
@@ -29,7 +32,9 @@ const {
   CobbAngleTool,
   ToolGroupManager,
   ArrowAnnotateTool,
+  PlanarFreehandROITool,
   Enums: csToolsEnums,
+  utilities,
 } = cornerstoneTools;
 
 const { ViewportType, Events } = Enums;
@@ -39,8 +44,8 @@ const viewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Annotation Tools Stack',
-  'Annotation tools for a stack viewport'
+  'Calibration Tools Stack',
+  'Calibration tools for a stack viewport (aspect ratio changes only supported initially)'
 );
 
 const content = document.getElementById('content');
@@ -105,6 +110,7 @@ const toolsNames = [
   AngleTool.toolName,
   CobbAngleTool.toolName,
   ArrowAnnotateTool.toolName,
+  PlanarFreehandROITool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -130,58 +136,80 @@ addDropdownToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Flip H',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
+const calibrationFunctions: Record<string, unknown> = {};
 
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
-
-    viewport.render();
+const calibrations = [
+  {
+    value: 'Default',
+    selected: 'userCalibration',
   },
-});
-
-addButtonToToolbar({
-  title: 'Flip V',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { flipVertical } = viewport.getCamera();
-
-    viewport.setCamera({ flipVertical: !flipVertical });
-
-    viewport.render();
+  {
+    value: 'User Calibration 0.5',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 0.5,
+      type: Enums.CalibrationTypes.USER,
+    },
   },
-});
+  {
+    value: 'ERMF 2',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 2,
+      type: Enums.CalibrationTypes.ERMF,
+    },
+  },
+  {
+    value: 'Projected 1',
+    selected: 'userCalibration',
+    calibration: {
+      // Bug right now in StackViewport that fails to reset
+      scale: 1,
+      type: Enums.CalibrationTypes.PROJECTION,
+    },
+  },
+  {
+    value: 'Error 1',
+    selected: 'userCalibration',
+    calibration: {
+      scale: 1,
+      type: Enums.CalibrationTypes.ERROR,
+    },
+  },
+  {
+    value: 'px units',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': null,
+    },
+  },
+  {
+    value: 'Aspect 1:2 (breaks existing annotations)',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': { Value: [0.5, 1] },
+    },
+  },
+  {
+    value: 'Aspect 1:1 (breaks existing annotations)',
+    selected: 'applyMetadata',
+    metadata: {
+      '00280030': { Value: [0.5, 0.5] },
+    },
+  },
+];
+const calibrationNames = calibrations.map((it) => it.value);
 
-addButtonToToolbar({
-  title: 'Rotate Delta 90',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
+addDropdownToToolbar({
+  options: { values: calibrationNames },
+  onSelectedValueChange: (newCalibrationValue) => {
+    const calibration = calibrations.find(
+      (it) => it.value === newCalibrationValue
     );
-
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 90 });
-
-    viewport.render();
+    if (!calibration) return;
+    const f = calibrationFunctions[calibration.selected];
+    if (!f) return;
+    f.apply(calibration);
   },
 });
 
@@ -202,6 +230,7 @@ async function run() {
   cornerstoneTools.addTool(AngleTool);
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -217,6 +246,7 @@ async function run() {
   toolGroup.addTool(AngleTool.toolName);
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
+  toolGroup.addTool(PlanarFreehandROITool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -249,6 +279,19 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  calibrationFunctions.userCalibration = function calibrationSelected() {
+    utilities.calibrateImageSpacing(
+      imageIds[0],
+      renderingEngine,
+      this.calibration
+    );
+  };
+  calibrationFunctions.applyMetadata = function applyMetadata() {
+    const instance = wadors.metaDataManager.get(imageIds[0]);
+    Object.assign(instance, this.metadata);
+    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null);
+  };
 
   // Create a stack viewport
   const viewportInput = {

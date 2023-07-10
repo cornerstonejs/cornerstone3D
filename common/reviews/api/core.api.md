@@ -140,6 +140,8 @@ enum CalibrationTypes {
     // (undocumented)
     REGION = "Region",
     // (undocumented)
+    UNCALIBRATED = "Uncalibrated",
+    // (undocumented)
     USER = "User"
 }
 
@@ -1150,10 +1152,6 @@ interface IImage {
 interface IImageCalibration {
     // (undocumented)
     columnPixelSpacing?: number;
-    // (undocumented)
-    hasPixelSpacing?: boolean;
-    // (undocumented)
-    isProjection?: boolean;
     // (undocumented)
     rowPixelSpacing?: number;
     // (undocumented)

@@ -49,6 +49,7 @@ enum CalibrationTypes {
     NOT_APPLICABLE = '',
     PROJECTION = 'Proj',
     REGION = 'Region',
+    UNCALIBRATED = 'Uncalibrated',
     USER = 'User',
 }
 
@@ -811,13 +812,9 @@ interface IImage {
 interface IImageCalibration {
     // (undocumented)
     columnPixelSpacing?: number;
-    hasPixelSpacing?: boolean;
-    isProjection?: boolean;
     rowPixelSpacing?: number;
     scale?: number;
-    // (undocumented)
     sequenceOfUltrasoundRegions?: Record<string, unknown>[];
-    // (undocumented)
     tooltip?: string;
     type: CalibrationTypes;
 }

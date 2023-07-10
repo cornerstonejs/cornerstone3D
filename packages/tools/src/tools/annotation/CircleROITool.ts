@@ -10,10 +10,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import {
-  calibratedLengthUnits,
-  calibratedAreaUnits,
-  getScale,
-} from '../../utilities/calibratedUnits';
+  getCalibratedLengthUnits,
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
@@ -1002,11 +1002,10 @@ class CircleROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const scale = getScale(image);
-        const area =
-          Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
-          scale /
-          scale;
+        const scale = getCalibratedScale(image);
+        const area = Math.abs(
+          Math.PI * (worldWidth / scale / 2) * (worldHeight / scale / 2)
+        );
 
         let count = 0;
         let mean = 0;
@@ -1054,9 +1053,9 @@ class CircleROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: calibratedAreaUnits(null, image),
+          areaUnit: getCalibratedAreaUnits(null, image),
           radius: worldWidth / 2 / scale,
-          radiusUnit: calibratedLengthUnits(null, image),
+          radiusUnit: getCalibratedLengthUnits(null, image),
           perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
         };
       } else {

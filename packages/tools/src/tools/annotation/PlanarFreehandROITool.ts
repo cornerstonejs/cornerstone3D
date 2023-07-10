@@ -10,7 +10,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { calibratedAreaUnits, getScale } from '../../utilities/calibratedUnits';
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
@@ -727,7 +730,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
       const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const scale = getScale(image);
+      const scale = getCalibratedScale(image);
       const area =
         polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
 
@@ -852,7 +855,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         mean,
         max,
         stdDev,
-        areaUnit: calibratedAreaUnits(null, image),
+        areaUnit: getCalibratedAreaUnits(null, image),
       };
     }
 

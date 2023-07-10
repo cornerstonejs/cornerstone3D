@@ -1,3 +1,8 @@
+import { Enums } from '@cornerstonejs/core';
+
+const { CalibrationTypes } = Enums;
+const PIXEL_UNITS = 'px';
+
 /**
  * Extracts the length units and the type of calibration for those units
  * into the response.  The length units will typically be either mm or px
@@ -8,15 +13,18 @@
  * TODO: Handle region calibration
  *
  * @param handles - used to detect if the spacing information is different
- *   between various points (eg angled ERMF or US Region)
+ *   between various points (eg angled ERMF or US Region).
+ *   Currently unused, but needed for correct US Region handling
  * @param image - to extract the calibration from
- * @param image.calibration - calibration value to extract units form
+ *        image.calibration - calibration value to extract units form
  * @returns String containing the units and type of calibration
  */
-const calibratedLengthUnits = (handles, image): string => {
+const getCalibratedLengthUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
-  const units = hasPixelSpacing ? 'mm' : 'px';
+  // Anachronistic - moving to using calibration consistently, but not completed yet
+  const units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
   if (!calibration || !calibration.type) return units;
+  if (calibration.type === CalibrationTypes.UNCALIBRATED) return PIXEL_UNITS;
   // TODO - handle US regions properly
   if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
   return `${units} ${calibration.type}`;
@@ -26,16 +34,20 @@ const SQUARE = '\xb2';
 /**
  *  Extracts the area units, including the squared sign plus calibration type.
  */
-const calibratedAreaUnits = (handles, image): string => {
+const getCalibratedAreaUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
-  const units = (hasPixelSpacing ? 'mm' : 'px') + SQUARE;
+  const units = (hasPixelSpacing ? 'mm' : PIXEL_UNITS) + SQUARE;
   if (!calibration || !calibration.type) return units;
   if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
   return `${units} ${calibration.type}`;
 };
 
-const getScale = (image) => image.calibration?.scale || 1;
+/**
+ * Gets the scale divisor for converting from internal spacing to
+ * image spacing for calibrated images.
+ */
+const getCalibratedScale = (image) => image.calibration?.scale || 1;
 
-export default calibratedLengthUnits;
+export default getCalibratedLengthUnits;
 
-export { calibratedAreaUnits, calibratedLengthUnits, getScale };
+export { getCalibratedAreaUnits, getCalibratedLengthUnits, getCalibratedScale };

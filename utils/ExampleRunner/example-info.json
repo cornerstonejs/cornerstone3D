@@ -137,6 +137,10 @@
         "name": "Stack Annotation Tools",
         "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
       },
+      "calibrationTools": {
+        "name": "Calibration Tools",
+        "description": "Demonstrates usage of calibration tools on a Stack Viewport."
+      },
       "volumeAnnotationTools": {
         "name": "Volume Annotation Tools ",
         "description": "Demonstrates annotation using the Length tool in a Volume Viewport (on axial, sagittal, and oblique views)"

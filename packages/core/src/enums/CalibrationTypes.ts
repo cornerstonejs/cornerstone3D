@@ -48,6 +48,8 @@ export enum CalibrationTypes {
    * NOT trust the measurement values but to manually calibrate.
    */
   ERROR = 'Error',
+  /** Uncalibrated image */
+  UNCALIBRATED = 'Uncalibrated',
 }
 
 export default CalibrationTypes;

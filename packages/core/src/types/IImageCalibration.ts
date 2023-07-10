@@ -8,30 +8,17 @@ export interface IImageCalibration {
   /** The pixel spacing for the image, in mm between pixel centers */
   rowPixelSpacing?: number;
   columnPixelSpacing?: number;
-
   /** The scaling of this image - new spacing = original pixelSpacing/scale */
   scale?: number;
-
   /** The type of the pixel spacing, distinguishing between various
    * types projection (CR/DX/MG) spacing and volumetric spacing (the type is
    * an empty string as it doesn't get a suffix, but this distinguishes it
    * from other types)
    */
   type: CalibrationTypes;
-
-  // A tooltip which can be used to explain the calibration information
+  /** A tooltip which can be used to explain the calibration information */
   tooltip?: string;
-  /**
-   * Boolean to indicate that the image has spacing information (the pixelSpacing
-   * can just be 1,1 to use image pixels, but this
-   * isn't distinguishable from a real spacing of 1mm square pixels so a real
-   * flag here is needed.)
-   */
-  hasPixelSpacing?: boolean;
-  /** Indication of projection (eg X-Ray type) spacing and volumetric type */
-  isProjection?: boolean;
-  // The DICOM defined ultrasound regions.  Used for non-distance spacing
-  // units.
+  /** The DICOM defined ultrasound regions.  Used for non-distance spacing units. */
   sequenceOfUltrasoundRegions?: Record<string, unknown>[];
 }
 

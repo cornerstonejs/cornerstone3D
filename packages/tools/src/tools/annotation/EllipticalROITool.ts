@@ -9,7 +9,10 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { calibratedAreaUnits, getScale } from '../../utilities/calibratedUnits';
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
@@ -1110,7 +1113,7 @@ class EllipticalROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const scale = getScale(image);
+        const scale = getCalibratedScale(image);
         const area =
           Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
           scale /
@@ -1162,7 +1165,7 @@ class EllipticalROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: calibratedAreaUnits(null, image),
+          areaUnit: getCalibratedAreaUnits(null, image),
         };
       } else {
         this.isHandleOutsideImage = true;

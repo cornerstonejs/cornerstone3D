@@ -8,9 +8,9 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import {
-  calibratedLengthUnits,
-  getScale,
-} from '../../utilities/calibratedUnits';
+  getCalibratedLengthUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
@@ -1297,7 +1297,7 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const scale = getScale(image);
+      const scale = getCalibratedScale(image);
       const dist1 = this._calculateLength(worldPos1, worldPos2) / scale;
       const dist2 = this._calculateLength(worldPos3, worldPos4) / scale;
       const length = dist1 > dist2 ? dist1 : dist2;
@@ -1315,7 +1315,7 @@ class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
-        unit: calibratedLengthUnits(null, image),
+        unit: getCalibratedLengthUnits(null, image),
       };
     }
 
