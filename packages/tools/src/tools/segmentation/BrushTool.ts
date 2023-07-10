@@ -30,7 +30,7 @@ import {
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 /**
  * @public
@@ -124,7 +124,9 @@ class BrushTool extends BaseTool {
       segmentationState.getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with this tool?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
+    const { volumeId } = representationData[
+      type
+    ] as LabelmapSegmentationDataVolume;
     const segmentation = cache.getVolume(volumeId);
 
     const actors = viewport.getActors();

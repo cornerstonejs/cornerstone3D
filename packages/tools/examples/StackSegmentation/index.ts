@@ -24,6 +24,7 @@ console.warn(
 
 const {
   ToolGroupManager,
+  segmentation,
   SegmentationDisplayTool,
   WindowLevelTool,
   StackScrollMouseWheelTool,
@@ -49,6 +50,7 @@ const { MouseBindings } = csToolsEnums;
 let renderingEngine;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VIEWPORT';
+const segmentationId = 'STACK_SEGMENTATION';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -142,9 +144,9 @@ function setupTools(toolGroupId) {
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
 function createMockEllipsoidSegmentation(dimensions, imageIds) {
-  const center = [dimensions[0] / 2, dimensions[1] / 2, 0];
-  const outerRadius = 128;
-  const innerRadius = 64;
+  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
+  const outerRadius = 64;
+  const innerRadius = 32;
 
   for (let z = 0; z < dimensions[2]; z++) {
     let voxelIndex = 0;
@@ -356,10 +358,26 @@ async function run() {
   const sortedImageIds = sortImageIds(imageIds);
   const { imageIds: derivedImageIds } =
     await imageLoader.createCacheDerivedImages(sortedImageIds);
+
   await viewport.setStack(sortedImageIds);
   const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
   const dimensions = [columns, rows, imageIds.length];
   createMockEllipsoidSegmentation(dimensions, derivedImageIds);
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          type: 'image',
+          imageIds: derivedImageIds,
+        },
+      },
+    },
+  ]);
 
   renderingEngine.renderViewports([viewportId]);
 }
