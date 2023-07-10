@@ -609,6 +609,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
+    console.log('Calibration event is', scale, calibration);
     this._calibrationEvent = <CalibrationEvent>{
       scale,
       calibration,
@@ -2336,6 +2337,11 @@ class StackViewport extends Viewport implements IStackViewport {
     };
 
     if (!this.suppressEvents) {
+      if (!eventDetail.scale) {
+        throw new Error(
+          `Can't send scaling event ${JSON.stringify(this._calibrationEvent)}`
+        );
+      }
       // Let the tools know the image spacing has been calibrated
       triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, eventDetail);
     }

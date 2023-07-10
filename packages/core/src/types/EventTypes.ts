@@ -9,6 +9,7 @@ import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
 import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
 import type DisplayArea from './displayArea';
+import IImageCalibration from './IImageCalibration';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -226,6 +227,7 @@ type ImageSpacingCalibratedEventDetail = {
   renderingEngineId: string;
   imageId: string;
   scale?: number;
+  calibration?: IImageCalibration;
   imageData: vtkImageData;
   worldToIndex: mat4;
 };

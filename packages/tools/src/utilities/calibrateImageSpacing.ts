@@ -9,16 +9,22 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
  * their reference imageIds. Finally, it triggers a re-render for invalidated annotations.
  * @param imageId - ImageId for the calibrated image
  * @param rowPixelSpacing - Spacing in row direction
- * @param columnPixelSpacing - Spacing in column direction
- * @param renderingEngine - Cornerstone RenderingEngine instance
+ * @param calibrationOrScale - either the calibration object or a scale value
  */
 export default function calibrateImageSpacing(
   imageId: string,
   renderingEngine: Types.IRenderingEngine,
-  spacing: Types.IImageCalibration
+  calibrationOrScale: Types.IImageCalibration | number
 ): void {
+  // Handle simple parameter version
+  if (typeof calibrationOrScale === 'number') {
+    calibrationOrScale = {
+      type: Enums.CalibrationTypes.USER,
+      scale: calibrationOrScale,
+    };
+  }
   // 1. Add the calibratedPixelSpacing metadata to the metadata
-  calibratedPixelSpacingMetadataProvider.add(imageId, spacing);
+  calibratedPixelSpacingMetadataProvider.add(imageId, calibrationOrScale);
 
   // 2. Update the actor for stackViewports
   const viewports = renderingEngine.getStackViewports();

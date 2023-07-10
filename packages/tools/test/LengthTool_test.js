@@ -16,7 +16,7 @@ const {
   getEnabledElement,
 } = cornerstone3D;
 
-const { Events, ViewportType } = Enums;
+const { Events, ViewportType, CalibrationTypes } = Enums;
 
 const {
   LengthTool,
@@ -1211,7 +1211,10 @@ describe('LengthTool:', () => {
           .getCurrentImageId();
 
         console.log('Starting image calibration');
-        calibrateImageSpacing(imageId, this.renderingEngine, scale);
+        calibrateImageSpacing(imageId, this.renderingEngine, {
+          type: CalibrationTypes.USER,
+          scale,
+        });
         console.log('Done image calibration');
       };
 

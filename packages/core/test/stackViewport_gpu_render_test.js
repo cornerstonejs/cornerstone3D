@@ -601,8 +601,8 @@ describe('renderingCore -- Stack', () => {
       element.addEventListener(Events.IMAGE_RENDERED, imageRenderedCallback);
 
       element.addEventListener(Events.IMAGE_SPACING_CALIBRATED, (evt) => {
-        const { scale } = evt.detail;
-        expect(scale).toBe(0.5);
+        const { calibration } = evt.detail;
+        expect(calibration?.scale).toBe(0.5);
       });
 
       try {
