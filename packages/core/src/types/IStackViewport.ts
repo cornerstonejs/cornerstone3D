@@ -139,11 +139,6 @@ export default interface IStackViewport extends IViewport {
    */
   getRenderer(): any;
   /**
-   * Sets the colormap for the current viewport.
-   * @param colormap - The colormap data to use.
-   */
-  setColormap(colormap: CPUFallbackColormapData | ColormapPublic): void;
-  /**
    * It sets the colormap to the default colormap.
    */
   unsetColormap(): void;
