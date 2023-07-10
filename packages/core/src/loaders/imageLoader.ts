@@ -1,14 +1,28 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
-import { triggerEvent } from '../utilities';
+import { imageIdToURI, triggerEvent } from '../utilities';
 import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
+import { metaData } from '../';
 
 export interface ImageLoaderOptions {
   priority: number;
   requestType: string;
   additionalDetails?: Record<string, unknown>;
+}
+
+interface DerivedImageOptions {
+  imageId: string;
+  targetBuffer?: {
+    type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int16Array';
+    sharedArrayBuffer?: boolean;
+  };
+}
+
+interface DerivedImages {
+  imageIds: Array<string>;
+  promises: Array<Promise<IImage>>;
 }
 /**
  * This module deals with ImageLoaders, loading images and caching images
@@ -181,6 +195,121 @@ export function loadAndCacheImages(
   });
 
   return allPromises;
+}
+
+/**
+ * Loads an image given an imageId and optional priority and returns a promise
+ * which will resolve to the loaded image object or fail if an error occurred.
+ * The image is stored in the cache.
+ *
+ * @param imageId -  A Cornerstone Image Object's imageId
+ * @param options - Options to be passed to the Image Loader
+ *
+ * @returns Image Loader Object
+ */
+export function createAndCacheDerivedImage(
+  imageId: string,
+  options: DerivedImageOptions
+): Promise<IImage> {
+  if (imageId === undefined) {
+    throw new Error(
+      'createAndCacheDerivedImage: parameter imageId must not be undefined'
+    );
+  }
+  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+
+  let imageScalarData;
+  const length = imagePlaneModule.rows * imagePlaneModule.columns;
+  let numBytes, TypedArray;
+
+  const { targetBuffer } = options;
+  if (targetBuffer) {
+    if (targetBuffer.type === 'Float32Array') {
+      numBytes = length * 4;
+      TypedArray = Float32Array;
+    } else if (targetBuffer.type === 'Uint8Array') {
+      numBytes = length;
+      TypedArray = Uint8Array;
+    } else if (targetBuffer.type === 'Uint16Array') {
+      numBytes = length * 2;
+      TypedArray = Uint16Array;
+    } else if (targetBuffer.type === 'Int16Array') {
+      numBytes = length * 2;
+      TypedArray = Uint16Array;
+    } else {
+      throw new Error('TargetBuffer should be Float32Array or Uint8Array');
+    }
+  } else {
+    // Use Uint8 if no targetBuffer is provided
+    numBytes = length;
+    TypedArray = Uint8Array;
+  }
+
+  if (targetBuffer?.sharedArrayBuffer) {
+    const buffer = new SharedArrayBuffer(numBytes);
+    imageScalarData = new TypedArray(buffer);
+  } else {
+    imageScalarData = new TypedArray(length);
+  }
+
+  const image: IImage = {
+    imageId: options.imageId,
+    intercept: 0,
+    windowCenter: 0,
+    windowWidth: 0,
+    color: false,
+    numComps: 1,
+    slope: 1,
+    minPixelValue: 0,
+    maxPixelValue: 255,
+    voiLUTFunction: undefined,
+    rows: imagePlaneModule.rows,
+    columns: imagePlaneModule.columns,
+    sizeInBytes: imageScalarData.byteLength,
+    getPixelData: () => imageScalarData,
+    getCanvas: undefined, // todo: which canvas?
+    height: imagePlaneModule.rows,
+    width: imagePlaneModule.columns,
+    rgba: undefined, // todo: how
+    columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
+    rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
+    invert: false,
+  };
+
+  const imageLoadObject = {
+    promise: Promise.resolve(image),
+  };
+  cache.putImageLoadObject(image.imageId, imageLoadObject);
+
+  return imageLoadObject.promise;
+}
+
+/**
+ * Load and cache a list of imageIds
+ *
+ * @param imageIds - list of imageIds
+ * @param options - options for loader
+ *
+ */
+export function createCacheDerivedImages(
+  imageIds: Array<string>
+): DerivedImages {
+  if (!imageIds || imageIds.length === 0) {
+    throw new Error(
+      'loadAndCacheImages: parameter imageIds must be list of image Ids'
+    );
+  }
+
+  const derivedImageIds = [];
+  const allPromises = imageIds.map((imageId) => {
+    const options: DerivedImageOptions = {
+      imageId: 'stackSeg:derived_' + imageIdToURI(imageId),
+    };
+    derivedImageIds.push(options.imageId);
+    return createAndCacheDerivedImage(imageId, options);
+  });
+
+  return { imageIds: derivedImageIds, promises: allPromises };
 }
 
 /**
