@@ -20,6 +20,7 @@ import {
   imageIdToURI,
   isImageActor,
   actorIsA,
+  colormap as colormapUtils,
 } from '../utilities';
 import {
   Point2,
@@ -40,7 +41,7 @@ import {
   IStackViewport,
   VolumeActor,
   Mat3,
-  ColormapRegistration,
+  ColormapPublic,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -246,7 +247,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param colormap - The colormap data to use.
    */
   public setColormap: (
-    colormap: CPUFallbackColormapData | ColormapRegistration
+    colormap: CPUFallbackColormapData | ColormapPublic
   ) => void;
 
   /**
@@ -693,6 +694,7 @@ class StackViewport extends Viewport implements IStackViewport {
       invert,
       interpolationType,
       rotation,
+      colormap,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -720,6 +722,10 @@ class StackViewport extends Viewport implements IStackViewport {
       if (this.getRotation() !== rotation) {
         this.setRotation(rotation);
       }
+    }
+
+    if (typeof colormap !== 'undefined') {
+      this.setColormap(colormap);
     }
   }
 
@@ -2674,20 +2680,22 @@ class StackViewport extends Viewport implements IStackViewport {
     this.render();
   }
 
-  private setColormapGPU(colormap: ColormapRegistration) {
+  private setColormapGPU(colormap: ColormapPublic) {
     const ActorEntry = this.getDefaultActor();
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
 
+    const colormapObj = colormapUtils.getColormap(colormap.name);
+
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();
       const voiRange = this._getVOIRangeForCurrentImage();
-      cfun.applyColorMap(colormap);
+      cfun.applyColorMap(colormapObj);
       cfun.setMappingRange(voiRange.lower, voiRange.upper);
       actorProp.setRGBTransferFunction(0, cfun);
     } else {
-      rgbTransferFunction.applyColorMap(colormap);
+      rgbTransferFunction.applyColorMap(colormapObj);
       actorProp.setRGBTransferFunction(0, rgbTransferFunction);
     }
 

@@ -2852,10 +2852,10 @@ interface IStackViewport extends IViewport {
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
+    setColormap(colormap: CPUFallbackColormapData | ColormapPublic): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
-        { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+        { voiRange, invert, interpolationType, rotation, colormap }: StackViewportProperties,
     suppressEvents?: boolean
     ): void;
     setStack(
@@ -5433,6 +5433,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    colormap?: ColormapPublic;
 };
 
 declare namespace visibility {
@@ -5573,7 +5574,6 @@ type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutO
 
 // @public
 type VolumeViewportProperties = ViewportProperties & {
-    colormap?: ColormapPublic;
     preset?: string;
 };
 

@@ -7,7 +7,7 @@ import Point2 from './Point2';
 import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
-import { ColormapRegistration } from './Colormap';
+import { ColormapPublic } from './Colormap';
 import IImage from './IImage';
 
 /**
@@ -32,7 +32,13 @@ export default interface IStackViewport extends IViewport {
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
    */
   setProperties(
-    { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+    {
+      voiRange,
+      invert,
+      interpolationType,
+      rotation,
+      colormap,
+    }: StackViewportProperties,
     suppressEvents?: boolean
   ): void;
   /**
@@ -136,7 +142,7 @@ export default interface IStackViewport extends IViewport {
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
+  setColormap(colormap: CPUFallbackColormapData | ColormapPublic): void;
   /**
    * It sets the colormap to the default colormap.
    */

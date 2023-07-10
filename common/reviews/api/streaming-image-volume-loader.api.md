@@ -1100,10 +1100,10 @@ interface IStackViewport extends IViewport {
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
+    setColormap(colormap: CPUFallbackColormapData | ColormapPublic): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
-        { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+        { voiRange, invert, interpolationType, rotation, colormap }: StackViewportProperties,
     suppressEvents?: boolean
     ): void;
     setStack(
@@ -1567,6 +1567,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    colormap?: ColormapPublic;
 };
 
 // @public
@@ -1682,7 +1683,6 @@ type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
 type VolumeViewportProperties = ViewportProperties & {
-    colormap?: ColormapPublic;
     preset?: string;
 };
 
