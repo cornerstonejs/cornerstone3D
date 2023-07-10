@@ -31,7 +31,7 @@ interface IVolume {
   referencedVolumeId?: string;
   /** volume scaling metadata */
   scaling?: {
-    PET?: {
+    PT?: {
       // @TODO: Do these values exist?
       SUVlbmFactor?: number;
       SUVbsaFactor?: number;

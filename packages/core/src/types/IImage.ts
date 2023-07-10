@@ -82,7 +82,7 @@ interface IImage {
   colormap?: CPUFallbackColormap;
   /** image scaling metadata - including PT suv values */
   scaling?: {
-    PET?: {
+    PT?: {
       // @TODO: Do these values exist?
       SUVlbmFactor?: number;
       SUVbsaFactor?: number;

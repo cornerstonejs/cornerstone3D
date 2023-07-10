@@ -562,7 +562,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * somehow indicate whether the PT image has been corrected with suvbw or
        * not, which we store it in the this.scaling.PT.suvbw.
        */
-      this.isPrescaled = isSlopeAndInterceptNumbers;
+      this.isPreScaled = isSlopeAndInterceptNumbers;
 
       const options = {
         // WADO Image Loader
@@ -767,7 +767,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       petScaling.suvbw = suvbw;
     }
 
-    this.scaling = { PET: petScaling };
+    this.scaling = { PT: petScaling };
   }
 
   private _removeFromCache() {

@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.0...v1.4.1) (2023-07-04)
+
+### Bug Fixes
+
+- **PET vs PT:** Change all to PT for consistency ([#676](https://github.com/cornerstonejs/cornerstone3D/issues/676)) ([813e5ba](https://github.com/cornerstonejs/cornerstone3D/commit/813e5bac8a615b53cab3640052ce5d9bb7dabc5b))
+
+# [1.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.3.0...v1.4.0) (2023-07-04)
+
+### Features
+
+- **detectGPU:** Add config for getGPUTier method in cornerstone.init ([#633](https://github.com/cornerstonejs/cornerstone3D/issues/633)) ([b5ea0e2](https://github.com/cornerstonejs/cornerstone3D/commit/b5ea0e2c1e337759062ff22c5c7db545fc8be745)), closes [#570](https://github.com/cornerstonejs/cornerstone3D/issues/570)
+
+# [1.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.9...v1.3.0) (2023-07-04)
+
+### Features
+
+- **invertSync:** add invert sync to voi sync ([#677](https://github.com/cornerstonejs/cornerstone3D/issues/677)) ([a1dcfbc](https://github.com/cornerstonejs/cornerstone3D/commit/a1dcfbc986a483d650cd2abfdd8f1bba1e3d829a))
+
+## [1.2.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.8...v1.2.9) (2023-07-03)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [1.2.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.7...v1.2.8) (2023-06-27)
 
 ### Bug Fixes

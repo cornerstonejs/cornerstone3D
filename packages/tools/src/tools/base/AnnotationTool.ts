@@ -281,7 +281,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     if (viewport instanceof BaseVolumeViewport) {
       const volumeId = targetId.split('volumeId:')[1];
       const volume = cache.getVolume(volumeId);
-      return volume.scaling?.PET !== undefined;
+      return volume.scaling?.PT !== undefined;
     } else if (viewport instanceof StackViewport) {
       const scalingModule: Types.ScalingParameters | undefined =
         imageId && metaData.get('scalingModule', imageId);
