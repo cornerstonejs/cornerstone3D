@@ -243,14 +243,6 @@ class StackViewport extends Viewport implements IStackViewport {
   public getImageData: () => IImageData | CPUIImageData;
 
   /**
-   * Sets the colormap for the current viewport.
-   * @param colormap - The colormap data to use.
-   */
-  public setColormap: (
-    colormap: CPUFallbackColormapData | ColormapPublic
-  ) => void;
-
-  /**
    * If the user has selected CPU rendering, return the CPU camera, otherwise
    * return the default camera
    * @returns The camera object.
@@ -356,6 +348,14 @@ class StackViewport extends Viewport implements IStackViewport {
   private setInterpolationType: (interpolationType: InterpolationType) => void;
 
   private setInvertColor: (invert: boolean) => void;
+
+  /**
+   * Sets the colormap for the current viewport.
+   * @param colormap - The colormap data to use.
+   */
+  private setColormap: (
+    colormap: CPUFallbackColormapData | ColormapPublic
+  ) => void;
 
   private initializeElementDisabledHandler() {
     eventTarget.addEventListener(

@@ -3,6 +3,7 @@ import {
   Types,
   Enums,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,6 +13,8 @@ import {
   camera as cameraHelpers,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
+
+import { getColorMaps } from '../../../../utils/demo/helpers/colormaps/ColormapGenerator';
 
 // This is for debugging purposes
 console.warn(
@@ -49,6 +52,12 @@ info.appendChild(flipHorizontalInfo);
 
 const flipVerticalInfo = document.createElement('div');
 info.appendChild(flipVerticalInfo);
+
+const registerColormaps = () => {
+  const colormaps = getColorMaps();
+  const { registerColormap } = utilities.colormap;
+  colormaps.forEach(registerColormap);
+};
 
 element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   // Get the rendering engine
@@ -281,6 +290,22 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Apply Colormap',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    viewport.setProperties({ colormap: { name: 'french' } });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
     // Get the rendering engine
@@ -305,6 +330,9 @@ addButtonToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+
+  //Register the colormaps in cornerstone
+  registerColormaps();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
