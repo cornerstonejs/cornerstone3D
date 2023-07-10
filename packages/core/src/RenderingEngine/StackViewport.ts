@@ -1,10 +1,8 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import _cloneDeep from 'lodash.clonedeep';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
-import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
@@ -58,7 +56,7 @@ import resize from './helpers/cpuFallback/rendering/resize';
 
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
 import {
   StackViewportNewStackEventDetail,
@@ -69,25 +67,23 @@ import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+import { PixelDataTypedArray, ImagePlaneModule } from '../types';
+
+import getImagePlaneModule from './helpers/getImagePlaneModule';
+import updateVTKImageDataFromCornerstoneImage from './helpers/updateVTKImageDataFromCornerstoneImage';
+import createActorMapper from './helpers/createActorMapper';
+import createVTKImageData from './helpers/createVTKImageData';
+import createDerivedActorMapper from './helpers/createDerivedActorMapper';
+import createDerivedVTKImageData from './helpers/createDerivedVTKImageData';
+import getValidVOILUTFunction from './helpers/getValidVOILUTFunction';
 import {
-  PixelDataTypedArray,
-  ImagePixelModule,
-  ImagePlaneModule,
-} from '../types';
+  ImageDataMetaData,
+  getMetadataFromImage,
+} from './helpers/getMetadataFromImage';
+import updateDerivedVTKImageData from './helpers/updateDerivedVTKImageData';
 
 const EPSILON = 1; // Slice Thickness
 
-interface ImageDataMetaData {
-  bitsAllocated: number;
-  numComps: number;
-  origin: Point3;
-  direction: Mat3;
-  dimensions: Point3;
-  spacing: Point3;
-  numVoxels: number;
-  imagePlaneModule: ImagePlaneModule;
-  imagePixelModule: ImagePixelModule;
-}
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
   rowScale: number;
@@ -127,6 +123,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Helpers
   private _imageData: vtkImageDataType;
+  private _derivedImageData: vtkImageDataType;
   private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private _publishCalibratedEvent = false;
@@ -492,37 +489,6 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   /**
-   * Creates imageMapper based on the provided vtkImageData and also creates
-   * the imageSliceActor and connects it to the imageMapper.
-   * For color stack images, it sets the independent components to be false which
-   * is required in vtk.
-   *
-   * @param imageData - vtkImageData for the viewport
-   * @returns actor vtkActor
-   */
-  private createActorMapper = (imageData) => {
-    const mapper = vtkImageMapper.newInstance();
-    mapper.setInputData(imageData);
-
-    const actor = vtkImageSlice.newInstance();
-
-    actor.setMapper(mapper);
-
-    const { preferSizeOverAccuracy } = getConfiguration().rendering;
-
-    if (preferSizeOverAccuracy) {
-      // @ts-ignore for now until vtk is updated
-      mapper.setPreferSizeOverAccuracy(true);
-    }
-
-    if (imageData.getPointData().getNumberOfComponents() > 1) {
-      actor.getProperty().setIndependentComponents(false);
-    }
-
-    return actor;
-  };
-
-  /**
    * Retrieves the metadata from the metadata provider, and optionally adds the
    * scaling to the viewport if modality is PET and scaling metadata is provided.
    *
@@ -554,7 +520,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.modality = modality;
-    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
     let imagePlaneModule = this._getImagePlaneModule(imageId);
@@ -1311,29 +1277,6 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
-   * Calculates number of components based on the dicom metadata
-   *
-   * @param photometricInterpretation - string dicom tag
-   * @returns number representing number of components
-   */
-  private _getNumCompsFromPhotometricInterpretation(
-    photometricInterpretation: string
-  ): number {
-    // TODO: this function will need to have more logic later
-    // see http://dicom.nema.org/medical/Dicom/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.2
-    let numberOfComponents = 1;
-    if (
-      photometricInterpretation === 'RGB' ||
-      photometricInterpretation.indexOf('YBR') !== -1 ||
-      photometricInterpretation === 'PALETTE COLOR'
-    ) {
-      numberOfComponents = 3;
-    }
-
-    return numberOfComponents;
-  }
-
-  /**
    * Calculates image metadata based on the image object. It calculates normal
    * axis for the images, and output image metadata
    *
@@ -1348,64 +1291,17 @@ class StackViewport extends Viewport implements IStackViewport {
     // should be optional and used if provided through a metadata provider.
 
     const { imagePlaneModule, imagePixelModule } = this.buildMetadata(image);
-
-    let rowCosines, columnCosines;
-
-    rowCosines = <Point3>imagePlaneModule.rowCosines;
-    columnCosines = <Point3>imagePlaneModule.columnCosines;
-
-    // if null or undefined
-    if (rowCosines == null || columnCosines == null) {
-      rowCosines = <Point3>[1, 0, 0];
-      columnCosines = <Point3>[0, 1, 0];
-    }
-
-    const rowCosineVec = vec3.fromValues(
-      rowCosines[0],
-      rowCosines[1],
-      rowCosines[2]
-    );
-    const colCosineVec = vec3.fromValues(
-      columnCosines[0],
-      columnCosines[1],
-      columnCosines[2]
-    );
-    const scanAxisNormal = vec3.create();
-    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
-
-    let origin = imagePlaneModule.imagePositionPatient;
-    // if null or undefined
-    if (origin == null) {
-      origin = [0, 0, 0];
-    }
-
-    const xSpacing =
-      imagePlaneModule.columnPixelSpacing || image.columnPixelSpacing;
-    const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing;
-    const xVoxels = image.columns;
-    const yVoxels = image.rows;
-
-    // Note: For rendering purposes, we use the EPSILON as the z spacing.
-    // This is purely for internal implementation logic since we are still
-    // technically rendering 3D objects with vtk.js, but the abstracted intention
-    //  of the stack viewport is to render 2D images
-    const zSpacing = EPSILON;
-    const zVoxels = 1;
-
-    const numComps =
-      image.numComps ||
-      this._getNumCompsFromPhotometricInterpretation(
-        imagePixelModule.photometricInterpretation
-      );
+    const { origin, direction, dimensions, spacing, numVoxels, numComps } =
+      getMetadataFromImage(image);
 
     return {
       bitsAllocated: imagePixelModule.bitsAllocated,
       numComps,
       origin,
-      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal] as Mat3,
-      dimensions: [xVoxels, yVoxels, zVoxels],
-      spacing: [xSpacing, ySpacing, zSpacing],
-      numVoxels: xVoxels * yVoxels * zVoxels,
+      direction,
+      dimensions: <Point3>dimensions,
+      spacing: <Point3>spacing,
+      numVoxels,
       imagePlaneModule,
       imagePixelModule,
     };
@@ -1449,22 +1345,14 @@ class StackViewport extends Viewport implements IStackViewport {
     numComps,
     pixelArray,
   }): void {
-    const values = new pixelArray.constructor(pixelArray.length);
-
-    // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numComps,
-      values: values,
+    this._imageData = createVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numComps,
+      pixelArray,
     });
-
-    this._imageData = vtkImageData.newInstance();
-
-    this._imageData.setDimensions(dimensions);
-    this._imageData.setSpacing(spacing);
-    this._imageData.setDirection(direction);
-    this._imageData.setOrigin(origin);
-    this._imageData.getPointData().setScalars(scalarArray);
   }
 
   /**
@@ -1579,51 +1467,11 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param image - Cornerstone Image object
    */
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
-    const imagePlaneModule = this._getImagePlaneModule(image.imageId);
-    let origin = imagePlaneModule.imagePositionPatient;
-
-    if (origin == null) {
-      origin = [0, 0, 0];
-    }
-
-    this._imageData.setOrigin(origin);
-
-    // Update the pixel data in the vtkImageData object with the pixelData
-    // from the loaded Cornerstone image
-    this._updatePixelData(image);
-  }
-
-  private _updatePixelData(image: IImage) {
-    const pixelData = image.getPixelData();
-    const scalars = this._imageData.getPointData().getScalars();
-    const scalarData = scalars.getData() as
-      | Uint8Array
-      | Float32Array
-      | Uint16Array
-      | Int16Array;
-
-    // if the color image is loaded with CPU previously, it loads it
-    // with RGBA, and here we need to remove the A channel from the
-    // pixel data.
-    if (image.color && image.rgba) {
-      const newPixelData = new Uint8Array(image.columns * image.rows * 3);
-      for (let i = 0; i < image.columns * image.rows; i++) {
-        newPixelData[i * 3] = pixelData[i * 4];
-        newPixelData[i * 3 + 1] = pixelData[i * 4 + 1];
-        newPixelData[i * 3 + 2] = pixelData[i * 4 + 2];
-      }
-      // modify the image object to have the correct pixel data for later
-      // use.
-      image.rgba = false;
-      image.getPixelData = () => newPixelData;
-      scalarData.set(newPixelData);
-    } else {
-      scalarData.set(pixelData);
-    }
-
-    // Trigger modified on the VTK Object so the texture is updated
-    // TODO: evaluate directly changing things with texSubImage3D later
-    this._imageData.modified();
+    updateVTKImageDataFromCornerstoneImage(
+      image.imageId,
+      image,
+      this._imageData
+    );
   }
 
   /**
@@ -2004,6 +1852,7 @@ class StackViewport extends Viewport implements IStackViewport {
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
+      updateDerivedVTKImageData(image, this._derivedImageData);
 
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
@@ -2077,9 +1926,14 @@ class StackViewport extends Viewport implements IStackViewport {
     this._updateVTKImageDataFromCornerstoneImage(image);
 
     // Create a VTK Image Slice actor to display the vtkImageData object
-    const actor = this.createActorMapper(this._imageData);
+    const actor = createActorMapper(this._imageData);
     const actors = [];
     actors.push({ uid: this.id, actor });
+    const { derivedActor, derivedImageData } = createDerivedActorMapper(image);
+    if (derivedActor) {
+      this._derivedImageData = derivedImageData;
+      actors.push({ uid: 'derived:' + this.id, actor: derivedActor });
+    }
     this.setActors(actors);
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
@@ -2543,13 +2397,6 @@ class StackViewport extends Viewport implements IStackViewport {
     return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
   }
 
-  private _getValidVOILUTFunction(voiLUTFunction: any) {
-    if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
-      voiLUTFunction = VOILUTFunctionType.LINEAR;
-    }
-    return voiLUTFunction;
-  }
-
   /**
    * Returns the index of the imageId being renderer
    *
@@ -2702,56 +2549,9 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // create default values for imagePlaneModule if values are undefined
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
-
-    const newImagePlaneModule: ImagePlaneModule = {
-      ...imagePlaneModule,
-    };
-
-    if (calibratedPixelSpacing?.appliedSpacing) {
-      // Over-ride the image plane module spacing, as the measurement data
-      // has already been created with the calibrated spacing provided from
-      // down below inside calibrateIfNecessary
-      const { rowPixelSpacing, columnPixelSpacing } =
-        calibratedPixelSpacing.appliedSpacing;
-      newImagePlaneModule.rowPixelSpacing = rowPixelSpacing;
-      newImagePlaneModule.columnPixelSpacing = columnPixelSpacing;
-    }
-
-    if (!newImagePlaneModule.columnPixelSpacing) {
-      newImagePlaneModule.columnPixelSpacing = 1;
-      this.hasPixelSpacing = false;
-    }
-
-    if (!newImagePlaneModule.rowPixelSpacing) {
-      newImagePlaneModule.rowPixelSpacing = 1;
-      this.hasPixelSpacing = false;
-    }
-
-    if (!newImagePlaneModule.columnCosines) {
-      newImagePlaneModule.columnCosines = [0, 1, 0];
-    }
-
-    if (!newImagePlaneModule.rowCosines) {
-      newImagePlaneModule.rowCosines = [1, 0, 0];
-    }
-
-    if (!newImagePlaneModule.imagePositionPatient) {
-      newImagePlaneModule.imagePositionPatient = [0, 0, 0];
-    }
-
-    if (!newImagePlaneModule.imageOrientationPatient) {
-      newImagePlaneModule.imageOrientationPatient = new Float32Array([
-        1, 0, 0, 0, 1, 0,
-      ]);
-    }
-
-    return newImagePlaneModule;
+    const { hasPixelSpacing, imagePlaneModule } = getImagePlaneModule(imageId);
+    this.hasPixelSpacing = hasPixelSpacing;
+    return imagePlaneModule;
   }
 
   private renderingPipelineFunctions = {

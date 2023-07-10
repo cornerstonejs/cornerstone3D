@@ -26,7 +26,7 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -118,7 +118,9 @@ class SphereScissorsTool extends BaseTool {
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
+    const { volumeId } = representationData[
+      type
+    ] as LabelmapSegmentationDataVolume;
     const segmentation = cache.getVolume(volumeId);
 
     this.isDrawing = true;
