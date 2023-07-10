@@ -107,6 +107,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       windowCenter,
       windowWidth,
       color,
+      // we don't use rgb for the volume actors, so this is always false
+      rgba: false,
       spacing: this.spacing,
       dimensions: this.dimensions,
       PhotometricInterpretation,
@@ -858,9 +860,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       windowWidth,
       voiLUTFunction,
       color,
+      rgba: false,
       numComps: numComponents,
-      rows: dimensions[0],
-      columns: dimensions[1],
+      // Note the dimensions were defined as [Columns, Rows, Frames]
+      rows: dimensions[1],
+      columns: dimensions[0],
       sizeInBytes: imageScalarData.byteLength,
       getPixelData: () => imageScalarData,
       minPixelValue: minMax.min,
@@ -871,7 +875,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       getCanvas: undefined, // todo: which canvas?
       height: dimensions[0],
       width: dimensions[1],
-      rgba: undefined, // todo: how
       columnPixelSpacing: spacing[0],
       rowPixelSpacing: spacing[1],
       invert,

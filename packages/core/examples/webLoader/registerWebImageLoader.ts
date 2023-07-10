@@ -19,7 +19,15 @@ function createImage(image, imageId) {
   function getPixelData() {
     const imageData = getImageData();
 
-    return imageData.data;
+    // modify original image data and remove alpha channel (RGBA to RGB)
+    const data = new Uint8Array(imageData.width * imageData.height * 3);
+    for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
+      data[j] = imageData.data[i];
+      data[j + 1] = imageData.data[i + 1];
+      data[j + 2] = imageData.data[i + 2];
+    }
+
+    return data;
   }
 
   function getImageData() {
@@ -70,11 +78,12 @@ function createImage(image, imageId) {
     height: rows,
     width: columns,
     color: true,
-    rgba: true,
+    // since the canvas return rgba we should tell the cornerstone that we have 4 components per pixel
+    rgba: false,
     columnPixelSpacing: 1, // for web it's always 1
     rowPixelSpacing: 1, // for web it's always 1
     invert: false,
-    sizeInBytes: rows * columns * 4,
+    sizeInBytes: rows * columns * 3,
   };
 }
 
@@ -202,20 +211,12 @@ function _loadImageIntoBuffer(
           // If we have a target buffer, write to that instead. This helps reduce memory duplication.
           const { arrayBuffer, offset, length } = options.targetBuffer;
 
+          // since the web image was loaded via canvas api it has rgba format
+          // below we convert it to rgb since the vtk image data can work
+          // only with rgb format
+
           // @ts-ignore
-          const pixelDataRGBA = image.getPixelData();
-          const pixelDataRGB = new Uint8ClampedArray(
-            (pixelDataRGBA.length * 3) / 4
-          );
-
-          let j = 0;
-          for (let i = 0; i < pixelDataRGBA.length; i += 4) {
-            pixelDataRGB[j] = pixelDataRGBA[i];
-            pixelDataRGB[j + 1] = pixelDataRGBA[i + 1];
-            pixelDataRGB[j + 2] = pixelDataRGBA[i + 2];
-            j += 3;
-          }
-
+          const pixelDataRGB = image.getPixelData();
           const targetArray = new Uint8Array(arrayBuffer, offset, length);
 
           // TypedArray.Set is api level and ~50x faster than copying elements even for
