@@ -1435,6 +1435,7 @@ type ImageSpacingCalibratedEventDetail = {
     renderingEngineId: string;
     imageId: string;
     scale?: number;
+    calibration?: IImageCalibration;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
