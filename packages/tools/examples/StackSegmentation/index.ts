@@ -360,7 +360,7 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
   const sortedImageIds = sortImageIds(imageIds);
   const { imageIds: derivedImageIds } =
-    await imageLoader.createCacheDerivedImages(sortedImageIds);
+    await imageLoader.createAndCacheDerivedImages(sortedImageIds);
 
   await viewport.setStack(sortedImageIds);
   const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
