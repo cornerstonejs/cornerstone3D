@@ -16,6 +16,7 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
 import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
+import roundNumber from '../../utilities/roundNumber';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -200,7 +201,6 @@ class AngleTool extends AnnotationTool {
     const [point1, point2, point3] = data.handles.points;
     const canvasPoint1 = viewport.worldToCanvas(point1);
     const canvasPoint2 = viewport.worldToCanvas(point2);
-    const canvasPoint3 = viewport.worldToCanvas(point3);
 
     const line1 = {
       start: {
@@ -213,6 +213,17 @@ class AngleTool extends AnnotationTool {
       },
     };
 
+    const distanceToPoint = lineSegment.distanceToPoint(
+      [line1.start.x, line1.start.y],
+      [line1.end.x, line1.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    );
+
+    if (distanceToPoint <= proximity) return true;
+    if (!point3) return false;
+
+    const canvasPoint3 = viewport.worldToCanvas(point3);
+
     const line2 = {
       start: {
         x: canvasPoint2[0],
@@ -224,19 +235,13 @@ class AngleTool extends AnnotationTool {
       },
     };
 
-    const distanceToPoint = lineSegment.distanceToPoint(
-      [line1.start.x, line1.start.y],
-      [line1.end.x, line1.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
-
     const distanceToPoint2 = lineSegment.distanceToPoint(
       [line2.start.x, line2.start.y],
       [line2.end.x, line2.end.y],
       [canvasCoords[0], canvasCoords[1]]
     );
 
-    if (distanceToPoint <= proximity || distanceToPoint2 <= proximity) {
+    if (distanceToPoint2 <= proximity) {
       return true;
     }
 
@@ -783,7 +788,7 @@ class AngleTool extends AnnotationTool {
       return;
     }
 
-    const textLines = [`${angle.toFixed(2)} ${String.fromCharCode(176)}`];
+    const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
 
     return textLines;
   }
