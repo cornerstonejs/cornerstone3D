@@ -16,18 +16,34 @@ function createImage(image, imageId) {
   const rows = image.naturalHeight;
   const columns = image.naturalWidth;
 
-  function getPixelData() {
+  function getPixelData(targetBuffer) {
     const imageData = getImageData();
 
-    // modify original image data and remove alpha channel (RGBA to RGB)
-    const data = new Uint8Array(imageData.width * imageData.height * 3);
-    for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
-      data[j] = imageData.data[i];
-      data[j + 1] = imageData.data[i + 1];
-      data[j + 2] = imageData.data[i + 2];
+    let targetArray;
+
+    // Check if targetBuffer is provided for volume viewports
+    if (targetBuffer) {
+      targetArray = new Uint8Array(
+        targetBuffer.arrayBuffer,
+        targetBuffer.offset,
+        targetBuffer.length
+      );
+    } else {
+      targetArray = new Uint8Array(imageData.width * imageData.height * 3);
     }
 
-    return data;
+    // modify original image data and remove alpha channel (RGBA to RGB)
+    convertImageDataToRGB(imageData, targetArray);
+
+    return targetArray;
+  }
+
+  function convertImageDataToRGB(imageData, targetArray) {
+    for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
+      targetArray[j] = imageData.data[i];
+      targetArray[j + 1] = imageData.data[i + 1];
+      targetArray[j + 2] = imageData.data[i + 2];
+    }
   }
 
   function getImageData() {
@@ -208,20 +224,9 @@ function _loadImageIntoBuffer(
             resolve(image);
             return;
           }
-          // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-          const { arrayBuffer, offset, length } = options.targetBuffer;
-
-          // since the web image was loaded via canvas api it has rgba format
-          // below we convert it to rgb since the vtk image data can work
-          // only with rgb format
 
           // @ts-ignore
-          const pixelDataRGB = image.getPixelData();
-          const targetArray = new Uint8Array(arrayBuffer, offset, length);
-
-          // TypedArray.Set is api level and ~50x faster than copying elements even for
-          // Arrays of different types, which aren't simply memcpy ops.
-          targetArray.set(pixelDataRGB, 0);
+          image.getPixelData(options.targetBuffer);
 
           resolve(true);
         },
