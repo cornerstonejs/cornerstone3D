@@ -107,7 +107,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       windowCenter,
       windowWidth,
       color,
-      // we don't use rgb for the volume actors, so this is always false
+      // we use rgb (3 components) for the color volumes (and not rgba), and not rgba (which is used
+      // in some parts of the lib for stack viewing in CPU)
       rgba: false,
       spacing: this.spacing,
       dimensions: this.dimensions,

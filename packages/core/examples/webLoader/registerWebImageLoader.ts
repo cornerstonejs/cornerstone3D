@@ -78,7 +78,7 @@ function createImage(image, imageId) {
     height: rows,
     width: columns,
     color: true,
-    // since the canvas return rgba we should tell the cornerstone that we have 4 components per pixel
+    // we converted the canvas rgba already to rgb above
     rgba: false,
     columnPixelSpacing: 1, // for web it's always 1
     rowPixelSpacing: 1, // for web it's always 1
