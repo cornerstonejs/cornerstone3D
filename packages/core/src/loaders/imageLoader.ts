@@ -292,7 +292,7 @@ export function createAndCacheDerivedImage(
  * @param options - options for loader
  *
  */
-export function createCacheDerivedImages(
+export function createAndCacheDerivedImages(
   imageIds: Array<string>
 ): DerivedImages {
   if (!imageIds || imageIds.length === 0) {
