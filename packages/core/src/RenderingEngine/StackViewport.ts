@@ -609,7 +609,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
-    console.log('Calibration event is', scale, calibration);
     this._calibrationEvent = <CalibrationEvent>{
       scale,
       calibration,

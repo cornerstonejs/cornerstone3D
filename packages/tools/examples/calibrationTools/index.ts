@@ -137,11 +137,16 @@ addDropdownToToolbar({
 });
 
 const calibrationFunctions: Record<string, unknown> = {};
+const originalSpacing = 0.976562;
 
 const calibrations = [
   {
     value: 'Default',
     selected: 'userCalibration',
+    calibration: {
+      scale: 1,
+      type: Enums.CalibrationTypes.NOT_APPLICABLE,
+    },
   },
   {
     value: 'User Calibration 0.5',
@@ -187,14 +192,14 @@ const calibrations = [
     value: 'Aspect 1:2 (breaks existing annotations)',
     selected: 'applyMetadata',
     metadata: {
-      '00280030': { Value: [0.5, 1] },
+      '00280030': { Value: [0.5 * originalSpacing, originalSpacing] },
     },
   },
   {
     value: 'Aspect 1:1 (breaks existing annotations)',
     selected: 'applyMetadata',
     metadata: {
-      '00280030': { Value: [0.5, 0.5] },
+      '00280030': { Value: [originalSpacing, originalSpacing] },
     },
   },
 ];
