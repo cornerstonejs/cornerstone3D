@@ -1,6 +1,7 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 export type Actor = vtkActor;
 export type VolumeActor = vtkVolume;
@@ -20,4 +21,6 @@ export type ActorEntry = {
   referenceId?: string;
   /** slab thickness for the actor */
   slabThickness?: number;
+  /** the vtkImage data related to an ImageActor */
+  imageData?: vtkImageData;
 };

@@ -9,7 +9,7 @@ import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
 import { ColormapRegistration } from './Colormap';
 import IImage from './IImage';
-
+import { IStackInput } from './IStackInput';
 /**
  * Interface for Stack Viewport
  */
@@ -69,6 +69,14 @@ export default interface IStackViewport extends IViewport {
    * Returns the currently rendered imageId
    */
   getCurrentImageId: () => string;
+  /**
+   * Add Image Slices actors to the viewport
+   */
+  addImages(
+    stackInputs: Array<IStackInput>,
+    immediateRender: boolean,
+    suppressEvents: boolean
+  );
 
   /**
    * Custom rendering pipeline for the rendering for the CPU fallback

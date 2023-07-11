@@ -41,12 +41,12 @@ export type LabelmapSegmentationDataVolume = {
   referencedVolumeId?: string;
 };
 
-export type LabelmapSegmentationDataImage = {
+export type LabelmapSegmentationDataStack = {
   type: 'image';
   imageIds: Array<string>;
-  referencedImageIds?: Array<string>;
+  referencedImageIds: Array<string>;
 };
 
 export type LabelmapSegmentationData =
   | LabelmapSegmentationDataVolume
-  | LabelmapSegmentationDataImage;
+  | LabelmapSegmentationDataStack;

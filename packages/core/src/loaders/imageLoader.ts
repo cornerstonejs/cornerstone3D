@@ -254,6 +254,7 @@ export function createAndCacheDerivedImage(
 
   const image: IImage = {
     imageId: options.imageId,
+    referenceImageId: imageId,
     intercept: 0,
     windowCenter: 0,
     windowWidth: 0,

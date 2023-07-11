@@ -3,7 +3,7 @@ import { cache } from '@cornerstonejs/core';
 import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
-  LabelmapSegmentationDataImage,
+  LabelmapSegmentationDataStack,
 } from '../../../types/LabelmapTypes';
 
 function validate(segmentationInput: SegmentationPublicInput): void {
@@ -34,7 +34,7 @@ function validate(segmentationInput: SegmentationPublicInput): void {
     }
   } else {
     representationData = segmentationInput.representation
-      .data as LabelmapSegmentationDataImage;
+      .data as LabelmapSegmentationDataStack;
     if (!representationData.imageIds) {
       throw new Error(
         'The segmentationInput.representationData.imageIds is undefined, please provide a valid representationData.imageIds'

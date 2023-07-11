@@ -59,10 +59,10 @@ export function getMetadataFromImagePlaneModule(
   }
 
   const xSpacing =
-    imagePlaneModule.columnPixelSpacing || image.columnPixelSpacing;
-  const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing;
-  const xVoxels = image.columns;
-  const yVoxels = image.rows;
+    imagePlaneModule.columnPixelSpacing || image?.columnPixelSpacing;
+  const ySpacing = imagePlaneModule.rowPixelSpacing || image?.rowPixelSpacing;
+  const xVoxels = imagePlaneModule.columns || image?.columns;
+  const yVoxels = imagePlaneModule.rows || image?.rows;
 
   // Note: For rendering purposes, we use the EPSILON as the z spacing.
   // This is purely for internal implementation logic since we are still
@@ -88,7 +88,9 @@ export function getMetadataFromImagePlaneModule(
  *  direction, dimensions, spacing, number of voxels.
  */
 export function getMetadataFromImage(image: IImage): ImageDataMetaData {
-  const { imagePlaneModule } = getImagePlaneModule(image.imageId);
+  const { imagePlaneModule } = getImagePlaneModule(
+    image?.referenceImageId || image.imageId
+  );
   const imagePlaneModuleMetadata = getMetadataFromImagePlaneModule(
     image,
     imagePlaneModule

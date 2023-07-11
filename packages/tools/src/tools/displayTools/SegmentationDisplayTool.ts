@@ -146,11 +146,7 @@ class SegmentationDisplayTool extends BaseTool {
         for (const viewport of toolGroupViewports) {
           if (representation.type == Representations.Labelmap) {
             viewportsRenderList.push(
-              labelmapDisplay.render(
-                viewport as Types.IVolumeViewport,
-                representation,
-                config
-              )
+              labelmapDisplay.render(viewport, representation, config)
             );
           } else if (representation.type == Representations.Contour) {
             viewportsRenderList.push(

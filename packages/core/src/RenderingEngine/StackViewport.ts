@@ -73,8 +73,7 @@ import getImagePlaneModule from './helpers/getImagePlaneModule';
 import updateVTKImageDataFromCornerstoneImage from './helpers/updateVTKImageDataFromCornerstoneImage';
 import createActorMapper from './helpers/createActorMapper';
 import createVTKImageData from './helpers/createVTKImageData';
-import createDerivedActorMapper from './helpers/createDerivedActorMapper';
-import createDerivedVTKImageData from './helpers/createDerivedVTKImageData';
+import { createActorMapperFromImageId } from './helpers/createActorMapperFromImage';
 import getValidVOILUTFunction from './helpers/getValidVOILUTFunction';
 import {
   PixelDataTypedArray,
@@ -124,7 +123,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Helpers
   private _imageData: vtkImageDataType;
-  private _derivedImageData: vtkImageDataType;
   private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private _publishCalibratedEvent = false;
@@ -1011,7 +1009,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
     if (
@@ -1828,6 +1826,24 @@ class StackViewport extends Viewport implements IStackViewport {
     );
   }
 
+  public async addImages(
+    stackInputs: Array<IStackInput>,
+    immediateRender: boolean,
+    suppressEvents: boolean
+  ): Promise<void> {
+    const actors = this.getActors();
+    stackInputs.forEach((stackInput) => {
+      const {
+        segmentationActor: imageActor,
+        segmentationImageData: imageData,
+      } = createActorMapperFromImageId(stackInput.imageId);
+      if (imageActor) {
+        actors.push({ uid: stackInput.actorUID, actor: imageActor, imageData });
+      }
+    });
+    this.setActors(actors);
+  }
+
   /**
    * It updates the volume actor with the retrieved cornerstone image.
    * It first checks if the new image has the same dimensions, spacings, and
@@ -1859,7 +1875,6 @@ class StackViewport extends Viewport implements IStackViewport {
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
-      updateDerivedVTKImageData(image, this._derivedImageData);
 
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
@@ -1936,11 +1951,6 @@ class StackViewport extends Viewport implements IStackViewport {
     const actor = createActorMapper(this._imageData);
     const actors = [];
     actors.push({ uid: this.id, actor });
-    const { derivedActor, derivedImageData } = createDerivedActorMapper(image);
-    if (derivedActor) {
-      this._derivedImageData = derivedImageData;
-      actors.push({ uid: 'derived:' + this.id, actor: derivedActor });
-    }
     this.setActors(actors);
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
