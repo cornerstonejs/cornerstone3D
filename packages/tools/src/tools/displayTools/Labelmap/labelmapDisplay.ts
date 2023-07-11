@@ -6,6 +6,8 @@ import {
   getEnabledElementByIds,
   Types,
   utilities,
+  Enums,
+  getEnabledElement,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
@@ -15,6 +17,8 @@ import { getToolGroup } from '../../../store/ToolGroupManager';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
 } from '../../../types/LabelmapTypes';
 import {
   RepresentationPublicInput,
@@ -25,7 +29,8 @@ import {
 import addLabelmapToElement from './addLabelmapToElement';
 
 import removeLabelmapFromElement from './removeLabelmapFromElement';
-
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import { updateVTKImageDataFromImageId } from '../../../../../core/src/RenderingEngine/helpers/updateVTKImageDataFromImage';
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
@@ -168,6 +173,19 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
   return false;
 }
 
+function updateSegmentationImage(evt) {
+  const eventData = evt.detail;
+  const { element } = eventData;
+  const { viewport } = getEnabledElement(element);
+  const imageId = viewport.getCurrentImageId();
+  const actors = viewport.getActors();
+  actors.forEach((actor) => {
+    if (actor.imageData) {
+      updateVTKImageDataFromImageId(imageId, actor.imageData);
+    }
+  });
+}
+
 /**
  * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
@@ -176,7 +194,7 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
  * @param configuration - The configuration object for the labelmap.
  */
 async function render(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
   representation: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {
@@ -192,30 +210,55 @@ async function render(
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
-  const { volumeId: labelmapUID } = labelmapData;
 
-  const labelmap = cache.getVolume(labelmapUID);
+  let actorEntry;
+  if (labelmapData.type === 'volume') {
+    const { volumeId: labelmapUID } = labelmapData;
 
-  if (!labelmap) {
-    throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
-  }
+    const labelmap = cache.getVolume(labelmapUID);
 
-  if (!isSameFrameOfReference(viewport, labelmapData?.referencedVolumeId)) {
-    return;
-  }
-  let actorEntry = viewport.getActor(segmentationRepresentationUID);
+    if (!labelmap) {
+      throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
+    }
 
-  if (!actorEntry) {
-    const segmentation = SegmentationState.getSegmentation(segmentationId);
-    const { volumeId } =
-      segmentation.representationData[Representations.Labelmap];
-    // only add the labelmap to ToolGroup viewports if it is not already added
-    await _addLabelmapToViewport(
-      viewport,
-      volumeId,
-      segmentationRepresentationUID
-    );
+    if (!isSameFrameOfReference(viewport, labelmapData?.referencedVolumeId)) {
+      return;
+    }
+    actorEntry = viewport.getActor(segmentationRepresentationUID);
 
+    if (!actorEntry) {
+      // only add the labelmap to ToolGroup viewports if it is not already added
+      await _addLabelmapToViewport(
+        viewport,
+        labelmapData,
+        segmentationRepresentationUID
+      );
+    }
+
+    actorEntry = viewport.getActor(segmentationRepresentationUID);
+  } else {
+    const imageId = viewport.getCurrentImageId();
+    const { referencedImageIds } = labelmapData;
+    if (referencedImageIds.includes(imageId)) {
+      actorEntry = viewport.getActor(segmentationRepresentationUID);
+      if (!actorEntry) {
+        // only add the labelmap to ToolGroup viewports if it is not already added
+        await _addLabelmapToViewport(
+          viewport,
+          labelmapData,
+          segmentationRepresentationUID
+        );
+      }
+
+      viewport.element.removeEventListener(
+        Enums.Events.IMAGE_RENDERED,
+        updateSegmentationImage
+      );
+      viewport.element.addEventListener(
+        Enums.Events.IMAGE_RENDERED,
+        updateSegmentationImage
+      );
+    }
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
 
@@ -264,7 +307,7 @@ function _setLabelmapColorAndOpacity(
   // the default color table uses RGB.
   const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
   const numColors = Math.min(256, colorLUT.length);
-  const volumeActor = actorEntry.actor as Types.VolumeActor;
+  const actor = actorEntry.actor as vtkActor;
   const { uid: actorUID } = actorEntry;
 
   // Note: right now outlineWidth and renderOutline are not configurable
@@ -324,24 +367,26 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
-  volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+  actor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
-  volumeActor.getProperty().setScalarOpacity(0, ofun);
+  actor.getProperty().setScalarOpacity(0, ofun);
 
-  volumeActor.getProperty().setInterpolationTypeToNearest();
+  actor.getProperty().setInterpolationTypeToNearest();
 
-  volumeActor.getProperty().setUseLabelOutline(renderOutline);
+  if (utilities.actorIsA(actorEntry, 'vtkVolume')) {
+    actor.getProperty().setUseLabelOutline(renderOutline);
 
-  // @ts-ignore: setLabelOutlineWidth is not in the vtk.d.ts apparently
-  volumeActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
-  volumeActor.getProperty().setLabelOutlineThickness(outlineWidth);
+    // @ts-ignore: setLabelOutlineWidth is not in the vtk.d.ts apparently
+    actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+    actor.getProperty().setLabelOutlineThickness(outlineWidth);
+  }
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
   const visible = isActiveLabelmap || renderInactiveSegmentations;
-  volumeActor.setVisibility(visible);
+  actor.setVisibility(visible);
 }
 
 function _getLabelmapConfig(
@@ -487,13 +532,13 @@ function _removeLabelmapFromToolGroupViewports(
 }
 
 async function _addLabelmapToViewport(
-  viewport: Types.IVolumeViewport,
-  volumeId: string,
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
+  labelmap: LabelmapSegmentationData,
   segmentationRepresentationUID: string
 ): Promise<void> {
   await addLabelmapToElement(
     viewport.element,
-    volumeId,
+    labelmap,
     segmentationRepresentationUID
   );
 }

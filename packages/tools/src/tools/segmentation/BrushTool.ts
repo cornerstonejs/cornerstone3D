@@ -30,7 +30,10 @@ import {
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
 
 /**
  * @public

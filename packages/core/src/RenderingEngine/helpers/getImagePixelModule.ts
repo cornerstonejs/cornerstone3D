@@ -3,7 +3,7 @@ import { metaData } from '../..';
 import getValidVOILUTFunction from './getValidVOILUTFunction';
 
 export default function getImagePixelModule(image: IImage) {
-  const imageId = image.imageId;
+  const imageId = image?.referenceImageId || image.imageId;
 
   const {
     pixelRepresentation,
