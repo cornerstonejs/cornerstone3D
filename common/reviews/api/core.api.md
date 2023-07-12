@@ -4,7 +4,9 @@
 
 ```ts
 
+import type { GetGPUTier } from 'detect-gpu';
 import { mat4 } from 'gl-matrix';
+import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -207,7 +209,8 @@ enum ContourType {
 
 // @public (undocumented)
 type Cornerstone3DConfig = {
-    detectGPU: any;
+    gpuTier?: TierResult;
+    detectGPUConfig: GetGPUTier;
     rendering: {
         preferSizeOverAccuracy: boolean;
         useNorm16Texture: boolean;
@@ -1087,7 +1090,7 @@ interface IImage {
     rows: number;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -1194,7 +1197,7 @@ interface IImageVolume {
     // (undocumented)
     isDynamicVolume(): boolean;
     // (undocumented)
-    isPrescaled: boolean;
+    isPreScaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
@@ -1207,7 +1210,7 @@ interface IImageVolume {
     referencedVolumeId?: string;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -1427,7 +1430,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     isDynamicVolume(): boolean;
     // (undocumented)
-    isPrescaled: boolean;
+    isPreScaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
@@ -1442,7 +1445,7 @@ export class ImageVolume implements IImageVolume {
     protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -1755,7 +1758,7 @@ interface IVolume {
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -2099,7 +2102,7 @@ function scaleRGBTransferFunction(rgbTransferFunction: any, scalingFactor: numbe
 
 // @public (undocumented)
 type Scaling = {
-    PET?: PTScaling;
+    PT?: PTScaling;
 };
 
 // @public (undocumented)
@@ -2701,6 +2704,7 @@ type VoiModifiedEventDetail = {
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    invertStateChanged?: boolean;
 };
 
 // @public (undocumented)

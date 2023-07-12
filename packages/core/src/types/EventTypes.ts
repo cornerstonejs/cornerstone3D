@@ -42,6 +42,8 @@ type VoiModifiedEventDetail = {
   VOILUTFunction?: VOILUTFunctionType;
   /** inverted */
   invert?: boolean;
+  /** Indicates if the 'invert' state has changed from the previous state */
+  invertStateChanged?: boolean;
 };
 
 /**

@@ -556,7 +556,7 @@ describe('renderingCore -- Stack', () => {
 
       const vp = this.renderingEngine.getViewport(viewportId);
       element.addEventListener(Events.IMAGE_RENDERED, () => {
-        expect(vp.scaling.PET).toEqual({
+        expect(vp.scaling.PT).toEqual({
           suvbwToSuvlbm: 1,
           suvbwToSuvbsa: 1,
         });

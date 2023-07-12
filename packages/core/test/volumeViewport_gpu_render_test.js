@@ -770,7 +770,6 @@ describe('Volume Viewport GPU -- ', () => {
       });
 
       const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setIndependentComponents(false);
         volumeActor.getProperty().setInterpolationTypeToNearest();
       };
 
@@ -814,7 +813,6 @@ describe('Volume Viewport GPU -- ', () => {
       });
 
       const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setIndependentComponents(false);
         volumeActor.getProperty().setInterpolationTypeToLinear();
       };
 
