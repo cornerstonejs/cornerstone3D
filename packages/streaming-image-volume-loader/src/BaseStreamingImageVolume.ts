@@ -885,6 +885,16 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     return imageLoadObject;
   }
 
+  public convertToCornerstoneImages(): Types.IImageLoadObject[] {
+    const { imageIds } = this;
+
+    const imageLoadObjects = imageIds.map((imageId, imageIdIndex) => {
+      return this.convertToCornerstoneImage(imageId, imageIdIndex);
+    });
+
+    return imageLoadObjects;
+  }
+
   /**
    * Converts all the volume images (imageIds) to cornerstoneImages and caches them.
    * It iterates over all the imageIds and convert them until there is no
