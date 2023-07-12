@@ -12,7 +12,7 @@ import RectangleROI from "./RectangleROI";
 import Length from "./Length";
 import PlanarFreehandROI from "./PlanarFreehandROI";
 import Probe from "./Probe";
-import Segmentation from "./Segmentation";
+import * as Segmentation from "./Segmentation";
 
 const Cornerstone3DSR = {
     Bidirectional,

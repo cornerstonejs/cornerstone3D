@@ -1,15 +1,9 @@
-import { utilities, normalizers, derivations } from "dcmjs";
-
-const { datasetToBlob, DicomMessage, DicomMetaDictionary } = utilities;
+import { utilities, normalizers, derivations, data as dcmjsData } from "dcmjs";
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 
 const { encode } = utilities.compression;
-
-const Segmentation = {
-    generateSegmentation
-};
 
 /**
  *
@@ -18,26 +12,28 @@ const Segmentation = {
  * @property {Object[]} segments - The cornerstoneTools segment metadata that corresponds to the
  *                                 seriesInstanceUid.
  */
-
 const generateSegmentationDefaultOptions = {
     includeSliceSpacing: true,
-    rleEncode: true
+    rleEncode: false
 };
 
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
  *
- * @param  images - An array of the cornerstone image objects.
- * @param  labelmaps
+ * @param images - An array of the cornerstone image objects, which includes imageId and metadata
+ * @param labelmaps - An array of the 3D Volumes that contain the segmentation data.
  */
 function generateSegmentation(
     images,
     labelmaps,
+    metadata,
     options = { includeSliceSpacing: true }
 ) {
-    const isMultiframe = images[0].imageId.includes("?frame");
-    const segmentation = _createSegFromImages(images, isMultiframe, options);
-
+    const segmentation = _createMultiframeSegmentationFromReferencedImages(
+        images,
+        metadata,
+        options
+    );
     return fillSegmentation(segmentation, labelmaps, options);
 }
 
@@ -70,7 +66,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
         labelmapIndex++
     ) {
         const labelmap3D = labelmaps3D[labelmapIndex];
-        const { labelmaps2D, metadata } = labelmap3D;
+        const { metadata, labelmaps2D } = labelmap3D;
 
         const referencedFramesPerSegment = [];
 
@@ -173,7 +169,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
         segmentation.bitPackPixelData();
     }
 
-    const segBlob = datasetToBlob(segmentation.dataset);
+    const segBlob = dcmjsData.datasetToBlob(segmentation.dataset);
 
     return segBlob;
 }
@@ -196,42 +192,48 @@ function _getLabelmapsFromReferencedFrameIndices(
 }
 
 /**
- * _createSegFromImages - description
+ * _createMultiframeSegmentationFromReferencedImages - description
  *
  * @param images - An array of the cornerstone image objects.
- * @param isMultiframe - Whether the images are multiframe.
+ * @param options - the options object for the SegmentationDerivation.
  * @returns The Seg derived dataSet.
  */
-function _createSegFromImages(images, isMultiframe, options) {
-    const datasets = [];
+function _createMultiframeSegmentationFromReferencedImages(
+    images,
+    metadata,
+    options
+) {
+    // for (let i = 0; i < images.length; i++) {
+    //     const image = images[i];
+    //     const arrayBuffer = image.data.byteArray.buffer;
+    //     const dicomData = DicomMessage.readFile(arrayBuffer);
+    //     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
 
-    if (isMultiframe) {
-        const image = images[0];
-        const arrayBuffer = image.data.byteArray.buffer;
+    //     dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+    //     datasets.push(dataset);
+    // }
 
-        const dicomData = DicomMessage.readFile(arrayBuffer);
-        const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+    const datasets = images.map(image => {
+        // add the sopClassUID to the dataset
+        const allMetadataModules = metadata.get("dataset", image.imageId);
 
-        dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-
-        datasets.push(dataset);
-    } else {
-        for (let i = 0; i < images.length; i++) {
-            const image = images[i];
-            const arrayBuffer = image.data.byteArray.buffer;
-            const dicomData = DicomMessage.readFile(arrayBuffer);
-            const dataset = DicomMetaDictionary.naturalizeDataset(
-                dicomData.dict
-            );
-
-            dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-            datasets.push(dataset);
-        }
-    }
+        return {
+            ...image,
+            ...allMetadataModules,
+            // Todo: move to dcmjs tag style
+            SOPClassUID: allMetadataModules.SopClassUID,
+            SOPInstanceUID: allMetadataModules.SopInstanceUID,
+            PixelData: image.getPixelData(),
+            _vrMap: {
+                PixelData: "OW"
+            },
+            _meta: {}
+        };
+    });
 
     const multiframe = Normalizer.normalizeToDataset(datasets);
 
     return new SegmentationDerivation([multiframe], options);
 }
 
-export default Segmentation;
+export { generateSegmentation };

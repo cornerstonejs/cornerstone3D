@@ -1342,26 +1342,6 @@
   resolved "https://registry.npmjs.org/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.2.tgz#e96721d56f6ec96f7f95c16321d88cc8467d8d81"
   integrity sha512-lgdvBvvNezleY+4pIe2ceUsJzlZe/0PipdeubQ3vZZOz3xxtHHMR1XFCl4fgd8gosR8COHuD7h6q+MwgrwBsng==
 
-"@cornerstonejs/core@file:packages/core":
-  version "1.2.6"
-  dependencies:
-    "@kitware/vtk.js" "27.3.1"
-    detect-gpu "^5.0.22"
-    gl-matrix "^3.4.3"
-    lodash.clonedeep "4.5.0"
-
-"@cornerstonejs/streaming-image-volume-loader@file:packages/streaming-image-volume-loader":
-  version "1.2.6"
-  dependencies:
-    "@cornerstonejs/core" "^1.2.6"
-
-"@cornerstonejs/tools@file:packages/tools":
-  version "1.2.6"
-  dependencies:
-    "@cornerstonejs/core" "^1.2.6"
-    lodash.clonedeep "4.5.0"
-    lodash.get "^4.4.2"
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
