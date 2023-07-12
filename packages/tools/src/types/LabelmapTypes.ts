@@ -42,7 +42,7 @@ export type LabelmapSegmentationDataVolume = {
 };
 
 export type LabelmapSegmentationDataStack = {
-  type: 'image';
+  type: 'stack';
   imageIds: Array<string>;
   referencedImageIds: Array<string>;
 };

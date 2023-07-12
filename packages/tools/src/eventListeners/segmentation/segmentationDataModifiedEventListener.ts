@@ -4,6 +4,7 @@ import triggerSegmentationRender from '../../utilities/segmentation/triggerSegme
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
+import { LabelmapSegmentationDataVolume } from 'tools/src/types/LabelmapTypes';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -18,33 +19,38 @@ const onSegmentationDataModified = function (
 
   let toolGroupIds;
   if (type === SegmentationRepresentations.Labelmap) {
-    // get the volume from cache, we need the openGLTexture to be updated to GPU
-    const segmentationVolume = cache.getVolume(
-      representationData[type].volumeId
-    );
+    if (representationData[type].type === 'volume') {
+      const representationDataVolume = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      // get the volume from cache, we need the openGLTexture to be updated to GPU
+      const segmentationVolume = cache.getVolume(
+        representationDataVolume.volumeId
+      );
 
-    if (!segmentationVolume) {
-      console.warn('segmentation not found in cache');
-      return;
+      if (!segmentationVolume) {
+        console.warn('segmentation not found in cache');
+        return;
+      }
+
+      const { imageData, vtkOpenGLTexture } = segmentationVolume;
+
+      // Update the texture for the volume in the GPU
+      let slicesToUpdate;
+      if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
+        slicesToUpdate = modifiedSlicesToUse;
+      } else {
+        const numSlices = imageData.getDimensions()[2];
+        slicesToUpdate = [...Array(numSlices).keys()];
+      }
+
+      slicesToUpdate.forEach((i) => {
+        vtkOpenGLTexture.setUpdatedFrame(i);
+      });
+
+      // Trigger modified on the imageData to update the image
+      imageData.modified();
     }
-
-    const { imageData, vtkOpenGLTexture } = segmentationVolume;
-
-    // Update the texture for the volume in the GPU
-    let slicesToUpdate;
-    if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
-      slicesToUpdate = modifiedSlicesToUse;
-    } else {
-      const numSlices = imageData.getDimensions()[2];
-      slicesToUpdate = [...Array(numSlices).keys()];
-    }
-
-    slicesToUpdate.forEach((i) => {
-      vtkOpenGLTexture.setUpdatedFrame(i);
-    });
-
-    // Trigger modified on the imageData to update the image
-    imageData.modified();
     toolGroupIds =
       SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
   } else {

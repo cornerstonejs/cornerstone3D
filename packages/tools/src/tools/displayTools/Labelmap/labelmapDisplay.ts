@@ -10,15 +10,18 @@ import {
   getEnabledElement,
 } from '@cornerstonejs/core';
 
+import { SegmentationRepresentations } from '../../../enums';
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+import {
+  getToolGroup,
+  getToolGroupForViewport,
+} from '../../../store/ToolGroupManager';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
 } from '../../../types/LabelmapTypes';
 import {
   RepresentationPublicInput,
@@ -173,15 +176,46 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
   return false;
 }
 
+function getLabelmapStackRepresentationUIDsFromToolGroup(
+  toolGroupID: string
+): Array<string> {
+  const toolGroupSegmentationRepresentations =
+    SegmentationState.getSegmentationRepresentations(toolGroupID);
+  const segmentationRepresentations = [];
+  toolGroupSegmentationRepresentations.forEach((representation) => {
+    if (representation.type === SegmentationRepresentations.Labelmap) {
+      const segmentation = SegmentationState.getSegmentation(
+        representation.segmentationId
+      );
+      const labelmapData =
+        segmentation.representationData[Representations.Labelmap];
+      if (labelmapData?.type === 'stack') {
+        segmentationRepresentations.push(
+          representation.segmentationRepresentationUID
+        );
+      }
+    }
+  });
+  return segmentationRepresentations;
+}
+
 function updateSegmentationImage(evt) {
   const eventData = evt.detail;
   const { element } = eventData;
-  const { viewport } = getEnabledElement(element);
+  const { viewport, viewportId, renderingEngineId } =
+    getEnabledElement(element);
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
+  const segmentationRepresentations =
+    getLabelmapStackRepresentationUIDsFromToolGroup(toolGroup.id);
+
   const imageId = viewport.getCurrentImageId();
   const actors = viewport.getActors();
   actors.forEach((actor) => {
-    if (actor.imageData) {
-      updateVTKImageDataFromImageId(imageId, actor.imageData);
+    if (segmentationRepresentations.includes(actor.uid)) {
+      updateVTKImageDataFromImageId(
+        imageId,
+        actor.actor.getMapper().getInputData()
+      );
     }
   });
 }

@@ -1,24 +1,15 @@
 import createActorMapper from './createActorMapper';
 import { IImage } from '../../types';
 import createVTKImageDataFromImage from './createVTKImageDataFromImage';
-import { getMetadataFromImage } from './getMetadataFromImage';
 import { getSegmentationImageFromImageId } from './getDerivedImage';
 
 export default function createActorMapperFromImage(image: IImage) {
-  const { origin, direction, dimensions, spacing } =
-    getMetadataFromImage(image);
-  const segmentationImageData = createVTKImageDataFromImage(image, {
-    origin,
-    direction,
-    dimensions,
-    spacing,
-  });
-
-  const segmentationActor = createActorMapper(segmentationImageData);
-  return { segmentationActor, segmentationImageData };
+  const imageData = createVTKImageDataFromImage(image);
+  const imageActor = createActorMapper(imageData);
+  return { imageActor, imageData };
 }
 
 export function createActorMapperFromImageId(imageId) {
-  const cachedImage = getSegmentationImageFromImageId(imageId);
-  return createActorMapperFromImage(cachedImage.image);
+  const image = getSegmentationImageFromImageId(imageId);
+  return createActorMapperFromImage(image);
 }

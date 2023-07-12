@@ -15,7 +15,7 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { Events, ToolModes } from '../../enums';
+import { Events, SegmentationRepresentations, ToolModes } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -35,14 +35,14 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 
+import { EditData } from './strategies/OperationalData';
 /**
  * @public
  */
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
-    segmentation: Types.IImageVolume;
-    imageVolume: Types.IImageVolume; //
+    data: EditData;
     segmentsLocked: number[]; //
   } | null;
   private _hoverData?: {
@@ -106,10 +106,6 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
-
     const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
@@ -121,31 +117,52 @@ class BrushTool extends BaseTool {
     }
 
     const { segmentationId, type } = activeSegmentationRepresentation;
+    if (type === SegmentationRepresentations.Contour) {
+      throw new Error('Not implemented yet');
+    }
+
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
     const { representationData } =
       segmentationState.getSegmentation(segmentationId);
-
-    // Todo: are we going to support contour editing with this tool?
-    const { volumeId } = representationData[
-      type
-    ] as LabelmapSegmentationDataVolume;
-    const segmentation = cache.getVolume(volumeId);
-
-    const actors = viewport.getActors();
-
-    // Note: For tools that need the source data. Assumed to use
-    // First volume actor for now.
-    const firstVolumeActorUID = actors[0].uid;
-    const imageVolume = cache.getVolume(firstVolumeActorUID);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
     const viewportIdsToRender = [viewport.id];
 
-    this._editData = {
-      segmentation,
-      imageVolume,
-      segmentsLocked,
-    };
+    if (labelmapData.type === 'volume') {
+      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+
+      const actors = viewport.getActors();
+
+      // Note: For tools that need the source data. Assumed to use
+      // First volume actor for now.
+      const firstVolumeActorUID = actors[0].uid;
+      const imageVolume = cache.getVolume(firstVolumeActorUID);
+
+      this._editData = {
+        data: {
+          type: 'volume',
+          segmentation,
+          imageVolume,
+        },
+        segmentsLocked,
+      };
+    } else {
+      const { imageIds, referencedImageIds } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      this._editData = {
+        data: {
+          type: 'stack',
+          segmentation: imageIds,
+          imageData: referencedImageIds,
+          currentImageId: viewport.getCurrentImageId(),
+        },
+        segmentsLocked,
+      };
+    }
 
     this._activateDraw(element);
 
@@ -240,7 +257,7 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+    const { data: editData, segmentsLocked } = this._editData;
 
     this.updateCursor(evt);
 
@@ -262,8 +279,8 @@ class BrushTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      volume: segmentation, // todo: just pass the segmentationId instead
-      imageVolume,
+      data,
+      editData,
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,
@@ -322,7 +339,7 @@ class BrushTool extends BaseTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+    const { data: editData, segmentsLocked } = this._editData;
     const {
       segmentIndex,
       segmentationId,
@@ -338,19 +355,13 @@ class BrushTool extends BaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     this._editData = null;
     this.updateCursor(evt);
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
-
     const operationData = {
       points: data.handles.points,
-      volume: segmentation,
-      imageVolume,
+      editData,
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,

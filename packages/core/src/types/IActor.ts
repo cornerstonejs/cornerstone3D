@@ -21,6 +21,4 @@ export type ActorEntry = {
   referenceId?: string;
   /** slab thickness for the actor */
   slabThickness?: number;
-  /** the vtkImage data related to an ImageActor */
-  imageData?: vtkImageData;
 };

@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
 import { fillInsideCircle } from './fillCircle';
-import { OperationData } from './OperationalData';
+import { OperationData } from '../OperationalData';
 
 export function eraseInsideCircle(
   enabledElement: Types.IEnabledElement,
