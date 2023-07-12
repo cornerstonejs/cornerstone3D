@@ -44,7 +44,10 @@ import {
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { annotation } from '@cornerstonejs/tools';
 
@@ -438,13 +441,15 @@ class ProbeTool extends AnnotationTool {
 
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
 
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
@@ -457,16 +462,14 @@ class ProbeTool extends AnnotationTool {
           annotation,
           renderingEngine,
           enabledElement,
-          isPreScaled,
-          isSuvScaled
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._calculateCachedStats(
           annotation,
           renderingEngine,
           enabledElement,
-          isPreScaled,
-          isSuvScaled
+          modalityUnitOptions
         );
 
         // If the invalidated data is as a result of volumeViewport manipulation
@@ -566,8 +569,7 @@ class ProbeTool extends AnnotationTool {
     annotation,
     renderingEngine,
     enabledElement,
-    isPreScaled,
-    isSuvScaled
+    modalityUnitOptions: ModalityUnitOptions
   ) {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -625,9 +627,8 @@ class ProbeTool extends AnnotationTool {
 
         const modalityUnit = getModalityUnit(
           modality,
-          isPreScaled,
-          isSuvScaled,
-          annotation.metadata.referencedImageId
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
         );
 
         cachedStats[targetId] = {

@@ -155,13 +155,15 @@ class DragProbeTool extends ProbeTool {
 
     const color = this.getStyle('color', styleSpecifier, annotation);
 
-    const isPreScaled = isViewportPreScaled(viewport, targetId);
+    const modalityUnitOptions = {
+      isPreScaled: isViewportPreScaled(viewport, targetId),
 
-    const isSuvScaled = this.isSuvScaled(
-      viewport,
-      targetId,
-      annotation.metadata.referencedImageId
-    );
+      isSuvScaled: this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      ),
+    };
 
     if (!data.cachedStats[targetId]) {
       data.cachedStats[targetId] = {
@@ -174,16 +176,14 @@ class DragProbeTool extends ProbeTool {
         annotation,
         renderingEngine,
         enabledElement,
-        isPreScaled,
-        isSuvScaled
+        modalityUnitOptions
       );
     } else if (annotation.invalidated) {
       this._calculateCachedStats(
         annotation,
         renderingEngine,
         enabledElement,
-        isPreScaled,
-        isSuvScaled
+        modalityUnitOptions
       );
     }
 

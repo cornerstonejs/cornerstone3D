@@ -49,7 +49,10 @@ import pointInPolyline from '../../utilities/math/polyline/pointInPolyline';
 import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -663,12 +666,14 @@ class PlanarFreehandROITool extends AnnotationTool {
       )
         return;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       if (!this.commonData?.movingTextBox) {
         const { data } = annotation;
@@ -690,8 +695,7 @@ class PlanarFreehandROITool extends AnnotationTool {
             viewport,
             renderingEngine,
             enabledElement,
-            isPreScaled,
-            isSuvScaled
+            modalityUnitOptions
           );
         } else if (annotation.invalidated) {
           this._throttledCalculateCachedStats(
@@ -699,8 +703,7 @@ class PlanarFreehandROITool extends AnnotationTool {
             viewport,
             renderingEngine,
             enabledElement,
-            isPreScaled,
-            isSuvScaled
+            modalityUnitOptions
           );
         }
       }
@@ -716,8 +719,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     viewport,
     renderingEngine,
     enabledElement,
-    isPreScaled,
-    isSuvScaled
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { cachedStats, polyline: points } = data;
@@ -856,9 +858,8 @@ class PlanarFreehandROITool extends AnnotationTool {
 
       const modalityUnit = getModalityUnit(
         metadata.Modality,
-        isPreScaled,
-        isSuvScaled,
-        annotation.metadata.referencedImageId
+        annotation.metadata.referencedImageId,
+        modalityUnitOptions
       );
 
       cachedStats[targetId] = {

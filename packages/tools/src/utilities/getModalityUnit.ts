@@ -1,33 +1,35 @@
 import { metaData } from '@cornerstonejs/core';
 
+type ModalityUnitOptions = {
+  isPreScaled: boolean;
+  isSuvScaled: boolean;
+};
+
 function getModalityUnit(
   modality: string,
-  isPreScaled: boolean,
-  isSuvScaled: boolean,
-  imageId: string
+  imageId: string,
+  options: ModalityUnitOptions
 ): string {
   if (modality === 'CT') {
     return 'HU';
   } else if (modality === 'PT') {
-    if (isPreScaled === true) {
-      if (isSuvScaled === true) {
-        return 'SUV';
-      }
-
-      const petSeriesModule = metaData.get('petSeriesModule', imageId);
-      const units = petSeriesModule?.units;
-
-      if (units) {
-        return units;
-      } else {
-        return 'unitless';
-      }
-    } else {
-      return 'raw';
-    }
+    return _handlePTModality(imageId, options);
   } else {
     return '';
   }
 }
 
-export { getModalityUnit };
+function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
+  if (!options.isPreScaled) {
+    return 'raw';
+  }
+
+  if (options.isSuvScaled) {
+    return 'SUV';
+  }
+
+  const petSeriesModule = metaData.get('petSeriesModule', imageId);
+  return petSeriesModule?.units || 'unitless';
+}
+
+export { getModalityUnit, ModalityUnitOptions };

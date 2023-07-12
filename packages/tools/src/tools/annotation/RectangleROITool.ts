@@ -649,13 +649,15 @@ class RectangleROITool extends AnnotationTool {
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
 
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -678,8 +680,7 @@ class RectangleROITool extends AnnotationTool {
           viewUp,
           renderingEngine,
           enabledElement,
-          isPreScaled,
-          isSuvScaled
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
@@ -688,8 +689,7 @@ class RectangleROITool extends AnnotationTool {
           viewUp,
           renderingEngine,
           enabledElement,
-          isPreScaled,
-          isSuvScaled
+          modalityUnitOptions
         );
 
         // If the invalidated data is as a result of volumeViewport manipulation
@@ -884,8 +884,7 @@ class RectangleROITool extends AnnotationTool {
     viewUp,
     renderingEngine,
     enabledElement,
-    isPreScaled,
-    isSuvScaled
+    modalityUnitOptions
   ) => {
     const { data } = annotation;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -995,9 +994,8 @@ class RectangleROITool extends AnnotationTool {
 
         const modalityUnit = getModalityUnit(
           metadata.Modality,
-          isPreScaled,
-          isSuvScaled,
-          annotation.metadata.referencedImageId
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
         );
 
         cachedStats[targetId] = {

@@ -51,7 +51,10 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
@@ -661,13 +664,15 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
 
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -692,8 +697,7 @@ class CircleROITool extends AnnotationTool {
           viewport,
           renderingEngine,
           enabledElement,
-          isPreScaled,
-          isSuvScaled
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
@@ -701,8 +705,7 @@ class CircleROITool extends AnnotationTool {
           viewport,
           renderingEngine,
           enabledElement,
-          isPreScaled,
-          isSuvScaled
+          modalityUnitOptions
         );
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -904,8 +907,7 @@ class CircleROITool extends AnnotationTool {
     viewport,
     renderingEngine,
     enabledElement,
-    isPreScaled,
-    isSuvScaled
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -1035,9 +1037,8 @@ class CircleROITool extends AnnotationTool {
 
         const modalityUnit = getModalityUnit(
           metadata.Modality,
-          isPreScaled,
-          isSuvScaled,
-          annotation.metadata.referencedImageId
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
         );
 
         cachedStats[targetId] = {
