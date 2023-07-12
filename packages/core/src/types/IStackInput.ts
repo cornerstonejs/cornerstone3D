@@ -1,29 +1,29 @@
 import { ImageActor } from './IActor';
 
 /**
- * Volume input callback type, used to perform operations on the volume data
+ * Stack input callback type, used to perform operations on the image data
  * after it has been loaded.
  */
 type StackInputCallback = (params: {
-  /** vtk volume actor */
+  /** vtk image actor */
   imageActor: ImageActor;
-  /** unique volume Id in the cache */
+  /** unique image Id in the cache */
   imageId: string;
 }) => unknown;
 
 /**
- * VolumeInput that can be used to add a volume to a viewport. It includes
- * mandatory `volumeId` but other options such as `visibility`, `blendMode`,
- * `slabThickness` and `callback` can also be provided
+ * StackInput that can be used to add an image actor  to a viewport. It includes
+ * mandatory `imageId` but other options such as `visibility` and `callback`
+ * can also be provided
  */
 interface IStackInput {
   /** imageId of the image in the cache */
   imageId: string;
-  // actorUID for segmentations
+  // actorUID of the imageActor being added
   actorUID?: string;
   /** Visibility of the image actor - by default it is true */
   visibility?: boolean;
-  /** Callback to be called when the volume is added to the viewport */
+  /** Callback to be called when the image is added to the viewport */
   callback?: StackInputCallback;
 }
 

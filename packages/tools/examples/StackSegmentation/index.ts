@@ -294,7 +294,7 @@ function createMockEllipsoidSegmentation(dimensions, imageIds) {
 
   for (let z = 0; z < dimensions[2]; z++) {
     let voxelIndex = 0;
-    const { image } = cache.getCachedImageBasedOnImageURI(imageIds[z]);
+    const image = cache.getImage(imageIds[z]);
     const scalarData = image.getPixelData();
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
@@ -362,7 +362,10 @@ async function run() {
   const { imageIds: derivedImageIds } =
     await imageLoader.createAndCacheDerivedImages(sortedImageIds);
 
-  await viewport.setStack(sortedImageIds);
+  await viewport.setStack(
+    sortedImageIds,
+    Math.floor(sortedImageIds.length / 2)
+  );
   const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
   const dimensions = [columns, rows, imageIds.length];
   createMockEllipsoidSegmentation(dimensions, derivedImageIds);
@@ -375,7 +378,7 @@ async function run() {
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
         data: {
-          type: 'image',
+          type: 'stack',
           imageIds: derivedImageIds,
           referencedImageIds: sortedImageIds,
         },

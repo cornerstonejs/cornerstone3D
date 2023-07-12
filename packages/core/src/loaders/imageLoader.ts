@@ -5,6 +5,7 @@ import { imageIdToURI, triggerEvent } from '../utilities';
 import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { metaData } from '../';
+import getDerivedImageId from '../utilities/getDerivedImageId';
 
 export interface ImageLoaderOptions {
   priority: number;
@@ -16,7 +17,6 @@ interface DerivedImageOptions {
   imageId: string;
   targetBuffer?: {
     type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int16Array';
-    sharedArrayBuffer?: boolean;
   };
 }
 
@@ -218,7 +218,6 @@ export function createAndCacheDerivedImage(
   }
   const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
 
-  let imageScalarData;
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
   let numBytes, TypedArray;
 
@@ -245,12 +244,7 @@ export function createAndCacheDerivedImage(
     TypedArray = Uint8Array;
   }
 
-  if (targetBuffer?.sharedArrayBuffer) {
-    const buffer = new SharedArrayBuffer(numBytes);
-    imageScalarData = new TypedArray(buffer);
-  } else {
-    imageScalarData = new TypedArray(length);
-  }
+  const imageScalarData = new TypedArray(length);
 
   const image: IImage = {
     imageId: options.imageId,
@@ -266,7 +260,7 @@ export function createAndCacheDerivedImage(
     voiLUTFunction: undefined,
     rows: imagePlaneModule.rows,
     columns: imagePlaneModule.columns,
-    sizeInBytes: imageScalarData.byteLength,
+    sizeInBytes: imageScalarData.byteLength | numBytes,
     getPixelData: () => imageScalarData,
     getCanvas: undefined, // todo: which canvas?
     height: imagePlaneModule.rows,
@@ -297,14 +291,14 @@ export function createAndCacheDerivedImages(
 ): DerivedImages {
   if (!imageIds || imageIds.length === 0) {
     throw new Error(
-      'loadAndCacheImages: parameter imageIds must be list of image Ids'
+      'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
     );
   }
 
   const derivedImageIds = [];
   const allPromises = imageIds.map((imageId) => {
     const options: DerivedImageOptions = {
-      imageId: 'stackSeg:derived_' + imageIdToURI(imageId),
+      imageId: getDerivedImageId(imageId),
     };
     derivedImageIds.push(options.imageId);
     return createAndCacheDerivedImage(imageId, options);

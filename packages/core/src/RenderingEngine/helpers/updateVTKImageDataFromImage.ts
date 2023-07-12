@@ -18,6 +18,6 @@ export function updateVTKImageDataFromImageId(
   imageId: string,
   imageData: vtkImageData
 ): void {
-  const segmentationImage = getSegmentationImageFromImageId(imageId);
-  updateVTKImageDataFromImage(segmentationImage.image, imageData);
+  const image = getSegmentationImageFromImageId(imageId);
+  updateVTKImageDataFromImage(image, imageData);
 }

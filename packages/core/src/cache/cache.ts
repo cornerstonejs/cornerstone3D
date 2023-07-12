@@ -14,6 +14,7 @@ import {
 import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import getDerivedImageId from '../utilities/getDerivedImageId';
 
 const MAX_CACHE_SIZE_1GB = 1073741824;
 
@@ -657,6 +658,50 @@ class Cache implements ICache {
     cachedVolume.timeStamp = Date.now();
 
     return cachedVolume.volume;
+  };
+
+  /**
+   * Returns the image associated with the imageId
+   *
+   * @param imageId - image ID
+   * @returns Image
+   */
+  public getImage = (imageId: string): IImage => {
+    if (imageId === undefined) {
+      throw new Error('getImage: imageId must not be undefined');
+    }
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (cachedImage === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached volume (not used for anything for now)
+    cachedImage.timeStamp = Date.now();
+
+    return cachedImage.image;
+  };
+
+  /**
+   * Returns the derived image associated with an imageId
+   *
+   * @param imageId - image ID
+   * @returns Image
+   */
+  public getDerivedImage = (imageId: string): IImage => {
+    if (imageId === undefined) {
+      throw new Error('getDerivedImage: imageId must not be undefined');
+    }
+    const cachedImage = this._imageCache.get(getDerivedImageId(imageId));
+
+    if (cachedImage === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached volume (not used for anything for now)
+    cachedImage.timeStamp = Date.now();
+
+    return cachedImage.image;
   };
 
   /**
