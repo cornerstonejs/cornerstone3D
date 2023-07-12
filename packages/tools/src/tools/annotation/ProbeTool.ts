@@ -49,7 +49,6 @@ import {
   getModalityUnit,
 } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { annotation } from '@cornerstonejs/tools';
 
 const { transformWorldToIndex } = csUtils;
 
