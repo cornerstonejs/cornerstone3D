@@ -68,6 +68,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   private inverted = false;
 
   // Viewport Properties
+  private colormap: ColormapPublic;
+  private voiRange: VOIRange;
   // TODO: similar to setVoi, this is only applicable to first volume
   private VOILUTFunction: VOILUTFunctionType;
 
@@ -264,6 +266,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     cfun.applyColorMap(colormapObj);
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+    this.colormap = colormap;
   }
 
   /**
@@ -425,6 +429,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
     }
+
+    this.voiRange = voiRange;
   }
 
   /**
@@ -512,25 +518,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
    */
   public getProperties = (): VolumeViewportProperties => {
-    const voiRanges = this.getActors()
-      .map((actorEntry) => {
-        const volumeActor = actorEntry.actor as vtkVolume;
-        const volumeId = actorEntry.uid;
-        const volume = cache.getVolume(volumeId);
-        if (!volume) return null;
-        const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
-        const [lower, upper] =
-          this.VOILUTFunction === 'SIGMOID'
-            ? getVoiFromSigmoidRGBTransferFunction(cfun)
-            : cfun.getRange();
-        return { volumeId, voiRange: { lower, upper } };
-      })
-      .filter(Boolean);
+    const { colormap, voiRange, VOILUTFunction, inverted } = this;
 
-    const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
-    const VOILUTFunction = this.VOILUTFunction;
-
-    return { voiRange, VOILUTFunction, invert: this.inverted };
+    return { colormap, voiRange, VOILUTFunction, invert: inverted };
   };
 
   /**

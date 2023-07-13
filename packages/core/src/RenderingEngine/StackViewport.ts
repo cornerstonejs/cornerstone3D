@@ -120,6 +120,7 @@ class StackViewport extends Viewport implements IStackViewport {
   private debouncedTimeout: number;
 
   // Viewport Properties
+  private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
   private VOILUTFunction: VOILUTFunctionType;
@@ -690,15 +691,18 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public setProperties(
     {
+      colormap,
       voiRange,
       VOILUTFunction,
       invert,
       interpolationType,
       rotation,
-      colormap,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
+    if (typeof colormap !== 'undefined') {
+      this.setColormap(colormap);
+    }
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
@@ -724,10 +728,6 @@ class StackViewport extends Viewport implements IStackViewport {
         this.setRotation(rotation);
       }
     }
-
-    if (typeof colormap !== 'undefined') {
-      this.setColormap(colormap);
-    }
   }
 
   /**
@@ -736,6 +736,7 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public getProperties = (): StackViewportProperties => {
     const {
+      colormap,
       voiRange,
       VOILUTFunction,
       interpolationType,
@@ -745,6 +746,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const rotation = this.getRotation();
 
     return {
+      colormap,
       voiRange,
       VOILUTFunction,
       interpolationType,
@@ -773,6 +775,15 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _resetProperties() {
+    let colormap;
+    if (this.useCPURendering) {
+      colormap = 'Gray';
+    } else {
+      colormap = 'Grayscale';
+    }
+
+    this.setColormap({ name: colormap });
+
     let voiRange;
     if (this._isCurrentImagePTPrescaled()) {
       // if not set via setProperties; if it is a PT image and is already prescaled,
@@ -2670,6 +2681,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setColormapCPU(colormapData: CPUFallbackColormapData) {
+    this.colormap = colormapData;
     const colormap = getColormap(colormapData.name, colormapData);
 
     this._cpuFallbackEnabledElement.viewport.colormap = colormap;
@@ -2687,11 +2699,9 @@ class StackViewport extends Viewport implements IStackViewport {
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
 
-    let colormapObj = colormapUtils.getColormap(colormap.name);
-
-    if (!colormapObj) {
-      colormapObj = vtkColorMaps.getPresetByName(colormap.name);
-    }
+    const colormapObj =
+      colormapUtils.getColormap(colormap.name) ||
+      vtkColorMaps.getPresetByName(colormap.name);
 
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();
@@ -2700,10 +2710,13 @@ class StackViewport extends Viewport implements IStackViewport {
       cfun.setMappingRange(voiRange.lower, voiRange.upper);
       actorProp.setRGBTransferFunction(0, cfun);
     } else {
+      const range = this.voiRange;
       rgbTransferFunction.applyColorMap(colormapObj);
+      rgbTransferFunction.setMappingRange(range.lower, range.upper);
       actorProp.setRGBTransferFunction(0, rgbTransferFunction);
     }
 
+    this.colormap = colormap;
     this.render();
   }
 

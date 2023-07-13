@@ -14,8 +14,6 @@ import {
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
 
-import { getColorMaps } from '../../../../utils/demo/helpers/colormaps/ColormapGenerator';
-
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -52,12 +50,6 @@ info.appendChild(flipHorizontalInfo);
 
 const flipVerticalInfo = document.createElement('div');
 info.appendChild(flipVerticalInfo);
-
-const registerColormaps = () => {
-  const colormaps = getColorMaps();
-  const { registerColormap } = utilities.colormap;
-  colormaps.forEach(registerColormap);
-};
 
 element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   // Get the rendering engine
@@ -300,7 +292,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    viewport.setProperties({ colormap: { name: 'french' } });
+    viewport.setProperties({ colormap: { name: 'hsv' } });
     viewport.render();
   },
 });
@@ -320,7 +312,6 @@ addButtonToToolbar({
     viewport.resetCamera();
     // Resets the viewport's properties
     viewport.resetProperties();
-    viewport.setProperties({ colormap: { name: 'Grayscale' } });
     viewport.render();
   },
 });
@@ -331,9 +322,6 @@ addButtonToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  //Register the colormaps in cornerstone
-  registerColormaps();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
