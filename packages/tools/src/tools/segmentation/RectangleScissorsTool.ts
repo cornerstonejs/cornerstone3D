@@ -153,7 +153,7 @@ class RectangleScissorsTool extends BaseTool {
       this.getToolName()
     );
 
-    if (labelmapData.type === 'volume') {
+    if (labelmapData.type === 'volume' || !labelmapData.type) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
