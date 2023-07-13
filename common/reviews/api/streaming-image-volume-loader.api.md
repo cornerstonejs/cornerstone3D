@@ -1689,6 +1689,8 @@ type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 // @public
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
+
+    slabThickness?: number;
 };
 
 // (No @packageDocumentation comment for this package)

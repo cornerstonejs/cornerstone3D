@@ -5580,6 +5580,8 @@ type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutO
 // @public
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
+
+    slabThickness?: number;
 };
 
 // @public (undocumented)

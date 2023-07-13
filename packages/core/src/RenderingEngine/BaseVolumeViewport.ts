@@ -521,7 +521,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   public getProperties = (): VolumeViewportProperties => {
     const { colormap, voiRange, VOILUTFunction, inverted } = this;
 
-    return { colormap, voiRange, VOILUTFunction, invert: inverted };
+    const slabThickness = this.getSlabThickness();
+
+    return {
+      colormap,
+      voiRange,
+      VOILUTFunction,
+      invert: inverted,
+      slabThickness,
+    };
   };
 
   /**

@@ -2829,6 +2829,7 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 // @public (undocumented)
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
+    slabThickness?: number;
 };
 
 declare namespace windowLevel {
