@@ -1,6 +1,7 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import cache from '../cache';
 import {
@@ -50,7 +51,7 @@ import volumeNewImageEventDispatcher, {
 import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import transformWorldToIndex from '../utilities/transformWorldToIndex';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -1021,45 +1022,64 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       );
     }
   }
-
   /**
-   * Reset the camera for the volume viewport
+   * Gets the largest slab thickness from all actors in the viewport.
+   *
+   * @returns slabThickness - The slab thickness.
    */
-  resetCamera(
-    resetPan?: boolean,
-    resetZoom?: boolean,
-    resetToCenter?: boolean
-  ): boolean {
-    return super.resetCamera(resetPan, resetZoom, resetToCenter);
+  public getSlabThickness(): number {
+    const actors = this.getActors();
+    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+    actors.forEach((actor) => {
+      if (actor.slabThickness > slabThickness) {
+        slabThickness = actor.slabThickness;
+      }
+    });
+
+    return slabThickness;
+  }
+  /**
+   * Given a point in world coordinates, return the intensity at that point
+   * @param point - The point in world coordinates to get the intensity
+   * from.
+   * @returns The intensity value of the voxel at the given point.
+   */
+  public getIntensityFromWorld(point: Point3): number {
+    const actorEntry = this.getDefaultActor();
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
+      return;
+    }
+
+    const { actor, uid } = actorEntry;
+    const imageData = actor.getMapper().getInputData();
+
+    const volume = cache.getVolume(uid);
+    const { dimensions } = volume;
+
+    const index = transformWorldToIndex(imageData, point);
+
+    const voxelIndex =
+      index[2] * dimensions[0] * dimensions[1] +
+      index[1] * dimensions[0] +
+      index[0];
+
+    return volume.getScalarData()[voxelIndex];
   }
 
-  getCurrentImageIdIndex = (): number => {
-    throw new Error('Method not implemented.');
-  };
+  abstract getCurrentImageIdIndex(): number;
 
-  getCurrentImageId = (): string => {
-    throw new Error('Method not implemented.');
-  };
+  abstract getCurrentImageId(): string;
 
-  getIntensityFromWorld(point: Point3): number {
-    throw new Error('Method not implemented.');
-  }
-
-  setBlendMode(
+  abstract setBlendMode(
     blendMode: BlendModes,
-    filterActorUIDs?: string[],
+    filterActorUIDs?: Array<string>,
     immediate?: boolean
-  ): void {
-    throw new Error('Method not implemented.');
-  }
+  ): void;
 
-  setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void {
-    throw new Error('Method not implemented.');
-  }
-
-  getSlabThickness(): number {
-    throw new Error('Method not implemented.');
-  }
+  abstract setSlabThickness(
+    slabThickness: number,
+    filterActorUIDs?: Array<string>
+  ): void;
 }
 
 export default BaseVolumeViewport;
