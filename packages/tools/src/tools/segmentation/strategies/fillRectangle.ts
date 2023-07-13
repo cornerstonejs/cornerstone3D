@@ -1,20 +1,7 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../utilities';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-
-const { transformWorldToIndex } = csUtils;
-
-type OperationData = {
-  segmentationId: string;
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentIndex: number;
-  segmentsLocked: number[];
-};
+import { OperationData } from './OperationalData';
+import * as stackStrategy from './stack';
+import * as volumeStrategy from './volume';
 
 /**
  * For each point in the bounding box around the rectangle, if the point is inside
@@ -30,55 +17,11 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
-  const {
-    volume: segmentation,
-    points,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    constraintFn,
-  } = operationData;
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
-
-  let rectangleCornersIJK = points.map((world) => {
-    return transformWorldToIndex(imageData, world);
-  });
-
-  // math round
-  rectangleCornersIJK = rectangleCornersIJK.map((point) => {
-    return point.map((coord) => {
-      return Math.round(coord);
-    });
-  });
-
-  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
-
-  if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet');
+  if (operationData.editData.type === 'volume') {
+    volumeStrategy.fillRectangle(enabledElement, operationData);
+  } else {
+    stackStrategy.fillRectangle(enabledElement, operationData);
   }
-
-  // Since always all points inside the boundsIJK is inside the rectangle...
-  const pointInRectangle = () => true;
-
-  const callback = ({ value, index, pointIJK }) => {
-    if (segmentsLocked.includes(value)) {
-      return;
-    }
-
-    if (!constraintFn) {
-      scalarData[index] = segmentIndex;
-      return;
-    }
-
-    if (constraintFn(pointIJK)) {
-      scalarData[index] = segmentIndex;
-    }
-  };
-
-  pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK);
-
-  triggerSegmentationDataModified(segmentationId);
 }
 
 /**

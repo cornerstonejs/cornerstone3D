@@ -2,42 +2,48 @@ import type { Types } from '@cornerstonejs/core';
 
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInSurroundingSphereCallback } from '../../../../utilities';
+import { OperationData, EditDataStack } from '../OperationalData';
+import { createVTKImageDataFromImageId } from '../../../../../../core/src/RenderingEngine/helpers/createVTKImageDataFromImage';
+import { cache } from '@cornerstonejs/core';
 
-type OperationData = {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentationId: string;
-  segmentsLocked: number[];
-  viewPlaneNormal: Types.Point3;
-  viewUp: Types.Point3;
-  constraintFn: () => boolean;
-};
-
-function fillSphere(
+export function fillSphere(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   _inside = true
 ): void {
   const { viewport } = enabledElement;
-  const {
-    volume: segmentation,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    points,
-  } = operationData;
+  const { segmentsLocked, segmentIndex, segmentationId, points } =
+    operationData;
 
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
+  const { currentImageId, imageIds, origin, zSpacing } =
+    operationData.editData as EditDataStack;
+  const imageData = createVTKImageDataFromImageId(currentImageId);
+  // hack the imageData so pointInSurroundingSphereCallback can treat it like a volume
+
+  // Hacking the dimensions
+  const dimensions = imageData.getDimensions();
+  dimensions[2] = imageIds.length;
+  imageData.setDimensions(dimensions);
+
+  // Hacking the spacing information.
+  const spacing = imageData.getSpacing();
+  spacing[2] = zSpacing;
+  imageData.setSpacing(spacing);
+  // Hacking the origin
+  imageData.setOrigin(origin);
   const scalarIndex = [];
 
-  const callback = ({ index, value }) => {
+  const callback = ({ pointIJK, value }) => {
     if (segmentsLocked.includes(value)) {
       return;
     }
+    const slice = pointIJK[2];
+    const image = cache.getDerivedImage(imageIds[slice]);
+    const scalarData = image.getPixelData();
+    const index = pointIJK[1] * dimensions[0] + pointIJK[0];
+
     scalarData[index] = segmentIndex;
-    scalarIndex.push(index);
+    scalarIndex.push(slice);
   };
 
   pointInSurroundingSphereCallback(
@@ -47,12 +53,8 @@ function fillSphere(
     viewport as Types.IVolumeViewport
   );
 
-  // Since the scalar indexes start from the top left corner of the cube, the first
-  // slice that needs to be rendered can be calculated from the first mask coordinate
-  // divided by the zMultiple, as well as the last slice for the last coordinate
-  const zMultiple = dimensions[0] * dimensions[1];
-  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
-  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
+  const minSlice = scalarIndex[0];
+  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1]);
   const sliceArray = Array.from(
     { length: maxSlice - minSlice + 1 },
     (v, k) => k + minSlice

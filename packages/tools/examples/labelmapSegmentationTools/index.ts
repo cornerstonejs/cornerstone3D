@@ -199,6 +199,7 @@ async function addSegmentationsToState() {
         // The actual segmentation data, in the case of labelmap this is a
         // reference to the source volume of the segmentation.
         data: {
+          type: 'volume',
           volumeId: segmentationId,
         },
       },

@@ -1,64 +1,18 @@
 import type { Types } from '@cornerstonejs/core';
+import { OperationData } from './OperationalData';
+import * as stackStrategy from './stack';
+import * as volumeStrategy from './volume';
 
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInSurroundingSphereCallback } from '../../../utilities';
-
-type OperationData = {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentationId: string;
-  segmentsLocked: number[];
-  viewPlaneNormal: Types.Point3;
-  viewUp: Types.Point3;
-  constraintFn: () => boolean;
-};
-
-function fillSphere(
+export function fillSphere(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   _inside = true
 ): void {
-  const { viewport } = enabledElement;
-  const {
-    volume: segmentation,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    points,
-  } = operationData;
-
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
-  const scalarIndex = [];
-
-  const callback = ({ index, value }) => {
-    if (segmentsLocked.includes(value)) {
-      return;
-    }
-    scalarData[index] = segmentIndex;
-    scalarIndex.push(index);
-  };
-
-  pointInSurroundingSphereCallback(
-    imageData,
-    [points[0], points[1]],
-    callback,
-    viewport as Types.IVolumeViewport
-  );
-
-  // Since the scalar indexes start from the top left corner of the cube, the first
-  // slice that needs to be rendered can be calculated from the first mask coordinate
-  // divided by the zMultiple, as well as the last slice for the last coordinate
-  const zMultiple = dimensions[0] * dimensions[1];
-  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
-  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
-  const sliceArray = Array.from(
-    { length: maxSlice - minSlice + 1 },
-    (v, k) => k + minSlice
-  );
-
-  triggerSegmentationDataModified(segmentationId, sliceArray);
+  if (operationData.editData.type === 'volume') {
+    volumeStrategy.fillSphere(enabledElement, operationData);
+  } else {
+    stackStrategy.fillSphere(enabledElement, operationData);
+  }
 }
 
 /**

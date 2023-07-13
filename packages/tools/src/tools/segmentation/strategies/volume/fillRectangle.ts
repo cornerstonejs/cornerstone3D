@@ -1,20 +1,11 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../../utilities/boundingBox';
 import { pointInShapeCallback } from '../../../../utilities';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-
+import { OperationData, EditDataVolume } from '../OperationalData';
 const { transformWorldToIndex } = csUtils;
-
-type OperationData = {
-  segmentationId: string;
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentIndex: number;
-  segmentsLocked: number[];
-};
 
 /**
  * For each point in the bounding box around the rectangle, if the point is inside
@@ -25,19 +16,15 @@ type OperationData = {
  * @param inside - boolean
  */
 // Todo: why we have another constraintFn? in addition to the one in the operationData?
-function fillRectangle(
+export function fillRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   inside = true
 ): void {
-  const {
-    volume: segmentation,
-    points,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    constraintFn,
-  } = operationData;
+  const { points, segmentsLocked, segmentIndex, segmentationId, constraintFn } =
+    operationData;
+  const { segmentation } = operationData.editData as EditDataVolume;
+
   const { imageData, dimensions } = segmentation;
   const scalarData = segmentation.getScalarData();
 

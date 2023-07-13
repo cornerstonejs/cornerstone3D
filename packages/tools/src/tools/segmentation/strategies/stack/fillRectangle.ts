@@ -1,4 +1,4 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../../utilities/boundingBox';
@@ -6,15 +6,9 @@ import { pointInShapeCallback } from '../../../../utilities';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 
 const { transformWorldToIndex } = csUtils;
-
-type OperationData = {
-  segmentationId: string;
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentIndex: number;
-  segmentsLocked: number[];
-};
+import { OperationData, EditDataStack } from '../OperationalData';
+import { cache } from '@cornerstonejs/core';
+import { createVTKImageDataFromImageId } from '../../../../../../core/src/RenderingEngine/helpers/createVTKImageDataFromImage';
 
 /**
  * For each point in the bounding box around the rectangle, if the point is inside
@@ -25,21 +19,17 @@ type OperationData = {
  * @param inside - boolean
  */
 // Todo: why we have another constraintFn? in addition to the one in the operationData?
-function fillRectangle(
+export function fillRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   inside = true
 ): void {
-  const {
-    volume: segmentation,
-    points,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    constraintFn,
-  } = operationData;
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
+  const { points, segmentsLocked, segmentIndex, segmentationId, constraintFn } =
+    operationData;
+  const { currentImageId } = operationData.editData as EditDataStack;
+  const imageData = createVTKImageDataFromImageId(currentImageId);
+  const scalarData = cache.getDerivedImage(currentImageId).getPixelData();
+  const dimensions = imageData.getDimensions();
 
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(imageData, world);

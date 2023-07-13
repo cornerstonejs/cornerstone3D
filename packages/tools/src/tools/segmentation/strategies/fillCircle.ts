@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { OperationData } from './OperationalData';
 import * as stackStrategy from './stack';
-import * as volumeStrategy from './stack';
+import * as volumeStrategy from './volume';
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -31,9 +31,9 @@ export function thresholdInsideCircle(
   operationData: OperationData
 ): void {
   if (operationData.editData.type === 'volume') {
-    volumeStrategy.thresholdInsideCircle;
+    volumeStrategy.thresholdInsideCircle(enabledElement, operationData);
   } else {
-    stackStrategy.thresholdInsideCircle;
+    stackStrategy.thresholdInsideCircle(enabledElement, operationData);
   }
 }
 

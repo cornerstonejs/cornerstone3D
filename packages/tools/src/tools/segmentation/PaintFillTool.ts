@@ -14,10 +14,18 @@ import {
   activeSegmentation,
   segmentIndex as segmentIndexController,
 } from '../../stateManagement/segmentation';
+import { SegmentationRepresentations } from '../../enums';
+
 import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
+import sortImageIds from './sortImageIds';
+import { createVTKImageDataFromImageId } from '../../../../core/src/RenderingEngine/helpers/createVTKImageDataFromImage';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -77,20 +85,64 @@ class PaintFillTool extends BaseTool {
     }
 
     const { segmentationId, type } = activeSegmentationRepresentation;
+    if (type === SegmentationRepresentations.Contour) {
+      throw new Error('Not implemented yet');
+    }
+
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked: number[] =
       segmentLocking.getLockedSegments(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
 
-    const { volumeId } = representationData[
-      type
-    ] as LabelmapSegmentationDataVolume;
-    const segmentation = cache.getVolume(volumeId);
-    const { dimensions, direction } = segmentation;
-    const scalarData = segmentation.getScalarData();
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
-    const index = transformWorldToIndex(segmentation.imageData, worldPos);
+    let dimensions, direction, scalarData, imageData;
+    const segmentationType = labelmapData.type;
+    const auxiliaryData = { type: '', imageIds: [] };
+    if (segmentationType === 'volume') {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+      dimensions = segmentation.dimensions;
+      direction = segmentation.direction;
+      scalarData = segmentation.getScalarData();
+      imageData = segmentation.imageData;
+    } else {
+      const { referencedImageIds } =
+        labelmapData as LabelmapSegmentationDataStack;
+      const {
+        zSpacing,
+        sortedImageIds,
+        origin,
+        direction: calculatedDirection,
+      } = sortImageIds(referencedImageIds);
+      const currentImageId = viewport.getCurrentImageId();
+
+      imageData = createVTKImageDataFromImageId(currentImageId);
+      // hack the imageData so pointInSurroundingSphereCallback can treat it like a volume
+
+      // Hacking the dimensions
+      dimensions = imageData.getDimensions();
+      dimensions[2] = sortedImageIds.length;
+      imageData.setDimensions(dimensions);
+
+      // Hacking the spacing information.
+      const spacing = imageData.getSpacing();
+      spacing[2] = zSpacing;
+      imageData.setSpacing(spacing);
+      // Hacking the origin
+      imageData.setOrigin(origin);
+      direction = calculatedDirection;
+      auxiliaryData.imageIds = sortedImageIds;
+      const image = cache.getDerivedImage(currentImageId);
+      scalarData = image.getPixelData();
+    }
+    auxiliaryData.type = segmentationType;
+
+    const index = transformWorldToIndex(imageData, worldPos);
 
     const fixedDimension = this.getFixedDimension(viewPlaneNormal, direction);
 
@@ -105,7 +157,13 @@ class PaintFillTool extends BaseTool {
       getScalarDataPositionFromPlane,
       inPlaneSeedPoint,
       fixedDimensionValue,
-    } = this.generateHelpers(scalarData, dimensions, index, fixedDimension);
+    } = this.generateHelpers(
+      auxiliaryData,
+      scalarData,
+      dimensions,
+      index,
+      fixedDimension
+    );
 
     // Check if within volume
     if (
@@ -136,7 +194,6 @@ class PaintFillTool extends BaseTool {
         index[0],
         index[1]
       );
-
       scalarData[scalarDataPosition] = segmentIndex;
     });
 
@@ -185,6 +242,7 @@ class PaintFillTool extends BaseTool {
   };
 
   private generateHelpers = (
+    auxiliaryData: any,
     scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array,
     dimensions: Types.Point3,
     seedIndex3D: Types.Point3,
@@ -211,11 +269,22 @@ class PaintFillTool extends BaseTool {
     }
 
     const getScalarDataPosition = (x: number, y: number, z: number): number => {
-      return z * dimensions[1] * dimensions[0] + y * dimensions[0] + x;
+      if (auxiliaryData.type === 'stack') {
+        return y * dimensions[0] + x;
+      } else {
+        return z * dimensions[1] * dimensions[0] + y * dimensions[0] + x;
+      }
     };
 
     const getLabelValue = (x: number, y: number, z: number): number => {
-      return scalarData[getScalarDataPosition(x, y, z)];
+      if (auxiliaryData.type === 'stack') {
+        const slice = z;
+        const image = cache.getDerivedImage(auxiliaryData.imageIds[slice]);
+        const imageScalarData = image.getPixelData();
+        return imageScalarData[getScalarDataPosition(x, y, z)];
+      } else {
+        return scalarData[getScalarDataPosition(x, y, z)];
+      }
     };
 
     const floodFillGetter = this.generateFloodFillGetter(

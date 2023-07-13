@@ -3,6 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { OperationData, EditDataStack } from '../OperationalData';
 import { cache } from '@cornerstonejs/core';
+import { createVTKImageDataFromImageId } from '../../../../../../core/src/RenderingEngine/helpers/createVTKImageDataFromImage';
 
 import {
   getCanvasEllipseCorners,
@@ -11,7 +12,6 @@ import {
 import { getBoundingBoxAroundShape } from '../../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../../utilities';
-import { createVTKImageDataFromImageId } from '../../../../../../core/src/RenderingEngine/helpers/createVTKImageDataFromImage';
 import { TypedArray } from '@kitware/vtk.js/types';
 const { transformWorldToIndex } = csUtils;
 
@@ -74,8 +74,8 @@ function fillCircle(
   } = operationData;
   const { currentImageId } = operationData.editData as EditDataStack;
   const imageData = createVTKImageDataFromImageId(currentImageId);
-  const image = cache.getDerivedImage(currentImageId);
-  const scalarData = image.getPixelData();
+  const scalarData = cache.getDerivedImage(currentImageId).getPixelData();
+  const imageScalarData = cache.getImage(currentImageId).getPixelData();
   const { viewport } = enabledElement;
   const { ellipseObj, boundsIJK } = getEllipse(viewport, imageData, points);
 
@@ -89,7 +89,9 @@ function fillCircle(
         return;
       }
 
-      if (isWithinThreshold(index, scalarData, strategySpecificConfiguration)) {
+      if (
+        isWithinThreshold(index, imageScalarData, strategySpecificConfiguration)
+      ) {
         scalarData[index] = segmentIndex;
         //Todo: I don't think this will always be index 2 in streamingImageVolume?
         modifiedSlicesToUse.add(pointIJK[2]);
