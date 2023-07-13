@@ -195,7 +195,7 @@ async function render(
     segmentation.representationData[Representations.Labelmap];
 
   let actorEntry;
-  if (labelmapData.type === 'volume') {
+  if (labelmapData.type === 'volume' || !labelmapData.type) {
     const { volumeId: labelmapUID } = labelmapData;
 
     const labelmap = cache.getVolume(labelmapUID);

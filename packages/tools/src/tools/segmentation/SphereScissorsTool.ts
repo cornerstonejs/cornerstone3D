@@ -152,7 +152,7 @@ class SphereScissorsTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
     // Todo: are we going to support contour editing with rectangle scissors?
-    if (labelmapData.type === 'volume') {
+    if (labelmapData.type === 'volume' || !labelmapData.type) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;

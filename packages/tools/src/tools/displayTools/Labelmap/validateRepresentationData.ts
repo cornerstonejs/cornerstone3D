@@ -16,7 +16,7 @@ function validate(segmentationInput: SegmentationPublicInput): void {
   let representationData = segmentationInput.representation
     .data as LabelmapSegmentationData;
 
-  if (representationData.type === 'volume') {
+  if (representationData.type === 'volume' || !representationData.type) {
     representationData = segmentationInput.representation
       .data as LabelmapSegmentationDataVolume;
     if (!representationData.volumeId) {

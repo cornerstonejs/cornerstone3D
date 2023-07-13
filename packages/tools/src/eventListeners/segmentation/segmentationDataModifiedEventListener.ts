@@ -19,7 +19,10 @@ const onSegmentationDataModified = function (
 
   let toolGroupIds;
   if (type === SegmentationRepresentations.Labelmap) {
-    if (representationData[type].type === 'volume') {
+    if (
+      representationData[type].type === 'volume' ||
+      !representationData[type].type
+    ) {
       const representationDataVolume = representationData[
         type
       ] as LabelmapSegmentationDataVolume;

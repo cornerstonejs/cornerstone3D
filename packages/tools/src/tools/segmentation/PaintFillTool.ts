@@ -101,7 +101,7 @@ class PaintFillTool extends BaseTool {
     let dimensions, direction, scalarData, imageData;
     const segmentationType = labelmapData.type;
     const auxiliaryData = { type: '', imageIds: [] };
-    if (segmentationType === 'volume') {
+    if (segmentationType === 'volume' || !segmentationType) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;

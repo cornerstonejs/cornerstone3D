@@ -145,7 +145,7 @@ class CircleScissorsTool extends BaseTool {
     };
 
     const viewportIdsToRender = [viewport.id];
-    if (labelmapData.type === 'volume') {
+    if (labelmapData.type === 'volume' || !labelmapData.type) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
