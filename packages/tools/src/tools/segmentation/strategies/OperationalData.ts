@@ -2,9 +2,10 @@ import type { Types } from '@cornerstonejs/core';
 
 type EditDataStack = {
   type: 'stack';
-  segmentation: Array<string>;
-  imageData: Array<string>;
+  imageIds: Array<string>;
   currentImageId: string;
+  zSpacing: number;
+  origin: number[];
 };
 
 type EditDataVolume = {

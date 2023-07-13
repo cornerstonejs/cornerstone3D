@@ -1,4 +1,4 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -10,7 +10,7 @@ import {
 } from '../../types';
 
 import { fillInsideSphere } from './strategies/fillSphere';
-import { Events } from '../../enums';
+import { Events, SegmentationRepresentations } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -26,7 +26,11 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
+import sortImageIds from './sortImageIds';
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -40,7 +44,8 @@ class SphereScissorsTool extends BaseTool {
   static toolName;
   editData: {
     annotation: any;
-    segmentation: any;
+    segmentation?: any;
+    data?: any;
     segmentIndex: number;
     segmentsLocked: number[];
     segmentationId: string;
@@ -105,6 +110,9 @@ class SphereScissorsTool extends BaseTool {
 
     const { segmentationRepresentationUID, segmentationId, type } =
       activeSegmentationRepresentation;
+    if (type === SegmentationRepresentations.Contour) {
+      throw new Error('Not implemented yet');
+    }
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
@@ -116,12 +124,8 @@ class SphereScissorsTool extends BaseTool {
     );
 
     const { representationData } = getSegmentation(segmentationId);
-
-    // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[
-      type
-    ] as LabelmapSegmentationDataVolume;
-    const segmentation = cache.getVolume(volumeId);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
     this.isDrawing = true;
 
@@ -147,22 +151,56 @@ class SphereScissorsTool extends BaseTool {
     };
 
     const viewportIdsToRender = [viewport.id];
+    // Todo: are we going to support contour editing with rectangle scissors?
+    if (labelmapData.type === 'volume') {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
 
-    this.editData = {
-      annotation,
-      segmentation,
-      centerCanvas: canvasPos,
-      segmentIndex,
-      segmentsLocked,
-      segmentColor,
-      segmentationId,
-      toolGroupId,
-      viewportIdsToRender,
-      handleIndex: 3,
-      movingTextBox: false,
-      newAnnotation: true,
-      hasMoved: false,
-    };
+      this.editData = {
+        annotation,
+        segmentation,
+        centerCanvas: canvasPos,
+        segmentIndex,
+        segmentsLocked,
+        segmentColor,
+        segmentationId,
+        toolGroupId,
+        viewportIdsToRender,
+        handleIndex: 3,
+        movingTextBox: false,
+        newAnnotation: true,
+        hasMoved: false,
+      };
+    } else {
+      const { referencedImageIds } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      const { zSpacing, sortedImageIds, origin } =
+        sortImageIds(referencedImageIds);
+
+      this.editData = {
+        annotation,
+        data: {
+          imageIds: sortedImageIds,
+          origin,
+          zSpacing,
+          currentImageId: viewport.getCurrentImageId(),
+        },
+        centerCanvas: canvasPos,
+        segmentIndex,
+        segmentsLocked,
+        segmentColor,
+        segmentationId,
+        toolGroupId,
+        viewportIdsToRender,
+        handleIndex: 3,
+        movingTextBox: false,
+        newAnnotation: true,
+        hasMoved: false,
+      };
+    }
 
     this._activateDraw(element);
 
@@ -230,6 +268,7 @@ class SphereScissorsTool extends BaseTool {
       newAnnotation,
       hasMoved,
       segmentation,
+      data: segmentationData,
       segmentIndex,
       segmentsLocked,
       segmentationId,
@@ -248,24 +287,41 @@ class SphereScissorsTool extends BaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     this.editData = null;
     this.isDrawing = false;
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
+    let operationData;
+    if (segmentation) {
+      operationData = {
+        editData: {
+          type: 'volume',
+          segmentation,
+        },
+        points: data.handles.points,
+        segmentationId,
+        segmentIndex,
+        segmentsLocked,
+        viewPlaneNormal,
+        viewUp,
+      };
+    } else {
+      operationData = {
+        editData: {
+          type: 'stack',
+          imageIds: segmentationData.imageIds,
+          origin: segmentationData.origin,
+          zSpacing: segmentationData.zSpacing,
+          currentImageId: segmentationData.currentImageId,
+        },
+        points: data.handles.points,
+        segmentationId,
+        segmentIndex,
+        segmentsLocked,
+        viewPlaneNormal,
+        viewUp,
+      };
     }
-
-    const operationData = {
-      points: data.handles.points,
-      volume: segmentation,
-      segmentIndex,
-      segmentsLocked,
-      segmentationId,
-      viewPlaneNormal,
-      viewUp,
-    };
 
     this.applyActiveStrategy(enabledElement, operationData);
   };

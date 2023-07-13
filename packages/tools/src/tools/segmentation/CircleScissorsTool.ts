@@ -10,7 +10,7 @@ import {
 } from '../../types';
 
 import { fillInsideCircle } from './strategies/fillCircle';
-import { Events } from '../../enums';
+import { Events, SegmentationRepresentations } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -38,7 +38,8 @@ class CircleScissorsTool extends BaseTool {
   static toolName;
   editData: {
     annotation: any;
-    segmentation: any;
+    segmentation?: any;
+    currentImageId?: string;
     segmentIndex: number;
     segmentationId: string;
     segmentsLocked: number[];
@@ -103,6 +104,10 @@ class CircleScissorsTool extends BaseTool {
 
     const { segmentationRepresentationUID, segmentationId, type } =
       activeSegmentationRepresentation;
+    if (type === SegmentationRepresentations.Contour) {
+      throw new Error('Not implemented yet');
+    }
+
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
@@ -114,12 +119,8 @@ class CircleScissorsTool extends BaseTool {
     );
 
     const { representationData } = getSegmentation(segmentationId);
-
-    // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[
-      type
-    ] as LabelmapSegmentationDataVolume;
-    const segmentation = cache.getVolume(volumeId);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -144,21 +145,41 @@ class CircleScissorsTool extends BaseTool {
     };
 
     const viewportIdsToRender = [viewport.id];
-
-    this.editData = {
-      annotation,
-      segmentation,
-      centerCanvas: canvasPos,
-      segmentIndex,
-      segmentationId,
-      segmentsLocked,
-      segmentColor,
-      viewportIdsToRender,
-      handleIndex: 3,
-      movingTextBox: false,
-      newAnnotation: true,
-      hasMoved: false,
-    };
+    if (labelmapData.type === 'volume') {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+      this.editData = {
+        annotation,
+        segmentation,
+        centerCanvas: canvasPos,
+        segmentIndex,
+        segmentationId,
+        segmentsLocked,
+        segmentColor,
+        viewportIdsToRender,
+        handleIndex: 3,
+        movingTextBox: false,
+        newAnnotation: true,
+        hasMoved: false,
+      };
+    } else {
+      this.editData = {
+        annotation,
+        currentImageId: viewport.getCurrentImageId(),
+        centerCanvas: canvasPos,
+        segmentIndex,
+        segmentationId,
+        segmentsLocked,
+        segmentColor,
+        viewportIdsToRender,
+        handleIndex: 3,
+        movingTextBox: false,
+        newAnnotation: true,
+        hasMoved: false,
+      };
+    }
 
     this._activateDraw(element);
 
@@ -228,6 +249,7 @@ class CircleScissorsTool extends BaseTool {
       newAnnotation,
       hasMoved,
       segmentation,
+      currentImageId,
       segmentIndex,
       segmentsLocked,
       segmentationId,
@@ -246,24 +268,38 @@ class CircleScissorsTool extends BaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     this.editData = null;
     this.isDrawing = false;
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
+    let operationData;
+    if (segmentation) {
+      operationData = {
+        editData: {
+          type: 'volume',
+          segmentation,
+        },
+        points: data.handles.points,
+        segmentationId,
+        segmentIndex,
+        segmentsLocked,
+        viewPlaneNormal,
+        viewUp,
+      };
+    } else {
+      operationData = {
+        editData: {
+          type: 'stack',
+          currentImageId,
+        },
+        points: data.handles.points,
+        segmentationId,
+        segmentIndex,
+        segmentsLocked,
+        viewPlaneNormal,
+        viewUp,
+      };
     }
-
-    const operationData = {
-      points: data.handles.points,
-      volume: segmentation,
-      segmentIndex,
-      segmentsLocked,
-      viewPlaneNormal,
-      segmentationId,
-      viewUp,
-    };
 
     this.applyActiveStrategy(enabledElement, operationData);
   };

@@ -4,7 +4,7 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
 import { pointInSurroundingSphereCallback } from '../../../../utilities';
 import { OperationData, EditDataVolume } from '../OperationalData';
 
-function fillSphere(
+export function fillSphere(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   _inside = true

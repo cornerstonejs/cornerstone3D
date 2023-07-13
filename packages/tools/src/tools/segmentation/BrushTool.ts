@@ -1,5 +1,4 @@
 import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
-
 import type { Types } from '@cornerstonejs/core';
 import type {
   PublicToolProps,
@@ -36,6 +35,8 @@ import {
 } from '../../types/LabelmapTypes';
 
 import { EditData } from './strategies/OperationalData';
+import sortImageIds from './sortImageIds';
+
 /**
  * @public
  */
@@ -150,14 +151,17 @@ class BrushTool extends BaseTool {
         segmentsLocked,
       };
     } else {
-      const { imageIds, referencedImageIds } =
+      const { referencedImageIds } =
         labelmapData as LabelmapSegmentationDataStack;
 
+      const { zSpacing, sortedImageIds, origin } =
+        sortImageIds(referencedImageIds);
       this._editData = {
         data: {
           type: 'stack',
-          segmentation: imageIds,
-          imageData: referencedImageIds,
+          imageIds: sortedImageIds,
+          origin,
+          zSpacing,
           currentImageId: viewport.getCurrentImageId(),
         },
         segmentsLocked,
