@@ -4,6 +4,8 @@ import {
   getRenderingEngine,
   Enums,
   Types,
+  getEnabledElement,
+  StackViewport,
 } from '@cornerstonejs/core';
 import { Events as csToolsEvents } from '../../enums';
 import {
@@ -13,6 +15,7 @@ import {
 
 import SegmentationDisplayTool from '../../tools/displayTools/SegmentationDisplayTool';
 import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
+import { stackImageChangeEventListener } from '../../eventListeners';
 
 /**
  * SegmentationRenderingEngine is a class that is responsible for rendering
@@ -136,11 +139,19 @@ class SegmentationRenderingEngine {
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
       const { element, viewportId, renderingEngineId } = evt.detail;
+      const { viewport } = getEnabledElement(element);
 
       element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender as EventListener
       );
+
+      if (viewport instanceof StackViewport) {
+        element.addEventListener(
+          Enums.Events.IMAGE_RENDERED,
+          stackImageChangeEventListener
+        );
+      }
 
       const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 

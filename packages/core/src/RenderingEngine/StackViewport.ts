@@ -1826,17 +1826,17 @@ class StackViewport extends Viewport implements IStackViewport {
     );
   }
 
-  public updateSegmentationImage(imageId) {
-    const actors = this.getActors();
-    for (let i = 0; i < actors.length; i++) {
-      if (actors[i].uid !== 'STACK_VIEWPORT') {
-        updateVTKImageDataFromImageId(
-          imageId,
-          actors[i].actor.getMapper().getInputData()
-        );
-      }
-    }
-  }
+  // public updateSegmentationImage(imageId) {
+  //   const actors = this.getActors();
+  //   for (let i = 0; i < actors.length; i++) {
+  //     if (actors[i].uid !== 'STACK_VIEWPORT') {
+  //       updateVTKImageDataFromImageId(
+  //         imageId,
+  //         actors[i].actor.getMapper().getInputData()
+  //       );
+  //     }
+  //   }
+  // }
 
   public async addImages(
     stackInputs: Array<IStackInput>,
@@ -1884,7 +1884,7 @@ class StackViewport extends Viewport implements IStackViewport {
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
-      this.updateSegmentationImage(image.imageId);
+      //this.updateSegmentationImage(image.imageId);
 
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting

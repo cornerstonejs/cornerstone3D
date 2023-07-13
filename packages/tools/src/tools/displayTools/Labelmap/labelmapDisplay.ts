@@ -6,18 +6,12 @@ import {
   getEnabledElementByIds,
   Types,
   utilities,
-  Enums,
-  getEnabledElement,
 } from '@cornerstonejs/core';
 
-import { SegmentationRepresentations } from '../../../enums';
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import {
-  getToolGroup,
-  getToolGroupForViewport,
-} from '../../../store/ToolGroupManager';
+import { getToolGroup } from '../../../store/ToolGroupManager';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
@@ -33,7 +27,6 @@ import addLabelmapToElement from './addLabelmapToElement';
 
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import { updateVTKImageDataFromImageId } from '../../../../../core/src/RenderingEngine/helpers/updateVTKImageDataFromImage';
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
@@ -176,50 +169,6 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
   return false;
 }
 
-function getLabelmapStackRepresentationUIDsFromToolGroup(
-  toolGroupID: string
-): Array<string> {
-  const toolGroupSegmentationRepresentations =
-    SegmentationState.getSegmentationRepresentations(toolGroupID);
-  const segmentationRepresentations = [];
-  toolGroupSegmentationRepresentations.forEach((representation) => {
-    if (representation.type === SegmentationRepresentations.Labelmap) {
-      const segmentation = SegmentationState.getSegmentation(
-        representation.segmentationId
-      );
-      const labelmapData =
-        segmentation.representationData[Representations.Labelmap];
-      if (labelmapData?.type === 'stack') {
-        segmentationRepresentations.push(
-          representation.segmentationRepresentationUID
-        );
-      }
-    }
-  });
-  return segmentationRepresentations;
-}
-
-function updateSegmentationImage(evt) {
-  const eventData = evt.detail;
-  const { element } = eventData;
-  const { viewport, viewportId, renderingEngineId } =
-    getEnabledElement(element);
-  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-  const segmentationRepresentations =
-    getLabelmapStackRepresentationUIDsFromToolGroup(toolGroup.id);
-
-  const imageId = viewport.getCurrentImageId();
-  const actors = viewport.getActors();
-  actors.forEach((actor) => {
-    if (segmentationRepresentations.includes(actor.uid)) {
-      updateVTKImageDataFromImageId(
-        imageId,
-        actor.actor.getMapper().getInputData()
-      );
-    }
-  });
-}
-
 /**
  * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
@@ -283,15 +232,6 @@ async function render(
           segmentationRepresentationUID
         );
       }
-
-      viewport.element.removeEventListener(
-        Enums.Events.IMAGE_RENDERED,
-        updateSegmentationImage
-      );
-      viewport.element.addEventListener(
-        Enums.Events.IMAGE_RENDERED,
-        updateSegmentationImage
-      );
     }
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
