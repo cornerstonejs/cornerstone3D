@@ -108,6 +108,16 @@ type ImageVolumeModifiedEventDetail = {
 };
 
 /**
+ * IMAGE_VOLUME_LOADING_COMPLETED Event's data
+ */
+type ImageVolumeLoadingCompletedEventDetail = {
+  /** the loaded volume */
+  volumeId: string;
+  /** FrameOfReferenceUID where the volume belongs to */
+  FrameOfReferenceUID: string;
+};
+
+/**
  * IMAGE_LOADED Event's data
  */
 type ImageLoadedEventDetail = {
@@ -305,6 +315,14 @@ type ImageRenderedEvent = CustomEventType<ElementEnabledEventDetail>;
 type ImageVolumeModifiedEvent = CustomEventType<ImageVolumeModifiedEventDetail>;
 
 /**
+ * IMAGE_VOLUME_LOADING_COMPLETED Event type
+ * This event is fired when a volume is fully loaded, means all the frames
+ * are loaded and cached.
+ */
+type ImageVolumeLoadingCompletedEvent =
+  CustomEventType<ImageVolumeLoadingCompletedEventDetail>;
+
+/**
  * IMAGE_LOADED Event type
  */
 type ImageLoadedEvent = CustomEventType<ImageLoadedEventDetail>;
@@ -397,6 +415,8 @@ export type {
   ImageRenderedEvent,
   ImageVolumeModifiedEvent,
   ImageVolumeModifiedEventDetail,
+  ImageVolumeLoadingCompletedEvent,
+  ImageVolumeLoadingCompletedEventDetail,
   ImageLoadedEvent,
   ImageLoadedEventDetail,
   ImageLoadedFailedEventDetail,

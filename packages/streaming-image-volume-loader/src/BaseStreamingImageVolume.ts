@@ -304,6 +304,17 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       if (evt.framesProcessed === evt.totalNumFrames) {
         loadStatus.callbacks.forEach((callback) => callback(evt));
+
+        const eventDetail = {
+          FrameOfReferenceUID,
+          volumeId: volumeId,
+        };
+
+        triggerEvent(
+          eventTarget,
+          Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
+          eventDetail
+        );
       }
     }
 
