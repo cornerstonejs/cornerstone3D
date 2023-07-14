@@ -1,7 +1,7 @@
 import { IImage } from 'core/src/types';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import updatePixelData from './updatePixelData';
-import getImagePlaneModule from './getImagePlaneModule';
+import { metaData } from '../..';
 
 /**
  * It Updates the vtkImageData of the viewport with the new pixel data
@@ -13,12 +13,14 @@ import getImagePlaneModule from './getImagePlaneModule';
  */
 
 export default function updateVTKImageDataFromCornerstoneImage(
-  imageId: string,
   image: IImage,
   imageData: vtkImageData
 ): void {
-  const { imagePlaneModule } = getImagePlaneModule(imageId);
-  let origin = imagePlaneModule.imagePositionPatient;
+  const { imagePositionPatient } = metaData.get(
+    'imagePlaneModule',
+    image?.referenceImageId || image.imageId
+  );
+  let origin = imagePositionPatient;
 
   if (origin == null) {
     origin = [0, 0, 0];

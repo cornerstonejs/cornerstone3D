@@ -31,7 +31,7 @@ export default function pointInSurroundingSphereCallback(
   imageData: vtkImageData,
   circlePoints: [Types.Point3, Types.Point3],
   callback: PointInShapeCallback,
-  viewport?: Types.IVolumeViewport
+  viewport?: Types.IVolumeViewport | Types.IStackViewport
 ): void {
   // We can run the sphere equation to determine if a point is inside
   // the sphere; however, since the imageData dimensions can be quite large, we

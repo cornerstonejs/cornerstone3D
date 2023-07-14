@@ -1,4 +1,4 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type {
   PublicToolProps,
@@ -36,6 +36,7 @@ import {
 
 import { EditData } from './strategies/OperationalData';
 import sortImageIds from './sortImageIds';
+import getDerivedImageId from './getDerivedImageId';
 
 /**
  * @public
@@ -151,18 +152,31 @@ class BrushTool extends BaseTool {
         segmentsLocked,
       };
     } else {
-      const { referencedImageIds } =
+      const { referencedImageIds, imageIds: segmentationImageIds } =
         labelmapData as LabelmapSegmentationDataStack;
 
       const { zSpacing, sortedImageIds, origin } =
         sortImageIds(referencedImageIds);
+
+      const orderedSegmentationImageIds = sortedImageIds.map((imageId) =>
+        getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
+      );
+      const currentImageId = viewport.getCurrentImageId();
+      const currentSegmentationImageId = getDerivedImageId(
+        currentImageId,
+        referencedImageIds,
+        segmentationImageIds
+      );
+
       this._editData = {
         data: {
           type: 'stack',
           imageIds: sortedImageIds,
           origin,
           zSpacing,
-          currentImageId: viewport.getCurrentImageId(),
+          currentImageId,
+          currentSegmentationImageId,
+          segmentationImageIds: orderedSegmentationImageIds,
         },
         segmentsLocked,
       };

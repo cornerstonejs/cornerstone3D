@@ -6,6 +6,7 @@ import {
   Types,
   metaData,
   imageLoader,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -329,6 +330,11 @@ function sortImageIds(imageIds) {
   );
   return sortedImageIds;
 }
+
+function getDerivedImageId(imageId: string): string {
+  return 'stackSeg:derived_' + utilities.imageIdToURI(imageId);
+}
+
 /**
  * Runs the demo
  */
@@ -360,7 +366,10 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
   const sortedImageIds = sortImageIds(imageIds);
   const { imageIds: derivedImageIds } =
-    await imageLoader.createAndCacheDerivedImages(sortedImageIds);
+    await imageLoader.createAndCacheDerivedImages(
+      sortedImageIds,
+      getDerivedImageId
+    );
 
   await viewport.setStack(
     sortedImageIds,

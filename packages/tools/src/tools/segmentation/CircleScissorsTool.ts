@@ -25,7 +25,11 @@ import {
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
+import getDerivedImageId from './getDerivedImageId';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -40,6 +44,7 @@ class CircleScissorsTool extends BaseTool {
     annotation: any;
     segmentation?: any;
     currentImageId?: string;
+    currentSegmentationImageId?: string;
     segmentIndex: number;
     segmentationId: string;
     segmentsLocked: number[];
@@ -145,40 +150,36 @@ class CircleScissorsTool extends BaseTool {
     };
 
     const viewportIdsToRender = [viewport.id];
+    this.editData = {
+      annotation,
+      centerCanvas: canvasPos,
+      segmentIndex,
+      segmentationId,
+      segmentsLocked,
+      segmentColor,
+      viewportIdsToRender,
+      handleIndex: 3,
+      movingTextBox: false,
+      newAnnotation: true,
+      hasMoved: false,
+    };
+
     if (labelmapData.type === 'volume' || !labelmapData.type) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
-      this.editData = {
-        annotation,
-        segmentation,
-        centerCanvas: canvasPos,
-        segmentIndex,
-        segmentationId,
-        segmentsLocked,
-        segmentColor,
-        viewportIdsToRender,
-        handleIndex: 3,
-        movingTextBox: false,
-        newAnnotation: true,
-        hasMoved: false,
-      };
+      this.editData.segmentation = segmentation;
     } else {
-      this.editData = {
-        annotation,
-        currentImageId: viewport.getCurrentImageId(),
-        centerCanvas: canvasPos,
-        segmentIndex,
-        segmentationId,
-        segmentsLocked,
-        segmentColor,
-        viewportIdsToRender,
-        handleIndex: 3,
-        movingTextBox: false,
-        newAnnotation: true,
-        hasMoved: false,
-      };
+      const { referencedImageIds, imageIds: segmentationImageIds } =
+        representationData[type] as LabelmapSegmentationDataStack;
+
+      this.editData.currentImageId = viewport.getCurrentImageId();
+      this.editData.currentSegmentationImageId = getDerivedImageId(
+        this.editData.currentImageId,
+        referencedImageIds,
+        segmentationImageIds
+      );
     }
 
     this._activateDraw(element);
@@ -250,6 +251,7 @@ class CircleScissorsTool extends BaseTool {
       hasMoved,
       segmentation,
       currentImageId,
+      currentSegmentationImageId,
       segmentIndex,
       segmentsLocked,
       segmentationId,
@@ -272,32 +274,26 @@ class CircleScissorsTool extends BaseTool {
     this.editData = null;
     this.isDrawing = false;
 
-    let operationData;
+    const operationData = {
+      editData: {},
+      points: data.handles.points,
+      segmentationId,
+      segmentIndex,
+      segmentsLocked,
+      viewPlaneNormal,
+      viewUp,
+    };
+
     if (segmentation) {
-      operationData = {
-        editData: {
-          type: 'volume',
-          segmentation,
-        },
-        points: data.handles.points,
-        segmentationId,
-        segmentIndex,
-        segmentsLocked,
-        viewPlaneNormal,
-        viewUp,
+      operationData.editData = {
+        type: 'volume',
+        segmentation,
       };
     } else {
-      operationData = {
-        editData: {
-          type: 'stack',
-          currentImageId,
-        },
-        points: data.handles.points,
-        segmentationId,
-        segmentIndex,
-        segmentsLocked,
-        viewPlaneNormal,
-        viewUp,
+      operationData.editData = {
+        type: 'stack',
+        currentImageId,
+        currentSegmentationImageId,
       };
     }
 

@@ -1,7 +1,7 @@
 import createActorMapper from './createActorMapper';
 import { IImage } from '../../types';
 import createVTKImageDataFromImage from './createVTKImageDataFromImage';
-import { getSegmentationImageFromImageId } from './getDerivedImage';
+import cache from '../../cache';
 
 export default function createActorMapperFromImage(image: IImage) {
   const imageData = createVTKImageDataFromImage(image);
@@ -10,6 +10,6 @@ export default function createActorMapperFromImage(image: IImage) {
 }
 
 export function createActorMapperFromImageId(imageId) {
-  const image = getSegmentationImageFromImageId(imageId);
+  const image = cache.getImage(imageId);
   return createActorMapperFromImage(image);
 }

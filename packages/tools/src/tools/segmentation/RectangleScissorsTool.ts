@@ -28,7 +28,11 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
+import getDerivedImageId from './getDerivedImageId';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -45,6 +49,7 @@ class RectangleScissorsTool extends BaseTool {
     segmentationId: string;
     segmentation?: any;
     currentImageId?: string;
+    currentSegmentationImageId?: string;
     segmentIndex: number;
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -153,38 +158,33 @@ class RectangleScissorsTool extends BaseTool {
       this.getToolName()
     );
 
+    this.editData = {
+      annotation,
+      segmentIndex,
+      segmentsLocked,
+      segmentColor,
+      segmentationId,
+      viewportIdsToRender,
+      handleIndex: 3,
+      movingTextBox: false,
+      newAnnotation: true,
+      hasMoved: false,
+    };
     if (labelmapData.type === 'volume' || !labelmapData.type) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
-      this.editData = {
-        annotation,
-        segmentation,
-        segmentIndex,
-        segmentsLocked,
-        segmentColor,
-        segmentationId,
-        viewportIdsToRender,
-        handleIndex: 3,
-        movingTextBox: false,
-        newAnnotation: true,
-        hasMoved: false,
-      };
+      this.editData.segmentation = segmentation;
     } else {
-      this.editData = {
-        annotation,
-        currentImageId: viewport.getCurrentImageId(),
-        segmentIndex,
-        segmentsLocked,
-        segmentColor,
-        segmentationId,
-        viewportIdsToRender,
-        handleIndex: 3,
-        movingTextBox: false,
-        newAnnotation: true,
-        hasMoved: false,
-      };
+      const { referencedImageIds, imageIds: segmentationImageIds } =
+        representationData[type] as LabelmapSegmentationDataStack;
+      this.editData.currentImageId = viewport.getCurrentImageId();
+      this.editData.currentSegmentationImageId = getDerivedImageId(
+        this.editData.currentImageId,
+        referencedImageIds,
+        segmentationImageIds
+      );
     }
 
     this._activateDraw(element);
@@ -285,6 +285,7 @@ class RectangleScissorsTool extends BaseTool {
       hasMoved,
       segmentation,
       currentImageId,
+      currentSegmentationImageId,
       segmentationId,
       segmentIndex,
       segmentsLocked,
@@ -306,28 +307,23 @@ class RectangleScissorsTool extends BaseTool {
     this.editData = null;
     this.isDrawing = false;
 
-    let operationData;
+    const operationData = {
+      editData: {},
+      points: data.handles.points,
+      segmentationId,
+      segmentIndex,
+      segmentsLocked,
+    };
     if (segmentation) {
-      operationData = {
-        editData: {
-          type: 'volume',
-          segmentation,
-        },
-        points: data.handles.points,
-        segmentationId,
-        segmentIndex,
-        segmentsLocked,
+      operationData.editData = {
+        type: 'volume',
+        segmentation,
       };
     } else {
-      operationData = {
-        editData: {
-          type: 'stack',
-          currentImageId,
-        },
-        points: data.handles.points,
-        segmentationId,
-        segmentIndex,
-        segmentsLocked,
+      operationData.editData = {
+        type: 'stack',
+        currentImageId,
+        currentSegmentationImageId,
       };
     }
 

@@ -6,6 +6,10 @@ import {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
+  updateVTKImageDataFromImage,
+  updateVTKImageDataFromImageId,
+  createVTKImageDataFromImage,
+  createVTKImageDataFromImageId,
 } from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
@@ -92,6 +96,10 @@ export {
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
+  updateVTKImageDataFromImage,
+  updateVTKImageDataFromImageId,
+  createVTKImageDataFromImage,
+  createVTKImageDataFromImageId,
   // cache
   cache,
   // event helpers

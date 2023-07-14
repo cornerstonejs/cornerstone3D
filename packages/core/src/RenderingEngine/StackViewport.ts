@@ -74,7 +74,6 @@ import updateVTKImageDataFromCornerstoneImage from './helpers/updateVTKImageData
 import createActorMapper from './helpers/createActorMapper';
 import createVTKImageData from './helpers/createVTKImageData';
 import { createActorMapperFromImageId } from './helpers/createActorMapperFromImage';
-import getValidVOILUTFunction from './helpers/getValidVOILUTFunction';
 import {
   PixelDataTypedArray,
   ImagePixelModule,
@@ -519,7 +518,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.modality = modality;
-    const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);
+    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
     let imagePlaneModule = this._getImagePlaneModule(imageId);
@@ -1009,7 +1008,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
     if (
@@ -1471,11 +1470,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param image - Cornerstone Image object
    */
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
-    updateVTKImageDataFromCornerstoneImage(
-      image.imageId,
-      image,
-      this._imageData
-    );
+    updateVTKImageDataFromCornerstoneImage(image, this._imageData);
   }
 
   /**
@@ -1826,23 +1821,11 @@ class StackViewport extends Viewport implements IStackViewport {
     );
   }
 
-  // public updateSegmentationImage(imageId) {
-  //   const actors = this.getActors();
-  //   for (let i = 0; i < actors.length; i++) {
-  //     if (actors[i].uid !== 'STACK_VIEWPORT') {
-  //       updateVTKImageDataFromImageId(
-  //         imageId,
-  //         actors[i].actor.getMapper().getInputData()
-  //       );
-  //     }
-  //   }
-  // }
-
-  public async addImages(
-    stackInputs: Array<IStackInput>,
-    immediateRender: boolean,
-    suppressEvents: boolean
-  ): Promise<void> {
+  /**
+   * Adds image actors to the viewport
+   * @param stackInputs
+   */
+  public async addImages(stackInputs: Array<IStackInput>): Promise<void> {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const { imageActor } = createActorMapperFromImageId(stackInput.imageId);
@@ -1884,7 +1867,6 @@ class StackViewport extends Viewport implements IStackViewport {
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
-      //this.updateSegmentationImage(image.imageId);
 
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
@@ -2045,6 +2027,13 @@ class StackViewport extends Viewport implements IStackViewport {
     return typeof windowCenter === 'number' && typeof windowWidth === 'number'
       ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
       : undefined;
+  }
+
+  private _getValidVOILUTFunction(voiLUTFunction: any) {
+    if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
+      voiLUTFunction = VOILUTFunctionType.LINEAR;
+    }
+    return voiLUTFunction;
   }
 
   /**

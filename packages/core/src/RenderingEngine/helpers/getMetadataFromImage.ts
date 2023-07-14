@@ -7,8 +7,8 @@ import {
 } from '../../types';
 import getImagePlaneModule from './getImagePlaneModule';
 import { vec3 } from 'gl-matrix';
-import getNumCompsFromPhotometricInterpretation from './getNumCompsFromPhotometricInterpretation';
-import getImagePixelModule from './getImagePixelModule';
+import { metaData } from '../..';
+import VOILUTFunctionType from '../../enums/VOILUTFunctionType';
 
 const EPSILON = 1;
 
@@ -22,6 +22,70 @@ export interface ImageDataMetaData {
   numVoxels: number;
   imagePlaneModule: ImagePlaneModule;
   imagePixelModule: ImagePixelModule;
+}
+
+/**
+ * Calculates number of components based on the dicom metadata
+ *
+ * @param photometricInterpretation - string dicom tag
+ * @returns number representing number of components
+ */
+export function getNumCompsFromPhotometricInterpretation(
+  photometricInterpretation: string
+): number {
+  // TODO: this function will need to have more logic later
+  // see http://dicom.nema.org/medical/Dicom/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.2
+  let numberOfComponents = 1;
+  if (
+    photometricInterpretation === 'RGB' ||
+    photometricInterpretation.indexOf('YBR') !== -1 ||
+    photometricInterpretation === 'PALETTE COLOR'
+  ) {
+    numberOfComponents = 3;
+  }
+
+  return numberOfComponents;
+}
+
+function getValidVOILUTFunction(voiLUTFunction: any) {
+  if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
+    voiLUTFunction = VOILUTFunctionType.LINEAR;
+  }
+  return voiLUTFunction;
+}
+
+export default function getImagePixelModule(image: IImage) {
+  const imageId = image?.referenceImageId || image.imageId;
+
+  const {
+    pixelRepresentation,
+    bitsAllocated,
+    bitsStored,
+    highBit,
+    photometricInterpretation,
+    samplesPerPixel,
+  } = metaData.get('imagePixelModule', imageId);
+
+  // we can grab the window center and width from the image object
+  // since it the loader already has used the metadata provider
+  // to get the values
+  const { windowWidth, windowCenter, voiLUTFunction } = image;
+
+  const { modality } = metaData.get('generalSeriesModule', imageId);
+  const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);
+
+  return {
+    bitsAllocated,
+    bitsStored,
+    samplesPerPixel,
+    highBit,
+    photometricInterpretation,
+    pixelRepresentation,
+    windowWidth,
+    windowCenter,
+    modality,
+    voiLUTFunction: voiLUTFunctionEnum,
+  };
 }
 
 export function getMetadataFromImagePlaneModule(

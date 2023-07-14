@@ -6,6 +6,12 @@ import setVolumesForViewports from './setVolumesForViewports';
 import addVolumesToViewports from './addVolumesToViewports';
 import addImageSlicesToViewports from './addImageSlicesToViewports';
 import volumeNewImageEventDispatcher from './volumeNewImageEventDispatcher';
+import createVTKImageData from './createVTKImageData';
+import createVTKImageDataFromImage, {
+  createVTKImageDataFromImageId,
+} from './createVTKImageDataFromImage';
+import updateVTKImageDataFromImage from './updateVTKImageDataFromImage';
+import { updateVTKImageDataFromImageId } from './updateVTKImageDataFromImage';
 
 export {
   createVolumeActor,
@@ -16,4 +22,9 @@ export {
   volumeNewImageEventDispatcher,
   createActorMapper,
   addImageSlicesToViewports,
+  createVTKImageData,
+  createVTKImageDataFromImage,
+  createVTKImageDataFromImageId,
+  updateVTKImageDataFromImage,
+  updateVTKImageDataFromImageId,
 };

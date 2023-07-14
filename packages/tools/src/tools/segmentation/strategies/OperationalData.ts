@@ -3,7 +3,9 @@ import type { Types } from '@cornerstonejs/core';
 type EditDataStack = {
   type: 'stack';
   imageIds: Array<string>;
+  segmentationImageIds: Array<string>;
   currentImageId: string;
+  currentSegmentationImageId: string;
   zSpacing: number;
   origin: number[];
 };

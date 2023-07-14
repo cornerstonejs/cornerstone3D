@@ -147,6 +147,12 @@ class SegmentationRenderingEngine {
       );
 
       if (viewport instanceof StackViewport) {
+        // this listener handles the image scrolls
+        element.addEventListener(
+          Enums.Events.STACK_NEW_IMAGE,
+          stackImageChangeEventListener
+        );
+        // this listener handles the segmentation modifications
         element.addEventListener(
           Enums.Events.IMAGE_RENDERED,
           stackImageChangeEventListener

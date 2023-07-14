@@ -1,7 +1,7 @@
 import { IImage } from '../../types';
 import createVTKImageData from './createVTKImageData';
-import { getSegmentationImageFromImageId } from './getDerivedImage';
 import { getMetadataFromImage } from './getMetadataFromImage';
+import cache from '../../cache';
 
 export default function createVTKImageDataFromImage(image: IImage) {
   const { origin, direction, dimensions, spacing } =
@@ -19,6 +19,7 @@ export default function createVTKImageDataFromImage(image: IImage) {
 }
 
 export function createVTKImageDataFromImageId(imageId) {
-  const image = getSegmentationImageFromImageId(imageId);
-  return createVTKImageDataFromImage(image);
+  const image = cache.getImage(imageId);
+  const imageData = createVTKImageDataFromImage(image);
+  return imageData;
 }

@@ -31,6 +31,7 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import sortImageIds from './sortImageIds';
+import getDerivedImageId from './getDerivedImageId';
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -151,54 +152,49 @@ class SphereScissorsTool extends BaseTool {
     };
 
     const viewportIdsToRender = [viewport.id];
+    this.editData = {
+      annotation,
+      centerCanvas: canvasPos,
+      segmentIndex,
+      segmentsLocked,
+      segmentColor,
+      segmentationId,
+      toolGroupId,
+      viewportIdsToRender,
+      handleIndex: 3,
+      movingTextBox: false,
+      newAnnotation: true,
+      hasMoved: false,
+    };
     // Todo: are we going to support contour editing with rectangle scissors?
     if (labelmapData.type === 'volume' || !labelmapData.type) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
-
-      this.editData = {
-        annotation,
-        segmentation,
-        centerCanvas: canvasPos,
-        segmentIndex,
-        segmentsLocked,
-        segmentColor,
-        segmentationId,
-        toolGroupId,
-        viewportIdsToRender,
-        handleIndex: 3,
-        movingTextBox: false,
-        newAnnotation: true,
-        hasMoved: false,
-      };
+      this.editData.segmentation = segmentation;
     } else {
-      const { referencedImageIds } =
+      const { referencedImageIds, imageIds: segmentationImageIds } =
         labelmapData as LabelmapSegmentationDataStack;
 
       const { zSpacing, sortedImageIds, origin } =
         sortImageIds(referencedImageIds);
 
-      this.editData = {
-        annotation,
-        data: {
-          imageIds: sortedImageIds,
-          origin,
-          zSpacing,
-          currentImageId: viewport.getCurrentImageId(),
-        },
-        centerCanvas: canvasPos,
-        segmentIndex,
-        segmentsLocked,
-        segmentColor,
-        segmentationId,
-        toolGroupId,
-        viewportIdsToRender,
-        handleIndex: 3,
-        movingTextBox: false,
-        newAnnotation: true,
-        hasMoved: false,
+      const orderedSegmentationImageIds = sortedImageIds.map((imageId) =>
+        getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
+      );
+      const currentImageId = viewport.getCurrentImageId();
+      this.editData.data = {
+        imageIds: sortedImageIds,
+        origin,
+        zSpacing,
+        currentImageId: currentImageId,
+        currentSegmentationImageId: getDerivedImageId(
+          currentImageId,
+          referencedImageIds,
+          segmentationImageIds
+        ),
+        segmentationImageIds: orderedSegmentationImageIds,
       };
     }
 
@@ -291,35 +287,30 @@ class SphereScissorsTool extends BaseTool {
     this.editData = null;
     this.isDrawing = false;
 
-    let operationData;
+    const operationData = {
+      editData: {},
+      points: data.handles.points,
+      segmentationId,
+      segmentIndex,
+      segmentsLocked,
+      viewPlaneNormal,
+      viewUp,
+    };
+
     if (segmentation) {
-      operationData = {
-        editData: {
-          type: 'volume',
-          segmentation,
-        },
-        points: data.handles.points,
-        segmentationId,
-        segmentIndex,
-        segmentsLocked,
-        viewPlaneNormal,
-        viewUp,
+      operationData.editData = {
+        type: 'volume',
+        segmentation,
       };
     } else {
-      operationData = {
-        editData: {
-          type: 'stack',
-          imageIds: segmentationData.imageIds,
-          origin: segmentationData.origin,
-          zSpacing: segmentationData.zSpacing,
-          currentImageId: segmentationData.currentImageId,
-        },
-        points: data.handles.points,
-        segmentationId,
-        segmentIndex,
-        segmentsLocked,
-        viewPlaneNormal,
-        viewUp,
+      operationData.editData = {
+        type: 'stack',
+        imageIds: segmentationData.imageIds,
+        origin: segmentationData.origin,
+        zSpacing: segmentationData.zSpacing,
+        currentImageId: segmentationData.currentImageId,
+        currentSegmentationImageId: segmentationData.currentSegmentationImageId,
+        segmentationImageIds: segmentationData.segmentationImageIds,
       };
     }
 

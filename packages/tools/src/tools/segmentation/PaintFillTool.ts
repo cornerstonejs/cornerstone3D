@@ -20,12 +20,12 @@ import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
 import {
-  LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import sortImageIds from './sortImageIds';
 import { createVTKImageDataFromImageId } from '../../../../core/src/RenderingEngine/helpers/createVTKImageDataFromImage';
+import getDerivedImageId from './getDerivedImageId';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -111,7 +111,7 @@ class PaintFillTool extends BaseTool {
       scalarData = segmentation.getScalarData();
       imageData = segmentation.imageData;
     } else {
-      const { referencedImageIds } =
+      const { referencedImageIds, imageIds: segmentationImageIds } =
         labelmapData as LabelmapSegmentationDataStack;
       const {
         zSpacing,
@@ -119,10 +119,18 @@ class PaintFillTool extends BaseTool {
         origin,
         direction: calculatedDirection,
       } = sortImageIds(referencedImageIds);
-      const currentImageId = viewport.getCurrentImageId();
+      const orderedSegmentationImageIds = sortedImageIds.map((imageId) =>
+        getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
+      );
 
-      imageData = createVTKImageDataFromImageId(currentImageId);
-      // hack the imageData so pointInSurroundingSphereCallback can treat it like a volume
+      const currentImageId = viewport.getCurrentImageId();
+      const currentSegmentationImageId = getDerivedImageId(
+        currentImageId,
+        referencedImageIds,
+        segmentationImageIds
+      );
+      imageData = createVTKImageDataFromImageId(currentSegmentationImageId);
+      // hack the imageData so it can be treated like a volume structure, despite having only one image slice data
 
       // Hacking the dimensions
       dimensions = imageData.getDimensions();
@@ -133,11 +141,13 @@ class PaintFillTool extends BaseTool {
       const spacing = imageData.getSpacing();
       spacing[2] = zSpacing;
       imageData.setSpacing(spacing);
+
       // Hacking the origin
       imageData.setOrigin(origin);
       direction = calculatedDirection;
-      auxiliaryData.imageIds = sortedImageIds;
-      const image = cache.getDerivedImage(currentImageId);
+      auxiliaryData.imageIds = orderedSegmentationImageIds;
+
+      const image = cache.getImage(currentSegmentationImageId);
       scalarData = image.getPixelData();
     }
     auxiliaryData.type = segmentationType;
@@ -279,7 +289,7 @@ class PaintFillTool extends BaseTool {
     const getLabelValue = (x: number, y: number, z: number): number => {
       if (auxiliaryData.type === 'stack') {
         const slice = z;
-        const image = cache.getDerivedImage(auxiliaryData.imageIds[slice]);
+        const image = cache.getImage(auxiliaryData.imageIds[slice]);
         const imageScalarData = image.getPixelData();
         return imageScalarData[getScalarDataPosition(x, y, z)];
       } else {

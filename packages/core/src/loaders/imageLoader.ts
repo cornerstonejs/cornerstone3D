@@ -5,7 +5,6 @@ import { imageIdToURI, triggerEvent } from '../utilities';
 import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { metaData } from '../';
-import getDerivedImageId from '../utilities/getDerivedImageId';
 
 export interface ImageLoaderOptions {
   priority: number;
@@ -287,7 +286,8 @@ export function createAndCacheDerivedImage(
  *
  */
 export function createAndCacheDerivedImages(
-  imageIds: Array<string>
+  imageIds: Array<string>,
+  getDerivedImageId: (imageId: string, index?: number) => string
 ): DerivedImages {
   if (!imageIds || imageIds.length === 0) {
     throw new Error(
@@ -296,9 +296,9 @@ export function createAndCacheDerivedImages(
   }
 
   const derivedImageIds = [];
-  const allPromises = imageIds.map((imageId) => {
+  const allPromises = imageIds.map((imageId, index) => {
     const options: DerivedImageOptions = {
-      imageId: getDerivedImageId(imageId),
+      imageId: getDerivedImageId(imageId, index),
     };
     derivedImageIds.push(options.imageId);
     return createAndCacheDerivedImage(imageId, options);

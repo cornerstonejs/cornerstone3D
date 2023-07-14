@@ -7,6 +7,10 @@ import {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
+  createVTKImageDataFromImage,
+  createVTKImageDataFromImageId,
+  updateVTKImageDataFromImage,
+  updateVTKImageDataFromImageId,
 } from './helpers';
 
 export {
@@ -18,6 +22,10 @@ export {
   createVolumeMapper,
   getOrCreateCanvas,
   StackViewport,
+  createVTKImageDataFromImage,
+  createVTKImageDataFromImageId,
+  updateVTKImageDataFromImage,
+  updateVTKImageDataFromImageId,
 };
 
 export default RenderingEngine;
