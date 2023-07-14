@@ -19,11 +19,11 @@
         "test": "jest --testTimeout 60000",
         "build": "rollup -c rollup.config.mjs",
         "build:esm": "rollup -c rollup.config.mjs",
-        "build:esm:watch": "rollup -c -w rollup.config.mjs",
-        "dev": "rollup -c -w rollup.config.mjs",
+        "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+        "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
         "build:update-api": "yarn run build && api-extractor run --local",
-        "start": "rollup -c -w",
+        "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."
     },
@@ -39,14 +39,14 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "dcmjs": "^0.29.6",
+        "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "file:../core",
-        "@cornerstonejs/tools": "file:../tools",
-        "@cornerstonejs/streaming-image-volume-loader": "file:../streaming-image-volume-loader"
+        "@cornerstonejs/core": "^1.2.6",
+        "@cornerstonejs/tools": "^1.2.6",
+        "@cornerstonejs/streaming-image-volume-loader": "^1.2.6"
     }
 }

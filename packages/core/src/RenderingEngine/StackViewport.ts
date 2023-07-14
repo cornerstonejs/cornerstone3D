@@ -1810,7 +1810,10 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
-        if (this.csImage?.imageFrame.photometricInterpretation !== image.imageFrame.photometricInterpretation) {
+        if (
+          this.csImage?.imageFrame.photometricInterpretation !==
+          image?.imageFrame?.photometricInterpretation
+        ) {
           this.stackInvalidated = true;
         }
 
