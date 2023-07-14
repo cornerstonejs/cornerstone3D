@@ -1,7 +1,9 @@
 import { utilities, normalizers, derivations, data as dcmjsData } from "dcmjs";
+import { Buffer } from "buffer";
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
+const { datasetToDict } = dcmjsData;
 
 const { encode } = utilities.compression;
 
@@ -169,7 +171,9 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
         segmentation.bitPackPixelData();
     }
 
-    const segBlob = dcmjsData.datasetToBlob(segmentation.dataset);
+    // const segBlob = dcmjsData.datasetToBlob(segmentation.dataset);
+    const buffer = Buffer.from(datasetToDict(segmentation.dataset).write());
+    const segBlob = new Blob([buffer], { type: "application/dicom" });
 
     return segBlob;
 }

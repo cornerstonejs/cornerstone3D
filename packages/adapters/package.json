@@ -42,7 +42,8 @@
         "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
-        "ndarray": "^1.0.19"
+        "ndarray": "^1.0.19",
+        "buffer": "^6.0.3"
     },
     "devDependencies": {
         "@cornerstonejs/core": "^1.2.6",
