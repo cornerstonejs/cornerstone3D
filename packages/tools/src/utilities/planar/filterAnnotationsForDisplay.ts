@@ -1,6 +1,6 @@
 import {
   StackViewport,
-  VolumeViewport,
+  BaseVolumeViewport,
   Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -50,7 +50,7 @@ export default function filterAnnotationsForDisplay(
       const referenceImageURI = imageId.substring(colonIndex + 1);
       return referenceImageURI === imageURI;
     });
-  } else if (viewport instanceof VolumeViewport) {
+  } else if (viewport instanceof BaseVolumeViewport) {
     const camera = viewport.getCamera();
 
     const { spacingInNormalDirection } =
