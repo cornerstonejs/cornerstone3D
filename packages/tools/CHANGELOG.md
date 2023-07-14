@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.5...v1.4.6) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.4...v1.4.5) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.3...v1.4.4) (2023-07-13)
+
+### Bug Fixes
+
+- **PT measurement units:** Non-SUV scaled, but pre-scaled PTs should show proper units ([#686](https://github.com/cornerstonejs/cornerstone3D/issues/686)) ([e9190df](https://github.com/cornerstonejs/cornerstone3D/commit/e9190df44b29be504b46ebb768e6ad2e6b02bbe3))
+
+## [1.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.2...v1.4.3) (2023-07-12)
+
+### Bug Fixes
+
+- **ptct:** Jump to click and voisync for volume3d ([#678](https://github.com/cornerstonejs/cornerstone3D/issues/678)) ([8342ff4](https://github.com/cornerstonejs/cornerstone3D/commit/8342ff4e665b9dc1c09af0ca2eddd607d3b1c3a3))
+
+## [1.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.1...v1.4.2) (2023-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [1.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.0...v1.4.1) (2023-07-04)
 
 ### Bug Fixes

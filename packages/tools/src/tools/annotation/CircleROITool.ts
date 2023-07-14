@@ -57,7 +57,10 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
@@ -667,6 +670,16 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -689,14 +702,16 @@ class CircleROITool extends AnnotationTool {
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -803,20 +818,7 @@ class CircleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
-
-      const textLines = this._getTextLines(
-        data,
-        targetId,
-        isPreScaled,
-        isSuvScaled
-      );
+      const textLines = this._getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -860,12 +862,7 @@ class CircleROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] => {
+  _getTextLines = (data, targetId: string): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const {
       radius,
@@ -877,10 +874,10 @@ class CircleROITool extends AnnotationTool {
       isEmptyArea,
       Modality,
       areaUnit,
+      modalityUnit,
     } = cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     if (radius) {
       const radiusLine = isEmptyArea
@@ -897,15 +894,15 @@ class CircleROITool extends AnnotationTool {
     }
 
     if (mean) {
-      textLines.push(`Mean: ${roundNumber(mean)} ${unit}`);
+      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${roundNumber(max)} ${unit}`);
+      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${unit}`);
+      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
     }
 
     return textLines;
@@ -915,7 +912,8 @@ class CircleROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -1046,6 +1044,12 @@ class CircleROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
+        const modalityUnit = getModalityUnit(
+          metadata.Modality,
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
+        );
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -1057,6 +1061,7 @@ class CircleROITool extends AnnotationTool {
           radius: worldWidth / 2 / scale,
           radiusUnit: getCalibratedLengthUnits(null, image),
           perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
