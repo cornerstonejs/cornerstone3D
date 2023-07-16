@@ -1166,6 +1166,7 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
+    renderedState: RenderedState;
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
@@ -1177,6 +1178,7 @@ interface IViewport {
     );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setRendered(): void;
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
@@ -1402,6 +1404,15 @@ type PublicViewportInput = {
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
 };
+
+// @public (undocumented)
+enum RenderedState {
+    LOADING = 'loading',
+    NO_DATA = 'noData',
+    READY = 'ready',
+    RENDERED = 'rendered',
+    RESIZE = 'resize',
+}
 
 // @public
 enum RequestType {

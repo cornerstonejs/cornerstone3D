@@ -74,6 +74,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
+import { RenderedState } from '../enums';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1494,6 +1495,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
+    this.renderedState = RenderedState.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1715,6 +1717,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         this._setCSImage(image);
+        this.renderedState = RenderedState.READY;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,

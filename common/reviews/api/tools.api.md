@@ -3027,6 +3027,7 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
+    renderedState: RenderedState;
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
@@ -3038,6 +3039,7 @@ interface IViewport {
     );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setRendered(): void;
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;

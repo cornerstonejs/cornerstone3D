@@ -7,6 +7,7 @@ import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
+import RenderedState from '../enums/RenderedState';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
@@ -50,6 +51,10 @@ class Viewport implements IViewport {
   protected flipHorizontal = false;
   protected flipVertical = false;
   public isDisabled: boolean;
+  /** Record the renddering status, mostly for testing purposes, but can also
+   * be useful for knowing things like whether the viewport is initialized
+   */
+  public renderedState: RenderedState = RenderedState.NO_DATA;
 
   /** sx of viewport on the offscreen canvas */
   sx: number;
@@ -115,6 +120,11 @@ class Viewport implements IViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  public setRendered() {
+    if (this.renderedState === RenderedState.NO_DATA) return;
+    this.renderedState = RenderedState.RENDERED;
   }
 
   /**

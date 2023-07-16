@@ -571,7 +571,8 @@ declare namespace Enums {
         GeometryType,
         ContourType,
         VOILUTFunctionType,
-        DynamicOperatorType
+        DynamicOperatorType,
+        RenderedState
     }
 }
 export { Enums }
@@ -1699,6 +1700,8 @@ interface IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
+    renderedState: RenderedState;
+    // (undocumented)
     renderingEngineId: string;
     // (undocumented)
     reset(immediate: boolean): void;
@@ -1712,6 +1715,8 @@ interface IViewport {
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
+    // (undocumented)
+    setRendered(): void;
     // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
@@ -2020,6 +2025,20 @@ function removeAllProviders(): void;
 function removeProvider(provider: (type: string, query: any) => {
     any: any;
 }): void;
+
+// @public (undocumented)
+enum RenderedState {
+    // (undocumented)
+    LOADING = "loading",
+    // (undocumented)
+    NO_DATA = "noData",
+    // (undocumented)
+    READY = "ready",
+    // (undocumented)
+    RENDERED = "rendered",
+    // (undocumented)
+    RESIZE = "resize"
+}
 
 // @public (undocumented)
 const RENDERING_DEFAULTS: {
@@ -2573,6 +2592,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
+    renderedState: RenderedState;
+    // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)
     reset(immediate?: boolean): void;
@@ -2600,6 +2621,8 @@ export class Viewport implements IViewport {
     setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
+    // (undocumented)
+    setRendered(): void;
     // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)

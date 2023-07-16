@@ -9,6 +9,7 @@ import GeometryType from './GeometryType';
 import ContourType from './ContourType';
 import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
+import RenderedState from './RenderedState';
 
 export {
   Events,
@@ -22,4 +23,5 @@ export {
   ContourType,
   VOILUTFunctionType,
   DynamicOperatorType,
+  RenderedState,
 };
