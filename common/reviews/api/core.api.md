@@ -1149,6 +1149,8 @@ interface IImage {
 // @public (undocumented)
 interface IImageCalibration {
     // (undocumented)
+    aspect?: number;
+    // (undocumented)
     columnPixelSpacing?: number;
     // (undocumented)
     rowPixelSpacing?: number;
@@ -1432,8 +1434,7 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    scale?: number;
-    calibration?: IImageCalibration;
+    calibration: IImageCalibration;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };

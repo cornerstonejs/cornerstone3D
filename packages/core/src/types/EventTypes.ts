@@ -226,8 +226,8 @@ type ImageSpacingCalibratedEventDetail = {
   viewportId: string;
   renderingEngineId: string;
   imageId: string;
-  scale?: number;
-  calibration?: IImageCalibration;
+  /** calibration contains the scaling information as well as other calibration info */
+  calibration: IImageCalibration;
   imageData: vtkImageData;
   worldToIndex: mat4;
 };
