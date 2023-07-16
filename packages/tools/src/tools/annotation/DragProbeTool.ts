@@ -155,6 +155,16 @@ class DragProbeTool extends ProbeTool {
 
     const color = this.getStyle('color', styleSpecifier, annotation);
 
+    const modalityUnitOptions = {
+      isPreScaled: isViewportPreScaled(viewport, targetId),
+
+      isSuvScaled: this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      ),
+    };
+
     if (!data.cachedStats[targetId]) {
       data.cachedStats[targetId] = {
         Modality: null,
@@ -162,9 +172,19 @@ class DragProbeTool extends ProbeTool {
         value: null,
       };
 
-      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+      this._calculateCachedStats(
+        annotation,
+        renderingEngine,
+        enabledElement,
+        modalityUnitOptions
+      );
     } else if (annotation.invalidated) {
-      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+      this._calculateCachedStats(
+        annotation,
+        renderingEngine,
+        enabledElement,
+        modalityUnitOptions
+      );
     }
 
     // If rendering engine has been destroyed while rendering
@@ -185,20 +205,7 @@ class DragProbeTool extends ProbeTool {
 
     renderStatus = true;
 
-    const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-    const isSuvScaled = this.isSuvScaled(
-      viewport,
-      targetId,
-      annotation.metadata.referencedImageId
-    );
-
-    const textLines = this._getTextLines(
-      data,
-      targetId,
-      isPreScaled,
-      isSuvScaled
-    );
+    const textLines = this._getTextLines(data, targetId);
     if (textLines) {
       const textCanvasCoordinates = [
         canvasCoordinates[0] + 6,

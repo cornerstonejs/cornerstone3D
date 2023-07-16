@@ -8,8 +8,9 @@ import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
-const defaultConfig = {
-  detectGPU: {},
+const defaultConfig: Cornerstone3DConfig = {
+  gpuTier: undefined,
+  detectGPUConfig: {},
   rendering: {
     useCPURendering: false,
     // GPU rendering options
@@ -21,8 +22,9 @@ const defaultConfig = {
   // ...
 };
 
-let config = {
-  detectGPU: {},
+let config: Cornerstone3DConfig = {
+  gpuTier: undefined,
+  detectGPUConfig: {},
   rendering: {
     useCPURendering: false,
     // GPU rendering options
@@ -106,19 +108,19 @@ async function init(configuration = {}): Promise<boolean> {
   // merge configs
   config = deepMerge(defaultConfig, configuration);
 
-  // detectGPU
+  // gpuTier
   const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    const gpuTier = await getGPUTier();
-    config.detectGPU = gpuTier;
+    config.gpuTier =
+      config.gpuTier || (await getGPUTier(config.detectGPUConfig));
     console.log(
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
-      gpuTier
+      config.gpuTier
     );
-    if (gpuTier.tier < 1) {
+    if (config.gpuTier.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );

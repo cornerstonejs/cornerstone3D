@@ -3,6 +3,58 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.5...v1.4.6) (2023-07-14)
+
+**Note:** Version bump only for package root
+
+## [1.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.4...v1.4.5) (2023-07-14)
+
+### Bug Fixes
+
+- **color volume:** take into account number of components for the volume length ([#687](https://github.com/cornerstonejs/cornerstone3D/issues/687)) ([667c42e](https://github.com/cornerstonejs/cornerstone3D/commit/667c42e635f6262225f88aa458fe7482ea9ecf1e))
+
+## [1.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.3...v1.4.4) (2023-07-13)
+
+### Bug Fixes
+
+- **PT measurement units:** Non-SUV scaled, but pre-scaled PTs should show proper units ([#686](https://github.com/cornerstonejs/cornerstone3D/issues/686)) ([e9190df](https://github.com/cornerstonejs/cornerstone3D/commit/e9190df44b29be504b46ebb768e6ad2e6b02bbe3))
+
+## [1.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.2...v1.4.3) (2023-07-12)
+
+### Bug Fixes
+
+- **ptct:** Jump to click and voisync for volume3d ([#678](https://github.com/cornerstonejs/cornerstone3D/issues/678)) ([8342ff4](https://github.com/cornerstonejs/cornerstone3D/commit/8342ff4e665b9dc1c09af0ca2eddd607d3b1c3a3))
+
+## [1.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.1...v1.4.2) (2023-07-11)
+
+### Bug Fixes
+
+- **color volume viewport:** fix incorrect property on volume actor ([#683](https://github.com/cornerstonejs/cornerstone3D/issues/683)) ([dbc40e9](https://github.com/cornerstonejs/cornerstone3D/commit/dbc40e9adda15570ff451a13c60effb5fbc1adbb))
+
+## [1.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.0...v1.4.1) (2023-07-04)
+
+### Bug Fixes
+
+- **PET vs PT:** Change all to PT for consistency ([#676](https://github.com/cornerstonejs/cornerstone3D/issues/676)) ([813e5ba](https://github.com/cornerstonejs/cornerstone3D/commit/813e5bac8a615b53cab3640052ce5d9bb7dabc5b))
+
+# [1.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.3.0...v1.4.0) (2023-07-04)
+
+### Features
+
+- **detectGPU:** Add config for getGPUTier method in cornerstone.init ([#633](https://github.com/cornerstonejs/cornerstone3D/issues/633)) ([b5ea0e2](https://github.com/cornerstonejs/cornerstone3D/commit/b5ea0e2c1e337759062ff22c5c7db545fc8be745)), closes [#570](https://github.com/cornerstonejs/cornerstone3D/issues/570)
+
+# [1.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.9...v1.3.0) (2023-07-04)
+
+### Features
+
+- **invertSync:** add invert sync to voi sync ([#677](https://github.com/cornerstonejs/cornerstone3D/issues/677)) ([a1dcfbc](https://github.com/cornerstonejs/cornerstone3D/commit/a1dcfbc986a483d650cd2abfdd8f1bba1e3d829a))
+
+## [1.2.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.8...v1.2.9) (2023-07-03)
+
+### Bug Fixes
+
+- **dicomImageLoader:** Error when loading Wadouri JPEG Image ([#674](https://github.com/cornerstonejs/cornerstone3D/issues/674)) ([6564232](https://github.com/cornerstonejs/cornerstone3D/commit/6564232531877d2545226a502c10a829f8e6bf28))
+
 ## [1.2.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.7...v1.2.8) (2023-06-27)
 
 ### Bug Fixes

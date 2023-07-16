@@ -27,7 +27,7 @@ type PTScaling = {
 };
 
 type Scaling = {
-  PET?: PTScaling;
+  PT?: PTScaling;
 };
 
 export { PTScaling, Scaling, ScalingParameters };

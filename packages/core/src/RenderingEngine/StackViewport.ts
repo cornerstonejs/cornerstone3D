@@ -1289,7 +1289,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageIdScalingFactor - suvbw, suvlbm, suvbsa
    */
   private _addScalingToViewport(imageIdScalingFactor) {
-    if (this.scaling.PET) {
+    if (this.scaling.PT) {
       return;
     }
 
@@ -1297,17 +1297,17 @@ class StackViewport extends Viewport implements IStackViewport {
     // These ratios are constant across all frames, so only need one.
     const { suvbw, suvlbm, suvbsa } = imageIdScalingFactor;
 
-    const petScaling = <PTScaling>{};
+    const ptScaling = <PTScaling>{};
 
     if (suvlbm) {
-      petScaling.suvbwToSuvlbm = suvlbm / suvbw;
+      ptScaling.suvbwToSuvlbm = suvlbm / suvbw;
     }
 
     if (suvbsa) {
-      petScaling.suvbwToSuvbsa = suvbsa / suvbw;
+      ptScaling.suvbwToSuvbsa = suvbsa / suvbw;
     }
 
-    this.scaling.PET = petScaling;
+    this.scaling.PT = ptScaling;
   }
 
   /**

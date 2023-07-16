@@ -4,7 +4,9 @@
 
 ```ts
 
+import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
+import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -673,7 +675,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CircleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -698,7 +700,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[];
+    _getTextLines: (data: any, targetId: string) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: CircleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -924,7 +926,8 @@ function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
 
 // @public (undocumented)
 type Cornerstone3DConfig = {
-    detectGPU: any;
+    gpuTier?: TierResult;
+    detectGPUConfig: GetGPUTier;
     rendering: {
         // vtk.js supports 8bit integer textures and 32bit float textures.
         // However, if the client has norm16 textures (it can be seen by visiting
@@ -1649,7 +1652,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1680,7 +1683,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _getCanvasEllipseCenter(ellipseCanvasPoints: Types_2.Point2[]): Types_2.Point2;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[];
+    _getTextLines: (data: any, targetId: string) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -2464,7 +2467,7 @@ interface IImage {
     rowPixelSpacing: number;
     rows: number;
     scaling?: {
-        PET?: {
+        PT?: {
             // @TODO: Do these values exist?
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
@@ -2540,14 +2543,14 @@ interface IImageVolume {
     imageData?: vtkImageData;
     imageIds: Array<string>;
     isDynamicVolume(): boolean;
-    isPrescaled: boolean;
+    isPreScaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
     scaling?: {
-        PET?: {
+        PT?: {
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
             suvbwToSuvlbm?: number;
@@ -3065,7 +3068,7 @@ interface IVolume {
     referencedVolumeId?: string;
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
-        PET?: {
+        PT?: {
             // @TODO: Do these values exist?
             SUVlbmFactor?: number;
             SUVbsaFactor?: number;
@@ -3667,13 +3670,13 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[];
+    _getTextLines: (data: any, targetId: string) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -3819,7 +3822,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -3842,9 +3845,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    _getTextLines(data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean): string[] | undefined;
-    // (undocumented)
-    _getValueForModality(value: any, imageVolume: any, modality: any): {};
+    _getTextLines(data: any, targetId: string): string[] | undefined;
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ProbeAnnotation): void;
     // (undocumented)
@@ -4105,7 +4106,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => RectangleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4133,7 +4134,7 @@ export class RectangleROITool extends AnnotationTool {
         height: number;
     };
     // (undocumented)
-    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[] | undefined;
+    _getTextLines: (data: any, targetId: string) => string[] | undefined;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -4417,7 +4418,7 @@ export class ScaleOverlayTool extends AnnotationDisplayTool {
 
 // @public (undocumented)
 type Scaling = {
-    PET?: PTScaling;
+    PT?: PTScaling;
 };
 
 // @public (undocumented)
@@ -5466,6 +5467,7 @@ type VoiModifiedEventDetail = {
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    invertStateChanged?: boolean;
 };
 
 // @public (undocumented)

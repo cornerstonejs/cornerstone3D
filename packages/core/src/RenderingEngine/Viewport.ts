@@ -621,7 +621,7 @@ class Viewport implements IViewport {
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  protected resetCamera(
+  public resetCamera(
     resetPan = true,
     resetZoom = true,
     resetToCenter = true,

@@ -523,7 +523,7 @@ function setUpSynchronizers() {
 
 async function setUpDisplay() {
   const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
-  const wadoRsRoot = 'https://d28o5kq0jsoob5.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849';
 

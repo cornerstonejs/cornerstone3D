@@ -649,6 +649,16 @@ class RectangleROITool extends AnnotationTool {
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -669,7 +679,8 @@ class RectangleROITool extends AnnotationTool {
           viewPlaneNormal,
           viewUp,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
@@ -677,7 +688,8 @@ class RectangleROITool extends AnnotationTool {
           viewPlaneNormal,
           viewUp,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
 
         // If the invalidated data is as a result of volumeViewport manipulation
@@ -769,20 +781,7 @@ class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
-
-      const textLines = this._getTextLines(
-        data,
-        targetId,
-        isPreScaled,
-        isSuvScaled
-      );
+      const textLines = this._getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -849,26 +848,21 @@ class RectangleROITool extends AnnotationTool {
    * @param targetId - The volumeId of the volume to display the stats for.
    * @param isPreScaled - Whether the viewport is pre-scaled or not.
    */
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] | undefined => {
+  _getTextLines = (data, targetId: string): string[] | undefined => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
+    const { area, mean, max, stdDev, areaUnit, modalityUnit } =
+      cachedVolumeStats;
 
     if (mean === undefined) {
       return;
     }
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
-    textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
-    textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
-    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+    textLines.push(`Mean: ${mean.toFixed(2)} ${modalityUnit}`);
+    textLines.push(`Max: ${max.toFixed(2)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${modalityUnit}`);
 
     return textLines;
   };
@@ -889,7 +883,8 @@ class RectangleROITool extends AnnotationTool {
     viewPlaneNormal,
     viewUp,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions
   ) => {
     const { data } = annotation;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -997,6 +992,12 @@ class RectangleROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
+        const modalityUnit = getModalityUnit(
+          metadata.Modality,
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
+        );
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -1004,6 +1005,7 @@ class RectangleROITool extends AnnotationTool {
           stdDev,
           max,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
