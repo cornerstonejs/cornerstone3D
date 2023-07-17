@@ -13,13 +13,17 @@ export interface IImageCalibration {
    */
   rowPixelSpacing?: number;
   columnPixelSpacing?: number;
-  /** The scaling of this image - new spacing = original pixelSpacing/scale */
+  /** The scaling of measurement values relative to the base pixel spacing (1 if not specified) */
   scale?: number;
   /**
-   * The aspect ratio of the screen.
-   * Defaults to 1 if not specified.
-   * Not well handled currently as changing the aspect ratio does not result in
-   * updating measurements in any meaningful way.
+   * The calibration aspect ratio for non-square calibrations.
+   * This is the aspect ratio similar to the scale above that applies when
+   * the viewport is displaying non-square image pixels as square screen pixels.
+   *
+   * Defaults to 1 if not specified, and is also 1 if the Viewport has squared
+   * up the image pixels so that they are displayed as a square.
+   * Not well handled currently as this needs to be incorporated into
+   * tools when doing calculations.
    */
   aspect?: number;
   /** The type of the pixel spacing, distinguishing between various

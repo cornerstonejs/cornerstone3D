@@ -48,6 +48,19 @@ const getCalibratedAreaUnits = (handles, image): string => {
  */
 const getCalibratedScale = (image) => image.calibration?.scale || 1;
 
+/** Gets the aspect ratio of the screen display relative to the image
+ * display in order to square up measurement values.
+ * That is, suppose the spacing on the image is 1, 0.5 (x,y spacing)
+ * This is displayed at 1, 1 spacing on screen, then the
+ * aspect value will be 1/0.5 = 2
+ */
+const getCalibratedAspect = (image) => image.calibration?.aspect || 1;
+
 export default getCalibratedLengthUnits;
 
-export { getCalibratedAreaUnits, getCalibratedLengthUnits, getCalibratedScale };
+export {
+  getCalibratedAreaUnits,
+  getCalibratedLengthUnits,
+  getCalibratedScale,
+  getCalibratedAspect,
+};

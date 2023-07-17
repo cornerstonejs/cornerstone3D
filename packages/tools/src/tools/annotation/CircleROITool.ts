@@ -13,6 +13,7 @@ import {
   getCalibratedLengthUnits,
   getCalibratedAreaUnits,
   getCalibratedScale,
+  getCalibratedAspect,
 } from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
@@ -1001,8 +1002,11 @@ class CircleROITool extends AnnotationTool {
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const scale = getCalibratedScale(image);
+        const aspect = getCalibratedAspect(image);
         const area = Math.abs(
-          Math.PI * (worldWidth / scale / 2) * (worldHeight / scale / 2)
+          Math.PI *
+            (worldWidth / scale / 2) *
+            (worldHeight / aspect / scale / 2)
         );
 
         let count = 0;
