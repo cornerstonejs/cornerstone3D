@@ -519,7 +519,24 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
    */
   public getProperties = (): VolumeViewportProperties => {
-    const { colormap, voiRange, VOILUTFunction, inverted } = this;
+    const voiRanges = this.getActors()
+      .map((actorEntry) => {
+        const volumeActor = actorEntry.actor as vtkVolume;
+        const volumeId = actorEntry.uid;
+        const volume = cache.getVolume(volumeId);
+        if (!volume) return null;
+        const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+        const [lower, upper] =
+          this.VOILUTFunction === 'SIGMOID'
+            ? getVoiFromSigmoidRGBTransferFunction(cfun)
+            : cfun.getRange();
+        return { volumeId, voiRange: { lower, upper } };
+      })
+      .filter(Boolean);
+
+    const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
+
+    const { colormap, VOILUTFunction, inverted } = this;
 
     const slabThickness = this.getSlabThickness();
 
