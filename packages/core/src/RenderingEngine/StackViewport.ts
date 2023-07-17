@@ -697,6 +697,9 @@ class StackViewport extends Viewport implements IStackViewport {
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
+    this.renderedState = this.csImage
+      ? RenderedState.READY
+      : RenderedState.LOADING;
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
@@ -754,6 +757,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
     this.voiUpdatedWithSetProperties = false;
+    this.renderedState = RenderedState.READY;
 
     this.fillWithBackgroundColor();
 
@@ -2651,6 +2655,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
+      renderedState: this.renderedState,
     };
   };
 

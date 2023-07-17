@@ -122,8 +122,19 @@ class Viewport implements IViewport {
     return false;
   }
 
+  /**
+   * Indicate that the image has been rendered.
+   * This will set hte renderedState to RENDERED if there is image data
+   * available to actually be rendered - otherwise, the rendering simply showed
+   * the background image.
+   */
   public setRendered() {
-    if (this.renderedState === RenderedState.NO_DATA) return;
+    if (
+      this.renderedState === RenderedState.NO_DATA ||
+      this.renderedState === RenderedState.LOADING
+    ) {
+      return;
+    }
     this.renderedState = RenderedState.RENDERED;
   }
 

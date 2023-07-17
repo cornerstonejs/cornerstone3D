@@ -1252,6 +1252,7 @@ class RenderingEngine implements IRenderingEngine {
       suppressEvents,
       viewportId,
       renderingEngineId,
+      renderedState: viewport.renderedState,
     };
   }
 

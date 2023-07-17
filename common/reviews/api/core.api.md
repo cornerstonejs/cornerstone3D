@@ -1375,6 +1375,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+    renderedState: RenderedState;
 };
 
 // @public (undocumented)
@@ -2229,6 +2230,7 @@ export class StackViewport extends Viewport implements IStackViewport {
         element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
+        renderedState: RenderedState;
     };
     // (undocumented)
     getActor: (actorUID: string) => ActorEntry;

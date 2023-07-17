@@ -980,6 +980,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+    renderedState: RenderedState;
 };
 
 // @public (undocumented)
