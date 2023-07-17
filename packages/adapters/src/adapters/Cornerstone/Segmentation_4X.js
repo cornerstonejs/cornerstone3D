@@ -7,6 +7,7 @@ import {
 } from "dcmjs";
 import ndarray from "ndarray";
 import cloneDeep from "lodash.clonedeep";
+import { Buffer } from "buffer";
 
 const {
     rotateDirectionCosinesInPlane,
@@ -16,21 +17,13 @@ const {
     nearlyEqual
 } = utilities.orientation;
 
-const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
+const { datasetToDict, BitArray, DicomMessage, DicomMetaDictionary } =
     dcmjsData;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 
 const { encode, decode } = utilities.compression;
-
-const Segmentation = {
-    generateSegmentation,
-    generateToolState,
-    fillSegmentation
-};
-
-export default Segmentation;
 
 /**
  *
@@ -39,10 +32,9 @@ export default Segmentation;
  * @property {Object[]} segments - The cornerstoneTools segment metadata that corresponds to the
  *                                 seriesInstanceUid.
  */
-
 const generateSegmentationDefaultOptions = {
     includeSliceSpacing: true,
-    rleEncode: true
+    rleEncode: false
 };
 
 /**
@@ -197,7 +189,8 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
         segmentation.bitPackPixelData();
     }
 
-    const segBlob = datasetToBlob(segmentation.dataset);
+    const buffer = Buffer.from(datasetToDict(segmentation.dataset).write());
+    const segBlob = new Blob([buffer], { type: "application/dicom" });
 
     return segBlob;
 }
@@ -1633,3 +1626,12 @@ function getUnpackedOffsetAndLength(chunks, offset, length) {
         end: { chunkIndex: endChunkIndex, offset: endOffsetInChunk }
     };
 }
+
+const Segmentation = {
+    generateSegmentation,
+    generateToolState,
+    fillSegmentation
+};
+
+export default Segmentation;
+export { fillSegmentation, generateSegmentation, generateToolState };

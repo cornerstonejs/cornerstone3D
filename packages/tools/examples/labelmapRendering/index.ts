@@ -9,17 +9,13 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { adaptersSEG } from '@cornerstonejs/adapters';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
-
-const { VTKjs } = adaptersSEG;
 
 const {
   SegmentationDisplayTool,
@@ -36,10 +32,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-// Create the viewports
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-const viewportId3 = 'CT_CORONAL';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -70,22 +62,8 @@ viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
-let renderingEngine;
+
 // ============================= //
-
-addButtonToToolbar({
-  title: 'Create SEG',
-  onClick: async () => {
-    const viewport = renderingEngine.getViewport(viewportId1);
-    debugger;
-
-    const segBlob = VTKjs.Segmentation.generateSegmentation();
-
-    //Create a URL for the binary.
-    const objectUrl = URL.createObjectURL(segBlob);
-    window.open(objectUrl);
-  },
-});
 
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
@@ -185,7 +163,12 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  renderingEngine = new RenderingEngine(renderingEngineId);
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Create the viewports
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
