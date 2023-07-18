@@ -411,6 +411,17 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
     const labelmapBufferArray = [];
     labelmapBufferArray[0] = new ArrayBuffer(arrayBufferLength);
 
+    // Precompute the indices and metadata so that we don't have to call
+    // a function for each imageId in the for loop.
+    const imageIdMaps = imageIds.reduce(
+        (acc, curr, index) => {
+            acc.indices[curr] = index;
+            acc.metadata[curr] = metadataProvider.get("instance", curr);
+            return acc;
+        },
+        { indices: {}, metadata: {} }
+    );
+
     insertFunction(
         segmentsOnFrame,
         segmentsOnFrameArray,
@@ -422,7 +433,8 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
         metadataProvider,
         sopUIDImageIdIndexMap,
         tolerance,
-        TypedArrayConstructor
+        TypedArrayConstructor,
+        imageIdMaps
     );
 
     return {
@@ -1067,7 +1079,8 @@ function insertPixelDataPlanar(
     metadataProvider,
     sopUIDImageIdIndexMap,
     tolerance,
-    TypedArrayConstructor
+    TypedArrayConstructor,
+    imageIdMaps
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -1140,7 +1153,7 @@ function insertPixelDataPlanar(
             continue;
         }
 
-        const sourceImageMetadata = metadataProvider.get("instance", imageId);
+        const sourceImageMetadata = imageIdMaps.metadata[imageId];
         if (
             Rows !== sourceImageMetadata.Rows ||
             Columns !== sourceImageMetadata.Columns
@@ -1152,7 +1165,8 @@ function insertPixelDataPlanar(
             );
         }
 
-        const imageIdIndex = imageIds.findIndex(element => element === imageId);
+        const imageIdIndex = imageIdMaps.indices[imageId];
+
         const byteOffset =
             sliceLength *
             imageIdIndex *

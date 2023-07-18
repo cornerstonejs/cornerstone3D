@@ -79,14 +79,9 @@ let segmentationVolume;
 let segmentationRepresentationUID;
 
 function generateMockMetadata(segmentIndex, color) {
-    // TODO -> Use colors from the cornerstoneTools LUT.
     const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB(
-        color.slice(0, 3)
-    );
-
-    const colorAgain = dcmjs.data.Colors.dicomlab2RGB(
-        RecommendedDisplayCIELabValue
-    );
+        color.slice(0, 3).map(value => value / 255)
+    ).map(value => Math.round(value));
 
     return {
         SegmentedPropertyCategoryCodeSequence: {
@@ -94,8 +89,8 @@ function generateMockMetadata(segmentIndex, color) {
             CodingSchemeDesignator: "SRT",
             CodeMeaning: "Tissue"
         },
-        SegmentNumber: (segmentIndex + 1).toString(),
-        SegmentLabel: "Tissue " + (segmentIndex + 1).toString(),
+        SegmentNumber: segmentIndex.toString(),
+        SegmentLabel: "Tissue " + segmentIndex.toString(),
         SegmentAlgorithmType: "SEMIAUTOMATIC",
         SegmentAlgorithmName: "Slicer Prototype",
         RecommendedDisplayCIELabValue,
@@ -162,11 +157,10 @@ function createMockEllipsoidSegmentation(
     segmentationVolume,
     outerRadius = 20,
     innerRadius = 10,
-    center = "center",
+    center,
     labels = [1, 2]
-    // mode = "first"
 ) {
-    const { dimensions, scalarData, imageData } = segmentationVolume;
+    const { dimensions, scalarData } = segmentationVolume;
 
     const centerToUse =
         center === "center"
@@ -174,9 +168,6 @@ function createMockEllipsoidSegmentation(
             : center;
 
     let voxelIndex = 0;
-
-    // const zToUse =
-    //     mode === "first" ? [0, 1] : [dimensions[2] - 1, dimensions[2]];
 
     for (let z = 0; z < dimensions[2]; z++) {
         for (let y = 0; y < dimensions[1]; y++) {
@@ -193,8 +184,6 @@ function createMockEllipsoidSegmentation(
                 }
 
                 voxelIndex++;
-                // const index = imageData.computeOffsetIndex([x, y, z]);
-                // scalarData[index] = labels[1];
             }
         }
     }
@@ -209,13 +198,6 @@ async function addSegmentationsToState() {
             volumeId: segmentationId
         }
     );
-
-    // segmentationVolume2 = await volumeLoader.createAndCacheDerivedVolume(
-    //     volumeId,
-    //     {
-    //         volumeId: `${segmentationId}2`
-    //     }
-    // );
 
     // Add the segmentations to state
     segmentation.addSegmentations([
@@ -232,20 +214,6 @@ async function addSegmentationsToState() {
             }
         }
     ]);
-    // segmentation.addSegmentations([
-    //     {
-    //         segmentationId: `${segmentationId}2`,
-    //         representation: {
-    //             // The type of segmentation
-    //             type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    //             // The actual segmentation data, in the case of labelmap this is a
-    //             // reference to the source volume of the segmentation.
-    //             data: {
-    //                 volumeId: `${segmentationId}2`
-    //             }
-    //         }
-    //     }
-    // ]);
 
     // Add some data to the segmentations
     // createMockEllipsoidSegmentation(segmentationVolume);
@@ -254,7 +222,7 @@ async function addSegmentationsToState() {
         40,
         20,
         [250, 100, 125],
-        [2, 5]
+        [1, 2]
     );
 }
 
@@ -352,12 +320,6 @@ async function run() {
                 type: csToolsEnums.SegmentationRepresentations.Labelmap
             }
         ]);
-    // await segmentation.addSegmentationRepresentations(toolGroupId, [
-    //     {
-    //         segmentationId: `${segmentationId}2`,
-    //         type: csToolsEnums.SegmentationRepresentations.Labelmap
-    //     }
-    // ]);
 
     // Render the image
     renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
