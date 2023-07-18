@@ -980,7 +980,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
-    renderedState: RenderedState;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -1167,7 +1167,6 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
-    renderedState: RenderedState;
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
@@ -1189,6 +1188,7 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    viewportStatus: ViewportStatus;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -1406,15 +1406,6 @@ type PublicViewportInput = {
     defaultOptions?: ViewportInputOptions;
 };
 
-// @public (undocumented)
-enum RenderedState {
-    LOADING = 'loading',
-    NO_DATA = 'noData',
-    READY = 'ready',
-    RENDERED = 'rendered',
-    RESIZE = 'resize',
-}
-
 // @public
 enum RequestType {
     Interaction = 'interaction',
@@ -1580,6 +1571,15 @@ type ViewportProperties = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
 };
+
+// @public (undocumented)
+enum ViewportStatus {
+    LOADING = 'loading',
+    NO_DATA = 'noData',
+    PRE_RENDER = 'preRender',
+    RENDERED = 'rendered',
+    RESIZE = 'resize',
+}
 
 // @public
 enum ViewportType {

@@ -74,7 +74,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
-import { RenderedState } from '../enums';
+import ViewportStatus from '../enums/ViewportStatus';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -697,9 +697,9 @@ class StackViewport extends Viewport implements IStackViewport {
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
-    this.renderedState = this.csImage
-      ? RenderedState.READY
-      : RenderedState.LOADING;
+    this.viewportStatus = this.csImage
+      ? ViewportStatus.PRE_RENDER
+      : ViewportStatus.LOADING;
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
@@ -757,7 +757,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
     this.voiUpdatedWithSetProperties = false;
-    this.renderedState = RenderedState.READY;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
 
@@ -1499,7 +1499,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
-    this.renderedState = RenderedState.LOADING;
+    this.viewportStatus = ViewportStatus.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1721,7 +1721,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         this._setCSImage(image);
-        this.renderedState = RenderedState.READY;
+        this.viewportStatus = ViewportStatus.PRE_RENDER;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -2655,7 +2655,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      renderedState: this.renderedState,
+      viewportStatus: this.viewportStatus,
     };
   };
 

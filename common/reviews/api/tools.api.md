@@ -2690,7 +2690,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
-    renderedState: RenderedState;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -3028,7 +3028,6 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
-    renderedState: RenderedState;
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
@@ -3050,6 +3049,7 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    viewportStatus: ViewportStatus;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 

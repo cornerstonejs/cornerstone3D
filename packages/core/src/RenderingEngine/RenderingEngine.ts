@@ -20,7 +20,7 @@ import type {
   InternalViewportInput,
   NormalizedViewportInput,
 } from '../types/IViewport';
-import { OrientationAxis, RenderedState } from '../enums';
+import { OrientationAxis, ViewportStatus } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {
@@ -1252,7 +1252,7 @@ class RenderingEngine implements IRenderingEngine {
       suppressEvents,
       viewportId,
       renderingEngineId,
-      renderedState: viewport.renderedState,
+      viewportStatus: viewport.viewportStatus,
     };
   }
 

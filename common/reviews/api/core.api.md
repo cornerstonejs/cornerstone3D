@@ -572,7 +572,7 @@ declare namespace Enums {
         ContourType,
         VOILUTFunctionType,
         DynamicOperatorType,
-        RenderedState
+        ViewportStatus
     }
 }
 export { Enums }
@@ -1375,7 +1375,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
-    renderedState: RenderedState;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -1701,8 +1701,6 @@ interface IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
-    renderedState: RenderedState;
-    // (undocumented)
     renderingEngineId: string;
     // (undocumented)
     reset(immediate: boolean): void;
@@ -1734,6 +1732,8 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    // (undocumented)
+    viewportStatus: ViewportStatus;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
@@ -2028,20 +2028,6 @@ function removeProvider(provider: (type: string, query: any) => {
 }): void;
 
 // @public (undocumented)
-enum RenderedState {
-    // (undocumented)
-    LOADING = "loading",
-    // (undocumented)
-    NO_DATA = "noData",
-    // (undocumented)
-    READY = "ready",
-    // (undocumented)
-    RENDERED = "rendered",
-    // (undocumented)
-    RESIZE = "resize"
-}
-
-// @public (undocumented)
 const RENDERING_DEFAULTS: {
     MINIMUM_SLAB_THICKNESS: number;
     MAXIMUM_RAY_DISTANCE: number;
@@ -2230,7 +2216,7 @@ export class StackViewport extends Viewport implements IStackViewport {
         element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
-        renderedState: RenderedState;
+        viewportStatus: ViewportStatus;
     };
     // (undocumented)
     getActor: (actorUID: string) => ActorEntry;
@@ -2594,8 +2580,6 @@ export class Viewport implements IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
-    renderedState: RenderedState;
-    // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)
     reset(immediate?: boolean): void;
@@ -2650,6 +2634,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
+    viewportStatus: ViewportStatus;
+    // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -2692,6 +2678,20 @@ type ViewportProperties = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
 };
+
+// @public (undocumented)
+enum ViewportStatus {
+    // (undocumented)
+    LOADING = "loading",
+    // (undocumented)
+    NO_DATA = "noData",
+    // (undocumented)
+    PRE_RENDER = "preRender",
+    // (undocumented)
+    RENDERED = "rendered",
+    // (undocumented)
+    RESIZE = "resize"
+}
 
 // @public (undocumented)
 enum ViewportType {

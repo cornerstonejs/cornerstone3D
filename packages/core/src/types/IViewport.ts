@@ -4,7 +4,7 @@ import Point3 from './Point3';
 import ViewportInputOptions from './ViewportInputOptions';
 import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
-import RenderedState from '../enums/RenderedState';
+import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
 
 /**
@@ -40,7 +40,7 @@ interface IViewport {
   /** if the viewport has been disabled */
   isDisabled: boolean;
   /** The rendering state of this viewport */
-  renderedState: RenderedState;
+  viewportStatus: ViewportStatus;
   /** the rotation applied to the view */
   getRotation: () => number;
   /** frameOfReferenceUID the viewport's default actor is rendering */
