@@ -8,6 +8,7 @@ import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
 import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 
 /**
@@ -96,6 +97,8 @@ type ImageRenderedEventDetail = {
   renderingEngineId: string;
   /** Whether to suppress the event */
   suppressEvents?: boolean;
+  /** Include information on whether this is a real rendering or just background */
+  viewportStatus: ViewportStatus;
 };
 /**
  * IMAGE_VOLUME_MODIFIED Event's data
