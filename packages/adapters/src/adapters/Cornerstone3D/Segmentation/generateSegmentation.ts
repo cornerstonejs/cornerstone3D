@@ -1,4 +1,4 @@
-import { , normalizers, derivations } from "dcmjs";
+import { normalizers, derivations } from "dcmjs";
 import { fillSegmentation } from "../../Cornerstone/Segmentation_4X";
 
 const { Normalizer } = normalizers;

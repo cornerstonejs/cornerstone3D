@@ -1,3 +1,3 @@
-import { adaptersSR, adaptersSEG } from "./adapters";
+import { adaptersSR, adaptersSEG, Enums } from "./adapters";
 
-export { adaptersSR, adaptersSEG };
+export { adaptersSR, adaptersSEG, Enums };

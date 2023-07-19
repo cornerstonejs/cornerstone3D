@@ -9,6 +9,8 @@ import ndarray from "ndarray";
 import cloneDeep from "lodash.clonedeep";
 import { Buffer } from "buffer";
 
+import { Events } from "../enums";
+
 const {
     rotateDirectionCosinesInPlane,
     flipImageOrientationPatient: flipIOP,
@@ -266,11 +268,18 @@ function _createSegFromImages(images, isMultiframe, options) {
  * @return {[][][]} 3D list containing the track of segments per frame for each labelMap
  *                  (available only for the overlapping case).
  */
-function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
+async function generateToolState(
+    imageIds,
+    arrayBuffer,
+    metadataProvider,
+    options
+) {
     const {
         skipOverlapping = false,
         tolerance = 1e-3,
-        TypedArrayConstructor = Uint8Array
+        TypedArrayConstructor = Uint8Array,
+        eventTarget,
+        triggerEvent
     } = options;
     const dicomData = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
@@ -428,7 +437,7 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
     // segment in the labelmapBuffer
     const segmentsPixelIndices = new Map();
 
-    insertFunction(
+    await insertFunction(
         segmentsOnFrame,
         segmentsOnFrameArray,
         labelmapBufferArray,
@@ -441,7 +450,9 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
         TypedArrayConstructor,
         segmentsPixelIndices,
         sopUIDImageIdIndexMap,
-        imageIdMaps
+        imageIdMaps,
+        eventTarget,
+        triggerEvent
     );
 
     // calculate the centroid of each segment
@@ -1106,7 +1117,9 @@ function insertPixelDataPlanar(
     TypedArrayConstructor,
     segmentsPixelIndices,
     sopUIDImageIdIndexMap,
-    imageIdMaps
+    imageIdMaps,
+    eventTarget,
+    triggerEvent
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -1122,120 +1135,155 @@ function insertPixelDataPlanar(
             : undefined;
     const sliceLength = Columns * Rows;
 
-    for (
-        let i = 0, groupsLen = PerFrameFunctionalGroupsSequence.length;
-        i < groupsLen;
-        ++i
-    ) {
-        const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
+    let i = 0;
+    const groupsLen = PerFrameFunctionalGroupsSequence.length;
+    const chunkSize = Math.ceil(groupsLen / 10); // 10% of total length
 
-        const ImageOrientationPatientI =
-            sharedImageOrientationPatient ||
-            PerFrameFunctionalGroups.PlaneOrientationSequence
-                .ImageOrientationPatient;
+    const shouldTriggerEvent = triggerEvent && eventTarget;
 
-        const view = readFromUnpackedChunks(
-            pixelData,
-            i * sliceLength,
-            sliceLength
-        );
+    // Below, we chunk the processing of the frames to avoid blocking the main thread
+    // if the segmentation is large. We also use a promise to allow the caller to
+    // wait for the processing to finish.
+    return new Promise(resolve => {
+        function processInChunks() {
+            // process one chunk
+            for (let end = Math.min(i + chunkSize, groupsLen); i < end; ++i) {
+                const PerFrameFunctionalGroups =
+                    PerFrameFunctionalGroupsSequence[i];
 
-        const pixelDataI2D = ndarray(view, [Rows, Columns]);
+                const ImageOrientationPatientI =
+                    sharedImageOrientationPatient ||
+                    PerFrameFunctionalGroups.PlaneOrientationSequence
+                        .ImageOrientationPatient;
 
-        const alignedPixelDataI = alignPixelDataWithSourceData(
-            pixelDataI2D,
-            ImageOrientationPatientI,
-            validOrientations,
-            tolerance
-        );
+                const view = readFromUnpackedChunks(
+                    pixelData,
+                    i * sliceLength,
+                    sliceLength
+                );
 
-        if (!alignedPixelDataI) {
-            throw new Error(
-                "Individual SEG frames are out of plane with respect to the first SEG frame. " +
-                    "This is not yet supported. Aborting segmentation loading."
-            );
-        }
+                const pixelDataI2D = ndarray(view, [Rows, Columns]);
 
-        const segmentIndex = getSegmentIndex(multiframe, i);
-        if (segmentIndex === undefined) {
-            throw new Error(
-                "Could not retrieve the segment index. Aborting segmentation loading."
-            );
-        }
+                const alignedPixelDataI = alignPixelDataWithSourceData(
+                    pixelDataI2D,
+                    ImageOrientationPatientI,
+                    validOrientations,
+                    tolerance
+                );
 
-        if (segmentsPixelIndices.get(segmentIndex) === undefined) {
-            segmentsPixelIndices.set(segmentIndex, []);
-        }
+                if (!alignedPixelDataI) {
+                    throw new Error(
+                        "Individual SEG frames are out of plane with respect to the first SEG frame. " +
+                            "This is not yet supported. Aborting segmentation loading."
+                    );
+                }
 
-        const imageId = findReferenceSourceImageId(
-            multiframe,
-            i,
-            imageIds,
-            metadataProvider,
-            tolerance,
-            sopUIDImageIdIndexMap
-        );
+                const segmentIndex = getSegmentIndex(multiframe, i);
 
-        if (!imageId) {
-            console.warn(
-                "Image not present in stack, can't import frame : " + i + "."
-            );
-            continue;
-        }
+                if (segmentIndex === undefined) {
+                    throw new Error(
+                        "Could not retrieve the segment index. Aborting segmentation loading."
+                    );
+                }
 
-        const sourceImageMetadata = imageIdMaps.metadata[imageId];
-        if (
-            Rows !== sourceImageMetadata.Rows ||
-            Columns !== sourceImageMetadata.Columns
-        ) {
-            throw new Error(
-                "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
-                    "respect to the source image reference frame. This is not yet supported. " +
-                    "Aborting segmentation loading. "
-            );
-        }
+                if (!segmentsPixelIndices.has(segmentIndex)) {
+                    segmentsPixelIndices.set(segmentIndex, {});
+                }
 
-        const imageIdIndex = imageIdMaps.indices[imageId];
+                const imageId = findReferenceSourceImageId(
+                    multiframe,
+                    i,
+                    imageIds,
+                    metadataProvider,
+                    tolerance,
+                    sopUIDImageIdIndexMap
+                );
 
-        if (segmentsPixelIndices.get(segmentIndex).length === 0) {
-            segmentsPixelIndices.set(segmentIndex, {});
-        }
+                if (!imageId) {
+                    console.warn(
+                        "Image not present in stack, can't import frame : " +
+                            i +
+                            "."
+                    );
+                    continue;
+                }
 
-        const byteOffset =
-            sliceLength *
-            imageIdIndex *
-            TypedArrayConstructor.BYTES_PER_ELEMENT;
+                const sourceImageMetadata = imageIdMaps.metadata[imageId];
+                if (
+                    Rows !== sourceImageMetadata.Rows ||
+                    Columns !== sourceImageMetadata.Columns
+                ) {
+                    throw new Error(
+                        "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
+                            "respect to the source image reference frame. This is not yet supported. " +
+                            "Aborting segmentation loading. "
+                    );
+                }
 
-        const labelmap2DView = new TypedArrayConstructor(
-            labelmapBufferArray[0],
-            byteOffset,
-            sliceLength
-        );
+                const imageIdIndex = imageIdMaps.indices[imageId];
 
-        const data = alignedPixelDataI.data;
+                const byteOffset =
+                    sliceLength *
+                    imageIdIndex *
+                    TypedArrayConstructor.BYTES_PER_ELEMENT;
 
-        const indexCache = [];
-        for (let j = 0, len = alignedPixelDataI.data.length; j < len; ++j) {
-            if (data[j]) {
-                for (let x = j; x < len; ++x) {
-                    if (data[x]) {
-                        labelmap2DView[x] = segmentIndex;
-                        indexCache.push(x);
+                const labelmap2DView = new TypedArrayConstructor(
+                    labelmapBufferArray[0],
+                    byteOffset,
+                    sliceLength
+                );
+
+                const data = alignedPixelDataI.data;
+
+                const indexCache = [];
+                for (
+                    let j = 0, len = alignedPixelDataI.data.length;
+                    j < len;
+                    ++j
+                ) {
+                    if (data[j]) {
+                        for (let x = j; x < len; ++x) {
+                            if (data[x]) {
+                                labelmap2DView[x] = segmentIndex;
+                                indexCache.push(x);
+                            }
+                        }
+
+                        if (!segmentsOnFrame[imageIdIndex]) {
+                            segmentsOnFrame[imageIdIndex] = [];
+                        }
+
+                        segmentsOnFrame[imageIdIndex].push(segmentIndex);
+
+                        break;
                     }
                 }
 
-                if (!segmentsOnFrame[imageIdIndex]) {
-                    segmentsOnFrame[imageIdIndex] = [];
-                }
+                const segmentIndexObject =
+                    segmentsPixelIndices.get(segmentIndex);
+                segmentIndexObject[imageIdIndex] = indexCache;
+                segmentsPixelIndices.set(segmentIndex, segmentIndexObject);
+            }
 
-                segmentsOnFrame[imageIdIndex].push(segmentIndex);
+            // trigger an event after each chunk
+            if (shouldTriggerEvent) {
+                const percentComplete = Math.round((i / groupsLen) * 100);
+                triggerEvent(eventTarget, Events.SEGMENTATION_LOAD_PROGRESS, {
+                    percentComplete
+                });
+            }
 
-                break;
+            // schedule next chunk
+            if (i < groupsLen) {
+                setTimeout(processInChunks, 0);
+            } else {
+                // resolve the Promise when all chunks have been processed
+                resolve();
             }
         }
 
-        segmentsPixelIndices.get(segmentIndex)[imageIdIndex] = indexCache;
-    }
+        processInChunks();
+    });
 }
 
 function checkOrientation(
