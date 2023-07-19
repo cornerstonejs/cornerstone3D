@@ -67,7 +67,6 @@ import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
-import { PixelDataTypedArray, ImagePlaneModule } from '../types';
 
 import getImagePlaneModule from './helpers/getImagePlaneModule';
 import updateVTKImageDataFromCornerstoneImage from './helpers/updateVTKImageDataFromCornerstoneImage';
@@ -81,7 +80,12 @@ import {
 } from '../types';
 import ViewportStatus from '../enums/ViewportStatus';
 
-const EPSILON = 1; // Slice Thickness
+import {
+  ImageDataMetaData,
+  getMetadataFromImage,
+} from './helpers/getMetadataFromImage';
+import { IStackInput } from '../types';
+import { updateVTKImageDataFromImageId } from './helpers/updateVTKImageDataFromImage';
 
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
