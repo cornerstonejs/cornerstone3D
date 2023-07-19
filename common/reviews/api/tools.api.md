@@ -2706,6 +2706,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -3053,6 +3054,7 @@ interface IViewport {
     );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setRendered(): void;
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
@@ -3062,6 +3064,7 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    viewportStatus: ViewportStatus;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 

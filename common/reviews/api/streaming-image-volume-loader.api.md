@@ -1007,6 +1007,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -1203,6 +1204,7 @@ interface IViewport {
     );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setRendered(): void;
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
@@ -1212,6 +1214,7 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    viewportStatus: ViewportStatus;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -1594,6 +1597,15 @@ type ViewportProperties = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
 };
+
+// @public (undocumented)
+enum ViewportStatus {
+    LOADING = 'loading',
+    NO_DATA = 'noData',
+    PRE_RENDER = 'preRender',
+    RENDERED = 'rendered',
+    RESIZE = 'resize',
+}
 
 // @public
 enum ViewportType {

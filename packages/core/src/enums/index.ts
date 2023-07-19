@@ -10,6 +10,7 @@ import ContourType from './ContourType';
 import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
 import CalibrationTypes from './CalibrationTypes';
+import ViewportStatus from './ViewportStatus';
 
 export {
   Events,
@@ -24,4 +25,5 @@ export {
   ContourType,
   VOILUTFunctionType,
   DynamicOperatorType,
+  ViewportStatus,
 };
