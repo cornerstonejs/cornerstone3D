@@ -28,10 +28,10 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
+    "@cornerstonejs/kit": "^1.5.0",
     "@kitware/vtk.js": "27.3.1",
     "detect-gpu": "^5.0.22",
     "gl-matrix": "^3.4.3",
-    "@cornerstonejs/kit": "^1.5.0",
     "lodash.clonedeep": "4.5.0"
   },
   "contributors": [

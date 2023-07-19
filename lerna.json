@@ -5,7 +5,8 @@
     "packages/core",
     "packages/tools",
     "packages/streaming-image-volume-loader",
-    "packages/dicomImageLoader"
+    "packages/dicomImageLoader",
+    "packages/kit"
   ],
   "npmClient": "yarn",
   "useWorkspaces": true,

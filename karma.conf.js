@@ -59,11 +59,13 @@ module.exports = function (config) {
       'packages/streaming-image-volume-loader/test/**/*_test.js',
       'packages/core/test/**/*_test.js',
       'packages/tools/test/**/*_test.js',
+      'packages/kit/test/**/*_test.js',
     ],
     preprocessors: {
       'packages/streaming-image-volume-loader/test/**/*_test.js': ['webpack'],
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
+      'packages/kit/test/**/*_test.js': ['webpack'],
     },
     coverageIstanbulReporter: {
       reports: ['html', 'text-summary', 'lcovonly'],
@@ -120,6 +122,7 @@ module.exports = function (config) {
           '@cornerstonejs/streaming-image-volume-loader': path.resolve(
             'packages/streaming-image-volume-loader/src/index'
           ),
+          '@cornerstonejs/kit': path.resolve('packages/kit/src/index'),
         },
       },
     },
