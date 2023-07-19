@@ -369,9 +369,9 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
             imageIds,
             validOrientations,
             metadataProvider,
-            sopUIDImageIdIndexMap,
             tolerance,
-            TypedArrayConstructor
+            TypedArrayConstructor,
+            sopUIDImageIdIndexMap
         );
     }
 
@@ -422,6 +422,12 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
         { indices: {}, metadata: {} }
     );
 
+    // This is the centroid calculation for each segment Index, the data structure
+    // is a Map with key = segmentIndex and value = {imageIdIndex: centroid, ...}
+    // later on we will use this data structure to calculate the centroid of the
+    // segment in the labelmapBuffer
+    const segmentsPixelIndices = new Map();
+
     insertFunction(
         segmentsOnFrame,
         segmentsOnFrameArray,
@@ -431,17 +437,35 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider, options) {
         imageIds,
         validOrientations,
         metadataProvider,
-        sopUIDImageIdIndexMap,
         tolerance,
         TypedArrayConstructor,
+        segmentsPixelIndices,
+        sopUIDImageIdIndexMap,
         imageIdMaps
     );
+
+    // calculate the centroid of each segment
+    const centroidXYZ = new Map();
+
+    segmentsPixelIndices.forEach((imageIdIndexBufferIndex, segmentIndex) => {
+        const { xAcc, yAcc, zAcc, count } = calculateCentroid(
+            imageIdIndexBufferIndex,
+            multiframe
+        );
+
+        centroidXYZ.set(segmentIndex, {
+            x: Math.floor(xAcc / count),
+            y: Math.floor(yAcc / count),
+            z: Math.floor(zAcc / count)
+        });
+    });
 
     return {
         labelmapBufferArray,
         segMetadata,
         segmentsOnFrame,
-        segmentsOnFrameArray
+        segmentsOnFrameArray,
+        centroids: centroidXYZ
     };
 }
 
@@ -632,8 +656,8 @@ function findReferenceSourceImageId(
     frameSegment,
     imageIds,
     metadataProvider,
-    sopUIDImageIdIndexMap,
-    tolerance
+    tolerance,
+    sopUIDImageIdIndexMap
 ) {
     let imageId = undefined;
 
@@ -727,9 +751,9 @@ function checkSEGsOverlapping(
     imageIds,
     validOrientations,
     metadataProvider,
-    sopUIDImageIdIndexMap,
     tolerance,
-    TypedArrayConstructor
+    TypedArrayConstructor,
+    sopUIDImageIdIndexMap
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -775,8 +799,8 @@ function checkSEGsOverlapping(
             frameSegment,
             imageIds,
             metadataProvider,
-            sopUIDImageIdIndexMap,
-            tolerance
+            tolerance,
+            sopUIDImageIdIndexMap
         );
 
         if (!imageId) {
@@ -861,9 +885,10 @@ function insertOverlappingPixelDataPlanar(
     imageIds,
     validOrientations,
     metadataProvider,
-    sopUIDImageIdIndexMap,
     tolerance,
-    TypedArrayConstructor
+    TypedArrayConstructor,
+    segmentsPixelIndices,
+    sopUIDImageIdIndexMap
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -959,8 +984,8 @@ function insertOverlappingPixelDataPlanar(
                 i,
                 imageIds,
                 metadataProvider,
-                sopUIDImageIdIndexMap,
-                tolerance
+                tolerance,
+                sopUIDImageIdIndexMap
             );
 
             if (!imageId) {
@@ -1077,9 +1102,10 @@ function insertPixelDataPlanar(
     imageIds,
     validOrientations,
     metadataProvider,
-    sopUIDImageIdIndexMap,
     tolerance,
     TypedArrayConstructor,
+    segmentsPixelIndices,
+    sopUIDImageIdIndexMap,
     imageIdMaps
 ) {
     const {
@@ -1137,13 +1163,17 @@ function insertPixelDataPlanar(
             );
         }
 
+        if (segmentsPixelIndices.get(segmentIndex) === undefined) {
+            segmentsPixelIndices.set(segmentIndex, []);
+        }
+
         const imageId = findReferenceSourceImageId(
             multiframe,
             i,
             imageIds,
             metadataProvider,
-            sopUIDImageIdIndexMap,
-            tolerance
+            tolerance,
+            sopUIDImageIdIndexMap
         );
 
         if (!imageId) {
@@ -1167,6 +1197,10 @@ function insertPixelDataPlanar(
 
         const imageIdIndex = imageIdMaps.indices[imageId];
 
+        if (segmentsPixelIndices.get(segmentIndex).length === 0) {
+            segmentsPixelIndices.set(segmentIndex, {});
+        }
+
         const byteOffset =
             sliceLength *
             imageIdIndex *
@@ -1179,11 +1213,14 @@ function insertPixelDataPlanar(
         );
 
         const data = alignedPixelDataI.data;
+
+        const indexCache = [];
         for (let j = 0, len = alignedPixelDataI.data.length; j < len; ++j) {
             if (data[j]) {
                 for (let x = j; x < len; ++x) {
                     if (data[x]) {
                         labelmap2DView[x] = segmentIndex;
+                        indexCache.push(x);
                     }
                 }
 
@@ -1196,6 +1233,8 @@ function insertPixelDataPlanar(
                 break;
             }
         }
+
+        segmentsPixelIndices.get(segmentIndex)[imageIdIndex] = indexCache;
     }
 }
 
@@ -1639,6 +1678,36 @@ function getUnpackedOffsetAndLength(chunks, offset, length) {
         start: { chunkIndex: startChunkIndex, offset: startOffsetInChunk },
         end: { chunkIndex: endChunkIndex, offset: endOffsetInChunk }
     };
+}
+
+function calculateCentroid(imageIdIndexBufferIndex, multiframe) {
+    let xAcc = 0;
+    let yAcc = 0;
+    let zAcc = 0;
+    let count = 0;
+
+    for (const [imageIdIndex, bufferIndices] of Object.entries(
+        imageIdIndexBufferIndex
+    )) {
+        const z = Number(imageIdIndex);
+
+        if (!bufferIndices || bufferIndices.length === 0) {
+            continue;
+        }
+
+        for (const bufferIndex of bufferIndices) {
+            const y = Math.floor(bufferIndex / multiframe.Rows);
+            const x = bufferIndex % multiframe.Rows;
+
+            xAcc += x;
+            yAcc += y;
+            zAcc += z;
+
+            count++;
+        }
+    }
+
+    return { xAcc, yAcc, zAcc, count };
 }
 
 const Segmentation = {
