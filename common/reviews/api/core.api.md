@@ -640,9 +640,6 @@ export enum EVENTS {
     VOLUME_VIEWPORT_NEW_VOLUME = "CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME"
 }
 
-// @public (undocumented)
-export const eventTarget: CornerstoneEventTarget;
-
 declare namespace EventTypes {
     export {
         CameraModifiedEventDetail,
@@ -2340,9 +2337,6 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 // @public (undocumented)
 function transformWorldToIndex(imageData: any, worldPos: Point3): any;
 
-// @public (undocumented)
-export function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
-
 declare namespace Types {
     export {
         Cornerstone3DConfig,
@@ -2439,7 +2433,6 @@ declare namespace utilities {
         getVoiFromSigmoidRGBTransferFunction,
         createLinearRGBTransferFunction,
         scaleRGBTransferFunction as scaleRgbTransferFunction,
-        triggerEvent,
         imageIdToURI,
         metadataProvider as calibratedPixelSpacingMetadataProvider,
         uuidv4,

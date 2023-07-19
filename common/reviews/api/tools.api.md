@@ -5233,25 +5233,6 @@ function triggerAnnotationRender(element: HTMLDivElement): void;
 // @public (undocumented)
 function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
-// @public
-function triggerEvent(
-el: EventTarget = eventTarget,
-type: string,
-detail: unknown = null
-): boolean {
-    if (!type) {
-        throw new Error('Event type was not defined');
-    }
-
-    const // (undocumented)
-    event = new CustomEvent(type, {
-        detail,
-        cancelable: true,
-    });
-
-    return el.dispatchEvent(event);
-}
-
 // @public (undocumented)
 function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[]): void;
 
@@ -5350,7 +5331,6 @@ declare namespace utilities {
         orientation_2 as orientation,
         isObject,
         touch,
-        triggerEvent,
         calibrateImageSpacing,
         segmentation_2 as segmentation,
         triggerAnnotationRenderForViewportIds,
