@@ -44,10 +44,10 @@
    * local files for library1.
    */
   "bundledPackages": [
+    "@cornerstonejs/kit",
     "@cornerstonejs/core",
     "@cornerstonejs/tools",
     "@cornerstonejs/streaming-image-volume-loader",
-    "@cornerstonejs/kit"
   ],
 
   /**
