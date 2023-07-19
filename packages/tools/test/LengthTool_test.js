@@ -10,10 +10,10 @@ const {
   RenderingEngine,
   Enums,
   imageLoader,
+  utilities,
   metaData,
   volumeLoader,
   setVolumesForViewports,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
