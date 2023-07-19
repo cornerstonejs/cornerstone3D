@@ -1,8 +1,8 @@
 import {
+  BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
   Types,
-  VolumeViewport,
 } from '@cornerstonejs/core';
 
 /**
@@ -21,7 +21,7 @@ export default function voiSyncCallback(
   voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
   const eventDetail = voiModifiedEvent.detail;
-  const { volumeId, range } = eventDetail;
+  const { volumeId, range, invertStateChanged, invert } = eventDetail;
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -31,18 +31,20 @@ export default function voiSyncCallback(
   }
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
+  const tProperties:
+    | Types.VolumeViewportProperties
+    | Types.StackViewportProperties = {
+    voiRange: range,
+  };
 
-  if (tViewport instanceof VolumeViewport) {
-    tViewport.setProperties(
-      {
-        voiRange: range,
-      },
-      volumeId
-    );
+  if (invertStateChanged) {
+    tProperties.invert = invert;
+  }
+
+  if (tViewport instanceof BaseVolumeViewport) {
+    tViewport.setProperties(tProperties, volumeId);
   } else if (tViewport instanceof StackViewport) {
-    tViewport.setProperties({
-      voiRange: range,
-    });
+    tViewport.setProperties(tProperties);
   } else {
     throw new Error('Viewport type not supported.');
   }

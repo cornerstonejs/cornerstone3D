@@ -3,6 +3,58 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.6...v1.5.0) (2023-07-18)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.5...v1.4.6) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.4...v1.4.5) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.3...v1.4.4) (2023-07-13)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.2...v1.4.3) (2023-07-12)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.1...v1.4.2) (2023-07-11)
+
+### Bug Fixes
+
+- **color volume viewport:** fix incorrect property on volume actor ([#683](https://github.com/cornerstonejs/cornerstone3D/issues/683)) ([dbc40e9](https://github.com/cornerstonejs/cornerstone3D/commit/dbc40e9adda15570ff451a13c60effb5fbc1adbb))
+
+## [1.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.0...v1.4.1) (2023-07-04)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.3.0...v1.4.0) (2023-07-04)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.9...v1.3.0) (2023-07-04)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.2.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.8...v1.2.9) (2023-07-03)
+
+### Bug Fixes
+
+- **dicomImageLoader:** Error when loading Wadouri JPEG Image ([#674](https://github.com/cornerstonejs/cornerstone3D/issues/674)) ([6564232](https://github.com/cornerstonejs/cornerstone3D/commit/6564232531877d2545226a502c10a829f8e6bf28))
+
+## [1.2.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.7...v1.2.8) (2023-06-27)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.2.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.6...v1.2.7) (2023-06-20)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [1.2.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.2.5...v1.2.6) (2023-06-14)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader

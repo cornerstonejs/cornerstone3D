@@ -74,6 +74,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
+import ViewportStatus from '../enums/ViewportStatus';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -696,6 +697,9 @@ class StackViewport extends Viewport implements IStackViewport {
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
+    this.viewportStatus = this.csImage
+      ? ViewportStatus.PRE_RENDER
+      : ViewportStatus.LOADING;
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
@@ -753,6 +757,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
     this.voiUpdatedWithSetProperties = false;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
 
@@ -1289,7 +1294,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageIdScalingFactor - suvbw, suvlbm, suvbsa
    */
   private _addScalingToViewport(imageIdScalingFactor) {
-    if (this.scaling.PET) {
+    if (this.scaling.PT) {
       return;
     }
 
@@ -1297,17 +1302,17 @@ class StackViewport extends Viewport implements IStackViewport {
     // These ratios are constant across all frames, so only need one.
     const { suvbw, suvlbm, suvbsa } = imageIdScalingFactor;
 
-    const petScaling = <PTScaling>{};
+    const ptScaling = <PTScaling>{};
 
     if (suvlbm) {
-      petScaling.suvbwToSuvlbm = suvlbm / suvbw;
+      ptScaling.suvbwToSuvlbm = suvlbm / suvbw;
     }
 
     if (suvbsa) {
-      petScaling.suvbwToSuvbsa = suvbsa / suvbw;
+      ptScaling.suvbwToSuvbsa = suvbsa / suvbw;
     }
 
-    this.scaling.PET = petScaling;
+    this.scaling.PT = ptScaling;
   }
 
   /**
@@ -1494,6 +1499,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
+    this.viewportStatus = ViewportStatus.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1715,6 +1721,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         this._setCSImage(image);
+        this.viewportStatus = ViewportStatus.PRE_RENDER;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -2101,10 +2108,13 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    this.setVOI(this._getInitialVOIRange(image));
-    this.setInvertColor(
-      imagePixelModule.photometricInterpretation === 'MONOCHROME1'
-    );
+    const monochrome1 =
+      imagePixelModule.photometricInterpretation === 'MONOCHROME1';
+
+    this.setVOI(this._getInitialVOIRange(image), {
+      forceRecreateLUTFunction: !!monochrome1,
+    });
+    this.setInvertColor(!!monochrome1);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
@@ -2645,6 +2655,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
+      viewportStatus: this.viewportStatus,
     };
   };
 

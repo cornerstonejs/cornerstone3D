@@ -2,7 +2,7 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { vec3 } from 'gl-matrix';
 
 import cache from '../cache';
-import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import { BlendModes, OrientationAxis } from '../enums';
 import type {
   ActorEntry,
@@ -13,7 +13,6 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, getClosestImageId } from '../utilities';
-import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import BaseVolumeViewport from './BaseVolumeViewport';
 
 /**
@@ -182,34 +181,6 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetCamera();
   }
 
-  /**
-   * Given a point in world coordinates, return the intensity at that point
-   * @param point - The point in world coordinates to get the intensity
-   * from.
-   * @returns The intensity value of the voxel at the given point.
-   */
-  public getIntensityFromWorld(point: Point3): number {
-    const actorEntry = this.getDefaultActor();
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
-      return;
-    }
-
-    const { actor, uid } = actorEntry;
-    const imageData = actor.getMapper().getInputData();
-
-    const volume = cache.getVolume(uid);
-    const { dimensions } = volume;
-
-    const index = transformWorldToIndex(imageData, point);
-
-    const voxelIndex =
-      index[2] * dimensions[0] * dimensions[1] +
-      index[1] * dimensions[0] +
-      index[0];
-
-    return volume.getScalarData()[voxelIndex];
-  }
-
   public setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs = [],
@@ -294,7 +265,6 @@ class VolumeViewport extends BaseVolumeViewport {
    * filterActorUIDs are provided, all actors will be affected.
    *
    * @param slabThickness - The slab thickness to set.
-   * @param blendMode - The blend mode to use when rendering the actors.
    * @param filterActorUIDs - Optional argument to filter the actors to apply
    * the slab thickness to (if not provided, all actors will be affected).
    */
@@ -316,23 +286,6 @@ class VolumeViewport extends BaseVolumeViewport {
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
-  }
-
-  /**
-   * Gets the largest slab thickness from all actors in the viewport.
-   *
-   * @returns slabThickness - The slab thickness.
-   */
-  public getSlabThickness(): number {
-    const actors = this.getActors();
-    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-    actors.forEach((actor) => {
-      if (actor.slabThickness > slabThickness) {
-        slabThickness = actor.slabThickness;
-      }
-    });
-
-    return slabThickness;
   }
 
   /**

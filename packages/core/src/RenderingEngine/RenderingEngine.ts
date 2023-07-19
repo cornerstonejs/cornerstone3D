@@ -20,7 +20,7 @@ import type {
   InternalViewportInput,
   NormalizedViewportInput,
 } from '../types/IViewport';
-import { OrientationAxis } from '../enums';
+import { OrientationAxis, ViewportStatus } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {
@@ -1107,6 +1107,7 @@ class RenderingEngine implements IRenderingEngine {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
         eventDetailArray.push(eventDetail);
+        viewport.setRendered();
 
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(viewport.id);
@@ -1251,6 +1252,7 @@ class RenderingEngine implements IRenderingEngine {
       suppressEvents,
       viewportId,
       renderingEngineId,
+      viewportStatus: viewport.viewportStatus,
     };
   }
 

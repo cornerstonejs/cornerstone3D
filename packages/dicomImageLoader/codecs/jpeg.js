@@ -561,7 +561,12 @@ var JpegImage = (function jpegImage() {
     return a <= 0 ? 0 : a >= 255 ? 255 : a | 0;
   }
 
-  constructor.prototype = {
+  // create a JPEG Image class
+  class JpegImage {}
+
+  // setting up all the prototype functions
+  // javascript new version of setting up prototype functions
+  Object.setPrototypeOf(JpegImage.prototype, {
     load: function load(path) {
       var handleData = function (data) {
         this.parse(data);
@@ -1088,7 +1093,7 @@ var JpegImage = (function jpegImage() {
       }
       return data;
     },
-  };
+  });
 
-  return constructor;
+  return JpegImage
 })();

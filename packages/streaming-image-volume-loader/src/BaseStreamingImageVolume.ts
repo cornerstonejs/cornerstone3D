@@ -107,6 +107,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       windowCenter,
       windowWidth,
       color,
+      // we use rgb (3 components) for the color volumes (and not rgba), and not rgba (which is used
+      // in some parts of the lib for stack viewing in CPU)
+      rgba: false,
       spacing: this.spacing,
       dimensions: this.dimensions,
       PhotometricInterpretation,
@@ -562,7 +565,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * somehow indicate whether the PT image has been corrected with suvbw or
        * not, which we store it in the this.scaling.PT.suvbw.
        */
-      this.isPrescaled = isSlopeAndInterceptNumbers;
+      this.isPreScaled = isSlopeAndInterceptNumbers;
 
       const options = {
         // WADO Image Loader
@@ -767,7 +770,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       petScaling.suvbw = suvbw;
     }
 
-    this.scaling = { PET: petScaling };
+    this.scaling = { PT: petScaling };
   }
 
   private _removeFromCache() {
@@ -858,9 +861,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       windowWidth,
       voiLUTFunction,
       color,
+      rgba: false,
       numComps: numComponents,
-      rows: dimensions[0],
-      columns: dimensions[1],
+      // Note the dimensions were defined as [Columns, Rows, Frames]
+      rows: dimensions[1],
+      columns: dimensions[0],
       sizeInBytes: imageScalarData.byteLength,
       getPixelData: () => imageScalarData,
       minPixelValue: minMax.min,
@@ -871,7 +876,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       getCanvas: undefined, // todo: which canvas?
       height: dimensions[0],
       width: dimensions[1],
-      rgba: undefined, // todo: how
       columnPixelSpacing: spacing[0],
       rowPixelSpacing: spacing[1],
       invert,
