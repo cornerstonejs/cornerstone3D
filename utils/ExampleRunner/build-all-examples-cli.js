@@ -118,6 +118,12 @@ if (configuration.examples) {
 
   // say name of running example
   const currentWD = process.cwd();
+
+  shell.cd('../../kit');
+  shell.exec(`yarn run build`);
+
+  shell.cd(currentWD);
+
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
   shell.exec(`yarn run webpack:dynamic-import`);
