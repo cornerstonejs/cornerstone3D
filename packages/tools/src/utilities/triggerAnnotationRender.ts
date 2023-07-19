@@ -1,8 +1,5 @@
-import {
-  getEnabledElement,
-  triggerEvent,
-  getRenderingEngine,
-} from '@cornerstonejs/core';
+import { triggerEvent } from '@cornerstonejs/kit';
+import { getEnabledElement, getRenderingEngine } from '@cornerstonejs/core';
 import { Events, ToolModes } from '../enums';
 import { draw as drawSvg } from '../drawingSvg';
 import getToolsWithModesForElement from './getToolsWithModesForElement';

@@ -1,6 +1,6 @@
-import * as cornerstone3D from '../src/index';
+import * as csKit from '../src/index';
 
-const { eventTarget: events } = cornerstone3D;
+const { eventTarget: events } = csKit;
 
 const fakeEventName = 'fake_event';
 

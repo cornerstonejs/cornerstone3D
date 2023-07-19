@@ -33,9 +33,6 @@ import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 
-// Events
-import { triggerEvent } from '@cornerstonejs/core';
-
 export {
   math,
   planar,
@@ -47,7 +44,6 @@ export {
   orientation,
   isObject,
   touch,
-  triggerEvent,
   calibrateImageSpacing,
   segmentation,
   triggerAnnotationRenderForViewportIds,

@@ -1,4 +1,5 @@
-import * as cornerstone from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+
 const canvas = document.createElement('canvas');
 let lastImageIdDrawn;
 
@@ -157,11 +158,7 @@ function loadImage(uri, imageId) {
         percentComplete,
       };
 
-      cornerstone.triggerEvent(
-        cornerstone.eventTarget,
-        'cornerstoneimageloadprogress',
-        eventDetail
-      );
+      triggerEvent(eventTarget, 'cornerstoneimageloadprogress', eventDetail);
     }
   };
 

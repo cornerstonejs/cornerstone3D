@@ -4,13 +4,12 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import cloneDeep from 'lodash.clonedeep';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import type * as Types from '../types';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
-import eventTarget from '../eventTarget';
-import triggerEvent from '../utilities/triggerEvent';
 import { uuidv4 } from '../utilities';
 import { Point3, Metadata, EventTypes, Mat3 } from '../types';
 import { getConfiguration } from '../init';

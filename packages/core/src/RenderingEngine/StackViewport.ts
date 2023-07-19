@@ -7,12 +7,12 @@ import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
-import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import {
-  triggerEvent,
   isEqual,
   invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,

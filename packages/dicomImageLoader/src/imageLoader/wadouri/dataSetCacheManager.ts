@@ -1,4 +1,6 @@
 import { DataSet } from 'dicom-parser';
+import { triggerEvent } from '@cornerstonejs/kit';
+
 import external from '../../externalModules';
 import { xhrRequest } from '../internal/index';
 import dataSetFromPartialContent from './dataset-from-partial-content';
@@ -65,15 +67,11 @@ function update(uri: string, dataSet: DataSet) {
   loadedDataSet.dataSet = dataSet;
   cacheSizeInBytes += dataSet.byteArray.length;
 
-  external.cornerstone.triggerEvent(
-    (external.cornerstone as any).events,
-    'datasetscachechanged',
-    {
-      uri,
-      action: 'updated',
-      cacheInfo: getInfo(),
-    }
-  );
+  triggerEvent((external.cornerstone as any).events, 'datasetscachechanged', {
+    uri,
+    action: 'updated',
+    cacheInfo: getInfo(),
+  });
 }
 
 // loads the dicom dataset from the wadouri sp
@@ -162,15 +160,11 @@ function load(
           cacheSizeInBytes += dataSet.byteArray.length;
           resolve(dataSet);
 
-          cornerstone.triggerEvent(
-            (cornerstone as any).events,
-            'datasetscachechanged',
-            {
-              uri,
-              action: 'loaded',
-              cacheInfo: getInfo(),
-            }
-          );
+          triggerEvent((cornerstone as any).events, 'datasetscachechanged', {
+            uri,
+            action: 'loaded',
+            cacheInfo: getInfo(),
+          });
         }, reject)
         .then(
           () => {
@@ -204,15 +198,11 @@ function unload(uri: string): void {
       cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
 
-      cornerstone.triggerEvent(
-        (cornerstone as any).events,
-        'datasetscachechanged',
-        {
-          uri,
-          action: 'unloaded',
-          cacheInfo: getInfo(),
-        }
-      );
+      triggerEvent((cornerstone as any).events, 'datasetscachechanged', {
+        uri,
+        action: 'unloaded',
+        cacheInfo: getInfo(),
+      });
     }
   }
 }

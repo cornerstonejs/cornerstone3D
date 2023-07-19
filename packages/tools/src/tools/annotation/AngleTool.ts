@@ -1,10 +1,8 @@
-import { Events } from '../../enums';
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+
+import { Events } from '../../enums';
 
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
@@ -24,7 +22,6 @@ import {
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   AnnotationCompletedEventDetail,

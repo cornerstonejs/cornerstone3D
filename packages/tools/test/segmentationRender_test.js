@@ -1,4 +1,5 @@
 import * as cornerstone3D from '@cornerstonejs/core';
+import * as csKit from '@cornerstonejs/kit';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
@@ -8,6 +9,7 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_COR from './groundTruth/volumeURI_1
 import * as volumeURI_100_100_10_1_1_1_0_2SEGs_AX from './groundTruth/volumeURI_100_100_10_1_1_1_0_2SEGs_AX.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom.png';
 
+const { eventTarget } = csKit;
 const {
   cache,
   RenderingEngine,
@@ -16,8 +18,6 @@ const {
   imageLoader,
   volumeLoader,
   setVolumesForViewports,
-  eventTarget,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;

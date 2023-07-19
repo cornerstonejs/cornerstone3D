@@ -1,14 +1,12 @@
-import { AnnotationTool } from '../base';
-
 import {
   getEnabledElement,
   VolumeViewport,
-  eventTarget,
-  triggerEvent,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 
+import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,

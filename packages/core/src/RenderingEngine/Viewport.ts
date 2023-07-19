@@ -5,12 +5,13 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
+import { triggerEvent } from '@cornerstonejs/kit';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
+import { planar, isImageActor, actorIsA } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {

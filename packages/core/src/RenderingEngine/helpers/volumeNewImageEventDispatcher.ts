@@ -1,7 +1,5 @@
-import {
-  getImageSliceDataForVolumeViewport,
-  triggerEvent,
-} from '../../utilities';
+import { triggerEvent } from '@cornerstonejs/kit';
+import { getImageSliceDataForVolumeViewport } from '../../utilities';
 import { EventTypes } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';

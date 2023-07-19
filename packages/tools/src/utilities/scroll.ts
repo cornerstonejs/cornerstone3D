@@ -2,11 +2,12 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
-  eventTarget,
   EVENTS,
   utilities as csUtils,
   getEnabledElement,
 } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+
 import { ScrollOptions, EventTypes } from '../types';
 
 /**
@@ -97,7 +98,7 @@ export function scrollVolume(
       currentImageId: viewport.getCurrentImageId(),
     };
 
-    csUtils.triggerEvent(
+    triggerEvent(
       eventTarget,
       EVENTS.VOLUME_SCROLL_OUT_OF_BOUNDS,
       VolumeScrollEventDetail as EventTypes.VolumeScrollOutOfBoundsEventDetail

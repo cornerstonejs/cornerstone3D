@@ -13,7 +13,6 @@ import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import Viewport from './RenderingEngine/Viewport';
-import eventTarget from './eventTarget';
 import {
   getRenderingEngine,
   getRenderingEngines,
@@ -51,8 +50,6 @@ import * as geometryLoader from './loaders/geometryLoader';
 import * as Types from './types';
 import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
-
-import triggerEvent from './utilities/triggerEvent';
 
 import {
   setVolumesForViewports,
@@ -93,9 +90,6 @@ export {
   createVolumeMapper,
   // cache
   cache,
-  // event helpers
-  eventTarget,
-  triggerEvent,
   // Image Loader
   imageLoader,
   registerImageLoader, // Todo: remove this after CSWIL uses imageLoader now

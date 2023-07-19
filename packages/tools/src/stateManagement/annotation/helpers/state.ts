@@ -1,9 +1,6 @@
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-  getEnabledElementByIds,
-} from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+import { getEnabledElement, getEnabledElementByIds } from '@cornerstonejs/core';
+
 import { Events } from '../../../enums';
 import { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';

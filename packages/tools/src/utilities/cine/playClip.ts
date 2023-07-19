@@ -7,14 +7,13 @@ import {
   cache,
   BaseVolumeViewport,
 } from '@cornerstonejs/core';
+import { triggerEvent } from '@cornerstonejs/kit';
 
 import { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState } from './state';
 import { CINETypes } from '../../types';
 import scroll from '../scroll';
-
-const { triggerEvent } = csUtils;
 
 const debounced = true;
 const loop = true;

@@ -1,3 +1,4 @@
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 import {
   ICache,
   IImage,
@@ -11,8 +12,7 @@ import {
   ICachedGeometry,
   EventTypes,
 } from '../types';
-import { triggerEvent, imageIdToURI } from '../utilities';
-import eventTarget from '../eventTarget';
+import { imageIdToURI } from '../utilities';
 import Events from '../enums/Events';
 
 const MAX_CACHE_SIZE_1GB = 1073741824;

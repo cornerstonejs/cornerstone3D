@@ -2,6 +2,7 @@ import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 
 import cache from '../cache';
 import {
@@ -17,7 +18,6 @@ import {
   VOILUTFunctionType,
 } from '../enums';
 import ViewportType from '../enums/ViewportType';
-import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
 import { loadVolume } from '../loaders/volumeLoader';
 import type {
@@ -42,7 +42,6 @@ import {
   getVoiFromSigmoidRGBTransferFunction,
   imageIdToURI,
   invertRgbTransferFunction,
-  triggerEvent,
   colormap as colormapUtils,
 } from '../utilities';
 import { createVolumeActor } from './helpers';

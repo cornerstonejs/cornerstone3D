@@ -1,15 +1,14 @@
+import { vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   cache,
   StackViewport,
   metaData,
-  triggerEvent,
-  eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 
-import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
 import { addAnnotation, getAnnotations } from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';

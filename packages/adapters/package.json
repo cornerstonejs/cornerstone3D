@@ -44,6 +44,7 @@
         "dcmjs": "^0.29.5",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
-        "ndarray": "^1.0.19"
+        "ndarray": "^1.0.19",
+        "@cornerstonejs/kit": "^1.5.0"
     }
 }

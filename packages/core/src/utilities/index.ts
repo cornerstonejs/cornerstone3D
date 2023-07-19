@@ -3,7 +3,6 @@ import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
 import createLinearRGBTransferFunction from './createLinearRGBTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
-import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
 import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
@@ -58,7 +57,6 @@ export {
   getVoiFromSigmoidRGBTransferFunction,
   createLinearRGBTransferFunction,
   scaleRgbTransferFunction,
-  triggerEvent,
   imageIdToURI,
   calibratedPixelSpacingMetadataProvider,
   uuidv4,

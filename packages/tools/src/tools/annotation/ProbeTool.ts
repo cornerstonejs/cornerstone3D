@@ -1,15 +1,13 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { vec2 } from 'gl-matrix';
-
 import {
   getEnabledElement,
   VolumeViewport,
-  triggerEvent,
-  eventTarget,
   utilities as csUtils,
   utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 
 import { AnnotationTool } from '../base';
 import {

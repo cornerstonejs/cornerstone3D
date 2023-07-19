@@ -1,7 +1,10 @@
 import * as cornerstone3D from '@cornerstonejs/core';
+import * as csKit from '@cornerstonejs/kit';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+
+const { eventTarget } = csKit;
 
 const {
   cache,
@@ -11,7 +14,6 @@ const {
   imageLoader,
   volumeLoader,
   metaData,
-  eventTarget,
   setVolumesForViewports,
 } = cornerstone3D;
 

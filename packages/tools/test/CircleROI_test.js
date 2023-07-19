@@ -1,7 +1,9 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import * as csKit from '@cornerstonejs/kit';
 
+const { eventTarget } = csKit;
 const {
   cache,
   RenderingEngine,
@@ -9,10 +11,8 @@ const {
   utilities,
   imageLoader,
   metaData,
-  eventTarget,
   volumeLoader,
   setVolumesForViewports,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;

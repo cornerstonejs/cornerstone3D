@@ -1,4 +1,5 @@
 import * as cornerstone3D from '@cornerstonejs/core';
+import * as csKit from '@cornerstonejs/kit';
 import * as testUtils from '../../../utils/test/testUtils';
 import * as csTools3d from '../src/index';
 
@@ -6,6 +7,7 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_activeInactive from './groundTruth/
 import * as volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_visiblity from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_visiblity.png';
 
+const { eventTarget } = csKit;
 const {
   cache,
   RenderingEngine,
@@ -13,9 +15,7 @@ const {
   volumeLoader,
   Enums,
   setVolumesForViewports,
-  eventTarget,
   imageLoader,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;

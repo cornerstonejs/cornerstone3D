@@ -1,11 +1,7 @@
-import {
-  triggerEvent,
-  eventTarget,
-  getRenderingEngine,
-  Enums,
-  Types,
-} from '@cornerstonejs/core';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+import { getRenderingEngine, Enums, Types } from '@cornerstonejs/core';
 import { Events as csToolsEvents } from '../../enums';
+
 import {
   getToolGroup,
   getToolGroupForViewport,

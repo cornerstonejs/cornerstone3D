@@ -1,10 +1,12 @@
 import * as cornerstone3D from '@cornerstonejs/core';
+import * as csKit from '@cornerstonejs/kit';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor.png';
 
+const { eventTarget } = csKit;
 const {
   cache,
   RenderingEngine,
@@ -13,8 +15,6 @@ const {
   volumeLoader,
   imageLoader,
   setVolumesForViewports,
-  eventTarget,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;

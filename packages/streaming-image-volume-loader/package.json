@@ -25,7 +25,8 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.5.0"
+    "@cornerstonejs/core": "^1.5.0",
+    "@cornerstonejs/kit": "^1.5.0"
   },
   "contributors": [
     {

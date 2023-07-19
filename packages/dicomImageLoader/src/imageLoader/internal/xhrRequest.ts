@@ -1,3 +1,4 @@
+import { triggerEvent } from '@cornerstonejs/kit';
 import external from '../../externalModules';
 import { getOptions } from './options';
 import {
@@ -73,7 +74,7 @@ function xhrRequest(
           imageId,
         };
 
-        cornerstone.triggerEvent(
+        triggerEvent(
           (cornerstone as any).events,
           'cornerstoneimageloadstart',
           eventData
@@ -93,7 +94,7 @@ function xhrRequest(
         };
 
         // Event
-        cornerstone.triggerEvent(
+        triggerEvent(
           (cornerstone as any).events,
           'cornerstoneimageloadend',
           eventData
@@ -158,7 +159,7 @@ function xhrRequest(
           percentComplete,
         };
 
-        cornerstone.triggerEvent(
+        triggerEvent(
           (cornerstone as any).events,
           cornerstone.EVENTS.IMAGE_LOAD_PROGRESS,
           eventData

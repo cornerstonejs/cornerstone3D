@@ -1,7 +1,9 @@
 import * as cornerstone3D from '@cornerstonejs/core';
+import * as csKit from '@cornerstonejs/kit';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
+const { eventTarget } = csKit;
 const {
   cache,
   RenderingEngine,
@@ -9,7 +11,6 @@ const {
   utilities,
   imageLoader,
   metaData,
-  eventTarget,
   volumeLoader,
   setUseCPURendering,
   resetUseCPURendering,

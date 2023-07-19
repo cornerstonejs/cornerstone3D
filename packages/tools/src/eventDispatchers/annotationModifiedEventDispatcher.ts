@@ -1,4 +1,6 @@
-import { eventTarget, getRenderingEngine } from '@cornerstonejs/core';
+import { eventTarget } from '@cornerstonejs/kit';
+
+import { getRenderingEngine } from '@cornerstonejs/core';
 import Events from '../enums/Events';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { AnnotationModifiedEventType } from '../types/EventTypes';

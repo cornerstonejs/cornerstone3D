@@ -1,4 +1,12 @@
 import cloneDeep from 'lodash.clonedeep';
+import { eventTarget } from '@cornerstonejs/kit';
+import {
+  Enums,
+  getEnabledElement,
+  Types,
+  utilities,
+} from '@cornerstonejs/core';
+
 import {
   Annotation,
   Annotations,
@@ -7,14 +15,6 @@ import {
 } from '../../types/AnnotationTypes';
 
 import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
-
-import {
-  Enums,
-  eventTarget,
-  getEnabledElement,
-  Types,
-  utilities,
-} from '@cornerstonejs/core';
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking';
 import { checkAndDefineIsVisibleProperty } from './annotationVisibility';

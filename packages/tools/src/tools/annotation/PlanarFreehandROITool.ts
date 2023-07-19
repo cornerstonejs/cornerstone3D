@@ -1,14 +1,14 @@
 import {
   CONSTANTS,
   getEnabledElement,
-  triggerEvent,
-  eventTarget,
   StackViewport,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {

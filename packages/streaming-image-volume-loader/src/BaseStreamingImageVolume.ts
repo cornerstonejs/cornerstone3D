@@ -1,9 +1,9 @@
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
+
 import {
   Enums,
-  eventTarget,
   metaData,
   imageLoadPoolManager,
-  triggerEvent,
   ImageVolume,
   cache,
   imageLoader,

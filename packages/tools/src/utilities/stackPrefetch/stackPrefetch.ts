@@ -1,9 +1,9 @@
+import { eventTarget } from '@cornerstonejs/kit';
 import {
   getEnabledElement,
   StackViewport,
   imageLoader,
   Enums,
-  eventTarget,
   imageLoadPoolManager,
   cache,
   getConfiguration as getCoreConfiguration,

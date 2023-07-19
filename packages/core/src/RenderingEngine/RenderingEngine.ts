@@ -1,7 +1,7 @@
+import { eventTarget, triggerEvent } from '@cornerstonejs/kit';
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
-import eventTarget from '../eventTarget';
-import { triggerEvent, uuidv4 } from '../utilities';
+import { uuidv4 } from '../utilities';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
@@ -20,7 +20,7 @@ import type {
   InternalViewportInput,
   NormalizedViewportInput,
 } from '../types/IViewport';
-import { OrientationAxis, ViewportStatus } from '../enums';
+import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {

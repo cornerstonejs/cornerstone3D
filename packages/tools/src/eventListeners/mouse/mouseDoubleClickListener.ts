@@ -1,4 +1,5 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import { triggerEvent } from '@cornerstonejs/kit';
+import { getEnabledElement } from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import getMouseEventPoints from './getMouseEventPoints';
 import { EventTypes, IPoints } from '../../types';
