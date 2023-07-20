@@ -25,7 +25,7 @@ import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getToolGroup } from '../store/ToolGroupManager';
 
 const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';
-const viewportsWithAnnotations = [];
+const viewportsFrameWithAnnotations = [];
 
 /**
  * @public
@@ -114,9 +114,17 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       )[0] as ScaleOverlayAnnotation;
     }
 
-    // viewportsWithAnnotations stores which viewports have an annotation,
-    // if the viewport does not have an annotation, create a new one
-    if (!viewportsWithAnnotations.includes(viewport.id)) {
+    // viewportsFrameWithAnnotations stores which viewports and FrameOfReference have an annotation,
+    // if the viewport and FrameOfReference does not have an annotation, create a new one
+    const viewportId = viewport.id;
+    const isScaleNotInViewportAndFrameOfReference =
+      !viewportsFrameWithAnnotations.find(
+        (viewport) =>
+          viewport.viewportId == viewportId &&
+          viewport.FrameOfReferenceUID == FrameOfReferenceUID
+      );
+
+    if (isScaleNotInViewportAndFrameOfReference) {
       const newAnnotation: ScaleOverlayAnnotation = {
         metadata: {
           toolName: this.getToolName(),
@@ -133,7 +141,10 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
         },
       };
 
-      viewportsWithAnnotations.push(viewport.id);
+      viewportsFrameWithAnnotations.push({
+        FrameOfReferenceUID,
+        viewportId,
+      });
 
       addAnnotation(newAnnotation, viewport.element);
       annotation = newAnnotation;
@@ -188,7 +199,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     const renderStatus = false;
 
-    if (!viewport) {
+    if (!viewport || !annotation) {
       return renderStatus;
     }
 
