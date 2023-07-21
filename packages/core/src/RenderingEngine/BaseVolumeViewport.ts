@@ -638,8 +638,32 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
     const volumeIdToUse = applicableVolumeActorInfo.volumeId;
+    const properties = this.currentViewportProperties.get(volumeIdToUse);
 
-    return this.currentViewportProperties.get(volumeIdToUse);
+    const voiRanges = this.getActors()
+      .map((actorEntry) => {
+        const volumeActor = actorEntry.actor as vtkVolume;
+        const volumeId = actorEntry.uid;
+        const volume = cache.getVolume(volumeId);
+        if (!volume) return null;
+        const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+        const [lower, upper] =
+          properties?.VOILUTFunction === 'SIGMOID'
+            ? getVoiFromSigmoidRGBTransferFunction(cfun)
+            : cfun.getRange();
+        return { volumeId, voiRange: { lower, upper } };
+      })
+      .filter(Boolean);
+
+    const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
+
+    return {
+      colormap: properties?.colormap,
+      voiRange: voiRange,
+      VOILUTFunction: properties?.VOILUTFunction,
+      invert: properties?.invert,
+      slabThickness: properties?.slabThickness,
+    };
   };
 
   /**
