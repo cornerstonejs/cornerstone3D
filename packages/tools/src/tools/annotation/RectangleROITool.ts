@@ -9,6 +9,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -859,10 +864,10 @@ class RectangleROITool extends AnnotationTool {
 
     const textLines: string[] = [];
 
-    textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
-    textLines.push(`Mean: ${mean.toFixed(2)} ${modalityUnit}`);
-    textLines.push(`Max: ${max.toFixed(2)} ${modalityUnit}`);
-    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${modalityUnit}`);
+    textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
 
     return textLines;
   };
@@ -907,7 +912,7 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata, hasPixelSpacing } = image;
+      const { dimensions, imageData, metadata } = image;
       const scalarData =
         'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
@@ -946,8 +951,9 @@ class RectangleROITool extends AnnotationTool {
           worldPos1,
           worldPos2
         );
+        const scale = getCalibratedScale(image);
 
-        const area = Math.abs(worldWidth * worldHeight);
+        const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
 
         let count = 0;
         let mean = 0;
@@ -1004,7 +1010,7 @@ class RectangleROITool extends AnnotationTool {
           mean,
           stdDev,
           max,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
         };
       } else {

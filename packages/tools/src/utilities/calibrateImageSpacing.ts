@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 const { calibratedPixelSpacingMetadataProvider } = utilities;
@@ -9,25 +9,22 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
  * their reference imageIds. Finally, it triggers a re-render for invalidated annotations.
  * @param imageId - ImageId for the calibrated image
  * @param rowPixelSpacing - Spacing in row direction
- * @param columnPixelSpacing - Spacing in column direction
- * @param renderingEngine - Cornerstone RenderingEngine instance
+ * @param calibrationOrScale - either the calibration object or a scale value
  */
 export default function calibrateImageSpacing(
   imageId: string,
   renderingEngine: Types.IRenderingEngine,
-  rowPixelSpacing: number,
-  columnPixelSpacing: number
+  calibrationOrScale: Types.IImageCalibration | number
 ): void {
-  // 1. Add the calibratedPixelSpacing metadata to the metadata provider
-  // If no column spacing provided, assume square pixels
-  if (!columnPixelSpacing) {
-    columnPixelSpacing = rowPixelSpacing;
+  // Handle simple parameter version
+  if (typeof calibrationOrScale === 'number') {
+    calibrationOrScale = {
+      type: Enums.CalibrationTypes.USER,
+      scale: calibrationOrScale,
+    };
   }
-
-  calibratedPixelSpacingMetadataProvider.add(imageId, {
-    rowPixelSpacing,
-    columnPixelSpacing,
-  });
+  // 1. Add the calibratedPixelSpacing metadata to the metadata
+  calibratedPixelSpacingMetadataProvider.add(imageId, calibrationOrScale);
 
   // 2. Update the actor for stackViewports
   const viewports = renderingEngine.getStackViewports();
