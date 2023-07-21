@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.6...v1.5.0) (2023-07-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+## [1.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.5...v1.4.6) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+## [1.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.4...v1.4.5) (2023-07-14)
+
+### Bug Fixes
+
+- **color volume:** take into account number of components for the volume length ([#687](https://github.com/cornerstonejs/cornerstone3D/issues/687)) ([667c42e](https://github.com/cornerstonejs/cornerstone3D/commit/667c42e635f6262225f88aa458fe7482ea9ecf1e))
+
+## [1.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.3...v1.4.4) (2023-07-13)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
 ## [1.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.2...v1.4.3) (2023-07-12)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

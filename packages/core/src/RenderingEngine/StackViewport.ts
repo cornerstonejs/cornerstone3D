@@ -76,6 +76,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
+import ViewportStatus from '../enums/ViewportStatus';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -700,6 +701,10 @@ class StackViewport extends Viewport implements IStackViewport {
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
+    this.viewportStatus = this.csImage
+      ? ViewportStatus.PRE_RENDER
+      : ViewportStatus.LOADING;
+
     if (typeof colormap !== 'undefined') {
       this.setColormap(colormap);
     }
@@ -762,6 +767,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
     this.voiUpdatedWithSetProperties = false;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
 
@@ -1512,6 +1518,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
+    this.viewportStatus = ViewportStatus.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1733,6 +1740,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         this._setCSImage(image);
+        this.viewportStatus = ViewportStatus.PRE_RENDER;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -2666,6 +2674,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
+      viewportStatus: this.viewportStatus,
     };
   };
 

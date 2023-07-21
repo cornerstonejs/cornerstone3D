@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.6...v1.5.0) (2023-07-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.5...v1.4.6) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.4...v1.4.5) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.3...v1.4.4) (2023-07-13)
+
+### Bug Fixes
+
+- **PT measurement units:** Non-SUV scaled, but pre-scaled PTs should show proper units ([#686](https://github.com/cornerstonejs/cornerstone3D/issues/686)) ([e9190df](https://github.com/cornerstonejs/cornerstone3D/commit/e9190df44b29be504b46ebb768e6ad2e6b02bbe3))
+
 ## [1.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.4.2...v1.4.3) (2023-07-12)
 
 ### Bug Fixes

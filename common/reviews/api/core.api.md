@@ -575,7 +575,8 @@ declare namespace Enums {
         GeometryType,
         ContourType,
         VOILUTFunctionType,
-        DynamicOperatorType
+        DynamicOperatorType,
+        ViewportStatus
     }
 }
 export { Enums }
@@ -1378,6 +1379,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -1715,6 +1717,8 @@ interface IViewport {
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
     // (undocumented)
+    setRendered(): void;
+    // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
     sHeight: number;
@@ -1730,6 +1734,8 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    // (undocumented)
+    viewportStatus: ViewportStatus;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
@@ -2216,6 +2222,7 @@ export class StackViewport extends Viewport implements IStackViewport {
         element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
+        viewportStatus: ViewportStatus;
     };
     // (undocumented)
     getActor: (actorUID: string) => ActorEntry;
@@ -2605,6 +2612,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
     // (undocumented)
+    setRendered(): void;
+    // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     sHeight: number;
@@ -2628,6 +2637,8 @@ export class Viewport implements IViewport {
     updateRenderingPipeline: () => void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    viewportStatus: ViewportStatus;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
@@ -2672,6 +2683,20 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
 };
+
+// @public (undocumented)
+enum ViewportStatus {
+    // (undocumented)
+    LOADING = "loading",
+    // (undocumented)
+    NO_DATA = "noData",
+    // (undocumented)
+    PRE_RENDER = "preRender",
+    // (undocumented)
+    RENDERED = "rendered",
+    // (undocumented)
+    RESIZE = "resize"
+}
 
 // @public (undocumented)
 enum ViewportType {

@@ -13,6 +13,7 @@ import {
   BlendModes,
   Events,
   OrientationAxis,
+  ViewportStatus,
   VOILUTFunctionType,
 } from '../enums';
 import ViewportType from '../enums/ViewportType';
@@ -698,6 +699,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     this._setVolumeActors(volumeActors);
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
       viewportId: this.id,

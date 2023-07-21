@@ -169,11 +169,11 @@ function cornerstoneStreamingImageVolumeLoader(
             '8 Bit signed images are not yet supported by this plugin.'
           );
         }
-        sizeInBytes = length;
+        sizeInBytes = length * numComponents;
         handleCache(sizeInBytes);
         scalarData = useSharedArrayBuffer
-          ? createUint8SharedArray(length)
-          : new Uint8Array(length);
+          ? createUint8SharedArray(length * numComponents)
+          : new Uint8Array(length * numComponents);
         break;
 
       case 16:
