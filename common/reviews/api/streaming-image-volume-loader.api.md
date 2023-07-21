@@ -1283,15 +1283,16 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
-    resetProperties(volumeId: string,): void;
+    resetProperties(volumeId: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
     immediate?: boolean
     ): void;
-    setDefaultProperties( ViewportProperties: VolumeViewportProperties,
+    setDefaultProperties(
+    ViewportProperties: VolumeViewportProperties,
     volumeId?: string
-    ): void
+    ): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis): void;
     setProperties(
