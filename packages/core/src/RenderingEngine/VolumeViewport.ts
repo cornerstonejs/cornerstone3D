@@ -269,6 +269,18 @@ class VolumeViewport extends BaseVolumeViewport {
    * the slab thickness to (if not provided, all actors will be affected).
    */
   public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
+    let blendMode = BlendModes.MAXIMUM_INTENSITY_BLEND;
+
+    if (slabThickness < 0.1) {
+      // Cannot render zero thickness
+      slabThickness = 0.1;
+
+      // Not a mip, just show slice
+      blendMode = BlendModes.COMPOSITE;
+    }
+
+    this.setBlendMode(blendMode);
+
     let actorEntries = this.getActors();
 
     if (filterActorUIDs && filterActorUIDs.length > 0) {

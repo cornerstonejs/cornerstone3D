@@ -1270,7 +1270,7 @@ interface IVolumeViewport extends IViewport {
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
     getIntensityFromWorld(point: Point3): number;
-    getProperties: () => VolumeViewportProperties;
+    getProperties: (volumeId?: string) => VolumeViewportProperties;
     getSlabThickness(): number;
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
@@ -1280,11 +1280,15 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
+    resetProperties(volumeId: string,): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
     immediate?: boolean
     ): void;
+    setDefaultProperties( ViewportProperties: VolumeViewportProperties,
+    volumeId?: string
+    ): void
     // (undocumented)
     setOrientation(orientation: OrientationAxis): void;
     setProperties(

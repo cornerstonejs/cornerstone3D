@@ -16,7 +16,7 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * Retrieve the viewport properties
    */
-  getProperties: () => VolumeViewportProperties;
+  getProperties: (volumeId?: string) => VolumeViewportProperties;
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
    * projected onto the plane defined by the `Viewport`'s `vtkCamera`'s focal point
@@ -54,6 +54,14 @@ export default interface IVolumeViewport extends IViewport {
    */
   getCurrentImageId: () => string;
   /**
+   * Sets the default properties for the viewport. If no volumeId is provided
+   * it applies the properties to the default volume actor (first volume)
+   */
+  setDefaultProperties(
+    ViewportProperties: VolumeViewportProperties,
+    volumeId?: string
+  ): void;
+  /**
    * Sets the properties for the viewport. If no volumeId is provided
    * it applies the properties to the default volume actor (first volume)
    */
@@ -62,6 +70,10 @@ export default interface IVolumeViewport extends IViewport {
     volumeId?: string,
     suppressEvents?: boolean
   ): void;
+  /**
+   * Reset the viewport properties to the default values
+   */
+  resetProperties(volumeId: string): void;
   /**
    * Creates volume actors for all volumes defined in the `volumeInputArray`.
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
