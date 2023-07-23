@@ -1,4 +1,4 @@
-import Segmentation from "./Segmentation.js";
+import Segmentation from "./Segmentation";
 
 const VTKjs = {
     Segmentation

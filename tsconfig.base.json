@@ -37,7 +37,6 @@
     "packages/**/dist",
     "packages/**/lib",
     "packages/**/lib-esm",
-    "packages/adapters",
     "packages/docs",
     "snippets",
     "examples"

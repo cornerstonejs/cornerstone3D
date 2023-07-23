@@ -30,6 +30,7 @@ import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
 import type ViewportInputOptions from './ViewportInputOptions';
 import type IImageData from './IImageData';
+import type IImageCalibration from './IImageCalibration';
 import type CPUIImageData from './CPUIImageData';
 import type { CPUImageData } from './CPUIImageData';
 import type IImage from './IImage';
@@ -102,6 +103,7 @@ export type {
   IStreamingImageVolume,
   IImage,
   IImageData,
+  IImageCalibration,
   CPUIImageData,
   CPUImageData,
   EventTypes,
