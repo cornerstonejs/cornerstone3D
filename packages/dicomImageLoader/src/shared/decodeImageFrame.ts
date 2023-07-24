@@ -201,7 +201,11 @@ function postProcessDecodedPixels(
     Float32Array,
   };
 
-  if (options.targetBuffer && options.targetBuffer.type) {
+  const type = options.targetBuffer?.type;
+  const invalidTargetType =
+    isColorImage(imageFrame.photometricInterpretation) && type !== 'Uint8Array';
+
+  if (type && !invalidTargetType) {
     pixelDataArray = _handleTargetBuffer(
       options,
       imageFrame,
