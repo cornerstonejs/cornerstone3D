@@ -7,6 +7,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedLengthUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -43,7 +48,6 @@ import {
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -776,7 +780,7 @@ class LengthTool extends AnnotationTool {
       return;
     }
 
-    const textLines = [`${length.toFixed(2)} ${unit}`];
+    const textLines = [`${roundNumber(length)} ${unit}`];
 
     return textLines;
   }
@@ -812,9 +816,10 @@ class LengthTool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, dimensions, hasPixelSpacing } = image;
+      const { imageData, dimensions } = image;
+      const scale = getCalibratedScale(image);
 
-      const length = this._calculateLength(worldPos1, worldPos2);
+      const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
@@ -830,7 +835,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
-        unit: hasPixelSpacing ? 'mm' : 'px',
+        unit: getCalibratedLengthUnits(null, image),
       };
     }
 

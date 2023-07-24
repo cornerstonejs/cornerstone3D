@@ -130,6 +130,24 @@ export const cache: Cache_2;
 function calculateViewportsSpatialRegistration(viewport1: IStackViewport, viewport2: IStackViewport): void;
 
 // @public (undocumented)
+enum CalibrationTypes {
+    // (undocumented)
+    ERMF = "ERMF",
+    // (undocumented)
+    ERROR = "Error",
+    // (undocumented)
+    NOT_APPLICABLE = "",
+    // (undocumented)
+    PROJECTION = "Proj",
+    // (undocumented)
+    REGION = "Region",
+    // (undocumented)
+    UNCALIBRATED = "Uncalibrated",
+    // (undocumented)
+    USER = "User"
+}
+
+// @public (undocumented)
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 
 // @public (undocumented)
@@ -442,6 +460,7 @@ type CPUIImageData = {
     scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    calibration?: IImageCalibration;
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -567,6 +586,7 @@ declare namespace Enums {
     export {
         EVENTS as Events,
         BlendModes,
+        CalibrationTypes,
         InterpolationType,
         RequestType,
         ViewportType,
@@ -1132,7 +1152,27 @@ interface IImage {
 }
 
 // @public (undocumented)
+interface IImageCalibration {
+    // (undocumented)
+    aspect?: number;
+    // (undocumented)
+    columnPixelSpacing?: number;
+    // (undocumented)
+    rowPixelSpacing?: number;
+    // (undocumented)
+    scale?: number;
+    // (undocumented)
+    sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    // (undocumented)
+    tooltip?: string;
+    // (undocumented)
+    type: CalibrationTypes;
+}
+
+// @public (undocumented)
 interface IImageData {
+    // (undocumented)
+    calibration?: IImageCalibration;
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
@@ -1400,8 +1440,7 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    rowScale: number;
-    columnScale: number;
+    calibration: IImageCalibration;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
@@ -1921,8 +1960,8 @@ export { metaData }
 
 // @public (undocumented)
 const metadataProvider: {
-    add: (imageId: string, payload: CalibratedPixelValue) => void;
-    get: (type: string, imageId: string) => CalibratedPixelValue;
+    add: (imageId: string, payload: IImageCalibration) => void;
+    get: (type: string, imageId: string) => IImageCalibration;
 };
 
 // @public (undocumented)
@@ -2367,6 +2406,7 @@ declare namespace Types {
         IStreamingImageVolume,
         IImage,
         IImageData,
+        IImageCalibration,
         CPUIImageData,
         CPUImageData,
         EventTypes,
@@ -2506,6 +2546,8 @@ export class Viewport implements IViewport {
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
+    // (undocumented)
+    protected calibration: IImageCalibration;
     // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)

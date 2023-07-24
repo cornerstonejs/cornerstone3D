@@ -6696,13 +6696,13 @@ caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001449, caniuse-lite@^1.0.30001464:
   resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001481.tgz#f58a717afe92f9e69d0e35ff64df596bfad93912"
   integrity sha512-KCqHwRnaa1InZBtqXzP98LPg0ajCVujMKjqKDhZEthIpAsJl/YEIa3YvXjGXPVqzZVguccuu7ga9KOE1J9rKPQ==
 
-canvas@2.9.0:
-  version "2.9.0"
-  resolved "https://registry.npmjs.org/canvas/-/canvas-2.9.0.tgz#7df0400b141a7e42e597824f377935ba96880f2a"
-  integrity sha512-0l93g7uxp7rMyr7H+XRQ28A3ud0dKIUTIEkUe1Dxh4rjUYN7B93+SjC3r1PDKA18xcQN87OFGgUnyw7LSgNLSQ==
+canvas@2.11.2:
+  version "2.11.2"
+  resolved "https://registry.yarnpkg.com/canvas/-/canvas-2.11.2.tgz#553d87b1e0228c7ac0fc72887c3adbac4abbd860"
+  integrity sha512-ItanGBMrmRV7Py2Z+Xhs7cT+FNt5K0vPL4p9EZ/UX/Mu7hFbkxSjKF2KVtPwX7UYWp7dRKnrTvReflgrItJbdw==
   dependencies:
     "@mapbox/node-pre-gyp" "^1.0.0"
-    nan "^2.15.0"
+    nan "^2.17.0"
     simple-get "^3.0.3"
 
 caseless@~0.12.0:
@@ -15048,9 +15048,9 @@ mute-stream@0.0.8, mute-stream@~0.0.4:
   resolved "https://registry.npmjs.org/mute-stream/-/mute-stream-0.0.8.tgz#1630c42b2251ff81e2a283de96a5497ea92e5e0d"
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
-nan@^2.15.0, nan@^2.16.0:
+nan@^2.16.0, nan@^2.17.0:
   version "2.17.0"
-  resolved "https://registry.npmjs.org/nan/-/nan-2.17.0.tgz#c0150a2368a182f033e9aa5195ec76ea41a199cb"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.17.0.tgz#c0150a2368a182f033e9aa5195ec76ea41a199cb"
   integrity sha512-2ZTgtl0nJsO0KQCjEpxcIr5D+Yv90plTitZt9JBfQvVJDS5seMl3FOvsh3+9CoYWXf/1l5OaZzzF6nDm4cagaQ==
 
 nanoid@3.3.1:
@@ -18686,12 +18686,12 @@ requizzle@^0.2.3:
   dependencies:
     lodash "^4.17.21"
 
-resemblejs@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.npmjs.org/resemblejs/-/resemblejs-4.1.0.tgz#66c29028febdb31997e9a164e5b2320c26816621"
-  integrity sha512-s9/+nQ7bnT+C7XBdnMCcC/QppvJcTmJ7fXZMtuTZMFJycN2kj/tacleyx9O1mURPDYNZsgKMfcamImM9+X+keQ==
+resemblejs@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/resemblejs/-/resemblejs-5.0.0.tgz#f5a0c6aaa59dcfb9f5192e7ab8740616cbbbf220"
+  integrity sha512-+B0eP9k9VDP/YhBbH+ZdYmHiotdtuc6blVI+h8wwkY2cOow+uiIpSmgkBBBtrEAL0D31/gR/AJPwDeX5TcwmIA==
   optionalDependencies:
-    canvas "2.9.0"
+    canvas "2.11.2"
 
 resize-observer-polyfill@^1.5.1:
   version "1.5.1"

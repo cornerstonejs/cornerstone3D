@@ -9,6 +9,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -994,20 +999,20 @@ class EllipticalROITool extends AnnotationTool {
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
+        : `Area: ${roundNumber(area)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
     if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${modalityUnit}`);
+      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${modalityUnit}`);
+      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${modalityUnit}`);
+      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
     }
 
     return textLines;
@@ -1105,7 +1110,11 @@ class EllipticalROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
+        const scale = getCalibratedScale(image);
+        const area =
+          Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
+          scale /
+          scale;
 
         let count = 0;
         let mean = 0;
@@ -1159,7 +1168,7 @@ class EllipticalROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
         };
       } else {

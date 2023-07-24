@@ -43,6 +43,17 @@ enum BlendModes {
 }
 
 // @public
+enum CalibrationTypes {
+    ERMF = 'ERMF',
+    ERROR = 'Error',
+    NOT_APPLICABLE = '',
+    PROJECTION = 'Proj',
+    REGION = 'Region',
+    UNCALIBRATED = 'Uncalibrated',
+    USER = 'User',
+}
+
+// @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 
 // @public
@@ -361,6 +372,8 @@ type CPUIImageData = {
     scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    calibration?: IImageCalibration;
+
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -796,7 +809,21 @@ interface IImage {
 }
 
 // @public
+interface IImageCalibration {
+    aspect?: number;
+    // (undocumented)
+    columnPixelSpacing?: number;
+    rowPixelSpacing?: number;
+    scale?: number;
+    sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    tooltip?: string;
+    type: CalibrationTypes;
+}
+
+// @public
 interface IImageData {
+    // (undocumented)
+    calibration?: IImageCalibration;
     dimensions: Point3;
     direction: Mat3;
     hasPixelSpacing?: boolean;
@@ -999,8 +1026,7 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    rowScale: number;
-    columnScale: number;
+    calibration: IImageCalibration;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
