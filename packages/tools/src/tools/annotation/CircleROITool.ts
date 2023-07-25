@@ -9,6 +9,13 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedLengthUnits,
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+  getCalibratedAspect,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -876,27 +883,27 @@ class CircleROITool extends AnnotationTool {
     if (radius) {
       const radiusLine = isEmptyArea
         ? `Radius: Oblique not supported`
-        : `Radius: ${radius.toFixed(2)} ${radiusUnit}`;
+        : `Radius: ${roundNumber(radius)} ${radiusUnit}`;
       textLines.push(radiusLine);
     }
 
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
+        : `Area: ${roundNumber(area)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
     if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${modalityUnit}`);
+      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${modalityUnit}`);
+      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${modalityUnit}`);
+      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
     }
 
     return textLines;
@@ -994,7 +1001,13 @@ class CircleROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
+        const scale = getCalibratedScale(image);
+        const aspect = getCalibratedAspect(image);
+        const area = Math.abs(
+          Math.PI *
+            (worldWidth / scale / 2) *
+            (worldHeight / aspect / scale / 2)
+        );
 
         let count = 0;
         let mean = 0;
@@ -1048,10 +1061,10 @@ class CircleROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
-          radius: worldWidth / 2,
-          radiusUnit: hasPixelSpacing ? 'mm' : 'px',
-          perimeter: 2 * Math.PI * (worldWidth / 2),
+          areaUnit: getCalibratedAreaUnits(null, image),
+          radius: worldWidth / 2 / scale,
+          radiusUnit: getCalibratedLengthUnits(null, image),
+          perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
           modalityUnit,
         };
       } else {
