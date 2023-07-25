@@ -2173,9 +2173,20 @@ class StackViewport extends Viewport implements IStackViewport {
     windowWidth: number | number[],
     windowCenter: number | number[]
   ): { lower: number; upper: number } | undefined {
-    return typeof windowCenter === 'number' && typeof windowWidth === 'number'
-      ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
-      : undefined;
+    let center, width;
+
+    if (typeof windowCenter === 'number' && typeof windowWidth === 'number') {
+      center = windowCenter;
+      width = windowWidth;
+    } else if (Array.isArray(windowCenter) && Array.isArray(windowWidth)) {
+      center = windowCenter[0];
+      width = windowWidth[0];
+    }
+
+    // If center and width are defined, convert them to low-high range
+    if (center !== undefined && width !== undefined) {
+      return windowLevelUtil.toLowHighRange(width, center);
+    }
   }
 
   /**
