@@ -2111,10 +2111,15 @@ class StackViewport extends Viewport implements IStackViewport {
     const monochrome1 =
       imagePixelModule.photometricInterpretation === 'MONOCHROME1';
 
+    // invalidate the stack so that we can set the voi range
+    this.stackInvalidated = true;
+
     this.setVOI(this._getInitialVOIRange(image), {
       forceRecreateLUTFunction: !!monochrome1,
     });
-    this.setInvertColor(!!monochrome1);
+
+    // should carry over the invert color from the previous image if has been applied
+    this.setInvertColor(this.invert || !!monochrome1);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
