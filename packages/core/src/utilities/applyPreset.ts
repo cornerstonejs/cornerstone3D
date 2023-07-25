@@ -13,17 +13,18 @@ export default function applyPreset(
   actor: VolumeActor,
   preset: ViewportPreset
 ) {
+  const eps = 1e-4;
   // Create color transfer function
   const colorTransferArray = preset.colorTransfer
     .split(' ')
     .splice(1)
     .map(parseFloat);
-
   const { shiftRange } = getShiftRange(colorTransferArray);
   const min = shiftRange[0];
   const width = shiftRange[1] - shiftRange[0];
   const cfun = vtkColorTransferFunction.newInstance();
-  const normColorTransferValuePoints = [];
+  const normColorTransferValuePoints: Array<[number, number, number, number]> =
+    [];
   for (let i = 0; i < colorTransferArray.length; i += 4) {
     let value = colorTransferArray[i];
     const r = colorTransferArray[i + 1];
@@ -34,9 +35,27 @@ export default function applyPreset(
     normColorTransferValuePoints.push([value, r, g, b]);
   }
 
+  // add a first and last value
+  // to make sure the transfer function is defined on the whole range
+  // normColorTransferValuePoints.unshift([
+  //   normColorTransferValuePoints[0][0] - eps,
+  //   normColorTransferValuePoints[0][1],
+  //   normColorTransferValuePoints[0][2],
+  //   normColorTransferValuePoints[0][3],
+  // ]);
+
+  // normColorTransferValuePoints.push([
+  //   normColorTransferValuePoints[normColorTransferValuePoints.length - 1][0] +
+  //     eps,
+  //   normColorTransferValuePoints[normColorTransferValuePoints.length - 1][1],
+  //   normColorTransferValuePoints[normColorTransferValuePoints.length - 1][2],
+  //   normColorTransferValuePoints[normColorTransferValuePoints.length - 1][3],
+  // ]);
+
   applyPointsToRGBFunction(normColorTransferValuePoints, shiftRange, cfun);
 
-  actor.getProperty().setRGBTransferFunction(0, cfun);
+  const property = actor.getProperty();
+  property.setRGBTransferFunction(0, cfun);
 
   // Create scalar opacity function
   const scalarOpacityArray = preset.scalarOpacity
@@ -55,9 +74,18 @@ export default function applyPreset(
     normPoints.push([value, opacity]);
   }
 
+  // add a first and last value
+  // to make sure the transfer function is defined on the whole range
+  // normPoints.unshift([normPoints[0][0] - eps, normPoints[0][1]]);
+
+  // normPoints.push([
+  //   normPoints[normPoints.length - 1][0] + eps,
+  //   normPoints[normPoints.length - 1][1],
+  // ]);
+
   applyPointsToPiecewiseFunction(normPoints, shiftRange, ofun);
 
-  actor.getProperty().setScalarOpacity(0, ofun);
+  property.setScalarOpacity(0, ofun);
 
   const [
     gradientMinValue,
@@ -66,26 +94,28 @@ export default function applyPreset(
     gradientMaxOpacity,
   ] = preset.gradientOpacity.split(' ').splice(1).map(parseFloat);
 
-  actor.getProperty().setUseGradientOpacity(0, true);
-  actor.getProperty().setGradientOpacityMinimumValue(0, gradientMinValue);
-  actor.getProperty().setGradientOpacityMinimumOpacity(0, gradientMinOpacity);
-  actor.getProperty().setGradientOpacityMaximumValue(0, gradientMaxValue);
-  actor.getProperty().setGradientOpacityMaximumOpacity(0, gradientMaxOpacity);
+  property.setUseGradientOpacity(0, true);
+  property.setGradientOpacityMinimumValue(0, gradientMinValue);
+  property.setGradientOpacityMinimumOpacity(0, gradientMinOpacity);
+  property.setGradientOpacityMaximumValue(0, gradientMaxValue);
+  property.setGradientOpacityMaximumOpacity(0, gradientMaxOpacity);
 
   if (preset.interpolation === '1') {
-    actor.getProperty().setInterpolationTypeToFastLinear();
-    //actor.getProperty().setInterpolationTypeToLinear()
+    // property.setInterpolationTypeToFastLinear();
+    property.setInterpolationTypeToLinear();
   }
+
+  property.setShade(preset.shade === '1');
 
   const ambient = parseFloat(preset.ambient);
   const diffuse = parseFloat(preset.diffuse);
   const specular = parseFloat(preset.specular);
   const specularPower = parseFloat(preset.specularPower);
 
-  actor.getProperty().setAmbient(ambient);
-  actor.getProperty().setDiffuse(diffuse);
-  actor.getProperty().setSpecular(specular);
-  actor.getProperty().setSpecularPower(specularPower);
+  property.setAmbient(ambient);
+  property.setDiffuse(diffuse);
+  property.setSpecular(specular);
+  property.setSpecularPower(specularPower);
 }
 
 function getShiftRange(colorTransferArray) {

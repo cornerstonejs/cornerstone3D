@@ -39,6 +39,12 @@ enum Events {
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
   /**
+   * Triggers on the HTML element when viewport modifies its preset (used in volume viewport 3D)
+   *
+   * Make use of {@link EventTypes.PresetModifiedEvent | PresetModified Event Type } for typing your event listeners for PRESET_MODIFIED event,
+   */
+  PRESET_MODIFIED = 'CORNERSTONE_PRESET_MODIFIED',
+  /**
    * Triggers on the HTML element when viewport modifies its display area
    *
    * Make use of {@link EventTypes.DisplayAreaModifiedEvent | DisplayAreaModified Event Type } for typing your event listeners for DISPLAY_AREA_MODIFIED event,
@@ -75,6 +81,15 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageVolumeModifiedEventDetail | ImageVolumeModified Event Detail }
    */
   IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+  /**
+   * Triggers on the eventTarget when the image volume loading is completed and all
+   * frames are loaded and inserted into a volume.
+   *
+   * Make use of {@link EventTypes.ImageVolumeLoadingCompletedEvent | ImageVolumeLoadingCompleted Event Type } for typing your
+   * event listeners for IMAGE_VOLUME_LOADING_COMPLETED event, and see what event detail is included
+   * in {@link EventTypes.ImageVolumeLoadingCompletedEventDetail | ImageVolumeLoadingCompleted Event Detail }
+   */
+  IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
   /**
    * Triggers on the eventTarget when the image has successfully loaded by imageLoaders
    *

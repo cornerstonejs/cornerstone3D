@@ -1,5 +1,250 @@
 <!DOCTYPE html>
 <html>
+  <style>
+    .overlay-top {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+    }
+
+    .overlay-bottom {
+      position: absolute !important;
+      bottom: 0;
+      left: 0;
+    }
+
+    .popup {
+      visibility: hidden;
+      display: inline-block;
+      /*    background-color: #333;
+    border: #444;
+    color: #fff;*/
+      font-size: 10px;
+      text-align: left;
+      padding: 6px;
+      margin: 6px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 10;
+    }
+
+    .menu {
+      padding: 6px 0px;
+    }
+
+    .menu ul {
+      list-style: none;
+      top: 0;
+      left: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .menu li span {
+      font-size: 11px;
+      position: relative;
+      min-width: 60px;
+      display: inline-block;
+      padding: 6px 12px;
+      pointer-events: none;
+      /*color: #fff;*/
+      text-decoration: none;
+    }
+
+    .menu .text:hover {
+      cursor: pointer;
+    }
+
+    .menu .gradient:hover {
+      opacity: 0.6;
+    }
+
+    .menu li ul li {
+      display: none;
+    }
+
+    .menu .folder:hover ul li {
+      display: block;
+      margin-left: 0px;
+      margin-top: 0px;
+    }
+
+    .menu ul + li:before {
+      content: "";
+      /*background: #444;*/
+      display: block;
+      margin: 0 auto;
+      width: 86%;
+      height: 1px;
+    }
+
+    .menu .gradient {
+      cursor: pointer;
+      opacity: 0.99;
+    }
+
+    #tf-collapsible div {
+      background-color: black;
+      color: white;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    #tf-panel {
+      overflow: hidden;
+    }
+
+    #tf-panel .handle {
+      opacity: 0.8;
+      cursor: pointer;
+      -webkit-user-select: none;
+    }
+
+    .move {
+      cursor: pointer;
+    }
+
+    .resize {
+      cursor: w-resize !important;
+    }
+
+    body {
+      font-family: sans-serif;
+    }
+
+    #tf-panel .handle:hover {
+      opacity: 1;
+    }
+
+    #tf-panel .handle.deleteCursor:hover {
+      /*base64 encoded x icon*/
+      cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkbFCUF0y4sCQAAAjxJREFUOMuVVM9rGkEYfTO7kQZFi0FCwIMUD9ISSo8tVCg59ZCb0EMRL177B3iQ/RusmEtP9Viw9NZcCgEvLexJiC1lE01iu7uTXX9t3fhzppcoZmskfadh5r33zfe+YQhW4wmAVDAYfB6NRh9xztHr9X7puv4NwEcAn7EOlFIC4FM8HncMw2iLfzHMZrMtWZYHAB6s82qpqmoIIbhYg36/P9nZ2bEppa9vqEOhEAHws16vO+Lu6O/u7nYopQ+XvXKVSsW6o8F4vjAMowvAAiABwP1AICCm0+mCkM/n65VKpe910HW9HQgEOrPZbNG6oigX18PBy1wupy8LZrPZKBqNaqVSaTDfsyzLIISY7Xb7RgHbtieSJH0BAIUx1ljRwiCRSJwWi0XXNE1LkiSj0Wh0vaTRaDT1+/0CAN6uyWOwvb2tARgyxnqrCJzzSSgU4hSAuO0tMMauTNOMhMPhi6OjI7qKI4QgAAgAvFFVteWtZFmWIUmSfn2TYSwWOykUCq6X57rudHNzcwIAT/f29i6XDzVN61JKzWaz2Vna/jPPbJl7dnY2AFAAAPh8vqHjOIvxV6vVU9u2V2XiZjKZY84X0+fJZJIBCM9bfby/v38u/hOHh4dtAF+9ub1XFKV3V5NarXYpy3IzEomQVUN4l0qlHMdxums8huVyeQTg2Ofzba37AV4A6KTT6RNN01zLsrht25wxJg4ODn4DOAdQ8orILWYygC0ArzY2Np4RQu6Nx+PvAD4A+AHgyiv4CwhV+hPmr65zAAAAAElFTkSuQmCC")
+          9 9,
+        auto !important;
+    }
+
+    #tf-panel .handle.addCursor:hover {
+      /*base64 encoded + icon*/
+      cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkbFCQoj+pBPQAAAghJREFUOMudkz+LGlEUxc/M+HADE3BR138IgmCRZloLs4V2AWsRQj6CmkaNfT5FwMbCpLRKqpBikRVMJ0hsdImKszHujK7uMI7vphLM7oyGnPKd+37v3nfvFfBIoih6OedFWZaziqK88Hq9omEYwmg0+jUYDL4B+ADgK07old/v37ZarTHZaLPZrNLptAHgE2PM7QR5m8vlVkRk0gl1Op05gB92kMtUKnVrd6nRaKjr9foJ/OrqSgfw/S+Kx+P5TUSWHSgQCGiTyWRjY/FyuTwG8HLPeVMoFOZOZUSjUX06ndqBSNO0LYDbPeijaZrq/4CIiAcCARXAhSiKYoQxdnGkk5Lb7RYdPCGfzxsAvK5YLBban+52uxljbOLz+c4BCETEF4tFNJFIzCRJsgAIAKhYLLJarRYFgFAodA/gmWs4HI4BxAFAkqQg5zx4+GQsFtN6vZ5fluWzfRaH/mw2ew7gQSSimWVZmlNdnHNhuVzuAcIjm5rNpgvAQgTwpVqtPhz5I3IydF3fqap6BkDdz9GdU9cikcjSYY6oUqn8BHB5CE9nMhndLrher9/ZTXa73dYAXNtl+r5UKhmc8+2pXet2uysAvWPb/1qW5WW/359zzp8ATNO0stnsDYA2/kHnAN55PJ5NPB6nZDJ5ryiKGQ6HiTH2GYBiO5knoEEAPgCGIAg3RLR1CvwDHa0wLTuhWQIAAAAASUVORK5CYII=")
+          9 9,
+        auto !important;
+    }
+
+    /* Tooltip text */
+    #tf-panel .tooltip {
+      visibility: hidden;
+      display: inline-block;
+      min-width: 56px;
+      font-size: 10px;
+      /* color: #fff;*/
+      text-align: left;
+      padding: 5px 8px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    #tf-panel .histogram-tooltip {
+      min-width: 24px;
+    }
+
+    .dark {
+      background-color: #333;
+      color: #fff !important;
+    }
+
+    .dark-transparent {
+      background-color: #333333a6;
+      color: #fff !important;
+    }
+
+    .dark .text:hover {
+      background: #444;
+    }
+
+    .dark input {
+      color: #ddd;
+      background-color: #2d2d2d;
+      border: 1px solid #222;
+    }
+
+    .light {
+      background-color: #eee;
+      border: 1px solid #ccc;
+      color: #111 !important;
+    }
+
+    .light .text:hover {
+      background: #ccc;
+    }
+
+    .light input {
+      color: #111;
+      background-color: #ddd;
+      border: 1px solid #ccc;
+    }
+
+    .blue {
+      background-color: #bdd5f0;
+      border: 1px solid #91c2f0;
+      color: #111 !important;
+    }
+
+    .blue .text:hover {
+      background: #91c2f0;
+    }
+
+    .blue input {
+      color: #111;
+      background-color: #c3ddf7;
+      border: 1px solid #91c2f0;
+    }
+
+    .unselectable {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
+    /* Show the tooltip text when you mouse over the tooltip container */
+    #tf-panel:hover .histogram-tooltip {
+      visibility: visible;
+    }
+
+    #tf-panel .control-point-tooltip-parent.anchor-move .control-endpoint-tooltip,
+    #tf-panel .control-point-tooltip-parent.anchor-hover:not(.control-point-move) .control-endpoint-tooltip,
+    #tf-panel .control-point-tooltip-parent.control-point-move .control-point-tooltip,
+    #tf-panel .control-point-tooltip-parent.control-point-hover:not(.anchor-move) .control-point-tooltip {
+      visibility: visible;
+    }
+
+    #cp-panel .handle {
+      cursor: pointer;
+      border: 1px solid #ddd;
+      margin: -1px; /* takes into account border width */
+      pointer-events: none;
+      background: none;
+      -webkit-box-shadow: 0 0 0 1px #222;
+      -moz-box-shadow: 0 0 0 1px #222;
+      box-shadow: 0 0 0 1px #222;
+    }
+
+    #cp-panel .field {
+      outline: 1px solid #222;
+    }
+
+    #cp-panel input[type="number"]:focus {
+      outline: none;
+      box-shadow: 0 0 2px 1px #2365c8;
+    }
+
+    #cp-panel input[type="number"] {
+      font-size: 10px;
+      text-align: right;
+      border-radius: 2px;
+    }
+  </style>
   <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <meta
