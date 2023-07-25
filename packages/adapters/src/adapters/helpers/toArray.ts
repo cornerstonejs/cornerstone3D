@@ -1,5 +1,3 @@
-const toArray = function (x) {
-    return Array.isArray(x) ? x : [x];
-};
+const toArray = x => (Array.isArray(x) ? x : [x]);
 
 export { toArray };

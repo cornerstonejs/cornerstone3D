@@ -5,12 +5,12 @@
  * @param types - An array of metadata types to retrieve.
  * @returns An object containing the retrieved metadata with capitalized keys.
  */
-function getDatasetModule(
+function getInstanceModule(
   imageId: string,
   metaDataProvider: any,
   types: string[]
 ): object;
-function getDatasetModule(imageId, metaDataProvider, types) {
+function getInstanceModule(imageId, metaDataProvider, types) {
   const result = {};
   for (const t of types) {
     try {
@@ -34,11 +34,24 @@ function getDatasetModule(imageId, metaDataProvider, types) {
   return result;
 }
 
-function capitalizeTag(tag) {
-  const parts = tag.split(/([0-9]+)/);
-  return parts
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}
+const capitalizeTag = (tag: string) =>
+  tag.charAt(0).toUpperCase() + tag.slice(1);
 
-export { getDatasetModule };
+const instanceModuleNames = [
+  'multiframeModule',
+  'generalSeriesModule',
+  'patientStudyModule',
+  'imagePlaneModule',
+  'nmMultiframeGeometryModule',
+  'imagePixelModule',
+  'modalityLutModule',
+  'voiLutModule',
+  'sopCommonModule',
+  'petIsotopeModule',
+  'overlayPlaneModule',
+  'transferSyntax',
+  'petSeriesModule',
+  'petImageModule',
+];
+
+export { getInstanceModule, instanceModuleNames };

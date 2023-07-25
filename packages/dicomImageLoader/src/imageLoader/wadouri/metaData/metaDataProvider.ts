@@ -16,7 +16,10 @@ import {
   extractSliceThicknessFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
-import { getDatasetModule } from '../../getDatasetModule';
+import {
+  getInstanceModule,
+  instanceModuleNames,
+} from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
   const { dicomParser } = external;
@@ -247,25 +250,8 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'dataset') {
-    const types = [
-      'multiframeModule',
-      'generalSeriesModule',
-      'patientStudyModule',
-      'imagePlaneModule',
-      'nmMultiframeGeometryModule',
-      'imagePixelModule',
-      'modalityLutModule',
-      'voiLutModule',
-      'sopCommonModule',
-      'petIsotopeModule',
-      'overlayPlaneModule',
-      'transferSyntax',
-      'petSeriesModule',
-      'petImageModule',
-    ];
-
-    return getDatasetModule(imageId, metaDataProvider, types);
+  if (type === 'instance') {
+    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
 }
 

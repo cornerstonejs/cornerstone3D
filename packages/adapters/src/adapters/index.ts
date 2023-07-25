@@ -2,6 +2,7 @@ import { CornerstoneSR } from "./Cornerstone";
 import { Cornerstone3DSR, Cornerstone3DSEG } from "./Cornerstone3D";
 import { VTKjsSEG } from "./VTKjs";
 import * as Enums from "./enums";
+import * as helpers from "./helpers";
 
 const adaptersSR = {
     Cornerstone: CornerstoneSR,
@@ -14,4 +15,4 @@ const adaptersSEG = {
     VTKjs: VTKjsSEG
 };
 
-export { adaptersSR, adaptersSEG, Enums };
+export { adaptersSR, adaptersSEG, Enums, helpers };

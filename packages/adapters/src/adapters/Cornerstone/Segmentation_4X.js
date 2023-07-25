@@ -278,6 +278,7 @@ async function generateToolState(
         skipOverlapping = false,
         tolerance = 1e-3,
         TypedArrayConstructor = Uint8Array,
+        maxBytesPerChunk = 199000000,
         eventTarget,
         triggerEvent
     } = options;
@@ -344,7 +345,7 @@ async function generateToolState(
         // Todo: need to test this with rle data
         pixelDataChunks = [pixelData];
     } else {
-        pixelDataChunks = unpackPixelData(multiframe);
+        pixelDataChunks = unpackPixelData(multiframe, { maxBytesPerChunk });
 
         if (!pixelDataChunks) {
             throw new Error("Fractional segmentations are not yet supported");
@@ -1358,9 +1359,10 @@ function checkIfPerpendicular(iop1, iop2, tolerance) {
  * unpackPixelData - Unpacks bit packed pixelData if the Segmentation is BINARY.
  *
  * @param  {Object} multiframe The multiframe dataset.
+ * @param  {Object} options    Options for the unpacking.
  * @return {Uint8Array}      The unpacked pixelData.
  */
-function unpackPixelData(multiframe) {
+function unpackPixelData(multiframe, options) {
     const segType = multiframe.SegmentationType;
 
     let data;
@@ -1378,7 +1380,7 @@ function unpackPixelData(multiframe) {
         // For extreme big data, we can't unpack the data at once and we need to
         // chunk it and unpack each chunk separately.
         // MAX 2GB is the limit right now to allocate a buffer
-        return getUnpackedChunks(data, 199000000);
+        return getUnpackedChunks(data, options.maxBytesPerChunk);
     }
 
     const pixelData = new Uint8Array(data);
@@ -1661,6 +1663,15 @@ function getSegmentMetadata(multiframe, seriesInstanceUid) {
     };
 }
 
+/**
+ * Reads a range of bytes from an array of ArrayBuffer chunks and
+ * aggregate them into a new Uint8Array.
+ *
+ * @param {ArrayBuffer[]} chunks - An array of ArrayBuffer chunks.
+ * @param {number} offset - The offset of the first byte to read.
+ * @param {number} length - The number of bytes to read.
+ * @returns {Uint8Array} A new Uint8Array containing the requested bytes.
+ */
 function readFromUnpackedChunks(chunks, offset, length) {
     const mapping = getUnpackedOffsetAndLength(chunks, offset, length);
 

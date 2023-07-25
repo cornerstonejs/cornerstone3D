@@ -15,7 +15,10 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
-import { getDatasetModule } from '../../getDatasetModule';
+import {
+  getInstanceModule,
+  instanceModuleNames,
+} from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
   if (type === 'multiframeModule') {
@@ -269,25 +272,8 @@ function metaDataProvider(type, imageId) {
   }
 
   // This is used for gathering all the metadata for export
-  if (type === 'dataset') {
-    const types = [
-      'multiframeModule',
-      'generalSeriesModule',
-      'patientStudyModule',
-      'nmMultiframeGeometryModule',
-      'imagePlaneModule',
-      'imagePixelModule',
-      'voiLutModule',
-      'modalityLutModule',
-      'sopCommonModule',
-      'petIsotopeModule',
-      'overlayPlaneModule',
-      'transferSyntax',
-      'petSeriesModule',
-      'petImageModule',
-    ];
-
-    return getDatasetModule(imageId, metaDataProvider, types);
+  if (type === 'instance') {
+    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
 }
 

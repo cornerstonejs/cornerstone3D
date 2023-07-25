@@ -22,7 +22,10 @@ function generateSegmentation(images, labelmaps, metadata, options) {
 /**
  * _createMultiframeSegmentationFromReferencedImages - description
  *
- * @param images - An array of the cornerstone image objects.
+ * @param images - An array of the cornerstone image objects related to the reference
+ * series that the segmentation is derived from. You can use methods such as
+ * volume.getCornerstoneImages() to get this array.
+ *
  * @param options - the options object for the SegmentationDerivation.
  * @returns The Seg derived dataSet.
  */
@@ -33,14 +36,13 @@ function _createMultiframeSegmentationFromReferencedImages(
 ) {
     const datasets = images.map(image => {
         // add the sopClassUID to the dataset
-        const allMetadataModules = metadata.get("dataset", image.imageId);
-
+        const instance = metadata.get("instance", image.imageId);
         return {
             ...image,
-            ...allMetadataModules,
+            ...instance,
             // Todo: move to dcmjs tag style
-            SOPClassUID: allMetadataModules.SopClassUID,
-            SOPInstanceUID: allMetadataModules.SopInstanceUID,
+            SOPClassUID: instance.SopClassUID,
+            SOPInstanceUID: instance.SopInstanceUID,
             PixelData: image.getPixelData(),
             _vrMap: {
                 PixelData: "OW"
