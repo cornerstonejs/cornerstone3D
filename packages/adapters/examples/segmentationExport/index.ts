@@ -108,45 +108,37 @@ addButtonToToolbar({
     title: "Create SEG",
     onClick: async () => {
         const volume = cache.getVolume(volumeId);
+        const segUID = segmentationRepresentationUID[0];
 
-        const volumeImages = volume.convertToCornerstoneImages();
-        const imagePromises = volumeImages.map(image => image.promise);
+        const images = volume.getCornerstoneImages();
 
-        await Promise.all(imagePromises).then(images => {
-            const labelmap3D =
-                Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
-                    segmentationVolume
-                );
-
-            const segUID = segmentationRepresentationUID[0];
-
-            labelmap3D.metadata = [];
-            // labelmap3D.labelmaps2D.forEach(labelmap2D => {
-            labelmap3D.segmentsOnLabelmap.forEach(segmentIndex => {
-                const color = segmentation.config.color.getColorForSegmentIndex(
-                    toolGroupId,
-                    segUID,
-                    segmentIndex
-                );
-
-                console.debug("color", segmentIndex, color);
-                const segmentMetadata = generateMockMetadata(
-                    segmentIndex,
-                    color
-                );
-                labelmap3D.metadata[segmentIndex] = segmentMetadata;
-            });
-
-            const segBlob = Cornerstone3D.Segmentation.generateSegmentation(
-                images,
-                labelmap3D,
-                metaData
+        const labelmapObj =
+            Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
+                segmentationVolume
             );
 
-            //Create a URL for the binary.
-            const objectUrl = URL.createObjectURL(segBlob);
-            window.open(objectUrl);
+        // Generate fake metadata as an example
+        labelmapObj.metadata = [];
+        labelmapObj.segmentsOnLabelmap.forEach(segmentIndex => {
+            const color = segmentation.config.color.getColorForSegmentIndex(
+                toolGroupId,
+                segUID,
+                segmentIndex
+            );
+
+            const segmentMetadata = generateMockMetadata(segmentIndex, color);
+            labelmapObj.metadata[segmentIndex] = segmentMetadata;
         });
+
+        const segBlob = Cornerstone3D.Segmentation.generateSegmentation(
+            images,
+            labelmapObj,
+            metaData
+        );
+
+        //Create a URL for the binary.
+        const objectUrl = URL.createObjectURL(segBlob);
+        window.open(objectUrl);
     }
 });
 
