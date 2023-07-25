@@ -9,6 +9,12 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {
@@ -49,7 +55,10 @@ import pointInPolyline from '../../utilities/math/polyline/pointInPolyline';
 import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -663,6 +672,15 @@ class PlanarFreehandROITool extends AnnotationTool {
       )
         return;
 
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
+
       if (!this.commonData?.movingTextBox) {
         const { data } = annotation;
         if (
@@ -682,14 +700,16 @@ class PlanarFreehandROITool extends AnnotationTool {
             annotation,
             viewport,
             renderingEngine,
-            enabledElement
+            enabledElement,
+            modalityUnitOptions
           );
         } else if (annotation.invalidated) {
           this._throttledCalculateCachedStats(
             annotation,
             viewport,
             renderingEngine,
-            enabledElement
+            enabledElement,
+            modalityUnitOptions
           );
         }
       }
@@ -704,7 +724,8 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { cachedStats, polyline: points } = data;
@@ -722,9 +743,11 @@ class PlanarFreehandROITool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, metadata, hasPixelSpacing } = image;
+      const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const area = polyline.calculateAreaOfPoints(canvasCoordinates);
+      const scale = getCalibratedScale(image);
+      const area =
+        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
 
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
@@ -841,13 +864,20 @@ class PlanarFreehandROITool extends AnnotationTool {
       let stdDev = sumSquares / count - mean ** 2;
       stdDev = Math.sqrt(stdDev);
 
+      const modalityUnit = getModalityUnit(
+        metadata.Modality,
+        annotation.metadata.referencedImageId,
+        modalityUnitOptions
+      );
+
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
         mean,
         max,
         stdDev,
-        areaUnit: hasPixelSpacing ? 'mm' : 'px',
+        areaUnit: getCalibratedAreaUnits(null, image),
+        modalityUnit,
       };
     }
 
@@ -861,19 +891,8 @@ class PlanarFreehandROITool extends AnnotationTool {
   _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
-    const isPreScaled = isViewportPreScaled(viewport, targetId);
-    const isSuvScaled = this.isSuvScaled(
-      viewport,
-      targetId,
-      annotation.metadata.referencedImageId
-    );
 
-    const textLines = this._getTextLines(
-      data,
-      targetId,
-      isPreScaled,
-      isSuvScaled
-    );
+    const textLines = this._getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) return;
 
     const canvasCoordinates = data.polyline.map((p) =>
@@ -918,36 +937,30 @@ class PlanarFreehandROITool extends AnnotationTool {
     };
   };
 
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] => {
+  _getTextLines = (data, targetId: string): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
+    const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
       cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     if (area) {
       const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
+        : `Area: ${roundNumber(area)} ${areaUnit}`;
       textLines.push(areaLine);
     }
 
     if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
     }
 
     if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
     }
 
     if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
     }
 
     return textLines;

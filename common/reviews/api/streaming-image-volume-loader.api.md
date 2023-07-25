@@ -43,6 +43,17 @@ enum BlendModes {
 }
 
 // @public
+enum CalibrationTypes {
+    ERMF = 'ERMF',
+    ERROR = 'Error',
+    NOT_APPLICABLE = '',
+    PROJECTION = 'Proj',
+    REGION = 'Region',
+    UNCALIBRATED = 'Uncalibrated',
+    USER = 'User',
+}
+
+// @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 
 // @public
@@ -361,6 +372,8 @@ type CPUIImageData = {
     scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    calibration?: IImageCalibration;
+
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -796,7 +809,21 @@ interface IImage {
 }
 
 // @public
+interface IImageCalibration {
+    aspect?: number;
+    // (undocumented)
+    columnPixelSpacing?: number;
+    rowPixelSpacing?: number;
+    scale?: number;
+    sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+    tooltip?: string;
+    type: CalibrationTypes;
+}
+
+// @public
 interface IImageData {
+    // (undocumented)
+    calibration?: IImageCalibration;
     dimensions: Point3;
     direction: Mat3;
     hasPixelSpacing?: boolean;
@@ -980,6 +1007,7 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+    viewportStatus: ViewportStatus;
 };
 
 // @public (undocumented)
@@ -998,8 +1026,7 @@ type ImageSpacingCalibratedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
-    rowScale: number;
-    columnScale: number;
+    calibration: IImageCalibration;
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
@@ -1177,6 +1204,7 @@ interface IViewport {
     );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setRendered(): void;
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
@@ -1186,6 +1214,7 @@ interface IViewport {
     type: ViewportType;
     // (undocumented)
     updateRenderingPipeline: () => void;
+    viewportStatus: ViewportStatus;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -1568,6 +1597,15 @@ type ViewportProperties = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
 };
+
+// @public (undocumented)
+enum ViewportStatus {
+    LOADING = 'loading',
+    NO_DATA = 'noData',
+    PRE_RENDER = 'preRender',
+    RENDERED = 'rendered',
+    RESIZE = 'resize',
+}
 
 // @public
 enum ViewportType {

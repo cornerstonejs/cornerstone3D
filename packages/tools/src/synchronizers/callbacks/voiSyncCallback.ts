@@ -1,8 +1,8 @@
 import {
+  BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
   Types,
-  VolumeViewport,
 } from '@cornerstonejs/core';
 
 /**
@@ -41,7 +41,7 @@ export default function voiSyncCallback(
     tProperties.invert = invert;
   }
 
-  if (tViewport instanceof VolumeViewport) {
+  if (tViewport instanceof BaseVolumeViewport) {
     tViewport.setProperties(tProperties, volumeId);
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties(tProperties);

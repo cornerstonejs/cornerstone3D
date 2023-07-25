@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.6.0](https://github.com/dcmjs-org/dcmjs/compare/v1.5.0...v1.6.0) (2023-07-21)
+
+### Features
+
+-   **calibration:** Add calibration type labels (ERMF, PROJ, USER) ([#638](https://github.com/dcmjs-org/dcmjs/issues/638)) ([0aafbc2](https://github.com/dcmjs-org/dcmjs/commit/0aafbc2be6f50f4733792b7eb924863ec3200f23))
+
+# [1.5.0](https://github.com/dcmjs-org/dcmjs/compare/v1.4.6...v1.5.0) (2023-07-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.4.6](https://github.com/dcmjs-org/dcmjs/compare/v1.4.5...v1.4.6) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.4.5](https://github.com/dcmjs-org/dcmjs/compare/v1.4.4...v1.4.5) (2023-07-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.4.4](https://github.com/dcmjs-org/dcmjs/compare/v1.4.3...v1.4.4) (2023-07-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.4.3](https://github.com/dcmjs-org/dcmjs/compare/v1.4.2...v1.4.3) (2023-07-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.4.2](https://github.com/dcmjs-org/dcmjs/compare/v1.4.1...v1.4.2) (2023-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.4.1](https://github.com/dcmjs-org/dcmjs/compare/v1.4.0...v1.4.1) (2023-07-04)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

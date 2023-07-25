@@ -27,13 +27,14 @@ function worldToImageCoords(
 
   const {
     columnCosines,
-    columnPixelSpacing,
     rowCosines,
-    rowPixelSpacing,
     imagePositionPatient: origin,
-    rows,
-    columns,
   } = imagePlaneModule;
+
+  let { columnPixelSpacing, rowPixelSpacing } = imagePlaneModule;
+  // Use ||= to convert null and 0 as well as undefined to 1
+  columnPixelSpacing ||= 1;
+  rowPixelSpacing ||= 1;
 
   // The origin is the image position patient, but since image coordinates start
   // from [0,0] for the top left hand of the first pixel, and the origin is at the
