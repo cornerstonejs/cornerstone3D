@@ -17,6 +17,9 @@
     },
     "dicom-image-loader": {
       "description": "usage of cornerstone dicom image loader"
+    },
+    "adapters": {
+      "description": "usage of cornerstone adapters"
     }
   },
   "examplesByCategory": {
