@@ -76,6 +76,15 @@ enum Events {
    */
   IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
   /**
+   * Triggers on the eventTarget when the image volume loading is completed and all
+   * frames are loaded and inserted into a volume.
+   *
+   * Make use of {@link EventTypes.ImageVolumeLoadingCompletedEvent | ImageVolumeLoadingCompleted Event Type } for typing your
+   * event listeners for IMAGE_VOLUME_LOADING_COMPLETED event, and see what event detail is included
+   * in {@link EventTypes.ImageVolumeLoadingCompletedEventDetail | ImageVolumeLoadingCompleted Event Detail }
+   */
+  IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+  /**
    * Triggers on the eventTarget when the image has successfully loaded by imageLoaders
    *
    * Make use of {@link EventTypes.ImageLoadedEvent | ImageLoaded Event Type } for typing your event listeners for IMAGE_LOADED event,
