@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.6.0...v1.7.0) (2023-07-26)
+
+### Features
+
+- **streamingVolumeLoader:** added IMAGE_VOLUME_LOADING_COMPLETED event ([#699](https://github.com/cornerstonejs/cornerstone3D/issues/699)) ([c8c8f59](https://github.com/cornerstonejs/cornerstone3D/commit/c8c8f59078251eca168bf11952def05cbe412118))
+
 # [1.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.5.0...v1.6.0) (2023-07-21)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
