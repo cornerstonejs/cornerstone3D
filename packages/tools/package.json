@@ -22,6 +22,7 @@
     "build": "yarn run build:all",
     "api-check": "api-extractor --debug run",
     "clean": "shx rm -rf dist",
+    "dev": "tsc --project ./tsconfig.esm.json --watch",
     "build:update-api": "yarn run build && api-extractor run --local",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
