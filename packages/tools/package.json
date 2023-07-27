@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "1.6.0",
+  "version": "1.7.1",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -23,12 +23,13 @@
     "build": "yarn run build:all",
     "api-check": "api-extractor --debug run",
     "clean": "shx rm -rf dist",
+    "dev": "tsc --project ./tsconfig.esm.json --watch",
     "build:update-api": "yarn run build && api-extractor run --local",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.6.0",
+    "@cornerstonejs/core": "^1.7.1",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
   },
