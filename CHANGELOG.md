@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.7.1...v1.7.2) (2023-07-27)
+
+### Bug Fixes
+
+- **SVGCursorDescriptor:** improve CursorSVG typing ([#705](https://github.com/cornerstonejs/cornerstone3D/issues/705)) ([26b854a](https://github.com/cornerstonejs/cornerstone3D/commit/26b854ab2340efc2a6190d48e86cb8e45dd7b442))
+
 ## [1.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.7.0...v1.7.1) (2023-07-27)
 
 **Note:** Version bump only for package root
