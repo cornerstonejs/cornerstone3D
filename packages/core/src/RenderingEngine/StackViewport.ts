@@ -1818,9 +1818,21 @@ class StackViewport extends Viewport implements IStackViewport {
       const priority = -5;
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
+      //
+      // issues : https://github.com/OHIF/Viewers/issues/3354
+      //
+      //
+      // 'Float32Array' as targetBuffer.type causes inproper ImageRendering
+      //  for DICOM with Photometric Interpretation (0028,0004)= RGB or PALETTE_COLOR
+      //
+      //  tested on RGB/MONOCHROME/YBR_XXX/PALETTE_COLOR ( mostly US modality)
+      //
+      //  requires better analysis and evalaution
+      //
       const options = {
         targetBuffer: {
-          type: this.useNativeDataType ? undefined : 'Float32Array',
+          //type: this.useNativeDataType ? undefined : 'Float32Array',
+          type: undefined,
         },
         preScale: {
           enabled: true,
