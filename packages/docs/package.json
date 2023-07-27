@@ -32,6 +32,7 @@
     "@cornerstonejs/dicom-image-loader": "^1.6.0",
     "@cornerstonejs/streaming-image-volume-loader": "^1.6.0",
     "@cornerstonejs/tools": "^1.6.0",
+    "@cornerstonejs/adapters": "^1.6.0",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",
     "@docusaurus/plugin-google-gtag": "2.3.1",
