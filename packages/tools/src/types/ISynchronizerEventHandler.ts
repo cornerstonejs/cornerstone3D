@@ -6,6 +6,7 @@ export default interface ISynchronizerEventHandler {
     synchronizer: Synchronizer,
     sourceViewport: Types.IViewportId,
     targetViewport: Types.IViewportId,
-    sourceEvent: any
+    sourceEvent: any,
+    options?: any
   ): void;
 }
