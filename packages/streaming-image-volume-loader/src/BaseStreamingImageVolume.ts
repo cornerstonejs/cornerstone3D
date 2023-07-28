@@ -321,63 +321,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       }
     }
 
-    const successCallback = (
-      imageIdIndex: number,
-      imageId: string,
-      scalingParameters
-    ) => {
-      const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-
-      // Check if there is a cached image for the same imageURI (different
-      // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-
-      // check if the load was cancelled while we were waiting for the image
-      // if so we don't want to do anything
-      if (loadStatus.cancelled) {
-        console.warn(
-          'volume load cancelled, returning for imageIdIndex: ',
-          imageIdIndex
-        );
-        return;
-      }
-
-      if (!cachedImage || !cachedImage.image) {
-        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
-      }
-      const imageScalarData = this._scaleIfNecessary(
-        cachedImage.image,
-        scalingParameters
-      );
-      // todo add scaling and slope
-      const { pixelsPerImage, bytesPerImage } = this.cornerstoneImageMetaData;
-      const TypedArray = scalarData.constructor;
-      let byteOffset = bytesPerImage * frameIndex;
-
-      // create a view on the volume arraybuffer
-      const bytePerPixel = bytesPerImage / pixelsPerImage;
-
-      if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-        byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
-      }
-
-      // @ts-ignore
-      const volumeBufferView = new TypedArray(
-        arrayBuffer,
-        byteOffset,
-        pixelsPerImage
-      );
-      cachedImage.imageLoadObject.promise
-        .then((image) => {
-          volumeBufferView.set(imageScalarData);
-          updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
-        })
-        .catch((err) => {
-          errorCallback.call(this, err, imageIdIndex, imageId);
-        });
-      return;
-    };
-
     const updateTextureAndTriggerEvents = (
       volume: BaseStreamingImageVolume,
       imageIdIndex,
@@ -429,6 +372,59 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           totalNumFrames,
         });
       }
+    };
+
+    const successCallback = (
+      imageIdIndex: number,
+      imageId: string,
+      scalingParameters
+    ) => {
+      const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
+
+      // Check if there is a cached image for the same imageURI (different
+      // data loader scheme)
+      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
+
+      // Check if the image was already loaded by another volume and we are here
+      // since we got the imageLoadObject from the cache from the other already loaded
+      // volume
+      const cachedVolume = cache.getVolumeContainingImageId(imageId);
+
+      // check if the load was cancelled while we were waiting for the image
+      // if so we don't want to do anything
+      if (loadStatus.cancelled) {
+        console.warn(
+          'volume load cancelled, returning for imageIdIndex: ',
+          imageIdIndex
+        );
+        return;
+      }
+
+      // if it is not a cached image or volume
+      if (
+        !cachedImage?.image &&
+        !(cachedVolume && cachedVolume.volume !== this)
+      ) {
+        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
+      }
+
+      // it is either cachedImage or cachedVolume
+      const isFromImageCache = !!cachedImage;
+
+      const cachedImageOrVolume = cachedImage || cachedVolume.volume;
+
+      this.handleImageComingFromCache(
+        cachedImageOrVolume,
+        isFromImageCache,
+        scalingParameters,
+        scalarData,
+        frameIndex,
+        arrayBuffer,
+        updateTextureAndTriggerEvents,
+        imageIdIndex,
+        imageId,
+        errorCallback
+      );
     };
 
     function errorCallback(error, imageIdIndex, imageId) {
@@ -633,6 +629,59 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     return requests;
   };
+
+  private handleImageComingFromCache(
+    cachedImageOrVolume,
+    isFromImageCache: boolean,
+    scalingParameters: any,
+    scalarData: Types.VolumeScalarData,
+    frameIndex: number,
+    arrayBuffer: ArrayBufferLike,
+    updateTextureAndTriggerEvents: (
+      volume: BaseStreamingImageVolume,
+      imageIdIndex: any,
+      imageId: any
+    ) => void,
+    imageIdIndex: number,
+    imageId: string,
+    errorCallback: (error: any, imageIdIndex: any, imageId: any) => void
+  ) {
+    const imageLoadObject = isFromImageCache
+      ? cachedImageOrVolume.imageLoadObject
+      : cachedImageOrVolume.convertToCornerstoneImage(imageId, imageIdIndex);
+
+    imageLoadObject.promise
+      .then((cachedImage) => {
+        const imageSource = isFromImageCache ? cachedImage.image : cachedImage;
+        const imageScalarData = this._scaleIfNecessary(
+          imageSource,
+          scalingParameters
+        );
+        // todo add scaling and slope
+        const { pixelsPerImage, bytesPerImage } = this.cornerstoneImageMetaData;
+        const TypedArray = scalarData.constructor;
+        let byteOffset = bytesPerImage * frameIndex;
+
+        // create a view on the volume arraybuffer
+        const bytePerPixel = bytesPerImage / pixelsPerImage;
+
+        if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
+          byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
+        }
+
+        // @ts-ignore
+        const volumeBufferView = new TypedArray(
+          arrayBuffer,
+          byteOffset,
+          pixelsPerImage
+        );
+        volumeBufferView.set(imageScalarData);
+        updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
+      })
+      .catch((err) => {
+        errorCallback.call(this, err, imageIdIndex, imageId);
+      });
+  }
 
   /**
    * It returns the imageLoad requests for the streaming image volume instance.
