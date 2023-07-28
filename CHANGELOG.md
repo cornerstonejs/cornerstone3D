@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.8.0...v1.8.1) (2023-07-28)
+
+### Bug Fixes
+
+- **voi:** fix the voi setting when the stack is composed of different orientations ([#703](https://github.com/cornerstonejs/cornerstone3D/issues/703)) ([c2810dd](https://github.com/cornerstonejs/cornerstone3D/commit/c2810dd5799caf21869c323631802cec3e599ca7))
+
 # [1.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.7.2...v1.8.0) (2023-07-28)
 
 ### Features
