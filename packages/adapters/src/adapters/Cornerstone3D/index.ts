@@ -12,8 +12,9 @@ import RectangleROI from "./RectangleROI";
 import Length from "./Length";
 import PlanarFreehandROI from "./PlanarFreehandROI";
 import Probe from "./Probe";
+import * as Segmentation from "./Segmentation";
 
-const Cornerstone3D = {
+const Cornerstone3DSR = {
     Bidirectional,
     CobbAngle,
     Angle,
@@ -29,4 +30,8 @@ const Cornerstone3D = {
     CORNERSTONE_3D_TAG
 };
 
-export default Cornerstone3D;
+const Cornerstone3DSEG = {
+    Segmentation
+};
+
+export { Cornerstone3DSR, Cornerstone3DSEG };

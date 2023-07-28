@@ -1982,6 +1982,9 @@ function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpec
 function getActiveSegmentIndex(segmentationId: string): number | undefined;
 
 // @public (undocumented)
+function getAllSegmentationRepresentations(): Record<string, ToolGroupSpecificRepresentation[]>;
+
+// @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
 
 // @public (undocumented)
@@ -4863,6 +4866,7 @@ declare namespace state_3 {
         getSegmentSpecificRepresentationConfig,
         setSegmentSpecificRepresentationConfig,
         getToolGroupIdsWithSegmentation,
+        getAllSegmentationRepresentations,
         getSegmentationRepresentationByUID,
         addColorLUT,
         getColorLUT,

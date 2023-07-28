@@ -17,6 +17,9 @@
     },
     "dicom-image-loader": {
       "description": "usage of cornerstone dicom image loader"
+    },
+    "adapters": {
+      "description": "usage of cornerstone adapters"
     }
   },
   "examplesByCategory": {
@@ -284,6 +287,12 @@
       "dicomImageLoaderWADOURI": {
         "name": "WADO-URI (DICOM P10)",
         "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
+      }
+    },
+    "adapters": {
+      "segmentationExport": {
+        "name": "DICOM SEG export",
+        "description": "Demonstrates how to export a segmentation to DICOM SEG"
       }
     }
   }

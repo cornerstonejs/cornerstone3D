@@ -86,12 +86,28 @@ function getSegmentationRepresentations(
 }
 
 /**
+ * Get all segmentation representations in the state
+ * @returns An array of segmentation representation objects.
+ */
+function getAllSegmentationRepresentations(): Record<
+  string,
+  ToolGroupSpecificRepresentation[]
+> {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getAllSegmentationRepresentations();
+}
+
+/**
  * Get the tool group IDs that have a segmentation representation with the given
  * segmentationId
  * @param segmentationId - The id of the segmentation
  * @returns An array of tool group IDs.
  */
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[] {
+  if (!segmentationId) {
+    throw new Error('getToolGroupIdsWithSegmentation: segmentationId is empty');
+  }
+
   const segmentationStateManager = getDefaultSegmentationStateManager();
   const state = segmentationStateManager.getState();
   const toolGroupIds = Object.keys(state.toolGroups);
@@ -405,6 +421,7 @@ export {
   setSegmentSpecificRepresentationConfig,
   // helpers s
   getToolGroupIdsWithSegmentation,
+  getAllSegmentationRepresentations,
   getSegmentationRepresentationByUID,
   // color
   addColorLUT,

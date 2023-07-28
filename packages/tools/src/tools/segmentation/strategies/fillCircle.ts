@@ -68,10 +68,6 @@ function fillCircle(
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions);
 
-  if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet');
-  }
-
   // using circle as a form of ellipse
   const ellipseObj = {
     center: center as Types.Point3,
