@@ -797,13 +797,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    *
    * @param imageId - the imageId of the image to be converted
    * @param imageIdIndex - the index of the imageId in the imageIds array
-   * @returns imageLoadObject containing the promise that resolves
-   * to the cornerstone image
+   * @returns image object containing the pixel data, metadata, and other information
    */
-  public convertToCornerstoneImage(
+  public getCornerstoneImage(
     imageId: string,
     imageIdIndex: number
-  ): Types.IImageLoadObject {
+  ): Types.IImage {
     const { imageIds } = this;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
@@ -865,7 +864,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       ? modalityLutModule.rescaleIntercept
       : 0;
 
-    const image: Types.IImage = {
+    return {
       imageId,
       intercept,
       windowCenter,
@@ -891,13 +890,61 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       rowPixelSpacing: spacing[1],
       invert,
     };
+  }
 
-    // 5. Create the imageLoadObject
+  /**
+   * Converts the requested imageId inside the volume to a cornerstoneImage
+   * object. It uses the typedArray set method to copy the pixelData from the
+   * correct offset in the scalarData to a new array for the image
+   * Duplicate of getCornerstoneImageLoadObject for legacy reasons
+   *
+   * @param imageId - the imageId of the image to be converted
+   * @param imageIdIndex - the index of the imageId in the imageIds array
+   * @returns imageLoadObject containing the promise that resolves
+   * to the cornerstone image
+   */
+  public convertToCornerstoneImage(
+    imageId: string,
+    imageIdIndex: number
+  ): Types.IImageLoadObject {
+    return this.getCornerstoneImageLoadObject(imageId, imageIdIndex);
+  }
+
+  /**
+   * Converts the requested imageId inside the volume to a cornerstoneImage
+   * object. It uses the typedArray set method to copy the pixelData from the
+   * correct offset in the scalarData to a new array for the image
+   *
+   * @param imageId - the imageId of the image to be converted
+   * @param imageIdIndex - the index of the imageId in the imageIds array
+   * @returns imageLoadObject containing the promise that resolves
+   * to the cornerstone image
+   */
+  public getCornerstoneImageLoadObject(
+    imageId: string,
+    imageIdIndex: number
+  ): Types.IImageLoadObject {
+    const image = this.getCornerstoneImage(imageId, imageIdIndex);
+
     const imageLoadObject = {
       promise: Promise.resolve(image),
     };
 
     return imageLoadObject;
+  }
+
+  /**
+   * Returns an array of all the volume's images as Cornerstone images.
+   * It iterates over all the imageIds and converts them to Cornerstone images.
+   *
+   * @returns An array of Cornerstone images.
+   */
+  public getCornerstoneImages(): Types.IImage[] {
+    const { imageIds } = this;
+
+    return imageIds.map((imageId, imageIdIndex) => {
+      return this.getCornerstoneImage(imageId, imageIdIndex);
+    });
   }
 
   /**

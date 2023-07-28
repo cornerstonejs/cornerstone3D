@@ -18,7 +18,7 @@ export default {
         //   sourcemap: true
         // },
         {
-            file: `dist/${pkg.name}.es.js`,
+            file: `dist/adapters.es.js`,
             format: "es",
             sourcemap: true
         }
@@ -28,11 +28,14 @@ export default {
             browser: true
         }),
         commonjs(),
-        typescript(),
-        //    globals(),
+        typescript({
+            tsconfig: "./tsconfig.json"
+        }),
+        // globals(),
         // builtins(),
         babel({
-            exclude: "node_modules/**"
+            exclude: "node_modules/**",
+            babelHelpers: "bundled"
         }),
         json()
     ]

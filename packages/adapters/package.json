@@ -9,23 +9,24 @@
         "dist"
     ],
     "directories": {
-        "example": "examples",
         "build": "dist"
     },
     "exports": {
-        ".": "./dist/@cornerstonejs/adapters.es.js"
+        "import": "./dist/adapters.es.js"
     },
-    "types": "./dist/@cornerstonejs/dts/index.d.ts",
+    "types": "./dist/types/index.d.ts",
     "publishConfig": {
         "access": "public"
     },
     "scripts": {
         "test": "jest --testTimeout 60000",
         "build": "rollup -c rollup.config.mjs",
+        "build:esm": "rollup -c rollup.config.mjs",
+        "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+        "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
-        "build:examples": "npm run build && npx cpx 'dist/**/*.{js,map}' examples/js",
         "build:update-api": "yarn run build && api-extractor run --local",
-        "start": "rollup -c -w",
+        "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."
     },
@@ -41,9 +42,15 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "dcmjs": "^0.29.5",
+        "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
-        "ndarray": "^1.0.19"
+        "ndarray": "^1.0.19",
+        "buffer": "^6.0.3"
+    },
+    "devDependencies": {
+        "@cornerstonejs/core": "^1.2.6",
+        "@cornerstonejs/tools": "^1.2.6",
+        "@cornerstonejs/streaming-image-volume-loader": "^1.2.6"
     }
 }

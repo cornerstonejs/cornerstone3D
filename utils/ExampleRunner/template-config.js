@@ -2,6 +2,7 @@ const path = require('path');
 
 const csRenderBasePath = path.resolve('packages/core/src/index');
 const csToolsBasePath = path.resolve('packages/tools/src/index');
+const csAdapters = path.resolve('packages/adapters/src/index');
 const csStreamingBasePath = path.resolve(
   'packages/streaming-image-volume-loader/src/index'
 );
@@ -68,6 +69,7 @@ module.exports = {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/adapters': '${csAdapters.replace(/\\/g, '/')}',
       '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
         /\\/g,
         '//'
