@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.8.1...v1.9.0) (2023-07-28)
+
+### Features
+
+- **voiSync:** add optoins to turn of invert sync for voisync ([#708](https://github.com/cornerstonejs/cornerstone3D/issues/708)) ([4f5b5c3](https://github.com/cornerstonejs/cornerstone3D/commit/4f5b5c36b92161dc103fa7fbc58137dc71c1ae91))
+
 ## [1.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.8.0...v1.8.1) (2023-07-28)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
