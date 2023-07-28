@@ -1230,13 +1230,13 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 function createStackImageSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
+function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any): Synchronizer;
 
 // @public (undocumented)
 function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function createVOISynchronizer(synchronizerName: string): Synchronizer;
+function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
 function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
@@ -2890,7 +2890,7 @@ function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeV
 // @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
-    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any): void;
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): void;
 }
 
 // @public (undocumented)
@@ -4945,7 +4945,7 @@ enum Swipe {
 
 // @public (undocumented)
 export class Synchronizer {
-    constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler);
+    constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any);
     // (undocumented)
     add(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
