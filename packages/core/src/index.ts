@@ -1,3 +1,4 @@
+import * as workerManagerComlink from 'comlink';
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
@@ -122,4 +123,5 @@ export {
   resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
+  workerManagerComlink,
 };
