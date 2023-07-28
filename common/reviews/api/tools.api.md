@@ -2854,6 +2854,7 @@ interface IStackViewport extends IViewport {
     getCornerstoneImage: () => IImage;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (imageIdIndex?: number) => StackViewportProperties;
     getFrameOfReferenceUID: () => string;
     getImageData(): IImageData | CPUIImageData;
     getImageIds: () => string[];
@@ -2868,6 +2869,10 @@ interface IStackViewport extends IViewport {
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
+    setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageIdIndex?: number
+    ): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
         {

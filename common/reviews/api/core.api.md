@@ -1620,6 +1620,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
+    getDefaultProperties: (imageIdIndex?: number) => StackViewportProperties;
+    // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(): IImageData | CPUIImageData;
@@ -1645,6 +1647,8 @@ interface IStackViewport extends IViewport {
     scaling: Scaling;
     // (undocumented)
     setCamera(cameraInterface: ICamera): void;
+    // (undocumented)
+    setDefaultProperties(ViewportProperties: StackViewportProperties, imageIdIndex?: number): void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
@@ -2278,6 +2282,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getDefaultActor: () => ActorEntry;
     // (undocumented)
+    getDefaultProperties: (imageIdIndex?: number) => StackViewportProperties;
+    // (undocumented)
     getFrameOfReferenceUID: () => string | undefined;
     // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
@@ -2315,6 +2321,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     setActors: (actors: Array<ActorEntry>) => void;
     // (undocumented)
     setCamera: (cameraInterface: ICamera, storeAsInitialCamera?: boolean) => void;
+    // (undocumented)
+    setDefaultProperties(ViewportProperties?: StackViewportProperties, imageIdIndex?: number): void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
