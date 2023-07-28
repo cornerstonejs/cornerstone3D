@@ -1,3 +1,4 @@
+import * as Comlink from 'comlink';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -10,6 +11,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
+
 import {
   triggerEvent,
   isEqual,
@@ -157,6 +159,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Camera properties
   private initialViewUp: Point3;
+  private workerAPI: any;
 
   /**
    * Constructor for the StackViewport class
@@ -181,6 +184,14 @@ class StackViewport extends Viewport implements IStackViewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
+    const worker: Worker = new Worker(
+      new URL('../workers/add.ts', import.meta.url),
+      {
+        name: 'worker',
+      }
+    );
+
+    this.workerAPI = Comlink.wrap(worker);
   }
 
   public setUseCPURendering(value: boolean) {
@@ -2235,6 +2246,11 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
+  fib(n) {
+    if (n <= 1) return 1;
+    return this.fib(n - 1) + this.fib(n - 2);
+  }
+
   /**
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.
@@ -2243,6 +2259,18 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
+    // await this.workerAPI.inc();
+
+    // console.debug(await this.workerAPI.counter);
+
+    // await this.workerAPI.vtk();
+
+    // console.debug(await this.workerAPI.counter);
+
+    console.debug('fib start');
+    const fib = await this.workerAPI.fib(40);
+    console.debug(fib);
+
     this._throwIfDestroyed();
 
     // If we are already on this imageId index, stop here
