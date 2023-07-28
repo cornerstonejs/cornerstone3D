@@ -127,6 +127,12 @@ class StackViewport extends Viewport implements IStackViewport {
   private debouncedTimeout: number;
 
   // Viewport Properties
+  private globalDefaultProperties: StackViewportProperties;
+  private defaultPropertiesByImageIdIndex = new Map<
+    number,
+    StackViewportProperties
+  >();
+
   private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
@@ -622,6 +628,25 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
+   * Sets the default properties for the viewport
+   * @param ViewportProperties
+   * @param imageIdIndex If given, we st the default properties only for this image index
+   */
+  public setDefaultProperties(
+    ViewportProperties: StackViewportProperties = {},
+    imageIdIndex?: number
+  ): void {
+    if (!imageIdIndex) {
+      this.globalDefaultProperties = ViewportProperties;
+    } else {
+      this.defaultPropertiesByImageIdIndex.set(
+        imageIdIndex,
+        ViewportProperties
+      );
+    }
+  }
+
+  /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
    * @param voiRange - Sets the lower and upper voi
@@ -643,6 +668,17 @@ class StackViewport extends Viewport implements IStackViewport {
     this.viewportStatus = this.csImage
       ? ViewportStatus.PRE_RENDER
       : ViewportStatus.LOADING;
+
+    if (this.globalDefaultProperties == undefined) {
+      this.setDefaultProperties({
+        colormap,
+        voiRange,
+        VOILUTFunction,
+        invert,
+        interpolationType,
+        rotation,
+      });
+    }
 
     if (typeof colormap !== 'undefined') {
       this.setColormap(colormap);
@@ -673,6 +709,37 @@ class StackViewport extends Viewport implements IStackViewport {
       }
     }
   }
+
+  /**
+   * Retrieve the viewport default properties
+   * @param imageIdIndex If given, we retrieve the default properties of an image index if it exists
+   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
+   */
+  public getDefaultProperties = (
+    imageIdIndex?: number
+  ): StackViewportProperties => {
+    let imageProperties;
+    if (imageIdIndex !== undefined) {
+      imageProperties = this.defaultPropertiesByImageIdIndex.get(imageIdIndex);
+    }
+
+    if (imageProperties !== undefined) {
+      return imageProperties;
+    }
+
+    const { colormap, voiRange, VOILUTFunction, interpolationType, invert } =
+      this.globalDefaultProperties;
+    const rotation = this.getRotation();
+
+    return {
+      colormap,
+      voiRange,
+      VOILUTFunction,
+      interpolationType,
+      invert,
+      rotation,
+    };
+  };
 
   /**
    * Retrieve the viewport properties
@@ -720,14 +787,11 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _resetProperties() {
-    let colormap;
-    if (this.useCPURendering) {
-      colormap = 'Gray';
-    } else {
-      colormap = 'Grayscale';
-    }
+    const properties = this.globalDefaultProperties;
 
-    this.setColormap({ name: colormap });
+    if (properties.colormap?.name) {
+      this.setColormap(properties.colormap);
+    }
 
     let voiRange;
     if (this._isCurrentImagePTPrescaled()) {
@@ -1055,6 +1119,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // @ts-ignore
     volumeProperty.setInterpolationType(interpolationType);
+
     this.interpolationType = interpolationType;
   }
 
@@ -1106,6 +1171,7 @@ class StackViewport extends Viewport implements IStackViewport {
       if ((!this.invert && invert) || (this.invert && !invert)) {
         invertRgbTransferFunction(tfunc);
       }
+
       this.invert = invert;
     }
   }
@@ -2267,6 +2333,17 @@ class StackViewport extends Viewport implements IStackViewport {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
       return this.getCurrentImageId();
+    }
+
+    //Check if there is any specific options for images
+    if (this.defaultPropertiesByImageIdIndex.size >= 1) {
+      const defaultProperties =
+        this.defaultPropertiesByImageIdIndex.get(imageIdIndex);
+      if (defaultProperties !== undefined) {
+        this.setProperties(defaultProperties);
+      } else {
+        this.setProperties(this.globalDefaultProperties);
+      }
     }
 
     // Otherwise, get the imageId and attempt to display it

@@ -27,6 +27,15 @@ export default interface IStackViewport extends IViewport {
    * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
    */
   getFrameOfReferenceUID: () => string;
+
+  /**
+   * Sets the default properties for the viewport. Properties include
+   * setting the VOI, inverting the colors and setting the interpolation type, rotation
+   */
+  setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageIdIndex?: number
+  ): void;
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
@@ -41,6 +50,10 @@ export default interface IStackViewport extends IViewport {
     }: StackViewportProperties,
     suppressEvents?: boolean
   ): void;
+  /**
+   * Retrieve the viewport default properties
+   */
+  getDefaultProperties: (imageIdIndex?: number) => StackViewportProperties;
   /**
    * Retrieve the viewport properties
    */
