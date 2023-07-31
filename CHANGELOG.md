@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.0...v1.9.1) (2023-07-31)
+
+### Bug Fixes
+
+- **loader:** Load colour images correctly when specified Float32Array ([#702](https://github.com/cornerstonejs/cornerstone3D/issues/702)) ([29f6619](https://github.com/cornerstonejs/cornerstone3D/commit/29f6619540609e45c7a2a0911b9c3fc99c26c85f)), closes [#699](https://github.com/cornerstonejs/cornerstone3D/issues/699) [#706](https://github.com/cornerstonejs/cornerstone3D/issues/706) [#705](https://github.com/cornerstonejs/cornerstone3D/issues/705)
+
 # [1.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.8.1...v1.9.0) (2023-07-28)
 
 ### Features
