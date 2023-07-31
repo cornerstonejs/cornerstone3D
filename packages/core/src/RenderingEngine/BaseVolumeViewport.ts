@@ -470,6 +470,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     this.currentViewportProperties.get(volumeIdToUse).voiRange = voiRangeToUse;
   }
 
+  /**
+   * Update the default properties for the volume viewport on the volume
+   * @param ViewportProperties - The properties to set
+   * @param volumeId The volume id to set the default properties for (if undefined, the first volume)
+   */
   public setDefaultProperties(
     ViewportProperties: VolumeViewportProperties,
     volumeId?: string
@@ -481,6 +486,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   /**
    * Sets the properties for the volume viewport on the volume
+   * and if setProperties is called for the first time, the properties will also become the default one.
    * (if fusion, it sets it for the first volume in the fusion)
    *
    * @param VolumeViewportProperties - The properties to set

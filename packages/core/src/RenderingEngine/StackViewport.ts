@@ -106,7 +106,6 @@ type CalibrationEvent = {
 type SetVOIOptions = {
   suppressEvents?: boolean;
   forceRecreateLUTFunction?: boolean;
-  voiUpdatedWithSetProperties?: boolean;
 };
 
 /**
@@ -128,14 +127,13 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Viewport Properties
   private globalDefaultProperties: StackViewportProperties;
-  private defaultPropertiesByImageIdIndex = new Map<
+  private perImageIdIndexDefaultProperties = new Map<
     number,
     StackViewportProperties
   >();
 
   private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
-  private voiUpdatedWithSetProperties = false;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -628,27 +626,34 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
-   * Sets the default properties for the viewport
-   * @param ViewportProperties
-   * @param imageIdIndex If given, we st the default properties only for this image index
+   * Update the default properties of the viewport and add properties by imageId if specified
+   * @param ViewportProperties - The properties to set
+   * @param imageIdIndex If given, we set the default properties only for this image index
    */
   public setDefaultProperties(
     ViewportProperties: StackViewportProperties = {},
     imageIdIndex?: number
   ): void {
-    if (!imageIdIndex) {
+    if (imageIdIndex == undefined) {
       this.globalDefaultProperties = ViewportProperties;
     } else {
-      this.defaultPropertiesByImageIdIndex.set(
+      this.perImageIdIndexDefaultProperties.set(
         imageIdIndex,
         ViewportProperties
       );
+
+      //If the viewport is one the same imageIdIndex, we need to update the viewport
+      if (this.getCurrentImageIdIndex() == imageIdIndex) {
+        this.setProperties(ViewportProperties);
+      }
     }
   }
 
   /**
-   * Sets the properties for the viewport on the default actor. Properties include
-   * setting the VOI, inverting the colors and setting the interpolation type, rotation
+   * Sets the properties for the viewport on the default actor.
+   * and if setProperties is called for the first time, the properties will become default properties for all imageIds
+   * Properties include setting the VOI, inverting the colors and
+   * setting the interpolation type, rotation.
    * @param voiRange - Sets the lower and upper voi
    * @param invert - Inverts the colors
    * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
@@ -686,8 +691,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
-      const voiUpdatedWithSetProperties = true;
-      this.setVOI(voiRange, { suppressEvents, voiUpdatedWithSetProperties });
+      this.setVOI(voiRange, { suppressEvents });
     }
 
     if (typeof VOILUTFunction !== 'undefined') {
@@ -720,7 +724,7 @@ class StackViewport extends Viewport implements IStackViewport {
   ): StackViewportProperties => {
     let imageProperties;
     if (imageIdIndex !== undefined) {
-      imageProperties = this.defaultPropertiesByImageIdIndex.get(imageIdIndex);
+      imageProperties = this.perImageIdIndexDefaultProperties.get(imageIdIndex);
     }
 
     if (imageProperties !== undefined) {
@@ -746,14 +750,8 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
   public getProperties = (): StackViewportProperties => {
-    const {
-      colormap,
-      voiRange,
-      VOILUTFunction,
-      interpolationType,
-      invert,
-      voiUpdatedWithSetProperties,
-    } = this;
+    const { colormap, voiRange, VOILUTFunction, interpolationType, invert } =
+      this;
     const rotation = this.getRotation();
 
     return {
@@ -763,7 +761,6 @@ class StackViewport extends Viewport implements IStackViewport {
       interpolationType,
       invert,
       rotation,
-      isComputedVOI: !voiUpdatedWithSetProperties,
     };
   };
 
@@ -772,7 +769,6 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
-    this.voiUpdatedWithSetProperties = false;
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
@@ -794,15 +790,13 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     let voiRange;
-    if (this._isCurrentImagePTPrescaled()) {
-      // if not set via setProperties; if it is a PT image and is already prescaled,
-      // use the default range for PT
-      voiRange = this._getDefaultPTPrescaledVOIRange();
-    } else {
+    if (properties.voiRange == undefined) {
       // if not set via setProperties; if it is not a PT image or is not prescaled,
       // use the voiRange for the current image from its metadata if found
       // otherwise, use the cached voiRange
       voiRange = this._getVOIRangeForCurrentImage();
+    } else {
+      voiRange = properties.voiRange;
     }
 
     this.setVOI(voiRange);
@@ -818,14 +812,10 @@ class StackViewport extends Viewport implements IStackViewport {
     const { interpolationType, invert } = this;
 
     let voiRange;
-    if (this.voiUpdatedWithSetProperties) {
+    if (this.voiRange) {
       // use the cached voiRange if the voiRange is locked (if the user has
       // manually set the voi with tools or setProperties api)
       voiRange = this.voiRange;
-    } else if (this._isCurrentImagePTPrescaled()) {
-      // if not set via setProperties; if it is a PT image and is already prescaled,
-      // use the default range for PT
-      voiRange = this._getDefaultPTPrescaledVOIRange();
     } else {
       // if not set via setProperties; if it is not a PT image or is not prescaled,
       // use the voiRange for the current image from its metadata if found
@@ -1227,11 +1217,8 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
-    const {
-      suppressEvents = false,
-      forceRecreateLUTFunction = false,
-      voiUpdatedWithSetProperties = false,
-    } = options;
+    const { suppressEvents = false, forceRecreateLUTFunction = false } =
+      options;
 
     if (
       voiRange &&
@@ -1293,11 +1280,6 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.voiRange = voiRangeToUse;
-
-    // if voiRange is set by setProperties we need to lock it if it is not locked already
-    if (!this.voiUpdatedWithSetProperties) {
-      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
-    }
 
     if (suppressEvents) {
       return;
@@ -2150,42 +2132,12 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _getInitialVOIRange(image: IImage) {
-    if (this.voiRange && this.voiUpdatedWithSetProperties) {
-      return this.voiRange;
+    if (this.globalDefaultProperties?.voiRange) {
+      return this.globalDefaultProperties.voiRange;
+    } else {
+      const { windowCenter, windowWidth } = image;
+      return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
     }
-    const { windowCenter, windowWidth } = image;
-
-    let voiRange = this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
-
-    // Get the range for the PT since if it is prescaled
-    // we set a default range of 0-5
-    voiRange = this._getPTPreScaledRange() || voiRange;
-
-    return voiRange;
-  }
-
-  private _getPTPreScaledRange() {
-    if (!this._isCurrentImagePTPrescaled()) {
-      return undefined;
-    }
-
-    return this._getDefaultPTPrescaledVOIRange();
-  }
-
-  private _isCurrentImagePTPrescaled() {
-    if (this.modality !== 'PT' || !this.csImage.isPreScaled) {
-      return false;
-    }
-
-    if (!this.csImage.preScale?.scalingParameters?.suvbw) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private _getDefaultPTPrescaledVOIRange() {
-    return { lower: 0, upper: 5 };
   }
 
   private _getVOIRangeFromWindowLevel(
@@ -2335,10 +2287,11 @@ class StackViewport extends Viewport implements IStackViewport {
       return this.getCurrentImageId();
     }
 
-    //Check if there is any specific options for images
-    if (this.defaultPropertiesByImageIdIndex.size >= 1) {
+    //Check if there is any existing specific options for images if not we don't
+    //want to re-render the viewport to its default properties
+    if (this.perImageIdIndexDefaultProperties.size >= 1) {
       const defaultProperties =
-        this.defaultPropertiesByImageIdIndex.get(imageIdIndex);
+        this.perImageIdIndexDefaultProperties.get(imageIdIndex);
       if (defaultProperties !== undefined) {
         this.setProperties(defaultProperties);
       } else {
@@ -2728,16 +2681,17 @@ class StackViewport extends Viewport implements IStackViewport {
       colormapUtils.getColormap(colormap.name) ||
       vtkColorMaps.getPresetByName(colormap.name);
 
-    const voiRange = this._getVOIRangeForCurrentImage();
-
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();
       cfun.applyColorMap(colormapObj);
-      cfun.setMappingRange(voiRange.lower, voiRange.upper);
+      cfun.setMappingRange(this.voiRange.lower, this.voiRange.upper);
       actorProp.setRGBTransferFunction(0, cfun);
     } else {
       rgbTransferFunction.applyColorMap(colormapObj);
-      rgbTransferFunction.setMappingRange(voiRange.lower, voiRange.upper);
+      rgbTransferFunction.setMappingRange(
+        this.voiRange.lower,
+        this.voiRange.upper
+      );
       actorProp.setRGBTransferFunction(0, rgbTransferFunction);
     }
 

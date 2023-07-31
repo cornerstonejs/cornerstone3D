@@ -365,13 +365,11 @@ async function run() {
   // Set the stack on the viewport
   await viewport.setStack(stack);
 
-  // Set the VOI of the stack
+  // Set the default properties of the stack for the reset
   viewport.setProperties({
     voiRange: ctVoiRange,
     colormap: { name: 'Grayscale' },
   });
-  // Set the VOI and colormap for one image
-  viewport.setDefaultProperties({ colormap: { name: 'hsv' } }, 2);
 
   // Render the image
   viewport.render();
