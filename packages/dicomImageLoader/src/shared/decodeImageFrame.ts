@@ -202,10 +202,14 @@ function postProcessDecodedPixels(
   };
 
   const type = options.targetBuffer?.type;
-  const invalidTargetType =
-    isColorImage(imageFrame.photometricInterpretation) && type !== 'Uint8Array';
+  // Sometimes the type is specified before the DICOM header data has been
+  // read.  This is fine except for color data, where the wrong type gets
+  // specified.  Don't use the target buffer in that case.
+  const invalidColorType =
+    isColorImage(imageFrame.photometricInterpretation) &&
+    options.targetBuffer?.offset === undefined;
 
-  if (type && !invalidTargetType) {
+  if (type && !invalidColorType) {
     pixelDataArray = _handleTargetBuffer(
       options,
       imageFrame,
