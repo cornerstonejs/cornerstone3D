@@ -3,8 +3,12 @@ import { IStackViewport } from '../types';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import { metaData } from '..';
 
-// Allow a fairly broad delta for angle differences, as it is common to have
-// some variance here, but the scrolling still works
+/**
+ * Defines the allowed difference as a percent between the unit normals before
+ * two planes are considered not coplanar.  Since this value is small compared
+ * to the unit lenght, this value is approximately the angular difference, measured
+ * in radians.  That is, allow about a 3 degrees variation.
+ */
 const ALLOWED_DELTA = 0.05;
 
 /**
