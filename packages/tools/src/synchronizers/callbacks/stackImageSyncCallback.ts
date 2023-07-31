@@ -9,6 +9,12 @@ import { Synchronizer } from '../../store';
 import { jumpToSlice } from '../../utilities';
 import areViewportsCoplanar from './areViewportsCoplanar ';
 
+const getSpatialRegistration = (targetId, sourceId) =>
+  utilities.spatialRegistrationMetadataProvider.get(
+    'spatialRegistrationModule',
+    [targetId, sourceId]
+  );
+
 /**
  * Synchronizer callback to synchronize the source viewport image to the
  * target viewports closest image in its stack.
@@ -71,11 +77,10 @@ export default async function stackImageSyncCallback(
   // if the frame of reference is different we need to use the registrationMetadataProvider
   // and add that to the imagePositionPatient of the source viewport to get the
   // imagePositionPatient of the target viewport's closest image in its stack
-  let registrationMatrixMat4 =
-    utilities.spatialRegistrationMetadataProvider.get(
-      'spatialRegistrationModule',
-      [targetViewport.viewportId, sourceViewport.viewportId]
-    );
+  let registrationMatrixMat4 = getSpatialRegistration(
+    targetViewport.viewportId,
+    sourceViewport.viewportId
+  );
 
   if (!registrationMatrixMat4) {
     const frameOfReferenceUID1 = sViewport.getFrameOfReferenceUID();
@@ -87,11 +92,10 @@ export default async function stackImageSyncCallback(
       registrationMatrixMat4 = mat4.identity(mat4.create());
     } else {
       utilities.calculateViewportsSpatialRegistration(sViewport, tViewport);
-      registrationMatrixMat4 =
-        utilities.spatialRegistrationMetadataProvider.get(
-          'spatialRegistrationModule',
-          [targetViewport.viewportId, sourceViewport.viewportId]
-        );
+      registrationMatrixMat4 = getSpatialRegistration(
+        targetViewport.viewportId,
+        sourceViewport.viewportId
+      );
     }
     if (!registrationMatrixMat4) {
       console.log(
