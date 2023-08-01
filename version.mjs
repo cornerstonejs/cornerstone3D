@@ -31,17 +31,7 @@ async function run() {
 
   let nextVersion;
 
-  if (branchName === 'main') {
-    console.log('Branch: main');
-    // if commit message starts with feat bump the minor version, otherwise bump the patch version
-    const isBumpMinor = lastCommitMessage.trim().startsWith('feat');
-
-    if (isBumpMinor) {
-      nextVersion = semver.inc(currentVersion, 'minor');
-    } else {
-      nextVersion = semver.inc(currentVersion, 'patch');
-    }
-  } else if (branchName === 'beta') {
+  if (branchName === 'beta') {
     console.log('Branch: beta');
     const prereleaseComponents = semver.prerelease(currentVersion);
     const isBumpBeta = lastCommitMessage.trim().endsWith('[BUMP BETA]');
@@ -66,7 +56,14 @@ async function run() {
       )}.0-beta.0`;
     }
   } else {
-    throw new Error(`Unknown branch: ${branchName}`);
+    // if commit message starts with feat bump the minor version, otherwise bump the patch version
+    const isBumpMinor = lastCommitMessage.trim().startsWith('feat');
+
+    if (isBumpMinor) {
+      nextVersion = semver.inc(currentVersion, 'minor');
+    } else {
+      nextVersion = semver.inc(currentVersion, 'patch');
+    }
   }
 
   if (!nextVersion) {
