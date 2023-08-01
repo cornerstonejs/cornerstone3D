@@ -131,7 +131,7 @@ async function run() {
     '--exact',
     '--force-publish',
     '--message',
-    'chore(version): Update package versions [skip ci]',
+    'chore(version): Update package versions %s [skip ci]',
     '--conventional-commits',
     '--create-release',
     'github',
