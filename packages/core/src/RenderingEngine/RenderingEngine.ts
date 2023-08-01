@@ -68,7 +68,7 @@ const VIEWPORT_MIN_SIZE = 2;
 class RenderingEngine implements IRenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
-  /** A flag which tells if the renderingEngine has been destroyed or not */
+  /** A flag which tells if the renderingEngine has been destroyed */
   public hasBeenDestroyed: boolean;
   public offscreenMultiRenderWindow: any;
   readonly offScreenCanvasContainer: any; // WebGL
