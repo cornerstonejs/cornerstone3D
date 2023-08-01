@@ -21,6 +21,24 @@ async function run() {
     throw new Error('Could not find packages in lerna.json');
   }
 
+  // Get the npm package names for the packages we are publishing
+  const npmPackageNames = [];
+  for (const packagePathPattern of packages) {
+    // Use glob to find all matching directories
+    const matchingDirectories = glob.sync(packagePathPattern);
+
+    for (const packageDirectory of matchingDirectories) {
+      const packageJsonPath = path.join(packageDirectory, 'package.json');
+
+      npmPackageNames.push(
+        JSON.parse(await fs.readFile(packageJsonPath, 'utf-8')).name
+      );
+    }
+  }
+
+  // add packages/docs so that we can update the peer dependencies
+  packages.push('packages/docs');
+
   // for each package's package.json file, see if there is a peerdependency,
   // and for each peer dependency see if it includes a package that
   // starts with @ohif/, if so update the version to the
@@ -52,11 +70,14 @@ async function run() {
           }
 
           for (const dependency of Object.keys(dependencies)) {
-            if (dependency.startsWith('@cornerstonejs/')) {
+            if (
+              dependency.startsWith('@cornerstonejs/') &&
+              npmPackageNames.includes(dependency)
+            ) {
               dependencies[dependency] = `^${nextVersion}`;
 
               console.log(
-                `updating ${dependencyType} to `,
+                `updating ${dependencyType} of ${dependency} to `,
                 dependencies[dependency]
               );
             }
@@ -67,6 +88,9 @@ async function run() {
           packageJsonPath,
           JSON.stringify(packageJson, null, 2) + '\n'
         );
+
+        // run prettier on the package.json file
+        await execa('npx', ['prettier', '--write', packageJsonPath]);
 
         console.log(`Updated ${packageJsonPath}`);
       } catch (err) {
@@ -108,6 +132,8 @@ async function run() {
     '--force-publish',
     '--message',
     'chore(version): Update package versions [skip ci]',
+    '--create-release',
+    'github',
   ]);
 
   console.log('Version set using lerna');
