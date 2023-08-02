@@ -6,6 +6,19 @@
  */
 enum Events {
   ///////////////////////////////////////
+  //            Tools
+  ///////////////////////////////////////
+
+  /**
+   * Triggers on the eventTarget when a new tools is activated.
+   *
+   * Make use of {@link EventTypes.ToolActivatedEventType | Tool Activated Event Type  }
+   * for typing your event listeners for this tool activated event, and see what event
+   * detail is included in {@link EventTypes.ToolActivatedEventDetail | Tool Activated Event Detail}.
+   */
+  TOOL_ACTIVATED = 'CORNERSTONE_TOOLS_TOOL_ACTIVATED',
+
+  ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////
 
