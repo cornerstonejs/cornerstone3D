@@ -998,21 +998,20 @@ class CircleROITool extends AnnotationWithCachedStats {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
-        let max = -Infinity;
-
         const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          null,
           boundsIJK
         );
-        const stats = this.calculateStats(pointsInShape);
+        const statistics = this.calculateStats(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[0].value,
-          max,
-          stdDev: stats[0].value,
+          mean: statistics.stats[0].value,
+          max: statistics.max,
+          stdDev: statistics.stats[0].value,
           isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
           radius: worldWidth / 2,

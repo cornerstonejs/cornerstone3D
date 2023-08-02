@@ -1,10 +1,10 @@
 //classe qui implemente mon interface
 //set qui ovveride le calcultor de base (this.calculator)
-import ICalculator, { PointInShape, StatisticValue } from "./ICalculator";
+import ICalculator, { PointInShape, StatisticValue, Statistics } from "./ICalculator";
 
 export default class BasicStatsCalculator implements ICalculator {
 
-  public calculate(points: PointInShape[]): StatisticValue[] {
+  public calculate(points: PointInShape[]): Statistics {
     let max = -Infinity;
     let mean = 0;
     let sumSquares = 0;
@@ -32,8 +32,13 @@ export default class BasicStatsCalculator implements ICalculator {
     stdDevWithSumSquare = Math.sqrt(sumSquares / points.length - mean ** 2);
     stdDev = Math.sqrt(stdDev / points.length);
 
-    return [{ name: 'mean', value: mean, unit: null }, { name: 'stdDev', value: stdDev, unit: null },
-    { name: 'stdDevWithSumSquare', value: stdDevWithSumSquare, unit: null }]
+
+    return {
+      max: max, stats: [{ name: 'mean', value: mean, unit: null }, { name: 'stdDev', value: stdDev, unit: null },
+      { name: 'stdDevWithSumSquare', value: stdDevWithSumSquare, unit: null }]
+    };
+    // return [{ name: 'mean', value: mean, unit: null }, { name: 'stdDev', value: stdDev, unit: null },
+    // { name: 'stdDevWithSumSquare', value: stdDevWithSumSquare, unit: null }]
   }
 
 }

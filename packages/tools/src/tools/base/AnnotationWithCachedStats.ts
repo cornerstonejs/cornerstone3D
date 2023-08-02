@@ -1,6 +1,6 @@
-import { BasicStatsCalculator } from "tools/src/utilities/math/basic";
-import AnnotationTool from "./AnnotationTool";
-import { PointInShape } from "tools/src/utilities/math/basic/ICalculator";
+import { BasicStatsCalculator } from "../../utilities/math/basic";
+import AnnotationTool from './AnnotationTool';
+import { PointInShape } from "../../utilities/math/basic/ICalculator";
 
 export default abstract class AnnotationWithCachedStats extends AnnotationTool {
 

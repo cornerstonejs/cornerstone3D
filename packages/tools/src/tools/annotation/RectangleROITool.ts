@@ -51,7 +51,7 @@ import {
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { pointInShapeCallback } from 'tools/src/utilities';
+import { pointInShapeCallback } from '../../utilities/';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -961,18 +961,16 @@ class RectangleROITool extends AnnotationWithCachedStats {
 
         const area = Math.abs(worldWidth * worldHeight);
 
-        let max = -Infinity;
-
         const pointsInShape = pointInShapeCallback(imageData, () => true, null, boundsIJK);
 
-        const stats = this.calculateStats(pointsInShape);
+        const statistics = this.calculateStats(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[0].value,
-          stdDev: stats[1].value,
-          max,
+          mean: statistics.stats[0].value,
+          stdDev: statistics.stats[1].value,
+          max:statistics.max,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
         };
       } else {

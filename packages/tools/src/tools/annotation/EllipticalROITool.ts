@@ -1110,8 +1110,6 @@ class EllipticalROITool extends AnnotationWithCachedStats {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
-        let max = -Infinity;
-
         const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
@@ -1119,14 +1117,14 @@ class EllipticalROITool extends AnnotationWithCachedStats {
           boundsIJK
         );
 
-        const stats = this.calculateStats(pointsInShape);
+        const statistics = this.calculateStats(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[0].value,
-          max,
-          stdDev: stats[1].value,
+          mean: statistics.stats[0].value,
+          max: statistics.max,
+          stdDev: statistics.stats[1].value,
           isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
         };
@@ -1184,7 +1182,7 @@ class EllipticalROITool extends AnnotationWithCachedStats {
 
     const inEllipse =
       (normalized[0] * normalized[0]) / (xRadius * xRadius) +
-        (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
+      (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
       1.0;
 
     return inEllipse;

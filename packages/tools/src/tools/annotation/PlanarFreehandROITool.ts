@@ -779,8 +779,6 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
       const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
       const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
 
-      let max = -Infinity;
-
       let curRow = 0;
       let intersections = [];
       let intersectionCounter = 0;
@@ -803,8 +801,8 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
                   return a[index] === b[index]
                     ? 0
                     : a[index] < b[index]
-                    ? -1
-                    : 1;
+                      ? -1
+                      : 1;
                 };
               })(0)
             );
@@ -822,14 +820,14 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
         boundsIJK
       );
 
-      const stats = this.calculateStats(pointsInShape);
+      const statistics = this.calculateStats(pointsInShape);
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean: stats[0].value,
-        max,
-        stdDev: stats[2].value,
+        mean: statistics.stats[0].value,
+        max: statistics.max,
+        stdDev: statistics.stats[2].value,
         areaUnit: hasPixelSpacing ? 'mm' : 'px',
       };
     }
