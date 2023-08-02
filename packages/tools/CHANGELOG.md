@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.3...v1.10.0) (2023-08-02)
+
+### Features
+
+- **toolEvent:** added an event that is triggered when a tool is activated ([#718](https://github.com/cornerstonejs/cornerstone3D/issues/718)) ([c67b61e](https://github.com/cornerstonejs/cornerstone3D/commit/c67b61e8d5dc32a5d454b8c8c9daec3f6e12a7f9))
+
 ## [1.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v1.9.3) (2023-08-02)
 
 **Note:** Version bump only for package @cornerstonejs/tools
