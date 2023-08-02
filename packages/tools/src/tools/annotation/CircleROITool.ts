@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationWithCachedStats } from '../base';
 
 import {
   getEnabledElement,
@@ -107,7 +107,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-class CircleROITool extends AnnotationTool {
+class CircleROITool extends AnnotationWithCachedStats {
   static toolName;
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -998,51 +998,21 @@ class CircleROITool extends AnnotationTool {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
         let max = -Infinity;
 
-        const meanMaxCalculator = ({ value: newValue }) => {
-          if (newValue > max) {
-            max = newValue;
-          }
-
-          mean += newValue;
-          count += 1;
-        };
-
-        pointInShapeCallback(
+        const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator,
           boundsIJK
         );
-
-        mean /= count;
-
-        const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean;
-
-          stdDev += valueMinusMean * valueMinusMean;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator,
-          boundsIJK
-        );
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
+        const stats = this.calculateStats(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
+          mean: stats[0].value,
           max,
-          stdDev,
+          stdDev: stats[0].value,
           isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
           radius: worldWidth / 2,

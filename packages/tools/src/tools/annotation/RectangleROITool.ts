@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationWithCachedStats } from '../base';
 
 import {
   getEnabledElement,
@@ -51,6 +51,7 @@ import {
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { pointInShapeCallback } from 'tools/src/utilities';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -92,7 +93,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-class RectangleROITool extends AnnotationTool {
+class RectangleROITool extends AnnotationWithCachedStats {
   static toolName;
 
   _throttledCalculateCachedStats: any;
@@ -945,6 +946,12 @@ class RectangleROITool extends AnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
 
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
           viewPlaneNormal,
           viewUp,
@@ -954,54 +961,17 @@ class RectangleROITool extends AnnotationTool {
 
         const area = Math.abs(worldWidth * worldHeight);
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
         let max = -Infinity;
 
-        const yMultiple = dimensions[0];
-        const zMultiple = dimensions[0] * dimensions[1];
+        const pointsInShape = pointInShapeCallback(imageData, () => true, null, boundsIJK);
 
-        //Todo: this can be replaced by pointInShapeCallback....
-        // This is a triple loop, but one of these 3 values will be constant
-        // In the planar view.
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              if (value > max) {
-                max = value;
-              }
-
-              count++;
-              mean += value;
-            }
-          }
-        }
-
-        mean /= count;
-
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              const valueMinusMean = value - mean;
-
-              stdDev += valueMinusMean * valueMinusMean;
-            }
-          }
-        }
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
+        const stats = this.calculateStats(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          stdDev,
+          mean: stats[0].value,
+          stdDev: stats[1].value,
           max,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
         };

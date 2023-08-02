@@ -10,7 +10,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
-import { AnnotationTool } from '../base';
+import { AnnotationWithCachedStats } from '../base';
 import {
   addAnnotation,
   getAnnotations,
@@ -115,7 +115,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *
  * Read more in the Docs section of the website.
  */
-class PlanarFreehandROITool extends AnnotationTool {
+class PlanarFreehandROITool extends AnnotationWithCachedStats {
   static toolName;
 
   public touchDragCallback: any;
@@ -779,25 +779,12 @@ class PlanarFreehandROITool extends AnnotationTool {
       const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
       const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
 
-      let count = 0;
-      let sum = 0;
-      let sumSquares = 0;
       let max = -Infinity;
-
-      const statCalculator = ({ value: newValue }) => {
-        if (newValue > max) {
-          max = newValue;
-        }
-
-        sum += newValue;
-        sumSquares += newValue ** 2;
-        count += 1;
-      };
 
       let curRow = 0;
       let intersections = [];
       let intersectionCounter = 0;
-      pointInShapeCallback(
+      const pointsInShape = pointInShapeCallback(
         imageData,
         (pointLPS, pointIJK) => {
           let result = true;
@@ -831,22 +818,18 @@ class PlanarFreehandROITool extends AnnotationTool {
           }
           return result;
         },
-        statCalculator,
+        null,
         boundsIJK
       );
 
-      const mean = sum / count;
-
-      // https://www.strchr.com/standard_deviation_in_one_pass?allcomments=1
-      let stdDev = sumSquares / count - mean ** 2;
-      stdDev = Math.sqrt(stdDev);
+      const stats = this.calculateStats(pointsInShape);
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean,
+        mean: stats[0].value,
         max,
-        stdDev,
+        stdDev: stats[2].value,
         areaUnit: hasPixelSpacing ? 'mm' : 'px',
       };
     }
