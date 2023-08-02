@@ -606,7 +606,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
     imagePlaneModule.calibration = calibration;
 
-    if (!isUpdated) return imagePlaneModule;
+    if (!isUpdated) {
+      return imagePlaneModule;
+    }
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
@@ -1755,10 +1757,17 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
+        // If Photometric Interpretation is not the same for the next image we are trying to load
+        // invalidate the stack to recreate the VTK imageData
+        const csImgFrame = this.csImage?.imageFrame;
+        const imgFrame = image?.imageFrame;
+
+        // if a volume is decached into images then the imageFrame will be undefined
         if (
-          this.csImage?.imageFrame.photometricInterpretation !==
-          image?.imageFrame?.photometricInterpretation
+          csImgFrame?.photometricInterpretation !==
+            imgFrame?.photometricInterpretation ||
+          this.csImage?.photometricInterpretation !==
+            image?.photometricInterpretation
         ) {
           this.stackInvalidated = true;
         }
@@ -2564,7 +2573,9 @@ class StackViewport extends Viewport implements IStackViewport {
   public hasImageURI = (imageURI: string): boolean => {
     const imageIds = this.imageIds;
     for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+      if (imageIdToURI(imageIds[i]) === imageURI) {
+        return true;
+      }
     }
 
     return false;
