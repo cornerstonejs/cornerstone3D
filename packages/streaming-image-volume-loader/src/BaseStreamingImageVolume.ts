@@ -112,7 +112,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       rgba: false,
       spacing: this.spacing,
       dimensions: this.dimensions,
-      PhotometricInterpretation,
+      photometricInterpretation: PhotometricInterpretation,
       voiLUTFunction: VOILUTFunction,
       invert: PhotometricInterpretation === 'MONOCHROME1',
     };
@@ -652,9 +652,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     imageLoadObject.promise
       .then((cachedImage) => {
-        const imageSource = isFromImageCache ? cachedImage.image : cachedImage;
         const imageScalarData = this._scaleIfNecessary(
-          imageSource,
+          cachedImage,
           scalingParameters
         );
         // todo add scaling and slope
@@ -866,6 +865,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       spacing,
       invert,
       voiLUTFunction,
+      photometricInterpretation,
     } = this.cornerstoneImageMetaData;
 
     // 1. Grab the buffer and it's type
@@ -938,6 +938,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       columnPixelSpacing: spacing[0],
       rowPixelSpacing: spacing[1],
       invert,
+      photometricInterpretation,
     };
   }
 

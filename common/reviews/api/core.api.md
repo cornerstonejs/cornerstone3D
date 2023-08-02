@@ -1096,6 +1096,8 @@ interface IImage {
     // (undocumented)
     numComps: number;
     // (undocumented)
+    photometricInterpretation?: string;
+    // (undocumented)
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
