@@ -2,6 +2,8 @@ import { MouseBindings, ToolModes } from '../../enums';
 import cloneDeep from 'lodash.clonedeep';
 import get from 'lodash.get';
 import {
+  triggerEvent,
+  eventTarget,
   getRenderingEngine,
   getRenderingEngines,
   getEnabledElementByIds,
@@ -9,6 +11,8 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { Events } from '../../enums';
+import { ToolActivatedEventDetail } from '../../types/EventTypes';
 import { state } from '../index';
 import {
   IToolBinding,
@@ -69,7 +73,7 @@ export default class ToolGroup implements IToolGroup {
     const toolInstance = this._toolInstances[toolInstanceName];
     if (!toolInstance) {
       console.warn(
-        `'${toolInstanceName}' is not registered with this toolGroup.`
+        `'${toolInstanceName}' is not registered with this toolGroup (${this.id}).`
       );
       return;
     }
@@ -372,6 +376,13 @@ export default class ToolGroup implements IToolGroup {
       toolInstance.onSetToolActive();
     }
     this._renderViewports();
+
+    const eventDetail: ToolActivatedEventDetail = {
+      toolName,
+      toolBindingsOptions,
+    };
+
+    triggerEvent(eventTarget, Events.TOOL_ACTIVATED, eventDetail);
   }
 
   /**
