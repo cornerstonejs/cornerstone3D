@@ -378,6 +378,7 @@ export default class ToolGroup implements IToolGroup {
     this._renderViewports();
 
     const eventDetail: ToolActivatedEventDetail = {
+      toolGroupId: this.id,
       toolName,
       toolBindingsOptions,
     };

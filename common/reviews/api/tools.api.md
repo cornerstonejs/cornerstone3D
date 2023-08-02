@@ -5030,6 +5030,7 @@ function throttle(func: Function, wait?: number, options?: {
 
 // @public (undocumented)
 type ToolActivatedEventDetail = {
+    toolGroupId: string;
     toolName: string;
     toolBindingsOptions: SetToolBindingsType;
 };

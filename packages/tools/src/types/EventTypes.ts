@@ -75,6 +75,8 @@ type InteractionEndEventDetail = InteractionEventDetail;
  * The data that is passed to the event handler when a tool is activated.
  */
 type ToolActivatedEventDetail = {
+  /** unique id of the toolGroup */
+  toolGroupId: string;
   /** Tool name */
   toolName: string;
   /** Tool binding options */
