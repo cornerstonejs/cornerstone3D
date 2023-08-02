@@ -1743,6 +1743,8 @@ enum Events {
     // (undocumented)
     SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED",
     // (undocumented)
+    TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
+    // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
     TOUCH_END = "CORNERSTONE_TOOLS_TOUCH_END",
@@ -1825,6 +1827,8 @@ declare namespace EventTypes_2 {
         NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
         NormalizedTouchEventType,
+        ToolActivatedEventDetail,
+        ToolActivatedEventType,
         AnnotationAddedEventDetail,
         AnnotationAddedEventType,
         AnnotationCompletedEventDetail,
@@ -5024,6 +5028,16 @@ function throttle(func: Function, wait?: number, options?: {
     leading?: boolean;
     trailing?: boolean;
 }): Function;
+
+// @public (undocumented)
+type ToolActivatedEventDetail = {
+    toolGroupId: string;
+    toolName: string;
+    toolBindingsOptions: SetToolBindingsType;
+};
+
+// @public (undocumented)
+type ToolActivatedEventType = Types_2.CustomEventType<ToolActivatedEventDetail>;
 
 // @public (undocumented)
 interface ToolData {
