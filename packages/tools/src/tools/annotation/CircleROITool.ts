@@ -1011,7 +1011,7 @@ class CircleROITool extends AnnotationWithCachedStats {
           area,
           mean: statistics.stats[0].value,
           max: statistics.max,
-          stdDev: statistics.stats[0].value,
+          stdDev: statistics.stats[1].value,
           isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
           radius: worldWidth / 2,
