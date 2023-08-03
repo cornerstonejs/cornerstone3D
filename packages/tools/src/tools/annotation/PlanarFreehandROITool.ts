@@ -820,14 +820,14 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
         boundsIJK
       );
 
-      const statistics = this.calculateStats(pointsInShape);
+      const stats = this.calculateStats(pointsInShape);
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean: statistics.stats[0].value,
-        max: statistics.max,
-        stdDev: statistics.stats[2].value,
+        mean: stats[1].value,
+        max: stats[0].value,
+        stdDev: stats[3].value,
         areaUnit: hasPixelSpacing ? 'mm' : 'px',
       };
     }

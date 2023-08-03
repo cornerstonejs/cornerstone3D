@@ -963,14 +963,14 @@ class RectangleROITool extends AnnotationWithCachedStats {
 
         const pointsInShape = pointInShapeCallback(imageData, () => true, null, boundsIJK);
 
-        const statistics = this.calculateStats(pointsInShape);
+        const stats = this.calculateStats(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: statistics.stats[0].value,
-          stdDev: statistics.stats[1].value,
-          max:statistics.max,
+          mean: stats[1].value,
+          stdDev: stats[2].value,
+          max:stats[0].value,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
         };
       } else {

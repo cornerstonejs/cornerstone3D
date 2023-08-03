@@ -15,11 +15,6 @@ export type StatisticValue =
     unit: null | string
   };
 
-export type Statistics = {
-  max: number;
-  stats: StatisticValue[];
-}
-
 export default interface ICalculator {
-  calculate: (points: PointInShape[]) => Statistics;
+  calculate: (points: PointInShape[]) => StatisticValue[];
 }
