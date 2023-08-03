@@ -454,17 +454,14 @@ export abstract class BaseTool implements IBaseTool {
     static toolName: any;
 }
 
-// @public (undocumented)
-class BasicStatsCalculator implements ICalculator {
-    // (undocumented)
-    calculate(points: PointInShape[]): StatisticValue[];
-}
-
-declare namespace BasicStatsCalculator_2 {
+declare namespace BasicStatsCalculator {
     export {
-        BasicStatsCalculator
+        BasicStatsCalculator_2 as BasicStatsCalculator
     }
 }
+
+// @public (undocumented)
+function BasicStatsCalculator_2(points: PointInShape[]): StatisticValue[];
 
 // @public (undocumented)
 interface BidirectionalAnnotation extends Annotation {
@@ -598,6 +595,9 @@ export class BrushTool extends BaseTool {
 function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
+type Calculator = (points: PointInShape[]) => StatisticValue[];
+
+// @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, calibrationOrScale: Types_2.IImageCalibration | number): void;
 
 // @public
@@ -678,7 +678,7 @@ interface CircleROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class CircleROITool extends AnnotationWithCachedStats {
+export class CircleROITool extends default_2 {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -1621,7 +1621,7 @@ interface EllipticalROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class EllipticalROITool extends AnnotationWithCachedStats {
+export class EllipticalROITool extends default_2 {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -3423,7 +3423,7 @@ declare namespace math {
         rectangle,
         polyline,
         point,
-        BasicStatsCalculator_2 as BasicStatsCalculator
+        BasicStatsCalculator
     }
 }
 
@@ -3680,7 +3680,7 @@ interface PlanarFreehandROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class PlanarFreehandROITool extends AnnotationWithCachedStats {
+export class PlanarFreehandROITool extends default_2 {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
@@ -3778,6 +3778,14 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 
 // @public (undocumented)
 function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
+
+// @public (undocumented)
+type PointInShape = {
+    value: number;
+    index: number;
+    pointIJK: Types_2.Point3;
+    pointLPS: Types_2.Point3;
+};
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape_2>;
@@ -4112,7 +4120,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
 function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation[], options: ThresholdOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
-export class RectangleROITool extends AnnotationWithCachedStats {
+export class RectangleROITool extends default_2 {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -4893,6 +4901,13 @@ declare namespace state_3 {
 }
 
 // @public (undocumented)
+type StatisticValue = {
+    name: string;
+    value: number;
+    unit: null | string;
+};
+
+// @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
 
 // @public (undocumented)
@@ -5356,7 +5371,10 @@ declare namespace Types {
         FloodFillResult,
         FloodFillGetter,
         FloodFillOptions,
-        ContourSegmentationData
+        ContourSegmentationData,
+        Calculator,
+        StatisticValue,
+        PointInShape
     }
 }
 export { Types }
