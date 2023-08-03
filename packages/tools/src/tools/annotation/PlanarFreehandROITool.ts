@@ -6,6 +6,7 @@ import {
   StackViewport,
   VolumeViewport,
   utilities as csUtils,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -743,11 +744,16 @@ class PlanarFreehandROITool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, metadata } = image;
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+      const { imageData, metadata, hasPixelSpacing } = image;
+      const imageId = viewport.getCurrentImageId();
+      const imageCoordinates = points.map((p) => csUtils.worldToImageCoords(imageId, p));
       const scale = getCalibratedScale(image);
-      const area =
-        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      let area =
+        polyline.calculateAreaOfPoints(imageCoordinates) / scale / scale;
+      if ( hasPixelSpacing ) {
+        const { PixelSpacing } = metaData.get('instance', imageId);
+        area *= PixelSpacing[0] * PixelSpacing[1];
+      }
 
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
@@ -816,6 +822,8 @@ class PlanarFreehandROITool extends AnnotationTool {
         sumSquares += newValue ** 2;
         count += 1;
       };
+
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       let curRow = 0;
       let intersections = [];
