@@ -1,15 +1,15 @@
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import AnnotationTool from './AnnotationTool';
-import { PointInShape } from '../../utilities/math/basic/ICalculator';
+import { PointInShape, Calculator } from '../../types';
 
-export default abstract class AnnotationWithCachedStats extends AnnotationTool {
-  calculator: BasicStatsCalculator = new BasicStatsCalculator();
+export default abstract class extends AnnotationTool {
+  calculator: Calculator = BasicStatsCalculator;
 
-  public setCalculator(newCalculator: BasicStatsCalculator): void {
+  public setCalculator(newCalculator: Calculator): void {
     this.calculator = newCalculator;
   }
 
   public calculateStats(points: PointInShape[]) {
-    return this.calculator.calculate(points);
+    return this.calculator(points);
   }
 }

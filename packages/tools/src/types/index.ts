@@ -52,6 +52,7 @@ import IToolClassReference from './IToolClassReference';
 import { ContourSegmentationData } from './ContourTypes';
 import IAnnotationManager from './IAnnotationManager';
 import AnnotationGroupSelector from './AnnotationGroupSelector';
+import { Calculator, StatisticValue, PointInShape } from './CalculatorTypes';
 
 export type {
   // AnnotationState
@@ -114,4 +115,8 @@ export type {
   FloodFillOptions,
   // Contour
   ContourSegmentationData,
+  //Statistics
+  Calculator,
+  StatisticValue,
+  PointInShape,
 };

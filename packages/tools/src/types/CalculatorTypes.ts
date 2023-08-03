@@ -13,6 +13,4 @@ export type StatisticValue = {
   unit: null | string;
 };
 
-export default interface ICalculator {
-  calculate: (points: PointInShape[]) => StatisticValue[];
-}
+export type Calculator = (points: PointInShape[]) => StatisticValue[];
