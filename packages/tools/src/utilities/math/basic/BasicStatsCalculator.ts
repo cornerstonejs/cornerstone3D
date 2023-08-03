@@ -1,5 +1,4 @@
-//classe qui implemente mon interface
-//set qui ovveride le calcultor de base (this.calculator)
+//Basic calculator
 import ICalculator, { PointInShape, StatisticValue } from "./ICalculator";
 
 export default class BasicStatsCalculator implements ICalculator {
