@@ -455,6 +455,18 @@ export abstract class BaseTool implements IBaseTool {
 }
 
 // @public (undocumented)
+class BasicStatsCalculator implements ICalculator {
+    // (undocumented)
+    calculate(points: PointInShape[]): StatisticValue[];
+}
+
+declare namespace BasicStatsCalculator_2 {
+    export {
+        BasicStatsCalculator
+    }
+}
+
+// @public (undocumented)
 interface BidirectionalAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -666,7 +678,7 @@ interface CircleROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class CircleROITool extends AnnotationTool {
+export class CircleROITool extends AnnotationWithCachedStats {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -1609,7 +1621,7 @@ interface EllipticalROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class EllipticalROITool extends AnnotationTool {
+export class EllipticalROITool extends AnnotationWithCachedStats {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -3410,7 +3422,8 @@ declare namespace math {
         lineSegment,
         rectangle,
         polyline,
-        point
+        point,
+        BasicStatsCalculator_2 as BasicStatsCalculator
     }
 }
 
@@ -3667,7 +3680,7 @@ interface PlanarFreehandROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class PlanarFreehandROITool extends AnnotationTool {
+export class PlanarFreehandROITool extends AnnotationWithCachedStats {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
@@ -3767,7 +3780,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK): void;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape_2>;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -4099,7 +4112,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
 function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation[], options: ThresholdOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
-export class RectangleROITool extends AnnotationTool {
+export class RectangleROITool extends AnnotationWithCachedStats {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
