@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationWithCachedStats } from '../base';
 
 import {
   getEnabledElement,
@@ -117,7 +117,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-class CircleROITool extends AnnotationTool {
+class CircleROITool extends AnnotationWithCachedStats {
   static toolName;
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -281,7 +281,9 @@ class CircleROITool extends AnnotationTool {
       canvasCoords,
     ]);
 
-    if (Math.abs(radiusPoint - radius) < proximity / 2) return true;
+    if (Math.abs(radiusPoint - radius) < proximity / 2) {
+      return true;
+    }
 
     return false;
   };
@@ -1009,57 +1011,27 @@ class CircleROITool extends AnnotationTool {
             (worldHeight / aspect / scale / 2)
         );
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-        let max = -Infinity;
-
-        const meanMaxCalculator = ({ value: newValue }) => {
-          if (newValue > max) {
-            max = newValue;
-          }
-
-          mean += newValue;
-          count += 1;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator,
-          boundsIJK
-        );
-
-        mean /= count;
-
-        const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean;
-
-          stdDev += valueMinusMean * valueMinusMean;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator,
-          boundsIJK
-        );
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
-
         const modalityUnit = getModalityUnit(
           metadata.Modality,
           annotation.metadata.referencedImageId,
           modalityUnitOptions
         );
 
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          null,
+          boundsIJK
+        );
+
+        const stats = this.calculateStats(pointsInShape);
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          max,
-          stdDev,
+          mean: stats[1].value,
+          max: stats[0].value,
+          stdDev: stats[2].value,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           radius: worldWidth / 2 / scale,

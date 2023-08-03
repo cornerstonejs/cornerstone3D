@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationWithCachedStats } from '../base';
 
 import {
   getEnabledElement,
@@ -115,7 +115,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-class EllipticalROITool extends AnnotationTool {
+class EllipticalROITool extends AnnotationWithCachedStats {
   static toolName;
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -1116,57 +1116,27 @@ class EllipticalROITool extends AnnotationTool {
           scale /
           scale;
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-        let max = -Infinity;
-
-        const meanMaxCalculator = ({ value: newValue }) => {
-          if (newValue > max) {
-            max = newValue;
-          }
-
-          mean += newValue;
-          count += 1;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator,
-          boundsIJK
-        );
-
-        mean /= count;
-
-        const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean;
-
-          stdDev += valueMinusMean * valueMinusMean;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator,
-          boundsIJK
-        );
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
-
         const modalityUnit = getModalityUnit(
           metadata.Modality,
           annotation.metadata.referencedImageId,
           modalityUnitOptions
         );
 
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          null,
+          boundsIJK
+        );
+
+        const stats = this.calculateStats(pointsInShape);
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          max,
-          stdDev,
+          mean: stats[1].value,
+          max: stats[0].value,
+          stdDev: stats[2].value,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
