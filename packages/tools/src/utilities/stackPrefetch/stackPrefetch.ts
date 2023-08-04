@@ -12,10 +12,12 @@ import { addToolState, getToolState } from './state';
 
 const requestType = Enums.RequestType.Prefetch;
 const priority = 0;
-const addToBeginning = true;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
+  // Fetch up to 1 image before and 5 after
+  minBefore: 1,
+  maxAfter: 5,
   preserveExistingPool: false,
 };
 
@@ -82,7 +84,22 @@ function getStackData(element) {
   };
 }
 
+const clearFromImageIds = (stack) => {
+  const { imageIds } = stack;
+  const imageIdSet = new Set<string>();
+  imageIds.forEach((imageId) => imageIdSet.add(imageId));
+  return (requestDetails) =>
+    requestDetails.type !== requestType ||
+    !imageIdSet.has(requestDetails.additionalDetails.imageId);
+};
+
 function prefetch(element) {
+  const stack = getStackData(element);
+  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    return;
+  }
+
   // Get the stackPrefetch tool data
   const stackPrefetchData = getToolState(element);
 
@@ -91,12 +108,6 @@ function prefetch(element) {
   }
 
   const stackPrefetch = stackPrefetchData || {};
-  const stack = getStackData(element);
-
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
-    return;
-  }
 
   // If all the requests are complete, disable the stackPrefetch tool
   if (
@@ -127,7 +138,7 @@ function prefetch(element) {
   stackPrefetchData.indicesToRequest.sort((a, b) => a - b);
   const indicesToRequestCopy = stackPrefetch.indicesToRequest.slice();
 
-  indicesToRequestCopy.forEach(function (imageIdIndex) {
+  indicesToRequestCopy.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
 
     if (!imageId) {
@@ -137,6 +148,7 @@ function prefetch(element) {
     const imageLoadObject = cache.getImageLoadObject(imageId);
 
     if (imageLoadObject) {
+      // Already in cache
       removeFromList(imageIdIndex);
     }
   });
@@ -149,95 +161,13 @@ function prefetch(element) {
 
   // Clear the requestPool of prefetch requests, if needed.
   if (!configuration.preserveExistingPool) {
-    imageLoadPoolManager.clearRequestStack(requestType);
+    imageLoadPoolManager.filterRequests(clearFromImageIds(stack));
   }
 
-  // Identify the nearest imageIdIndex to the currentImageIdIndex
-  const nearest = nearestIndex(
-    stackPrefetch.indicesToRequest,
-    stack.currentImageIdIndex
-  );
-
-  let imageId;
-  let nextImageIdIndex;
-  const preventCache = false;
-
   function doneCallback(image) {
-    console.log('prefetch done: %s', image.imageId);
     const imageIdIndex = stack.imageIds.indexOf(image.imageId);
 
     removeFromList(imageIdIndex);
-
-    // triggerEvent(element, EVENTS.STACK_PREFETCH_IMAGE_LOADED, {
-    //   element,
-    //   imageId: image.imageId,
-    //   imageIndex: imageIdIndex,
-    //   stackPrefetch,
-    //   stack,
-    // });
-
-    // If there are no more images to fetch
-    // if (
-    //   !(
-    //     stackPrefetch.indicesToRequest &&
-    //     stackPrefetch.indicesToRequest.length > 0
-    //   )
-    // ) {
-    //   triggerEvent(element, EVENTS.STACK_PREFETCH_DONE, {
-    //     element,
-    //     stackPrefetch,
-    //     stack,
-    //   });
-    // }
-  }
-
-  // Retrieve the errorLoadingHandler if one exists
-  // const errorLoadingHandler =
-  //   loadHandlerManager.getErrorLoadingHandler(element);
-
-  // function failCallback(error) {
-  //   logger.log('prefetch errored: %o', error);
-  //   if (errorLoadingHandler) {
-  //     errorLoadingHandler(element, imageId, error, 'stackPrefetch');
-  //   }
-  // }
-
-  // Prefetch images around the current image (before and after)
-  let lowerIndex = nearest.low;
-  let higherIndex = nearest.high;
-  const imageIdsToPrefetch = [];
-
-  while (
-    lowerIndex >= 0 ||
-    higherIndex < stackPrefetch.indicesToRequest.length
-  ) {
-    const currentIndex = stack.currentImageIdIndex;
-    const shouldSkipLower =
-      currentIndex - stackPrefetch.indicesToRequest[lowerIndex] >
-      configuration.maxImagesToPrefetch;
-    const shouldSkipHigher =
-      stackPrefetch.indicesToRequest[higherIndex] - currentIndex >
-      configuration.maxImagesToPrefetch;
-
-    const shouldLoadLower = !shouldSkipLower && lowerIndex >= 0;
-    const shouldLoadHigher =
-      !shouldSkipHigher && higherIndex < stackPrefetch.indicesToRequest.length;
-
-    if (!shouldLoadHigher && !shouldLoadLower) {
-      break;
-    }
-
-    if (shouldLoadLower) {
-      nextImageIdIndex = stackPrefetch.indicesToRequest[lowerIndex--];
-      imageId = stack.imageIds[nextImageIdIndex];
-      imageIdsToPrefetch.push(imageId);
-    }
-
-    if (shouldLoadHigher) {
-      nextImageIdIndex = stackPrefetch.indicesToRequest[higherIndex++];
-      imageId = stack.imageIds[nextImageIdIndex];
-      imageIdsToPrefetch.push(imageId);
-    }
   }
 
   const requestFn = (imageId, options) =>
@@ -245,7 +175,8 @@ function prefetch(element) {
 
   const { useNorm16Texture } = getCoreConfiguration().rendering;
 
-  imageIdsToPrefetch.forEach((imageId) => {
+  indicesToRequestCopy.forEach((imageIdIndex) => {
+    const imageId = stack.imageIds[imageIdIndex];
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
@@ -324,6 +255,7 @@ function onImageUpdated(e) {
     // If playClip is enabled and the user loads a different series in the viewport
     // An exception will be thrown because the element will not be enabled anymore
     try {
+      updateToolState(element);
       prefetch(element);
     } catch (error) {
       return;
@@ -331,17 +263,24 @@ function onImageUpdated(e) {
   }, resetPrefetchDelay);
 }
 
-function enable(element) {
+const updateToolState = (element) => {
   const stack = getStackData(element);
-
   if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 
+  const minIndex = Math.max(
+    0,
+    stack.currentImageIdIndex - configuration.minBefore
+  );
+  const maxIndex = Math.min(
+    stack.imageIds.length - 1,
+    stack.currentImageIdIndex + configuration.maxAfter
+  );
   // Use the currentImageIdIndex from the stack as the initialImageIdIndex
   const stackPrefetchData = {
-    indicesToRequest: range(0, stack.imageIds.length - 1),
+    indicesToRequest: range(minIndex, maxIndex),
     enabled: true,
     direction: 1,
   };
@@ -350,10 +289,27 @@ function enable(element) {
   const indexOfCurrentImage = stackPrefetchData.indicesToRequest.indexOf(
     stack.currentImageIdIndex
   );
-
   stackPrefetchData.indicesToRequest.splice(indexOfCurrentImage, 1);
 
   addToolState(element, stackPrefetchData);
+};
+
+/**
+ * Listen to newly added stacks enabled elements and then listen for
+ * STACK_NEW_IMAGE to detect when a new image is displayed.  When it is,
+ * update the prefetch stack for [index-min...index+max]
+ *
+ * @param element to prefetch on
+ */
+const enable = (element): void => {
+  const stack = getStackData(element);
+
+  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    return;
+  }
+
+  updateToolState(element);
 
   prefetch(element);
 
@@ -370,7 +326,7 @@ function enable(element) {
     Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
     promiseRemovedHandler
   );
-}
+};
 
 function disable(element) {
   clearTimeout(resetPrefetchTimeout);
@@ -388,9 +344,7 @@ function disable(element) {
 
   if (stackPrefetchData && stackPrefetchData.data.length) {
     stackPrefetchData.enabled = false;
-
-    // Clear current prefetch requests from the requestPool
-    imageLoadPoolManager.clearRequestStack(requestType);
+    // Don't worry about clearing the requests - there aren't that many too be bothersome
   }
 }
 
