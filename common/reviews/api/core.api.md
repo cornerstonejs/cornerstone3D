@@ -633,6 +633,8 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_SPACING_CALIBRATED = "CORNERSTONE_IMAGE_SPACING_CALIBRATED",
     // (undocumented)
+    IMAGE_VOLUME_LOADING_COMPLETED = "CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED",
+    // (undocumented)
     IMAGE_VOLUME_MODIFIED = "CORNERSTONE_IMAGE_VOLUME_MODIFIED",
     // (undocumented)
     PRE_STACK_NEW_IMAGE = "CORNERSTONE_PRE_STACK_NEW_IMAGE",
@@ -679,6 +681,8 @@ declare namespace EventTypes {
         ImageRenderedEvent,
         ImageVolumeModifiedEvent,
         ImageVolumeModifiedEventDetail,
+        ImageVolumeLoadingCompletedEvent,
+        ImageVolumeLoadingCompletedEventDetail,
         ImageLoadedEvent,
         ImageLoadedEventDetail,
         ImageLoadedFailedEventDetail,
@@ -1092,6 +1096,8 @@ interface IImage {
     // (undocumented)
     numComps: number;
     // (undocumented)
+    photometricInterpretation?: string;
+    // (undocumented)
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -1502,6 +1508,15 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     vtkOpenGLTexture: any;
 }
+
+// @public (undocumented)
+type ImageVolumeLoadingCompletedEvent = CustomEvent_2<ImageVolumeLoadingCompletedEventDetail>;
+
+// @public (undocumented)
+type ImageVolumeLoadingCompletedEventDetail = {
+    volumeId: string;
+    FrameOfReferenceUID: string;
+};
 
 // @public (undocumented)
 type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>;

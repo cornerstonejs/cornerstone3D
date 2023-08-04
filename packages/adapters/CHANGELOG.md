@@ -3,6 +3,48 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.10.0](https://github.com/dcmjs-org/dcmjs/compare/v1.9.3...v1.10.0) (2023-08-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.9.3](https://github.com/dcmjs-org/dcmjs/compare/v1.9.2...v1.9.3) (2023-08-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.9.2](https://github.com/dcmjs-org/dcmjs/compare/v1.9.1...v1.9.2) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.9.1](https://github.com/dcmjs-org/dcmjs/compare/v1.9.0...v1.9.1) (2023-07-31)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.9.0](https://github.com/dcmjs-org/dcmjs/compare/v1.8.1...v1.9.0) (2023-07-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.8.1](https://github.com/dcmjs-org/dcmjs/compare/v1.8.0...v1.8.1) (2023-07-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.8.0](https://github.com/dcmjs-org/dcmjs/compare/v1.7.2...v1.8.0) (2023-07-28)
+
+### Features
+
+-   **segmentation export:** add new cornerstone3D segmentation export adapter ([#692](https://github.com/dcmjs-org/dcmjs/issues/692)) ([9e743f5](https://github.com/dcmjs-org/dcmjs/commit/9e743f5d2b58dedb17dcbe0de40f42e703f77b14))
+
+## [1.7.2](https://github.com/dcmjs-org/dcmjs/compare/v1.7.1...v1.7.2) (2023-07-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.7.1](https://github.com/dcmjs-org/dcmjs/compare/v1.7.0...v1.7.1) (2023-07-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.7.0](https://github.com/dcmjs-org/dcmjs/compare/v1.6.0...v1.7.0) (2023-07-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 # [1.6.0](https://github.com/dcmjs-org/dcmjs/compare/v1.5.0...v1.6.0) (2023-07-21)
 
 ### Features

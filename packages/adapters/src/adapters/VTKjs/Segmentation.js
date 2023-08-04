@@ -1,6 +1,6 @@
-import {data} from 'dcmjs';
+import { data } from "dcmjs";
 
-const {Colors, BitArray} = data;
+const { Colors, BitArray } = data;
 
 // TODO: Is there a better name for this? RGBAInt?
 // Should we move it to Colors.js

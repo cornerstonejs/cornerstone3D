@@ -204,7 +204,7 @@ module.exports = {
             (pkg) => `packages/${pkg}`
           ),
         ],
-        url: 'https://github.com/cornerstonejs/cornerstone3D/blob/main/packages-alireza/',
+        url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
         removeScopes: ['cornerstonejs'],
         minimal: false,
         readmes: true,

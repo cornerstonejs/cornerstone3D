@@ -77,6 +77,10 @@ const configuration = {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',
     },
+    {
+      path: 'packages/adapters/examples',
+      regexp: 'index.ts',
+    },
   ],
 };
 

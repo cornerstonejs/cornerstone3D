@@ -54,10 +54,6 @@ function fillRectangle(
 
   const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
 
-  if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet');
-  }
-
   // Since always all points inside the boundsIJK is inside the rectangle...
   const pointInRectangle = () => true;
 

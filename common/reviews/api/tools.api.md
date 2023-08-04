@@ -1230,13 +1230,13 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 function createStackImageSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
+function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any): Synchronizer;
 
 // @public (undocumented)
 function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function createVOISynchronizer(synchronizerName: string): Synchronizer;
+function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
 function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
@@ -1363,43 +1363,7 @@ declare namespace cursors {
 export { cursors }
 
 // @public (undocumented)
-const CursorSVG: {
-    Angle: SVGCursorDescriptor;
-    ArrowAnnotate: SVGCursorDescriptor;
-    Bidirectional: SVGCursorDescriptor;
-    CobbAngle: SVGCursorDescriptor;
-    CircleROI: SVGCursorDescriptor;
-    EllipticalROI: SVGCursorDescriptor;
-    FreehandROI: SVGCursorDescriptor;
-    FreehandROISculptor: SVGCursorDescriptor;
-    Length: SVGCursorDescriptor;
-    Probe: SVGCursorDescriptor;
-    RectangleROI: SVGCursorDescriptor;
-    TextMarker: SVGCursorDescriptor;
-    Crosshairs: SVGCursorDescriptor;
-    Eraser: SVGCursorDescriptor;
-    Magnify: SVGCursorDescriptor;
-    Pan: SVGCursorDescriptor;
-    Rotate: SVGCursorDescriptor;
-    StackScroll: SVGCursorDescriptor;
-    WindowLevelRegion: SVGCursorDescriptor;
-    WindowLevel: SVGCursorDescriptor;
-    Zoom: SVGCursorDescriptor;
-    SegmentationFreeHandEraseInside: SVGCursorDescriptor;
-    SegmentationFreeHandFillInside: SVGCursorDescriptor;
-    SegmentationFreeHandEraseOutside: SVGCursorDescriptor;
-    SegmentationFreeHandFillOutside: SVGCursorDescriptor;
-    SegmentationRectangleEraseInside: SVGCursorDescriptor;
-    RectangleScissor: SVGCursorDescriptor;
-    'RectangleScissor.FILL_INSIDE': SVGCursorDescriptor;
-    'RectangleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
-    'RectangleScissor.ERASE_OUTSIDE': SVGCursorDescriptor;
-    'RectangleScissor.ERASE_INSIDE': SVGCursorDescriptor;
-    CircleScissor: SVGCursorDescriptor;
-    'CircleScissor.FILL_INSIDE': SVGCursorDescriptor;
-    'CircleScissor.ERASE_OUTSIDE': SVGCursorDescriptor;
-    'CircleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
-};
+const CursorSVG: Record<string, SVGCursorDescriptor>;
 
 // @public (undocumented)
 interface CustomEvent_2<T = any> extends Event {
@@ -1779,6 +1743,8 @@ enum Events {
     // (undocumented)
     SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED",
     // (undocumented)
+    TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
+    // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
     TOUCH_END = "CORNERSTONE_TOOLS_TOUCH_END",
@@ -1818,6 +1784,8 @@ declare namespace EventTypes {
         ImageRenderedEvent,
         ImageVolumeModifiedEvent,
         ImageVolumeModifiedEventDetail,
+        ImageVolumeLoadingCompletedEvent,
+        ImageVolumeLoadingCompletedEventDetail,
         ImageLoadedEvent,
         ImageLoadedEventDetail,
         ImageLoadedFailedEventDetail,
@@ -1859,6 +1827,8 @@ declare namespace EventTypes_2 {
         NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
         NormalizedTouchEventType,
+        ToolActivatedEventDetail,
+        ToolActivatedEventType,
         AnnotationAddedEventDetail,
         AnnotationAddedEventType,
         AnnotationCompletedEventDetail,
@@ -2014,6 +1984,9 @@ function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpec
 
 // @public (undocumented)
 function getActiveSegmentIndex(segmentationId: string): number | undefined;
+
+// @public (undocumented)
+function getAllSegmentationRepresentations(): Record<string, ToolGroupSpecificRepresentation[]>;
 
 // @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
@@ -2452,6 +2425,7 @@ interface IImage {
     minPixelValue: number;
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
+    photometricInterpretation?: string;
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -2731,6 +2705,16 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 // @public
+type ImageVolumeLoadingCompletedEvent =
+CustomEvent_2<ImageVolumeLoadingCompletedEventDetail>;
+
+// @public
+type ImageVolumeLoadingCompletedEventDetail = {
+    volumeId: string;
+    FrameOfReferenceUID: string;
+};
+
+// @public
 type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>;
 
 // @public
@@ -2911,7 +2895,7 @@ function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeV
 // @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
-    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any): void;
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): void;
 }
 
 // @public (undocumented)
@@ -4887,6 +4871,7 @@ declare namespace state_3 {
         getSegmentSpecificRepresentationConfig,
         setSegmentSpecificRepresentationConfig,
         getToolGroupIdsWithSegmentation,
+        getAllSegmentationRepresentations,
         getSegmentationRepresentationByUID,
         addColorLUT,
         getColorLUT,
@@ -4965,7 +4950,7 @@ enum Swipe {
 
 // @public (undocumented)
 export class Synchronizer {
-    constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler);
+    constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any);
     // (undocumented)
     add(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
@@ -5043,6 +5028,16 @@ function throttle(func: Function, wait?: number, options?: {
     leading?: boolean;
     trailing?: boolean;
 }): Function;
+
+// @public (undocumented)
+type ToolActivatedEventDetail = {
+    toolGroupId: string;
+    toolName: string;
+    toolBindingsOptions: SetToolBindingsType;
+};
+
+// @public (undocumented)
+type ToolActivatedEventType = Types_2.CustomEventType<ToolActivatedEventDetail>;
 
 // @public (undocumented)
 interface ToolData {

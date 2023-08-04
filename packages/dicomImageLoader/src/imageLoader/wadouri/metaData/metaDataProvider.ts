@@ -16,6 +16,10 @@ import {
   extractSliceThicknessFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
+import {
+  getInstanceModule,
+  instanceModuleNames,
+} from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
   const { dicomParser } = external;
@@ -244,6 +248,10 @@ function metaDataProvider(type, imageId) {
       ),
       actualFrameDuration: dicomParser.intString(dataSet.string('x00181242')),
     };
+  }
+
+  if (type === 'instance') {
+    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
 }
 
