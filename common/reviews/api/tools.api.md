@@ -1677,7 +1677,7 @@ export class EllipticalROITool extends AnnotationTool {
 }
 
 // @public (undocumented)
-function enable(element: any): void;
+const enable: (element: any) => void;
 
 declare namespace Enums {
     export {
@@ -2054,6 +2054,8 @@ function getColorLUT(index: number): ColorLUT | undefined;
 // @public (undocumented)
 function getConfiguration(): {
     maxImagesToPrefetch: number;
+    minBefore: number;
+    maxAfter: number;
     preserveExistingPool: boolean;
 };
 

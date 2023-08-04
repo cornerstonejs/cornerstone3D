@@ -22,7 +22,9 @@ let configuration = {
 };
 
 let resetPrefetchTimeout;
-const resetPrefetchDelay = 10;
+// Starting the prefetch quickly isn't an issue as the main image is already being
+// loaded, so a 5 ms prefetch delay is fine
+const resetPrefetchDelay = 5;
 
 function range(lowEnd, highEnd) {
   // Javascript version of Python's range function
@@ -42,23 +44,6 @@ function range(lowEnd, highEnd) {
   }
 
   return arr;
-}
-
-function nearestIndex(arr, x) {
-  // Return index of nearest values in array
-  // http://stackoverflow.com/questions/25854212/return-index-of-nearest-values-in-an-array
-  let low = 0;
-  let high = arr.length - 1;
-
-  arr.forEach((v, idx) => {
-    if (v < x) {
-      low = Math.max(idx, low);
-    } else if (v > x) {
-      high = Math.min(idx, high);
-    }
-  });
-
-  return { low, high };
 }
 
 function getStackData(element) {
