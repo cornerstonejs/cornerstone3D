@@ -606,7 +606,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
     imagePlaneModule.calibration = calibration;
 
-    if (!isUpdated) return imagePlaneModule;
+    if (!isUpdated) {
+      return imagePlaneModule;
+    }
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
@@ -2564,7 +2566,9 @@ class StackViewport extends Viewport implements IStackViewport {
   public hasImageURI = (imageURI: string): boolean => {
     const imageIds = this.imageIds;
     for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+      if (imageIdToURI(imageIds[i]) === imageURI) {
+        return true;
+      }
     }
 
     return false;

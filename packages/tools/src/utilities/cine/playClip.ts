@@ -193,7 +193,9 @@ function stopClip(element: HTMLDivElement): void {
 
 function _stopClip(element: HTMLDivElement, stopDynamicCine: boolean): void {
   const enabledElement = getEnabledElement(element);
-  if (!enabledElement) return;
+  if (!enabledElement) {
+    return;
+  }
   const { viewport } = enabledElement;
   const cineToolData = getToolState(viewport.element);
 

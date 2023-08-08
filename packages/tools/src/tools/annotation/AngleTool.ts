@@ -219,8 +219,12 @@ class AngleTool extends AnnotationTool {
       [canvasCoords[0], canvasCoords[1]]
     );
 
-    if (distanceToPoint <= proximity) return true;
-    if (!point3) return false;
+    if (distanceToPoint <= proximity) {
+      return true;
+    }
+    if (!point3) {
+      return false;
+    }
 
     const canvasPoint3 = viewport.worldToCanvas(point3);
 

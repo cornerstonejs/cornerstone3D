@@ -137,7 +137,9 @@ function thresholdVolumeByRange(
     }
 
     // Todo: make the segmentIndex a parameter
-    if (insert) scalarData[index] = 1;
+    if (insert) {
+      scalarData[index] = 1;
+    }
   };
 
   pointInShapeCallback(segmentationImageData, () => true, callback, boundsIJK);

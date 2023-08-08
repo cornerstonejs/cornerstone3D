@@ -80,9 +80,13 @@ class MIPJumpToClickTool extends BaseTool {
     const { targetViewportIds, toolGroupId } = this.configuration;
     // TODO - consider making this a utility
     const viewports = renderingEngine.getViewports().filter((vp) => {
-      if (targetViewportIds?.indexOf(vp.id) >= 0) return true;
+      if (targetViewportIds?.indexOf(vp.id) >= 0) {
+        return true;
+      }
       const foundToolGroup = getToolGroupForViewport(vp.id, renderingEngine.id);
-      if (toolGroupId && toolGroupId === foundToolGroup?.id) return true;
+      if (toolGroupId && toolGroupId === foundToolGroup?.id) {
+        return true;
+      }
       return false;
     });
 

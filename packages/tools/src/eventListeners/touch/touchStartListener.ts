@@ -168,7 +168,9 @@ function touchStartListener(evt: TouchEvent) {
   state.renderingEngineId = renderingEngineId;
   state.viewportId = viewportId;
   // this prevents multiple start firing
-  if (state.isTouchStart) return;
+  if (state.isTouchStart) {
+    return;
+  }
   // this will clear on touchstart and touchend
   clearTimeout(state.pressTimeout);
   state.pressTimeout = setTimeout(() => _onTouchPress(evt), state.pressDelay);
@@ -187,7 +189,9 @@ function touchStartListener(evt: TouchEvent) {
  */
 function _onTouchPress(evt: TouchEvent) {
   const totalDistance = state.accumulatedDistance.canvas;
-  if (totalDistance > state.pressMaxDistance) return;
+  if (totalDistance > state.pressMaxDistance) {
+    return;
+  }
   const eventDetail: EventTypes.TouchPressEventDetail = {
     event: evt, // touchstart native event
     eventName: TOUCH_PRESS,
@@ -384,7 +388,9 @@ function _onTouchEnd(evt: TouchEvent): void {
 function _checkTouchTap(evt: TouchEvent): void {
   const currentTime = new Date().getTime();
   const startTime = state.startTime.getTime();
-  if (currentTime - startTime > tapState.tapToleranceMs) return;
+  if (currentTime - startTime > tapState.tapToleranceMs) {
+    return;
+  }
 
   // first tap, initialize the state
   if (tapState.taps === 0) {
@@ -422,7 +428,9 @@ function _checkTouchTap(evt: TouchEvent): void {
   // region where the user has the option to perform unlimited multitaps as long
   // as they are < the tapToleranceMs value. So a tap somewhere else on the screen
   // that is > the tapMaxDistance will start a separate and new "TapChain".
-  if (distanceFromStart > tapState.tapMaxDistance) return;
+  if (distanceFromStart > tapState.tapMaxDistance) {
+    return;
+  }
 
   clearTimeout(tapState.tapTimeout);
   tapState.taps += 1;
@@ -447,7 +455,9 @@ function _checkTouchTap(evt: TouchEvent): void {
 function _checkTouchSwipe(evt: TouchEvent, deltaPoints: IPoints) {
   const currentTime = new Date().getTime();
   const startTime = state.startTime.getTime();
-  if (state.swiped || currentTime - startTime > state.swipeToleranceMs) return;
+  if (state.swiped || currentTime - startTime > state.swipeToleranceMs) {
+    return;
+  }
   const [x, y] = deltaPoints.canvas;
   const eventDetail: EventTypes.TouchSwipeEventDetail = {
     event: evt,
