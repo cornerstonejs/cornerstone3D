@@ -257,10 +257,11 @@ function createImage(
           );
 
           imageFrame.pixelDataLength = imageFrame.pixelData.length;
-        } else {
-          // No need to do any conversion - already RGB
-          // Consider RGB to RGBA conversion?
         }
+        // else {
+        // No need to do any conversion - already RGB
+        // Consider RGB to RGBA conversion?
+
         /** @todo check as any */
         // calculate smallest and largest PixelValue of the converted pixelData
         const minMax = getMinMax(imageFrame.pixelData as any);
