@@ -8,7 +8,6 @@ import {
 } from './colorSpaceConverters/index';
 
 function convertRGB(imageFrame, colorBuffer, useRGBA) {
-  console.log('* convertRGB', imageFrame, useRGBA);
   if (imageFrame.planarConfiguration === 0) {
     convertRGBColorByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else {
@@ -39,6 +38,7 @@ export default function convertColorSpace(imageFrame, colorBuffer, useRGBA) {
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL') {
     convertYBRFull(imageFrame, colorBuffer, useRGBA);
   } else {
+    // TODO - handle YBR_PARTIAL and 420 colour spaces
     throw new Error(
       `No color space conversion for photometric interpretation ${imageFrame.photometricInterpretation}`
     );

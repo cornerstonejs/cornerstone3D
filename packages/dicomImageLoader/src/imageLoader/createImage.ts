@@ -18,6 +18,15 @@ import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
+// Transfer syntaxes that have the photometric color apply
+// Other ones have the colour PMI applied by the decoder
+const TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR = {
+  '1.2.840.10008.1.2.1': 'application/octet-stream',
+  '1.2.840.10008.1.2': 'application/octet-stream',
+  '1.2.840.10008.1.2.2': 'application/octet-stream',
+  '1.2.840.10008.1.2.5': 'image/dicom-rle',
+};
+
 let lastImageIdDrawn = '';
 
 function isModalityLUTForDisplay(sopClassUid: string): boolean {
@@ -214,75 +223,8 @@ function createImage(
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
       if (isColorImage) {
-        console.log(
-          '* createImage isColorImage',
-          imageFrame,
-          useRGBA,
-          transferSyntax
-        );
-        if (useRGBA) {
-          // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
-          // because it's using a canvas to load and decode images.
-          if (
-            !isJPEGBaseline8BitColor(imageFrame, transferSyntax) &&
-            imageFrame.photometricInterpretation !== 'RGB'
-          ) {
-            canvas.height = imageFrame.rows;
-            canvas.width = imageFrame.columns;
-            const context = canvas.getContext('2d');
-            const imageData = context.createImageData(
-              imageFrame.columns,
-              imageFrame.rows
-            );
-
-            convertColorSpace(imageFrame, imageData.data, useRGBA);
-            imageFrame.imageData = imageData;
-            imageFrame.pixelData = imageData.data;
-            imageFrame.pixelDataLength = imageData.data.length;
-          }
-        } else if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
-          // If we don't need the RGBA but the decoding is done with RGBA (the case
-          // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
-          // we need to remove the A channel from pixel data
-          // Note: rendering libraries like vtk expect Uint8Array for RGB images
-          // otherwise they will convert them to Float32Array which might be slow
-          const colorBuffer = new Uint8Array(
-            (imageFrame.pixelData.length / 4) * 3
-          );
-
-          console.log('* isJPEGBaseline8BitColor', transferSyntax);
-          // remove the A from the RGBA of the imageFrame
-          imageFrame.pixelData = removeAFromRGBA(
-            imageFrame.pixelData,
-            colorBuffer
-          );
-
-          imageFrame.pixelDataLength = imageFrame.pixelData.length;
-        } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-          canvas.height = imageFrame.rows;
-          canvas.width = imageFrame.columns;
-
-          const context = canvas.getContext('2d');
-
-          const imageData = context.createImageData(
-            imageFrame.columns,
-            imageFrame.rows
-          );
-
-          convertColorSpace(imageFrame, imageData.data, true);
-
-          /** @todo check as any */
-          const colorBuffer = new (imageData.data as any).constructor(
-            (imageData.data.length / 4) * 3
-          );
-
-          // remove the A from the RGBA of the imageFrame
-          imageFrame.pixelData = new Uint8Array(
-            removeAFromRGBA(imageData.data, colorBuffer)
-          );
-          imageFrame.pixelDataLength = imageFrame.pixelData.length;
-        } else {
-          console.log('Calling convert color space', imageFrame);
+        const { rows, columns } = imageFrame;
+        if (TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax]) {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');
@@ -295,8 +237,30 @@ function createImage(
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
           imageFrame.pixelDataLength = imageData.data.length;
-        }
+        } else if (
+          !useRGBA &&
+          imageFrame.pixelDataLength === 4 * rows * columns
+        ) {
+          // If we don't need the RGBA but the decoding is done with RGBA (the case
+          // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
+          // we need to remove the A channel from pixel data
+          // Note: rendering libraries like vtk expect Uint8Array for RGB images
+          // otherwise they will convert them to Float32Array which might be slow
+          const colorBuffer = new Uint8Array(
+            (imageFrame.pixelData.length / 4) * 3
+          );
 
+          // remove the A from the RGBA of the imageFrame
+          imageFrame.pixelData = removeAFromRGBA(
+            imageFrame.pixelData,
+            colorBuffer
+          );
+
+          imageFrame.pixelDataLength = imageFrame.pixelData.length;
+        } else {
+          // No need to do any conversion - already RGB
+          // Consider RGB to RGBA conversion?
+        }
         /** @todo check as any */
         // calculate smallest and largest PixelValue of the converted pixelData
         const minMax = getMinMax(imageFrame.pixelData as any);
