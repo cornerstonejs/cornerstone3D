@@ -8,6 +8,7 @@ import {
 } from './colorSpaceConverters/index';
 
 function convertRGB(imageFrame, colorBuffer, useRGBA) {
+  console.log('* convertRGB', imageFrame, useRGBA);
   if (imageFrame.planarConfiguration === 0) {
     convertRGBColorByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else {

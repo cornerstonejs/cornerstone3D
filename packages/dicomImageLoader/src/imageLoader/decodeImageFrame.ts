@@ -44,6 +44,7 @@ function decodeImageFrame(
   options = {},
   decodeConfig
 ) {
+  console.log('* decodeImageFrame', imageFrame);
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian

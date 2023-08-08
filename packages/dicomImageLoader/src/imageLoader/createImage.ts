@@ -214,6 +214,12 @@ function createImage(
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
       if (isColorImage) {
+        console.log(
+          '* createImage isColorImage',
+          imageFrame,
+          useRGBA,
+          transferSyntax
+        );
         if (useRGBA) {
           // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
           // because it's using a canvas to load and decode images.
@@ -244,6 +250,7 @@ function createImage(
             (imageFrame.pixelData.length / 4) * 3
           );
 
+          console.log('* isJPEGBaseline8BitColor', transferSyntax);
           // remove the A from the RGBA of the imageFrame
           imageFrame.pixelData = removeAFromRGBA(
             imageFrame.pixelData,
@@ -274,6 +281,9 @@ function createImage(
             removeAFromRGBA(imageData.data, colorBuffer)
           );
           imageFrame.pixelDataLength = imageFrame.pixelData.length;
+        } else {
+          console.log('Calling convert color space', imageFrame);
+          convertColorSpace(imageFrame, imageData.data, useRGBA);
         }
 
         /** @todo check as any */
