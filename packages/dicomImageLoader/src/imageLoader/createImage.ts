@@ -283,7 +283,18 @@ function createImage(
           imageFrame.pixelDataLength = imageFrame.pixelData.length;
         } else {
           console.log('Calling convert color space', imageFrame);
+          canvas.height = imageFrame.rows;
+          canvas.width = imageFrame.columns;
+          const context = canvas.getContext('2d');
+          const imageData = context.createImageData(
+            imageFrame.columns,
+            imageFrame.rows
+          );
+
           convertColorSpace(imageFrame, imageData.data, useRGBA);
+          imageFrame.imageData = imageData;
+          imageFrame.pixelData = imageData.data;
+          imageFrame.pixelDataLength = imageData.data.length;
         }
 
         /** @todo check as any */
