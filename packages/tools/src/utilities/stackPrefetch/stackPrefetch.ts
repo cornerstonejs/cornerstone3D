@@ -17,7 +17,7 @@ let configuration = {
   maxImagesToPrefetch: Infinity,
   // Fetch up to 1 image before and 5 after
   minBefore: 1,
-  maxAfter: 5,
+  maxAfter: 25,
   preserveExistingPool: false,
 };
 
@@ -257,11 +257,11 @@ const updateToolState = (element) => {
 
   const minIndex = Math.max(
     0,
-    stack.currentImageIdIndex - configuration.minBefore
+    stack.currentImageIdIndex - (configuration.minBefore || 1)
   );
   const maxIndex = Math.min(
     stack.imageIds.length - 1,
-    stack.currentImageIdIndex + configuration.maxAfter
+    stack.currentImageIdIndex + (configuration.maxAfter || 5)
   );
   // Use the currentImageIdIndex from the stack as the initialImageIdIndex
   const stackPrefetchData = {
