@@ -662,15 +662,18 @@ class PlanarFreehandROITool extends AnnotationTool {
       renderStatus = true;
     }
 
-    if (!this.configuration.calculateStats) return;
+    if (!this.configuration.calculateStats) {
+      return;
+    }
 
     annotations.forEach((annotation) => {
       const activeAnnotationUID = this.commonData?.annotation.annotationUID;
       if (
         annotation.annotationUID === activeAnnotationUID &&
         !this.commonData?.movingTextBox
-      )
+      ) {
         return;
+      }
 
       const modalityUnitOptions = {
         isPreScaled: isViewportPreScaled(viewport, targetId),
@@ -893,7 +896,9 @@ class PlanarFreehandROITool extends AnnotationTool {
     const targetId = this.getTargetId(viewport);
 
     const textLines = this._getTextLines(data, targetId);
-    if (!textLines || textLines.length === 0) return;
+    if (!textLines || textLines.length === 0) {
+      return;
+    }
 
     const canvasCoordinates = data.polyline.map((p) =>
       viewport.worldToCanvas(p)

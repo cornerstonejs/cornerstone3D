@@ -104,26 +104,38 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
   onSetToolActive(): void {
     this._disableCursorEnabled = this.configuration.disableCursor;
-    if (!this._disableCursorEnabled) return;
+    if (!this._disableCursorEnabled) {
+      return;
+    }
     const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
-    if (!viewportIds) return;
+    if (!viewportIds) {
+      return;
+    }
     const enabledElements = viewportIds.map((e) =>
       getEnabledElementByIds(e.viewportId, e.renderingEngineId)
     );
 
     enabledElements.forEach((element) => {
-      if (element) hideElementCursor(element.viewport.element);
+      if (element) {
+        hideElementCursor(element.viewport.element);
+      }
     });
   }
   onSetToolDisabled(): void {
-    if (!this._disableCursorEnabled) return;
+    if (!this._disableCursorEnabled) {
+      return;
+    }
     const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
-    if (!viewportIds) return;
+    if (!viewportIds) {
+      return;
+    }
     const enabledElements = viewportIds.map((e) =>
       getEnabledElementByIds(e.viewportId, e.renderingEngineId)
     );
     enabledElements.forEach((element) => {
-      if (element) resetElementCursor(element.viewport.element);
+      if (element) {
+        resetElementCursor(element.viewport.element);
+      }
     });
   }
 
@@ -132,14 +144,18 @@ class ReferenceCursors extends AnnotationDisplayTool {
     element: HTMLDivElement
   ): void => {
     const enabledElement = getEnabledElement(element);
-    if (!enabledElement) throw new Error('No enabled element found');
+    if (!enabledElement) {
+      throw new Error('No enabled element found');
+    }
     const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-    if (!viewPlaneNormal || !viewUp) throw new Error('Camera not found');
+    if (!viewPlaneNormal || !viewUp) {
+      throw new Error('Camera not found');
+    }
 
     const referencedImageId = this.getReferencedImageId(
       viewport,
@@ -181,10 +197,14 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     const annotations = getAnnotations(this.getToolName(), element);
 
-    if (annotations.length > 0) return null;
+    if (annotations.length > 0) {
+      return null;
+    }
     const annotationId = addAnnotation(annotation, element);
 
-    if (annotationId === null) return;
+    if (annotationId === null) {
+      return;
+    }
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -212,8 +232,12 @@ class ReferenceCursors extends AnnotationDisplayTool {
     annotation: Annotation
   ): void {
     const worldPos = this._currentCursorWorldPosition;
-    if (!worldPos) return;
-    if (!annotation.data?.handles?.points) return;
+    if (!worldPos) {
+      return;
+    }
+    if (!annotation.data?.handles?.points) {
+      return;
+    }
     annotation.data.handles.points = [[...worldPos]];
     annotation.invalidated = true;
 
@@ -223,7 +247,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
       false
     );
     const enabledElement = getEnabledElement(element);
-    if (!enabledElement) return;
+    if (!enabledElement) {
+      return;
+    }
     const { renderingEngine } = enabledElement;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   }
@@ -238,7 +264,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
       | Types.IStackViewport;
 
     //only react to changes for element with cursor, otherwise would cause infinite loop
-    if (element !== this._elementWithCursor) return;
+    if (element !== this._elementWithCursor) {
+      return;
+    }
     //check if camera moved along its normal
     const oldFocalPoint = previousCamera.focalPoint;
     const cameraNormal = camera.viewPlaneNormal;
@@ -247,14 +275,20 @@ class ReferenceCursors extends AnnotationDisplayTool {
     const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0];
     vtkMath.subtract(newFocalPoint, oldFocalPoint, deltaCameraFocalPoint);
     //check if focal point changed
-    if (deltaCameraFocalPoint.reduce((a, b) => a + b, 0) === 0) return;
+    if (deltaCameraFocalPoint.reduce((a, b) => a + b, 0) === 0) {
+      return;
+    }
     //if nomrmal is perpendicular to focal point change, then we are not moving along the normal
     const dotProduct = vtkMath.dot(deltaCameraFocalPoint, cameraNormal);
     //dot product is 0 -> perpendicular
-    if (Math.abs(dotProduct) < 1e-2) return;
+    if (Math.abs(dotProduct) < 1e-2) {
+      return;
+    }
 
     //need to update the position of the annotation since camera changed
-    if (!this._currentCanvasPosition) return;
+    if (!this._currentCanvasPosition) {
+      return;
+    }
 
     const newWorldPos = viewport.canvasToWorld(this._currentCanvasPosition);
     this._currentCursorWorldPosition = newWorldPos;
@@ -267,15 +301,23 @@ class ReferenceCursors extends AnnotationDisplayTool {
     annotations: Annotations
   ): Annotations {
     //calculate distance of current viewport to annotation
-    if (!(annotations instanceof Array) || annotations.length === 0) return [];
+    if (!(annotations instanceof Array) || annotations.length === 0) {
+      return [];
+    }
     const annotation = annotations[0];
     const viewport = getEnabledElement(element)?.viewport;
-    if (!viewport) return [];
+    if (!viewport) {
+      return [];
+    }
     const camera = viewport.getCamera();
     const { viewPlaneNormal, focalPoint } = camera;
-    if (!viewPlaneNormal || !focalPoint) return [];
+    if (!viewPlaneNormal || !focalPoint) {
+      return [];
+    }
     const points = annotation.data?.handles?.points;
-    if (!(points instanceof Array) || points.length !== 1) return [];
+    if (!(points instanceof Array) || points.length !== 1) {
+      return [];
+    }
     const worldPos = points[0];
     const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
     const distance = utilities.planar.planeDistanceToPoint(plane, worldPos);
@@ -333,7 +375,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
       const { handles } = data;
       const { points } = handles;
 
-      if (!annotationUID) return renderStatus;
+      if (!annotationUID) {
+        return renderStatus;
+      }
       styleSpecifier.annotationUID = annotationUID;
 
       const lineWidthBase = parseFloat(
@@ -347,7 +391,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      if (points[0].some((e) => isNaN(e))) return renderStatus;
+      if (points[0].some((e) => isNaN(e))) {
+        return renderStatus;
+      }
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
       ) as [Types.Point2];
@@ -414,8 +460,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
   ): void {
     const currentMousePosition = this._currentCursorWorldPosition;
 
-    if (!currentMousePosition || currentMousePosition.some((e) => isNaN(e)))
+    if (!currentMousePosition || currentMousePosition.some((e) => isNaN(e))) {
       return;
+    }
 
     if (viewport instanceof StackViewport) {
       const closestIndex = utilities.getClosestStackImageIndexForPoint(
@@ -423,12 +470,17 @@ class ReferenceCursors extends AnnotationDisplayTool {
         viewport
       );
 
-      if (closestIndex === null) return;
-      if (closestIndex !== viewport.getCurrentImageIdIndex())
+      if (closestIndex === null) {
+        return;
+      }
+      if (closestIndex !== viewport.getCurrentImageIdIndex()) {
         viewport.setImageIdIndex(closestIndex);
+      }
     } else if (viewport instanceof VolumeViewport) {
       const { focalPoint, viewPlaneNormal } = viewport.getCamera();
-      if (!focalPoint || !viewPlaneNormal) return;
+      if (!focalPoint || !viewPlaneNormal) {
+        return;
+      }
       const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
       const currentDistance = utilities.planar.planeDistanceToPoint(
         plane,
@@ -436,7 +488,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
         true
       );
 
-      if (Math.abs(currentDistance) < 0.5) return;
+      if (Math.abs(currentDistance) < 0.5) {
+        return;
+      }
       const normalizedViewPlane = vec3.normalize(
         vec3.create(),
         vec3.fromValues(...viewPlaneNormal)
@@ -456,7 +510,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
       if (isInBounds) {
         viewport.setCamera({ focalPoint: newFocalPoint });
         const renderingEngine = viewport.getRenderingEngine();
-        if (renderingEngine) renderingEngine.renderViewport(viewport.id);
+        if (renderingEngine) {
+          renderingEngine.renderViewport(viewport.id);
+        }
       }
     }
   }

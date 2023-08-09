@@ -23,10 +23,16 @@ const getCalibratedLengthUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
   // Anachronistic - moving to using calibration consistently, but not completed yet
   const units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
-  if (!calibration || !calibration.type) return units;
-  if (calibration.type === CalibrationTypes.UNCALIBRATED) return PIXEL_UNITS;
+  if (!calibration || !calibration.type) {
+    return units;
+  }
+  if (calibration.type === CalibrationTypes.UNCALIBRATED) {
+    return PIXEL_UNITS;
+  }
   // TODO - handle US regions properly
-  if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
+  if (calibration.SequenceOfUltrasoundRegions) {
+    return 'US Region';
+  }
   return `${units} ${calibration.type}`;
 };
 
@@ -37,8 +43,12 @@ const SQUARE = '\xb2';
 const getCalibratedAreaUnits = (handles, image): string => {
   const { calibration, hasPixelSpacing } = image;
   const units = (hasPixelSpacing ? 'mm' : PIXEL_UNITS) + SQUARE;
-  if (!calibration || !calibration.type) return units;
-  if (calibration.SequenceOfUltrasoundRegions) return 'US Region';
+  if (!calibration || !calibration.type) {
+    return units;
+  }
+  if (calibration.SequenceOfUltrasoundRegions) {
+    return 'US Region';
+  }
   return `${units} ${calibration.type}`;
 };
 
