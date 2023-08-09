@@ -1,5 +1,3 @@
-import { Types } from '@cornerstonejs/core';
-
 type PlayClipOptions = {
   framesPerSecond?: number;
   frameTimeVector?: number[];
@@ -7,6 +5,8 @@ type PlayClipOptions = {
   loop?: boolean;
   dynamicCineEnabled?: boolean;
   frameTimeVectorSpeedMultiplier?: number;
+  // How many items to wait for.  Set to 0 to play immediately
+  waitForRendered?: number;
 };
 
 interface ToolData {
@@ -26,6 +26,7 @@ type CinePlayContext = {
   get numScrollSteps(): number;
   get currentStepIndex(): number;
   get frameTimeVectorEnabled(): boolean;
+  tries?: number;
   scroll(delta: number): void;
 };
 

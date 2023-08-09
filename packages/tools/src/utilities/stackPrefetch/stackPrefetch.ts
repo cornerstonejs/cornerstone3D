@@ -15,9 +15,9 @@ const priority = 0;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
-  // Fetch up to 1 image before and 5 after
+  // Fetch up to 1 image before and 50 after
   minBefore: 1,
-  maxAfter: 25,
+  maxAfter: 5,
   preserveExistingPool: false,
 };
 
@@ -119,8 +119,7 @@ function prefetch(element) {
   }
 
   // Remove all already cached images from the
-  // IndicesToRequest array
-  stackPrefetchData.indicesToRequest.sort((a, b) => a - b);
+  // IndicesToRequest array.
   const indicesToRequestCopy = stackPrefetch.indicesToRequest.slice();
 
   indicesToRequestCopy.forEach((imageIdIndex) => {
@@ -248,6 +247,9 @@ function onImageUpdated(e) {
   }, resetPrefetchDelay);
 }
 
+// Not a full signum, but good enough for direction.
+const signum = (x) => (x < 0 ? -1 : 1);
+
 const updateToolState = (element) => {
   const stack = getStackData(element);
   if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
@@ -255,25 +257,58 @@ const updateToolState = (element) => {
     return;
   }
 
-  const minIndex = Math.max(
-    0,
-    stack.currentImageIdIndex - (configuration.minBefore || 1)
-  );
+  const { currentImageIdIndex } = stack;
+  const { maxAfter = 5, minBefore = 1 } = configuration;
+  const minIndex = Math.max(0, currentImageIdIndex - minBefore);
+
   const maxIndex = Math.min(
     stack.imageIds.length - 1,
-    stack.currentImageIdIndex + (configuration.maxAfter || 5)
+    currentImageIdIndex + maxAfter
   );
   // Use the currentImageIdIndex from the stack as the initialImageIdIndex
-  const stackPrefetchData = {
-    indicesToRequest: range(minIndex, maxIndex),
+  const stackPrefetchData = getToolState(element) || {
+    indicesToRequest: [],
+    currentImageIdIndex,
+    stackCount: 0,
     enabled: true,
     direction: 1,
   };
 
+  const delta = currentImageIdIndex - stackPrefetchData.currentImageIdIndex;
+  stackPrefetchData.direction = signum(delta);
+  stackPrefetchData.currentImageIdIndex = stack.currentImageIdIndex;
+  stackPrefetchData.enabled = true;
+  stackPrefetchData.indicesToRequest = range(minIndex, maxIndex);
+
+  console.log('Setup for next stackPrefetch', currentImageIdIndex, delta);
+  if (delta === 1) {
+    console.log('Computing how many extra indices', currentImageIdIndex);
+    // Cache up to an extra 100 images
+    if (stackPrefetchData.stackCount < 100) {
+      stackPrefetchData.stackCount += 5;
+    }
+    const maxExtraStack = Math.min(
+      stack.imageIds.length - 1,
+      currentImageIdIndex + stackPrefetchData.stackCount
+    );
+    for (let i = maxIndex + 1; i < maxExtraStack; i++) {
+      stackPrefetchData.indicesToRequest.add(i);
+    }
+    console.log(
+      'Adding extra indices to cache',
+      currentImageIdIndex,
+      delta,
+      stackPrefetchData.indicesToRequest
+    );
+  } else {
+    console.log('Not incrementing by 1', currentImageIdIndex, delta);
+    // Not incrementing by 1, so stop increasing the data size
+    stackPrefetchData.stackCount = 0;
+  }
+
   // Remove the currentImageIdIndex from the list to request
-  const indexOfCurrentImage = stackPrefetchData.indicesToRequest.indexOf(
-    stack.currentImageIdIndex
-  );
+  const indexOfCurrentImage =
+    stackPrefetchData.indicesToRequest.indexOf(currentImageIdIndex);
   stackPrefetchData.indicesToRequest.splice(indexOfCurrentImage, 1);
 
   addToolState(element, stackPrefetchData);

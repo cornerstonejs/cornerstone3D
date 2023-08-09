@@ -19,30 +19,31 @@ const MAX_CACHE_SIZE_1GB = 1073741824;
 
 class Cache implements ICache {
   private readonly _imageCache: Map<string, ICachedImage>; // volatile space
-  private readonly _volumeCache: Map<string, ICachedVolume>; // non-volatile space
+  // used to store volume data (3d)
+  private readonly _volumeCache = new Map<string, ICachedVolume>(); // non-volatile space
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache: Map<string, ICachedGeometry>;
-  private _imageCacheSize: number;
-  private _volumeCacheSize: number;
-  private _maxCacheSize: number;
+  // Only use the weak cache for small memory caches, otherwise the data
+  // will always be gone before it is used.
+  private _weakCache;
+
+  private _imageCacheSize = 0;
+  private _volumeCacheSize = 0;
+  private _maxCacheSize = 6 * MAX_CACHE_SIZE_1GB;
+  private _maxInstanceSize = MAX_CACHE_SIZE_1GB;
 
   constructor() {
     // used to store image data (2d)
     this._imageCache = new Map();
-    // used to store volume data (3d)
-    this._volumeCache = new Map();
     // used to store object data (contour, surface, etc.)
     this._geometryCache = new Map();
-    this._imageCacheSize = 0;
-    this._volumeCacheSize = 0;
-    this._maxCacheSize = MAX_CACHE_SIZE_1GB; // Default 1GB
   }
 
   /**
    * Set the maximum cache Size
    *
-   * Maximum cache size should be set before adding the data; otherwise, it
-   * will throw an error.
+   * Maximum cache size should be set before adding the data.  If set after,
+   * and it is smaller than the current size, will cause issues.
    *
    * @param newMaxCacheSize -  new maximum cache size
    *
@@ -54,12 +55,14 @@ class Cache implements ICache {
     }
 
     this._maxCacheSize = newMaxCacheSize;
+    this._weakCache =
+      this._maxCacheSize > MAX_CACHE_SIZE_1GB / 2 ? null : new Map();
   };
 
   /**
    * Checks if there is enough space in the cache for requested byte size
    *
-   * It throws error, if the sum of volatile (image) cache and unallocated cache
+   * It returns false, if the sum of volatile (image) cache and unallocated cache
    * is less than the requested byteLength
    *
    * @param byteLength - byte length of requested byte size
@@ -67,6 +70,9 @@ class Cache implements ICache {
    * @returns - boolean indicating if there is enough space in the cache
    */
   public isCacheable = (byteLength: number): boolean => {
+    if (byteLength > this._maxInstanceSize) {
+      return false;
+    }
     const unallocatedSpace = this.getBytesAvailable();
     const imageCacheSize = this._imageCacheSize;
     const availableSpace = unallocatedSpace + imageCacheSize;
@@ -80,6 +86,13 @@ class Cache implements ICache {
    * @returns maximum allowed cache size
    */
   public getMaxCacheSize = (): number => this._maxCacheSize;
+
+  /**
+   * Returns maximum size of a single instance (volume or single image)
+   *
+   * @returns maximum instance size
+   */
+  public getMaxInstanceSize = (): number => this._maxInstanceSize;
 
   /**
    * Returns current size of the cache
@@ -413,7 +426,13 @@ class Cache implements ICache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (cachedImage === undefined) {
-      return;
+      const weakImage = this._weakCache?.get(imageId)?.deref();
+      if (!weakImage) {
+        return;
+      }
+      this.decacheIfNecessaryUntilBytesAvailable(weakImage.sizeInBytes);
+      this._incrementImageCacheSize(weakImage.sizeInBytes);
+      this._imageCache.set(imageId, weakImage);
     }
 
     // Bump time stamp for cached image
@@ -425,7 +444,7 @@ class Cache implements ICache {
   /**
    * It checks the imageCache for the provided imageId, and returns true
    * if the image is loaded, false otherwise. Note, this only checks the imageCache
-   * and does not check the volume cache.
+   * and weak caches, and does not check the volume cache.
    * @param imageId - image Id to check
    * @returns boolean
    */
@@ -433,6 +452,10 @@ class Cache implements ICache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
+      const weakImage = this._weakCache?.get(imageId)?.deref();
+      if (weakImage) {
+        return weakImage.loaded;
+      }
       return false;
     }
 
@@ -687,6 +710,9 @@ class Cache implements ICache {
     };
 
     triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, eventDetails);
+    if (this._weakCache) {
+      this._weakCache.set(imageId, new window.WeakRef(cachedImage));
+    }
     this._decacheImage(imageId);
   };
 

@@ -2236,6 +2236,8 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const imageAlreadyLoaded = cache.isImageIdCached(targetImageId);
 
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
+
     // If image is already cached we want to scroll right away; however, if it is
     // not cached, we can debounce the scroll event to avoid firing multiple scroll
     // events for the images that might happen to be passing by (as a result of infinite
