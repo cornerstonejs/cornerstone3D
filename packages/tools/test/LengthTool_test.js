@@ -1105,7 +1105,9 @@ describe('LengthTool:', () => {
         imageLoader.unregisterAllImageLoaders();
         ToolGroupManager.destroyToolGroup('stack');
 
-        if (!this.DOMElements) return;
+        if (!this.DOMElements) {
+          return;
+        }
         this.DOMElements.forEach((el) => {
           if (el.parentNode) {
             el.parentNode.removeChild(el);

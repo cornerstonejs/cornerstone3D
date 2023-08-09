@@ -250,10 +250,14 @@ function get(dictionary: Record<string, unknown>, key: string): unknown {
  */
 function isValidKey(key: string): boolean {
   let last: number, current: number, previous: number;
-  if (typeof key !== 'string' || (last = key.length - 1) < 0) return false;
+  if (typeof key !== 'string' || (last = key.length - 1) < 0) {
+    return false;
+  }
   previous = -1;
   while ((current = key.indexOf('.', previous + 1)) >= 0) {
-    if (current - previous < 2 || current === last) return false;
+    if (current - previous < 2 || current === last) {
+      return false;
+    }
     previous = current;
   }
   return true;

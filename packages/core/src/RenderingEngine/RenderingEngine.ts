@@ -547,7 +547,9 @@ class RenderingEngine implements IRenderingEngine {
   ) {
     // 1. If viewport has a custom resize method, call it here.
     customRenderingViewports.forEach((vp) => {
-      if (typeof vp.resize === 'function') vp.resize();
+      if (typeof vp.resize === 'function') {
+        vp.resize();
+      }
     });
 
     // 3. Reset viewport cameras
@@ -1125,7 +1127,9 @@ class RenderingEngine implements IRenderingEngine {
 
     eventDetailArray.forEach((eventDetail) => {
       // Very small viewports won't have an element
-      if (!eventDetail?.element) return;
+      if (!eventDetail?.element) {
+        return;
+      }
       triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
     });
   };

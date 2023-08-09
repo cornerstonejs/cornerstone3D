@@ -2,7 +2,9 @@
 export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
   const colonIndex = imageId.indexOf(':');
   const scheme = imageId.substring(0, colonIndex);
-  if (scheme !== 'web') return;
+  if (scheme !== 'web') {
+    return;
+  }
 
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
