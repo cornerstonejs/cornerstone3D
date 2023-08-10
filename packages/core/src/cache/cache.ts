@@ -15,26 +15,28 @@ import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 
-const MAX_CACHE_SIZE_1GB = 1073741824;
+const ONE_GB = 1073741824;
 
+/**
+ * Stores images, volumes and geometry.
+ * There are two sizes - the max cache size, that controls the overal maximum
+ * size, and the instance size, which controls how big any single object can
+ * be.  Defaults are 6 GB and 2 GB - 8 bytes (just enough to allow allocating it)
+ */
 class Cache implements ICache {
-  private readonly _imageCache: Map<string, ICachedImage>; // volatile space
+  // used to store image data (2d)
+  private readonly _imageCache = new Map<string, ICachedImage>(); // volatile space
   // used to store volume data (3d)
   private readonly _volumeCache = new Map<string, ICachedVolume>(); // non-volatile space
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache: Map<string, ICachedGeometry>;
-  // Only use the weak cache for small memory caches, otherwise the data
-  // will always be gone before it is used.
-  private _weakCache;
 
   private _imageCacheSize = 0;
   private _volumeCacheSize = 0;
-  private _maxCacheSize = 6 * MAX_CACHE_SIZE_1GB;
-  private _maxInstanceSize = MAX_CACHE_SIZE_1GB;
+  private _maxCacheSize = 1 * ONE_GB;
+  private _maxInstanceSize = 2 * ONE_GB - 8;
 
   constructor() {
-    // used to store image data (2d)
-    this._imageCache = new Map();
     // used to store object data (contour, surface, etc.)
     this._geometryCache = new Map();
   }
@@ -55,8 +57,6 @@ class Cache implements ICache {
     }
 
     this._maxCacheSize = newMaxCacheSize;
-    this._weakCache =
-      this._maxCacheSize > MAX_CACHE_SIZE_1GB / 2 ? null : new Map();
   };
 
   /**
@@ -397,6 +397,12 @@ class Cache implements ICache {
         cachedImage.image = image;
         cachedImage.sizeInBytes = image.sizeInBytes;
         this._incrementImageCacheSize(cachedImage.sizeInBytes);
+        console.log(
+          'Caching',
+          this._imageCache.size,
+          this.getBytesAvailable(),
+          cachedImage.sizeInBytes
+        );
 
         const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
           image: cachedImage,
@@ -426,13 +432,7 @@ class Cache implements ICache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (cachedImage === undefined) {
-      const weakImage = this._weakCache?.get(imageId)?.deref();
-      if (!weakImage) {
-        return;
-      }
-      this.decacheIfNecessaryUntilBytesAvailable(weakImage.sizeInBytes);
-      this._incrementImageCacheSize(weakImage.sizeInBytes);
-      this._imageCache.set(imageId, weakImage);
+      return;
     }
 
     // Bump time stamp for cached image
@@ -444,7 +444,7 @@ class Cache implements ICache {
   /**
    * It checks the imageCache for the provided imageId, and returns true
    * if the image is loaded, false otherwise. Note, this only checks the imageCache
-   * and weak caches, and does not check the volume cache.
+   * and does not check the volume cache.
    * @param imageId - image Id to check
    * @returns boolean
    */
@@ -452,10 +452,6 @@ class Cache implements ICache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
-      const weakImage = this._weakCache?.get(imageId)?.deref();
-      if (weakImage) {
-        return weakImage.loaded;
-      }
       return false;
     }
 
@@ -710,9 +706,6 @@ class Cache implements ICache {
     };
 
     triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, eventDetails);
-    if (this._weakCache) {
-      this._weakCache.set(imageId, new window.WeakRef(cachedImage));
-    }
     this._decacheImage(imageId);
   };
 

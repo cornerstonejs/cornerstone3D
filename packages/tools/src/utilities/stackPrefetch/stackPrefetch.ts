@@ -121,6 +121,7 @@ function prefetch(element) {
   // Remove all already cached images from the
   // IndicesToRequest array.
   const indicesToRequestCopy = stackPrefetch.indicesToRequest.slice();
+  const { currentImageIdIndex } = stack;
 
   indicesToRequestCopy.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
@@ -129,9 +130,15 @@ function prefetch(element) {
       return;
     }
 
-    const imageLoadObject = cache.getImageLoadObject(imageId);
+    const distance = Math.abs(currentImageIdIndex - imageIdIndex);
+    // Use getter for nearby objects to ensure the recent access is updated
+    // and is cached for distant objects, to let them be decached if necessary
+    const imageCached =
+      distance < 6
+        ? cache.getImageLoadObject(imageId)
+        : cache.isImageIdCached(imageId);
 
-    if (imageLoadObject) {
+    if (imageCached) {
       // Already in cache
       removeFromList(imageIdIndex);
     }
@@ -276,33 +283,31 @@ const updateToolState = (element) => {
 
   const delta = currentImageIdIndex - stackPrefetchData.currentImageIdIndex;
   stackPrefetchData.direction = signum(delta);
-  stackPrefetchData.currentImageIdIndex = stack.currentImageIdIndex;
+  stackPrefetchData.currentImageIdIndex = currentImageIdIndex;
   stackPrefetchData.enabled = true;
   stackPrefetchData.indicesToRequest = range(minIndex, maxIndex);
 
-  console.log('Setup for next stackPrefetch', currentImageIdIndex, delta);
-  if (delta === 1) {
-    console.log('Computing how many extra indices', currentImageIdIndex);
+  if (delta > 0 && delta < maxAfter) {
     // Cache up to an extra 100 images
-    if (stackPrefetchData.stackCount < 100) {
-      stackPrefetchData.stackCount += 5;
+    try {
+      const lastMax =
+        maxIndex + Math.max(stackPrefetchData.stackCount - maxAfter - 1, 0);
+      if (stackPrefetchData.stackCount < 100) {
+        stackPrefetchData.stackCount += maxAfter;
+      }
+      const maxExtraStack = Math.min(
+        stack.imageIds.length - 1,
+        currentImageIdIndex + stackPrefetchData.stackCount
+      );
+      for (let i = lastMax + 1; i < maxExtraStack; i++) {
+        stackPrefetchData.indicesToRequest.push(i);
+      }
+    } catch (e) {
+      console.warn('Caught', e);
     }
-    const maxExtraStack = Math.min(
-      stack.imageIds.length - 1,
-      currentImageIdIndex + stackPrefetchData.stackCount
-    );
-    for (let i = maxIndex + 1; i < maxExtraStack; i++) {
-      stackPrefetchData.indicesToRequest.add(i);
-    }
-    console.log(
-      'Adding extra indices to cache',
-      currentImageIdIndex,
-      delta,
-      stackPrefetchData.indicesToRequest
-    );
   } else {
-    console.log('Not incrementing by 1', currentImageIdIndex, delta);
     // Not incrementing by 1, so stop increasing the data size
+    // TODO - consider reversing the CINE playback
     stackPrefetchData.stackCount = 0;
   }
 
