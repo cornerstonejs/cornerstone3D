@@ -4,6 +4,19 @@ import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
+import { metaDataProvider } from './metaData';
+
+function imageIdIsStreamable(imageId: string) {
+  const streamableTransferSyntaxes = [
+    '3.2.840.10008.1.2.4.96', // 'jphc':
+    '1.2.840.10008.1.2.4.140', // 'jxl'
+  ];
+  const { transferSyntaxUID } = metaDataProvider('transferSyntax', imageId) as
+    | { transferSyntaxUID: string }
+    | undefined;
+  if (!transferSyntaxUID) return false;
+  return streamableTransferSyntaxes.includes(transferSyntaxUID);
+}
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
@@ -82,6 +95,62 @@ export interface CornerstoneWadoRsLoaderOptions
   addToBeginning?: boolean;
 }
 
+const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
+
+// If streaming transfer syntax, listen for partial imageFrame byte arrays,
+// decompress, and emit event with pixel data
+let listeningForPartialImages = false;
+function handlePartialImageFrame(event: any) {
+  const { cornerstone } = external;
+  const { url, imageId, contentType, imageFrame } = event.detail;
+  const options = optionsCache[imageId];
+  if (!options) {
+    console.error('No options found for imageId ', imageId);
+  }
+  const transferSyntax = getTransferSyntaxForContentType(contentType);
+  console.log(
+    'Process partial image frame for imageId ',
+    imageId,
+    ' with transfer syntax: ',
+    transferSyntax
+  );
+  const imagePromise = createImage(
+    imageId,
+    imageFrame,
+    transferSyntax,
+    options
+  );
+
+  imagePromise.then((image: any) => {
+    cornerstone.triggerEvent(
+      cornerstone.eventTarget,
+      cornerstone.EVENTS.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
+      {
+        url,
+        imageId,
+        image,
+      }
+    );
+  });
+}
+function listenForStreamingPartialImages() {
+  if (listeningForPartialImages) return;
+  const { cornerstone } = external;
+  cornerstone.eventTarget.addEventListener(
+    cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
+    handlePartialImageFrame
+  );
+  listeningForPartialImages = true;
+}
+function stopListeningForStreamingPartialImages() {
+  const { cornerstone } = external;
+  cornerstone.eventTarget.removeEventListener(
+    cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
+    (event) => handlePartialImageFrame
+  );
+  listeningForPartialImages = false;
+}
+
 function loadImage(
   imageId: string,
   options: CornerstoneWadoRsLoaderOptions = {}
@@ -103,13 +172,20 @@ function loadImage(
 
     function sendXHR(imageURI: string, imageId: string, mediaType: string) {
       // get the pixel data from the server
-      return getPixelData(imageURI, imageId, mediaType)
+      const isStreamable = imageIdIsStreamable(imageId);
+      if (isStreamable) {
+        listenForStreamingPartialImages();
+        optionsCache[imageId] = options;
+      }
+      return getPixelData(imageURI, imageId, mediaType, isStreamable)
         .then((result) => {
           const transferSyntax = getTransferSyntaxForContentType(
             result.contentType
           );
 
           const pixelData = result.imageFrame.pixelData;
+          console.log('pixel data length: ', pixelData.length);
+
           const imagePromise = createImage(
             imageId,
             pixelData,

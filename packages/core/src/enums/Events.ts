@@ -176,6 +176,11 @@ enum Events {
    */
   IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
 
+  IMAGE_LOAD_STREAM_COMPLETE = 'CORNERSTONE_IMAGE_LOAD_STREAM_COMPLETE', // Compressed streamed image frame complete bytes
+  // IMAGE_LOAD_STREAM_COMPLETE_IMAGE = 'CORNERSTONE_IMAGE_LOAD_STREAM_IMAGE', // Decoded streamed image frame complete
+  IMAGE_LOAD_STREAM_PARTIAL = 'CORNERSTONE_IMAGE_LOAD_STREAM_PARTIAL', // Compressed partial image frame bytes
+  IMAGE_LOAD_STREAM_UPDATED_IMAGE = 'CORNERSTONE_IMAGE_LOAD_STREAM_UPDATED_IMAGE', // Decoded partial streamed image frame
+
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.
    * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for STACK_VIEWPORT_NEW_STACK event,

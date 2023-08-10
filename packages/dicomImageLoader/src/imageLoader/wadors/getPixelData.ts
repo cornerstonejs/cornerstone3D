@@ -1,4 +1,5 @@
 import { xhrRequest } from '../internal/index';
+import streamRequest from '../internal/streamRequest';
 import findIndexOfString from './findIndexOfString';
 
 function findBoundary(header: string[]): string {
@@ -32,13 +33,30 @@ function uint8ArrayToString(data, offset, length) {
 function getPixelData(
   uri: string,
   imageId: string,
-  mediaType = 'application/octet-stream'
+  mediaType = 'application/octet-stream',
+  streamable = false
 ): Promise<any> {
   const headers = {
     Accept: mediaType,
   };
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    if (streamable) {
+      const { contentType, imageFrame } = await streamRequest(
+        uri,
+        imageId,
+        headers
+      );
+
+      // Resolve the promise with the first streaming result (low quality
+      // presumably)
+      return resolve({
+        contentType: contentType || 'application/octet-stream',
+        imageFrame: {
+          pixelData: imageFrame,
+        },
+      });
+    }
     const loadPromise = xhrRequest(uri, imageId, headers);
     const { xhr } = loadPromise;
 

@@ -296,6 +296,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // TODO: probably don't want this here
 
       if (autoRenderOnLoad) {
+        if (evt.isUpdatedImage) {
+          console.log('trigger rerender with updated image');
+          autoLoad(volumeId);
+        }
         if (
           evt.framesProcessed > reRenderTarget ||
           evt.framesProcessed === evt.totalNumFrames
@@ -313,13 +317,17 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const successCallback = (
       imageIdIndex: number,
       imageId: string,
-      scalingParameters
+      scalingParameters,
+      isUpdatedImage?: boolean
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
       // Check if there is a cached image for the same imageURI (different
       // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
+      const cachedImage =
+        isUpdatedImage === true
+          ? undefined
+          : cache.getCachedImageBasedOnImageURI(imageId);
 
       // check if the load was cancelled while we were waiting for the image
       // if so we don't want to do anything
@@ -332,7 +340,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       }
 
       if (!cachedImage || !cachedImage.image) {
-        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
+        return updateTextureAndTriggerEvents(
+          this,
+          imageIdIndex,
+          imageId,
+          isUpdatedImage
+        );
       }
       const imageScalarData = this._scaleIfNecessary(
         cachedImage.image,
@@ -370,13 +383,16 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const updateTextureAndTriggerEvents = (
       volume: BaseStreamingImageVolume,
       imageIdIndex,
-      imageId
+      imageId,
+      isUpdatedImage?: boolean
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
-      cachedFrames[imageIdIndex] = true;
-      this.framesLoaded++;
-      this.framesProcessed++;
+      if (!isUpdatedImage) {
+        cachedFrames[imageIdIndex] = true;
+        this.framesLoaded++;
+        this.framesProcessed++;
+      }
 
       vtkOpenGLTexture.setUpdatedFrame(frameIndex);
       imageData.modified();
@@ -392,7 +408,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         eventDetail
       );
 
-      if (this.framesProcessed === totalNumFrames) {
+      if (!isUpdatedImage && this.framesProcessed === totalNumFrames) {
         loadStatus.loaded = true;
         loadStatus.loading = false;
 
@@ -405,6 +421,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           framesProcessed: this.framesProcessed,
           numFrames,
           totalNumFrames,
+          isUpdatedImage,
         });
         loadStatus.callbacks = [];
       } else {
@@ -416,6 +433,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           framesProcessed: this.framesProcessed,
           numFrames,
           totalNumFrames,
+          isUpdatedImage,
         });
       }
     };
@@ -594,12 +612,32 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       const callLoadImage = (imageId, imageIdIndex, options) => {
+        function handleNewPixelData(image, isUpdatedImage = false) {
+          // scalarData is the volume container we are progressively loading into
+          // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
+          handleArrayBufferLoad(scalarData, image, options);
+          if (isUpdatedImage !== true) {
+            console.log('initial render imageId:', imageId);
+          }
+          successCallback(
+            imageIdIndex,
+            imageId,
+            scalingParameters,
+            isUpdatedImage
+          );
+        }
+        eventTarget.addEventListener(
+          Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
+          (event) => {
+            if (event.detail.imageId === imageId) {
+              console.log('updated image:', event.detail.imageId);
+              handleNewPixelData(event.detail.image, true);
+            }
+          }
+        );
         return imageLoader.loadImage(imageId, options).then(
           (image) => {
-            // scalarData is the volume container we are progressively loading into
-            // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-            handleArrayBufferLoad(scalarData, image, options);
-            successCallback(imageIdIndex, imageId, scalingParameters);
+            handleNewPixelData(image);
           },
           (error) => {
             errorCallback.call(this, error, imageIdIndex, imageId);
