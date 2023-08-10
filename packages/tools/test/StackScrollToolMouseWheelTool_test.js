@@ -276,7 +276,9 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     let pageX1;
     let pageY1;
     function renderEventHandler() {
-      if (handlerRun) return;
+      if (handlerRun) {
+        return;
+      }
       handlerRun = true;
 
       // First render is the actual image render
