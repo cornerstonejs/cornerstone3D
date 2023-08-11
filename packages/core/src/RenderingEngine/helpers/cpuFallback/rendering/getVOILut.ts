@@ -15,6 +15,10 @@
  */
 
 /**
+ * Generates the linear VOI LUT function.
+ * From the DICOM standard, that is:
+ * ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
+ * clipped to the ymin...ymax range
  *
  * @param {Number} windowWidth Window Width
  * @param {Number} windowCenter Window Center
@@ -23,7 +27,10 @@
  */
 function generateLinearVOILUT(windowWidth: number, windowCenter: number) {
   return function (modalityLutValue) {
-    return ((modalityLutValue - windowCenter) / windowWidth + 0.5) * 255.0;
+    const value =
+      ((modalityLutValue - (windowCenter - 0.5)) / (windowWidth - 1) + 0.5) *
+      255.0;
+    return Math.min(Math.max(value, 0), 255);
   };
 }
 
