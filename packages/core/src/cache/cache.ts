@@ -21,7 +21,10 @@ const ONE_GB = 1073741824;
  * Stores images, volumes and geometry.
  * There are two sizes - the max cache size, that controls the overal maximum
  * size, and the instance size, which controls how big any single object can
- * be.  Defaults are 6 GB and 2 GB - 8 bytes (just enough to allow allocating it)
+ * be.  Defaults are 3 GB and 2 GB - 8 bytes (just enough to allow allocating it
+ * without crashing).
+ * The 3 gb is tuned to the chromium garbage collection cycle to allow image volumes
+ * to be used/discarded.
  */
 class Cache implements ICache {
   // used to store image data (2d)
@@ -33,7 +36,7 @@ class Cache implements ICache {
 
   private _imageCacheSize = 0;
   private _volumeCacheSize = 0;
-  private _maxCacheSize = 1 * ONE_GB;
+  private _maxCacheSize = 3 * ONE_GB;
   private _maxInstanceSize = 2 * ONE_GB - 8;
 
   constructor() {
@@ -397,13 +400,6 @@ class Cache implements ICache {
         cachedImage.image = image;
         cachedImage.sizeInBytes = image.sizeInBytes;
         this._incrementImageCacheSize(cachedImage.sizeInBytes);
-        console.log(
-          'Caching',
-          this._imageCache.size,
-          this.getBytesAvailable(),
-          cachedImage.sizeInBytes
-        );
-
         const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
           image: cachedImage,
         };

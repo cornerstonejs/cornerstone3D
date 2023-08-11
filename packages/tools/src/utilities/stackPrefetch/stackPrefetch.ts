@@ -288,7 +288,9 @@ const updateToolState = (element) => {
   stackPrefetchData.indicesToRequest = range(minIndex, maxIndex);
 
   if (delta > 0 && delta < maxAfter) {
-    // Cache up to an extra 100 images
+    // Cache extra images when navigating small amounts
+    // The exact amount is hard to determine, but trial and error suggest
+    // that fairly long precache lists work best.
     try {
       const lastMax =
         maxIndex + Math.max(stackPrefetchData.stackCount - maxAfter - 1, 0);
