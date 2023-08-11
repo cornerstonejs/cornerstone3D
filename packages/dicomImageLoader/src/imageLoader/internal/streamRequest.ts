@@ -6,12 +6,14 @@ import {
   LoaderXhrRequestPromise,
 } from '../../types';
 
+const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
+
 const streamCache: {
   [key: string]: { byteArray: Uint8Array; currentChunkSize: number };
 } = {};
 // const minChunkSize = 65_536 * 2;
 // const minChunkSize = 3_000_000;
-const minChunkSize = 80_000;
+const minChunkSize = 100_000;
 
 function appendChunk(options: {
   imageId: string;
@@ -25,7 +27,10 @@ function appendChunk(options: {
   if (!complete) {
     const existingDataForImageId = streamCache[imageId];
     if (!existingDataForImageId) {
-      streamCache[imageId] = { byteArray: chunk, currentChunkSize: 0 };
+      streamCache[imageId] = {
+        byteArray: chunk,
+        currentChunkSize: 0,
+      };
     } else {
       const newDataArray = new Uint8Array(
         existingDataForImageId.byteArray.length + chunk.length
@@ -117,6 +122,9 @@ export default function streamRequest(
         const responseReader = response.body.getReader();
         const responseHeaders = response.headers;
 
+        const totalBytes = responseHeaders.get('Content-Length');
+        loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
+
         // for await (const chunk of response.body as unknown as Iterable<
         //   ReadableStream<Uint8Array>
         // >) {
@@ -129,6 +137,14 @@ export default function streamRequest(
               imageId,
               complete: true,
             });
+            loadTracking[imageId].loaded = imageFrame.length;
+            console.log(
+              'LOADED: ',
+              Object.values(loadTracking).filter((v) => v.loaded === v.total)
+                .length,
+              '/',
+              Object.keys(loadTracking).length
+            );
             console.log('Finished reading streaming file');
             cornerstone.triggerEvent(
               cornerstone.eventTarget,
@@ -159,7 +175,7 @@ export default function streamRequest(
               contentType: responseHeaders.get('content-type'),
               imageFrame,
             });
-            console.log('initial resolve imageid:', imageId, imageFrame.length)
+            console.log('initial resolve imageid:', imageId, imageFrame.length);
             hasResolved = true;
           } else {
             cornerstone.triggerEvent(

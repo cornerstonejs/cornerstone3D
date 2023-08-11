@@ -104,16 +104,7 @@ function handlePartialImageFrame(event: any) {
   const { cornerstone } = external;
   const { url, imageId, contentType, imageFrame } = event.detail;
   const options = optionsCache[imageId];
-  if (!options) {
-    console.error('No options found for imageId ', imageId);
-  }
   const transferSyntax = getTransferSyntaxForContentType(contentType);
-  console.log(
-    'Process partial image frame for imageId ',
-    imageId,
-    ' with transfer syntax: ',
-    transferSyntax
-  );
   const imagePromise = createImage(
     imageId,
     imageFrame,
@@ -135,18 +126,29 @@ function handlePartialImageFrame(event: any) {
 }
 function listenForStreamingPartialImages() {
   if (listeningForPartialImages) return;
+  listeningForPartialImages = true;
   const { cornerstone } = external;
   cornerstone.eventTarget.addEventListener(
     cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
     handlePartialImageFrame
   );
-  listeningForPartialImages = true;
+  cornerstone.eventTarget.addEventListener(
+    cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
+    (e) => {
+      console.log('complete image');
+      handlePartialImageFrame(e);
+    }
+  );
 }
 function stopListeningForStreamingPartialImages() {
   const { cornerstone } = external;
   cornerstone.eventTarget.removeEventListener(
     cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-    (event) => handlePartialImageFrame
+    handlePartialImageFrame
+  );
+  cornerstone.eventTarget.removeEventListener(
+    cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
+    handlePartialImageFrame
   );
   listeningForPartialImages = false;
 }

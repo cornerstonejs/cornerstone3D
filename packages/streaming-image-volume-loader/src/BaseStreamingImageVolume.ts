@@ -299,8 +299,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         if (evt.isUpdatedImage) {
           console.log('trigger rerender with updated image');
           autoLoad(volumeId);
-        }
-        if (
+        } else if (
           evt.framesProcessed > reRenderTarget ||
           evt.framesProcessed === evt.totalNumFrames
         ) {
