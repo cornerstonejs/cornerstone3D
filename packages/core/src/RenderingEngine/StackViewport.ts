@@ -2151,6 +2151,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
     this.hasPixelSpacing = true;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
@@ -2217,6 +2218,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const currentTargetImageIdIndex = this.targetImageIdIndex;
     const numberOfFrames = imageIds.length;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     let newTargetImageIdIndex = currentTargetImageIdIndex + delta;
     newTargetImageIdIndex = Math.max(0, newTargetImageIdIndex);
