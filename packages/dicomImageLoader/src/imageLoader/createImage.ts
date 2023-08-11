@@ -394,8 +394,10 @@ function createImage(
       }
 
       if (image.color) {
-        image.windowWidth = 255;
-        image.windowCenter = 127;
+        // Note that by the DICOM definition, the window width and center are
+        // 256/128 for an identity transform.
+        image.windowWidth = 256;
+        image.windowCenter = 128;
       }
 
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
