@@ -16,7 +16,8 @@
 
 /**
  * Generates the linear VOI LUT function.
- * From the DICOM standard, that is:
+ * From the DICOM standard:
+ * https://dicom.nema.org/medical/dicom/current/output/html/part03.html#sect_C.11.2.1.2.1
  * ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
  * clipped to the ymin...ymax range
  *
