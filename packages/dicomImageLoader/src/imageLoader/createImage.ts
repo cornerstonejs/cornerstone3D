@@ -18,8 +18,16 @@ import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
-// Transfer syntaxes that have the photometric color apply
-// Other ones have the colour PMI applied by the decoder
+/**
+ * Compressed colour images being decomrpessed by the typical decompressors
+ * we are using come out of the decompressor in RGB or RGBA.  As well, they
+ * come out in planar configuration 0 (by plane, not by colour), so the images
+ * only need the RGBA to RGB transform without any photometric interpretation
+ * changes.  However, RLE and other uncompressed syntaxes all need to have
+ * the color space transforms applied, so this object defines the set of
+ * transfer syntaxes for which the photometric color/planar configuration
+ * gets used after the decompressor.
+ */
 const TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR = {
   '1.2.840.10008.1.2.1': 'application/octet-stream',
   '1.2.840.10008.1.2': 'application/octet-stream',
@@ -152,6 +160,7 @@ function createImage(
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
+      console.log('decodePromise resolve', imageFrame);
       // if it is desired to skip creating image, return the imageFrame
       // after the decode. This might be useful for some applications
       // that only need the decoded pixel data and not the image object
@@ -241,9 +250,9 @@ function createImage(
           !useRGBA &&
           imageFrame.pixelDataLength === 4 * rows * columns
         ) {
-          // If we don't need the RGBA but the decoding is done with RGBA (the case
-          // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
-          // we need to remove the A channel from pixel data
+          // This case is the case where we need RGB (that is !useRGBA), and
+          // we have RGBA (that is 4 values per pixel, not 3).  For this case,
+          // remove the A value.
           // Note: rendering libraries like vtk expect Uint8Array for RGB images
           // otherwise they will convert them to Float32Array which might be slow
           const colorBuffer = new Uint8Array(
