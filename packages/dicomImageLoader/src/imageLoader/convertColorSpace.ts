@@ -24,7 +24,6 @@ function convertYBRFull(imageFrame, colorBuffer, useRGBA) {
 }
 
 export default function convertColorSpace(imageFrame, colorBuffer, useRGBA) {
-  console.log('convertColorSpace', imageFrame, useRGBA);
   // convert based on the photometric interpretation
   if (imageFrame.photometricInterpretation === 'RGB') {
     convertRGB(imageFrame, colorBuffer, useRGBA);

@@ -160,7 +160,6 @@ function createImage(
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
-      console.log('decodePromise resolve', imageFrame);
       // if it is desired to skip creating image, return the imageFrame
       // after the decode. This might be useful for some applications
       // that only need the decoded pixel data and not the image object
