@@ -10,6 +10,8 @@ describe('Cache', () => {
   beforeAll(() => {
     // initialize the library
     cornerstone.init();
+    // Use max instance size for max cache size so they don't interfere
+    cache.setMaxCacheSize(cache.getMaxInstanceSize());
   });
 
   describe('Set maximum cache size', function () {
@@ -224,7 +226,7 @@ describe('Cache', () => {
       expect(cache.getCacheSize()).toBe(0);
     });
 
-    it('should successfully caching an image when there is enough volatile + unallocated space', async function () {
+    it('should cache images when there is enough volatile + unallocated space', async function () {
       // Use max instance size for max cache size so they don't interfere
       cache.setMaxCacheSize(cache.getMaxInstanceSize());
       const maxCacheSize = cache.getMaxCacheSize();
@@ -267,8 +269,6 @@ describe('Cache', () => {
     });
 
     it('should unsuccessfully caching an image when there is not enough volatile + unallocated space', async function () {
-      // Use max instance size for max cache size so they don't interfere
-      cache.setMaxCacheSize(cache.getMaxInstanceSize());
       const maxCacheSize = cache.getMaxCacheSize();
 
       const volumeSizeInBytes = maxCacheSize - 10000;
