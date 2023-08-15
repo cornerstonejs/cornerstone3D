@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.1...v1.10.2) (2023-08-15)
+
+### Bug Fixes
+
+- **color:** Convert color space for useRGBA false ([#730](https://github.com/cornerstonejs/cornerstone3D/issues/730)) ([52d5dcd](https://github.com/cornerstonejs/cornerstone3D/commit/52d5dcd59c892e594188f056612474db2812579d))
+
 ## [1.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.0...v1.10.1) (2023-08-09)
 
 **Note:** Version bump only for package root
