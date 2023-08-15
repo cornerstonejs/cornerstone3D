@@ -22,8 +22,9 @@ import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
  * When using typical decompressors to decompress compressed color images,
  * the resulting output is in RGB or RGBA format. Additionally, these images
  * are in planar configuration 0, meaning they are arranged by plane rather
- * than by color. Consequently, the images only require a transformation from
- * RGBA to RGB without needing to alter the photometric interpretation
+ * than by color.  Consequently, the images only require a transformation from
+ * RGBA to RGB without needing to use the photometric interpretation to convert
+ * to RGB or adjust the planar configuration.
  */
 const TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR = {
   '1.2.840.10008.1.2.1': 'application/octet-stream',
