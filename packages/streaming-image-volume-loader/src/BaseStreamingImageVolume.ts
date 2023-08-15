@@ -297,7 +297,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       if (autoRenderOnLoad) {
         if (evt.isUpdatedImage) {
-          console.log('trigger rerender with updated image');
           autoLoad(volumeId);
         } else if (
           evt.framesProcessed > reRenderTarget ||
@@ -615,9 +614,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
           handleArrayBufferLoad(scalarData, image, options);
-          if (isUpdatedImage !== true) {
-            console.log('initial render imageId:', imageId);
-          }
           successCallback(
             imageIdIndex,
             imageId,
@@ -629,7 +625,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
           (event) => {
             if (event.detail.imageId === imageId) {
-              console.log('updated image:', event.detail.imageId);
               handleNewPixelData(event.detail.image, true);
             }
           }

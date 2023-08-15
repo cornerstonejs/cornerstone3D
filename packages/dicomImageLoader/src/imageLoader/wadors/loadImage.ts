@@ -96,11 +96,12 @@ export interface CornerstoneWadoRsLoaderOptions
 }
 
 const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
+const decodeJobs: { [key: string]: Promise<any> } = {};
 
 // If streaming transfer syntax, listen for partial imageFrame byte arrays,
 // decompress, and emit event with pixel data
 let listeningForPartialImages = false;
-function handlePartialImageFrame(event: any) {
+async function handlePartialImageFrame(event: any) {
   const { cornerstone } = external;
   const { url, imageId, contentType, imageFrame } = event.detail;
   const options = optionsCache[imageId];
@@ -112,7 +113,13 @@ function handlePartialImageFrame(event: any) {
     options
   );
 
-  imagePromise.then((image: any) => {
+  const currentDecodeJobForImageId = decodeJobs[imageId];
+  if (currentDecodeJobForImageId) {
+    console.log('waiting for current decode job')
+    await currentDecodeJobForImageId;
+  }
+  decodeJobs[imageId] = imagePromise.then((image: any) => {
+    decodeJobs[imageId] = undefined;
     cornerstone.triggerEvent(
       cornerstone.eventTarget,
       cornerstone.EVENTS.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
@@ -135,7 +142,6 @@ function listenForStreamingPartialImages() {
   cornerstone.eventTarget.addEventListener(
     cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
     (e) => {
-      console.log('complete image');
       handlePartialImageFrame(e);
     }
   );
@@ -186,8 +192,6 @@ function loadImage(
           );
 
           const pixelData = result.imageFrame.pixelData;
-          console.log('pixel data length: ', pixelData.length);
-
           const imagePromise = createImage(
             imageId,
             pixelData,

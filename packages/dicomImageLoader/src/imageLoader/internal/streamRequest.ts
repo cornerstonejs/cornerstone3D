@@ -175,7 +175,6 @@ export default function streamRequest(
               contentType: responseHeaders.get('content-type'),
               imageFrame,
             });
-            console.log('initial resolve imageid:', imageId, imageFrame.length);
             hasResolved = true;
           } else {
             cornerstone.triggerEvent(
