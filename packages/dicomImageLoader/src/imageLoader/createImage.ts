@@ -19,14 +19,11 @@ import isColorImageFn from '../shared/isColorImage';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 /**
- * Compressed colour images being decomrpessed by the typical decompressors
- * we are using come out of the decompressor in RGB or RGBA.  As well, they
- * come out in planar configuration 0 (by plane, not by colour), so the images
- * only need the RGBA to RGB transform without any photometric interpretation
- * changes.  However, RLE and other uncompressed syntaxes all need to have
- * the color space transforms applied, so this object defines the set of
- * transfer syntaxes for which the photometric color/planar configuration
- * gets used after the decompressor.
+ * When using typical decompressors to decompress compressed color images,
+ * the resulting output is in RGB or RGBA format. Additionally, these images
+ * are in planar configuration 0, meaning they are arranged by plane rather
+ * than by color. Consequently, the images only require a transformation from
+ * RGBA to RGB without needing to alter the photometric interpretation
  */
 const TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR = {
   '1.2.840.10008.1.2.1': 'application/octet-stream',
