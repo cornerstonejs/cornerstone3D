@@ -716,8 +716,9 @@ class Viewport implements IViewport {
       radius = (heightWorld * scaleFactor) / 2;
     }
 
-    //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = 1.1 * radius;
+    // parallel scale should be equal to the radius to make the image
+    // fit the window see https://github.com/Kitware/vtk-js/blob/5ec65e9d9ad06ef4d6450df75cb1f7f15ed11501/Sources/Rendering/Core/Renderer/index.js
+    const parallelScale = radius;
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];

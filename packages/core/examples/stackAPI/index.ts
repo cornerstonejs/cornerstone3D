@@ -324,9 +324,6 @@ async function run() {
     viewportId,
     type: ViewportType.STACK,
     element,
-    defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
-    },
   };
 
   renderingEngine.enableElement(viewportInput);
