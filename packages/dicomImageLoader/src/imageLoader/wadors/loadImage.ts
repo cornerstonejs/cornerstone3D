@@ -106,18 +106,19 @@ async function handlePartialImageFrame(event: any) {
   const { url, imageId, contentType, imageFrame } = event.detail;
   const options = optionsCache[imageId];
   const transferSyntax = getTransferSyntaxForContentType(contentType);
-  const imagePromise = createImage(
-    imageId,
-    imageFrame,
-    transferSyntax,
-    options
-  );
 
   const currentDecodeJobForImageId = decodeJobs[imageId];
   if (currentDecodeJobForImageId) {
     console.log('waiting for current decode job')
     await currentDecodeJobForImageId;
   }
+
+  const imagePromise = createImage(
+    imageId,
+    imageFrame,
+    transferSyntax,
+    options
+  );
   decodeJobs[imageId] = imagePromise.then((image: any) => {
     decodeJobs[imageId] = undefined;
     cornerstone.triggerEvent(
