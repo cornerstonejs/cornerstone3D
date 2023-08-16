@@ -86,7 +86,7 @@ export default function rangeRequest(
   range: {
     initialBytes: number;
     totalRanges: number;
-  } = { initialBytes: 65_536, totalRanges: 2 }
+  } = { initialBytes: 65_536 * 2, totalRanges: 2 }
 ): LoaderXhrRequestPromise<{
   contentType: string;
   imageFrame: Uint8Array;
