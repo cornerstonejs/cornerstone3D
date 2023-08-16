@@ -1,6 +1,8 @@
 import { xhrRequest } from '../internal/index';
+import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
 import findIndexOfString from './findIndexOfString';
+import external from '../../externalModules';
 
 function findBoundary(header: string[]): string {
   for (let i = 0; i < header.length; i++) {
@@ -42,20 +44,56 @@ function getPixelData(
 
   return new Promise(async (resolve, reject) => {
     if (streamable) {
-      const { contentType, imageFrame } = await streamRequest(
-        uri,
-        imageId,
-        headers
-      );
+      const { cornerstone } = external;
+
+      const { contentType, imageFrame, complete, loadNextRange } =
+        await rangeRequest(uri, imageId, headers);
 
       // Resolve the promise with the first streaming result (low quality
       // presumably)
-      return resolve({
+      resolve({
         contentType: contentType || 'application/octet-stream',
         imageFrame: {
           pixelData: imageFrame,
         },
       });
+
+      let fetches = 1;
+      let maxFetches = 5;
+      let loadComplete = complete;
+      while (loadComplete === false && fetches <= maxFetches) {
+        const { complete, imageFrame, contentType } = await loadNextRange();
+        loadComplete = complete;
+        fetches += 1;
+        if (!complete) {
+          cornerstone.triggerEvent(
+            cornerstone.eventTarget,
+            cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
+            {
+              imageId,
+              contentType,
+              imageFrame,
+            }
+          );
+        } else {
+          cornerstone.triggerEvent(
+            cornerstone.eventTarget,
+            cornerstone.EVENTS.IMAGE_LOADED,
+            { imageId }
+          );
+          cornerstone.triggerEvent(
+            cornerstone.eventTarget,
+            cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
+            {
+              imageId,
+              contentType,
+              imageFrame,
+            }
+          );
+        }
+      }
+
+      return;
     }
     const loadPromise = xhrRequest(uri, imageId, headers);
     const { xhr } = loadPromise;
