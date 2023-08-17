@@ -79,6 +79,7 @@ import {
   ImagePlaneModule,
 } from '../types';
 import ViewportStatus from '../enums/ViewportStatus';
+import { Enums } from '..';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1705,9 +1706,36 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       function sendRequest(imageId, imageIdIndex, options) {
+        function handleNewPixelData(
+          image: IImage,
+          imageIdIndex: number,
+          imageId: string
+        ) {
+          successCallback.call(this, image, imageIdIndex, imageId);
+        }
+        eventTarget.addEventListener(
+          Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
+          (event) => {
+            if (event.detail.imageId === imageId) {
+              // Update cache
+              cache.putImageLoadObject(
+                imageId,
+                { promise: Promise.resolve(event.detail.image) },
+                true
+              );
+              handleNewPixelData.call(
+                this,
+                event.detail.image,
+                imageIdIndex,
+                imageId
+              );
+            }
+          }
+        );
         return loadAndCacheImage(imageId, options).then(
           (image) => {
-            successCallback.call(this, image, imageIdIndex, imageId);
+            handleNewPixelData.call(this, image, imageIdIndex, imageId);
+            // successCallback.call(this, image, imageIdIndex, imageId);
           },
           (error) => {
             errorCallback.call(this, error, imageIdIndex, imageId);
@@ -1797,9 +1825,30 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       function sendRequest(imageId, imageIdIndex, options) {
+        function handleNewPixelData(
+          image: IImage,
+          imageIdIndex: number,
+          imageId: string
+        ) {
+          successCallback.call(this, image, imageIdIndex, imageId);
+        }
+        eventTarget.addEventListener(
+          Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
+          (event) => {
+            if (event.detail.imageId === imageId) {
+              handleNewPixelData.call(
+                this,
+                event.detail.image,
+                imageIdIndex,
+                imageId
+              );
+            }
+          }
+        );
         return loadAndCacheImage(imageId, options).then(
           (image) => {
-            successCallback.call(this, image, imageIdIndex, imageId);
+            handleNewPixelData.call(this, image, imageIdIndex, imageId);
+            // successCallback.call(this, image, imageIdIndex, imageId);
           },
           (error) => {
             errorCallback.call(this, error, imageIdIndex, imageId);
