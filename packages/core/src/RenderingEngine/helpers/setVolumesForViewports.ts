@@ -34,7 +34,9 @@ async function setVolumesForViewports(
 
     // if not instance of BaseVolumeViewport, throw
     if (!(viewport instanceof BaseVolumeViewport)) {
-      throw new Error('setVolumesForViewports only supports VolumeViewport and VolumeViewport3D');
+      throw new Error(
+        'setVolumesForViewports only supports VolumeViewport and VolumeViewport3D'
+      );
     }
   });
 

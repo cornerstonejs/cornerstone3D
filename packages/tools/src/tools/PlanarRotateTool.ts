@@ -56,7 +56,9 @@ class PlanarRotateTool extends BaseTool {
       angle = -angle;
     }
 
-    if (Number.isNaN(angle)) return;
+    if (Number.isNaN(angle)) {
+      return;
+    }
 
     if (viewport instanceof BaseVolumeViewport) {
       const rotAngle = (angle * Math.PI) / 180;

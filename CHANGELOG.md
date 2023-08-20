@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.3...v1.10.4) (2023-08-17)
+
+### Bug Fixes
+
+- sorting priority groups ([#741](https://github.com/cornerstonejs/cornerstone3D/issues/741)) ([2dc7e87](https://github.com/cornerstonejs/cornerstone3D/commit/2dc7e87b362868e4bf7946924a597f238fa31027))
+
+## [1.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.2...v1.10.3) (2023-08-15)
+
+**Note:** Version bump only for package root
+
+## [1.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.1...v1.10.2) (2023-08-15)
+
+### Bug Fixes
+
+- **color:** Convert color space for useRGBA false ([#730](https://github.com/cornerstonejs/cornerstone3D/issues/730)) ([52d5dcd](https://github.com/cornerstonejs/cornerstone3D/commit/52d5dcd59c892e594188f056612474db2812579d))
+
+## [1.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.0...v1.10.1) (2023-08-09)
+
+**Note:** Version bump only for package root
+
 # [1.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.3...v1.10.0) (2023-08-02)
 
 ### Features
