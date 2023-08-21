@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.0...v1.11.1) (2023-08-21)
+
+### Bug Fixes
+
+- **memory leak:** array buffer was sticking around because of exception ([#748](https://github.com/cornerstonejs/cornerstone3D/issues/748)) ([f27ae9a](https://github.com/cornerstonejs/cornerstone3D/commit/f27ae9a28c4fa796ffd1973b7c56c325dec41754))
+
 # [1.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.5...v1.11.0) (2023-08-21)
 
 ### Features
