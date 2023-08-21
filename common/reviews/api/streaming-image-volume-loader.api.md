@@ -1303,6 +1303,7 @@ interface IVolumeViewport extends IViewport {
     flip(flipDirection: FlipDirection): void;
     getBounds(): any;
     getCurrentImageId: () => string;
+    resetProperties(): void;
     getCurrentImageIdIndex: () => number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;

@@ -105,6 +105,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
+    // (undocumented)
+    resetProperties(): void;
 }
 
 // @public (undocumented)
@@ -2892,6 +2894,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
+    resetProperties(): void;
 }
 
 // @public (undocumented)
