@@ -14,7 +14,8 @@ import type {
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, getClosestImageId } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
-import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI'
+import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -359,13 +360,13 @@ class VolumeViewport extends BaseVolumeViewport {
    */
   public resetProperties(): void {
     this._resetProperties();
-  };
+  }
 
   private _resetProperties() {
     const volumeActor = this.getDefaultActor();
     const imageVolume = cache.getVolume(volumeActor.uid);
-    setDefaultVolumeVOI(volumeActor.actor, imageVolume, false);
-  };
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+  }
 }
 
 export default VolumeViewport;
