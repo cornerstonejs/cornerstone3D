@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.5...v1.11.0) (2023-08-21)
+
+### Features
+
+- **VolumeViewport:** Add reset properties to volume viewport ([#747](https://github.com/cornerstonejs/cornerstone3D/issues/747)) ([054b044](https://github.com/cornerstonejs/cornerstone3D/commit/054b044f8279f547459c0776a67db56e776927a6))
+
 ## [1.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.4...v1.10.5) (2023-08-21)
 
 **Note:** Version bump only for package @cornerstonejs/core
