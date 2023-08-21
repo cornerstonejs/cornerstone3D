@@ -1303,7 +1303,6 @@ interface IVolumeViewport extends IViewport {
     flip(flipDirection: FlipDirection): void;
     getBounds(): any;
     getCurrentImageId: () => string;
-    resetProperties(): void;
     getCurrentImageIdIndex: () => number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -1319,6 +1318,7 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
+    resetProperties(): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
