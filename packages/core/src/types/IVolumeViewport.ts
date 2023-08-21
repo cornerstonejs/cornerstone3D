@@ -138,6 +138,8 @@ export default interface IVolumeViewport extends IViewport {
   getImageData(volumeId?: string): IImageData | undefined;
 
   setOrientation(orientation: OrientationAxis): void;
-
-  re
+  /**
+   * Reset the viewport properties to the default values
+   */
+  resetProperties(): void;
 }
