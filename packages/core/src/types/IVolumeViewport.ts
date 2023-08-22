@@ -141,5 +141,5 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * Reset the viewport properties to the default values
    */
-  resetProperties(): void;
+  resetProperties(volumeId?: string): void;
 }

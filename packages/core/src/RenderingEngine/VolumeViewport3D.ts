@@ -61,7 +61,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return null;
   }
 
-  resetProperties(): void {
+  resetProperties(volumeId?: string): void {
     return null;
   }
 }
