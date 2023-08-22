@@ -356,6 +356,7 @@ class VolumeViewport extends BaseVolumeViewport {
   /**
    * Reset the viewport properties to the default values
    *
+
    * @param volumeId - Optional volume ID to specify which volume properties to reset.
    * If not provided, it will reset the properties of the default actor.
    *
