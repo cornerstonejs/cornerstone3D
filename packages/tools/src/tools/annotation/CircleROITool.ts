@@ -281,7 +281,9 @@ class CircleROITool extends AnnotationTool {
       canvasCoords,
     ]);
 
-    if (Math.abs(radiusPoint - radius) < proximity / 2) return true;
+    if (Math.abs(radiusPoint - radius) < proximity / 2) {
+      return true;
+    }
 
     return false;
   };

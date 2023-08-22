@@ -211,9 +211,13 @@ addDropdownToToolbar({
     const calibration = calibrations.find(
       (it) => it.value === newCalibrationValue
     );
-    if (!calibration) return;
+    if (!calibration) {
+      return;
+    }
     const f = calibrationFunctions[calibration.selected];
-    if (!f) return;
+    if (!f) {
+      return;
+    }
     f.apply(calibration);
   },
 });

@@ -60,6 +60,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
   ): void {
     return null;
   }
+
+  resetProperties(): void {
+    return null;
+  }
 }
 
 export default VolumeViewport3D;

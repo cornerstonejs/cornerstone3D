@@ -3,6 +3,78 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.0...v1.11.1) (2023-08-21)
+
+**Note:** Version bump only for package docs
+
+# [1.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.5...v1.11.0) (2023-08-21)
+
+**Note:** Version bump only for package docs
+
+## [1.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.4...v1.10.5) (2023-08-21)
+
+**Note:** Version bump only for package docs
+
+## [1.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.3...v1.10.4) (2023-08-17)
+
+**Note:** Version bump only for package docs
+
+## [1.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.2...v1.10.3) (2023-08-15)
+
+**Note:** Version bump only for package docs
+
+## [1.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.1...v1.10.2) (2023-08-15)
+
+**Note:** Version bump only for package docs
+
+## [1.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.0...v1.10.1) (2023-08-09)
+
+**Note:** Version bump only for package docs
+
+# [1.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.3...v1.10.0) (2023-08-02)
+
+**Note:** Version bump only for package docs
+
+## [1.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v1.9.3) (2023-08-02)
+
+### Bug Fixes
+
+- **volumeloader:** should work when images are cached ([#719](https://github.com/cornerstonejs/cornerstone3D/issues/719)) ([7e71da6](https://github.com/cornerstonejs/cornerstone3D/commit/7e71da6aef151e81adc8252be585eb0caa4205cf))
+
+## [1.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.1...v1.9.2) (2023-08-01)
+
+**Note:** Version bump only for package docs
+
+## [1.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.0...v1.9.1) (2023-07-31)
+
+**Note:** Version bump only for package docs
+
+# [1.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.8.1...v1.9.0) (2023-07-28)
+
+**Note:** Version bump only for package docs
+
+## [1.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.8.0...v1.8.1) (2023-07-28)
+
+**Note:** Version bump only for package docs
+
+# [1.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.7.2...v1.8.0) (2023-07-28)
+
+### Features
+
+- **segmentation export:** add new cornerstone3D segmentation export adapter ([#692](https://github.com/cornerstonejs/cornerstone3D/issues/692)) ([9e743f5](https://github.com/cornerstonejs/cornerstone3D/commit/9e743f5d2b58dedb17dcbe0de40f42e703f77b14))
+
+## [1.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.7.1...v1.7.2) (2023-07-27)
+
+**Note:** Version bump only for package docs
+
+## [1.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.7.0...v1.7.1) (2023-07-27)
+
+**Note:** Version bump only for package docs
+
+# [1.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.6.0...v1.7.0) (2023-07-26)
+
+**Note:** Version bump only for package docs
+
 # [1.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.5.0...v1.6.0) (2023-07-21)
 
 **Note:** Version bump only for package docs

@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.11.1",
   "packages": [
     "packages/adapters",
     "packages/core",
@@ -8,19 +8,5 @@
     "packages/dicomImageLoader"
   ],
   "npmClient": "yarn",
-  "useWorkspaces": true,
-  "command": {
-    "publish": {
-      "ignoreChanges": ["*.md", "*.yml", "*.spec.js", "*.test.js"],
-      "message": "chore(release): publish"
-    },
-    "version": {
-      "allowBranch": "main",
-      "conventionalCommits": true,
-      "createRelease": "github",
-      "yes": true,
-      "message": "chore(release): publish [skip ci]",
-      "forcePublish": true
-    }
-  }
+  "useWorkspaces": true
 }

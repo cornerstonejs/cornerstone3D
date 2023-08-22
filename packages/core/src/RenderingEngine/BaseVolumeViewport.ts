@@ -651,7 +651,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         const volumeActor = actorEntry.actor as vtkVolume;
         const volumeId = actorEntry.uid;
         const volume = cache.getVolume(volumeId);
-        if (!volume) return null;
+        if (!volume) {
+          return null;
+        }
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
           properties?.VOILUTFunction === 'SIGMOID'
@@ -1229,6 +1231,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     slabThickness: number,
     filterActorUIDs?: Array<string>
   ): void;
+
 }
 
 export default BaseVolumeViewport;

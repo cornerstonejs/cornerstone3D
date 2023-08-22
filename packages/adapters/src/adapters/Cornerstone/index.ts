@@ -5,12 +5,13 @@ import Bidirectional from "./Bidirectional";
 import EllipticalRoi from "./EllipticalRoi";
 import CircleRoi from "./CircleRoi";
 import ArrowAnnotate from "./ArrowAnnotate";
-import Segmentation from "./Segmentation";
 import CobbAngle from "./CobbAngle";
 import Angle from "./Angle";
 import RectangleRoi from "./RectangleRoi";
+// Segmentation
+import Segmentation from "./Segmentation";
 
-const Cornerstone = {
+const CornerstoneSR = {
     Length,
     FreehandRoi,
     Bidirectional,
@@ -18,10 +19,13 @@ const Cornerstone = {
     CircleRoi,
     ArrowAnnotate,
     MeasurementReport,
-    Segmentation,
     CobbAngle,
     Angle,
     RectangleRoi
 };
 
-export default Cornerstone;
+const CornerstoneSEG = {
+    Segmentation
+};
+
+export { CornerstoneSR, CornerstoneSEG };

@@ -613,7 +613,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
     imagePlaneModule.calibration = calibration;
 
-    if (!isUpdated) return imagePlaneModule;
+    if (!isUpdated) {
+      return imagePlaneModule;
+    }
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
@@ -1822,10 +1824,17 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
+        // If Photometric Interpretation is not the same for the next image we are trying to load
+        // invalidate the stack to recreate the VTK imageData
+        const csImgFrame = this.csImage?.imageFrame;
+        const imgFrame = image?.imageFrame;
+
+        // if a volume is decached into images then the imageFrame will be undefined
         if (
-          this.csImage?.imageFrame?.photometricInterpretation !==
-          image.imageFrame?.photometricInterpretation
+          csImgFrame?.photometricInterpretation !==
+            imgFrame?.photometricInterpretation ||
+          this.csImage?.photometricInterpretation !==
+            image?.photometricInterpretation
         ) {
           this.stackInvalidated = true;
         }
@@ -2117,10 +2126,15 @@ class StackViewport extends Viewport implements IStackViewport {
     const monochrome1 =
       imagePixelModule.photometricInterpretation === 'MONOCHROME1';
 
+    // invalidate the stack so that we can set the voi range
+    this.stackInvalidated = true;
+
     this.setVOI(this._getInitialVOIRange(image), {
       forceRecreateLUTFunction: !!monochrome1,
     });
-    this.setInvertColor(!!monochrome1);
+
+    // should carry over the invert color from the previous image if has been applied
+    this.setInvertColor(this.invert || !!monochrome1);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
@@ -2144,9 +2158,20 @@ class StackViewport extends Viewport implements IStackViewport {
     windowWidth: number | number[],
     windowCenter: number | number[]
   ): { lower: number; upper: number } | undefined {
-    return typeof windowCenter === 'number' && typeof windowWidth === 'number'
-      ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
-      : undefined;
+    let center, width;
+
+    if (typeof windowCenter === 'number' && typeof windowWidth === 'number') {
+      center = windowCenter;
+      width = windowWidth;
+    } else if (Array.isArray(windowCenter) && Array.isArray(windowWidth)) {
+      center = windowCenter[0];
+      width = windowWidth[0];
+    }
+
+    // If center and width are defined, convert them to low-high range
+    if (center !== undefined && width !== undefined) {
+      return windowLevelUtil.toLowHighRange(width, center);
+    }
   }
 
   /**
@@ -2597,7 +2622,9 @@ class StackViewport extends Viewport implements IStackViewport {
   public hasImageURI = (imageURI: string): boolean => {
     const imageIds = this.imageIds;
     for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+      if (imageIdToURI(imageIds[i]) === imageURI) {
+        return true;
+      }
     }
 
     return false;

@@ -12,7 +12,9 @@ const midPoint = (
   for (const arg of args) {
     ret[0] += arg[0] / len;
     ret[1] += arg[1] / len;
-    if (ret.length === 3) ret[2] += arg[2] / len;
+    if (ret.length === 3) {
+      ret[2] += arg[2] / len;
+    }
   }
   return ret;
 };

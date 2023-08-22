@@ -1,7 +1,7 @@
 import Segmentation from "./Segmentation";
 
-const VTKjs = {
+const VTKjsSEG = {
     Segmentation
 };
 
-export default VTKjs;
+export { VTKjsSEG };
