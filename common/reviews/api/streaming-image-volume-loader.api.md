@@ -1329,6 +1329,7 @@ interface IVolumeViewport extends IViewport {
     resetToCenter?: boolean
     ): boolean;
     resetProperties(volumeId: string): void;
+    resetProperties(volumeId?: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
@@ -1357,6 +1358,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
+
 }
 
 // @public

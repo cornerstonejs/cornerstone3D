@@ -566,7 +566,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Reset the viewport properties to the default values
    */
-  public resetProperties(volumeId: string): void {
+  public resetToDefaultProperties(volumeId: string): void {
     const properties = this.initViewportProperties.get(volumeId);
 
     if (properties.colormap?.name) {
@@ -1232,6 +1232,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     filterActorUIDs?: Array<string>
   ): void;
 
+  abstract resetProperties(volumeId?: string): void;
 }
 
 export default BaseVolumeViewport;
