@@ -2848,9 +2848,7 @@ interface IStackViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
-    removeDefaultProperties(
-    imageId?: string
-    ): void;
+    removeDefaultProperties(imageId?: string): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resetToDefaultProperties(): void;
