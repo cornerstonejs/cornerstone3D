@@ -106,6 +106,7 @@ type CalibrationEvent = {
 type SetVOIOptions = {
   suppressEvents?: boolean;
   forceRecreateLUTFunction?: boolean;
+  voiUpdatedWithSetProperties?: boolean;
 };
 
 /**
@@ -127,13 +128,14 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Viewport Properties
   private globalDefaultProperties: StackViewportProperties;
-  private perImageIdIndexDefaultProperties = new Map<
-    number,
+  private perImageIdDefaultProperties = new Map<
+    string,
     StackViewportProperties
   >();
 
   private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
+  private voiUpdatedWithSetProperties = false;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -630,36 +632,54 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Update the default properties of the viewport and add properties by imageId if specified
    * @param ViewportProperties - The properties to set
-   * @param imageIdIndex If given, we set the default properties only for this image index
+   * @param imageIdIndex If given, we set the default properties only for this image index, if not
+   * the default properties will be set for all imageIds
    */
   public setDefaultProperties(
-    ViewportProperties: StackViewportProperties = {},
-    imageIdIndex?: number
+    ViewportProperties: StackViewportProperties,
+    imageId?: string
   ): void {
-    if (imageIdIndex == undefined) {
+    if (imageId == null) {
       this.globalDefaultProperties = ViewportProperties;
     } else {
-      this.perImageIdIndexDefaultProperties.set(
-        imageIdIndex,
-        ViewportProperties
-      );
+      this.perImageIdDefaultProperties.set(imageId, ViewportProperties);
 
-      //If the viewport is one the same imageIdIndex, we need to update the viewport
-      if (this.getCurrentImageIdIndex() == imageIdIndex) {
+      //If the viewport is the same imageIdIndex, we need to update the viewport
+      if (this.getCurrentImageId() == imageId) {
         this.setProperties(ViewportProperties);
       }
     }
   }
 
   /**
-   * Sets the properties for the viewport on the default actor.
-   * and if setProperties is called for the first time, the properties will become default properties for all imageIds
-   * Properties include setting the VOI, inverting the colors and
-   * setting the interpolation type, rotation.
-   * @param voiRange - Sets the lower and upper voi
-   * @param invert - Inverts the colors
-   * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
-   * @param rotation - image rotation in degrees
+   * Remove the global default properties of the viewport or remove default properties for an imageId if specified
+   * @param imageIdIndex If given, we remove the default properties only for this imageID, if not
+   * the global default properties will be removed
+   */
+  public removeDefaultProperties(imageId?: string): void {
+    if (imageId == null) {
+      this.globalDefaultProperties = {};
+      this.resetProperties();
+    } else {
+      this.perImageIdDefaultProperties.delete(imageId);
+      this.resetToDefaultProperties();
+    }
+  }
+
+  /**
+   Configures the properties of the viewport.
+   This method allows customization of the viewport by setting attributes like
+   VOI (Value of Interest), color inversion, interpolation type, and image rotation.
+   If setProperties is called for the first time, the provided properties will
+   become the default settings for all images in the stack in case the resetPropertiese need to be called
+   @param properties - An object containing the properties to be set.
+   @param properties.colormap - Specifies the colormap for the viewport.
+   @param properties.voiRange - Defines the lower and upper Value of Interest (VOI) to be applied.
+   @param properties.VOILUTFunction - Function to handle the application of a lookup table (LUT) to the VOI.
+   @param properties.invert - A boolean value to toggle color inversion (true: inverted, false: not inverted).
+   @param properties.interpolationType - Determines the interpolation method to be used (1: linear, 0: nearest-neighbor).
+   @param properties.rotation - Specifies the image rotation angle in degrees.
+   @param suppressEvents - A boolean value to control event suppression. If true, the related events will not be triggered. Default is false.
    */
   public setProperties(
     {
@@ -676,7 +696,7 @@ class StackViewport extends Viewport implements IStackViewport {
       ? ViewportStatus.PRE_RENDER
       : ViewportStatus.LOADING;
 
-    if (this.globalDefaultProperties == undefined) {
+    if (this.globalDefaultProperties == null) {
       this.setDefaultProperties({
         colormap,
         voiRange,
@@ -693,7 +713,8 @@ class StackViewport extends Viewport implements IStackViewport {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
-      this.setVOI(voiRange, { suppressEvents });
+      const voiUpdatedWithSetProperties = true;
+      this.setVOI(voiRange, { suppressEvents, voiUpdatedWithSetProperties });
     }
 
     if (typeof VOILUTFunction !== 'undefined') {
@@ -719,14 +740,13 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Retrieve the viewport default properties
    * @param imageIdIndex If given, we retrieve the default properties of an image index if it exists
+   * If not given,we return the global properties of the viewport
    * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
-  public getDefaultProperties = (
-    imageIdIndex?: number
-  ): StackViewportProperties => {
+  public getDefaultProperties = (imageId?: string): StackViewportProperties => {
     let imageProperties;
-    if (imageIdIndex !== undefined) {
-      imageProperties = this.perImageIdIndexDefaultProperties.get(imageIdIndex);
+    if (imageId !== undefined) {
+      imageProperties = this.perImageIdDefaultProperties.get(imageId);
     }
 
     if (imageProperties !== undefined) {
@@ -752,8 +772,14 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
   public getProperties = (): StackViewportProperties => {
-    const { colormap, voiRange, VOILUTFunction, interpolationType, invert } =
-      this;
+    const {
+      colormap,
+      voiRange,
+      VOILUTFunction,
+      interpolationType,
+      invert,
+      voiUpdatedWithSetProperties,
+    } = this;
     const rotation = this.getRotation();
 
     return {
@@ -763,6 +789,7 @@ class StackViewport extends Viewport implements IStackViewport {
       interpolationType,
       invert,
       rotation,
+      isComputedVOI: !voiUpdatedWithSetProperties,
     };
   };
 
@@ -771,6 +798,7 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
+    this.voiUpdatedWithSetProperties = false;
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
@@ -785,8 +813,37 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _resetProperties() {
-    const properties = this.globalDefaultProperties;
+    const voiRange = this._getVOIRangeForCurrentImage();
+    this.setVOI(voiRange);
 
+    if (this.getRotation() !== 0) {
+      this.setRotation(0);
+    }
+    this.setInterpolationType(InterpolationType.LINEAR);
+    this.setInvertColor(false);
+  }
+
+  public resetToDefaultProperties(): void {
+    this.cpuRenderingInvalidated = true;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
+
+    this.fillWithBackgroundColor();
+
+    if (this.useCPURendering) {
+      this._cpuFallbackEnabledElement.renderingTools = {};
+    }
+
+    let properties;
+    if (
+      this.perImageIdDefaultProperties.get(this.getCurrentImageId()) !==
+      undefined
+    ) {
+      properties = this.perImageIdDefaultProperties.get(
+        this.getCurrentImageId()
+      );
+    } else {
+      properties = this.globalDefaultProperties;
+    }
     if (properties.colormap?.name) {
       this.setColormap(properties.colormap);
     }
@@ -808,6 +865,8 @@ class StackViewport extends Viewport implements IStackViewport {
     }
     this.setInterpolationType(InterpolationType.LINEAR);
     this.setInvertColor(false);
+
+    this.render();
   }
 
   private _setPropertiesFromCache(): void {
@@ -1219,8 +1278,11 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
-    const { suppressEvents = false, forceRecreateLUTFunction = false } =
-      options;
+    const {
+      suppressEvents = false,
+      forceRecreateLUTFunction = false,
+      voiUpdatedWithSetProperties = false,
+    } = options;
 
     if (
       voiRange &&
@@ -1282,6 +1344,11 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.voiRange = voiRangeToUse;
+
+    // if voiRange is set by setProperties we need to lock it if it is not locked already
+    if (!this.voiUpdatedWithSetProperties) {
+      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
+    }
 
     if (suppressEvents) {
       return;
@@ -2146,7 +2213,10 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _getInitialVOIRange(image: IImage) {
-    if (this.globalDefaultProperties?.voiRange) {
+    if (
+      this.globalDefaultProperties?.voiRange &&
+      this.voiUpdatedWithSetProperties
+    ) {
       return this.globalDefaultProperties.voiRange;
     } else {
       const { windowCenter, windowWidth } = image;
@@ -2195,6 +2265,17 @@ class StackViewport extends Viewport implements IStackViewport {
       this.imageIds[imageIdIndex],
       imageIdIndex
     );
+
+    //Check if there is any existing specific options for images if not we don't
+    //want to re-render the viewport to its default properties
+    if (this.perImageIdDefaultProperties.size >= 1) {
+      const defaultProperties = this.perImageIdDefaultProperties.get(imageId);
+      if (defaultProperties !== undefined) {
+        this.setProperties(defaultProperties);
+      } else if (this.globalDefaultProperties !== undefined) {
+        this.setProperties(this.globalDefaultProperties);
+      }
+    }
 
     return imageId;
   }
@@ -2310,18 +2391,6 @@ class StackViewport extends Viewport implements IStackViewport {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
       return this.getCurrentImageId();
-    }
-
-    //Check if there is any existing specific options for images if not we don't
-    //want to re-render the viewport to its default properties
-    if (this.perImageIdIndexDefaultProperties.size >= 1) {
-      const defaultProperties =
-        this.perImageIdIndexDefaultProperties.get(imageIdIndex);
-      if (defaultProperties !== undefined) {
-        this.setProperties(defaultProperties);
-      } else {
-        this.setProperties(this.globalDefaultProperties);
-      }
     }
 
     // Otherwise, get the imageId and attempt to display it

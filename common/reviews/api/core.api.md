@@ -1637,7 +1637,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
-    getDefaultProperties: (imageIdIndex?: number) => StackViewportProperties;
+    getDefaultProperties: (imageId?: string) => StackViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
@@ -1655,9 +1655,13 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
+    removeDefaultProperties(imageId?: string): void;
+    // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     resetProperties(): void;
+    // (undocumented)
+    resetToDefaultProperties(): void;
     // (undocumented)
     resize: () => void;
     // (undocumented)
@@ -1665,7 +1669,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setCamera(cameraInterface: ICamera): void;
     // (undocumented)
-    setDefaultProperties(ViewportProperties: StackViewportProperties, imageIdIndex?: number): void;
+    setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
@@ -2301,7 +2305,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getDefaultActor: () => ActorEntry;
     // (undocumented)
-    getDefaultProperties: (imageIdIndex?: number) => StackViewportProperties;
+    getDefaultProperties: (imageId?: string) => StackViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string | undefined;
     // (undocumented)
@@ -2325,11 +2329,15 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     removeAllActors: () => void;
     // (undocumented)
+    removeDefaultProperties(imageId?: string): void;
+    // (undocumented)
     renderImageObject: (image: any) => void;
     // (undocumented)
     resetCamera: (resetPan?: boolean, resetZoom?: boolean) => boolean;
     // (undocumented)
     resetProperties(): void;
+    // (undocumented)
+    resetToDefaultProperties(): void;
     // (undocumented)
     resize: () => void;
     // (undocumented)
@@ -2341,7 +2349,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setCamera: (cameraInterface: ICamera, storeAsInitialCamera?: boolean) => void;
     // (undocumented)
-    setDefaultProperties(ViewportProperties?: StackViewportProperties, imageIdIndex?: number): void;
+    setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)

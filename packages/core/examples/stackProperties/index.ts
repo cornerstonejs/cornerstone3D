@@ -55,43 +55,6 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 });
 
 addButtonToToolbar({
-  title: 'Set VOI Range',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Set a range to highlight bones
-    viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'SetProperties only for current image',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Set a range to highlight bones
-    viewport.setDefaultProperties(
-      { voiRange: { upper: 2500, lower: -1500 }, colormap: { name: 'hsv' } },
-      viewport.getCurrentImageIdIndex()
-    );
-  },
-});
-
-addButtonToToolbar({
   title: 'Next Image',
   onClick: () => {
     // Get the rendering engine
@@ -141,7 +104,41 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Reset Viewport',
+  title: 'Add Properties only for current imageID',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Set a range to highlight bones
+    viewport.setDefaultProperties(
+      { voiRange: { upper: 2500, lower: -1500 }, colormap: { name: 'hsv' } },
+      viewport.getCurrentImageId()
+    );
+  },
+});
+
+addButtonToToolbar({
+  title: 'Remove current imageId Properties',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    viewport.removeDefaultProperties(viewport.getCurrentImageId());
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reset to Default Viewport Properties',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -153,7 +150,26 @@ addButtonToToolbar({
 
     // Resets the viewport's camera
     viewport.resetCamera();
-    // Resets the viewport's properties
+    // Resets the viewport's to his default properties
+    viewport.resetToDefaultProperties();
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reset to metadata',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Resets the viewport's camera
+    viewport.resetCamera();
+    // Resets the viewport's properties to image metadata
     viewport.resetProperties();
     viewport.render();
   },
@@ -167,7 +183,7 @@ async function run() {
   await initDemo();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const image1 = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
@@ -197,20 +213,14 @@ async function run() {
   );
 
   // Define a stack containing a few images
-  const stack = [
-    imageIds[0],
-    imageIds[1],
-    imageIds[2],
-    imageIds[3],
-    imageIds[4],
-  ];
+  const stack = [image1[0], image1[1], image1[2], image1[3], image1[4]];
 
   // Set the stack on the viewport
   await viewport.setStack(stack);
 
   // Set the default properties of the viewport
   viewport.setProperties({
-    voiRange: { upper: 240, lower: -160 },
+    voiRange: { upper: 200, lower: -300 },
     colormap: { name: 'Grayscale' },
   });
 
