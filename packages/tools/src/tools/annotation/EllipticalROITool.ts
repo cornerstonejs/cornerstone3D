@@ -1114,6 +1114,7 @@ class EllipticalROITool extends AnnotationTool {
           max: stats[0]?.value,
           stdDev: stats[2]?.value,
           statsArray: stats,
+          pointsInShape: pointsInShape,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,

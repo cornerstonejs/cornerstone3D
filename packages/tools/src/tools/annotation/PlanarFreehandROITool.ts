@@ -865,6 +865,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         max: stats[0]?.value,
         stdDev: stats[3]?.value,
         statsArray: stats,
+        pointsInShape: pointsInShape,
         areaUnit: getCalibratedAreaUnits(null, image),
         modalityUnit,
       };
@@ -880,7 +881,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
-    
+
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
