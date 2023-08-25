@@ -50,6 +50,11 @@ module.exports = {
             '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
           to: '${destPath.replace(/\\/g, '/')}',
         },
+        {
+          from:
+            '../../../rendered.mp4',
+          to: '${destPath.replace(/\\/g, '/')}',
+        },
       ],
     }),
     // new BundleAnalyzerPlugin()

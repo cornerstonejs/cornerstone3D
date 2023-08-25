@@ -1,6 +1,7 @@
 import {
   StackViewport,
   VolumeViewport,
+  VideoViewport,
   Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -49,6 +50,12 @@ export default function filterAnnotationsForDisplay(
       const colonIndex = imageId.indexOf(':');
       const referenceImageURI = imageId.substring(colonIndex + 1);
       return referenceImageURI === imageURI;
+    });
+  } else if (viewport instanceof VideoViewport) {
+    const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
+
+    return annotations.filter((toolData) => {
+      return toolData.metadata.FrameOfReferenceUID === frameOfReferenceUID;
     });
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();

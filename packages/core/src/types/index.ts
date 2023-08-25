@@ -81,8 +81,10 @@ import type { ViewportProperties } from './ViewportProperties';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
+import IVideo from './IVideo';
 
 export type {
+  IVideo,
   // config
   Cornerstone3DConfig,
   //

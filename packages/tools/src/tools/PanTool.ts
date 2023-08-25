@@ -1,5 +1,5 @@
 import { BaseTool } from './base';
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, VideoViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -29,28 +29,38 @@ class PanTool extends BaseTool {
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
+    const viewport = enabledElement.viewport;
 
-    const deltaPointsWorld = deltaPoints.world;
-    const camera = enabledElement.viewport.getCamera();
-    const { focalPoint, position } = camera;
+    if (viewport instanceof VideoViewport) {
+      const videoViewport: VideoViewport = <VideoViewport>viewport;
 
-    const updatedPosition = <Types.Point3>[
-      position[0] - deltaPointsWorld[0],
-      position[1] - deltaPointsWorld[1],
-      position[2] - deltaPointsWorld[2],
-    ];
+      const { pan } = videoViewport.getCamera();
 
-    const updatedFocalPoint = <Types.Point3>[
-      focalPoint[0] - deltaPointsWorld[0],
-      focalPoint[1] - deltaPointsWorld[1],
-      focalPoint[2] - deltaPointsWorld[2],
-    ];
+      videoViewport.setCamera({
+        pan: [pan[0] + deltaPoints.world[0], pan[1] + deltaPoints.world[1]],
+      });
+    } else {
+      const deltaPointsWorld = deltaPoints.world;
+      const camera = enabledElement.viewport.getCamera();
+      const { focalPoint, position } = camera;
 
-    enabledElement.viewport.setCamera({
-      focalPoint: updatedFocalPoint,
-      position: updatedPosition,
-    });
-    enabledElement.viewport.render();
+      const updatedPosition = <Types.Point3>[
+        position[0] - deltaPointsWorld[0],
+        position[1] - deltaPointsWorld[1],
+        position[2] - deltaPointsWorld[2],
+      ];
+
+      const updatedFocalPoint = <Types.Point3>[
+        focalPoint[0] - deltaPointsWorld[0],
+        focalPoint[1] - deltaPointsWorld[1],
+        focalPoint[2] - deltaPointsWorld[2],
+      ];
+      enabledElement.viewport.setCamera({
+        focalPoint: updatedFocalPoint,
+        position: updatedPosition,
+      });
+      enabledElement.viewport.render();
+    }
   }
 }
 

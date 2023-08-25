@@ -13,6 +13,8 @@ import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
 import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
+import VideoViewport from './VideoViewport';
+
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
@@ -156,8 +158,14 @@ class RenderingEngine implements IRenderingEngine {
     // 2.a) See if viewport uses a custom rendering pipeline.
     const { type } = viewportInput;
 
-    const viewportUsesCustomRenderingPipeline =
-      viewportTypeUsesCustomRenderingPipeline(type);
+    let viewportUsesCustomRenderingPipeline;
+
+    if (type === 'video') {
+      viewportUsesCustomRenderingPipeline = true;
+    } else {
+      viewportUsesCustomRenderingPipeline =
+        viewportTypeUsesCustomRenderingPipeline(type);
+    }
 
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
@@ -166,6 +174,8 @@ class RenderingEngine implements IRenderingEngine {
     // GPU rendering, we don't need to resize the offscreen canvas.
     if (!this.useCPURendering && !viewportUsesCustomRenderingPipeline) {
       this.enableVTKjsDrivenViewport(viewportInput);
+    } else if (type === 'video') {
+      this._addStandaloneViewport(viewportInputEntry);
     } else {
       // 3 Add the requested viewport to rendering Engine
       this.addCustomViewport(viewportInput);
@@ -175,6 +185,52 @@ class RenderingEngine implements IRenderingEngine {
     const canvas = getOrCreateCanvas(element);
     const { background } = viewportInput.defaultOptions;
     this.fillCanvasWithBackgroundColor(canvas, background);
+  }
+
+  private _getStandaloneViewportsAsArray(): Array<VideoViewport> {
+    const viewports: Array<StackViewport | VolumeViewport | VideoViewport> =
+      this._getViewportsAsArray();
+
+    const standaloneViewports: Array<VideoViewport> = <Array<VideoViewport>>(
+      viewports.filter((vp) => vp.type === ViewportType.VIDEO)
+    );
+
+    return standaloneViewports;
+  }
+
+  private _addStandaloneViewport(
+    viewportInputEntry: PublicViewportInput
+  ): void {
+    const { element, viewportId, type, defaultOptions } = viewportInputEntry;
+
+    // 1. ViewportInput to be passed to a stack/volume viewport
+    const viewportInput = <ViewportInput>{
+      id: viewportId,
+      renderingEngineId: this.id,
+      type,
+      element,
+      defaultOptions: defaultOptions || {},
+    };
+
+    // 4. Create a proper viewport based on the type of the viewport
+    let viewport;
+    if (type === ViewportType.VIDEO) {
+      // 4.a Create stack viewport
+      viewport = new VideoViewport(viewportInput);
+    } else {
+      throw new Error(`Viewport Type ${type} is not supported`);
+    }
+
+    // 5. Storing the viewports
+    this._viewports.set(viewportId, viewport);
+
+    const eventData = {
+      element,
+      viewportId,
+      renderingEngineId: this.id,
+    };
+
+    triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventData);
   }
 
   /**
@@ -287,6 +343,7 @@ class RenderingEngine implements IRenderingEngine {
 
     const vtkDrivenViewportInputEntries: NormalizedViewportInput[] = [];
     const customRenderingViewportInputEntries: NormalizedViewportInput[] = [];
+    const standaloneViewportEntries = [];
 
     viewportInputEntries.forEach((vpie) => {
       if (
@@ -294,6 +351,8 @@ class RenderingEngine implements IRenderingEngine {
         !viewportTypeUsesCustomRenderingPipeline(vpie.type)
       ) {
         vtkDrivenViewportInputEntries.push(vpie);
+      } else if (vpie.type === 'video') {
+        standaloneViewportEntries.push(vpie);
       } else {
         customRenderingViewportInputEntries.push(vpie);
       }
@@ -301,6 +360,11 @@ class RenderingEngine implements IRenderingEngine {
 
     this.setVtkjsDrivenViewports(vtkDrivenViewportInputEntries);
     this.setCustomViewports(customRenderingViewportInputEntries);
+    for (let i = 0; i < standaloneViewportEntries.length; i++) {
+      const standaloneViewportEntry = standaloneViewportEntries[i];
+
+      this._addStandaloneViewport(standaloneViewportEntry);
+    }
   }
 
   /**
@@ -337,6 +401,14 @@ class RenderingEngine implements IRenderingEngine {
         keepCamera,
         immediate
       );
+    }
+
+    const standAloneViewports = this._getStandaloneViewportsAsArray();
+
+    for (let i = 0; i < standAloneViewports.length; i++) {
+      const standaloneViewport = standAloneViewports[i];
+
+      standaloneViewport.resize();
     }
   }
 
