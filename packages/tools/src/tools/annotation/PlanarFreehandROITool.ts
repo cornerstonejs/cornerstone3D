@@ -880,7 +880,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
-
+    
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;

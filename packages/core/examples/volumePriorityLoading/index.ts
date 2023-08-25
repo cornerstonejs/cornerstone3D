@@ -166,8 +166,12 @@ async function run() {
   const maxFrames = Math.max(ctRequests.length, ptRequests.length);
 
   for (let i = 0; i < maxFrames; i++) {
-    if (ctRequests[i]) customOrderedRequests.push(ctRequests[i]);
-    if (ptRequests[i]) customOrderedRequests.push(ptRequests[i]);
+    if (ctRequests[i]) {
+      customOrderedRequests.push(ctRequests[i]);
+    }
+    if (ptRequests[i]) {
+      customOrderedRequests.push(ptRequests[i]);
+    }
   }
 
   const requests = generateRequests(
