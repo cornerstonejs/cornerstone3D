@@ -40,7 +40,6 @@ function getDataInTime(
 
   if (options.maskVolumeId) {
     const segmentationVolume = cache.getVolume(options.maskVolumeId);
-    const startTime = performance.now();
     const segScalarData = segmentationVolume.getScalarData();
     const indexArray = [];
 
@@ -50,9 +49,6 @@ function getDataInTime(
         indexArray.push(i);
       }
     }
-
-    // eslint-disable-next-line
-    console.log('>>>>> total time: ', performance.now() - startTime);
 
     const dataInTime = _getTimePointDataMask(frames, indexArray, dynamicVolume);
 
