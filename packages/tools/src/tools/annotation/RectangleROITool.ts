@@ -1,4 +1,4 @@
-import { AnnotationWithCachedStats } from '../base';
+import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
@@ -57,6 +57,7 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInShapeCallback } from '../../utilities/';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -98,7 +99,8 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-class RectangleROITool extends AnnotationWithCachedStats {
+
+class RectangleROITool extends AnnotationTool {
   static toolName;
 
   _throttledCalculateCachedStats: any;
@@ -120,6 +122,8 @@ class RectangleROITool extends AnnotationWithCachedStats {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -787,7 +791,7 @@ class RectangleROITool extends AnnotationWithCachedStats {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -844,33 +848,6 @@ class RectangleROITool extends AnnotationWithCachedStats {
       width: Math.abs(point0[0] - point1[0]),
       height: Math.abs(point0[1] - point1[1]),
     };
-  };
-
-  /**
-   * _getTextLines - Returns the Area, mean and std deviation of the area of the
-   * target volume enclosed by the rectangle.
-   *
-   * @param data - The annotation tool-specific data.
-   * @param targetId - The volumeId of the volume to display the stats for.
-   * @param isPreScaled - Whether the viewport is pre-scaled or not.
-   */
-  _getTextLines = (data, targetId: string): string[] | undefined => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, areaUnit, modalityUnit } =
-      cachedVolumeStats;
-
-    if (mean === undefined) {
-      return;
-    }
-
-    const textLines: string[] = [];
-
-    textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
-
-    return textLines;
   };
 
   /**
@@ -975,14 +952,15 @@ class RectangleROITool extends AnnotationWithCachedStats {
           boundsIJK
         );
 
-        const stats = this.calculateStats(pointsInShape);
+        const stats = this.configuration.statsCalculator(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[1].value,
-          stdDev: stats[2].value,
-          max: stats[0].value,
+          mean: stats[1]?.value,
+          stdDev: stats[2]?.value,
+          max: stats[0]?.value,
+          statsArray: stats,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
         };
@@ -1015,6 +993,31 @@ class RectangleROITool extends AnnotationWithCachedStats {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   };
+}
+
+/**
+ * _getTextLines - Returns the Area, mean and std deviation of the area of the
+ * target volume enclosed by the rectangle.
+ *
+ * @param data - The annotation tool-specific data.
+ * @param targetId - The volumeId of the volume to display the stats for.
+ */
+function defaultGetTextLines(data, targetId: string): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+
+  if (mean === undefined) {
+    return;
+  }
+
+  const textLines: string[] = [];
+
+  textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 RectangleROITool.toolName = 'RectangleROI';

@@ -18,6 +18,8 @@ import {
   EventTypes,
   ToolHandle,
   InteractionTypes,
+  ToolProps,
+  PublicToolProps,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
@@ -36,6 +38,19 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
+
+  constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
+    super(toolProps, defaultToolProps);
+
+    if (toolProps.configuration?.getTextLines) {
+      this.configuration.getTextLines = toolProps.configuration.getTextLines;
+    }
+
+    if (toolProps.configuration?.statsCalculator) {
+      this.configuration.statsCalculator =
+        toolProps.configuration.statsCalculator;
+    }
+  }
 
   /**
    * @abstract addNewAnnotation Creates a new annotation based on the clicked mouse position

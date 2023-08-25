@@ -113,6 +113,7 @@ class LengthTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -731,7 +732,7 @@ class LengthTool extends AnnotationTool {
         return renderStatus;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, targetId);
 
       // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
@@ -770,20 +771,20 @@ class LengthTool extends AnnotationTool {
     return renderStatus;
   };
 
-  // text line for the current active length annotation
-  _getTextLines(data, targetId) {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { length, unit } = cachedVolumeStats;
+  // // text line for the current active length annotation
+  // _getTextLines(data, targetId) {
+  //   const cachedVolumeStats = data.cachedStats[targetId];
+  //   const { length, unit } = cachedVolumeStats;
 
-    // Can be null on load
-    if (length === undefined || length === null || isNaN(length)) {
-      return;
-    }
+  //   // Can be null on load
+  //   if (length === undefined || length === null || isNaN(length)) {
+  //     return;
+  //   }
 
-    const textLines = [`${roundNumber(length)} ${unit}`];
+  //   const textLines = [`${roundNumber(length)} ${unit}`];
 
-    return textLines;
-  }
+  //   return textLines;
+  // }
 
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0];
@@ -860,6 +861,20 @@ class LengthTool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { length, unit } = cachedVolumeStats;
+
+  // Can be null on load
+  if (length === undefined || length === null || isNaN(length)) {
+    return;
+  }
+
+  const textLines = [`${roundNumber(length)} ${unit}`];
+
+  return textLines;
 }
 
 LengthTool.toolName = 'Length';

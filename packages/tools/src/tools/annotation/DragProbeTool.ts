@@ -205,7 +205,7 @@ class DragProbeTool extends ProbeTool {
 
     renderStatus = true;
 
-    const textLines = this._getTextLines(data, targetId);
+    const textLines = this.configuration.getTextLines(data, targetId);
     if (textLines) {
       const textCanvasCoordinates = [
         canvasCoordinates[0] + 6,

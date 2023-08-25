@@ -1,4 +1,4 @@
-import { AnnotationWithCachedStats } from '../base';
+import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
@@ -66,6 +66,7 @@ import {
   getModalityUnit,
 } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -115,8 +116,10 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-class EllipticalROITool extends AnnotationWithCachedStats {
+
+class EllipticalROITool extends AnnotationTool {
   static toolName;
+
   touchDragCallback: any;
   mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
@@ -145,6 +148,8 @@ class EllipticalROITool extends AnnotationWithCachedStats {
         // Radius of the circle to draw  at the center point of the ellipse.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -945,7 +950,7 @@ class EllipticalROITool extends AnnotationWithCachedStats {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -987,35 +992,6 @@ class EllipticalROITool extends AnnotationWithCachedStats {
     }
 
     return renderStatus;
-  };
-
-  _getTextLines = (data, targetId: string): string[] => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-      cachedVolumeStats;
-
-    const textLines: string[] = [];
-
-    if (area) {
-      const areaLine = isEmptyArea
-        ? `Area: Oblique not supported`
-        : `Area: ${roundNumber(area)} ${areaUnit}`;
-      textLines.push(areaLine);
-    }
-
-    if (mean) {
-      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-    }
-
-    if (max) {
-      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-    }
-
-    if (stdDev) {
-      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
-    }
-
-    return textLines;
   };
 
   _calculateCachedStats = (
@@ -1129,14 +1105,15 @@ class EllipticalROITool extends AnnotationWithCachedStats {
           boundsIJK
         );
 
-        const stats = this.calculateStats(pointsInShape);
+        const stats = this.configuration.statsCalculator(pointsInShape);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[1].value,
-          max: stats[0].value,
-          stdDev: stats[2].value,
+          mean: stats[1]?.value,
+          max: stats[0]?.value,
+          stdDev: stats[2]?.value,
+          statsArray: stats,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
@@ -1216,6 +1193,35 @@ class EllipticalROITool extends AnnotationWithCachedStats {
       (topLeft[1] + bottomRight[1]) / 2,
     ] as Types.Point2;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+    cachedVolumeStats;
+
+  const textLines: string[] = [];
+
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
+
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
+
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
+
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  return textLines;
 }
 
 EllipticalROITool.toolName = 'EllipticalROI';

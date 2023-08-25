@@ -16,7 +16,7 @@ import {
 } from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
-import { AnnotationWithCachedStats } from '../base';
+import { AnnotationTool } from '../base';
 import {
   addAnnotation,
   getAnnotations,
@@ -59,6 +59,7 @@ import {
   ModalityUnitOptions,
   getModalityUnit,
 } from '../../utilities/getModalityUnit';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -124,7 +125,8 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *
  * Read more in the Docs section of the website.
  */
-class PlanarFreehandROITool extends AnnotationWithCachedStats {
+
+class PlanarFreehandROITool extends AnnotationTool {
   static toolName;
 
   public touchDragCallback: any;
@@ -215,6 +217,8 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
           knotsRatioPercentageOnEdit: 40,
         },
         calculateStats: false,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -852,14 +856,15 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
         modalityUnitOptions
       );
 
-      const stats = this.calculateStats(pointsInShape);
+      const stats = this.configuration.statsCalculator(pointsInShape);
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean: stats[1].value,
-        max: stats[0].value,
-        stdDev: stats[3].value,
+        mean: stats[1]?.value,
+        max: stats[0]?.value,
+        stdDev: stats[3]?.value,
+        statsArray: stats,
         areaUnit: getCalibratedAreaUnits(null, image),
         modalityUnit,
       };
@@ -876,7 +881,7 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
 
-    const textLines = this._getTextLines(data, targetId);
+    const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
     }
@@ -922,35 +927,35 @@ class PlanarFreehandROITool extends AnnotationWithCachedStats {
       bottomRight: viewport.canvasToWorld([left + width, top + height]),
     };
   };
+}
 
-  _getTextLines = (data, targetId: string): string[] => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-      cachedVolumeStats;
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+    cachedVolumeStats;
 
-    const textLines: string[] = [];
+  const textLines: string[] = [];
 
-    if (area) {
-      const areaLine = isEmptyArea
-        ? `Area: Oblique not supported`
-        : `Area: ${roundNumber(area)} ${areaUnit}`;
-      textLines.push(areaLine);
-    }
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
 
-    if (mean) {
-      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-    }
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
 
-    if (max) {
-      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-    }
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
 
-    if (stdDev) {
-      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
-    }
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
 
-    return textLines;
-  };
+  return textLines;
 }
 
 PlanarFreehandROITool.toolName = 'PlanarFreehandROI';

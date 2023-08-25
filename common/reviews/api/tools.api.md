@@ -132,8 +132,6 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getTextLines(data: any, targetId: any): string[];
-    // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: AngleAnnotation, handle: ToolHandle): void;
     // (undocumented)
     isDrawing: boolean;
@@ -314,6 +312,7 @@ enum AnnotationStyleStates {
 
 // @public (undocumented)
 export abstract class AnnotationTool extends AnnotationDisplayTool {
+    constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
     abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes): Annotation;
     // (undocumented)
@@ -531,8 +530,6 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _getSignedAngle: (vector1: any, vector2: any) => number;
     // (undocumented)
-    _getTextLines: (data: any, targetId: any) => string[];
-    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: BidirectionalAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
@@ -678,7 +675,7 @@ interface CircleROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class CircleROITool extends default_2 {
+export class CircleROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -711,8 +708,6 @@ export class CircleROITool extends default_2 {
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
-    // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: CircleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -809,8 +804,6 @@ export class CobbAngleTool extends AnnotationTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
-    // (undocumented)
-    _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
@@ -1621,7 +1614,7 @@ interface EllipticalROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class EllipticalROITool extends default_2 {
+export class EllipticalROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -1660,8 +1653,6 @@ export class EllipticalROITool extends default_2 {
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     _getCanvasEllipseCenter(ellipseCanvasPoints: Types_2.Point2[]): Types_2.Point2;
-    // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -3325,8 +3316,6 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getTextLines(data: any, targetId: any): string[];
-    // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation, handle: ToolHandle): void;
     // (undocumented)
     isDrawing: boolean;
@@ -3680,7 +3669,7 @@ interface PlanarFreehandROIAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export class PlanarFreehandROITool extends default_2 {
+export class PlanarFreehandROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
@@ -3690,8 +3679,6 @@ export class PlanarFreehandROITool extends default_2 {
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
-    // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -3867,8 +3854,6 @@ export class ProbeTool extends AnnotationTool {
     };
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
-    // (undocumented)
-    _getTextLines(data: any, targetId: string): string[] | undefined;
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ProbeAnnotation): void;
     // (undocumented)
@@ -4120,7 +4105,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
 function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation[], options: ThresholdOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
-export class RectangleROITool extends default_2 {
+export class RectangleROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -4156,8 +4141,6 @@ export class RectangleROITool extends default_2 {
         width: number;
         height: number;
     };
-    // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[] | undefined;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
