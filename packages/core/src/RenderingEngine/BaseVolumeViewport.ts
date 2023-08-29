@@ -849,6 +849,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    */
   private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
+    // New volume actors implies resetting the inverted flag (i.e. like starting from scratch).
+    this.inverted = false;
     this.setActors(volumeActorEntries);
   }
 
