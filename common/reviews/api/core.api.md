@@ -72,7 +72,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
-    abstract getImageIds(volumeId?: string): Array<string>;
+    getImageIds: (volumeId?: string) => Array<string>;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
@@ -2888,8 +2888,6 @@ export class VolumeViewport extends BaseVolumeViewport {
     getCurrentImageId: () => string | undefined;
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
-    // (undocumented)
-    getImageIds: (volumeId?: string) => Array<string>;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
