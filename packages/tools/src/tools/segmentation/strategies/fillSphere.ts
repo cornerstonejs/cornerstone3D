@@ -11,6 +11,7 @@ type OperationData = {
   segmentsLocked: number[];
   viewPlaneNormal: Types.Point3;
   viewUp: Types.Point3;
+  lazyCalculation?: boolean;
   constraintFn: () => boolean;
 };
 
@@ -26,37 +27,44 @@ function fillSphere(
     segmentIndex,
     segmentationId,
     points,
+    lazyCalculation,
   } = operationData;
-
   const { imageData, dimensions } = segmentation;
   const scalarData = segmentation.getScalarData();
-  const scalarIndex = [];
+  const modifiedSlicesToUse = new Set<number>();
 
-  const callback = ({ index, value }) => {
-    if (segmentsLocked.includes(value)) {
-      return;
+  let pointsChunks;
+  if (lazyCalculation) {
+    pointsChunks = [];
+    for (let i = 0; i < points.length; i += 4) {
+      pointsChunks.push(points.slice(i, i + 4));
     }
-    scalarData[index] = segmentIndex;
-    scalarIndex.push(index);
-  };
+  } else {
+    pointsChunks = [points];
+  }
 
-  pointInSurroundingSphereCallback(
-    imageData,
-    [points[0], points[1]],
-    callback,
-    viewport as Types.IVolumeViewport
-  );
+  for (let i = 0; i < pointsChunks.length; i++) {
+    const pointsChunk = pointsChunks[i];
 
-  // Since the scalar indexes start from the top left corner of the cube, the first
-  // slice that needs to be rendered can be calculated from the first mask coordinate
-  // divided by the zMultiple, as well as the last slice for the last coordinate
-  const zMultiple = dimensions[0] * dimensions[1];
-  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
-  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
-  const sliceArray = Array.from(
-    { length: maxSlice - minSlice + 1 },
-    (v, k) => k + minSlice
-  );
+    const callback = ({ index, value, pointIJK }) => {
+      if (segmentsLocked.includes(value)) {
+        return;
+      }
+      scalarData[index] = segmentIndex;
+      modifiedSlicesToUse.add(
+        Math.floor(index / (dimensions[0] * dimensions[1]))
+      );
+    };
+
+    pointInSurroundingSphereCallback(
+      imageData,
+      pointsChunk.slice(0, 2),
+      callback,
+      viewport as Types.IVolumeViewport
+    );
+  }
+
+  const sliceArray = Array.from(modifiedSlicesToUse);
 
   triggerSegmentationDataModified(segmentationId, sliceArray);
 }

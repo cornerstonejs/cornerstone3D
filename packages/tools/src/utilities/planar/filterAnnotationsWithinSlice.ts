@@ -83,17 +83,12 @@ export default function filterAnnotationsWithinSlice(
   const annotationsWithinSlice = [];
 
   for (const annotation of annotationsWithParallelNormals) {
+    const data = annotation.data;
+    const point = data.handles.points[0];
+
     if (!annotation.isVisible) {
       continue;
     }
-
-    const data = annotation.data;
-
-    // pick a sample point from the annotation
-    const point = Array.isArray(data.handles.points)
-      ? data.handles.points[0][0]
-      : data.handles.points[0];
-
     // A = point
     // B = focal point
     // P = normal

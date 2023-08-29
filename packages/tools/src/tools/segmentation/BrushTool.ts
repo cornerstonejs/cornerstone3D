@@ -8,7 +8,7 @@ import type {
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { AnnotationTool, BaseTool } from '../base';
+import { AnnotationTool } from '../base';
 import { fillInsideSphere } from './strategies/fillSphere';
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
@@ -51,7 +51,6 @@ class BrushTool extends AnnotationTool {
     segmentsLocked: number[]; //
   } | null;
   private _hoverData?: {
-    brushCursor: any;
     segmentationId: string;
     segmentIndex: number;
     segmentationRepresentationUID: string;
@@ -86,6 +85,18 @@ class BrushTool extends AnnotationTool {
     super(toolProps, defaultToolProps);
   }
 
+  handleSelectedCallback = () => {
+    return;
+  };
+
+  toolSelectedCallback = () => {
+    return;
+  };
+
+  cancel = () => {
+    this._hoverData = undefined;
+  };
+
   onSetToolPassive = () => {
     this.disableCursor();
   };
@@ -95,6 +106,15 @@ class BrushTool extends AnnotationTool {
   };
 
   onSetToolDisabled = () => {
+    removeAnnotation('brushCursorUID');
+    this.disableCursor();
+  };
+
+  onSetToolActive = () => {
+    this.disableCursor();
+  };
+
+  onSetConfiguration = () => {
     this.disableCursor();
   };
 
@@ -153,7 +173,7 @@ class BrushTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    this._addAnnotation(viewport, worldPos);
+    const annotation = this._addAnnotation(viewport, worldPos);
     this._activateDraw(element);
 
     evt.preventDefault();
@@ -163,7 +183,7 @@ class BrushTool extends AnnotationTool {
     return annotation;
   };
 
-  private _addAnnotation = (viewport, worldPos) => {
+  private _addAnnotation = (viewport, worldPos): BrushCursor => {
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
     const camera = viewport.getCamera();
 
@@ -189,37 +209,26 @@ class BrushTool extends AnnotationTool {
       },
       data: {
         handles: {
-          points: [[...this._calculateBrushLocation(viewport, worldPos)]],
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
+          points: [...this._calculateBrushLocation(viewport, worldPos)],
         },
-        label: '',
-        cachedStats: {},
       },
-    };
+    } as BrushCursor;
 
     addAnnotation(annotation, viewport.element);
 
     return annotation;
   };
 
-  mouseMoveCallback = (evt: EventTypes.InteractionEventType) => {
+  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType) => {
     if (this.mode === ToolModes.Active) {
       this._updateBrushLocation(evt);
     }
+
+    return true;
   };
 
   private _updateBrushLocation(
-    evt: EventTypes.InteractionEventType,
+    evt: EventTypes.MouseMoveEventType,
     drag = false
   ) {
     const eventData = evt.detail;
@@ -230,9 +239,15 @@ class BrushTool extends AnnotationTool {
     const { renderingEngine, viewport } = enabledElement;
 
     let annotation = getAnnotation('brushCursorUID');
-
-    if (!annotation || !drag) {
+    if (!drag && !annotation) {
       annotation = this._addAnnotation(viewport, currentPoints.world);
+    } else if (!drag) {
+      // already we have an annotation, but we are not dragging
+      // so just update the location
+      annotation.data.handles.points = [
+        ...this._calculateBrushLocation(viewport, currentPoints.canvas),
+      ];
+      annotation.data.invalidated = false;
     }
 
     const toolGroupId = this.toolGroupId;
@@ -270,14 +285,14 @@ class BrushTool extends AnnotationTool {
 
     if (drag) {
       const pos = this._calculateBrushLocation(viewport, centerCanvas);
-      annotation.data.handles.points.push(pos);
+      annotation.data.handles.points.push(...pos);
       annotation.data.invalidated = false;
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   }
 
-  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+  private _dragCallback = (evt: EventTypes.MouseMoveEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -289,7 +304,7 @@ class BrushTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  private _calculateBrushLocation(viewport, centerCanvas) {
+  private _calculateBrushLocation(viewport, centerCanvas): Types.Point3[] {
     const { canvasToWorld } = viewport;
     const camera = viewport.getCamera();
     const { brushSize } = this.configuration;
@@ -310,7 +325,6 @@ class BrushTool extends AnnotationTool {
 
     // in the world coordinate system, the brushSize is the radius of the circle
     // in mm
-
     const centerCursorInWorld: Types.Point3 = canvasToWorld([
       centerCanvas[0],
       centerCanvas[1],
@@ -330,14 +344,14 @@ class BrushTool extends AnnotationTool {
     }
 
     return [
-      bottomCursorInWorld,
-      topCursorInWorld,
-      leftCursorInWorld,
-      rightCursorInWorld,
+      bottomCursorInWorld as Types.Point3,
+      topCursorInWorld as Types.Point3,
+      leftCursorInWorld as Types.Point3,
+      rightCursorInWorld as Types.Point3,
     ];
   }
 
-  private _endCallback = (evt: EventTypes.InteractionEventType): void => {
+  private _endCallback = (evt: EventTypes.MouseMoveEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -351,19 +365,16 @@ class BrushTool extends AnnotationTool {
     this._deactivateDraw(element);
 
     resetElementCursor(element);
+
+    // remove the annotation svg since we need to draw for the next drag
     removeAnnotation('brushCursorUID');
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     this._editData = null;
     this._updateBrushLocation(evt);
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
-
-    const operationData = {
+    this.applyActiveStrategy(enabledElement, {
       points: annotation.data.handles.points,
       volume: segmentation,
       imageVolume,
@@ -374,13 +385,15 @@ class BrushTool extends AnnotationTool {
       segmentationId,
       segmentationRepresentationUID,
       viewUp,
+      lazyCalculation: true,
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
-    };
+    });
 
-    this.applyActiveStrategy(enabledElement, operationData);
-
-    triggerAnnotationRenderForViewportIds;
+    triggerAnnotationRenderForViewportIds(
+      enabledElement.renderingEngine,
+      this._hoverData.viewportIdsToRender
+    );
   };
 
   /**
@@ -421,10 +434,13 @@ class BrushTool extends AnnotationTool {
 
   public invalidateBrushCursor() {
     if (this._hoverData !== undefined) {
-      const { data } = this._hoverData.brushCursor;
-
-      data.invalidated = true;
+      const annotation = getAnnotation('brushCursorUID');
+      annotation.data.invalidated = true;
     }
+  }
+
+  public isPointNearTool(): boolean {
+    return false;
   }
 
   renderAnnotation(
@@ -447,7 +463,6 @@ class BrushTool extends AnnotationTool {
 
     let annotations = getAnnotations(this.getToolName(), viewport.element);
 
-    // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
       return renderStatus;
     }
@@ -461,60 +476,60 @@ class BrushTool extends AnnotationTool {
       return renderStatus;
     }
 
-    // const brushCursor = this._hoverData.brushCursor;
+    const annotation = annotations[0];
 
-    // if (brushCursor.data.invalidated === true) {
-    //   const { centerCanvas } = this._hoverData;
-    //   // This can be set true when changing the brush size programmatically
-    //   // whilst the cursor is being rendered.
-    //   this._calculateBrushLocation(viewport, centerCanvas);
-    // }
+    if (annotation.data.invalidated === true) {
+      const { centerCanvas } = this._hoverData;
+      // This can be set true when changing the brush size programmatically
+      // whilst the cursor is being rendered.
+      this._calculateBrushLocation(viewport, centerCanvas);
+    }
 
     const segmentColor = this._hoverData.segmentColor;
     const annotationUID = 'brushCursorUID';
     let counter = 0;
-    annotations.forEach((toolData) => {
-      const data = toolData.data;
-      const { points: pointsList } = data.handles;
+    const data = annotation.data;
+    const { points: pointsList } = data.handles;
 
-      pointsList.map((points) => {
-        const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    const notDrag = pointsList.length === 4;
 
-        const bottom = canvasCoordinates[0];
-        const top = canvasCoordinates[1];
+    for (let i = 0; i < pointsList.length; i += 4) {
+      // we only need two points to draw a circle so four is redundant
+      const points = [pointsList[i], pointsList[i + 1]];
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-        const center = [
-          Math.floor((bottom[0] + top[0]) / 2),
-          Math.floor((bottom[1] + top[1]) / 2),
-        ];
+      const bottom = canvasCoordinates[0];
+      const top = canvasCoordinates[1];
 
-        const radius = Math.abs(
-          bottom[1] - Math.floor((bottom[1] + top[1]) / 2)
-        );
+      const center = [
+        Math.floor((bottom[0] + top[0]) / 2),
+        Math.floor((bottom[1] + top[1]) / 2),
+      ];
 
-        const color = `rgb(${segmentColor.slice(0, 3)})`;
+      const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
-        // If rendering engine has been destroyed while rendering
-        if (!viewport.getRenderingEngine()) {
-          console.warn('Rendering Engine has been destroyed');
-          return;
+      const color = `rgb(${segmentColor.slice(0, 3)})`;
+
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed');
+        return;
+      }
+
+      const circleUID = '0';
+      drawCircleSvg(
+        svgDrawingHelper,
+        `${annotationUID}-${counter++}`,
+        circleUID,
+        center as Types.Point2,
+        radius,
+        {
+          color,
+          lineWidth: notDrag ? 2 : 0.75,
+          strokeOpacity: notDrag ? 1 : 0.6,
         }
-
-        const circleUID = '0';
-        drawCircleSvg(
-          svgDrawingHelper,
-          `${annotationUID}-${counter++}`,
-          circleUID,
-          center as Types.Point2,
-          radius,
-          {
-            color,
-            lineWidth: 1,
-            strokeOpacity: 0.5,
-          }
-        );
-      });
-    });
+      );
+    }
   }
 }
 
