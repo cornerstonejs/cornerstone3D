@@ -57,6 +57,14 @@ export default function loadImageToCanvas(
 
       image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
 
+      // If a dummy canvas, then setup the right size
+      if (canvas.width === 300 && canvas.height === 150) {
+        const width = Math.min(256, image.columns);
+        const height = (width * image.rows) / image.columns;
+        canvas.width = width / devicePixelRatio;
+        canvas.height = height / devicePixelRatio;
+      }
+
       renderFn(canvas, image, modality, renderingEngineId).then(() => {
         resolve(imageId);
       });

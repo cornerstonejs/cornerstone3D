@@ -39,21 +39,20 @@ export default function renderToCanvasGPU(
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
   const imageId = image.imageId;
   const element = document.createElement('div');
-  element.style.width = `${canvas.width}px`;
-  element.style.height = `${canvas.height}px`;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const originalWidth = canvas.width;
+  const originalHeight = canvas.height;
+  // Account for rounding errors by adding a half device pixel
+  element.style.width = `${originalWidth + devicePixelRatio / 2}px`;
+  element.style.height = `${originalHeight + devicePixelRatio / 2}px`;
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
 
   // Up-sampling the provided canvas to match the device pixel ratio
   // since we use device pixel ratio to determine the size of the canvas
   // inside the rendering engine.
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const originalWidth = canvas.width;
-  const originalHeight = canvas.height;
   canvas.width = originalWidth * devicePixelRatio;
   canvas.height = originalHeight * devicePixelRatio;
-  canvas.style.width = `${originalWidth}px`;
-  canvas.style.height = `${originalHeight}px`;
 
   document.body.appendChild(element);
 
@@ -61,6 +60,8 @@ export default function renderToCanvasGPU(
   const uniqueId = viewportId.split(':').join('-');
   element.setAttribute('viewport-id-for-remove', uniqueId);
 
+  // get the canvas element that is the child of the div
+  const temporaryCanvas = getOrCreateCanvas(element);
   const renderingEngine =
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
     new RenderingEngine(renderingEngineId);
@@ -90,9 +91,6 @@ export default function renderToCanvasGPU(
       if (elementRendered) {
         return;
       }
-
-      // get the canvas element that is the child of the div
-      const temporaryCanvas = getOrCreateCanvas(element);
 
       // Copy the temporary canvas to the given canvas
       const context = canvas.getContext('2d');
@@ -135,8 +133,10 @@ export default function renderToCanvasGPU(
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
     viewport.renderImageObject(image);
 
-    // force a reset camera to center the image
+    // force a reset camera to center the image and undo the small scaling
     viewport.resetCamera();
+    const parallelScale = viewport.getCamera().parallelScale / 1.04;
+    viewport.setCamera({ parallelScale });
 
     if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
       viewport.setProperties({

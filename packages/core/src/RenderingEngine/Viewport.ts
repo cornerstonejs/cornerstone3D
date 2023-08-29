@@ -571,12 +571,48 @@ class Viewport implements IViewport {
     displayArea: DisplayArea,
     suppressEvents = false
   ): void {
-    const { storeAsInitialCamera } = displayArea;
+    if (!displayArea) {
+      return;
+    }
+    const { storeAsInitialCamera, type: areaType } = displayArea;
 
     // make calculations relative to the fitToCanvasCamera view
     this.setCamera(this.fitToCanvasCamera, false);
 
-    const { imageArea, imageCanvasPoint } = displayArea;
+    if (storeAsInitialCamera) {
+      this.options.displayArea = displayArea;
+    }
+
+    if (areaType === 'SCALE') {
+      this.setDisplayAreaScale(displayArea);
+    } else {
+      this.setDisplayAreaFit(displayArea);
+    }
+
+    if (!suppressEvents) {
+      const eventDetail: EventTypes.DisplayAreaModifiedEventDetail = {
+        viewportId: this.id,
+        displayArea: displayArea,
+        storeAsInitialCamera: storeAsInitialCamera,
+      };
+
+      triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, eventDetail);
+    }
+  }
+
+  protected setDisplayAreaScale(displayArea: DisplayArea) {
+    const { scale = 1 } = displayArea;
+    const canvas = this.canvas;
+    const height = canvas.height;
+    const width = canvas.width;
+    if (height < 8 || width < 8) {
+      return;
+    }
+    this.setCamera({ parallelScale: height / (2 * scale) });
+  }
+
+  protected setDisplayAreaFit(displayArea: DisplayArea) {
+    const { storeAsInitialCamera, imageArea, imageCanvasPoint } = displayArea;
 
     if (imageArea) {
       const [areaX, areaY] = imageArea;
@@ -612,20 +648,6 @@ class Viewport implements IViewport {
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
       this.setPan(deltaPoint2, storeAsInitialCamera);
-    }
-
-    if (storeAsInitialCamera) {
-      this.options.displayArea = displayArea;
-    }
-
-    if (!suppressEvents) {
-      const eventDetail: EventTypes.DisplayAreaModifiedEventDetail = {
-        viewportId: this.id,
-        displayArea: displayArea,
-        storeAsInitialCamera: storeAsInitialCamera,
-      };
-
-      triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, eventDetail);
     }
   }
 
@@ -705,19 +727,19 @@ class Viewport implements IViewport {
     const boundsAspectRatio = widthWorld / heightWorld;
     const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
-    let radius;
+    let parallelScale;
 
-    if (boundsAspectRatio < canvasAspectRatio) {
-      // can fit full height, so use it.
-      radius = heightWorld / 2;
+    if (boundsAspectRatio <= 1.1 * canvasAspectRatio) {
+      // can fit full height, so use it minus 10%
+      parallelScale = (1.1 * heightWorld) / 2;
     } else {
       const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
-      radius = (heightWorld * scaleFactor) / 2;
+      // Scale to width exactly - no extra spacing at sides
+      parallelScale = (heightWorld * scaleFactor) / 2;
     }
 
     //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = 1.1 * radius;
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];
@@ -725,7 +747,7 @@ class Viewport implements IViewport {
     w1 *= w1;
     w2 *= w2;
     w3 *= w3;
-    radius = w1 + w2 + w3;
+    let radius = w1 + w2 + w3;
 
     // If we have just a single point, pick a radius of 1.0
     radius = radius === 0 ? 1.0 : radius;

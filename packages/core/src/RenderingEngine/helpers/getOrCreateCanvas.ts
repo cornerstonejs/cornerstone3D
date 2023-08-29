@@ -13,6 +13,7 @@ function createCanvas(element: Element | HTMLDivElement): HTMLCanvasElement {
   canvas.style.position = 'absolute';
   canvas.style.width = '100%';
   canvas.style.height = '100%';
+  canvas.style.imageRendering = 'pixelated';
   canvas.classList.add(CANVAS_CSS_CLASS);
   element.appendChild(canvas);
 
@@ -54,5 +55,24 @@ export default function getOrCreateCanvas(
   const internalDiv =
     element.querySelector(viewportElement) || createViewportElement(element);
 
-  return internalDiv.querySelector(canvasSelector) || createCanvas(internalDiv);
+  const canvas = (internalDiv.querySelector(canvasSelector) ||
+    createCanvas(internalDiv)) as HTMLCanvasElement;
+  const rect = internalDiv.getBoundingClientRect();
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  // The width and height will be floored by the canvas to produce integers
+  const left = Math.ceil(rect.x * devicePixelRatio) - rect.x * devicePixelRatio;
+  const top = Math.ceil(rect.y * devicePixelRatio) - rect.y * devicePixelRatio;
+  const width = Math.floor(rect.width * devicePixelRatio - left);
+  const height = Math.floor(rect.height * devicePixelRatio - top);
+  canvas.width = width;
+  canvas.height = height;
+  // Reset size to be pixel exact size as a percent
+  canvas.style.width = (width + 0.01) / devicePixelRatio + 'px';
+  canvas.style.height = (height + 0.01) / devicePixelRatio + 'px';
+  // In theory it should be required to do the following, but in practice
+  // the browser seems to do this internally
+  // canvas.style.left = (left - 0.02) / devicePixelRatio + 'px';
+  // canvas.style.top = (top - 0.02) / devicePixelRatio + 'px';
+
+  return canvas;
 }
