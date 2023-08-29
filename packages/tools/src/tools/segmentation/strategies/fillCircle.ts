@@ -45,72 +45,77 @@ function fillCircle(
 
   // Average the points to get the center of the ellipse
   const center = vec3.fromValues(0, 0, 0);
-  points.forEach((point) => {
-    vec3.add(center, center, point);
-  });
-  vec3.scale(center, center, 1 / points.length);
-
-  const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
-  // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
-  // corners in canvas coordinates
-  const [topLeftCanvas, bottomRightCanvas] =
-    getCanvasEllipseCorners(canvasCoordinates);
-
-  // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-  const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
-  const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
-
-  const ellipsoidCornersIJK = [
-    <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
-    <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
-  ];
-
-  const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions);
-
-  // using circle as a form of ellipse
-  const ellipseObj = {
-    center: center as Types.Point3,
-    xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-    yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-    zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-  };
-
   const modifiedSlicesToUse = new Set() as Set<number>;
 
-  let callback;
+  points?.map((points) => {
+    points.forEach((point) => {
+      vec3.add(center, center, point);
+    });
+    vec3.scale(center, center, 1 / points.length);
 
-  if (threshold) {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      if (
-        isWithinThreshold(index, imageVolume, strategySpecificConfiguration)
-      ) {
+    // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
+    // corners in canvas coordinates
+    const [topLeftCanvas, bottomRightCanvas] =
+      getCanvasEllipseCorners(canvasCoordinates);
+
+    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
+
+    const ellipsoidCornersIJK = [
+      <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
+      <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
+    ];
+
+    const boundsIJK = getBoundingBoxAroundShape(
+      ellipsoidCornersIJK,
+      dimensions
+    );
+
+    // using circle as a form of ellipse
+    const ellipseObj = {
+      center: center as Types.Point3,
+      xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+      yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+      zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+    };
+
+    let callback;
+
+    if (threshold) {
+      callback = ({ value, index, pointIJK }) => {
+        if (segmentsLocked.includes(value)) {
+          return;
+        }
+
+        if (
+          isWithinThreshold(index, imageVolume, strategySpecificConfiguration)
+        ) {
+          scalarData[index] = segmentIndex;
+          //Todo: I don't think this will always be index 2 in streamingImageVolume?
+          modifiedSlicesToUse.add(pointIJK[2]);
+        }
+      };
+    } else {
+      callback = ({ value, index, pointIJK }) => {
+        if (segmentsLocked.includes(value)) {
+          return;
+        }
         scalarData[index] = segmentIndex;
         //Todo: I don't think this will always be index 2 in streamingImageVolume?
         modifiedSlicesToUse.add(pointIJK[2]);
-      }
-    };
-  } else {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-      scalarData[index] = segmentIndex;
-      //Todo: I don't think this will always be index 2 in streamingImageVolume?
-      modifiedSlicesToUse.add(pointIJK[2]);
-    };
-  }
+      };
+    }
 
-  pointInShapeCallback(
-    imageData,
-    (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-    callback,
-    boundsIJK
-  );
+    pointInShapeCallback(
+      imageData,
+      (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+      callback,
+      boundsIJK
+    );
+  });
 
   const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse);
 

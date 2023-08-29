@@ -12,6 +12,7 @@ import {
 import {
   BlendModes,
   Events,
+  InterpolationType,
   OrientationAxis,
   ViewportStatus,
   VOILUTFunctionType,
@@ -367,6 +368,23 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return newRGBTransferFunction;
   }
 
+  private setInterpolationType(
+    interpolationType: InterpolationType,
+    volumeId?: string
+  ) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+
+    const { volumeActor } = applicableVolumeActorInfo;
+    const volumeProperty = volumeActor.getProperty();
+
+    // @ts-ignore
+    volumeProperty.setInterpolationType(interpolationType);
+  }
+
   /**
    * Sets the properties for the volume viewport on the volume
    * (if fusion, it sets it for the first volume in the fusion)
@@ -449,6 +467,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       invert,
       colormap,
       preset,
+      interpolationType,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -465,6 +484,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (voiRange !== undefined) {
       this.setVOI(voiRange, volumeId, suppressEvents);
+    }
+
+    if (typeof interpolationType !== 'undefined') {
+      this.setInterpolationType(interpolationType);
     }
 
     if (VOILUTFunction !== undefined) {
