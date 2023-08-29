@@ -1160,11 +1160,26 @@ class BidirectionalTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (options.visibility === '0') {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
 
+      const textLines = this._getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
+
       let canvasTextBoxCoords;
 
       if (!data.handles.textBox.hasMoved) {
@@ -1187,7 +1202,7 @@ class BidirectionalTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
