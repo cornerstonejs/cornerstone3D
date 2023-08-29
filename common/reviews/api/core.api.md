@@ -72,6 +72,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
+    abstract getImageIds(volumeId?: string): Array<string>;
+    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     protected _getOrientationVectors(orientation: OrientationAxis | OrientationVectors): OrientationVectors;
@@ -1880,6 +1882,8 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
+    getImageIds: (volumeId?: string) => string[];
+    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getProperties: () => VolumeViewportProperties;
@@ -2885,6 +2889,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
     // (undocumented)
+    getImageIds: (volumeId?: string) => Array<string>;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
@@ -2907,6 +2913,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
+    // (undocumented)
+    getImageIds: (volumeId?: string) => Array<string>;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)

@@ -291,6 +291,30 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
+   * Returns the list of image Ids for the current viewport
+   * @returns list of strings for image Ids
+   */
+  public getImageIds = (volumeId?: string): Array<string> => {
+    // Get the actor based on the volumeId if provided, otherwise use the default actor.
+    const volumeActor = volumeId
+      ? this.getActor(volumeId)
+      : this.getDefaultActor();
+
+    if (!volumeActor) {
+      throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+    }
+
+    const imageVolume = cache.getVolume(volumeActor.uid);
+    if (!imageVolume) {
+      throw new Error(
+        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+      );
+    }
+
+    return imageVolume.imageIds;
+  };
+
+  /**
    * Uses the origin and focalPoint to calculate the slice index.
    * Todo: This only works if the imageIds are properly sorted
    *

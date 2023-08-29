@@ -1080,6 +1080,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return volume.getScalarData()[voxelIndex];
   }
 
+  abstract getImageIds(volumeId?: string): Array<string>;
+
   abstract getCurrentImageIdIndex(): number;
 
   abstract getCurrentImageId(): string;
