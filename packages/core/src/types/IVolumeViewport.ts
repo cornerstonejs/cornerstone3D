@@ -29,6 +29,10 @@ export default interface IVolumeViewport extends IViewport {
    */
   worldToCanvas: (worldPos: Point3) => Point2;
   /**
+   * Returns the list of image Ids for the current viewport
+   */
+  getImageIds: (volumeId?: string) => string[];
+  /**
    * Uses viewport camera and volume actor to decide if the viewport
    * is looking at the volume in the direction of acquisition (imageIds).
    * If so, it uses the origin and focalPoint to calculate the slice index.
@@ -142,5 +146,4 @@ export default interface IVolumeViewport extends IViewport {
    * Reset the viewport properties to the default values
    */
   resetProperties(volumeId?: string): void;
-
 }
