@@ -1082,6 +1082,31 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return volume.getScalarData()[voxelIndex];
   }
 
+  /**
+   * Returns the list of image Ids for the current viewport
+   *
+   * @param volumeId - volumeId
+   * @returns list of strings for image Ids
+   */
+  public getImageIds = (volumeId?: string): Array<string> => {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+    }
+
+    const volumeIdToUse = applicableVolumeActorInfo.volumeId;
+
+    const imageVolume = cache.getVolume(volumeIdToUse);
+    if (!imageVolume) {
+      throw new Error(
+        `imageVolume with id: ${volumeIdToUse} does not exist in cache`
+      );
+    }
+
+    return imageVolume.imageIds;
+  };
+
   abstract getCurrentImageIdIndex(): number;
 
   abstract getCurrentImageId(): string;
