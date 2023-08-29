@@ -1420,6 +1420,8 @@ function disable(element: any): void;
 
 // @public (undocumented)
 type DisplayArea = {
+    type?: 'SCALE' | 'FIT';
+    scale?: number;
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
         imagePoint: [number, number]; // imageX, imageY
