@@ -460,7 +460,26 @@ declare namespace BasicStatsCalculator {
 }
 
 // @public (undocumented)
-function BasicStatsCalculator_2(points: PointInShape[]): StatisticValue[];
+class BasicStatsCalculator_2 extends Calculator {
+    // (undocumented)
+    count: number;
+    // (undocumented)
+    currentMax: number;
+    // (undocumented)
+    getStatistics: () => StatisticValue[];
+    // (undocumented)
+    max: number;
+    // (undocumented)
+    squaredDiffSum: number;
+    // (undocumented)
+    statsCallback: ({ value: newValue }: {
+        value: any;
+    }) => void;
+    // (undocumented)
+    sum: number;
+    // (undocumented)
+    sumSquares: number;
+}
 
 // @public (undocumented)
 interface BidirectionalAnnotation extends Annotation {
@@ -592,7 +611,14 @@ export class BrushTool extends BaseTool {
 function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
-type Calculator = (points: PointInShape[]) => StatisticValue[];
+abstract class Calculator {
+    // (undocumented)
+    abstract getStatistics: () => StatisticValue[];
+    // (undocumented)
+    abstract statsCallback: ({ value }: {
+        value: any;
+    }) => void;
+}
 
 // @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, calibrationOrScale: Types_2.IImageCalibration | number): void;
@@ -2915,7 +2941,9 @@ type IToolClassReference = new <T extends BaseTool>(config: any) => T;
 interface IToolGroup {
     // (undocumented)
     addTool: {
-        (toolName: string, toolConfiguration?: any): void;
+        (toolName: string, toolConfiguration?: Record<any, any> & {
+            statsCalculator?: Calculator;
+        }): void;
     };
     // (undocumented)
     addToolInstance: {
@@ -2961,7 +2989,9 @@ interface IToolGroup {
     };
     // (undocumented)
     setToolConfiguration: {
-        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): void;
+        (toolName: string, configuration: Record<any, any> & {
+            statsCalculator?: Calculator;
+        }, overwrite?: boolean): void;
     };
     // (undocumented)
     setToolDisabled: {
@@ -3166,6 +3196,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
+
 }
 
 // @public (undocumented)
@@ -3768,15 +3799,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 
 // @public (undocumented)
-type PointInShape = {
-    value: number;
-    index: number;
-    pointIJK: Types_2.Point3;
-    pointLPS: Types_2.Point3;
-};
-
-// @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape_2>;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -4885,13 +4908,6 @@ declare namespace state_3 {
 }
 
 // @public (undocumented)
-type StatisticValue = {
-    name: string;
-    value: number;
-    unit: null | string;
-};
-
-// @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
 
 // @public (undocumented)
@@ -5356,9 +5372,7 @@ declare namespace Types {
         FloodFillGetter,
         FloodFillOptions,
         ContourSegmentationData,
-        Calculator,
-        StatisticValue,
-        PointInShape
+        Calculator
     }
 }
 export { Types }

@@ -12,6 +12,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import Calculator, { StatisticValue } from '../../src/types/CalculatorTypes';
 
 // This is for debugging purposes
 console.warn(
@@ -186,15 +187,36 @@ function getTextLinesAngle(data, targetId): string[] {
   return textLines;
 }
 
-function newRectangleStatsCalculator() {
-  //Here you can make your own statistics and return the name of the statistic with it's value and unit
-  //In this example, our statistics calculated are 999,999,999...
+//This is an exemple of a custom statistic calculator
+class newStatsCalculator extends Calculator {
+  /**
+   * This callback is used when we verify if the point is in the annotion drawn so we can get every point
+   * in the shape to calculate the statistics
+   * @param value of the point in the shape of the annotation
+   */
+  statsCallback = ({ value: newValue }): void => {
+    //Do something with the points in the annotation
+  };
 
-  return [
-    { name: 'max', value: 999, unit: null },
-    { name: 'mean', value: 999, unit: null },
-    { name: 'stdDev', value: 999, unit: null },
-  ];
+  /**
+   * Basic function that calculates statictics for a given array of points.
+   * @param points
+   * @returns An object that contains :
+   * max : The maximum value of the array
+   * mean : mean of the array
+   * stdDev : standard deviation of the array
+   * stdDevWithSumSquare : standard deviation of the array using sum²
+   */
+
+  getStatistics = (): StatisticValue[] => {
+    //Here you can calculate your own statistics and send them back
+    return [
+      { name: 'max', value: 900, unit: null },
+      { name: 'mean', value: 999, unit: null },
+      { name: 'stdDev', value: 999, unit: null },
+      { name: 'stdDevWithSumSquare', value: 999, unit: null },
+    ];
+  };
 }
 
 addButtonToToolbar({
@@ -214,17 +236,17 @@ addButtonToToolbar({
 
     toolgroup.setToolConfiguration(RectangleROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: newRectangleStatsCalculator,
+      statsCalculator: new newStatsCalculator(),
     });
 
     toolgroup.setToolConfiguration(EllipticalROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: newRectangleStatsCalculator,
+      statsCalculator: new newStatsCalculator(),
     });
 
     toolgroup.setToolConfiguration(CircleROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: newRectangleStatsCalculator,
+      statsCalculator: new newStatsCalculator(),
     });
 
     toolgroup.setToolConfiguration(BidirectionalTool.toolName, {
@@ -241,7 +263,7 @@ addButtonToToolbar({
 
     toolgroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: newRectangleStatsCalculator,
+      statsCalculator: new newStatsCalculator(),
     });
   },
 });

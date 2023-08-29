@@ -1,8 +1,10 @@
+import Calculator from '../types/CalculatorTypes';
+
 type SharedToolProp = {
   /** supported interactions for the tool */
   supportedInteractionTypes?: Array<string>;
   /** tool specific tool configuration */
-  configuration?: Record<string, any>;
+  configuration?: Record<string, any> & { statsCalculator?: Calculator };
 };
 
 export type ToolProps = SharedToolProp;

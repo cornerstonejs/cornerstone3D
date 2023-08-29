@@ -771,21 +771,6 @@ class LengthTool extends AnnotationTool {
     return renderStatus;
   };
 
-  // // text line for the current active length annotation
-  // _getTextLines(data, targetId) {
-  //   const cachedVolumeStats = data.cachedStats[targetId];
-  //   const { length, unit } = cachedVolumeStats;
-
-  //   // Can be null on load
-  //   if (length === undefined || length === null || isNaN(length)) {
-  //     return;
-  //   }
-
-  //   const textLines = [`${roundNumber(length)} ${unit}`];
-
-  //   return textLines;
-  // }
-
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0];
     const dy = pos1[1] - pos2[1];

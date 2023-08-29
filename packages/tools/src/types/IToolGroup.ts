@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
 import { MouseBindings } from '../enums';
+import Calculator from '../types/CalculatorTypes';
 /**
  * ToolGroup interface
  */
@@ -19,8 +20,13 @@ export default interface IToolGroup {
   getViewportsInfo: () => Array<Types.IViewportId>;
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any };
-  /** Add a tool to toolGroup with its configuration */
-  addTool: { (toolName: string, toolConfiguration?: any): void };
+  /** Add a tool to toolGroup with its configuration and custom calculator if wanted */
+  addTool: {
+    (
+      toolName: string,
+      toolConfiguration?: Record<any, any> & { statsCalculator?: Calculator }
+    ): void;
+  };
   /** Add tool instance, if you want to create more than one instance from the same tool e.g., brush/eraser tool */
   addToolInstance: {
     (ttoolName: string, parentClassName: string, configuration?: any): void;
@@ -62,7 +68,7 @@ export default interface IToolGroup {
   setToolConfiguration: {
     (
       toolName: string,
-      configuration: Record<any, any>,
+      configuration: Record<any, any> & { statsCalculator?: Calculator },
       overwrite?: boolean
     ): void;
   };

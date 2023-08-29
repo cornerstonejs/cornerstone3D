@@ -1,40 +1,60 @@
-//Basic calculator
-import { PointInShape, StatisticValue } from '../../../types';
+import { StatisticValue } from '../../../types/CalculatorTypes';
+import Calculator from '../../../types/CalculatorTypes';
 
-export default function BasicStatsCalculator(
-  points: PointInShape[]
-): StatisticValue[] {
-  let max = -Infinity;
-  let mean = 0;
-  let sumSquares = 0;
+export default class BasicStatsCalculator extends Calculator {
+  max = -Infinity;
+  currentMax = 0;
+  sum = 0;
+  sumSquares = 0;
+  squaredDiffSum = 0;
+  count = 0;
 
-  points.forEach((point) => {
-    const newValue = point.value;
-    if (newValue > max) {
-      max = newValue;
+  /**
+   * This callback is used when we verify if the point is in the annotion drawn so we can get every point
+   * in the shape to calculate the statistics
+   * @param value of the point in the shape of the annotation
+   */
+  statsCallback = ({ value: newValue }): void => {
+    if (newValue > this.max) {
+      this.max = newValue;
+      this.currentMax = newValue;
     }
 
-    sumSquares += newValue ** 2;
-    mean += newValue;
-  });
+    this.count += 1;
 
-  mean = mean / points.length;
+    this.sum += newValue;
+    this.sumSquares += newValue ** 2;
+    this.squaredDiffSum += Math.pow(newValue - this.sum / this.count, 2);
+  };
 
-  let stdDev = 0;
-  let stdDevWithSumSquare = 0;
+  /**
+   * Basic function that calculates statictics for a given array of points.
+   * @param points
+   * @returns An object that contains :
+   * max : The maximum value of the array
+   * mean : mean of the array
+   * stdDev : standard deviation of the array
+   * stdDevWithSumSquare : standard deviation of the array using sum²
+   */
 
-  points.forEach((point) => {
-    const valueMinusMean = point.value - mean;
-    stdDev += valueMinusMean ** 2;
-  });
+  getStatistics = (): StatisticValue[] => {
+    const mean = this.sum / this.count;
+    const stdDev = Math.sqrt(this.squaredDiffSum / this.count);
+    const stdDevWithSumSquare = Math.sqrt(
+      this.sumSquares / this.count - mean ** 2
+    );
 
-  stdDevWithSumSquare = Math.sqrt(sumSquares / points.length - mean ** 2);
-  stdDev = Math.sqrt(stdDev / points.length);
+    this.max = -Infinity;
+    this.sum = 0;
+    this.sumSquares = 0;
+    this.squaredDiffSum = 0;
+    this.count = 0;
 
-  return [
-    { name: 'max', value: max, unit: null },
-    { name: 'mean', value: mean, unit: null },
-    { name: 'stdDev', value: stdDev, unit: null },
-    { name: 'stdDevWithSumSquare', value: stdDevWithSumSquare, unit: null },
-  ];
+    return [
+      { name: 'max', value: this.currentMax, unit: null },
+      { name: 'mean', value: mean, unit: null },
+      { name: 'stdDev', value: stdDev, unit: null },
+      { name: 'stdDevWithSumSquare', value: stdDevWithSumSquare, unit: null },
+    ];
+  };
 }

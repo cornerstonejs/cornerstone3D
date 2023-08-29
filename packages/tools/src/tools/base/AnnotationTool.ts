@@ -22,6 +22,7 @@ import {
   PublicToolProps,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import Calculator from '../../types/CalculatorTypes';
 
 /**
  * Abstract class for tools which create and display annotations on the

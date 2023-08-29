@@ -218,7 +218,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         },
         calculateStats: false,
         getTextLines: defaultGetTextLines,
-        statsCalculator: BasicStatsCalculator,
+        statsCalculator: new BasicStatsCalculator(),
       },
     }
   ) {
@@ -846,7 +846,7 @@ class PlanarFreehandROITool extends AnnotationTool {
           }
           return result;
         },
-        null,
+        this.configuration.statsCalculator.statsCallback,
         boundsIJK
       );
 
@@ -856,7 +856,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         modalityUnitOptions
       );
 
-      const stats = this.configuration.statsCalculator(pointsInShape);
+      const stats = this.configuration.statsCalculator.getStatistics();
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,

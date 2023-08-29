@@ -44,6 +44,7 @@ class DragProbeTool extends ProbeTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -225,6 +226,23 @@ class DragProbeTool extends ProbeTool {
 
     return renderStatus;
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 DragProbeTool.toolName = 'DragProbe';

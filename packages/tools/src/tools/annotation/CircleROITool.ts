@@ -147,7 +147,7 @@ class CircleROITool extends AnnotationTool {
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
         getTextLines: defaultGetTextLines,
-        statsCalculator: BasicStatsCalculator,
+        statsCalculator: new BasicStatsCalculator(),
       },
     }
   ) {
@@ -979,11 +979,11 @@ class CircleROITool extends AnnotationTool {
         const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          null,
+          this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 
-        const stats = this.configuration.statsCalculator(pointsInShape);
+        const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,

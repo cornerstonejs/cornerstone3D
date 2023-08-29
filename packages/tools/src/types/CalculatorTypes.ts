@@ -1,16 +1,13 @@
-import { Types } from '@cornerstonejs/core';
-
-export type PointInShape = {
-  value: number;
-  index: number;
-  pointIJK: Types.Point3;
-  pointLPS: Types.Point3;
-};
-
-export type StatisticValue = {
+type StatisticValue = {
   name: string;
   value: number;
   unit: null | string;
 };
 
-export type Calculator = (points: PointInShape[]) => StatisticValue[];
+abstract class Calculator {
+  abstract statsCallback: ({ value }) => void;
+  abstract getStatistics: () => StatisticValue[];
+}
+
+export default Calculator;
+export type { StatisticValue };
