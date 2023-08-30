@@ -846,7 +846,7 @@ class PlanarFreehandROITool extends AnnotationTool {
           }
           return result;
         },
-        this.configuration.statsCalculator.run,
+        this.configuration.statsCalculator.statsCallback,
         boundsIJK
       );
 

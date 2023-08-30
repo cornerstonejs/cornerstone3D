@@ -979,7 +979,7 @@ class CircleROITool extends AnnotationTool {
         const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          this.configuration.statsCalculator.run,
+          this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 

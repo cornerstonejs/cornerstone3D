@@ -948,7 +948,7 @@ class RectangleROITool extends AnnotationTool {
         const pointsInShape = pointInShapeCallback(
           imageData,
           () => true,
-          this.configuration.statsCalculator.run,
+          this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 

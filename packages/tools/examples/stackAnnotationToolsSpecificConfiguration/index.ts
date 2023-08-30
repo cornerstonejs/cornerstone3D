@@ -195,7 +195,7 @@ class newStatsCalculator extends Calculator {
    * in the shape to calculate the statistics
    * @param value of the point in the shape of the annotation
    */
-  static run = ({ value: newValue }): void => {
+  static statsCallback = ({ value: newValue }): void => {
     //Do something with the points in the annotation
   };
 

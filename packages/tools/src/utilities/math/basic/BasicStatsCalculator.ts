@@ -14,7 +14,7 @@ export default class BasicStatsCalculator extends Calculator {
    * in the shape to calculate the statistics
    * @param value of the point in the shape of the annotation
    */
-  static run = ({ value: newValue }): void => {
+  static statsCallback = ({ value: newValue }): void => {
     if (newValue > this.max) {
       this.max = newValue;
       this.currentMax = newValue;

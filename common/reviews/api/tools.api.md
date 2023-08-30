@@ -465,7 +465,7 @@ class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
     static getStatistics: () => Statistics[];
     // (undocumented)
-    static run: ({ value: newValue }: {
+    static statsCallback: ({ value: newValue }: {
         value: any;
     }) => void;
 }
@@ -2930,9 +2930,7 @@ type IToolClassReference = new <T extends BaseTool>(config: any) => T;
 interface IToolGroup {
     // (undocumented)
     addTool: {
-        (toolName: string, toolConfiguration?: Record<any, any> & {
-            statsCalculator?: Calculator;
-        }): void;
+        (toolName: string, toolConfiguration?: ToolConfiguration): void;
     };
     // (undocumented)
     addToolInstance: {
@@ -2978,9 +2976,7 @@ interface IToolGroup {
     };
     // (undocumented)
     setToolConfiguration: {
-        (toolName: string, configuration: Record<any, any> & {
-            statsCalculator?: Calculator;
-        }, overwrite?: boolean): void;
+        (toolName: string, configuration: ToolConfiguration, overwrite?: boolean): void;
     };
     // (undocumented)
     setToolDisabled: {
