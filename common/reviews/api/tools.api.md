@@ -562,12 +562,34 @@ declare namespace boundingBox {
 type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-export class BrushTool extends BaseTool {
+interface BrushCursor extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: [Types_2.Point3];
+        };
+    };
+}
+
+// @public (undocumented)
+export class BrushTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => BrushCursor;
+    // (undocumented)
+    cancel: () => void;
+    // (undocumented)
+    handleSelectedCallback: () => void;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    isPointNearTool(): boolean;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => boolean;
+    // (undocumented)
+    onSetConfiguration: () => void;
+    // (undocumented)
+    onSetToolActive: () => void;
     // (undocumented)
     onSetToolDisabled: () => void;
     // (undocumented)
@@ -575,11 +597,11 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     onSetToolPassive: () => void;
     // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
-    // (undocumented)
-    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: () => void;
 }
 
 // @public (undocumented)
@@ -3163,6 +3185,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
+
 }
 
 // @public (undocumented)
@@ -5143,7 +5166,8 @@ declare namespace ToolSpecificAnnotationTypes {
         AngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
-        ScaleOverlayAnnotation
+        ScaleOverlayAnnotation,
+        BrushCursor
     }
 }
 
@@ -5449,6 +5473,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 declare namespace visibility {

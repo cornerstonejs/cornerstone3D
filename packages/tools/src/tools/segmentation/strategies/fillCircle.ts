@@ -16,7 +16,7 @@ type OperationData = {
   segmentationId: string;
   imageVolume: Types.IImageVolume;
   points: any;
-  lazyCalculation: boolean;
+  lazyCalculation?: boolean;
   volume: Types.IImageVolume;
   segmentIndex: number;
   segmentsLocked: number[];
