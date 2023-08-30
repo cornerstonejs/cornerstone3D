@@ -68,6 +68,7 @@ import {
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
 import { pointInEllipse } from '../../utilities/math/ellipse';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -117,8 +118,10 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
+
 class CircleROITool extends AnnotationTool {
   static toolName;
+
   touchDragCallback: any;
   mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
@@ -143,6 +146,8 @@ class CircleROITool extends AnnotationTool {
         // Radius of the circle to draw  at the center point of the circle.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -821,7 +826,7 @@ class CircleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -863,52 +868,6 @@ class CircleROITool extends AnnotationTool {
     }
 
     return renderStatus;
-  };
-
-  _getTextLines = (data, targetId: string): string[] => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const {
-      radius,
-      radiusUnit,
-      area,
-      mean,
-      stdDev,
-      max,
-      isEmptyArea,
-      Modality,
-      areaUnit,
-      modalityUnit,
-    } = cachedVolumeStats;
-
-    const textLines: string[] = [];
-
-    if (radius) {
-      const radiusLine = isEmptyArea
-        ? `Radius: Oblique not supported`
-        : `Radius: ${roundNumber(radius)} ${radiusUnit}`;
-      textLines.push(radiusLine);
-    }
-
-    if (area) {
-      const areaLine = isEmptyArea
-        ? `Area: Oblique not supported`
-        : `Area: ${roundNumber(area)} ${areaUnit}`;
-      textLines.push(areaLine);
-    }
-
-    if (mean) {
-      textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-    }
-
-    if (max) {
-      textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-    }
-
-    if (stdDev) {
-      textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
-    }
-
-    return textLines;
   };
 
   _calculateCachedStats = (
@@ -1011,57 +970,29 @@ class CircleROITool extends AnnotationTool {
             (worldHeight / aspect / scale / 2)
         );
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-        let max = -Infinity;
-
-        const meanMaxCalculator = ({ value: newValue }) => {
-          if (newValue > max) {
-            max = newValue;
-          }
-
-          mean += newValue;
-          count += 1;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator,
-          boundsIJK
-        );
-
-        mean /= count;
-
-        const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean;
-
-          stdDev += valueMinusMean * valueMinusMean;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator,
-          boundsIJK
-        );
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
-
         const modalityUnit = getModalityUnit(
           metadata.Modality,
           annotation.metadata.referencedImageId,
           modalityUnitOptions
         );
 
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          this.configuration.statsCalculator.statsCallback,
+          boundsIJK
+        );
+
+        const stats = this.configuration.statsCalculator.getStatistics();
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          max,
-          stdDev,
+          mean: stats[1]?.value,
+          max: stats[0]?.value,
+          stdDev: stats[2]?.value,
+          statsArray: stats,
+          pointsInShape: pointsInShape,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           radius: worldWidth / 2 / scale,
@@ -1100,6 +1031,52 @@ class CircleROITool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const {
+    radius,
+    radiusUnit,
+    area,
+    mean,
+    stdDev,
+    max,
+    isEmptyArea,
+    Modality,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats;
+
+  const textLines: string[] = [];
+
+  if (radius) {
+    const radiusLine = isEmptyArea
+      ? `Radius: Oblique not supported`
+      : `Radius: ${roundNumber(radius)} ${radiusUnit}`;
+    textLines.push(radiusLine);
+  }
+
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
+
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
+
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
+
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  return textLines;
 }
 
 CircleROITool.toolName = 'CircleROI';
