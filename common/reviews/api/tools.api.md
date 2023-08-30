@@ -455,30 +455,19 @@ export abstract class BaseTool implements IBaseTool {
 
 declare namespace BasicStatsCalculator {
     export {
-        BasicStatsCalculator_2 as BasicStatsCalculator
+        BasicStatsCalculator_2 as BasicStatsCalculator,
+        Calculator
     }
 }
 
 // @public (undocumented)
 class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
-    count: number;
+    static getStatistics: () => Statistics[];
     // (undocumented)
-    currentMax: number;
-    // (undocumented)
-    getStatistics: () => StatisticValue[];
-    // (undocumented)
-    max: number;
-    // (undocumented)
-    squaredDiffSum: number;
-    // (undocumented)
-    statsCallback: ({ value: newValue }: {
+    static run: ({ value: newValue }: {
         value: any;
     }) => void;
-    // (undocumented)
-    sum: number;
-    // (undocumented)
-    sumSquares: number;
 }
 
 // @public (undocumented)
@@ -613,9 +602,9 @@ function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 // @public (undocumented)
 abstract class Calculator {
     // (undocumented)
-    abstract getStatistics: () => StatisticValue[];
+    static getStatistics: () => Statistics[];
     // (undocumented)
-    abstract statsCallback: ({ value }: {
+    static run: ({ value }: {
         value: any;
     }) => void;
 }
@@ -797,7 +786,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -4908,6 +4897,13 @@ declare namespace state_3 {
 }
 
 // @public (undocumented)
+type Statistics = {
+    name: string;
+    value: number;
+    unit: null | string;
+};
+
+// @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
 
 // @public (undocumented)
@@ -5066,6 +5062,11 @@ type ToolActivatedEventDetail = {
 
 // @public (undocumented)
 type ToolActivatedEventType = Types_2.CustomEventType<ToolActivatedEventDetail>;
+
+// @public (undocumented)
+type ToolConfiguration = Record<string, any> & {
+    statsCalculator?: Calculator;
+};
 
 // @public (undocumented)
 interface ToolData {
@@ -5335,6 +5336,7 @@ declare namespace Types {
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
+        ToolConfiguration,
         EventTypes_2 as EventTypes,
         IPoints,
         ITouchPoints,
@@ -5372,7 +5374,7 @@ declare namespace Types {
         FloodFillGetter,
         FloodFillOptions,
         ContourSegmentationData,
-        Calculator
+        Statistics
     }
 }
 export { Types }

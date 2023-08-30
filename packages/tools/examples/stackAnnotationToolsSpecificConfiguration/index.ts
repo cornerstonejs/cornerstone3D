@@ -12,7 +12,8 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import Calculator, { StatisticValue } from '../../src/types/CalculatorTypes';
+import { Statistics } from '../../src/types';
+import { Calculator } from '../../src/utilities/math/basic';
 
 // This is for debugging purposes
 console.warn(
@@ -194,7 +195,7 @@ class newStatsCalculator extends Calculator {
    * in the shape to calculate the statistics
    * @param value of the point in the shape of the annotation
    */
-  statsCallback = ({ value: newValue }): void => {
+  static run = ({ value: newValue }): void => {
     //Do something with the points in the annotation
   };
 
@@ -208,7 +209,7 @@ class newStatsCalculator extends Calculator {
    * stdDevWithSumSquare : standard deviation of the array using sum²
    */
 
-  getStatistics = (): StatisticValue[] => {
+  static getStatistics = (): Statistics[] => {
     //Here you can calculate your own statistics and send them back
     return [
       { name: 'max', value: 900, unit: null },
@@ -236,17 +237,17 @@ addButtonToToolbar({
 
     toolgroup.setToolConfiguration(RectangleROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: new newStatsCalculator(),
+      statsCalculator: newStatsCalculator,
     });
 
     toolgroup.setToolConfiguration(EllipticalROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: new newStatsCalculator(),
+      statsCalculator: newStatsCalculator,
     });
 
     toolgroup.setToolConfiguration(CircleROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: new newStatsCalculator(),
+      statsCalculator: newStatsCalculator,
     });
 
     toolgroup.setToolConfiguration(BidirectionalTool.toolName, {
@@ -263,7 +264,7 @@ addButtonToToolbar({
 
     toolgroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
       getTextLines: getTextLinesRectangle,
-      statsCalculator: new newStatsCalculator(),
+      statsCalculator: newStatsCalculator,
     });
   },
 });

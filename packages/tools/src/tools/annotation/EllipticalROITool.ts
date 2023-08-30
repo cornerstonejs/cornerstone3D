@@ -149,7 +149,7 @@ class EllipticalROITool extends AnnotationTool {
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
         getTextLines: defaultGetTextLines,
-        statsCalculator: new BasicStatsCalculator(),
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -1101,7 +1101,7 @@ class EllipticalROITool extends AnnotationTool {
         const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          this.configuration.statsCalculator.statsCallback,
+          this.configuration.statsCalculator.run,
           boundsIJK
         );
 

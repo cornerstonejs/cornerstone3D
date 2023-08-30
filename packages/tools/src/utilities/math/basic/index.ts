@@ -1,3 +1,4 @@
 import BasicStatsCalculator from './BasicStatsCalculator';
+import Calculator from './Calculator';
 
-export { BasicStatsCalculator };
+export { BasicStatsCalculator, Calculator };

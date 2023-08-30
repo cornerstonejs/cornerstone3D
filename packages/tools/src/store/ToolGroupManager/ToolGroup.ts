@@ -20,11 +20,11 @@ import {
   IToolGroup,
   SetToolBindingsType,
   ToolOptionsType,
+  ToolConfiguration,
 } from '../../types';
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
-import Calculator from '../../types/CalculatorTypes';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -90,10 +90,7 @@ export default class ToolGroup implements IToolGroup {
    * @param toolName - string
    * @param configuration - Tool configuration objects and a custom statistics calculator if needed
    */
-  addTool(
-    toolName: string,
-    configuration: Record<any, any> & { statsCalculator?: Calculator } = {}
-  ): void {
+  addTool(toolName: string, configuration: ToolConfiguration = {}): void {
     const toolDefinition = state.tools[toolName];
     const hasToolName = typeof toolName !== 'undefined' && toolName !== '';
     const localToolInstance = this.toolOptions[toolName];
@@ -609,7 +606,7 @@ export default class ToolGroup implements IToolGroup {
    */
   public setToolConfiguration(
     toolName: string,
-    configuration: Record<any, any> & { statsCalculator?: Calculator },
+    configuration: ToolConfiguration,
     overwrite?: boolean
   ): boolean {
     if (this._toolInstances[toolName] === undefined) {

@@ -123,7 +123,7 @@ class RectangleROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
-        statsCalculator: new BasicStatsCalculator(),
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -948,7 +948,7 @@ class RectangleROITool extends AnnotationTool {
         const pointsInShape = pointInShapeCallback(
           imageData,
           () => true,
-          this.configuration.statsCalculator.statsCallback,
+          this.configuration.statsCalculator.run,
           boundsIJK
         );
 

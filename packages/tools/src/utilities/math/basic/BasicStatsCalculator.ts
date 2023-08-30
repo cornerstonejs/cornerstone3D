@@ -1,20 +1,20 @@
-import { StatisticValue } from '../../../types/CalculatorTypes';
-import Calculator from '../../../types/CalculatorTypes';
+import { Statistics } from '../../../types';
+import Calculator from './Calculator';
 
 export default class BasicStatsCalculator extends Calculator {
-  max = -Infinity;
-  currentMax = 0;
-  sum = 0;
-  sumSquares = 0;
-  squaredDiffSum = 0;
-  count = 0;
+  private static max = -Infinity;
+  private static currentMax = 0;
+  private static sum = 0;
+  private static sumSquares = 0;
+  private static squaredDiffSum = 0;
+  private static count = 0;
 
   /**
    * This callback is used when we verify if the point is in the annotion drawn so we can get every point
    * in the shape to calculate the statistics
    * @param value of the point in the shape of the annotation
    */
-  statsCallback = ({ value: newValue }): void => {
+  static run = ({ value: newValue }): void => {
     if (newValue > this.max) {
       this.max = newValue;
       this.currentMax = newValue;
@@ -37,7 +37,7 @@ export default class BasicStatsCalculator extends Calculator {
    * stdDevWithSumSquare : standard deviation of the array using sum²
    */
 
-  getStatistics = (): StatisticValue[] => {
+  static getStatistics = (): Statistics[] => {
     const mean = this.sum / this.count;
     const stdDev = Math.sqrt(this.squaredDiffSum / this.count);
     const stdDevWithSumSquare = Math.sqrt(

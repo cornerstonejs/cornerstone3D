@@ -218,7 +218,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         },
         calculateStats: false,
         getTextLines: defaultGetTextLines,
-        statsCalculator: new BasicStatsCalculator(),
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -846,7 +846,7 @@ class PlanarFreehandROITool extends AnnotationTool {
           }
           return result;
         },
-        this.configuration.statsCalculator.statsCallback,
+        this.configuration.statsCalculator.run,
         boundsIJK
       );
 

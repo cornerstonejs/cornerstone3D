@@ -22,9 +22,8 @@ import {
   PublicToolProps,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import Calculator from '../../types/CalculatorTypes';
 
-/**
+/**-q
  * Abstract class for tools which create and display annotations on the
  * cornerstone3D canvas. In addition, it provides a base class for segmentation
  * tools that require drawing an annotation before running the segmentation strategy

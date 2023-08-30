@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
 import { MouseBindings } from '../enums';
-import Calculator from '../types/CalculatorTypes';
+import { Calculator } from '../utilities/math/basic';
 /**
  * ToolGroup interface
  */
