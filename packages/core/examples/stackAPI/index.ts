@@ -354,22 +354,13 @@ async function run() {
   );
 
   // Define a stack containing a few images
-  const stack = [
-    imageIds[0],
-    imageIds[1],
-    imageIds[2],
-    imageIds[3],
-    imageIds[4],
-  ];
+  const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Set the stack on the viewport
   await viewport.setStack(stack);
 
-  // Set the default properties of the stack for the reset
-  viewport.setProperties({
-    voiRange: ctVoiRange,
-    colormap: { name: 'Grayscale' },
-  });
+  // Set the VOI of the stack
+  viewport.setProperties({ voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();
