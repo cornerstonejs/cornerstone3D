@@ -8,13 +8,20 @@ import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import { getConfiguration } from '../init';
 
-interface LoadImageOptions {
+export interface LoadImageOptions {
   canvas: HTMLCanvasElement;
   imageId: string;
   requestType?: RequestType;
   priority?: number;
   renderingEngineId?: string;
   useCPURendering?: boolean;
+  // Render a thumbnail in a 256x256 viewport
+  // Also set imageAspect to render thumbnail in an aspect ratio width viewport
+  thumbnail?: boolean;
+  // Sets the CSS width to the image aspect ratio
+  imageAspect?: boolean;
+  // Sets the canvas pixel size to the physical pixel size of the image area
+  physicalPixels?: boolean;
 }
 
 /**
@@ -35,6 +42,9 @@ interface LoadImageOptions {
  * the order of loading for the pool manager is interaction, thumbnail, prefetch
  * @param priority - The priority of the request within the request type (lower is higher priority)
  * @param useCPURendering - Force the use of the CPU rendering pipeline (default to false)
+ * @param thumbnail - Render a thumbnail image
+ * @param imageAspect - assign the width based on the aspect ratio of the image
+ * @param physicalPixels - set the width/height to the physical pixel size
  * @returns - A promise that resolves when the image has been rendered with the imageId
  */
 export default function loadImageToCanvas(
@@ -47,8 +57,12 @@ export default function loadImageToCanvas(
     priority = -5,
     renderingEngineId = '_thumbnails',
     useCPURendering = false,
+    thumbnail = false,
+    imageAspect = false,
+    physicalPixels = false,
   } = options;
 
+  const devicePixelRatio = window.devicePixelRatio || 1;
   const renderFn = useCPURendering ? renderToCanvasCPU : renderToCanvasGPU;
 
   return new Promise((resolve, reject) => {
@@ -57,12 +71,16 @@ export default function loadImageToCanvas(
 
       image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
 
-      // If a dummy canvas, then setup the right size
-      if (canvas.width === 300 && canvas.height === 150) {
-        const width = Math.min(256, image.columns);
-        const height = (width * image.rows) / image.columns;
-        canvas.width = width / devicePixelRatio;
-        canvas.height = height / devicePixelRatio;
+      if (thumbnail) {
+        canvas.height = 256;
+        canvas.width = 256;
+      }
+      if (physicalPixels) {
+        canvas.width = canvas.offsetWidth * devicePixelRatio;
+        canvas.height = canvas.offsetHeight * devicePixelRatio;
+      }
+      if (imageAspect) {
+        canvas.width = (canvas.height * image.width) / image.height;
       }
 
       renderFn(canvas, image, modality, renderingEngineId).then(() => {

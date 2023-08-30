@@ -535,6 +535,7 @@ const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 type DisplayArea = {
     type?: 'SCALE' | 'FIT';
     scale?: number;
+    interpolationType?: InterpolationType;
     imageArea: [number, number];
     imageCanvasPoint: {
         imagePoint: [number, number];

@@ -40,6 +40,12 @@ export function createViewportElement(element: HTMLDivElement): HTMLDivElement {
 /**
  * Create a canvas or returns the one that already exists for a given element.
  * It first checks if the element has a canvas, if not it creates one and returns it.
+ * The canvas is updated for:
+ *   1. width/height in screen pixels to just fit inside the div element
+ *   2. CSS width/height in CSS pixels to be the size of the physical screen pixels
+ *      width and height (from #1)
+ * This allows drawing to the canvas and having pixel perfect/exact drawing to
+ * the physical screen pixels.
  *
  * @param element - An HTML Element
  * @returns canvas a Canvas DOM element
@@ -57,16 +63,24 @@ export default function getOrCreateCanvas(
 
   const canvas = (internalDiv.querySelector(canvasSelector) ||
     createCanvas(internalDiv)) as HTMLCanvasElement;
+  // Fit the canvas into the div
   const rect = internalDiv.getBoundingClientRect();
   const devicePixelRatio = window.devicePixelRatio || 1;
-  // The width and height will be floored by the canvas to produce integers
+
+  // The left/top can be fractional physical pixels, round UP to the nearest
+  // physical pixel on the left/top hand edge.
   const left = Math.ceil(rect.x * devicePixelRatio) - rect.x * devicePixelRatio;
   const top = Math.ceil(rect.y * devicePixelRatio) - rect.y * devicePixelRatio;
+  // The width/height is the number of physical pixels which fit into the
+  // remaining space without any fractional pixels left over
+  // The floor is because we don't want any fractional pixels left over.
   const width = Math.floor(rect.width * devicePixelRatio - left);
   const height = Math.floor(rect.height * devicePixelRatio - top);
   canvas.width = width;
   canvas.height = height;
-  // Reset size to be pixel exact size as a percent
+  // Reset the size of the canvas to be the number of physical pixels,
+  // expressed as CSS pixels, with a tiny extra amount to prevent clipping
+  // to the next lower size in the physical display.
   canvas.style.width = (width + 0.01) / devicePixelRatio + 'px';
   canvas.style.height = (height + 0.01) / devicePixelRatio + 'px';
   // In theory it should be required to do the following, but in practice

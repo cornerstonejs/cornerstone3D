@@ -1422,6 +1422,7 @@ function disable(element: any): void;
 type DisplayArea = {
     type?: 'SCALE' | 'FIT';
     scale?: number;
+    interpolationType?: InterpolationType;
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
         imagePoint: [number, number]; // imageX, imageY

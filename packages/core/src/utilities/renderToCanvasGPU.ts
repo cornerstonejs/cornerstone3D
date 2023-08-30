@@ -42,7 +42,11 @@ export default function renderToCanvasGPU(
   const devicePixelRatio = window.devicePixelRatio || 1;
   const originalWidth = canvas.width;
   const originalHeight = canvas.height;
-  // Account for rounding errors by adding a half device pixel
+  // The canvas width/height are set by flooring the CSS size converted
+  // into physical pixels, but because these are float values, the conversion
+  // isn't exact, and using the exact value sometimes leads to an off by 1
+  // in the actual size, so adding a half physical pixel to the size resolves
+  // the problem.
   element.style.width = `${originalWidth + devicePixelRatio / 2}px`;
   element.style.height = `${originalHeight + devicePixelRatio / 2}px`;
   element.style.visibility = 'hidden';
@@ -135,6 +139,10 @@ export default function renderToCanvasGPU(
 
     // force a reset camera to center the image and undo the small scaling
     viewport.resetCamera();
+    // Update the parallel scale to fill the viewport rather than leaving
+    // space empty.  The 1.04 leaves a tiny border for hte image, and is
+    // based on the 1.10 factor (eg 10%) in Viewport that is divided by 2
+    // eg 5% would be the full amount, but 4% is used to leave a tiny border.
     const parallelScale = viewport.getCamera().parallelScale / 1.04;
     viewport.setCamera({ parallelScale });
 

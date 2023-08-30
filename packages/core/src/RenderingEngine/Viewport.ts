@@ -600,7 +600,18 @@ class Viewport implements IViewport {
     }
   }
 
-  protected setDisplayAreaScale(displayArea: DisplayArea) {
+  /**
+   * Sets the viewport to pixel scaling mode.  Pixel scaling displays
+   * 1 image pixel as 1 (or scale) physical screen pixels.  That is,
+   * a 1024x512 image will be displayed with scale=2, as 2048x1024
+   * physical image pixels.
+   *
+   * @param displayArea.scale - the number of physical pixels to display
+   *        each image pixel in.  Values < 1 mean smaller than physical,
+   *        while values > 1 mean more than one pixel.  Default is 1
+   *        Suggest using whole numbers or integer fractions (eg 1/3)
+   */
+  protected setDisplayAreaScale(displayArea: DisplayArea): void {
     const { scale = 1 } = displayArea;
     const canvas = this.canvas;
     const height = canvas.height;
@@ -611,6 +622,31 @@ class Viewport implements IViewport {
     this.setCamera({ parallelScale: height / (2 * scale) });
   }
 
+  /**
+   * This applies a display area with a fit of the provided area to the
+   * available area.
+   * The zoom level is controlled by the imageArea parameter, which is a pair
+   * of percentage width in the horizontal and vertical dimension is scaled
+   * to fit the displayable area.  Both values are taken into account, and the
+   * scaling is set so that both fractions of the image area are visible.
+   *
+   * The panning is controlled by the imageCanvasPoint, which has two
+   * values, teh imagePoint and the canvasPoint.  They are fractional
+   * values of the image and canvas respectively, with the panning set to
+   * display the image pixel at the given fraction on top of the canvas at the
+   * given percentage.  The default points are 0.5.
+   *
+   * For example, if the zoom level is [2,1], then the image is displayed
+   * such that at least twice the width is visible, and the height is visible.
+   * That will result in the image width being black, divided up on the left
+   * and right according to the imageCanvasPoint
+   *
+   * Then, if the imagePoint is [1,0] and the canvas point is [1,0], then
+   * the right most edge of the image, at the top of the image, will be
+   * displayed at the right most edge of the canvas, at the top.
+   *
+   * @param displayArea
+   */
   protected setDisplayAreaFit(displayArea: DisplayArea) {
     const { storeAsInitialCamera, imageArea, imageCanvasPoint } = displayArea;
 
