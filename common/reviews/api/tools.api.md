@@ -1696,7 +1696,7 @@ export class EllipticalROITool extends AnnotationTool {
 }
 
 // @public (undocumented)
-const enable: (element: any) => void;
+function enable(element: any): void;
 
 declare namespace Enums {
     export {
@@ -2073,8 +2073,6 @@ function getColorLUT(index: number): ColorLUT | undefined;
 // @public (undocumented)
 function getConfiguration(): {
     maxImagesToPrefetch: number;
-    minBefore: number;
-    maxAfter: number;
     preserveExistingPool: boolean;
 };
 
@@ -3185,7 +3183,6 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
-
 }
 
 // @public (undocumented)

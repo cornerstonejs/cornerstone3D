@@ -2151,7 +2151,6 @@ class StackViewport extends Viewport implements IStackViewport {
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
     this.hasPixelSpacing = true;
-    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
@@ -2218,7 +2217,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const currentTargetImageIdIndex = this.targetImageIdIndex;
     const numberOfFrames = imageIds.length;
-    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     let newTargetImageIdIndex = currentTargetImageIdIndex + delta;
     newTargetImageIdIndex = Math.max(0, newTargetImageIdIndex);
@@ -2237,8 +2235,6 @@ class StackViewport extends Viewport implements IStackViewport {
     const targetImageId = imageIds[newTargetImageIdIndex];
 
     const imageAlreadyLoaded = cache.isImageIdCached(targetImageId);
-
-    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     // If image is already cached we want to scroll right away; however, if it is
     // not cached, we can debounce the scroll event to avoid firing multiple scroll

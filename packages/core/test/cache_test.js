@@ -10,8 +10,6 @@ describe('Cache', () => {
   beforeAll(() => {
     // initialize the library
     cornerstone.init();
-    // Use max instance size for max cache size so they don't interfere
-    cache.setMaxCacheSize(cache.getMaxInstanceSize());
   });
 
   describe('Set maximum cache size', function () {
@@ -19,13 +17,11 @@ describe('Cache', () => {
       cache.purgeCache();
     });
 
-    it('Maximum cache size should be at least 1 GB', function () {
+    it('should start by allocating 1GB of cache size', function () {
       // Arrange
       const maximumSizeInBytes = 1073741824; // 1GB
 
-      expect(cache.getMaxCacheSize()).toBeGreaterThanOrEqual(
-        maximumSizeInBytes
-      );
+      expect(cache.getMaxCacheSize()).toBe(maximumSizeInBytes);
     });
 
     it('should fail if numBytes is not defined', function () {
@@ -226,9 +222,7 @@ describe('Cache', () => {
       expect(cache.getCacheSize()).toBe(0);
     });
 
-    it('should cache images when there is enough volatile + unallocated space', async function () {
-      // Use max instance size for max cache size so they don't interfere
-      cache.setMaxCacheSize(cache.getMaxInstanceSize());
+    it('should successfully caching an image when there is enough volatile + unallocated space', async function () {
       const maxCacheSize = cache.getMaxCacheSize();
 
       const image1SizeInBytes = maxCacheSize - 10000;
