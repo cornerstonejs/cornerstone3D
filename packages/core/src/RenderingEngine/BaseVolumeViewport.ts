@@ -519,7 +519,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         const volumeActor = actorEntry.actor as vtkVolume;
         const volumeId = actorEntry.uid;
         const volume = cache.getVolume(volumeId);
-        if (!volume) return null;
+        if (!volume) {
+          return null;
+        }
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
           this.VOILUTFunction === 'SIGMOID'
@@ -847,6 +849,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    */
   private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
+    // New volume actors implies resetting the inverted flag (i.e. like starting from scratch).
+    this.inverted = false;
     this.setActors(volumeActorEntries);
   }
 
@@ -1078,6 +1082,31 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return volume.getScalarData()[voxelIndex];
   }
 
+  /**
+   * Returns the list of image Ids for the current viewport
+   *
+   * @param volumeId - volumeId
+   * @returns list of strings for image Ids
+   */
+  public getImageIds = (volumeId?: string): Array<string> => {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+    }
+
+    const volumeIdToUse = applicableVolumeActorInfo.volumeId;
+
+    const imageVolume = cache.getVolume(volumeIdToUse);
+    if (!imageVolume) {
+      throw new Error(
+        `imageVolume with id: ${volumeIdToUse} does not exist in cache`
+      );
+    }
+
+    return imageVolume.imageIds;
+  };
+
   abstract getCurrentImageIdIndex(): number;
 
   abstract getCurrentImageId(): string;
@@ -1092,6 +1121,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     slabThickness: number,
     filterActorUIDs?: Array<string>
   ): void;
+
+  abstract resetProperties(volumeId?: string): void;
 }
 
 export default BaseVolumeViewport;

@@ -3,6 +3,78 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.1...v1.13.0) (2023-08-30)
+
+### Features
+
+- **tools extensibility:** Added statistics calculator for Annotation Tools ([#723](https://github.com/cornerstonejs/cornerstone3D/issues/723)) ([9d96bed](https://github.com/cornerstonejs/cornerstone3D/commit/9d96beda02be8e32770512d815a56966620bb9d6))
+
+## [1.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.0...v1.12.1) (2023-08-30)
+
+### Bug Fixes
+
+- **modifier key:** reset modifier keys when browser tab loses focus/is hidden ([#759](https://github.com/cornerstonejs/cornerstone3D/issues/759)) ([2602ec6](https://github.com/cornerstonejs/cornerstone3D/commit/2602ec6d69da53590217bd012e6b979fd22204da)), closes [#733](https://github.com/cornerstonejs/cornerstone3D/issues/733)
+
+# [1.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.4...v1.12.0) (2023-08-29)
+
+### Features
+
+- **VolumeViewport:** Add getImageIds to volume viewport ([#758](https://github.com/cornerstonejs/cornerstone3D/issues/758)) ([6c430c7](https://github.com/cornerstonejs/cornerstone3D/commit/6c430c7b053a0bbed19c1bf6c6a1afb80ab039ae))
+
+## [1.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.3...v1.11.4) (2023-08-29)
+
+### Bug Fixes
+
+- **BaseVolumeViewport:** when the volume actors are explicitly set, reset the inverted flag too ([#756](https://github.com/cornerstonejs/cornerstone3D/issues/756)) ([2258093](https://github.com/cornerstonejs/cornerstone3D/commit/2258093a2b9a2ed75023a6156a1a285093fcafc0))
+
+## [1.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.2...v1.11.3) (2023-08-28)
+
+### Bug Fixes
+
+- **4D utility:** wrong array type returned by getDataInTime ([#754](https://github.com/cornerstonejs/cornerstone3D/issues/754)) ([14ea6c1](https://github.com/cornerstonejs/cornerstone3D/commit/14ea6c1dd77271d1d30698aa0e82994818112b5a))
+
+## [1.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.1...v1.11.2) (2023-08-22)
+
+### Bug Fixes
+
+- **VolumeViewport:** Add optional volumeId to resetProperties in VolumeViewport ([#749](https://github.com/cornerstonejs/cornerstone3D/issues/749)) ([34b815e](https://github.com/cornerstonejs/cornerstone3D/commit/34b815e18c4380abe31c3fc5368d27dd99fa5fc6))
+
+## [1.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.0...v1.11.1) (2023-08-21)
+
+### Bug Fixes
+
+- **memory leak:** array buffer was sticking around because of exception ([#748](https://github.com/cornerstonejs/cornerstone3D/issues/748)) ([f27ae9a](https://github.com/cornerstonejs/cornerstone3D/commit/f27ae9a28c4fa796ffd1973b7c56c325dec41754))
+
+# [1.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.5...v1.11.0) (2023-08-21)
+
+### Features
+
+- **VolumeViewport:** Add reset properties to volume viewport ([#747](https://github.com/cornerstonejs/cornerstone3D/issues/747)) ([054b044](https://github.com/cornerstonejs/cornerstone3D/commit/054b044f8279f547459c0776a67db56e776927a6))
+
+## [1.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.4...v1.10.5) (2023-08-21)
+
+**Note:** Version bump only for package root
+
+## [1.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.3...v1.10.4) (2023-08-17)
+
+### Bug Fixes
+
+- sorting priority groups ([#741](https://github.com/cornerstonejs/cornerstone3D/issues/741)) ([2dc7e87](https://github.com/cornerstonejs/cornerstone3D/commit/2dc7e87b362868e4bf7946924a597f238fa31027))
+
+## [1.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.2...v1.10.3) (2023-08-15)
+
+**Note:** Version bump only for package root
+
+## [1.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.1...v1.10.2) (2023-08-15)
+
+### Bug Fixes
+
+- **color:** Convert color space for useRGBA false ([#730](https://github.com/cornerstonejs/cornerstone3D/issues/730)) ([52d5dcd](https://github.com/cornerstonejs/cornerstone3D/commit/52d5dcd59c892e594188f056612474db2812579d))
+
+## [1.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.0...v1.10.1) (2023-08-09)
+
+**Note:** Version bump only for package root
+
 # [1.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.3...v1.10.0) (2023-08-02)
 
 ### Features

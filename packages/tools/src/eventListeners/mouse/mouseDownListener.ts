@@ -129,7 +129,9 @@ const doubleClickState: IDoubleClickState = {
 function mouseDownListener(evt: MouseEvent) {
   if (doubleClickState.doubleClickTimeout) {
     // A second identical click will be a double click event, so ignore it
-    if (evt.buttons === doubleClickState.mouseDownEvent.buttons) return;
+    if (evt.buttons === doubleClickState.mouseDownEvent.buttons) {
+      return;
+    }
 
     // Record the second button or the changed button event as the initial
     // button down state so that the multi-button event can be detected

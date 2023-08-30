@@ -64,9 +64,21 @@ function keyListener(evt: KeyboardEvent): void {
   triggerEvent(eventDetail.element, Events.KEY_DOWN, eventDetail);
 
   document.addEventListener('keyup', _onKeyUp);
+  document.addEventListener('visibilitychange', _onVisibilityChange);
 
   // Todo: handle combination of keys
   state.element.removeEventListener('keydown', keyListener);
+}
+
+/**
+ * Whenever the visibility (i.e. tab focus) changes such that the tab is NOT the
+ * active tab, reset the modifier key.
+ */
+function _onVisibilityChange(): void {
+  document.removeEventListener('visibilitychange', _onVisibilityChange);
+  if (document.visibilityState === 'hidden') {
+    resetModifierKey();
+  }
 }
 
 function _onKeyUp(evt: KeyboardEvent): void {
@@ -81,6 +93,7 @@ function _onKeyUp(evt: KeyboardEvent): void {
 
   // Remove our temporary handlers
   document.removeEventListener('keyup', _onKeyUp);
+  document.removeEventListener('visibilitychange', _onVisibilityChange);
   state.element.addEventListener('keydown', keyListener);
 
   // Restore `state` to `defaultState`

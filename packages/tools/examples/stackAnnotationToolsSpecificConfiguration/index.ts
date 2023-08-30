@@ -12,14 +12,13 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
+import { Statistics } from '../../src/types';
+import { Calculator } from '../../src/utilities/math/basic';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
-
-const { wadors } = dicomImageLoader;
 
 const {
   LengthTool,
@@ -34,7 +33,6 @@ const {
   ArrowAnnotateTool,
   PlanarFreehandROITool,
   Enums: csToolsEnums,
-  utilities,
 } = cornerstoneTools;
 
 const { ViewportType, Events } = Enums;
@@ -44,8 +42,8 @@ const viewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Calibration Tools Stack',
-  'Calibration tools for a stack viewport (aspect ratio changes only supported initially)'
+  'Annotation Tools Stack',
+  'Annotation tools for a stack viewport with custom text and statistics calculator if wanted'
 );
 
 const content = document.getElementById('content');
@@ -88,13 +86,6 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   if (!viewport) {
     return;
   }
-
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
-
-  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
-  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
-  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
 // ============================= //
 
@@ -136,89 +127,145 @@ addDropdownToToolbar({
   },
 });
 
-const calibrationFunctions: Record<string, unknown> = {};
-const originalSpacing = 0.976562;
+//Here are the function with all your custom text to show
+function getTextLinesLength(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { length, unit } = cachedVolumeStats;
 
-const calibrations = [
-  {
-    value: 'Default',
-    selected: 'userCalibration',
-    calibration: {
-      scale: 1,
-      type: Enums.CalibrationTypes.NOT_APPLICABLE,
-    },
-  },
-  {
-    value: 'User Calibration 0.5',
-    selected: 'userCalibration',
-    calibration: {
-      scale: 0.5,
-      type: Enums.CalibrationTypes.USER,
-    },
-  },
-  {
-    value: 'ERMF 2',
-    selected: 'userCalibration',
-    calibration: {
-      scale: 2,
-      type: Enums.CalibrationTypes.ERMF,
-    },
-  },
-  {
-    value: 'Projected 1',
-    selected: 'userCalibration',
-    calibration: {
-      // Bug right now in StackViewport that fails to reset
-      scale: 1,
-      type: Enums.CalibrationTypes.PROJECTION,
-    },
-  },
-  {
-    value: 'Error 1',
-    selected: 'userCalibration',
-    calibration: {
-      scale: 1,
-      type: Enums.CalibrationTypes.ERROR,
-    },
-  },
-  {
-    value: 'px units',
-    selected: 'applyMetadata',
-    metadata: {
-      '00280030': null,
-    },
-  },
-  {
-    value: 'Aspect 1:2 (breaks existing annotations)',
-    selected: 'applyMetadata',
-    metadata: {
-      '00280030': { Value: [0.5 * originalSpacing, originalSpacing] },
-    },
-  },
-  {
-    value: 'Aspect 1:1 (breaks existing annotations)',
-    selected: 'applyMetadata',
-    metadata: {
-      '00280030': { Value: [originalSpacing, originalSpacing] },
-    },
-  },
-];
-const calibrationNames = calibrations.map((it) => it.value);
+  // Can be null on load
+  if (length === undefined || length === null || isNaN(length)) {
+    return;
+  }
 
-addDropdownToToolbar({
-  options: { values: calibrationNames },
-  onSelectedValueChange: (newCalibrationValue) => {
-    const calibration = calibrations.find(
-      (it) => it.value === newCalibrationValue
-    );
-    if (!calibration) {
-      return;
-    }
-    const f = calibrationFunctions[calibration.selected];
-    if (!f) {
-      return;
-    }
-    f.apply(calibration);
+  const textLines = [`${Math.round(length)} ${unit}`, `(your custom text)`];
+
+  return textLines;
+}
+
+function getTextLinesRectangle(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+
+  if (mean === undefined) {
+    return;
+  }
+
+  const textLines: string[] = [];
+
+  textLines.push(`Area: ${Math.round(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${Math.round(mean)} ${modalityUnit}`);
+  textLines.push(`(your custom text or statistic)`);
+  return textLines;
+}
+
+function getTextLinesProbe(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+  textLines.push(`(your custom text)`);
+
+  return textLines;
+}
+
+function getTextLinesAngle(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { angle } = cachedVolumeStats;
+
+  if (angle === undefined) {
+    return;
+  }
+
+  const textLines = [`${Math.round(angle)} ${String.fromCharCode(176)}`];
+  textLines.push(`(your custom text)`);
+
+  return textLines;
+}
+
+//This is an exemple of a custom statistic calculator
+class newStatsCalculator extends Calculator {
+  /**
+   * This callback is used when we verify if the point is in the annotion drawn so we can get every point
+   * in the shape to calculate the statistics
+   * @param value of the point in the shape of the annotation
+   */
+  static statsCallback = ({ value: newValue }): void => {
+    //Do something with the points in the annotation
+  };
+
+  /**
+   * Basic function that calculates statictics for a given array of points.
+   * @param points
+   * @returns An object that contains :
+   * max : The maximum value of the array
+   * mean : mean of the array
+   * stdDev : standard deviation of the array
+   * stdDevWithSumSquare : standard deviation of the array using sum²
+   */
+
+  static getStatistics = (): Statistics[] => {
+    //Here you can calculate your own statistics and send them back
+    return [
+      { name: 'max', value: 900, unit: null },
+      { name: 'mean', value: 999, unit: null },
+      { name: 'stdDev', value: 999, unit: null },
+      { name: 'stdDevWithSumSquare', value: 999, unit: null },
+    ];
+  };
+}
+
+addButtonToToolbar({
+  title: 'Customize text',
+  onClick: () => {
+    const toolgroup = ToolGroupManager.getToolGroup('STACK_TOOL_GROUP_ID');
+
+    //Here we are setting the new configuration to the tools we want to update
+    //But we can do it also when adding the tool into the toolgroup
+    toolgroup.setToolConfiguration(LengthTool.toolName, {
+      getTextLines: getTextLinesLength,
+    });
+
+    toolgroup.setToolConfiguration(ProbeTool.toolName, {
+      getTextLines: getTextLinesProbe,
+    });
+
+    toolgroup.setToolConfiguration(RectangleROITool.toolName, {
+      getTextLines: getTextLinesRectangle,
+      statsCalculator: newStatsCalculator,
+    });
+
+    toolgroup.setToolConfiguration(EllipticalROITool.toolName, {
+      getTextLines: getTextLinesRectangle,
+      statsCalculator: newStatsCalculator,
+    });
+
+    toolgroup.setToolConfiguration(CircleROITool.toolName, {
+      getTextLines: getTextLinesRectangle,
+      statsCalculator: newStatsCalculator,
+    });
+
+    toolgroup.setToolConfiguration(BidirectionalTool.toolName, {
+      getTextLines: getTextLinesLength,
+    });
+
+    toolgroup.setToolConfiguration(AngleTool.toolName, {
+      getTextLines: getTextLinesAngle,
+    });
+
+    toolgroup.setToolConfiguration(CobbAngleTool.toolName, {
+      getTextLines: getTextLinesAngle,
+    });
+
+    toolgroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
+      getTextLines: getTextLinesRectangle,
+      statsCalculator: newStatsCalculator,
+    });
   },
 });
 
@@ -245,7 +292,7 @@ async function run() {
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  // Add the tools to the tool group
+  // Add the tools to the tool group (we can add specified tools configuration if wanted)
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
@@ -255,7 +302,9 @@ async function run() {
   toolGroup.addTool(AngleTool.toolName);
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(PlanarFreehandROITool.toolName, {
+    calculateStats: true,
+  });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -276,6 +325,7 @@ async function run() {
   toolGroup.setToolPassive(AngleTool.toolName);
   toolGroup.setToolPassive(CobbAngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
+  toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -288,19 +338,6 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  calibrationFunctions.userCalibration = function calibrationSelected() {
-    utilities.calibrateImageSpacing(
-      imageIds[0],
-      renderingEngine,
-      this.calibration
-    );
-  };
-  calibrationFunctions.applyMetadata = function applyMetadata() {
-    const instance = wadors.metaDataManager.get(imageIds[0]);
-    Object.assign(instance, this.metadata);
-    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null);
-  };
 
   // Create a stack viewport
   const viewportInput = {

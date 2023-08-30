@@ -3,6 +3,64 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.1...v1.13.0) (2023-08-30)
+
+### Features
+
+- **tools extensibility:** Added statistics calculator for Annotation Tools ([#723](https://github.com/cornerstonejs/cornerstone3D/issues/723)) ([9d96bed](https://github.com/cornerstonejs/cornerstone3D/commit/9d96beda02be8e32770512d815a56966620bb9d6))
+
+## [1.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.0...v1.12.1) (2023-08-30)
+
+### Bug Fixes
+
+- **modifier key:** reset modifier keys when browser tab loses focus/is hidden ([#759](https://github.com/cornerstonejs/cornerstone3D/issues/759)) ([2602ec6](https://github.com/cornerstonejs/cornerstone3D/commit/2602ec6d69da53590217bd012e6b979fd22204da)), closes [#733](https://github.com/cornerstonejs/cornerstone3D/issues/733)
+
+# [1.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.4...v1.12.0) (2023-08-29)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.3...v1.11.4) (2023-08-29)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.2...v1.11.3) (2023-08-28)
+
+### Bug Fixes
+
+- **4D utility:** wrong array type returned by getDataInTime ([#754](https://github.com/cornerstonejs/cornerstone3D/issues/754)) ([14ea6c1](https://github.com/cornerstonejs/cornerstone3D/commit/14ea6c1dd77271d1d30698aa0e82994818112b5a))
+
+## [1.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.1...v1.11.2) (2023-08-22)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.0...v1.11.1) (2023-08-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [1.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.5...v1.11.0) (2023-08-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.4...v1.10.5) (2023-08-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.3...v1.10.4) (2023-08-17)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.2...v1.10.3) (2023-08-15)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.1...v1.10.2) (2023-08-15)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.10.0...v1.10.1) (2023-08-09)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 # [1.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.3...v1.10.0) (2023-08-02)
 
 ### Features

@@ -74,6 +74,7 @@ class AngleTool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -219,8 +220,12 @@ class AngleTool extends AnnotationTool {
       [canvasCoords[0], canvasCoords[1]]
     );
 
-    if (distanceToPoint <= proximity) return true;
-    if (!point3) return false;
+    if (distanceToPoint <= proximity) {
+      return true;
+    }
+    if (!point3) {
+      return false;
+    }
 
     const canvasPoint3 = viewport.worldToCanvas(point3);
 
@@ -740,7 +745,7 @@ class AngleTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, targetId);
 
       if (!data.handles.textBox.hasMoved) {
         // linked to the vertex by default
@@ -778,20 +783,6 @@ class AngleTool extends AnnotationTool {
 
     return renderStatus;
   };
-
-  // text line for the current active angle annotation
-  _getTextLines(data, targetId) {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { angle } = cachedVolumeStats;
-
-    if (angle === undefined) {
-      return;
-    }
-
-    const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
-
-    return textLines;
-  }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
@@ -835,6 +826,19 @@ class AngleTool extends AnnotationTool {
 
     return cachedStats;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { angle } = cachedVolumeStats;
+
+  if (angle === undefined) {
+    return;
+  }
+
+  const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
+
+  return textLines;
 }
 
 AngleTool.toolName = 'Angle';
