@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.1...v1.13.0) (2023-08-30)
+
+### Features
+
+- **tools extensibility:** Added statistics calculator for Annotation Tools ([#723](https://github.com/cornerstonejs/cornerstone3D/issues/723)) ([9d96bed](https://github.com/cornerstonejs/cornerstone3D/commit/9d96beda02be8e32770512d815a56966620bb9d6))
+
 ## [1.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.0...v1.12.1) (2023-08-30)
 
 ### Bug Fixes
