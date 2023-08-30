@@ -72,6 +72,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
+    getImageIds: (volumeId?: string) => Array<string>;
+    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     protected _getOrientationVectors(orientation: OrientationAxis | OrientationVectors): OrientationVectors;
@@ -1879,6 +1881,8 @@ interface IVolumeViewport extends IViewport {
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
+    // (undocumented)
+    getImageIds: (volumeId?: string) => string[];
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)

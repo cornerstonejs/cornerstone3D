@@ -91,6 +91,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
+
 class BidirectionalTool extends AnnotationTool {
   static toolName;
 
@@ -115,6 +116,7 @@ class BidirectionalTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -1175,7 +1177,7 @@ class BidirectionalTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -1256,27 +1258,6 @@ class BidirectionalTool extends AnnotationTool {
     const wouldPutThroughShortAxis = !proposedIntersectionPoint;
 
     return wouldPutThroughShortAxis;
-  };
-
-  /**
-   * get text box content
-   */
-  _getTextLines = (data, targetId) => {
-    const { cachedStats } = data;
-    const { length, width, unit } = cachedStats[targetId];
-
-    if (length === undefined) {
-      return;
-    }
-
-    // spaceBetweenSlices & pixelSpacing &
-    // magnitude in each direction? Otherwise, this is "px"?
-    const textLines = [
-      `L: ${roundNumber(length)} ${unit}`,
-      `W: ${roundNumber(width)} ${unit}`,
-    ];
-
-    return textLines;
   };
 
   _calculateLength(pos1, pos2) {
@@ -1364,6 +1345,24 @@ class BidirectionalTool extends AnnotationTool {
       vector1[0] * vector2[0] + vector1[1] * vector2[1]
     );
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const { cachedStats } = data;
+  const { length, width, unit } = cachedStats[targetId];
+
+  if (length === undefined) {
+    return;
+  }
+
+  // spaceBetweenSlices & pixelSpacing &
+  // magnitude in each direction? Otherwise, this is "px"?
+  const textLines = [
+    `L: ${roundNumber(length)} ${unit}`,
+    `W: ${roundNumber(width)} ${unit}`,
+  ];
+
+  return textLines;
 }
 
 BidirectionalTool.toolName = 'Bidirectional';
