@@ -6,7 +6,6 @@ import {
   VolumeViewport,
   cache,
   BaseVolumeViewport,
-  Enums,
 } from '@cornerstonejs/core';
 
 import { Types } from '@cornerstonejs/core';
@@ -15,7 +14,6 @@ import { addToolState, getToolState } from './state';
 import { CINETypes } from '../../types';
 import scroll from '../scroll';
 
-const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
 
 const debounced = true;
@@ -317,8 +315,7 @@ function _getVolumeFromViewport(viewport): Types.IImageVolume {
 }
 
 function _createStackViewportCinePlayContext(
-  viewport: StackViewport,
-  waitForRendered: number
+  viewport: StackViewport
 ): CINETypes.CinePlayContext {
   const imageIds = viewport.getImageIds();
 
@@ -333,16 +330,7 @@ function _createStackViewportCinePlayContext(
       // It is always in acquired orientation
       return true;
     },
-    tries: 0,
     scroll(delta: number): void {
-      if (
-        this.tries <= waitForRendered &&
-        viewport.viewportStatus !== ViewportStatus.RENDERED
-      ) {
-        this.tries++;
-        return;
-      }
-      this.tries = 0;
       scroll(viewport, { delta, debounceLoading: debounced });
     },
   };
@@ -431,10 +419,7 @@ function _createCinePlayContext(
   playClipOptions: CINETypes.PlayClipOptions
 ): CINETypes.CinePlayContext {
   if (viewport instanceof StackViewport) {
-    return _createStackViewportCinePlayContext(
-      viewport,
-      playClipOptions.waitForRendered ?? 30
-    );
+    return _createStackViewportCinePlayContext(viewport);
   }
 
   if (viewport instanceof VolumeViewport) {
