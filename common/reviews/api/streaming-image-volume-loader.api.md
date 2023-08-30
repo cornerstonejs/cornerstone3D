@@ -1307,6 +1307,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
+    getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
     getProperties: () => VolumeViewportProperties;
     getSlabThickness(): number;

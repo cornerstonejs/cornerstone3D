@@ -4,5 +4,14 @@ import * as lineSegment from './line';
 import * as rectangle from './rectangle';
 import * as polyline from './polyline';
 import * as point from './point';
+import * as BasicStatsCalculator from './basic';
 
-export { vec2, ellipse, lineSegment, rectangle, polyline, point };
+export {
+  vec2,
+  ellipse,
+  lineSegment,
+  rectangle,
+  polyline,
+  point,
+  BasicStatsCalculator,
+};
