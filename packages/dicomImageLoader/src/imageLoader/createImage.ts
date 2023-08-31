@@ -81,6 +81,7 @@ function removeAFromRGBA(
 function createImage(
   imageId: string,
   pixelData: ByteArray,
+  decodeLevel: number | undefined, // Used for subresolution decoding
   transferSyntax: string,
   options: DICOMLoaderImageOptions = {}
 ): Promise<DICOMLoaderIImage | ImageFrame> {
@@ -104,6 +105,7 @@ function createImage(
   const { cornerstone } = external;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
+  imageFrame.decodeLevel = decodeLevel;
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {

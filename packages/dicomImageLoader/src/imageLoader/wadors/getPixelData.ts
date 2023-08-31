@@ -3,6 +3,7 @@ import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
 import findIndexOfString from './findIndexOfString';
 import external from '../../externalModules';
+import imageIdToURI from '../imageIdToURI';
 
 function findBoundary(header: string[]): string {
   for (let i = 0; i < header.length; i++) {
@@ -43,7 +44,10 @@ function getPixelData(
   };
 
   return new Promise(async (resolve, reject) => {
-    if (streamable) {
+    const url = imageIdToURI(imageId);
+    const searchParams = new URL(url).searchParams;
+    const fsiz = searchParams.get('fsiz');
+    if (streamable && !fsiz) {
       const { cornerstone } = external;
 
       const { contentType, imageFrame, complete, loadNextRange } =
@@ -104,6 +108,9 @@ function getPixelData(
 
       const contentType =
         xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
+      let decodeLevel = xhr.getResponseHeader('X-Decode-Level')
+        ? Number(xhr.getResponseHeader('X-Decode-Level'))
+        : undefined;
 
       if (contentType.indexOf('multipart') === -1) {
         resolve({
@@ -147,6 +154,7 @@ function getPixelData(
         contentType: findContentType(split),
         imageFrame: {
           pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
+          decodeLevel,
         },
       });
     }, reject);

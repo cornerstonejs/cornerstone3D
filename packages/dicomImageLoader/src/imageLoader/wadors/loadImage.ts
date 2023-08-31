@@ -102,13 +102,14 @@ const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
 let listeningForPartialImages = false;
 async function handlePartialImageFrame(event: any) {
   const { cornerstone } = external;
-  const { imageId, contentType, imageFrame } = event.detail;
+  const { imageId, contentType, imageFrame: pixelData, decodeLevel } = event.detail;
   const options = optionsCache[imageId];
   const transferSyntax = getTransferSyntaxForContentType(contentType);
 
   const imagePromise = createImage(
     imageId,
-    imageFrame,
+    pixelData,
+    decodeLevel, // This is always undefined for now, as we aren't doing subresolution progressive rendering yet.
     transferSyntax,
     options
   );
@@ -181,11 +182,13 @@ function loadImage(
           const transferSyntax = getTransferSyntaxForContentType(
             result.contentType
           );
+          const decodeLevel = result.imageFrame.decodeLevel;
 
           const pixelData = result.imageFrame.pixelData;
           const imagePromise = createImage(
             imageId,
             pixelData,
+            decodeLevel,
             transferSyntax,
             options
           );

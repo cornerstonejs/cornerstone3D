@@ -34,6 +34,7 @@ interface ImageFrame {
   };
   minAfterScale?: number;
   maxAfterScale?: number;
+  decodeLevel?: number;
   imageId: string;
 }
 

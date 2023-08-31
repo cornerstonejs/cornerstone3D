@@ -14,6 +14,20 @@ const local: {
   decodeConfig: {},
 };
 
+function calculateSizeAtDecompositionLevel(
+  decompositionLevel: number,
+  frameWidth: number,
+  frameHeight: number
+) {
+  const result = { width: frameWidth, height: frameHeight };
+  while (decompositionLevel > 0) {
+    result.width = Math.ceil(result.width / 2);
+    result.height = Math.ceil(result.height / 2);
+    decompositionLevel--;
+  }
+  return result;
+}
+
 export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   local.decodeConfig = decodeConfig;
 
@@ -55,12 +69,23 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   encodedBufferInWASM.set(compressedImageFrame);
 
   // decode it
-  decoder.decode();
+  // decoder.decode();
+  decoder.decodeSubResolution(imageInfo.decodeLevel || 0);
   // decoder.decodeSubResolution(decodeLevel, decodeLayer);
   // const resolutionAtLevel = decoder.calculateSizeAtDecompositionLevel(decodeLevel);
 
   // get information about the decoded image
   const frameInfo = decoder.getFrameInfo();
+  // Overwrite width/height if subresolution
+  if (imageInfo.decodeLevel > 0) {
+    const { width, height } = calculateSizeAtDecompositionLevel(
+      imageInfo.decodeLevel,
+      frameInfo.width,
+      frameInfo.height
+    );
+    frameInfo.width = width;
+    frameInfo.height = height;
+  }
   // get the decoded pixels
   const decodedBufferInWASM = decoder.getDecodedBuffer();
   const imageFrame = new Uint8Array(decodedBufferInWASM.length);

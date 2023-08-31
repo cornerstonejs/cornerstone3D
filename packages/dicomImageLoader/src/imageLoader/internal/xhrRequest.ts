@@ -113,7 +113,7 @@ function xhrRequest(
         // TODO: consider sending out progress messages here as we receive
         // the pixel data
         if (xhr.readyState === 4) {
-          if (xhr.status === 200) {
+          if (xhr.status === 200 || xhr.status === 206) {
             options
               .beforeProcessing(xhr)
               .then(resolve)
