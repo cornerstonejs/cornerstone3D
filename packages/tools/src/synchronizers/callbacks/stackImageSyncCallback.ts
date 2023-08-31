@@ -69,11 +69,9 @@ export default async function stackImageSyncCallback(
   const targetImageIds = tViewport.getImageIds();
 
   if (!areViewportsCoplanar(sViewport, tViewport)) {
-    console.log('Viewports not coplanar', sViewport.id, tViewport.id);
     return;
   }
 
-  console.log('Stack image sync', sViewport.id, tViewport.id);
   // if the frame of reference is different we need to use the registrationMetadataProvider
   // and add that to the imagePositionPatient of the source viewport to get the
   // imagePositionPatient of the target viewport's closest image in its stack
@@ -98,11 +96,6 @@ export default async function stackImageSyncCallback(
       );
     }
     if (!registrationMatrixMat4) {
-      console.log(
-        "Viewports still don't have registration:",
-        sourceViewport.viewportId,
-        targetViewport.viewportId
-      );
       return;
     }
   }
