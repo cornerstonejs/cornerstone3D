@@ -22,6 +22,11 @@ let options: LoaderOptions = {
     convertFloatPixelDataToInt: true,
     use16BitDataType: false,
   },
+  progressivelyRender: false,
+  streamMethod: 'byte-ranges',
+  initialBytes: 65_536,
+  totalRanges: 2,
+  minChunkSize: 65_536 * 2,
 };
 
 export function setOptions(newOptions: LoaderOptions): void {

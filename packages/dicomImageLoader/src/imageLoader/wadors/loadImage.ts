@@ -5,6 +5,7 @@ import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { metaDataProvider } from './metaData';
+import { getOptions } from '../internal';
 
 function imageIdIsStreamable(imageId: string) {
   const streamableTransferSyntaxes = [
@@ -173,11 +174,13 @@ function loadImage(
     function sendXHR(imageURI: string, imageId: string, mediaType: string) {
       // get the pixel data from the server
       const isStreamable = imageIdIsStreamable(imageId);
-      if (isStreamable) {
+      const loaderOptions = getOptions();
+      const progressivelyRender = isStreamable && loaderOptions.progressivelyRender;
+      if (progressivelyRender) {
         listenForStreamingPartialImages();
         optionsCache[imageId] = options;
       }
-      return getPixelData(imageURI, imageId, mediaType, isStreamable)
+      return getPixelData(imageURI, imageId, mediaType, progressivelyRender)
         .then((result) => {
           const transferSyntax = getTransferSyntaxForContentType(
             result.contentType

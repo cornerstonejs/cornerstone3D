@@ -1,4 +1,4 @@
-import { xhrRequest } from '../internal/index';
+import { getOptions, xhrRequest } from '../internal/index';
 import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
 import findIndexOfString from './findIndexOfString';
@@ -37,7 +37,7 @@ function getPixelData(
   uri: string,
   imageId: string,
   mediaType = 'application/octet-stream',
-  streamable = false
+  progressivelyRender = false
 ): Promise<any> {
   const headers = {
     Accept: mediaType,
@@ -47,58 +47,84 @@ function getPixelData(
     const url = imageIdToURI(imageId);
     const searchParams = new URL(url).searchParams;
     const fsiz = searchParams.get('fsiz');
-    if (streamable && !fsiz) {
+    const streamMethod = getOptions().streamMethod;
+
+    if (progressivelyRender && !fsiz) {
       const { cornerstone } = external;
 
-      const { contentType, imageFrame, complete, loadNextRange } =
-        await rangeRequest(uri, imageId, headers);
+      if (streamMethod === 'web-streams') {
+        const { contentType, imageFrame } = await streamRequest(
+          uri,
+          imageId,
+          headers
+        );
 
-      // Resolve the promise with the first streaming result (low quality
-      // presumably)
-      resolve({
-        contentType: contentType || 'application/octet-stream',
-        imageFrame: {
-          pixelData: imageFrame,
-        },
-      });
+        // Resolve the promise with the first streaming result (low quality
+        // presumably)
+        return resolve({
+          contentType: contentType || 'application/octet-stream',
+          imageFrame: {
+            pixelData: imageFrame,
+          },
+        });
+      } else {
+        // Using range request method
 
-      let fetches = 1;
-      let maxFetches = 5;
-      let loadComplete = complete;
-      while (loadComplete === false && fetches <= maxFetches) {
-        const { complete, imageFrame, contentType } = await loadNextRange();
-        loadComplete = complete;
-        fetches += 1;
-        if (!complete) {
-          cornerstone.triggerEvent(
-            cornerstone.eventTarget,
-            cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-            {
-              imageId,
-              contentType,
-              imageFrame,
-            }
-          );
-        } else {
-          cornerstone.triggerEvent(
-            cornerstone.eventTarget,
-            cornerstone.EVENTS.IMAGE_LOADED,
-            { imageId }
-          );
-          cornerstone.triggerEvent(
-            cornerstone.eventTarget,
-            cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
-            {
-              imageId,
-              contentType,
-              imageFrame,
-            }
-          );
+        const { contentType, imageFrame, complete, loadNextRange } =
+          await rangeRequest(uri, imageId, headers);
+
+        // Resolve the promise with the first streaming result (low quality
+        // presumably)
+        resolve({
+          contentType: contentType || 'application/octet-stream',
+          imageFrame: {
+            pixelData: imageFrame,
+          },
+        });
+
+        let fetches = 1;
+        let maxFetches = 5;
+        let loadComplete = complete;
+        while (loadComplete === false && fetches <= maxFetches) {
+          const { complete, imageFrame, contentType } = await loadNextRange();
+          loadComplete = complete;
+          fetches += 1;
+          if (!complete) {
+            cornerstone.triggerEvent(
+              cornerstone.eventTarget,
+              cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
+              {
+                imageId,
+                contentType,
+                imageFrame,
+              }
+            );
+          } else {
+            cornerstone.triggerEvent(
+              cornerstone.eventTarget,
+              cornerstone.EVENTS.IMAGE_LOADED,
+              { imageId }
+            );
+            cornerstone.triggerEvent(
+              cornerstone.eventTarget,
+              cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
+              {
+                imageId,
+                contentType,
+                imageFrame,
+              }
+            );
+          }
         }
-      }
 
-      return;
+        return;
+      }
     }
+
+    /**
+     * Not progressively rendering, use regular xhr request.
+     */
+
     const loadPromise = xhrRequest(uri, imageId, headers);
     const { xhr } = loadPromise;
 

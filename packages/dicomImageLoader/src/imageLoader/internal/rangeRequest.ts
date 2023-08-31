@@ -82,11 +82,7 @@ async function fetchRangeAndAppend(
 export default function rangeRequest(
   url: string,
   imageId: string,
-  defaultHeaders: Record<string, string> = {},
-  range: {
-    initialBytes: number;
-    totalRanges: number;
-  } = { initialBytes: 65_536 * 2, totalRanges: 2 }
+  defaultHeaders: Record<string, string> = {}
 ): LoaderXhrRequestPromise<{
   contentType: string;
   imageFrame: Uint8Array;
@@ -96,13 +92,12 @@ export default function rangeRequest(
   const { cornerstone } = external;
   const options = getOptions();
 
+  const initialBytes = options.initialBytes;
+  const totalRanges = options.totalRanges;
+
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
-
-      // error.request = xhr;
-      // error.response = xhr.response;
-      // error.status = xhr.status;
       options.errorInterceptor(error);
     }
   };
@@ -140,8 +135,8 @@ export default function rangeRequest(
       );
 
       streamCache[imageId] = {
-        initialBytes: range.initialBytes,
-        totalRanges: range.totalRanges,
+        initialBytes: initialBytes,
+        totalRanges: totalRanges,
         rangesFetched: 0,
       };
 
@@ -149,7 +144,7 @@ export default function rangeRequest(
         url,
         imageId,
         headers,
-        [0, range.initialBytes]
+        [0, initialBytes]
       );
 
       // Resolve promise with the first range, so it can be passed through to
@@ -175,9 +170,9 @@ export default function rangeRequest(
 
               const rangesFetched = streamCache[imageId].rangesFetched;
               const rangeEnd =
-                (totalBytes - loadedBytes) /
-                  (range.totalRanges - rangesFetched) +
-                loadedBytes;
+                Math.ceil(
+                  (totalBytes - loadedBytes) / (totalRanges - rangesFetched)
+                ) + loadedBytes;
 
               const { bytes } = await fetchRangeAndAppend(
                 url,
@@ -193,54 +188,6 @@ export default function rangeRequest(
               };
             },
       });
-
-      //   cornerstone.triggerEvent(
-      //     cornerstone.eventTarget,
-      //     cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-      //     {
-      //       url,
-      //       imageId,
-      //       contentType: responseHeaders.get('content-type'),
-      //       imageFrame,
-      //     }
-      //   );
-
-      // while (true) {
-      //   const { done, value } = await responseReader.read();
-      //   if (done) {˝
-      //     const imageFrame = appendChunk({
-      //       imageId,
-      //       complete: true,
-      //     });
-      //     loadTracking[imageId].loaded = imageFrame.length;
-      //     console.log(
-      //       'LOADED: ',
-      //       Object.values(loadTracking).filter((v) => v.loaded === v.total)
-      //         .length,
-      //       '/',
-      //       Object.keys(loadTracking).length
-      //     );
-      //     console.log('Finished reading streaming file');
-      //     cornerstone.triggerEvent(
-      //       cornerstone.eventTarget,
-      //       cornerstone.EVENTS.IMAGE_LOADED,
-      //       { url, imageId }
-      //     );
-      //     cornerstone.triggerEvent(
-      //       cornerstone.eventTarget,
-      //       cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
-      //       {
-      //         url,
-      //         imageId,
-      //         contentType: responseHeaders.get('content-type'),
-      //         imageFrame,
-      //       }
-      //     );
-      //     break;
-      //   }
-      //   const imageFrame = appendChunk({ imageId, chunk: value });
-      //   if (!imageFrame) continue;
-      // }
     } catch (err: any) {
       errorInterceptor(err);
       console.error(err);

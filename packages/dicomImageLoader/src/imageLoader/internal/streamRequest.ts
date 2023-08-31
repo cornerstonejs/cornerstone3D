@@ -11,9 +11,7 @@ const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 const streamCache: {
   [key: string]: { byteArray: Uint8Array; currentChunkSize: number };
 } = {};
-// const minChunkSize = 65_536 * 2;
-// const minChunkSize = 3_000_000;
-const minChunkSize = 100_000;
+const minChunkSize = getOptions().minChunkSize;
 
 function appendChunk(options: {
   imageId: string;
@@ -65,8 +63,7 @@ function appendChunk(options: {
 export default function streamRequest(
   url: string,
   imageId: string,
-  defaultHeaders: Record<string, string> = {},
-  params: LoaderXhrRequestParams = {}
+  defaultHeaders: Record<string, string> = {}
 ): LoaderXhrRequestPromise<{ contentType: string; imageFrame: Uint8Array }> {
   const { cornerstone } = external;
   const options = getOptions();
@@ -74,10 +71,6 @@ export default function streamRequest(
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
-
-      // error.request = xhr;
-      // error.response = xhr.response;
-      // error.status = xhr.status;
       options.errorInterceptor(error);
     }
   };
