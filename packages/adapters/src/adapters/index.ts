@@ -1,4 +1,4 @@
-import { CornerstoneSR } from "./Cornerstone";
+import { CornerstoneSR, CornerstoneSEG } from "./Cornerstone";
 import { Cornerstone3DSR, Cornerstone3DSEG } from "./Cornerstone3D";
 import { VTKjsSEG } from "./VTKjs";
 import * as Enums from "./enums";
@@ -10,7 +10,7 @@ const adaptersSR = {
 };
 
 const adaptersSEG = {
-    Cornerstone: CornerstoneSR,
+    Cornerstone: CornerstoneSEG,
     Cornerstone3D: Cornerstone3DSEG,
     VTKjs: VTKjsSEG
 };
