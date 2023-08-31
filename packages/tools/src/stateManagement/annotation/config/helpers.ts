@@ -15,8 +15,12 @@ function getHierarchalPropertyStyles(
   mode?: ToolModes
 ): string[] {
   const list = [`${property}`];
-  if (state) list.push(`${list[0]}${state}`);
-  if (mode) list.push(`${list[list.length - 1]}${mode}`);
+  if (state) {
+    list.push(`${list[0]}${state}`);
+  }
+  if (mode) {
+    list.push(`${list[list.length - 1]}${mode}`);
+  }
   return list;
 }
 

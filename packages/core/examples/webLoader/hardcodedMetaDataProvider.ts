@@ -2,7 +2,9 @@
 export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
   const colonIndex = imageId.indexOf(':');
   const scheme = imageId.substring(0, colonIndex);
-  if (scheme !== 'web') return;
+  if (scheme !== 'web') {
+    return;
+  }
 
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
@@ -45,7 +47,11 @@ export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
     return imagePlaneModule;
   } else if (type === 'voiLutModule') {
     return {
-      windowWidth: [255],
+      // According to the DICOM standard, the width is the number of samples
+      // in the input, so 256 samples.
+      windowWidth: [256],
+      // The center is offset by 0.5 to allow for an integer value for even
+      // sample counts
       windowCenter: [128],
     };
   } else if (type === 'modalityLutModule') {
