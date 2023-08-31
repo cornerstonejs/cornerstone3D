@@ -2828,6 +2828,7 @@ function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boo
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(imageId?: string): void;
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLDivElement;
@@ -2848,7 +2849,6 @@ interface IStackViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
-    removeDefaultProperties(imageId?: string): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resetToDefaultProperties(): void;

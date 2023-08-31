@@ -40,7 +40,7 @@ export default interface IStackViewport extends IViewport {
   /**
    * Remove the global default properties of the viewport or remove default properties for an imageId if specified
    */
-  removeDefaultProperties(imageId?: string): void;
+  clearDefaultProperties(imageId?: string): void;
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation

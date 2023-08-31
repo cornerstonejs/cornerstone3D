@@ -1622,6 +1622,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
+    clearDefaultProperties(imageId?: string): void;
+    // (undocumented)
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLDivElement;
@@ -1654,8 +1656,6 @@ interface IStackViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
-    // (undocumented)
-    removeDefaultProperties(imageId?: string): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
@@ -2283,6 +2283,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
+    clearDefaultProperties(imageId?: string): void;
+    // (undocumented)
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLDivElement;
@@ -2328,8 +2330,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     modality: string;
     // (undocumented)
     removeAllActors: () => void;
-    // (undocumented)
-    removeDefaultProperties(imageId?: string): void;
     // (undocumented)
     renderImageObject: (image: any) => void;
     // (undocumented)

@@ -632,7 +632,7 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Update the default properties of the viewport and add properties by imageId if specified
    * @param ViewportProperties - The properties to set
-   * @param imageIdIndex If given, we set the default properties only for this image index, if not
+   * @param imageId If given, we set the default properties only for this image index, if not
    * the default properties will be set for all imageIds
    */
   public setDefaultProperties(
@@ -644,7 +644,7 @@ class StackViewport extends Viewport implements IStackViewport {
     } else {
       this.perImageIdDefaultProperties.set(imageId, ViewportProperties);
 
-      //If the viewport is the same imageIdIndex, we need to update the viewport
+      //If the viewport is the same imageIdI, we need to update the viewport
       if (this.getCurrentImageId() == imageId) {
         this.setProperties(ViewportProperties);
       }
@@ -653,10 +653,10 @@ class StackViewport extends Viewport implements IStackViewport {
 
   /**
    * Remove the global default properties of the viewport or remove default properties for an imageId if specified
-   * @param imageIdIndex If given, we remove the default properties only for this imageID, if not
+   * @param imageId If given, we remove the default properties only for this imageID, if not
    * the global default properties will be removed
    */
-  public removeDefaultProperties(imageId?: string): void {
+  public clearDefaultProperties(imageId?: string): void {
     if (imageId == null) {
       this.globalDefaultProperties = {};
       this.resetProperties();
@@ -739,7 +739,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   /**
    * Retrieve the viewport default properties
-   * @param imageIdIndex If given, we retrieve the default properties of an image index if it exists
+   * @param imageId If given, we retrieve the default properties of an image index if it exists
    * If not given,we return the global properties of the viewport
    * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
@@ -753,17 +753,9 @@ class StackViewport extends Viewport implements IStackViewport {
       return imageProperties;
     }
 
-    const { colormap, voiRange, VOILUTFunction, interpolationType, invert } =
-      this.globalDefaultProperties;
-    const rotation = this.getRotation();
-
     return {
-      colormap,
-      voiRange,
-      VOILUTFunction,
-      interpolationType,
-      invert,
-      rotation,
+      ...this.globalDefaultProperties,
+      rotation: this.getRotation(),
     };
   };
 
@@ -873,7 +865,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const { interpolationType, invert } = this;
 
     let voiRange;
-    if (this.voiRange) {
+    if (this.voiUpdatedWithSetProperties) {
       // use the cached voiRange if the voiRange is locked (if the user has
       // manually set the voi with tools or setProperties api)
       voiRange = this.voiRange;
@@ -2213,10 +2205,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _getInitialVOIRange(image: IImage) {
-    if (
-      this.globalDefaultProperties?.voiRange &&
-      this.voiUpdatedWithSetProperties
-    ) {
+    if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.globalDefaultProperties.voiRange;
     } else {
       const { windowCenter, windowWidth } = image;
