@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.13.1](https://github.com/dcmjs-org/dcmjs/compare/v1.13.0...v1.13.1) (2023-09-01)
+
+### Bug Fixes
+
+-   **Adapters:** adaptersSEG cornerstoneSR to cornerstoneSEG ([#766](https://github.com/dcmjs-org/dcmjs/issues/766)) ([e5d7826](https://github.com/dcmjs-org/dcmjs/commit/e5d78260320681714c6371a1747bdab8956e6e6b))
+
 # [1.13.0](https://github.com/dcmjs-org/dcmjs/compare/v1.12.1...v1.13.0) (2023-08-30)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
