@@ -15,7 +15,7 @@ const { transformWorldToIndex } = csUtils;
 type OperationData = {
   segmentationId: string;
   imageVolume: Types.IImageVolume;
-  points: any;
+  points: Types.Point3[];
   lazyCalculation?: boolean;
   volume: Types.IImageVolume;
   segmentIndex: number;
@@ -70,6 +70,11 @@ function fillCircle(
     strategySpecificConfiguration,
     lazyCalculation,
   } = operationData;
+
+  if (points.length % 4 !== 0) {
+    throw new Error('The length of the points array must be a multiple of 4.');
+  }
+
   const { imageData, dimensions } = segmentationVolume;
   const scalarData = segmentationVolume.getScalarData();
   const { viewport } = enabledElement;
@@ -90,6 +95,15 @@ function fillCircle(
     }
   }
 
+  // Previously fillSphere and fillCircle (used in brushes) were acting on a
+  // single circle or sphere. However, that meant that we were modifying the
+  // segmentation scalar data on each drag (can be often +100 transactions). Lazy
+  // calculation allows us to only modify the segmentation scalar data once the
+  // user has finished drawing the circle or sphere. This is done by splitting
+  // the points into chunks and only triggering the segmentation data modified
+  // event once all the points have been processed. The tool need to provide the points
+  // in the correct order to be chunked here. Todo: Maybe we should move the chunk
+  // logic to the tool itself.
   let pointsChunks;
   if (lazyCalculation) {
     pointsChunks = [];

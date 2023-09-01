@@ -237,6 +237,7 @@ class BrushTool extends AnnotationTool {
     const centerCanvas = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
     let annotation = getAnnotation('brushCursorUID');
     if (!drag && !annotation) {
@@ -247,6 +248,12 @@ class BrushTool extends AnnotationTool {
       annotation.data.handles.points = [
         ...this._calculateBrushLocation(viewport, currentPoints.canvas),
       ];
+
+      // Update the camera props since we might have changed the cursor location
+      // and have been moving to a new viewport with different orientation without
+      // dragging or clicking
+      annotation.metadata.viewUp = viewUp;
+      annotation.metadata.viewPlaneNormal = viewPlaneNormal;
       annotation.data.invalidated = false;
     }
 
@@ -456,7 +463,6 @@ class BrushTool extends AnnotationTool {
     const { element } = viewport;
 
     const viewportIdsToRender = this._hoverData.viewportIdsToRender;
-
     if (!viewportIdsToRender.includes(viewport.id)) {
       return;
     }
@@ -478,10 +484,11 @@ class BrushTool extends AnnotationTool {
 
     const annotation = annotations[0];
 
+    // If brush size programmatically has been changed then we need to invalidate
+    // the cursor points to be recalculated for the rendering
     if (annotation.data.invalidated === true) {
       const { centerCanvas } = this._hoverData;
-      // This can be set true when changing the brush size programmatically
-      // whilst the cursor is being rendered.
+
       this._calculateBrushLocation(viewport, centerCanvas);
     }
 
