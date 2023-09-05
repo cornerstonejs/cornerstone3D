@@ -562,16 +562,6 @@ declare namespace boundingBox {
 type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-interface BrushCursor extends Annotation {
-    // (undocumented)
-    data: {
-        handles: {
-            points: [Types_2.Point3];
-        };
-    };
-}
-
-// @public (undocumented)
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -5154,8 +5144,7 @@ declare namespace ToolSpecificAnnotationTypes {
         AngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
-        ScaleOverlayAnnotation,
-        BrushCursor
+        ScaleOverlayAnnotation
     }
 }
 

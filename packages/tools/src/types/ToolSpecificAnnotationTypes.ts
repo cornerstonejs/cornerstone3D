@@ -310,11 +310,3 @@ export interface ScaleOverlayAnnotation extends Annotation {
     viewportId: string;
   };
 }
-
-export interface BrushCursor extends Annotation {
-  data: {
-    handles: {
-      points: [Types.Point3];
-    };
-  };
-}
