@@ -312,6 +312,14 @@ export interface ScaleOverlayAnnotation extends Annotation {
 }
 
 export interface BrushCursor extends Annotation {
+  metadata: {
+    toolName: string;
+    viewUp: Types.Point3;
+    viewPlaneNormal: Types.Point3;
+    FrameOfReferenceUID: string;
+    referencedImageId: string;
+    isBrushTool: boolean;
+  };
   data: {
     handles: {
       points: [Types.Point3];

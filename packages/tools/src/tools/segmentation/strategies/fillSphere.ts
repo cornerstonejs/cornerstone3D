@@ -57,22 +57,22 @@ function fillSphere(
     pointsChunks = [points];
   }
 
+  const inPlane = dimensions[0] * dimensions[1];
+
+  const callback = ({ index, value }) => {
+    if (segmentsLocked.includes(value)) {
+      return;
+    }
+    scalarData[index] = segmentIndex;
+    modifiedSlicesToUse.add(Math.floor(index / inPlane));
+  };
+
   for (let i = 0; i < pointsChunks.length; i++) {
     const pointsChunk = pointsChunks[i];
 
-    const callback = ({ index, value, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-      scalarData[index] = segmentIndex;
-      modifiedSlicesToUse.add(
-        Math.floor(index / (dimensions[0] * dimensions[1]))
-      );
-    };
-
     pointInSurroundingSphereCallback(
       imageData,
-      pointsChunk.slice(0, 2),
+      [pointsChunk[0], pointsChunk[1]],
       callback,
       viewport as Types.IVolumeViewport
     );

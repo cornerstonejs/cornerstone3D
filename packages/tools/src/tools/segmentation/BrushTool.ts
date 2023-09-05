@@ -7,15 +7,16 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotations,
 } from '../../types';
 import { AnnotationTool } from '../base';
 import { fillInsideSphere } from './strategies/fillSphere';
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
   addAnnotation,
-  getAnnotations,
   getAnnotation,
   removeAnnotation,
+  getAnnotationManager,
 } from '../../stateManagement/annotation/annotationState';
 import {
   thresholdInsideCircle,
@@ -206,6 +207,7 @@ class BrushTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
+        isBrushTool: true,
       },
       data: {
         handles: {
@@ -467,7 +469,28 @@ class BrushTool extends AnnotationTool {
       return;
     }
 
-    let annotations = getAnnotations(this.getToolName(), viewport.element);
+    // This is a tricky situation, our annotations are bound to the toolName (length, angle, etc)
+    // however, for our brushTool we can create multiple instances of it based on the same
+    // tool with different configuration/strategies e.g., brush, eraser, brushCircle, brushSphere
+    // brushThreshold etc.. So if we start by brushCircle and then switch to brushSphere below
+    // we don't get any annotations since the previous annotations are bound to the toolName (brushCircle)
+    // so we kind of need to look into the annotation manager and get the annotations any
+    // tool that was derived from the brush tool (have Brush as their parent tool)
+    // let annotations = getAnnotations(this.getToolName(), viewport.element);
+    const annotationManager = getAnnotationManager();
+    const frameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    let annotations = annotationManager.getAnnotations(
+      frameOfReferenceUID
+    ) as Annotations;
+
+    if (!Object.keys(annotations)?.length) {
+      return renderStatus;
+    }
+
+    annotations = Object.values(annotations)
+      .flat()
+      // @ts-ignore
+      .filter((annotation) => annotation.metadata?.isBrushTool);
 
     if (!annotations?.length) {
       return renderStatus;
