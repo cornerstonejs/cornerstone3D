@@ -222,6 +222,22 @@ type AnnotationCompletedEventDetail = {
 type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
 
 // @public (undocumented)
+export abstract class AnnotationDisplayTool extends BaseTool {
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    // (undocumented)
+    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    // (undocumented)
+    getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
+    // (undocumented)
+    onImageSpacingCalibrated: (evt: Types_2.EventTypes.ImageSpacingCalibratedEvent) => void;
+    // (undocumented)
+    abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 type AnnotationGroupSelector = HTMLDivElement | string;
 
 // @public (undocumented)
@@ -1529,7 +1545,9 @@ declare namespace drawing {
         drawLinkedTextBox,
         drawRect,
         drawTextBox,
-        drawArrow
+        drawArrow,
+        setAttributesIfNecessary,
+        setNewAttributesIfValid
     }
 }
 export { drawing }
@@ -3182,7 +3200,6 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
-
 }
 
 // @public (undocumented)
@@ -4655,6 +4672,9 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
 
 // @public (undocumented)
+function setAttributesIfNecessary(attributes: any, svgNode: any): void;
+
+// @public (undocumented)
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
 
 // @public (undocumented)
@@ -4683,6 +4703,9 @@ function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig)
 
 // @public (undocumented)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
+
+// @public (undocumented)
+function setNewAttributesIfValid(attributes: any, svgNode: any): void;
 
 // @public (undocumented)
 function setSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;

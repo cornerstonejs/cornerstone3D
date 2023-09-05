@@ -3,8 +3,8 @@ import { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
 
 function drawCircle(
   svgDrawingHelper: SVGDrawingHelper,
@@ -45,7 +45,7 @@ function drawCircle(
   };
 
   if (existingCircleElement) {
-    _setAttributesIfNecessary(attributes, existingCircleElement);
+    setAttributesIfNecessary(attributes, existingCircleElement);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -55,7 +55,7 @@ function drawCircle(
       newCircleElement.setAttribute('data-id', dataId);
     }
 
-    _setNewAttributesIfValid(attributes, newCircleElement);
+    setNewAttributesIfValid(attributes, newCircleElement);
 
     svgDrawingHelper.appendNode(newCircleElement, svgNodeHash);
   }
