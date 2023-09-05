@@ -12,6 +12,7 @@ type OperationData = {
   viewPlaneNormal: Types.Point3;
   viewUp: Types.Point3;
   constraintFn: () => boolean;
+  strategySpecificConfiguration: any;
 };
 
 export function eraseInsideSphere(

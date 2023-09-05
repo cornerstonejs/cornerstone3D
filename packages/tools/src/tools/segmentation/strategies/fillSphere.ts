@@ -15,7 +15,6 @@ type OperationData = {
   viewPlaneNormal: Types.Point3;
   viewUp: Types.Point3;
   strategySpecificConfiguration: any;
-
   constraintFn: () => boolean;
 };
 

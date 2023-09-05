@@ -572,24 +572,12 @@ interface BrushCursor extends Annotation {
 }
 
 // @public (undocumented)
-export class BrushTool extends AnnotationTool {
+export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
-    // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => BrushCursor;
-    // (undocumented)
-    cancel: () => void;
-    // (undocumented)
-    handleSelectedCallback: () => void;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
-    isPointNearTool(): boolean;
-    // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => boolean;
-    // (undocumented)
-    onSetConfiguration: () => void;
-    // (undocumented)
-    onSetToolActive: () => void;
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     onSetToolDisabled: () => void;
     // (undocumented)
@@ -597,11 +585,11 @@ export class BrushTool extends AnnotationTool {
     // (undocumented)
     onSetToolPassive: () => void;
     // (undocumented)
-    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
     static toolName: any;
-    // (undocumented)
-    toolSelectedCallback: () => void;
 }
 
 // @public (undocumented)
