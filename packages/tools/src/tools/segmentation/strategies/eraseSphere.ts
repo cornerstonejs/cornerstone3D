@@ -4,7 +4,7 @@ import { fillInsideSphere } from './fillSphere';
 
 type OperationData = {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  imageVoluem: Types.IImageVolume;
+  imageVolume: Types.IImageVolume;
   volume: Types.IImageVolume;
   segmentIndex: number;
   segmentationId: string;
