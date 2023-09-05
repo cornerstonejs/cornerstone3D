@@ -10,7 +10,6 @@ type OperationData = {
   segmentIndex: number;
   segmentsLocked: number[];
   viewPlaneNormal: number[];
-  lazyCalculation?: boolean;
   viewUp: number[];
   strategySpecificConfiguration: any;
   constraintFn: () => boolean;

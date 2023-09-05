@@ -1,5 +1,5 @@
-import { vec3 } from 'gl-matrix';
 import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
 import type {
@@ -8,15 +8,12 @@ import type {
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { AnnotationTool } from '../base';
-import { fillInsideSphere } from './strategies/fillSphere';
-import { eraseInsideSphere } from './strategies/eraseSphere';
+import { BaseTool } from '../base';
 import {
-  addAnnotation,
-  getAnnotations,
-  getAnnotation,
-  removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
+  fillInsideSphere,
+  thresholdInsideSphere,
+} from './strategies/fillSphere';
+import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
   thresholdInsideCircle,
   fillInsideCircle,
@@ -29,7 +26,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   config as segmentationConfig,
   segmentLocking,
@@ -38,12 +35,11 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-import { BrushCursor } from '../../types/ToolSpecificAnnotationTypes';
 
 /**
  * @public
  */
-class BrushTool extends AnnotationTool {
+class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
     segmentation: Types.IImageVolume;
@@ -51,6 +47,7 @@ class BrushTool extends AnnotationTool {
     segmentsLocked: number[]; //
   } | null;
   private _hoverData?: {
+    brushCursor: any;
     segmentationId: string;
     segmentIndex: number;
     segmentationRepresentationUID: string;
@@ -66,10 +63,11 @@ class BrushTool extends AnnotationTool {
       configuration: {
         strategies: {
           FILL_INSIDE_CIRCLE: fillInsideCircle,
-          THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
           ERASE_INSIDE_CIRCLE: eraseInsideCircle,
           FILL_INSIDE_SPHERE: fillInsideSphere,
           ERASE_INSIDE_SPHERE: eraseInsideSphere,
+          THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
+          THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
         },
         strategySpecificConfiguration: {
           THRESHOLD_INSIDE_CIRCLE: {
@@ -85,18 +83,6 @@ class BrushTool extends AnnotationTool {
     super(toolProps, defaultToolProps);
   }
 
-  handleSelectedCallback = () => {
-    return;
-  };
-
-  toolSelectedCallback = () => {
-    return;
-  };
-
-  cancel = () => {
-    this._hoverData = undefined;
-  };
-
   onSetToolPassive = () => {
     this.disableCursor();
   };
@@ -106,15 +92,6 @@ class BrushTool extends AnnotationTool {
   };
 
   onSetToolDisabled = () => {
-    removeAnnotation('brushCursorUID');
-    this.disableCursor();
-  };
-
-  onSetToolActive = () => {
-    this.disableCursor();
-  };
-
-  onSetConfiguration = () => {
     this.disableCursor();
   };
 
@@ -122,14 +99,13 @@ class BrushTool extends AnnotationTool {
     this._hoverData = undefined;
   }
 
-  addNewAnnotation = (
+  preMouseDownCallback = (
     evt: EventTypes.MouseDownActivateEventType
-  ): BrushCursor => {
+  ): boolean => {
     const eventData = evt.detail;
-    const { element, currentPoints } = eventData;
+    const { element } = eventData;
 
     const enabledElement = getEnabledElement(element);
-    const worldPos = currentPoints.world;
     const { viewport, renderingEngine } = enabledElement;
 
     if (viewport instanceof StackViewport) {
@@ -171,91 +147,36 @@ class BrushTool extends AnnotationTool {
       segmentsLocked,
     };
 
-    hideElementCursor(element);
-
-    const annotation = this._addAnnotation(viewport, worldPos);
     this._activateDraw(element);
+
+    hideElementCursor(element);
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    return annotation;
-  };
-
-  private _addAnnotation = (viewport, worldPos): BrushCursor => {
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-    const camera = viewport.getCamera();
-
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportIdsToRender
     );
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      annotationUID: 'brushCursorUID',
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-      },
-      data: {
-        handles: {
-          points: [...this._calculateBrushLocation(viewport, worldPos)],
-        },
-      },
-    } as BrushCursor;
-
-    addAnnotation(annotation, viewport.element);
-
-    return annotation;
-  };
-
-  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType) => {
-    if (this.mode === ToolModes.Active) {
-      this._updateBrushLocation(evt);
-    }
 
     return true;
   };
 
-  private _updateBrushLocation(
-    evt: EventTypes.MouseMoveEventType,
-    drag = false
-  ) {
+  mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this.mode === ToolModes.Active) {
+      this.updateCursor(evt);
+    }
+  };
+
+  private updateCursor(evt: EventTypes.InteractionEventType) {
     const eventData = evt.detail;
     const { element } = eventData;
     const { currentPoints } = eventData;
     const centerCanvas = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
-    let annotation = getAnnotation('brushCursorUID');
-    if (!drag && !annotation) {
-      annotation = this._addAnnotation(viewport, currentPoints.world);
-    } else if (!drag) {
-      // already we have an annotation, but we are not dragging
-      // so just update the location
-      annotation.data.handles.points = [
-        ...this._calculateBrushLocation(viewport, currentPoints.canvas),
-      ];
-
-      // Update the camera props since we might have changed the cursor location
-      // and have been moving to a new viewport with different orientation without
-      // dragging or clicking
-      annotation.metadata.viewUp = viewUp;
-      annotation.metadata.viewPlaneNormal = viewPlaneNormal;
-      annotation.data.invalidated = false;
-    }
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
 
     const toolGroupId = this.toolGroupId;
 
@@ -281,7 +202,22 @@ class BrushTool extends AnnotationTool {
 
     const viewportIdsToRender = [viewport.id];
 
+    // Center of circle in canvas Coordinates
+
+    const brushCursor = {
+      metadata: {
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId: '',
+        toolName: this.getToolName(),
+        segmentColor,
+      },
+      data: {},
+    };
+
     this._hoverData = {
+      brushCursor,
       centerCanvas,
       segmentIndex,
       segmentationId,
@@ -290,28 +226,61 @@ class BrushTool extends AnnotationTool {
       viewportIdsToRender,
     };
 
-    if (drag) {
-      const pos = this._calculateBrushLocation(viewport, centerCanvas);
-      annotation.data.handles.points.push(...pos);
-      annotation.data.invalidated = false;
-    }
+    this._calculateCursor(element, centerCanvas);
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportIdsToRender
+    );
   }
 
-  private _dragCallback = (evt: EventTypes.MouseMoveEventType): void => {
+  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    this._updateBrushLocation(evt, true);
+    const { imageVolume, segmentation, segmentsLocked } = this._editData;
 
-    const { viewportIdsToRender } = this._hoverData;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    this.updateCursor(evt);
+
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      brushCursor,
+      viewportIdsToRender,
+    } = this._hoverData;
+
+    const { data } = brushCursor;
+    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
+
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportIdsToRender
+    );
+
+    const operationData = {
+      points: data.handles.points,
+      volume: segmentation, // todo: just pass the segmentationId instead
+      imageVolume,
+      segmentIndex,
+      segmentsLocked,
+      viewPlaneNormal,
+      toolGroupId: this.toolGroupId,
+      segmentationId,
+      segmentationRepresentationUID,
+      viewUp,
+      strategySpecificConfiguration:
+        this.configuration.strategySpecificConfiguration,
+    };
+
+    this.applyActiveStrategy(enabledElement, operationData);
   };
 
-  private _calculateBrushLocation(viewport, centerCanvas): Types.Point3[] {
+  private _calculateCursor(element, centerCanvas) {
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
     const camera = viewport.getCamera();
     const { brushSize } = this.configuration;
@@ -350,39 +319,54 @@ class BrushTool extends AnnotationTool {
       rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
     }
 
-    return [
-      bottomCursorInWorld as Types.Point3,
-      topCursorInWorld as Types.Point3,
-      leftCursorInWorld as Types.Point3,
-      rightCursorInWorld as Types.Point3,
+    const { brushCursor } = this._hoverData;
+    const { data } = brushCursor;
+
+    if (data.handles === undefined) {
+      data.handles = {};
+    }
+
+    data.handles.points = [
+      bottomCursorInWorld,
+      topCursorInWorld,
+      leftCursorInWorld,
+      rightCursorInWorld,
     ];
+
+    data.invalidated = false;
   }
 
-  private _endCallback = (evt: EventTypes.MouseMoveEventType): void => {
+  private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
 
     const { imageVolume, segmentation, segmentsLocked } = this._editData;
-    const { segmentIndex, segmentationId, segmentationRepresentationUID } =
-      this._hoverData;
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      brushCursor,
+    } = this._hoverData;
 
-    const annotation = getAnnotation('brushCursorUID');
-    const { viewPlaneNormal, viewUp } = annotation.metadata;
+    const { data } = brushCursor;
+    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
 
     this._deactivateDraw(element);
 
     resetElementCursor(element);
 
-    // remove the annotation svg since we need to draw for the next drag
-    removeAnnotation('brushCursorUID');
-
     const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
     this._editData = null;
-    this._updateBrushLocation(evt);
+    this.updateCursor(evt);
 
-    this.applyActiveStrategy(enabledElement, {
-      points: annotation.data.handles.points,
+    if (viewport instanceof StackViewport) {
+      throw new Error('Not implemented yet');
+    }
+
+    const operationData = {
+      points: data.handles.points,
       volume: segmentation,
       imageVolume,
       segmentIndex,
@@ -392,15 +376,11 @@ class BrushTool extends AnnotationTool {
       segmentationId,
       segmentationRepresentationUID,
       viewUp,
-      lazyCalculation: true,
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
-    });
+    };
 
-    triggerAnnotationRenderForViewportIds(
-      enabledElement.renderingEngine,
-      this._hoverData.viewportIdsToRender
-    );
+    this.applyActiveStrategy(enabledElement, operationData);
   };
 
   /**
@@ -441,102 +421,75 @@ class BrushTool extends AnnotationTool {
 
   public invalidateBrushCursor() {
     if (this._hoverData !== undefined) {
-      const annotation = getAnnotation('brushCursorUID');
-      annotation.data.invalidated = true;
-    }
-  }
+      const { data } = this._hoverData.brushCursor;
 
-  public isPointNearTool(): boolean {
-    return false;
+      data.invalidated = true;
+    }
   }
 
   renderAnnotation(
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
-  ): boolean {
-    const renderStatus = false;
+  ): void {
     if (!this._hoverData) {
       return;
     }
 
     const { viewport } = enabledElement;
-    const { element } = viewport;
 
     const viewportIdsToRender = this._hoverData.viewportIdsToRender;
+
     if (!viewportIdsToRender.includes(viewport.id)) {
       return;
     }
 
-    let annotations = getAnnotations(this.getToolName(), viewport.element);
+    const brushCursor = this._hoverData.brushCursor;
 
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
-      annotations
-    );
-
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    const annotation = annotations[0];
-
-    // If brush size programmatically has been changed then we need to invalidate
-    // the cursor points to be recalculated for the rendering
-    if (annotation.data.invalidated === true) {
+    if (brushCursor.data.invalidated === true) {
       const { centerCanvas } = this._hoverData;
+      const { element } = viewport;
 
-      this._calculateBrushLocation(viewport, centerCanvas);
+      // This can be set true when changing the brush size programmatically
+      // whilst the cursor is being rendered.
+      this._calculateCursor(element, centerCanvas);
     }
 
-    const segmentColor = this._hoverData.segmentColor;
-    const annotationUID = 'brushCursorUID';
-    let counter = 0;
-    const data = annotation.data;
-    const { points: pointsList } = data.handles;
+    const toolMetadata = brushCursor.metadata;
+    const annotationUID = toolMetadata.brushCursorUID;
 
-    const notDrag = pointsList.length === 4;
+    const data = brushCursor.data;
+    const { points } = data.handles;
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-    for (let i = 0; i < pointsList.length; i += 4) {
-      // we only need two points to draw a circle so four is redundant
-      const points = [pointsList[i], pointsList[i + 1]];
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    const bottom = canvasCoordinates[0];
+    const top = canvasCoordinates[1];
 
-      const bottom = canvasCoordinates[0];
-      const top = canvasCoordinates[1];
+    const center = [
+      Math.floor((bottom[0] + top[0]) / 2),
+      Math.floor((bottom[1] + top[1]) / 2),
+    ];
 
-      const center = [
-        Math.floor((bottom[0] + top[0]) / 2),
-        Math.floor((bottom[1] + top[1]) / 2),
-      ];
+    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
-      const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
+    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
-      const color = `rgb(${segmentColor.slice(0, 3)})`;
+    // If rendering engine has been destroyed while rendering
+    if (!viewport.getRenderingEngine()) {
+      console.warn('Rendering Engine has been destroyed');
+      return;
+    }
 
-      // If rendering engine has been destroyed while rendering
-      if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
-        return;
+    const circleUID = '0';
+    drawCircleSvg(
+      svgDrawingHelper,
+      annotationUID,
+      circleUID,
+      center as Types.Point2,
+      radius,
+      {
+        color,
       }
-
-      const circleUID = '0';
-      drawCircleSvg(
-        svgDrawingHelper,
-        `${annotationUID}-${counter++}`,
-        circleUID,
-        center as Types.Point2,
-        radius,
-        {
-          color,
-          lineWidth: notDrag ? 2 : 0.75,
-          strokeOpacity: notDrag ? 1 : 0.6,
-        }
-      );
-    }
+    );
   }
 }
 
