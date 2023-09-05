@@ -620,6 +620,40 @@ class Viewport implements IViewport {
       return;
     }
     this.setCamera({ parallelScale: height / (2 * scale) });
+    // Need to ensure the focal point is aligned with the canvas size/position
+    // so that we don't get half pixel rendering, which causes additional
+    // moire patterns to be displayed.
+    // This is based on the canvas size having the center pixel be at a fractional
+    // position when the size is even, so matching a fractional position on the
+    // focal point to the center of an image pixel.
+    const { focalPoint, position, viewUp, viewPlaneNormal } = this.getCamera();
+    const focalChange = vec3.create();
+    const imageData = this.getDefaultImageData() || {};
+    const { spacing = [1, 1] } = imageData;
+    if (canvas.height % 2 === 0) {
+      vec3.scaleAndAdd(
+        focalChange,
+        focalChange,
+        viewUp,
+        scale * 0.5 * spacing[0]
+      );
+    }
+    if (canvas.width % 2 === 0) {
+      const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
+      vec3.scaleAndAdd(
+        focalChange,
+        focalChange,
+        viewRight,
+        scale * 0.5 * spacing[1]
+      );
+    }
+    if (!focalChange[0] && !focalChange[1] && !focalChange[2]) {
+      return;
+    }
+    this.setCamera({
+      focalPoint: <Point3>vec3.add(vec3.create(), focalPoint, focalChange),
+      position: <Point3>vec3.add(vec3.create(), position, focalChange),
+    });
   }
 
   /**

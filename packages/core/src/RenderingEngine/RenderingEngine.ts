@@ -148,9 +148,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
-      console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
-      console.log(`Viewport ${viewportId} disabled`);
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
@@ -629,11 +627,6 @@ class RenderingEngine implements IRenderingEngine {
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
     canvasesDrivenByVtkJs.push(canvas);
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * devicePixelRatio;
-    canvas.height = rect.height * devicePixelRatio;
     // 2.c Calculating the new size for offScreen Canvas
     const { offScreenCanvasWidth, offScreenCanvasHeight } =
       this._resizeOffScreenCanvas(canvasesDrivenByVtkJs);
@@ -1173,7 +1166,7 @@ class RenderingEngine implements IRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.log('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
@@ -1226,6 +1219,7 @@ class RenderingEngine implements IRenderingEngine {
 
     const onScreenContext = canvas.getContext('2d');
 
+    const rect = canvas.getBoundingClientRect();
     onScreenContext.drawImage(
       offScreenCanvas,
       sx,
@@ -1344,6 +1338,7 @@ class RenderingEngine implements IRenderingEngine {
 
       const onScreenContext = canvas.getContext('2d');
 
+      const rect = canvas.getBoundingClientRect();
       //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
       onScreenContext.drawImage(
         offScreenCanvas,
