@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 
 import _getHash from './_getHash';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
 import { SVGDrawingHelper } from '../types';
 
 function drawHandles(
@@ -75,13 +75,13 @@ function drawHandles(
     const existingHandleElement = svgDrawingHelper.getSvgNode(svgNodeHash);
 
     if (existingHandleElement) {
-      _setAttributesIfNecessary(attributes, existingHandleElement);
+      setAttributesIfNecessary(attributes, existingHandleElement);
 
       svgDrawingHelper.setNodeTouched(svgNodeHash);
     } else {
       const newHandleElement = document.createElementNS(svgns, type);
 
-      _setNewAttributesIfValid(attributes, newHandleElement);
+      setNewAttributesIfValid(attributes, newHandleElement);
 
       svgDrawingHelper.appendNode(newHandleElement, svgNodeHash);
     }
