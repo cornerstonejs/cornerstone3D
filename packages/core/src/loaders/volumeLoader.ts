@@ -93,7 +93,7 @@ function createInternalVTKRepresentation(
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
 
-  // Add scalar datas to 3D or 4D volume
+  // Add scalar data to 3D or 4D volume
   if (volume.isDynamicVolume()) {
     const scalarDataArrays = (<Types.IDynamicImageVolume>(
       volume

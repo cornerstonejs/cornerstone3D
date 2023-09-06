@@ -9,6 +9,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -51,6 +56,8 @@ import {
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { pointInShapeCallback } from '../../utilities/';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -92,6 +99,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
+
 class RectangleROITool extends AnnotationTool {
   static toolName;
 
@@ -114,6 +122,8 @@ class RectangleROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -649,6 +659,16 @@ class RectangleROITool extends AnnotationTool {
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -669,7 +689,8 @@ class RectangleROITool extends AnnotationTool {
           viewPlaneNormal,
           viewUp,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
@@ -677,7 +698,8 @@ class RectangleROITool extends AnnotationTool {
           viewPlaneNormal,
           viewUp,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
 
         // If the invalidated data is as a result of volumeViewport manipulation
@@ -769,20 +791,7 @@ class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
-
-      const textLines = this._getTextLines(
-        data,
-        targetId,
-        isPreScaled,
-        isSuvScaled
-      );
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -842,38 +851,6 @@ class RectangleROITool extends AnnotationTool {
   };
 
   /**
-   * _getTextLines - Returns the Area, mean and std deviation of the area of the
-   * target volume enclosed by the rectangle.
-   *
-   * @param data - The annotation tool-specific data.
-   * @param targetId - The volumeId of the volume to display the stats for.
-   * @param isPreScaled - Whether the viewport is pre-scaled or not.
-   */
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] | undefined => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
-
-    if (mean === undefined) {
-      return;
-    }
-
-    const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
-
-    textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
-    textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
-    textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
-    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
-
-    return textLines;
-  };
-
-  /**
    * _calculateCachedStats - For each volume in the frame of reference that a
    * tool instance in particular viewport defines as its target volume, find the
    * volume coordinates (i,j,k) being probed by the two corners. One of i,j or k
@@ -889,7 +866,8 @@ class RectangleROITool extends AnnotationTool {
     viewPlaneNormal,
     viewUp,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions
   ) => {
     const { data } = annotation;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -912,7 +890,7 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata, hasPixelSpacing } = image;
+      const { dimensions, imageData, metadata } = image;
       const scalarData =
         'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
@@ -945,65 +923,47 @@ class RectangleROITool extends AnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
 
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
           viewPlaneNormal,
           viewUp,
           worldPos1,
           worldPos2
         );
+        const scale = getCalibratedScale(image);
 
-        const area = Math.abs(worldWidth * worldHeight);
+        const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-        let max = -Infinity;
+        const modalityUnit = getModalityUnit(
+          metadata.Modality,
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
+        );
 
-        const yMultiple = dimensions[0];
-        const zMultiple = dimensions[0] * dimensions[1];
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          () => true,
+          this.configuration.statsCalculator.statsCallback,
+          boundsIJK
+        );
 
-        //Todo: this can be replaced by pointInShapeCallback....
-        // This is a triple loop, but one of these 3 values will be constant
-        // In the planar view.
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              if (value > max) {
-                max = value;
-              }
-
-              count++;
-              mean += value;
-            }
-          }
-        }
-
-        mean /= count;
-
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              const valueMinusMean = value - mean;
-
-              stdDev += valueMinusMean * valueMinusMean;
-            }
-          }
-        }
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
+        const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          stdDev,
-          max,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          mean: stats[1]?.value,
+          stdDev: stats[2]?.value,
+          max: stats[0]?.value,
+          statsArray: stats,
+          pointsInShape: pointsInShape,
+          areaUnit: getCalibratedAreaUnits(null, image),
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -1034,6 +994,31 @@ class RectangleROITool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   };
+}
+
+/**
+ * _getTextLines - Returns the Area, mean and std deviation of the area of the
+ * target volume enclosed by the rectangle.
+ *
+ * @param data - The annotation tool-specific data.
+ * @param targetId - The volumeId of the volume to display the stats for.
+ */
+function defaultGetTextLines(data, targetId: string): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+
+  if (mean === undefined) {
+    return;
+  }
+
+  const textLines: string[] = [];
+
+  textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 RectangleROITool.toolName = 'RectangleROI';

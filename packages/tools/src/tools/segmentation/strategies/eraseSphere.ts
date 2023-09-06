@@ -4,6 +4,7 @@ import { fillInsideSphere } from './fillSphere';
 
 type OperationData = {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
+  imageVolume: Types.IImageVolume;
   volume: Types.IImageVolume;
   segmentIndex: number;
   segmentationId: string;
@@ -11,6 +12,7 @@ type OperationData = {
   viewPlaneNormal: Types.Point3;
   viewUp: Types.Point3;
   constraintFn: () => boolean;
+  strategySpecificConfiguration: any;
 };
 
 export function eraseInsideSphere(

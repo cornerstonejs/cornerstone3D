@@ -7,6 +7,7 @@ import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
+import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
@@ -26,6 +27,7 @@ import type {
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
+import IImageCalibration from '../types/IImageCalibration';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -50,6 +52,10 @@ class Viewport implements IViewport {
   protected flipHorizontal = false;
   protected flipVertical = false;
   public isDisabled: boolean;
+  /** Record the renddering status, mostly for testing purposes, but can also
+   * be useful for knowing things like whether the viewport is initialized
+   */
+  public viewportStatus: ViewportStatus = ViewportStatus.NO_DATA;
 
   /** sx of viewport on the offscreen canvas */
   sx: number;
@@ -69,6 +75,7 @@ class Viewport implements IViewport {
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
+  protected calibration: IImageCalibration;
   /** The camera that is initially defined on the reset for
    * the relative pan/zoom
    */
@@ -115,6 +122,22 @@ class Viewport implements IViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  /**
+   * Indicate that the image has been rendered.
+   * This will set hte viewportStatus to RENDERED if there is image data
+   * available to actually be rendered - otherwise, the rendering simply showed
+   * the background image.
+   */
+  public setRendered() {
+    if (
+      this.viewportStatus === ViewportStatus.NO_DATA ||
+      this.viewportStatus === ViewportStatus.LOADING
+    ) {
+      return;
+    }
+    this.viewportStatus = ViewportStatus.RENDERED;
   }
 
   /**
@@ -621,7 +644,7 @@ class Viewport implements IViewport {
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  protected resetCamera(
+  public resetCamera(
     resetPan = true,
     resetZoom = true,
     resetToCenter = true,

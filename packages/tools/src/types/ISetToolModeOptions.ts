@@ -1,9 +1,9 @@
 import { ToolModes, MouseBindings, KeyboardBindings } from '../enums';
 
-type ToolBindingMouseType = typeof MouseBindings[keyof typeof MouseBindings];
+type ToolBindingMouseType = (typeof MouseBindings)[keyof typeof MouseBindings];
 
 type ToolBindingKeyboardType =
-  typeof KeyboardBindings[keyof typeof KeyboardBindings];
+  (typeof KeyboardBindings)[keyof typeof KeyboardBindings];
 
 type IToolBinding = {
   /** Mouse button bindings e.g., MouseBindings.Primary/Secondary etc. */

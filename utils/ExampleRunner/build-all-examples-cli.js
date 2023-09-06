@@ -67,6 +67,10 @@ if (options.fromRoot === true) {
         path: 'packages/nifti-volume-loader/examples',
         regexp: 'index.ts',
       },
+      {
+        path: 'packages/adapters/examples',
+        regexp: 'index.ts',
+      },
     ],
   };
 } else {

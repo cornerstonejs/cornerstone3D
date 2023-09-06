@@ -16,6 +16,7 @@
     "build": "npx lerna run build --stream",
     "build:esm": "npx lerna run build:esm --stream",
     "build:umd": "npx lerna run build:umd --stream",
+    "watch": "npx lerna watch -- lerna run build --scope=$LERNA_PACKAGE_NAME --include-dependents",
     "build:update-api:core": "cd packages/core && npm run build:update-api",
     "build:update-api:tools": "cd packages/tools && npm run build:update-api",
     "build:update-api:adapters": "cd packages/adapters && npm run build:update-api",
@@ -93,6 +94,7 @@
     "eslint-plugin-tsdoc": "^0.2.17",
     "eslint-webpack-plugin": "^4.0.1",
     "eslint": "^8.39.0",
+    "execa": "^7.2.0",
     "exports-loader": "^3.0.0",
     "file-loader": "^6.2.0",
     "follow-redirects": "^1.15.2",
@@ -125,8 +127,9 @@
     "postcss": "^8.4.23",
     "prettier": "^2.8.8",
     "puppeteer": "^13.5.0",
-    "resemblejs": "^4.1.0",
+    "resemblejs": "^5.0.0",
     "rollup": "^3.21.3",
+    "semver": "^7.5.4",
     "shader-loader": "^1.3.1",
     "shelljs": "^0.8.5",
     "shx": "^0.3.3",
@@ -159,5 +162,6 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "dependencies": {}
+  "dependencies": {},
+  "resolutions": {}
 }

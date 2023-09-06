@@ -9,6 +9,12 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {
@@ -49,7 +55,11 @@ import pointInPolyline from '../../utilities/math/polyline/pointInPolyline';
 import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -115,6 +125,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *
  * Read more in the Docs section of the website.
  */
+
 class PlanarFreehandROITool extends AnnotationTool {
   static toolName;
 
@@ -206,6 +217,8 @@ class PlanarFreehandROITool extends AnnotationTool {
           knotsRatioPercentageOnEdit: 40,
         },
         calculateStats: false,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -653,15 +666,27 @@ class PlanarFreehandROITool extends AnnotationTool {
       renderStatus = true;
     }
 
-    if (!this.configuration.calculateStats) return;
+    if (!this.configuration.calculateStats) {
+      return;
+    }
 
     annotations.forEach((annotation) => {
       const activeAnnotationUID = this.commonData?.annotation.annotationUID;
       if (
         annotation.annotationUID === activeAnnotationUID &&
         !this.commonData?.movingTextBox
-      )
+      ) {
         return;
+      }
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       if (!this.commonData?.movingTextBox) {
         const { data } = annotation;
@@ -682,14 +707,16 @@ class PlanarFreehandROITool extends AnnotationTool {
             annotation,
             viewport,
             renderingEngine,
-            enabledElement
+            enabledElement,
+            modalityUnitOptions
           );
         } else if (annotation.invalidated) {
           this._throttledCalculateCachedStats(
             annotation,
             viewport,
             renderingEngine,
-            enabledElement
+            enabledElement,
+            modalityUnitOptions
           );
         }
       }
@@ -704,7 +731,8 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { cachedStats, polyline: points } = data;
@@ -722,9 +750,11 @@ class PlanarFreehandROITool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, metadata, hasPixelSpacing } = image;
+      const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const area = polyline.calculateAreaOfPoints(canvasCoordinates);
+      const scale = getCalibratedScale(image);
+      const area =
+        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
 
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
@@ -779,25 +809,10 @@ class PlanarFreehandROITool extends AnnotationTool {
       const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
       const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
 
-      let count = 0;
-      let sum = 0;
-      let sumSquares = 0;
-      let max = -Infinity;
-
-      const statCalculator = ({ value: newValue }) => {
-        if (newValue > max) {
-          max = newValue;
-        }
-
-        sum += newValue;
-        sumSquares += newValue ** 2;
-        count += 1;
-      };
-
       let curRow = 0;
       let intersections = [];
       let intersectionCounter = 0;
-      pointInShapeCallback(
+      const pointsInShape = pointInShapeCallback(
         imageData,
         (pointLPS, pointIJK) => {
           let result = true;
@@ -831,23 +846,28 @@ class PlanarFreehandROITool extends AnnotationTool {
           }
           return result;
         },
-        statCalculator,
+        this.configuration.statsCalculator.statsCallback,
         boundsIJK
       );
 
-      const mean = sum / count;
+      const modalityUnit = getModalityUnit(
+        metadata.Modality,
+        annotation.metadata.referencedImageId,
+        modalityUnitOptions
+      );
 
-      // https://www.strchr.com/standard_deviation_in_one_pass?allcomments=1
-      let stdDev = sumSquares / count - mean ** 2;
-      stdDev = Math.sqrt(stdDev);
+      const stats = this.configuration.statsCalculator.getStatistics();
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean,
-        max,
-        stdDev,
-        areaUnit: hasPixelSpacing ? 'mm' : 'px',
+        mean: stats[1]?.value,
+        max: stats[0]?.value,
+        stdDev: stats[3]?.value,
+        statsArray: stats,
+        pointsInShape: pointsInShape,
+        areaUnit: getCalibratedAreaUnits(null, image),
+        modalityUnit,
       };
     }
 
@@ -861,20 +881,11 @@ class PlanarFreehandROITool extends AnnotationTool {
   _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
-    const isPreScaled = isViewportPreScaled(viewport, targetId);
-    const isSuvScaled = this.isSuvScaled(
-      viewport,
-      targetId,
-      annotation.metadata.referencedImageId
-    );
 
-    const textLines = this._getTextLines(
-      data,
-      targetId,
-      isPreScaled,
-      isSuvScaled
-    );
-    if (!textLines || textLines.length === 0) return;
+    const textLines = this.configuration.getTextLines(data, targetId);
+    if (!textLines || textLines.length === 0) {
+      return;
+    }
 
     const canvasCoordinates = data.polyline.map((p) =>
       viewport.worldToCanvas(p)
@@ -917,41 +928,35 @@ class PlanarFreehandROITool extends AnnotationTool {
       bottomRight: viewport.canvasToWorld([left + width, top + height]),
     };
   };
+}
 
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
-      cachedVolumeStats;
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+    cachedVolumeStats;
 
-    const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
+  const textLines: string[] = [];
 
-    if (area) {
-      const areaLine = isEmptyArea
-        ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
-      textLines.push(areaLine);
-    }
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
 
-    if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
-    }
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
 
-    if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
-    }
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
 
-    if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
-    }
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
 
-    return textLines;
-  };
+  return textLines;
 }
 
 PlanarFreehandROITool.toolName = 'PlanarFreehandROI';

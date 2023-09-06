@@ -16,10 +16,34 @@ function createImage(image, imageId) {
   const rows = image.naturalHeight;
   const columns = image.naturalWidth;
 
-  function getPixelData() {
+  function getPixelData(targetBuffer) {
     const imageData = getImageData();
 
-    return imageData.data;
+    let targetArray;
+
+    // Check if targetBuffer is provided for volume viewports
+    if (targetBuffer) {
+      targetArray = new Uint8Array(
+        targetBuffer.arrayBuffer,
+        targetBuffer.offset,
+        targetBuffer.length
+      );
+    } else {
+      targetArray = new Uint8Array(imageData.width * imageData.height * 3);
+    }
+
+    // modify original image data and remove alpha channel (RGBA to RGB)
+    convertImageDataToRGB(imageData, targetArray);
+
+    return targetArray;
+  }
+
+  function convertImageDataToRGB(imageData, targetArray) {
+    for (let i = 0, j = 0; i < imageData.data.length; i += 4, j += 3) {
+      targetArray[j] = imageData.data[i];
+      targetArray[j + 1] = imageData.data[i + 1];
+      targetArray[j + 2] = imageData.data[i + 2];
+    }
   }
 
   function getImageData() {
@@ -70,11 +94,12 @@ function createImage(image, imageId) {
     height: rows,
     width: columns,
     color: true,
-    rgba: true,
+    // we converted the canvas rgba already to rgb above
+    rgba: false,
     columnPixelSpacing: 1, // for web it's always 1
     rowPixelSpacing: 1, // for web it's always 1
     invert: false,
-    sizeInBytes: rows * columns * 4,
+    sizeInBytes: rows * columns * 3,
   };
 }
 
@@ -199,14 +224,9 @@ function _loadImageIntoBuffer(
             resolve(image);
             return;
           }
-          // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-          const { arrayBuffer, offset, length } = options.targetBuffer;
 
           // @ts-ignore
-          const pixelDataRGBA = image.getPixelData();
-          const targetArray = new Uint8Array(arrayBuffer, offset, length);
-
-          targetArray.set(pixelDataRGBA, 0);
+          image.getPixelData(options.targetBuffer);
 
           resolve(true);
         },

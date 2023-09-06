@@ -23,6 +23,7 @@ import * as segmentation from './stateManagement/segmentation';
 import {
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   PanTool,
   TrackballRotateTool,
   DragProbeTool,
@@ -71,6 +72,7 @@ export {
   // Base Tools
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
