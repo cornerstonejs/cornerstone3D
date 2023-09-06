@@ -621,7 +621,10 @@ export default class ToolGroup implements IToolGroup {
     if (overwrite) {
       _configuration = configuration;
     } else {
-      _configuration = csUtils.deepMerge(
+      // We should not deep copy here, it is the job of the application to
+      // deep copy the configuration before passing it to the toolGroup, otherwise
+      // some strange appending behaviour happens for the arrays
+      _configuration = Object.assign(
         this._toolInstances[toolName].configuration,
         configuration
       );
