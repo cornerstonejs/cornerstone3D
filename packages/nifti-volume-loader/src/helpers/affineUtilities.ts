@@ -73,7 +73,7 @@ function parseAffineMatrix(affine): {
     affine[2][2] / spacing[2],
   ] as Types.Mat3;
 
-  return { origin, orientation: orientation, spacing };
+  return { origin, orientation, spacing };
 }
 
 export { generateAffineMatrix, parseAffineMatrix };

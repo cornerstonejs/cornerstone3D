@@ -14,6 +14,7 @@ import * as NIFTICONSTANTS from './niftiConstants';
 import { invertDataPerFrame, rasToLps } from './convert';
 import scaleNiftiArray from './scaleNiftiArray';
 import Events from '../enums/Events';
+import { NIFTI_LOADER_SCHEME } from '../constants';
 
 const { createUint8SharedArray, createFloat32SharedArray } = utilities;
 
@@ -23,22 +24,34 @@ function fetchArrayBuffer(url, onProgress, signal, onload) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
-
     xhr.responseType = 'arraybuffer';
 
-    xhr.onload = function (e) {
+    const onLoadHandler = function (e) {
       if (onload && typeof onload === 'function') {
         onload();
+      }
+
+      // Remove event listener for 'abort'
+      if (signal) {
+        signal.removeEventListener('abort', onAbortHandler);
       }
 
       resolve(xhr.response);
     };
 
+    const onAbortHandler = () => {
+      xhr.abort();
+
+      // Remove event listener for 'load'
+      xhr.removeEventListener('load', onLoadHandler);
+
+      reject(new Error('Request aborted'));
+    };
+
+    xhr.addEventListener('load', onLoadHandler);
+
     if (onProgress && typeof onProgress === 'function') {
       xhr.onprogress = function (e) {
-        //  if (e.lengthComputable) {
-        //    onProgress(e.loaded, e.total);
-        //  }
         onProgress(e.loaded, e.total);
       };
     }
@@ -46,12 +59,9 @@ function fetchArrayBuffer(url, onProgress, signal, onload) {
     if (signal && signal.aborted) {
       xhr.abort();
       reject(new Error('Request aborted'));
+    } else if (signal) {
+      signal.addEventListener('abort', onAbortHandler);
     }
-
-    signal.addEventListener('abort', () => {
-      xhr.abort();
-      reject(new Error('Request aborted'));
-    });
 
     xhr.send();
   });
@@ -74,7 +84,7 @@ export default async function fetchAndAllocateNiftiVolume(
   volumeId: string
 ): Promise<NiftiImageVolume> {
   // nifti volumeIds start with 'nifti:' so we need to remove that
-  const niftiURL = volumeId.substring(6);
+  const niftiURL = volumeId.substring(NIFTI_LOADER_SCHEME.length + 1);
 
   const progress = (loaded, total) => {
     const data = { volumeId, loaded, total };
@@ -133,13 +143,6 @@ export default async function fetchAndAllocateNiftiVolume(
     orientation,
     typedNiftiArray
   );
-
-  // Todo: we should grab this from somewhere else but it doesn't really
-  // prevent us from rendering the volume so we'll just hardcode it for now.
-  Object.assign(volumeMetadata, {
-    Modality: 'MR',
-    FrameOfReferenceUID: '1.2.3',
-  });
 
   const scanAxisNormal = vec3.create();
   vec3.set(scanAxisNormal, orientation[6], orientation[7], orientation[8]);

@@ -1,6 +1,8 @@
 /**
  * Given a pixel array, rescale the pixel values using the rescale slope and
- * intercept and if modality is PT it uses the suv values to scale the array
+ * intercept
+ *
+ * Todo: add the scaling of PT and SUV
  * @param array - The array to be scaled.
  * @param scalingParameters - The scaling parameters
  * @returns The array being scaled

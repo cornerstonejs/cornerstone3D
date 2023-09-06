@@ -88,8 +88,6 @@ async function setup() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  volume.load();
-
   setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
