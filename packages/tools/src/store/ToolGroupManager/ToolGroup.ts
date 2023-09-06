@@ -624,7 +624,6 @@ export default class ToolGroup implements IToolGroup {
       // deep copy the configuration before passing it to the toolGroup, otherwise
       // some strange appending behaviour happens for the arrays
       _configuration = Object.assign(
-        {},
         this._toolInstances[toolName].configuration,
         configuration
       );

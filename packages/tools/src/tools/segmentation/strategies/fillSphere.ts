@@ -101,7 +101,7 @@ export function fillInsideSphere(
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels inside the defined circle.
- * @param enabledElement - The element for which the segment is being erased.
+ * @param enabledElement - The element for which the segment is being filled.
  * @param operationData - EraseOperationData
  */
 export function thresholdInsideSphere(
