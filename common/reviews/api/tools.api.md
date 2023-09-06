@@ -73,6 +73,14 @@ export function addTool(ToolClass: any): void;
 function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
 
 // @public (undocumented)
+type AffineMatrix = [
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number]
+];
+
+// @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -3200,7 +3208,6 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
-
 }
 
 // @public (undocumented)
@@ -3428,17 +3435,9 @@ export class MagnifyTool extends BaseTool {
 }
 
 // @public
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 =
+| [number, number, number, number, number, number, number, number, number]
+| Float32Array;
 
 declare namespace math {
     export {
