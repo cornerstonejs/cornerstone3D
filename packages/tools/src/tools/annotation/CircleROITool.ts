@@ -9,6 +9,13 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedLengthUnits,
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+  getCalibratedAspect,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -51,13 +58,17 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
 import { pointInEllipse } from '../../utilities/math/ellipse';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -107,8 +118,10 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
+
 class CircleROITool extends AnnotationTool {
   static toolName;
+
   touchDragCallback: any;
   mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
@@ -133,6 +146,8 @@ class CircleROITool extends AnnotationTool {
         // Radius of the circle to draw  at the center point of the circle.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -271,7 +286,9 @@ class CircleROITool extends AnnotationTool {
       canvasCoords,
     ]);
 
-    if (Math.abs(radiusPoint - radius) < proximity / 2) return true;
+    if (Math.abs(radiusPoint - radius) < proximity / 2) {
+      return true;
+    }
 
     return false;
   };
@@ -661,6 +678,16 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -683,14 +710,16 @@ class CircleROITool extends AnnotationTool {
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -797,20 +826,7 @@ class CircleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
-
-      const textLines = this._getTextLines(
-        data,
-        targetId,
-        isPreScaled,
-        isSuvScaled
-      );
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -854,62 +870,12 @@ class CircleROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const {
-      radius,
-      radiusUnit,
-      area,
-      mean,
-      stdDev,
-      max,
-      isEmptyArea,
-      Modality,
-      areaUnit,
-    } = cachedVolumeStats;
-
-    const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
-
-    if (radius) {
-      const radiusLine = isEmptyArea
-        ? `Radius: Oblique not supported`
-        : `Radius: ${radius.toFixed(2)} ${radiusUnit}`;
-      textLines.push(radiusLine);
-    }
-
-    if (area) {
-      const areaLine = isEmptyArea
-        ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
-      textLines.push(areaLine);
-    }
-
-    if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
-    }
-
-    if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
-    }
-
-    if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
-    }
-
-    return textLines;
-  };
-
   _calculateCachedStats = (
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -996,58 +962,43 @@ class CircleROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
+        const scale = getCalibratedScale(image);
+        const aspect = getCalibratedAspect(image);
+        const area = Math.abs(
+          Math.PI *
+            (worldWidth / scale / 2) *
+            (worldHeight / aspect / scale / 2)
+        );
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-        let max = -Infinity;
+        const modalityUnit = getModalityUnit(
+          metadata.Modality,
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
+        );
 
-        const meanMaxCalculator = ({ value: newValue }) => {
-          if (newValue > max) {
-            max = newValue;
-          }
-
-          mean += newValue;
-          count += 1;
-        };
-
-        pointInShapeCallback(
+        const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator,
+          this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 
-        mean /= count;
-
-        const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean;
-
-          stdDev += valueMinusMean * valueMinusMean;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator,
-          boundsIJK
-        );
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
+        const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          max,
-          stdDev,
+          mean: stats[1]?.value,
+          max: stats[0]?.value,
+          stdDev: stats[2]?.value,
+          statsArray: stats,
+          pointsInShape: pointsInShape,
           isEmptyArea,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
-          radius: worldWidth / 2,
-          radiusUnit: hasPixelSpacing ? 'mm' : 'px',
-          perimeter: 2 * Math.PI * (worldWidth / 2),
+          areaUnit: getCalibratedAreaUnits(null, image),
+          radius: worldWidth / 2 / scale,
+          radiusUnit: getCalibratedLengthUnits(null, image),
+          perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -1080,6 +1031,52 @@ class CircleROITool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const {
+    radius,
+    radiusUnit,
+    area,
+    mean,
+    stdDev,
+    max,
+    isEmptyArea,
+    Modality,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats;
+
+  const textLines: string[] = [];
+
+  if (radius) {
+    const radiusLine = isEmptyArea
+      ? `Radius: Oblique not supported`
+      : `Radius: ${roundNumber(radius)} ${radiusUnit}`;
+    textLines.push(radiusLine);
+  }
+
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
+
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
+
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
+
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  return textLines;
 }
 
 CircleROITool.toolName = 'CircleROI';

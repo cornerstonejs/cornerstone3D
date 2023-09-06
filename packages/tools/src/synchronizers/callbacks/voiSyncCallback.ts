@@ -1,8 +1,8 @@
 import {
+  BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
   Types,
-  VolumeViewport,
 } from '@cornerstonejs/core';
 
 /**
@@ -13,12 +13,14 @@ import {
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport.
  * @param voiModifiedEvent - The VOI_MODIFIED event.
+ * @param options - Options for the synchronizer.
  */
 export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
-  voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
+  voiModifiedEvent: Types.EventTypes.VoiModifiedEvent,
+  options?: any
 ): void {
   const eventDetail = voiModifiedEvent.detail;
   const { volumeId, range, invertStateChanged, invert } = eventDetail;
@@ -37,11 +39,11 @@ export default function voiSyncCallback(
     voiRange: range,
   };
 
-  if (invertStateChanged) {
+  if (options.syncInvertState && invertStateChanged) {
     tProperties.invert = invert;
   }
 
-  if (tViewport instanceof VolumeViewport) {
+  if (tViewport instanceof BaseVolumeViewport) {
     tViewport.setProperties(tProperties, volumeId);
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties(tProperties);

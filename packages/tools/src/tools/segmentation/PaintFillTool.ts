@@ -172,8 +172,12 @@ class PaintFillTool extends BaseTool {
     for (let b = 0; b < boundaries.length; b++) {
       const j = boundaries[b][1];
 
-      if (j < minJ) minJ = j;
-      if (j > maxJ) maxJ = j;
+      if (j < minJ) {
+        minJ = j;
+      }
+      if (j > maxJ) {
+        maxJ = j;
+      }
     }
 
     const framesModified = [];

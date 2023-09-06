@@ -262,7 +262,7 @@ Learn more about:
 - [ToolGroup](../concepts/cornerstone-tools/toolGroups.md)
 - [Annotations](../concepts/cornerstone-tools/annotation/index.md)
 
-For advanced usage of Stack Viewport, please visit <a href="/live-examples/volumeAnnotationTools.html" target="_blank">Volume Annotation Tools</a> example page.
+For advanced usage of Annotation tools, please visit <a href="/live-examples/volumeAnnotationTools.html" target="_blank">Volume Annotation Tools</a> example page.
 
 :::note Tip
 

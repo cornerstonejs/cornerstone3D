@@ -14,15 +14,25 @@ const OUTSIDE = 0;
 
 function clipT(num, denom, c) {
   const [tE, tL] = c;
-  if (Math.abs(denom) < EPSILON) return num < 0;
+  if (Math.abs(denom) < EPSILON) {
+    return num < 0;
+  }
   const t = num / denom;
 
   if (denom > 0) {
-    if (t > tL) return 0;
-    if (t > tE) c[0] = t;
+    if (t > tL) {
+      return 0;
+    }
+    if (t > tE) {
+      c[0] = t;
+    }
   } else {
-    if (t < tE) return 0;
-    if (t < tL) c[1] = t;
+    if (t < tE) {
+      return 0;
+    }
+    if (t < tL) {
+      c[1] = t;
+    }
   }
   return 1;
 }

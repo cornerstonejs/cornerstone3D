@@ -135,6 +135,25 @@ export default class SegmentationStateManager {
   }
 
   /**
+   * Returns an array of all segmentation representations for all tool groups.
+   * @returns An array of ToolGroupSpecificRepresentations.
+   */
+  getAllSegmentationRepresentations(): Record<
+    string,
+    ToolGroupSpecificRepresentation[]
+  > {
+    const toolGroupSegReps: Record<string, ToolGroupSpecificRepresentation[]> =
+      {};
+    Object.entries(this.state.toolGroups).forEach(
+      ([toolGroupId, toolGroupSegRepresentationsWithConfig]) => {
+        toolGroupSegReps[toolGroupId] =
+          toolGroupSegRepresentationsWithConfig.segmentationRepresentations;
+      }
+    );
+    return toolGroupSegReps;
+  }
+
+  /**
    * Add a new segmentation representation to the toolGroup's segmentation representations.
    * @param toolGroupId - The Id of the tool group .
    * @param segmentationRepresentation - The segmentation representation to add.

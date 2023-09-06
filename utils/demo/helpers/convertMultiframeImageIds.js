@@ -55,7 +55,9 @@ function convertMultiframeImageIds(imageIds) {
         const newImageId = imageIdFrameless + (i + 1);
         newImageIds.push(newImageId);
       }
-    } else newImageIds.push(imageId);
+    } else {
+      newImageIds.push(imageId);
+    }
   });
   return newImageIds;
 }

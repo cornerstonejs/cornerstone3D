@@ -39,7 +39,7 @@ const SCISSOR_ICON = `<path fill="{{color}}" d="M82.89,10a12.09,12.09,0,0,0-16.8
 const RECTANGLE_ICON = `<path fill="{{color}}" d="M8.86,2.25V66.08H72.69V2.25H8.86ZM65.28,58.67h-49v-49h49v49Z" transform="translate(-8.86 -2.25)"/>`;
 const CIRCLE_ICON = `<path fill="{{color}}" d="M40.77,2.25A31.92,31.92,0,1,0,72.69,34.16,31.92,31.92,0,0,0,40.77,2.25Zm0,57.63A25.71,25.71,0,1,1,66.48,34.16,25.71,25.71,0,0,1,40.77,59.87Z" transform="translate(-8.86 -2.25)"/>`;
 
-const CursorSVG = {
+const CursorSVG: Record<string, SVGCursorDescriptor> = {
   Angle: extend(BASE, {
     iconContent: `<path fill="{{color}}" d="M1203 544q0 13-10 23l-393 393 393 393q10 10 10 23t-10 23l-50
     50q-10 10-23 10t-23-10l-466-466q-10-10-10-23t10-23l466-466q10-10 23-10t23
@@ -444,9 +444,7 @@ function registerCursor(
 function getDefinedSVGCursorDescriptor(
   name: string
 ): SVGCursorDescriptor | undefined {
-  if (Object.prototype.hasOwnProperty.call(CursorSVG, name)) {
-    return CursorSVG[name];
-  }
+  return CursorSVG[name];
 }
 
 /*

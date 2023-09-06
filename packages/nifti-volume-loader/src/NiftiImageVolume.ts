@@ -12,9 +12,6 @@ type NiftiImageProperties = {
   controller: AbortController;
 };
 
-// const requestType = Enums.RequestType.Prefetch;
-// const { getMinMax } = csUtils;
-
 /**
  * NiftiImageVolume Class that extends ImageVolume base class.
  * It implements load method to load the data from the Nifti file, and insert them into the volume.

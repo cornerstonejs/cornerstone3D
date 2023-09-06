@@ -16,7 +16,7 @@ const {
   getEnabledElement,
 } = cornerstone3D;
 
-const { Events, ViewportType } = Enums;
+const { Events, ViewportType, CalibrationTypes } = Enums;
 
 const {
   LengthTool,
@@ -24,7 +24,10 @@ const {
   Enums: csToolsEnums,
   cancelActiveManipulations,
   annotation,
+  utilities: toolsUtilities,
 } = csTools3d;
+
+const { calibrateImageSpacing } = toolsUtilities;
 
 const { Events: csToolsEvents } = csToolsEnums;
 
@@ -1062,47 +1065,58 @@ describe('LengthTool:', () => {
     });
   });
 
-  /** Todo: this is a flaky test
+  /** Test that the calibration works as expected when provided a calibrated
+   * scale value.
+   */
   describe('Calibration ', () => {
+    const FOR = 'for';
+
     beforeEach(function () {
-      csTools3d.init()
-      csTools3d.addTool(LengthTool)
-      cache.purgeCache()
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
+      csTools3d.init();
+      csTools3d.addTool(LengthTool);
+      cache.purgeCache();
+      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
       this.stackToolGroup.addTool(LengthTool.toolName, {
         configuration: {},
-      })
+      });
       this.stackToolGroup.setToolActive(LengthTool.toolName, {
         bindings: [{ mouseButton: 1 }],
-      })
+      });
 
-      this.renderingEngine = new RenderingEngine(renderingEngineId)
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-      metaData.addProvider(fakeMetaDataProvider, 10000)
+      this.renderingEngine = new RenderingEngine(renderingEngineId);
+      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
+      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+      metaData.addProvider(fakeMetaDataProvider, 10000);
       metaData.addProvider(
-        calibratedPixelSpacingMetadataProvider.get.bind(
-          calibratedPixelSpacingMetadataProvider
+        utilities.calibratedPixelSpacingMetadataProvider.get.bind(
+          utilities.calibratedPixelSpacingMetadataProvider
         ),
         11000
-      )
-    })
+      );
+    });
 
     afterEach(function () {
-      csTools3d.destroy()
-      eventTarget.reset()
-      cache.purgeCache()
-      this.renderingEngine.destroy()
-      metaData.removeProvider(fakeMetaDataProvider)
-      imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup('stack')
+      try {
+        csTools3d.destroy();
+        eventTarget.reset();
+        cache.purgeCache();
+        this.renderingEngine.destroy();
+        metaData.removeProvider(fakeMetaDataProvider);
+        imageLoader.unregisterAllImageLoaders();
+        ToolGroupManager.destroyToolGroup('stack');
 
-      DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el)
+        if (!this.DOMElements) {
+          return;
         }
-      })
-    })
+        this.DOMElements.forEach((el) => {
+          if (el.parentNode) {
+            el.parentNode.removeChild(el);
+          }
+        });
+      } catch (e) {
+        console.warn(e);
+      }
+    });
 
     it('Should be able to calibrate an image and update the tool', function (done) {
       const element = createViewport(
@@ -1110,54 +1124,62 @@ describe('LengthTool:', () => {
         ViewportType.STACK,
         256,
         256
-      )
+      );
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_4_40_1_1_0_1'
+      const imageId1 = 'fakeImageLoader:imageURI_64_64_4_40_1_1_0_1';
 
-      const vp = this.renderingEngine.getViewport(viewportId)
+      const vp = this.renderingEngine.getViewport(viewportId);
+      const scale = 1.5;
+      const index1 = [32, 32, 0];
+      const index2 = [10, 1, 0];
 
       const secondCallback = () => {
-        const lengthAnnotations = annotation.state.getAnnotations(LengthTool.toolName, FOR)
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
         //  Can successfully add Length tool to annotationManager
-        expect(lengthAnnotations).toBeDefined()
-        expect(lengthAnnotations.length).toBe(1)
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(1);
 
-        const lengthAnnotation = lengthAnnotations[0]
-        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName)
-        expect(lengthAnnotation.invalidated).toBe(false)
-        expect(lengthAnnotation.highlighted).toBe(true)
+        const lengthAnnotation = lengthAnnotations[0];
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+        expect(lengthAnnotation.invalidated).toBe(false);
+        expect(lengthAnnotation.highlighted).toBe(true);
 
-        const data = lengthAnnotation.data.cachedStats
-        const targets = Array.from(Object.keys(data))
-        expect(targets.length).toBe(1)
+        const data = lengthAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
 
-        expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
+        console.log('data', data, targets[0]);
+        expect(data[targets[0]].length).toBeCloseTo(
+          calculateLength(index1, index2) / scale,
+          0.05
+        );
 
-        annotation.state.removeAnnotation(lengthAnnotation.annotationUID)
-        done()
-      }
+        annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+        done();
+      };
 
       const firstCallback = () => {
-        element.removeEventListener(Events.IMAGE_RENDERED, firstCallback)
-        element.addEventListener(Events.IMAGE_RENDERED, secondCallback)
-        const index1 = [32, 32, 0]
-        const index2 = [10, 1, 0]
+        element.removeEventListener(Events.IMAGE_RENDERED, firstCallback);
+        element.addEventListener(Events.IMAGE_RENDERED, secondCallback);
 
-        const { imageData } = vp.getImageData()
+        const { imageData } = vp.getImageData();
 
         const {
           pageX: pageX1,
           pageY: pageY1,
           clientX: clientX1,
           clientY: clientY1,
-        } = createNormalizedMouseEvent(imageData, index1, element, vp)
+        } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
         const {
           pageX: pageX2,
           pageY: pageY2,
           clientX: clientX2,
           clientY: clientY2,
-        } = createNormalizedMouseEvent(imageData, index2, element, vp)
+        } = createNormalizedMouseEvent(imageData, index2, element, vp);
 
         let evt = new MouseEvent('mousedown', {
           target: element,
@@ -1166,8 +1188,8 @@ describe('LengthTool:', () => {
           clientY: clientY1,
           pageX: pageX1,
           pageY: pageY1,
-        })
-        element.dispatchEvent(evt)
+        });
+        element.dispatchEvent(evt);
 
         evt = new MouseEvent('mousemove', {
           target: element,
@@ -1176,34 +1198,39 @@ describe('LengthTool:', () => {
           clientY: clientY2,
           pageX: pageX2,
           pageY: pageY2,
-        })
-        document.dispatchEvent(evt)
+        });
+        document.dispatchEvent(evt);
 
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup')
+        evt = new MouseEvent('mouseup');
 
         // Since there is tool rendering happening for any mouse event
         // we just attach a listener before the last one -> mouse up
-        document.dispatchEvent(evt)
+        document.dispatchEvent(evt);
 
         const imageId = this.renderingEngine
           .getViewport(viewportId)
-          .getCurrentImageId()
+          .getCurrentImageId();
 
-        calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
-      }
+        console.log('Starting image calibration');
+        calibrateImageSpacing(imageId, this.renderingEngine, {
+          type: CalibrationTypes.USER,
+          scale,
+        });
+        console.log('Done image calibration');
+      };
 
-      element.addEventListener(Events.IMAGE_RENDERED, firstCallback)
+      element.addEventListener(Events.IMAGE_RENDERED, firstCallback);
 
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
       try {
-        vp.setStack([imageId1], 0)
-        this.renderingEngine.render()
+        vp.setStack([imageId1], 0);
+        this.renderingEngine.render();
       } catch (e) {
-        done.fail(e)
+        console.warn('Calibrate failed:', e);
+        done.fail(e);
       }
-    })
-  })
-  */
+    });
+  });
 });
