@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.2...v1.13.3) (2023-09-06)
+
+### Bug Fixes
+
+- **brush size:** brush size should be calculated in world not in canvas ([#771](https://github.com/cornerstonejs/cornerstone3D/issues/771)) ([6ca1e3a](https://github.com/cornerstonejs/cornerstone3D/commit/6ca1e3a6d7bc445bbe8aed08a46ec4998f9f8c54))
+
 ## [1.13.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.1...v1.13.2) (2023-09-05)
 
 **Note:** Version bump only for package @cornerstonejs/tools
