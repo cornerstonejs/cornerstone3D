@@ -7,14 +7,14 @@
  * @param scalingParameters - The scaling parameters
  * @returns The array being scaled
  */
-export default function scaleNiftiArray(
+export default function modalityScaleNifti(
   array: Float32Array | Int16Array | Uint8Array,
   niftiHeader
 ): void {
   const arrayLength = array.length;
   const { scl_slope, scl_inter } = niftiHeader;
 
-  if (scl_slope === 0 || Number.isNaN(scl_slope)) {
+  if (!scl_slope || scl_slope === 0 || Number.isNaN(scl_slope)) {
     // No scaling encoded in NIFTI header
     return;
   }

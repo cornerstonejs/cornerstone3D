@@ -500,7 +500,7 @@ type FlipDirection = {
 
 declare namespace helpers {
     export {
-        scaleNiftiArray,
+        modalityScaleNifti,
         makeVolumeMetadata,
         fetchAndAllocateNiftiVolume
     }
@@ -1382,7 +1382,7 @@ type PublicViewportInput = {
 type RGB = [number, number, number];
 
 // @public (undocumented)
-function scaleNiftiArray(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
+function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
 
 // @public (undocumented)
 type Scaling = {

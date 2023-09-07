@@ -12,7 +12,7 @@ import makeVolumeMetadata from './makeVolumeMetadata';
 import NiftiImageVolume from '../NiftiImageVolume';
 import * as NIFTICONSTANTS from './niftiConstants';
 import { invertDataPerFrame, rasToLps } from './convert';
-import scaleNiftiArray from './scaleNiftiArray';
+import modalityScaleNifti from './modalityScaleNifti';
 import Events from '../enums/Events';
 import { NIFTI_LOADER_SCHEME } from '../constants';
 
@@ -136,7 +136,7 @@ export default async function fetchAndAllocateNiftiVolume(
   const { orientation, origin, spacing } = rasToLps(niftiHeader);
   invertDataPerFrame(niftiHeader.dims.slice(1, 4), typedNiftiArray);
 
-  scaleNiftiArray(typedNiftiArray, niftiHeader);
+  modalityScaleNifti(typedNiftiArray, niftiHeader);
 
   const volumeMetadata = makeVolumeMetadata(
     niftiHeader,

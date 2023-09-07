@@ -1,5 +1,5 @@
 import makeVolumeMetadata from './makeVolumeMetadata';
-import scaleNiftiArray from './scaleNiftiArray';
+import modalityScaleNifti from './modalityScaleNifti';
 import fetchAndAllocateNiftiVolume from './fetchAndAllocateNiftiVolume';
 
-export { scaleNiftiArray, makeVolumeMetadata, fetchAndAllocateNiftiVolume };
+export { modalityScaleNifti, makeVolumeMetadata, fetchAndAllocateNiftiVolume };
