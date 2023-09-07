@@ -8,6 +8,8 @@ import drawLinkedTextBox from './drawLinkedTextBox';
 import drawRect from './drawRect';
 import drawTextBox from './drawTextBox';
 import drawArrow from './drawArrow';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
 
 export {
   draw,
@@ -20,4 +22,6 @@ export {
   drawRect,
   drawTextBox,
   drawArrow,
+  setAttributesIfNecessary,
+  setNewAttributesIfValid,
 };

@@ -1307,6 +1307,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
+    getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
     getProperties: () => VolumeViewportProperties;
     getSlabThickness(): number;
@@ -1318,6 +1319,7 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
+    resetProperties(volumeId?: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
@@ -1342,6 +1344,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
+
 }
 
 // @public
@@ -1610,6 +1613,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 // @public (undocumented)

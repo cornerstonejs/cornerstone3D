@@ -151,12 +151,12 @@ export class ImageVolume implements IImageVolume {
    */
   destroy(): void {
     // TODO: GPU memory associated with volume is not cleared.
-    this.vtkOpenGLTexture.releaseGraphicsResources();
-    this.vtkOpenGLTexture.destroyTexture();
-    this.vtkOpenGLTexture.delete();
     this.imageData.delete();
     this.imageData = null;
     this.scalarData = null;
+
+    this.vtkOpenGLTexture.releaseGraphicsResources();
+    this.vtkOpenGLTexture.delete();
   }
 }
 
