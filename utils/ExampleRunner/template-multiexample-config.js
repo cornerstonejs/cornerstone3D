@@ -109,7 +109,7 @@ module.exports = {
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'
-      )}'
+      )}',
       '@cornerstonejs/nifti-volume-loader': '${csNiftiPath.replace(
         /\\/g,
         '/'
