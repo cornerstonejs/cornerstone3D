@@ -294,6 +294,16 @@
         "name": "DICOM SEG export",
         "description": "Demonstrates how to export a segmentation to DICOM SEG"
       }
+    },
+    "nifti": {
+      "niftiBasic": {
+        "name": "Load Nifti Volume",
+        "description": "Demonstrates how to load and render a nifti volume"
+      },
+      "niftiWithTools": {
+        "name": "Tool Usage in Nifti",
+        "description": "Demonstrates how to use manipulation and annotation tools on a nifti volume"
+      }
     }
   }
 }

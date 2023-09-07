@@ -12,6 +12,9 @@
   "directories": {
     "test": "test"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "scripts": {
     "build:esm": "tsc --project ./tsconfig.esm.json",
