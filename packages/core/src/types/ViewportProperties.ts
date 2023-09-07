@@ -1,4 +1,4 @@
-import { VOILUTFunctionType } from '../enums';
+import { InterpolationType, VOILUTFunctionType } from '../enums';
 import { VOIRange } from './voi';
 import { ColormapPublic } from './Colormap';
 
@@ -14,6 +14,8 @@ type ViewportProperties = {
   invert?: boolean;
   /** Colormap applied to the viewport*/
   colormap?: ColormapPublic;
+  /** interpolation type */
+  interpolationType?: InterpolationType;
 };
 
 export type { ViewportProperties };

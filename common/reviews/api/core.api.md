@@ -48,6 +48,34 @@ function addProvider(provider: (type: string, query: any) => any, priority?: num
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
+type AffineMatrix = [
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+]
+];
+
+// @public (undocumented)
 function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
 
 // @public (undocumented)
@@ -71,6 +99,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
+    // (undocumented)
+    getImageIds: (volumeId?: string) => Array<string>;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
@@ -98,7 +128,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, slabThickness, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -493,7 +523,7 @@ function createAndCacheDerivedVolume(referencedVolumeId: string, options: Derive
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
-function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
+function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
 
 // @public (undocumented)
 function createFloat32SharedArray(length: number): Float32Array;
@@ -1890,6 +1920,8 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
+    getImageIds: (volumeId?: string) => string[];
+    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
@@ -1944,17 +1976,7 @@ function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
 type Metadata = {
@@ -2503,7 +2525,8 @@ declare namespace Types {
         ColormapRegistration,
         PixelDataTypedArray,
         ImagePixelModule,
-        ImagePlaneModule
+        ImagePlaneModule,
+        AffineMatrix
     }
 }
 export { Types }
@@ -2759,6 +2782,7 @@ type ViewportProperties = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
     colormap?: ColormapPublic;
+    interpolationType?: InterpolationType;
 };
 
 // @public (undocumented)

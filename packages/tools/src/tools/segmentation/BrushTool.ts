@@ -1,4 +1,5 @@
 import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
 import type {
@@ -8,7 +9,10 @@ import type {
   SVGDrawingHelper,
 } from '../../types';
 import { BaseTool } from '../base';
-import { fillInsideSphere } from './strategies/fillSphere';
+import {
+  fillInsideSphere,
+  thresholdInsideSphere,
+} from './strategies/fillSphere';
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
   thresholdInsideCircle,
@@ -59,10 +63,11 @@ class BrushTool extends BaseTool {
       configuration: {
         strategies: {
           FILL_INSIDE_CIRCLE: fillInsideCircle,
-          THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
           ERASE_INSIDE_CIRCLE: eraseInsideCircle,
           FILL_INSIDE_SPHERE: fillInsideSphere,
           ERASE_INSIDE_SPHERE: eraseInsideSphere,
+          THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
+          THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
         },
         strategySpecificConfiguration: {
           THRESHOLD_INSIDE_CIRCLE: {
@@ -277,24 +282,42 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
+    const camera = viewport.getCamera();
     const { brushSize } = this.configuration;
-    // Center of circle in canvas Coordinates
 
-    const radius = brushSize;
+    const viewUp = vec3.fromValues(
+      camera.viewUp[0],
+      camera.viewUp[1],
+      camera.viewUp[2]
+    );
+    const viewPlaneNormal = vec3.fromValues(
+      camera.viewPlaneNormal[0],
+      camera.viewPlaneNormal[1],
+      camera.viewPlaneNormal[2]
+    );
+    const viewRight = vec3.create();
 
-    const bottomCanvas: Types.Point2 = [
+    vec3.cross(viewRight, viewUp, viewPlaneNormal);
+
+    // in the world coordinate system, the brushSize is the radius of the circle
+    // in mm
+    const centerCursorInWorld: Types.Point3 = canvasToWorld([
       centerCanvas[0],
-      centerCanvas[1] + radius,
-    ];
-    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius];
-    const leftCanvas: Types.Point2 = [
-      centerCanvas[0] - radius,
       centerCanvas[1],
-    ];
-    const rightCanvas: Types.Point2 = [
-      centerCanvas[0] + radius,
-      centerCanvas[1],
-    ];
+    ]);
+
+    const bottomCursorInWorld = vec3.create();
+    const topCursorInWorld = vec3.create();
+    const leftCursorInWorld = vec3.create();
+    const rightCursorInWorld = vec3.create();
+
+    // Calculate the bottom and top points of the circle in world coordinates
+    for (let i = 0; i <= 2; i++) {
+      bottomCursorInWorld[i] = centerCursorInWorld[i] - viewUp[i] * brushSize;
+      topCursorInWorld[i] = centerCursorInWorld[i] + viewUp[i] * brushSize;
+      leftCursorInWorld[i] = centerCursorInWorld[i] - viewRight[i] * brushSize;
+      rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
+    }
 
     const { brushCursor } = this._hoverData;
     const { data } = brushCursor;
@@ -304,10 +327,10 @@ class BrushTool extends BaseTool {
     }
 
     data.handles.points = [
-      canvasToWorld(bottomCanvas),
-      canvasToWorld(topCanvas),
-      canvasToWorld(leftCanvas),
-      canvasToWorld(rightCanvas),
+      bottomCursorInWorld,
+      topCursorInWorld,
+      leftCursorInWorld,
+      rightCursorInWorld,
     ];
 
     data.invalidated = false;

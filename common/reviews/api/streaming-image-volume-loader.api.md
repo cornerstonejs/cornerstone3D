@@ -34,6 +34,14 @@ type ActorSliceRange = {
     current: number;
 };
 
+// @public (undocumented)
+type AffineMatrix = [
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number]
+];
+
 // @public
 enum BlendModes {
     AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
@@ -1319,6 +1327,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
+    getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     getSlabThickness(): number;
@@ -1360,21 +1369,12 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
-
 }
 
 // @public
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 =
+| [number, number, number, number, number, number, number, number, number]
+| Float32Array;
 
 // @public
 type Metadata = {
@@ -1630,6 +1630,7 @@ type ViewportProperties = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
     colormap?: ColormapPublic;
+    interpolationType?: InterpolationType;
 };
 
 // @public (undocumented)
