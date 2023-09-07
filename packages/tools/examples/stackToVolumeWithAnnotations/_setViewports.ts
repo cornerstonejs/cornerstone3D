@@ -66,6 +66,8 @@ async function _convertStackToVolumeViewport(
 
   const { id, element } = viewport;
 
+  const prevCamera = viewport.getCamera();
+
   let imageIds = viewport.getImageIds();
   imageIds = imageIds.map((imageId) => {
     const imageURI = utilities.imageIdToURI(imageId);
@@ -78,7 +80,6 @@ async function _convertStackToVolumeViewport(
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0.4, 0.2],
       },
     },
@@ -98,11 +99,27 @@ async function _convertStackToVolumeViewport(
 
   // Set the volume to load
   volume.load();
+  const volumeViewport = <Types.IVolumeViewport>renderingEngine.getViewport(id);
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [id]);
+  setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId,
+      },
+    ],
+    [id]
+  );
 
-  // Render the image
-  renderingEngine.renderViewports([id]);
+  // preserve the slice location when switching from stack to volume
+  element.addEventListener(Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME, () => {
+    volumeViewport.setCamera({
+      focalPoint: prevCamera.focalPoint,
+    });
+    volumeViewport.render();
+  });
+
+  volumeViewport.render();
 }
 
 export { _convertStackToVolumeViewport, _convertVolumeToStackViewport };

@@ -10,7 +10,7 @@ const { Segmentation: SegmentationDerivation } = derivations;
  * @param images - An array of the cornerstone image objects, which includes imageId and metadata
  * @param labelmaps - An array of the 3D Volumes that contain the segmentation data.
  */
-function generateSegmentation(images, labelmaps, metadata, options) {
+function generateSegmentation(images, labelmaps, metadata, options = {}) {
     const segmentation = _createMultiframeSegmentationFromReferencedImages(
         images,
         metadata,
@@ -41,8 +41,8 @@ function _createMultiframeSegmentationFromReferencedImages(
             ...image,
             ...instance,
             // Todo: move to dcmjs tag style
-            SOPClassUID: instance.SopClassUID,
-            SOPInstanceUID: instance.SopInstanceUID,
+            SOPClassUID: instance.SopClassUID || instance.SOPClassUID,
+            SOPInstanceUID: instance.SopInstanceUID || instance.SOPInstanceUID,
             PixelData: image.getPixelData(),
             _vrMap: {
                 PixelData: "OW"
