@@ -1304,6 +1304,9 @@ type Metadata = {
 };
 
 // @public (undocumented)
+function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
+
+// @public (undocumented)
 export class NiftiImageVolume extends ImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: NiftiImageProperties);
     // (undocumented)
@@ -1380,9 +1383,6 @@ type PublicViewportInput = {
 
 // @public
 type RGB = [number, number, number];
-
-// @public (undocumented)
-function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
 
 // @public (undocumented)
 type Scaling = {
