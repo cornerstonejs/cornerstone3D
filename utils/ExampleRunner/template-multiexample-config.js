@@ -12,6 +12,7 @@ const csStreamingBasePath = path.resolve(
 const csDICOMImageLoaderDistPath = path.resolve(
   './packages/dicomImageLoader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js'
 );
+const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
 module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
   let multiExampleEntryPoints = '';
@@ -109,6 +110,10 @@ module.exports = {
         /\\/g,
         '/'
       )}'
+      '@cornerstonejs/nifti-volume-loader': '${csNiftiPath.replace(
+        /\\/g,
+        '/'
+      )}',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
