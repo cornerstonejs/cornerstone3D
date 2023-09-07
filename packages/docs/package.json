@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "1.14.1",
+  "version": "1.14.2",
   "private": true,
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
@@ -31,8 +31,8 @@
     "@cornerstonejs/adapters": "^1.14.2",
     "@cornerstonejs/core": "^1.14.2",
     "@cornerstonejs/dicom-image-loader": "^1.14.2",
-    "@cornerstonejs/streaming-image-volume-loader": "^1.14.2",
     "@cornerstonejs/nifti-volume-loader": "^1.14.2",
+    "@cornerstonejs/streaming-image-volume-loader": "^1.14.2",
     "@cornerstonejs/tools": "^1.14.2",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.1...v1.14.2) (2023-09-07)
+
+### Bug Fixes
+
+- **examples:** publish nifti examples ([#773](https://github.com/cornerstonejs/cornerstone3D/issues/773)) ([e457ca8](https://github.com/cornerstonejs/cornerstone3D/commit/e457ca834939679c87b9ac46322b3b3c1c2b430f))
+
 ## [1.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.0...v1.14.1) (2023-09-07)
 
 ### Bug Fixes
