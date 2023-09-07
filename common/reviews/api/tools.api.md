@@ -73,6 +73,14 @@ export function addTool(ToolClass: any): void;
 function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
 
 // @public (undocumented)
+type AffineMatrix = [
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number]
+];
+
+// @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -220,6 +228,22 @@ type AnnotationCompletedEventDetail = {
 
 // @public (undocumented)
 type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
+
+// @public (undocumented)
+export abstract class AnnotationDisplayTool extends BaseTool {
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    // (undocumented)
+    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    // (undocumented)
+    getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
+    // (undocumented)
+    onImageSpacingCalibrated: (evt: Types_2.EventTypes.ImageSpacingCalibratedEvent) => void;
+    // (undocumented)
+    abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
+    // (undocumented)
+    static toolName: any;
+}
 
 // @public (undocumented)
 type AnnotationGroupSelector = HTMLDivElement | string;
@@ -1529,7 +1553,9 @@ declare namespace drawing {
         drawLinkedTextBox,
         drawRect,
         drawTextBox,
-        drawArrow
+        drawArrow,
+        setAttributesIfNecessary,
+        setNewAttributesIfValid
     }
 }
 export { drawing }
@@ -3411,17 +3437,9 @@ export class MagnifyTool extends BaseTool {
 }
 
 // @public
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 =
+| [number, number, number, number, number, number, number, number, number]
+| Float32Array;
 
 declare namespace math {
     export {
@@ -4656,6 +4674,9 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
 
 // @public (undocumented)
+function setAttributesIfNecessary(attributes: any, svgNode: any): void;
+
+// @public (undocumented)
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
 
 // @public (undocumented)
@@ -4684,6 +4705,9 @@ function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig)
 
 // @public (undocumented)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
+
+// @public (undocumented)
+function setNewAttributesIfValid(attributes: any, svgNode: any): void;
 
 // @public (undocumented)
 function setSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
@@ -5477,6 +5501,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 declare namespace visibility {

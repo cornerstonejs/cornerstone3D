@@ -48,6 +48,7 @@ jobs:
             - packages/streaming-image-volume-loader/dist
             - packages/adapters/dist
             - packages/dicomImageLoader/dist
+            - packages/nifti-volume-loader/dist
             - version.txt
             - commit.txt
             - version.json

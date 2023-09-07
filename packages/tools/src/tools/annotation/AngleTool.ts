@@ -808,7 +808,7 @@ class AngleTool extends AnnotationTool {
       );
 
       cachedStats[targetId] = {
-        angle,
+        angle: isNaN(angle) ? 'Incomplete Angle' : angle,
       };
     }
 

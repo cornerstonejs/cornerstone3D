@@ -1,4 +1,4 @@
-export function _setNewAttributesIfValid(attributes, svgNode) {
+export function setNewAttributesIfValid(attributes, svgNode) {
   Object.keys(attributes).forEach((key) => {
     const newValue = attributes[key];
     if (newValue !== undefined && newValue !== '') {
@@ -7,4 +7,4 @@ export function _setNewAttributesIfValid(attributes, svgNode) {
   });
 }
 
-export default _setNewAttributesIfValid;
+export default setNewAttributesIfValid;

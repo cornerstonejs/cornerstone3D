@@ -200,24 +200,26 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
     const { data } = annotation;
     const { points, textBox } = data.handles;
-    const { worldBoundingBox } = textBox;
 
-    if (worldBoundingBox) {
-      const canvasBoundingBox = {
-        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
-        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
-        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      };
+    if (textBox) {
+      const { worldBoundingBox } = textBox;
+      if (worldBoundingBox) {
+        const canvasBoundingBox = {
+          topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
+          topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
+          bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
+          bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        };
 
-      if (
-        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
-        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
-      ) {
-        data.handles.activeHandleIndex = null;
-        return textBox;
+        if (
+          canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
+          canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
+          canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
+          canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
+        ) {
+          data.handles.activeHandleIndex = null;
+          return textBox;
+        }
       }
     }
 
