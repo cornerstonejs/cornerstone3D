@@ -5,4 +5,8 @@ import {
   getConfiguration,
 } from './stackPrefetch';
 
-export { enable, disable, setConfiguration, getConfiguration };
+import * as stackContextPrefetch from './stackContextPrefetch';
+
+const stackPrefetch = { enable, disable, setConfiguration, getConfiguration };
+
+export { stackPrefetch, stackContextPrefetch };

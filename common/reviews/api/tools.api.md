@@ -1460,7 +1460,7 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
-function disable(element: any): void;
+function disable_2(element: any): void;
 
 // @public (undocumented)
 type DisplayArea = {
@@ -1721,7 +1721,7 @@ export class EllipticalROITool extends AnnotationTool {
 }
 
 // @public (undocumented)
-const enable: (element: any) => void;
+const enable_2: (element: any) => void;
 
 declare namespace Enums {
     export {
@@ -2096,7 +2096,7 @@ function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function getColorLUT(index: number): ColorLUT | undefined;
 
 // @public (undocumented)
-function getConfiguration(): {
+function getConfiguration_2(): {
     maxImagesToPrefetch: number;
     minBefore: number;
     maxAfter: number;
@@ -4689,7 +4689,7 @@ function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function setConfiguration(config: any): void;
+function setConfiguration_2(config: any): void;
 
 // @public (undocumented)
 function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
@@ -4786,6 +4786,15 @@ export class SphereScissorsTool extends BaseTool {
     static toolName: any;
 }
 
+declare namespace stackContextPrefetch {
+    export {
+        enable_2 as enable,
+        disable_2 as disable,
+        getConfiguration_2 as getConfiguration,
+        setConfiguration_2 as setConfiguration
+    }
+}
+
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
@@ -4798,14 +4807,13 @@ type StackNewImageEventDetail = {
     renderingEngineId: string;
 };
 
-declare namespace stackPrefetch {
-    export {
-        enable,
-        disable,
-        setConfiguration,
-        getConfiguration
-    }
-}
+// @public (undocumented)
+const stackPrefetch: {
+    enable: typeof enable;
+    disable: typeof disable;
+    setConfiguration: typeof setConfiguration;
+    getConfiguration: typeof getConfiguration;
+};
 
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
@@ -5433,6 +5441,7 @@ declare namespace utilities {
         rectangleROITool,
         planarFreehandROITool,
         stackPrefetch,
+        stackContextPrefetch,
         scroll_2 as scroll,
         roundNumber
     }
