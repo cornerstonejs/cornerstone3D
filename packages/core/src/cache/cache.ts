@@ -444,7 +444,7 @@ class Cache implements ICache {
    * @param imageId - image Id to check
    * @returns boolean
    */
-  public isImageIdCached(imageId: string): boolean {
+  public isLoaded(imageId: string): boolean {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {

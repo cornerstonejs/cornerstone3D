@@ -37,7 +37,7 @@ function prefetch(element) {
   const stackPrefetch = stackPrefetchData || {};
   const stack = getStackData(element);
 
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+  if (!stack?.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
@@ -45,12 +45,7 @@ function prefetch(element) {
   const { currentImageIdIndex } = stack;
 
   // If all the requests are complete, disable the stackPrefetch tool
-  if (
-    !stackPrefetch.indicesToRequest ||
-    !stackPrefetch.indicesToRequest.length
-  ) {
-    stackPrefetch.enabled = false;
-  }
+  stackPrefetch.enabled &&= stackPrefetch.indicesToRequest?.length;
 
   // Make sure the tool is still enabled
   if (stackPrefetch.enabled === false) {
@@ -90,7 +85,7 @@ function prefetch(element) {
     const imageCached =
       distance < 6
         ? cache.getImageLoadObject(imageId)
-        : cache.isImageIdCached(imageId);
+        : cache.isLoaded(imageId);
 
     if (imageCached) {
       // Already in cache
