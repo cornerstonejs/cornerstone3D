@@ -619,7 +619,10 @@ class Viewport implements IViewport {
     if (height < 8 || width < 8) {
       return;
     }
-    this.setCamera({ parallelScale: height / (2 * scale) });
+    const imageData = this.getDefaultImageData();
+    const spacingWorld = imageData.getSpacing();
+    const spacing = spacingWorld[1];
+    this.setCamera({ parallelScale: (height * spacing) / (2 * scale) });
     // Need to ensure the focal point is aligned with the canvas size/position
     // so that we don't get half pixel rendering, which causes additional
     // moire patterns to be displayed.
@@ -628,15 +631,8 @@ class Viewport implements IViewport {
     // focal point to the center of an image pixel.
     const { focalPoint, position, viewUp, viewPlaneNormal } = this.getCamera();
     const focalChange = vec3.create();
-    const imageData = this.getDefaultImageData() || {};
-    const { spacing = [1, 1] } = imageData;
     if (canvas.height % 2 === 0) {
-      vec3.scaleAndAdd(
-        focalChange,
-        focalChange,
-        viewUp,
-        scale * 0.5 * spacing[0]
-      );
+      vec3.scaleAndAdd(focalChange, focalChange, viewUp, scale * 0.5 * spacing);
     }
     if (canvas.width % 2 === 0) {
       const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
@@ -644,7 +640,7 @@ class Viewport implements IViewport {
         focalChange,
         focalChange,
         viewRight,
-        scale * 0.5 * spacing[1]
+        scale * 0.5 * spacing
       );
     }
     if (!focalChange[0] && !focalChange[1] && !focalChange[2]) {
@@ -757,18 +753,6 @@ class Viewport implements IViewport {
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
-    // Todo: remove this, this is just for tests passing
-    if (imageData) {
-      const spc = imageData.getSpacing();
-
-      bounds[0] = bounds[0] + spc[0] / 2;
-      bounds[1] = bounds[1] - spc[0] / 2;
-      bounds[2] = bounds[2] + spc[1] / 2;
-      bounds[3] = bounds[3] - spc[1] / 2;
-      bounds[4] = bounds[4] + spc[2] / 2;
-      bounds[5] = bounds[5] - spc[2] / 2;
-    }
-
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const viewUp = <Point3>activeCamera.getViewUp();
@@ -783,7 +767,7 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+      const middleIJK = dimensions.map((d) => d / 2);
 
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
       imageData.indexToWorld(idx, focalPoint);
@@ -809,19 +793,13 @@ class Viewport implements IViewport {
       parallelScale = (heightWorld * scaleFactor) / 2;
     }
 
-    let w1 = bounds[1] - bounds[0];
-    let w2 = bounds[3] - bounds[2];
-    let w3 = bounds[5] - bounds[4];
-    w1 *= w1;
-    w2 *= w2;
-    w3 *= w3;
-    let radius = w1 + w2 + w3;
+    const w1 = (bounds[1] - bounds[0]) ** 2;
+    const w2 = (bounds[3] - bounds[2]) ** 2;
+    const w3 = (bounds[5] - bounds[4]) ** 2;
 
     // If we have just a single point, pick a radius of 1.0
-    radius = radius === 0 ? 1.0 : radius;
-
     // compute the radius of the enclosing sphere
-    radius = Math.sqrt(radius) * 0.5;
+    const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
 
     const distance = 1.1 * radius;
 
