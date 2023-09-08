@@ -631,10 +631,10 @@ class Viewport implements IViewport {
     // focal point to the center of an image pixel.
     const { focalPoint, position, viewUp, viewPlaneNormal } = this.getCamera();
     const focalChange = vec3.create();
-    if (canvas.height % 2 === 0) {
+    if (canvas.height % 2) {
       vec3.scaleAndAdd(focalChange, focalChange, viewUp, scale * 0.5 * spacing);
     }
-    if (canvas.width % 2 === 0) {
+    if (canvas.width % 2) {
       const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
       vec3.scaleAndAdd(
         focalChange,
@@ -767,7 +767,7 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => d / 2);
+      const middleIJK = dimensions.map((d) => (d - 1) / 2);
 
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
       imageData.indexToWorld(idx, focalPoint);
