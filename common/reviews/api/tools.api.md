@@ -1460,9 +1460,6 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
-function disable_2(element: any): void;
-
-// @public (undocumented)
 type DisplayArea = {
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
@@ -1719,9 +1716,6 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     touchDragCallback: any;
 }
-
-// @public (undocumented)
-const enable_2: (element: any) => void;
 
 declare namespace Enums {
     export {
@@ -2094,14 +2088,6 @@ function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 
 // @public (undocumented)
 function getColorLUT(index: number): ColorLUT | undefined;
-
-// @public (undocumented)
-function getConfiguration_2(): {
-    maxImagesToPrefetch: number;
-    minBefore: number;
-    maxAfter: number;
-    preserveExistingPool: boolean;
-};
 
 // @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
@@ -4689,9 +4675,6 @@ function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function setConfiguration_2(config: any): void;
-
-// @public (undocumented)
 function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
 
 // @public (undocumented)
@@ -4786,14 +4769,13 @@ export class SphereScissorsTool extends BaseTool {
     static toolName: any;
 }
 
-declare namespace stackContextPrefetch {
-    export {
-        enable_2 as enable,
-        disable_2 as disable,
-        getConfiguration_2 as getConfiguration,
-        setConfiguration_2 as setConfiguration
-    }
-}
+// @public (undocumented)
+const stackContextPrefetch: {
+    enable: (element: any) => void;
+    disable: typeof disable_2;
+    getConfiguration: typeof getConfiguration_2;
+    setConfiguration: typeof setConfiguration_2;
+};
 
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
@@ -4811,8 +4793,8 @@ type StackNewImageEventDetail = {
 const stackPrefetch: {
     enable: typeof enable;
     disable: typeof disable;
-    setConfiguration: typeof setConfiguration;
     getConfiguration: typeof getConfiguration;
+    setConfiguration: typeof setConfiguration;
 };
 
 // @public (undocumented)

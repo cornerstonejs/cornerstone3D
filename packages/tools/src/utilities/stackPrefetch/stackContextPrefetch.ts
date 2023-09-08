@@ -1,6 +1,4 @@
 import {
-  getEnabledElement,
-  StackViewport,
   imageLoader,
   Enums,
   eventTarget,
@@ -9,9 +7,14 @@ import {
   getConfiguration as getCoreConfiguration,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState } from './state';
-
-const requestType = Enums.RequestType.Prefetch;
-const priority = 0;
+import {
+  getStackData,
+  range,
+  requestType,
+  priority,
+  clearFromImageIds,
+  getPromiseRemovedHandler,
+} from './stackPrefetchUtils';
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -25,58 +28,6 @@ let resetPrefetchTimeout;
 // Starting the prefetch quickly isn't an issue as the main image is already being
 // loaded, so a 5 ms prefetch delay is fine
 const resetPrefetchDelay = 5;
-
-function range(lowEnd, highEnd) {
-  // Javascript version of Python's range function
-  // http://stackoverflow.com/questions/3895478/does-javascript-have-a-method-like-range-to-generate-an-array-based-on-suppl
-  lowEnd = Math.round(lowEnd) || 0;
-  highEnd = Math.round(highEnd) || 0;
-
-  const arr = [];
-  let c = highEnd - lowEnd + 1;
-
-  if (c <= 0) {
-    return arr;
-  }
-
-  while (c--) {
-    arr[c] = highEnd--;
-  }
-
-  return arr;
-}
-
-function getStackData(element) {
-  const enabledElement = getEnabledElement(element);
-
-  if (!enabledElement) {
-    throw new Error(
-      'stackPrefetch: element must be a valid Cornerstone enabled element'
-    );
-  }
-
-  const { viewport } = enabledElement;
-
-  if (!(viewport instanceof StackViewport)) {
-    throw new Error(
-      'stackPrefetch: element must be a StackViewport, VolumeViewport stackPrefetch not yet implemented'
-    );
-  }
-
-  return {
-    currentImageIdIndex: viewport.getCurrentImageIdIndex(),
-    imageIds: viewport.getImageIds(),
-  };
-}
-
-const clearFromImageIds = (stack) => {
-  const { imageIds } = stack;
-  const imageIdSet = new Set<string>();
-  imageIds.forEach((imageId) => imageIdSet.add(imageId));
-  return (requestDetails) =>
-    requestDetails.type !== requestType ||
-    !imageIdSet.has(requestDetails.additionalDetails.imageId);
-};
 
 function prefetch(element) {
   const stack = getStackData(element);
@@ -131,8 +82,12 @@ function prefetch(element) {
     }
 
     const distance = Math.abs(currentImageIdIndex - imageIdIndex);
-    // Use getter for nearby objects to ensure the recent access is updated
-    // and is cached for distant objects, to let them be decached if necessary
+    // For nearby objects, ensure the last accessed time is updated
+    // by using getImageLoadObject.
+    // For more distant objects, just check if available, but dont
+    // change the access time.
+    // This allows throwing data that hasn't been accessed and is not
+    // nearby.
     const imageCached =
       distance < 6
         ? cache.getImageLoadObject(imageId)
@@ -191,49 +146,6 @@ function prefetch(element) {
       // addToBeginning
     );
   });
-}
-
-function getPromiseRemovedHandler(element) {
-  return function (e) {
-    const eventData = e.detail;
-
-    // When an imagePromise has been pushed out of the cache, re-add its index
-    // It to the indicesToRequest list so that it will be retrieved later if the
-    // CurrentImageIdIndex is changed to an image nearby
-    let stackData;
-
-    try {
-      // It will throw an exception in some cases (eg: thumbnails)
-      stackData = getStackData(element);
-    } catch (error) {
-      return;
-    }
-
-    if (!stackData || !stackData.imageIds || stackData.imageIds.length === 0) {
-      return;
-    }
-
-    const stack = stackData;
-    const imageIdIndex = stack.imageIds.indexOf(eventData.imageId);
-
-    // Make sure the image that was removed is actually in this stack
-    // Before adding it to the indicesToRequest array
-    if (imageIdIndex < 0) {
-      return;
-    }
-
-    const stackPrefetchData = getToolState(element);
-
-    if (
-      !stackPrefetchData ||
-      !stackPrefetchData.data ||
-      !stackPrefetchData.data.length
-    ) {
-      return;
-    }
-
-    stackPrefetchData.indicesToRequest.push(imageIdIndex);
-  };
 }
 
 function onImageUpdated(e) {
@@ -383,4 +295,11 @@ function setConfiguration(config) {
   configuration = config;
 }
 
-export { enable, disable, getConfiguration, setConfiguration };
+const stackContextPrefetch = {
+  enable,
+  disable,
+  getConfiguration,
+  setConfiguration,
+};
+
+export default stackContextPrefetch;
