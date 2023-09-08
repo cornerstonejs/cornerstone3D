@@ -255,6 +255,11 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     // for the textBox.
 
     return {
+      visibility: this.getStyle(
+        'textBoxVisibility',
+        specifications,
+        annotation
+      ),
       fontFamily: this.getStyle(
         'textBoxFontFamily',
         specifications,
