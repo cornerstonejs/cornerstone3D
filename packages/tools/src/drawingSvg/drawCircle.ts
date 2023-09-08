@@ -3,8 +3,8 @@ import { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
 
 function drawCircle(
   svgDrawingHelper: SVGDrawingHelper,
@@ -15,13 +15,23 @@ function drawCircle(
   options = {},
   dataId = ''
 ): void {
-  const { color, fill, width, lineWidth, lineDash } = Object.assign(
+  const {
+    color,
+    fill,
+    width,
+    lineWidth,
+    lineDash,
+    fillOpacity,
+    strokeOpacity,
+  } = Object.assign(
     {
       color: 'dodgerblue',
       fill: 'transparent',
       width: '2',
       lineDash: undefined,
       lineWidth: undefined,
+      strokeOpacity: 1,
+      fillOpacity: 1,
     },
     options
   );
@@ -42,10 +52,12 @@ function drawCircle(
     fill,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
+    'fill-opacity': fillOpacity, // setting fill opacity
+    'stroke-opacity': strokeOpacity, // setting stroke opacity
   };
 
   if (existingCircleElement) {
-    _setAttributesIfNecessary(attributes, existingCircleElement);
+    setAttributesIfNecessary(attributes, existingCircleElement);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -55,7 +67,7 @@ function drawCircle(
       newCircleElement.setAttribute('data-id', dataId);
     }
 
-    _setNewAttributesIfValid(attributes, newCircleElement);
+    setNewAttributesIfValid(attributes, newCircleElement);
 
     svgDrawingHelper.appendNode(newCircleElement, svgNodeHash);
   }
