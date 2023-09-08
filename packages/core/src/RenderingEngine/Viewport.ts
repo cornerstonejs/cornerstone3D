@@ -799,17 +799,15 @@ class Viewport implements IViewport {
 
     let parallelScale;
 
-    if (boundsAspectRatio <= 1.1 * canvasAspectRatio) {
+    if (boundsAspectRatio <= canvasAspectRatio) {
       // can fit full height, so use it minus 10%
-      parallelScale = (1.1 * heightWorld) / 2;
+      parallelScale = heightWorld / 2;
     } else {
       const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
       // Scale to width exactly - no extra spacing at sides
       parallelScale = (heightWorld * scaleFactor) / 2;
     }
-
-    //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];
