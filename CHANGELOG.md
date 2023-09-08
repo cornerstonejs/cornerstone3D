@@ -3,6 +3,64 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.3...v1.14.4) (2023-09-07)
+
+### Bug Fixes
+
+- **measurements:** The image stack sync tool fails to work on non-FOR instances and hangs the browser ([#642](https://github.com/cornerstonejs/cornerstone3D/issues/642)) ([cd5efa0](https://github.com/cornerstonejs/cornerstone3D/commit/cd5efa06cb740e960a80817f9bdbb1fbe1d799d8))
+
+## [1.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.2...v1.14.3) (2023-09-07)
+
+### Bug Fixes
+
+- **angle tool:** No text box if angle is incomplete/ value is NaN ([#721](https://github.com/cornerstonejs/cornerstone3D/issues/721)) ([de1af97](https://github.com/cornerstonejs/cornerstone3D/commit/de1af97624f199eabcb19cedbd4435681b895b35))
+
+## [1.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.1...v1.14.2) (2023-09-07)
+
+### Bug Fixes
+
+- **examples:** publish nifti examples ([#773](https://github.com/cornerstonejs/cornerstone3D/issues/773)) ([e457ca8](https://github.com/cornerstonejs/cornerstone3D/commit/e457ca834939679c87b9ac46322b3b3c1c2b430f))
+
+## [1.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.0...v1.14.1) (2023-09-07)
+
+### Bug Fixes
+
+- **release:** try to release nifti loader ([#772](https://github.com/cornerstonejs/cornerstone3D/issues/772)) ([74bbde0](https://github.com/cornerstonejs/cornerstone3D/commit/74bbde0542934f359be9f17f2f2b2a25eea0ae9d))
+
+# [1.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.3...v1.14.0) (2023-09-07)
+
+### Features
+
+- **nifti:** Add nifti volume loader to cornerstone 3D repo ([#696](https://github.com/cornerstonejs/cornerstone3D/issues/696)) ([c9c2e83](https://github.com/cornerstonejs/cornerstone3D/commit/c9c2e83b2e0614c90c88bd89634f1bcb325d0a00))
+
+## [1.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.2...v1.13.3) (2023-09-06)
+
+### Bug Fixes
+
+- **brush size:** brush size should be calculated in world not in canvas ([#771](https://github.com/cornerstonejs/cornerstone3D/issues/771)) ([6ca1e3a](https://github.com/cornerstonejs/cornerstone3D/commit/6ca1e3a6d7bc445bbe8aed08a46ec4998f9f8c54))
+
+## [1.13.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.1...v1.13.2) (2023-09-05)
+
+**Note:** Version bump only for package root
+
+## [1.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.0...v1.13.1) (2023-09-01)
+
+### Bug Fixes
+
+- **Adapters:** adaptersSEG cornerstoneSR to cornerstoneSEG ([#766](https://github.com/cornerstonejs/cornerstone3D/issues/766)) ([e5d7826](https://github.com/cornerstonejs/cornerstone3D/commit/e5d78260320681714c6371a1747bdab8956e6e6b))
+
+# [1.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.1...v1.13.0) (2023-08-30)
+
+### Features
+
+- **tools extensibility:** Added statistics calculator for Annotation Tools ([#723](https://github.com/cornerstonejs/cornerstone3D/issues/723)) ([9d96bed](https://github.com/cornerstonejs/cornerstone3D/commit/9d96beda02be8e32770512d815a56966620bb9d6))
+
+## [1.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.12.0...v1.12.1) (2023-08-30)
+
+### Bug Fixes
+
+- **modifier key:** reset modifier keys when browser tab loses focus/is hidden ([#759](https://github.com/cornerstonejs/cornerstone3D/issues/759)) ([2602ec6](https://github.com/cornerstonejs/cornerstone3D/commit/2602ec6d69da53590217bd012e6b979fd22204da)), closes [#733](https://github.com/cornerstonejs/cornerstone3D/issues/733)
+
 # [1.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.11.4...v1.12.0) (2023-08-29)
 
 ### Features

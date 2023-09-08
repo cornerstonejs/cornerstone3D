@@ -14,8 +14,10 @@ import {
     createImageIdsAndCacheMetaData
 } from "../../../../utils/demo/helpers";
 import * as cornerstoneTools from "@cornerstonejs/tools";
-import { adaptersSEG } from "@cornerstonejs/adapters";
+import { adaptersSEG, helpers } from "@cornerstonejs/adapters";
 import dcmjs from "dcmjs";
+
+const { downloadDICOMData } = helpers;
 
 // This is for debugging purposes
 console.warn(
@@ -130,15 +132,14 @@ addButtonToToolbar({
             labelmapObj.metadata[segmentIndex] = segmentMetadata;
         });
 
-        const segBlob = Cornerstone3D.Segmentation.generateSegmentation(
-            images,
-            labelmapObj,
-            metaData
-        );
+        const generatedSegmentation =
+            Cornerstone3D.Segmentation.generateSegmentation(
+                images,
+                labelmapObj,
+                metaData
+            );
 
-        //Create a URL for the binary.
-        const objectUrl = URL.createObjectURL(segBlob);
-        window.open(objectUrl);
+        downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
     }
 });
 

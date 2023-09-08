@@ -34,6 +34,14 @@ type ActorSliceRange = {
     current: number;
 };
 
+// @public (undocumented)
+type AffineMatrix = [
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number]
+];
+
 // @public
 enum BlendModes {
     AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
@@ -1350,17 +1358,9 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 =
+| [number, number, number, number, number, number, number, number, number]
+| Float32Array;
 
 // @public
 type Metadata = {
@@ -1615,6 +1615,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 // @public (undocumented)

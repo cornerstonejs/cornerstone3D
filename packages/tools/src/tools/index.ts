@@ -1,4 +1,4 @@
-import { BaseTool, AnnotationTool } from './base';
+import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import WindowLevelTool from './WindowLevelTool';
@@ -43,6 +43,7 @@ export {
   // ~~ BASE
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,

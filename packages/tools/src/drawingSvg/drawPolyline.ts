@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
 import { SVGDrawingHelper } from '../types';
 
 /**
@@ -67,13 +67,13 @@ export default function drawPolyline(
 
   if (existingPolyLine) {
     // This is run to avoid re-rendering annotations that actually haven't changed
-    _setAttributesIfNecessary(attributes, existingPolyLine);
+    setAttributesIfNecessary(attributes, existingPolyLine);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const newPolyLine = document.createElementNS(svgns, 'polyline');
 
-    _setNewAttributesIfValid(attributes, newPolyLine);
+    setNewAttributesIfValid(attributes, newPolyLine);
 
     svgDrawingHelper.appendNode(newPolyLine, svgNodeHash);
   }
