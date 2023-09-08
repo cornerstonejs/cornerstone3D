@@ -673,7 +673,7 @@ type CinePlayContext = {
     get numScrollSteps(): number;
     get currentStepIndex(): number;
     get frameTimeVectorEnabled(): boolean;
-    tries?: number;
+    waitForRenderedCount?: number;
     scroll(delta: number): void;
 };
 
