@@ -333,16 +333,16 @@ function _createStackViewportCinePlayContext(
       // It is always in acquired orientation
       return true;
     },
-    tries: 0,
+    waitForRenderedCount: 0,
     scroll(delta: number): void {
       if (
-        this.tries <= waitForRendered &&
+        this.waitForRenderedCount <= waitForRendered &&
         viewport.viewportStatus !== ViewportStatus.RENDERED
       ) {
-        this.tries++;
+        this.waitForRenderedCount++;
         return;
       }
-      this.tries = 0;
+      this.waitForRenderedCount = 0;
       scroll(viewport, { delta, debounceLoading: debounced });
     },
   };
