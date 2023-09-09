@@ -11,9 +11,13 @@
  * @param precision - defining how many digits after 1..9 are desired
  */
 function roundNumber(value: string | number, precision = 2): string {
-  if (value === undefined || value === null || value === '') return 'NaN';
+  if (value === undefined || value === null || value === '') {
+    return 'NaN';
+  }
   value = Number(value);
-  if (value < 0.0001) return `${value}`;
+  if (value < 0.0001) {
+    return `${value}`;
+  }
   const fixedPrecision =
     value >= 100
       ? precision - 2

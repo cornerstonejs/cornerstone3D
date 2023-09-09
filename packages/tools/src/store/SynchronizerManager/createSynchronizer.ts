@@ -9,12 +9,14 @@ import { ISynchronizerEventHandler } from '../../types';
  * synchronizer.
  * @param eventHandler - The event handler that will be
  * called when the event is emitted.
+ * @param options - Options for the synchronizer.
  * @returns A reference to the synchronizer.
  */
 function createSynchronizer(
   synchronizerId: string,
   eventName: string,
-  eventHandler: ISynchronizerEventHandler
+  eventHandler: ISynchronizerEventHandler,
+  options?: any
 ): Synchronizer {
   const synchronizerWithSameIdExists = state.synchronizers.some(
     (sync) => sync.id === synchronizerId
@@ -28,7 +30,8 @@ function createSynchronizer(
   const synchronizer = new Synchronizer(
     synchronizerId,
     eventName,
-    eventHandler
+    eventHandler,
+    options
   );
 
   // Update state

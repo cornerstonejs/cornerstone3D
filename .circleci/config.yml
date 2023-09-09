@@ -14,7 +14,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
       - restore_cache:
           name: Restore Package Cache
           keys:
@@ -36,6 +36,9 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+      - run:
+          name: 'Perform the versioning before build'
+          command: node ./version.mjs
       - run: yarn run build
       - persist_to_workspace:
           root: ~/repo
@@ -44,6 +47,11 @@ jobs:
             - packages/tools/dist
             - packages/streaming-image-volume-loader/dist
             - packages/adapters/dist
+            - packages/dicomImageLoader/dist
+            - packages/nifti-volume-loader/dist
+            - version.txt
+            - commit.txt
+            - version.json
 
   API_CHECK:
     <<: *defaults
@@ -91,8 +99,18 @@ jobs:
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
       - run: git config --global user.email "contact@ohif.org"
       - run: git config --global user.name "ohif-bot"
-      - run: npx lerna version
-      - run: npx lerna publish from-package --no-verify-access
+      - run:
+          name: publish package versions
+          command: |
+            node ./publish-version.mjs
+      - run:
+          name: Again set the NPM registry (was deleted in the version script)
+          command:
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: publish package dist
+          command: |
+            node ./publish-package.mjs
 
 workflows:
   version: 2
@@ -123,7 +141,9 @@ workflows:
       - CHECKOUT:
           filters:
             branches:
-              only: main
+              only:
+                - main
+                - beta
       - BUILD:
           requires:
             - CHECKOUT

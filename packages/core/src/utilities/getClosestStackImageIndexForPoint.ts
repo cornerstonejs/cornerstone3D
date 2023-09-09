@@ -29,11 +29,15 @@ export function calculateMinimalDistanceForStackViewport(
   const imageIds = viewport.getImageIds();
   const currentImageIdIndex = viewport.getCurrentImageIdIndex();
 
-  if (imageIds.length === 0) return null;
+  if (imageIds.length === 0) {
+    return null;
+  }
 
   const getDistance = (imageId: string): null | number => {
     const planeMetadata = getPlaneMetadata(imageId);
-    if (!planeMetadata) return null;
+    if (!planeMetadata) {
+      return null;
+    }
     const plane = planar.planeEquation(
       planeMetadata.planeNormal,
       planeMetadata.imagePositionPatient
@@ -53,22 +57,30 @@ export function calculateMinimalDistanceForStackViewport(
   for (let i = 0; i < higherImageIds.length; i++) {
     const id = higherImageIds[i];
     const distance = getDistance(id);
-    if (distance === null) continue;
+    if (distance === null) {
+      continue;
+    }
     if (distance <= closestStack.distance) {
       closestStack.distance = distance;
       closestStack.index = i + currentImageIdIndex + 1;
-    } else break;
+    } else {
+      break;
+    }
   }
   //check lower indices
   const lowerImageIds = imageIds.slice(0, currentImageIdIndex);
   for (let i = lowerImageIds.length - 1; i >= 0; i--) {
     const id = lowerImageIds[i];
     const distance = getDistance(id);
-    if (distance === null || distance === closestStack.distance) continue;
+    if (distance === null || distance === closestStack.distance) {
+      continue;
+    }
     if (distance < closestStack.distance) {
       closestStack.distance = distance;
       closestStack.index = i;
-    } else break;
+    } else {
+      break;
+    }
   }
   return closestStack.distance === Infinity ? null : closestStack;
 }

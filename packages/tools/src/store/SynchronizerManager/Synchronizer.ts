@@ -22,12 +22,14 @@ class Synchronizer {
   private _sourceViewports: Array<Types.IViewportId>;
   private _targetViewports: Array<Types.IViewportId>;
   private _viewportOptions: Record<string, Record<string, unknown>> = {};
+  private _options: any;
   public id: string;
 
   constructor(
     synchronizerId: string,
     eventName: string,
-    eventHandler: ISynchronizerEventHandler
+    eventHandler: ISynchronizerEventHandler,
+    options?: any
   ) {
     this._enabled = true;
     this._eventName = eventName;
@@ -35,6 +37,7 @@ class Synchronizer {
     this._ignoreFiredEvents = false;
     this._sourceViewports = [];
     this._targetViewports = [];
+    this._options = options || {};
 
     //
     this.id = synchronizerId;
@@ -202,6 +205,7 @@ class Synchronizer {
     }
 
     this._ignoreFiredEvents = true;
+    const promises = [];
     try {
       for (let i = 0; i < this._targetViewports.length; i++) {
         const targetViewport = this._targetViewports[i];
@@ -211,13 +215,26 @@ class Synchronizer {
         if (targetIsSource) {
           continue;
         }
-
-        this._eventHandler(this, sourceViewport, targetViewport, sourceEvent);
+        promises.push(
+          this._eventHandler(
+            this,
+            sourceViewport,
+            targetViewport,
+            sourceEvent,
+            this._options
+          )
+        );
       }
     } catch (ex) {
       console.warn(`Synchronizer, for: ${this._eventName}`, ex);
     } finally {
-      this._ignoreFiredEvents = false;
+      if (promises.length) {
+        Promise.allSettled(promises).then(() => {
+          this._ignoreFiredEvents = false;
+        });
+      } else {
+        this._ignoreFiredEvents = false;
+      }
     }
   }
 

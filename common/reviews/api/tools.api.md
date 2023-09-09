@@ -73,6 +73,14 @@ export function addTool(ToolClass: any): void;
 function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
 
 // @public (undocumented)
+type AffineMatrix = [
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number]
+];
+
+// @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -131,8 +139,6 @@ export class AngleTool extends AnnotationTool {
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
-    // (undocumented)
-    _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: AngleAnnotation, handle: ToolHandle): void;
     // (undocumented)
@@ -222,6 +228,22 @@ type AnnotationCompletedEventDetail = {
 
 // @public (undocumented)
 type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
+
+// @public (undocumented)
+export abstract class AnnotationDisplayTool extends BaseTool {
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    // (undocumented)
+    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    // (undocumented)
+    getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
+    // (undocumented)
+    onImageSpacingCalibrated: (evt: Types_2.EventTypes.ImageSpacingCalibratedEvent) => void;
+    // (undocumented)
+    abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
+    // (undocumented)
+    static toolName: any;
+}
 
 // @public (undocumented)
 type AnnotationGroupSelector = HTMLDivElement | string;
@@ -314,6 +336,7 @@ enum AnnotationStyleStates {
 
 // @public (undocumented)
 export abstract class AnnotationTool extends AnnotationDisplayTool {
+    constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
     abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes): Annotation;
     // (undocumented)
@@ -454,6 +477,23 @@ export abstract class BaseTool implements IBaseTool {
     static toolName: any;
 }
 
+declare namespace BasicStatsCalculator {
+    export {
+        BasicStatsCalculator_2 as BasicStatsCalculator,
+        Calculator
+    }
+}
+
+// @public (undocumented)
+class BasicStatsCalculator_2 extends Calculator {
+    // (undocumented)
+    static getStatistics: () => Statistics[];
+    // (undocumented)
+    static statsCallback: ({ value: newValue }: {
+        value: any;
+    }) => void;
+}
+
 // @public (undocumented)
 interface BidirectionalAnnotation extends Annotation {
     // (undocumented)
@@ -522,8 +562,6 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _getSignedAngle: (vector1: any, vector2: any) => number;
     // (undocumented)
-    _getTextLines: (data: any, targetId: any) => string[];
-    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: BidirectionalAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
@@ -584,6 +622,16 @@ export class BrushTool extends BaseTool {
 
 // @public (undocumented)
 function calculateAreaOfPoints(points: Types_2.Point2[]): number;
+
+// @public (undocumented)
+abstract class Calculator {
+    // (undocumented)
+    static getStatistics: () => Statistics[];
+    // (undocumented)
+    static run: ({ value }: {
+        value: any;
+    }) => void;
+}
 
 // @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, calibrationOrScale: Types_2.IImageCalibration | number): void;
@@ -700,8 +748,6 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[];
-    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: CircleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
@@ -764,7 +810,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -797,8 +843,6 @@ export class CobbAngleTool extends AnnotationTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
-    // (undocumented)
-    _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
@@ -1230,13 +1274,13 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 function createStackImageSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
+function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any): Synchronizer;
 
 // @public (undocumented)
 function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function createVOISynchronizer(synchronizerName: string): Synchronizer;
+function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
 function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
@@ -1363,43 +1407,7 @@ declare namespace cursors {
 export { cursors }
 
 // @public (undocumented)
-const CursorSVG: {
-    Angle: SVGCursorDescriptor;
-    ArrowAnnotate: SVGCursorDescriptor;
-    Bidirectional: SVGCursorDescriptor;
-    CobbAngle: SVGCursorDescriptor;
-    CircleROI: SVGCursorDescriptor;
-    EllipticalROI: SVGCursorDescriptor;
-    FreehandROI: SVGCursorDescriptor;
-    FreehandROISculptor: SVGCursorDescriptor;
-    Length: SVGCursorDescriptor;
-    Probe: SVGCursorDescriptor;
-    RectangleROI: SVGCursorDescriptor;
-    TextMarker: SVGCursorDescriptor;
-    Crosshairs: SVGCursorDescriptor;
-    Eraser: SVGCursorDescriptor;
-    Magnify: SVGCursorDescriptor;
-    Pan: SVGCursorDescriptor;
-    Rotate: SVGCursorDescriptor;
-    StackScroll: SVGCursorDescriptor;
-    WindowLevelRegion: SVGCursorDescriptor;
-    WindowLevel: SVGCursorDescriptor;
-    Zoom: SVGCursorDescriptor;
-    SegmentationFreeHandEraseInside: SVGCursorDescriptor;
-    SegmentationFreeHandFillInside: SVGCursorDescriptor;
-    SegmentationFreeHandEraseOutside: SVGCursorDescriptor;
-    SegmentationFreeHandFillOutside: SVGCursorDescriptor;
-    SegmentationRectangleEraseInside: SVGCursorDescriptor;
-    RectangleScissor: SVGCursorDescriptor;
-    'RectangleScissor.FILL_INSIDE': SVGCursorDescriptor;
-    'RectangleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
-    'RectangleScissor.ERASE_OUTSIDE': SVGCursorDescriptor;
-    'RectangleScissor.ERASE_INSIDE': SVGCursorDescriptor;
-    CircleScissor: SVGCursorDescriptor;
-    'CircleScissor.FILL_INSIDE': SVGCursorDescriptor;
-    'CircleScissor.ERASE_OUTSIDE': SVGCursorDescriptor;
-    'CircleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
-};
+const CursorSVG: Record<string, SVGCursorDescriptor>;
 
 // @public (undocumented)
 interface CustomEvent_2<T = any> extends Event {
@@ -1545,7 +1553,9 @@ declare namespace drawing {
         drawLinkedTextBox,
         drawRect,
         drawTextBox,
-        drawArrow
+        drawArrow,
+        setAttributesIfNecessary,
+        setNewAttributesIfValid
     }
 }
 export { drawing }
@@ -1685,8 +1695,6 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _getCanvasEllipseCenter(ellipseCanvasPoints: Types_2.Point2[]): Types_2.Point2;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[];
-    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
@@ -1779,6 +1787,8 @@ enum Events {
     // (undocumented)
     SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED",
     // (undocumented)
+    TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
+    // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
     TOUCH_END = "CORNERSTONE_TOOLS_TOUCH_END",
@@ -1818,6 +1828,8 @@ declare namespace EventTypes {
         ImageRenderedEvent,
         ImageVolumeModifiedEvent,
         ImageVolumeModifiedEventDetail,
+        ImageVolumeLoadingCompletedEvent,
+        ImageVolumeLoadingCompletedEventDetail,
         ImageLoadedEvent,
         ImageLoadedEventDetail,
         ImageLoadedFailedEventDetail,
@@ -1859,6 +1871,8 @@ declare namespace EventTypes_2 {
         NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
         NormalizedTouchEventType,
+        ToolActivatedEventDetail,
+        ToolActivatedEventType,
         AnnotationAddedEventDetail,
         AnnotationAddedEventType,
         AnnotationCompletedEventDetail,
@@ -2014,6 +2028,9 @@ function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpec
 
 // @public (undocumented)
 function getActiveSegmentIndex(segmentationId: string): number | undefined;
+
+// @public (undocumented)
+function getAllSegmentationRepresentations(): Record<string, ToolGroupSpecificRepresentation[]>;
 
 // @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
@@ -2452,6 +2469,7 @@ interface IImage {
     minPixelValue: number;
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
+    photometricInterpretation?: string;
     preScale?: {
         scaled?: boolean;
         scalingParameters?: {
@@ -2731,6 +2749,16 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 // @public
+type ImageVolumeLoadingCompletedEvent =
+CustomEvent_2<ImageVolumeLoadingCompletedEventDetail>;
+
+// @public
+type ImageVolumeLoadingCompletedEventDetail = {
+    volumeId: string;
+    FrameOfReferenceUID: string;
+};
+
+// @public
 type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>;
 
 // @public
@@ -2911,7 +2939,7 @@ function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeV
 // @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
-    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any): void;
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): void;
 }
 
 // @public (undocumented)
@@ -2928,7 +2956,7 @@ type IToolClassReference = new <T extends BaseTool>(config: any) => T;
 interface IToolGroup {
     // (undocumented)
     addTool: {
-        (toolName: string, toolConfiguration?: any): void;
+        (toolName: string, toolConfiguration?: ToolConfiguration): void;
     };
     // (undocumented)
     addToolInstance: {
@@ -2974,7 +3002,7 @@ interface IToolGroup {
     };
     // (undocumented)
     setToolConfiguration: {
-        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): void;
+        (toolName: string, configuration: ToolConfiguration, overwrite?: boolean): void;
     };
     // (undocumented)
     setToolDisabled: {
@@ -3143,6 +3171,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
+    getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
     getProperties: () => VolumeViewportProperties;
     getSlabThickness(): number;
@@ -3154,6 +3183,7 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
+    resetProperties(volumeId?: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
@@ -3329,8 +3359,6 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getTextLines(data: any, targetId: any): string[];
-    // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation, handle: ToolHandle): void;
     // (undocumented)
     isDrawing: boolean;
@@ -3407,17 +3435,9 @@ export class MagnifyTool extends BaseTool {
 }
 
 // @public
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 =
+| [number, number, number, number, number, number, number, number, number]
+| Float32Array;
 
 declare namespace math {
     export {
@@ -3426,7 +3446,8 @@ declare namespace math {
         lineSegment,
         rectangle,
         polyline,
-        point
+        point,
+        BasicStatsCalculator
     }
 }
 
@@ -3694,8 +3715,6 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[];
-    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
@@ -3783,7 +3802,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK): void;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -3862,8 +3881,6 @@ export class ProbeTool extends AnnotationTool {
     };
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
-    // (undocumented)
-    _getTextLines(data: any, targetId: string): string[] | undefined;
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ProbeAnnotation): void;
     // (undocumented)
@@ -4151,8 +4168,6 @@ export class RectangleROITool extends AnnotationTool {
         width: number;
         height: number;
     };
-    // (undocumented)
-    _getTextLines: (data: any, targetId: string) => string[] | undefined;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -4657,6 +4672,9 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
 
 // @public (undocumented)
+function setAttributesIfNecessary(attributes: any, svgNode: any): void;
+
+// @public (undocumented)
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
 
 // @public (undocumented)
@@ -4685,6 +4703,9 @@ function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig)
 
 // @public (undocumented)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
+
+// @public (undocumented)
+function setNewAttributesIfValid(attributes: any, svgNode: any): void;
 
 // @public (undocumented)
 function setSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
@@ -4887,12 +4908,20 @@ declare namespace state_3 {
         getSegmentSpecificRepresentationConfig,
         setSegmentSpecificRepresentationConfig,
         getToolGroupIdsWithSegmentation,
+        getAllSegmentationRepresentations,
         getSegmentationRepresentationByUID,
         addColorLUT,
         getColorLUT,
         removeColorLUT
     }
 }
+
+// @public (undocumented)
+type Statistics = {
+    name: string;
+    value: number;
+    unit: null | string;
+};
 
 // @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
@@ -4965,7 +4994,7 @@ enum Swipe {
 
 // @public (undocumented)
 export class Synchronizer {
-    constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler);
+    constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any);
     // (undocumented)
     add(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
@@ -5043,6 +5072,21 @@ function throttle(func: Function, wait?: number, options?: {
     leading?: boolean;
     trailing?: boolean;
 }): Function;
+
+// @public (undocumented)
+type ToolActivatedEventDetail = {
+    toolGroupId: string;
+    toolName: string;
+    toolBindingsOptions: SetToolBindingsType;
+};
+
+// @public (undocumented)
+type ToolActivatedEventType = Types_2.CustomEventType<ToolActivatedEventDetail>;
+
+// @public (undocumented)
+type ToolConfiguration = Record<string, any> & {
+    statsCalculator?: Calculator;
+};
 
 // @public (undocumented)
 interface ToolData {
@@ -5312,6 +5356,7 @@ declare namespace Types {
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
+        ToolConfiguration,
         EventTypes_2 as EventTypes,
         IPoints,
         ITouchPoints,
@@ -5348,7 +5393,8 @@ declare namespace Types {
         FloodFillResult,
         FloodFillGetter,
         FloodFillOptions,
-        ContourSegmentationData
+        ContourSegmentationData,
+        Statistics
     }
 }
 export { Types }
@@ -5453,6 +5499,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 declare namespace visibility {
