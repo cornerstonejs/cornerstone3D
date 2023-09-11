@@ -30,20 +30,20 @@ export interface LoaderOptions {
    * Progressively render images as the image is downloaded, if the transfer
    * syntax supports it.
    */
-  progressivelyRender: boolean;
+  progressivelyRender?: boolean;
 
   /**
    * Whether to use web Streams api or byte ranges to progressively load data.
    * Web Streams: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
    */
-  streamMethod: 'web-streams' | 'byte-ranges';
+  streamMethod?: 'web-streams' | 'byte-ranges';
 
   /**
    * If using byte ranges, how many bytes should be requested in the initial
    * request. This can be helpful to establish a rough minimum initial image
    * quality, although this will vary by modality.
    */
-  initialBytes: number;
+  initialBytes?: number;
 
   /**
    * If using byte ranges, how many total byte range requests should be used
@@ -60,13 +60,13 @@ export interface LoaderOptions {
    * Setting `totalRanges` to 2 will load the remainder of the file on the
    * second request after `initialBytes` are loaded.
    */
-  totalRanges: number;
+  totalRanges?: number;
 
   /**
    * If using web streams, set the minimum chunk size before sending another
    * decode request.
    */
-  minChunkSize: number;
+  minChunkSize?: number;
 
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;

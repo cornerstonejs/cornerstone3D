@@ -58,7 +58,7 @@ describe('Test lossless TransferSyntaxes decoding', function () {
 
         uncompressedPixelData = getPixelData(dataSet);
 
-        createImage(imageId, uncompressedPixelData, undefined, transferSyntax, {}).then(
+        createImage(imageId, uncompressedPixelData, transferSyntax, {}).then(
           (image) => {
             uncompressedImage = image;
           }
@@ -94,7 +94,7 @@ describe('Test lossless TransferSyntaxes decoding', function () {
 
           curTransferSyntax.should.to.be.equals(transferSyntaxUid);
 
-          createImage(imageId, pixelData, undefined, curTransferSyntax, {})
+          createImage(imageId, pixelData, curTransferSyntax, {})
             .then((image) => {
               const uncompressedImagePixelData =
                 uncompressedImage.getPixelData();

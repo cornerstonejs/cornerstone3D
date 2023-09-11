@@ -63,7 +63,6 @@ function loadImageFromPromise(
         const imagePromise = createImage(
           imageId,
           pixelData,
-          undefined,
           transferSyntax,
           options
         );
@@ -130,7 +129,6 @@ function loadImageFromDataSet(
         imagePromise = createImage(
           imageId,
           pixelData,
-          undefined,
           transferSyntax,
           options
         );
