@@ -88,6 +88,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
+    clearDefaultProperties(volumeId?: string): void;
+    // (undocumented)
     flip(flipDirection: FlipDirection): void;
     // (undocumented)
     getBounds(): number[];
@@ -95,6 +97,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     abstract getCurrentImageId(): string;
     // (undocumented)
     abstract getCurrentImageIdIndex(): number;
+    // (undocumented)
+    getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
@@ -1908,6 +1912,8 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
+    clearDefaultProperties(volumeId?: string): void;
+    // (undocumented)
     flip(flipDirection: FlipDirection): void;
     // (undocumented)
     getBounds(): any;
@@ -1915,6 +1921,8 @@ interface IVolumeViewport extends IViewport {
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
+    // (undocumented)
+    getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)

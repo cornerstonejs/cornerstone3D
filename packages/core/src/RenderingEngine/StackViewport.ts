@@ -645,7 +645,7 @@ class StackViewport extends Viewport implements IStackViewport {
       this.perImageIdDefaultProperties.set(imageId, ViewportProperties);
 
       //If the viewport is the same imageIdI, we need to update the viewport
-      if (this.getCurrentImageId() == imageId) {
+      if (this.getCurrentImageId() === imageId) {
         this.setProperties(ViewportProperties);
       }
     }
@@ -2207,10 +2207,40 @@ class StackViewport extends Viewport implements IStackViewport {
   private _getInitialVOIRange(image: IImage) {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.globalDefaultProperties.voiRange;
-    } else {
-      const { windowCenter, windowWidth } = image;
-      return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
     }
+    const { windowCenter, windowWidth } = image;
+
+    let voiRange = this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
+
+    // Get the range for the PT since if it is prescaled
+    // we set a default range of 0-5
+    voiRange = this._getPTPreScaledRange() || voiRange;
+
+    return voiRange;
+  }
+
+  private _getPTPreScaledRange() {
+    if (!this._isCurrentImagePTPrescaled()) {
+      return undefined;
+    }
+
+    return this._getDefaultPTPrescaledVOIRange();
+  }
+
+  private _isCurrentImagePTPrescaled() {
+    if (this.modality !== 'PT' || !this.csImage.isPreScaled) {
+      return false;
+    }
+
+    if (!this.csImage.preScale?.scalingParameters?.suvbw) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private _getDefaultPTPrescaledVOIRange() {
+    return { lower: 0, upper: 5 };
   }
 
   private _getVOIRangeFromWindowLevel(
