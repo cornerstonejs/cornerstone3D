@@ -1845,6 +1845,12 @@ class StackViewport extends Viewport implements IStackViewport {
           Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
           (event) => {
             if (event.detail.imageId === imageId) {
+              // Update cache
+              cache.putImageLoadObject(
+                imageId,
+                { promise: Promise.resolve(event.detail.image) },
+                true
+              );
               handleNewPixelData.call(
                 this,
                 event.detail.image,
