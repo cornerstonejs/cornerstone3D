@@ -143,6 +143,7 @@ function getPixelData(
           contentType,
           imageFrame: {
             pixelData: response,
+            decodeLevel,
           },
         });
 

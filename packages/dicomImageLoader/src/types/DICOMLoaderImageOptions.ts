@@ -16,4 +16,5 @@ export interface DICOMLoaderImageOptions {
   };
   isSharedArrayBuffer?: boolean;
   loader?: LoadRequestFunction;
+  decodeLevel?: number;
 }

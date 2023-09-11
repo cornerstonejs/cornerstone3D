@@ -185,9 +185,25 @@ enum Events {
    */
   IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
 
-  IMAGE_LOAD_STREAM_COMPLETE = 'CORNERSTONE_IMAGE_LOAD_STREAM_COMPLETE', // Compressed streamed image frame complete bytes
-  // IMAGE_LOAD_STREAM_COMPLETE_IMAGE = 'CORNERSTONE_IMAGE_LOAD_STREAM_IMAGE', // Decoded streamed image frame complete
-  IMAGE_LOAD_STREAM_PARTIAL = 'CORNERSTONE_IMAGE_LOAD_STREAM_PARTIAL', // Compressed partial image frame bytes
+  /**
+   * Triggers on the eventTarget when a streaming or byte range partial image
+   * request has completed, i.e. all chunks have been loaded. This fires prior
+   * to image decode.
+   */
+  IMAGE_LOAD_STREAM_COMPLETE = 'CORNERSTONE_IMAGE_LOAD_STREAM_COMPLETE',
+
+  /**
+   * Triggers on the eventTarget when a streaming or byte range partial image
+   * request updates, i.e. a new chunk has loaded but the file is not yet
+   * completely downloaded.
+   */
+  IMAGE_LOAD_STREAM_PARTIAL = 'CORNERSTONE_IMAGE_LOAD_STREAM_PARTIAL',
+
+  /**
+   * Triggers on the eventTarget when a streaming or byte range partial image
+   * request has been decoded, and a new image object has been created. The
+   * event data contains the new image object.
+   */
   IMAGE_LOAD_STREAM_UPDATED_IMAGE = 'CORNERSTONE_IMAGE_LOAD_STREAM_UPDATED_IMAGE', // Decoded partial streamed image frame
 
   /**

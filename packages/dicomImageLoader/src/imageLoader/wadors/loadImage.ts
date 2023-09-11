@@ -10,7 +10,7 @@ import { getOptions } from '../internal';
 function imageIdIsStreamable(imageId: string) {
   const streamableTransferSyntaxes = [
     '3.2.840.10008.1.2.4.96', // 'jphc':
-    '1.2.840.10008.1.2.4.140', // 'jxl'
+    // '1.2.840.10008.1.2.4.140', // 'jxl' Have not tested JXL yet
   ];
   const { transferSyntaxUID } = metaDataProvider('transferSyntax', imageId) as
     | { transferSyntaxUID: string }
@@ -107,10 +107,13 @@ async function handlePartialImageFrame(event: any) {
   const options = optionsCache[imageId];
   const transferSyntax = getTransferSyntaxForContentType(contentType);
 
+  // This is here for the future, but for now we are not doing subresolutions
+  // for partial image rendering so decodeLevel will always be undefined.
+  options.decodeLevel = decodeLevel;
+
   const imagePromise = createImage(
     imageId,
     pixelData,
-    decodeLevel, // This is always undefined for now, as we aren't doing subresolution progressive rendering yet.
     transferSyntax,
     options
   );
@@ -186,12 +189,12 @@ function loadImage(
             result.contentType
           );
           const decodeLevel = result.imageFrame.decodeLevel;
+          options.decodeLevel = decodeLevel;
 
           const pixelData = result.imageFrame.pixelData;
           const imagePromise = createImage(
             imageId,
             pixelData,
-            decodeLevel,
             transferSyntax,
             options
           );
