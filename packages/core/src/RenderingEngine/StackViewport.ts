@@ -805,7 +805,18 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _resetProperties() {
-    const voiRange = this._getVOIRangeForCurrentImage();
+    let voiRange;
+    if (this._isCurrentImagePTPrescaled()) {
+      // if not set via setProperties; if it is a PT image and is already prescaled,
+      // use the default range for PT
+      voiRange = this._getDefaultPTPrescaledVOIRange();
+    } else {
+      // if not set via setProperties; if it is not a PT image or is not prescaled,
+      // use the voiRange for the current image from its metadata if found
+      // otherwise, use the cached voiRange
+      voiRange = this._getVOIRangeForCurrentImage();
+    }
+
     this.setVOI(voiRange);
 
     if (this.getRotation() !== 0) {
@@ -869,6 +880,10 @@ class StackViewport extends Viewport implements IStackViewport {
       // use the cached voiRange if the voiRange is locked (if the user has
       // manually set the voi with tools or setProperties api)
       voiRange = this.voiRange;
+    } else if (this._isCurrentImagePTPrescaled()) {
+      // if not set via setProperties; if it is a PT image and is already prescaled,
+      // use the default range for PT
+      voiRange = this._getDefaultPTPrescaledVOIRange();
     } else {
       // if not set via setProperties; if it is not a PT image or is not prescaled,
       // use the voiRange for the current image from its metadata if found
