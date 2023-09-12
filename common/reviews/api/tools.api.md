@@ -2076,7 +2076,7 @@ function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
 
 // @public (undocumented)
-function getBrushSizeForToolGroup(toolGroupId: string): void;
+function getBrushSizeForToolGroup(toolGroupId: string, toolName?: string): void;
 
 // @public (undocumented)
 function getBrushThresholdForToolGroup(toolGroupId: string): any;
@@ -4677,7 +4677,7 @@ function setAnnotationVisibility(annotationUID: string, visible?: boolean): void
 function setAttributesIfNecessary(attributes: any, svgNode: any): void;
 
 // @public (undocumented)
-function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
+function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number, toolName?: string): void;
 
 // @public (undocumented)
 function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
