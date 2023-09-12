@@ -277,7 +277,7 @@ function _setLabelmapColorAndOpacity(
   );
 
   // Todo: the below loop probably can be optimized so that we don't hit it
-  // unless a config has chaged. Right now we get into the following loop
+  // unless a config has changed. Right now we get into the following loop
   // even for brush drawing which does not makes sense
   for (let i = 0; i < numColors; i++) {
     const segmentIndex = i;
