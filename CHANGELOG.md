@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.1...v1.16.0) (2023-09-12)
+
+### Features
+
+- **brush size:** enable specifying brush size for specific tool ([#780](https://github.com/cornerstonejs/cornerstone3D/issues/780)) ([e933b2f](https://github.com/cornerstonejs/cornerstone3D/commit/e933b2f0c02108023c38830ce479ca49a5cd372c))
+
 ## [1.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.0...v1.15.1) (2023-09-12)
 
 ### Bug Fixes
