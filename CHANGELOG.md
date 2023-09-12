@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.4...v1.15.0) (2023-09-12)
+
+### Features
+
+- **Annotation textbox:** Add textBoxVisibility ([#776](https://github.com/cornerstonejs/cornerstone3D/issues/776)) ([c1981a1](https://github.com/cornerstonejs/cornerstone3D/commit/c1981a15d8ab3b5cbd227e6912b0e0f4a87871d5))
+
 ## [1.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.3...v1.14.4) (2023-09-07)
 
 ### Bug Fixes
