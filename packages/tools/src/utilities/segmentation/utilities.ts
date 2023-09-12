@@ -10,7 +10,7 @@ export type ThresholdInformation = {
   upper: number;
 };
 
-export default function getBrushToolInstances(toolGroupId) {
+export default function getBrushToolInstances(toolGroupId, toolName) {
   const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
@@ -21,6 +21,10 @@ export default function getBrushToolInstances(toolGroupId) {
 
   if (!Object.keys(toolInstances).length) {
     return;
+  }
+
+  if (toolName && toolInstances[toolName]) {
+    return [toolInstances[toolName]];
   }
 
   // For each tool that has BrushTool as base class, set the brush size.

@@ -6,7 +6,8 @@ import getBrushToolInstances from './utilities';
 
 export function setBrushSizeForToolGroup(
   toolGroupId: string,
-  brushSize: number
+  brushSize: number,
+  toolName?: string
 ): void {
   const toolGroup = getToolGroup(toolGroupId);
 
@@ -14,7 +15,7 @@ export function setBrushSizeForToolGroup(
     return;
   }
 
-  const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
+  const brushBasedToolInstances = getBrushToolInstances(toolGroupId, toolName);
 
   brushBasedToolInstances.forEach((tool: BrushTool) => {
     tool.configuration.brushSize = brushSize;
@@ -45,7 +46,10 @@ export function setBrushSizeForToolGroup(
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
 }
 
-export function getBrushSizeForToolGroup(toolGroupId: string): void {
+export function getBrushSizeForToolGroup(
+  toolGroupId: string,
+  toolName?: string
+): void {
   const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
@@ -58,7 +62,7 @@ export function getBrushSizeForToolGroup(toolGroupId: string): void {
     return;
   }
 
-  const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
+  const brushBasedToolInstances = getBrushToolInstances(toolGroupId, toolName);
 
   // one is enough as they share the same brush size
   const brushToolInstance = brushBasedToolInstances[0];
