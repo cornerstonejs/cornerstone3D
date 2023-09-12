@@ -4,6 +4,13 @@ import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderFor
 import { getRenderingEngine } from '@cornerstonejs/core';
 import getBrushToolInstances from './utilities';
 
+/**
+ * Sets the brush size for all brush-based tools in a given tool group.
+ * @param toolGroupId - The ID of the tool group to set the brush size for.
+ * @param brushSize - The new brush size to set.
+ * @param toolName - The name of the specific tool to set the brush size for (optional)
+ * If not provided, all brush-based tools in the tool group will be affected.
+ */
 export function setBrushSizeForToolGroup(
   toolGroupId: string,
   brushSize: number,
@@ -46,6 +53,13 @@ export function setBrushSizeForToolGroup(
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
 }
 
+/**
+ * Gets the brush size for the first brush-based tool instance in a given tool group.
+ * @param toolGroupId - The ID of the tool group to get the brush size for.
+ * @param toolName - The name of the specific tool to get the brush size for (Optional)
+ * If not provided, the first brush-based tool instance in the tool group will be used.
+ * @returns The brush size of the selected tool instance, or undefined if no brush-based tool instance is found.
+ */
 export function getBrushSizeForToolGroup(
   toolGroupId: string,
   toolName?: string

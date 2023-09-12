@@ -10,7 +10,10 @@ export type ThresholdInformation = {
   upper: number;
 };
 
-export default function getBrushToolInstances(toolGroupId, toolName) {
+export default function getBrushToolInstances(
+  toolGroupId: string,
+  toolName?: string
+) {
   const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
