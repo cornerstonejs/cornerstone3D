@@ -1,5 +1,3 @@
-import { Types } from '@cornerstonejs/core';
-
 type PlayClipOptions = {
   framesPerSecond?: number;
   frameTimeVector?: number[];
@@ -7,6 +5,11 @@ type PlayClipOptions = {
   loop?: boolean;
   dynamicCineEnabled?: boolean;
   frameTimeVectorSpeedMultiplier?: number;
+  // How many CINE frames to wait for a rendered event to occur before
+  // trying to display the image after the next one
+  // A CINE frame is attempted every 1 / fps seconds
+  // The default is 30 tries, or 1.25 seconds at 24 fps
+  waitForRendered?: number;
 };
 
 interface ToolData {
@@ -26,6 +29,9 @@ type CinePlayContext = {
   get numScrollSteps(): number;
   get currentStepIndex(): number;
   get frameTimeVectorEnabled(): boolean;
+  // How many times has the wait for rendered been tried without showing
+  // the next image.
+  waitForRenderedCount?: number;
   scroll(delta: number): void;
 };
 
