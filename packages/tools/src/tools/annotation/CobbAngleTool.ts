@@ -75,6 +75,7 @@ class CobbAngleTool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -769,7 +770,22 @@ class CobbAngleTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
+
+      const textLines = this.configuration.getTextLines(data, targetId);
 
       if (!data.handles.textBox.hasMoved) {
         const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
@@ -791,7 +807,7 @@ class CobbAngleTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -806,20 +822,6 @@ class CobbAngleTool extends AnnotationTool {
 
     return renderStatus;
   };
-
-  // text line for the current active angle annotation
-  _getTextLines(data, targetId) {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { angle } = cachedVolumeStats;
-
-    if (angle === undefined) {
-      return;
-    }
-
-    const textLines = [`${angle.toFixed(2)} ${String.fromCharCode(176)}`];
-
-    return textLines;
-  }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
@@ -884,6 +886,19 @@ class CobbAngleTool extends AnnotationTool {
 
     return cachedStats;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { angle } = cachedVolumeStats;
+
+  if (angle === undefined) {
+    return;
+  }
+
+  const textLines = [`${angle.toFixed(2)} ${String.fromCharCode(176)}`];
+
+  return textLines;
 }
 
 CobbAngleTool.toolName = 'CobbAngle';

@@ -15,7 +15,9 @@ function getToolGroupsWithToolName(toolName: string): IToolGroup[] | [] {
     const toolGroupToolNames = Object.keys(toolOptions);
 
     for (let i = 0; i < toolGroupToolNames.length; i++) {
-      if (toolName !== toolGroupToolNames[i]) continue;
+      if (toolName !== toolGroupToolNames[i]) {
+        continue;
+      }
 
       /* filter out tools that don't have options */
       if (!toolOptions[toolName]) {

@@ -29,10 +29,11 @@ export default function (
       colorBuffer[bufferIndex++] = imageFrame[bIndex++]; // blue
       colorBuffer[bufferIndex++] = 255; // alpha
     }
-
-    return;
+  } else {
+    for (let i = 0; i < numPixels; i++) {
+      colorBuffer[bufferIndex++] = imageFrame[rIndex++]; // red
+      colorBuffer[bufferIndex++] = imageFrame[gIndex++]; // green
+      colorBuffer[bufferIndex++] = imageFrame[bIndex++]; // blue
+    }
   }
-
-  // if RGB buffer
-  colorBuffer.set(imageFrame);
 }

@@ -48,6 +48,34 @@ function addProvider(provider: (type: string, query: any) => any, priority?: num
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
+type AffineMatrix = [
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+]
+];
+
+// @public (undocumented)
 function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
 
 // @public (undocumented)
@@ -72,6 +100,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
+    getImageIds: (volumeId?: string) => Array<string>;
+    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     protected _getOrientationVectors(orientation: OrientationAxis | OrientationVectors): OrientationVectors;
@@ -86,13 +116,15 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
+    abstract resetProperties(volumeId?: string): void;
+    // (undocumented)
     protected resetVolumeViewportClippingRange(): void;
     // (undocumented)
     abstract setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -487,7 +519,7 @@ function createAndCacheDerivedVolume(referencedVolumeId: string, options: Derive
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
-function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
+function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
 
 // @public (undocumented)
 function createFloat32SharedArray(length: number): Float32Array;
@@ -1095,6 +1127,8 @@ interface IImage {
     modalityLUT?: CPUFallbackLUT;
     // (undocumented)
     numComps: number;
+    // (undocumented)
+    photometricInterpretation?: string;
     // (undocumented)
     preScale?: {
         scaled?: boolean;
@@ -1876,6 +1910,8 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
+    getImageIds: (volumeId?: string) => string[];
+    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getProperties: () => VolumeViewportProperties;
@@ -1889,6 +1925,8 @@ interface IVolumeViewport extends IViewport {
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    // (undocumented)
+    resetProperties(volumeId?: string): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -1924,17 +1962,7 @@ function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
 type Metadata = {
@@ -2477,7 +2505,8 @@ declare namespace Types {
         ColormapRegistration,
         PixelDataTypedArray,
         ImagePixelModule,
-        ImagePlaneModule
+        ImagePlaneModule,
+        AffineMatrix
     }
 }
 export { Types }
@@ -2732,6 +2761,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 // @public (undocumented)
@@ -2883,6 +2913,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
+    resetProperties(volumeId?: string): void;
+    // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
@@ -2903,6 +2935,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     getRotation: () => number;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    // (undocumented)
+    resetProperties(volumeId?: string): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
     // (undocumented)

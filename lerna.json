@@ -1,26 +1,13 @@
 {
-  "version": "1.7.2",
+  "version": "1.16.0",
   "packages": [
     "packages/adapters",
     "packages/core",
     "packages/tools",
     "packages/streaming-image-volume-loader",
+    "packages/nifti-volume-loader",
     "packages/dicomImageLoader"
   ],
   "npmClient": "yarn",
-  "useWorkspaces": true,
-  "command": {
-    "publish": {
-      "ignoreChanges": ["*.md", "*.yml", "*.spec.js", "*.test.js"],
-      "message": "chore(release): publish"
-    },
-    "version": {
-      "allowBranch": "main",
-      "conventionalCommits": true,
-      "createRelease": "github",
-      "yes": true,
-      "message": "chore(release): publish [skip ci]",
-      "forcePublish": true
-    }
-  }
+  "useWorkspaces": true
 }

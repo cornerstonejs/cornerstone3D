@@ -15,6 +15,10 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
+import {
+  getInstanceModule,
+  instanceModuleNames,
+} from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
   if (type === 'multiframeModule') {
@@ -265,6 +269,11 @@ function metaDataProvider(type, imageId) {
       frameReferenceTime: getNumberValue(metaData['00541300']),
       actualFrameDuration: getNumberValue(metaData['00181242']),
     };
+  }
+
+  // This is used for gathering all the metadata for export
+  if (type === 'instance') {
+    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
 }
 

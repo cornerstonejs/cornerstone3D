@@ -16,6 +16,10 @@ import {
   extractSliceThicknessFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
+import {
+  getInstanceModule,
+  instanceModuleNames,
+} from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
   const { dicomParser } = external;
@@ -239,11 +243,15 @@ function metaDataProvider(type, imageId) {
 
   if (type === 'petImageModule') {
     return {
-      frameReferenceTime: dicomParser.floatString(
+      frameReferenceTime: dataSet.floatString(
         dataSet.string('x00541300') || ''
       ),
-      actualFrameDuration: dicomParser.intString(dataSet.string('x00181242')),
+      actualFrameDuration: dataSet.intString(dataSet.string('x00181242')),
     };
+  }
+
+  if (type === 'instance') {
+    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
 }
 

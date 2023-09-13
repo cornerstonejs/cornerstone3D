@@ -6,6 +6,7 @@ import {
   VolumeViewport,
   cache,
   BaseVolumeViewport,
+  Enums,
 } from '@cornerstonejs/core';
 
 import { Types } from '@cornerstonejs/core';
@@ -14,6 +15,7 @@ import { addToolState, getToolState } from './state';
 import { CINETypes } from '../../types';
 import scroll from '../scroll';
 
+const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
 
 const debounced = true;
@@ -193,7 +195,9 @@ function stopClip(element: HTMLDivElement): void {
 
 function _stopClip(element: HTMLDivElement, stopDynamicCine: boolean): void {
   const enabledElement = getEnabledElement(element);
-  if (!enabledElement) return;
+  if (!enabledElement) {
+    return;
+  }
   const { viewport } = enabledElement;
   const cineToolData = getToolState(viewport.element);
 
@@ -313,7 +317,8 @@ function _getVolumeFromViewport(viewport): Types.IImageVolume {
 }
 
 function _createStackViewportCinePlayContext(
-  viewport: StackViewport
+  viewport: StackViewport,
+  waitForRendered: number
 ): CINETypes.CinePlayContext {
   const imageIds = viewport.getImageIds();
 
@@ -328,7 +333,16 @@ function _createStackViewportCinePlayContext(
       // It is always in acquired orientation
       return true;
     },
+    waitForRenderedCount: 0,
     scroll(delta: number): void {
+      if (
+        this.waitForRenderedCount <= waitForRendered &&
+        viewport.viewportStatus !== ViewportStatus.RENDERED
+      ) {
+        this.waitForRenderedCount++;
+        return;
+      }
+      this.waitForRenderedCount = 0;
       scroll(viewport, { delta, debounceLoading: debounced });
     },
   };
@@ -417,7 +431,10 @@ function _createCinePlayContext(
   playClipOptions: CINETypes.PlayClipOptions
 ): CINETypes.CinePlayContext {
   if (viewport instanceof StackViewport) {
-    return _createStackViewportCinePlayContext(viewport);
+    return _createStackViewportCinePlayContext(
+      viewport,
+      playClipOptions.waitForRendered ?? 30
+    );
   }
 
   if (viewport instanceof VolumeViewport) {

@@ -11,7 +11,9 @@ export default function pointInPolyline(
     pointEnd[1],
   ]);
 
-  if (intersections.length % 2 === 0) return false;
+  if (intersections.length % 2 === 0) {
+    return false;
+  }
 
   return true;
 }

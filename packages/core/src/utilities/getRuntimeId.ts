@@ -46,7 +46,9 @@ function getNextRuntimeId(
       n = n + 1;
     } else {
       n = 0;
-      if (i + 1 === idComponents.length) idComponents.push(0);
+      if (i + 1 === idComponents.length) {
+        idComponents.push(0);
+      }
     }
     idComponents[i] = n;
   }

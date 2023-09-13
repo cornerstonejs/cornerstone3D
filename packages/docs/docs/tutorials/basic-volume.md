@@ -210,7 +210,7 @@ Learn more about:
 - [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
 - [viewport](../concepts/cornerstone-core/viewports.md)
 
-For advanced usage of Stack Viewport, please visit <a href="/live-examples/volumeAPI.html" target="_blank">VolumeViewport API</a> example page.
+For advanced usage of Volume Viewport, please visit <a href="/live-examples/volumeAPI.html" target="_blank">VolumeViewport API</a> example page.
 
 :::note Tip
 
