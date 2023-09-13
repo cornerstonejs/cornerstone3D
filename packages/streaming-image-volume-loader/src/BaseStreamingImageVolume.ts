@@ -8,10 +8,16 @@ import {
   cache,
   imageLoader,
   utilities as csUtils,
+  getWorkerManager,
 } from '@cornerstonejs/core';
 
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
+
+const workerFn = () => {
+  const instance = new Worker(new URL('./volumeComlink.js', import.meta.url));
+  return instance;
+};
 
 const requestType = Enums.RequestType.Prefetch;
 const { getMinMax } = csUtils;
@@ -45,6 +51,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.numFrames = this._getNumFrames();
 
     this._createCornerstoneImageMetaData();
+    const workerManager = getWorkerManager();
+    this.workerManager = workerManager;
+
+    this.workerManager.registerWorker('stuff', workerFn, 2);
   }
 
   /**
@@ -251,6 +261,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     scalarData: Types.VolumeScalarData,
     priority: number
   ) => {
+    this.workerManager.executeTask('stuff', 'fib', 40).then((res) => {
+      console.debug('result', res);
+    });
+
     const { loadStatus } = this;
     const { cachedFrames } = loadStatus;
 

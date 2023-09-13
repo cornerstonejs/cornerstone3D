@@ -11,6 +11,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
+import { getWorkerManager } from '../init';
 
 import {
   triggerEvent,
@@ -109,6 +110,15 @@ type SetVOIOptions = {
   voiUpdatedWithSetProperties?: boolean;
 };
 
+// const worker: Worker = new Worker(
+//   new URL('../workers/add.js', import.meta.url),
+//   {
+//     name: 'worker',
+//   }
+// );
+
+// this.workerAPI = Comlink.wrap(worker);
+
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal viewport, and an associated target output `canvas`.
@@ -184,14 +194,18 @@ class StackViewport extends Viewport implements IStackViewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
-    const worker: Worker = new Worker(
-      new URL('../workers/add.ts', import.meta.url),
-      {
-        name: 'worker',
-      }
-    );
+    const workerManager = getWorkerManager();
+    this.workerManager = workerManager;
 
-    this.workerAPI = Comlink.wrap(worker);
+    const workerFn = () => {
+      const worker = new Worker(new URL('../workers/add.js', import.meta.url), {
+        name: 'worker',
+      });
+
+      return worker;
+    };
+
+    this.workerManager.registerWorker('add', workerFn, 2);
   }
 
   public setUseCPURendering(value: boolean) {
@@ -2272,11 +2286,6 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  fib(n) {
-    if (n <= 1) return 1;
-    return this.fib(n - 1) + this.fib(n - 2);
-  }
-
   /**
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.
@@ -2285,17 +2294,8 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
-    // await this.workerAPI.inc();
-
-    // console.debug(await this.workerAPI.counter);
-
-    // await this.workerAPI.vtk();
-
-    // console.debug(await this.workerAPI.counter);
-
-    console.debug('fib start');
-    const fib = await this.workerAPI.fib(40);
-    console.debug(fib);
+    const res = await this.workerManager.executeTask('add', 'fib', 40);
+    console.debug('result', res);
 
     this._throwIfDestroyed();
 

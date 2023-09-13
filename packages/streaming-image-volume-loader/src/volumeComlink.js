@@ -1,4 +1,4 @@
-import { expose } from 'comlink';
+import { workerManagerComlink } from '@cornerstonejs/core';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
 const obj = {
@@ -15,9 +15,11 @@ const obj = {
     console.debug(points);
   },
   fib(n) {
-    if (n <= 1) return 1;
+    if (n <= 1) {
+      return 1;
+    }
     return obj.fib(n - 1) + obj.fib(n - 2);
   },
 };
 
-expose(obj);
+workerManagerComlink.expose(obj);

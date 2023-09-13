@@ -22,7 +22,7 @@ async function addLabelmapToElement(
   segmentationRepresentationUID: string
 ): Promise<void> {
   const workerAPI = workerManagerComlink.wrap(
-    new Worker(new URL('../../../workers/subtract.ts', import.meta.url))
+    new Worker(new URL('../../../workers/subtract.js', import.meta.url))
   );
 
   console.log('Calculating cached stats');
