@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.1...v1.16.2) (2023-09-18)
+
+### Bug Fixes
+
+- **invert:** Resetting the stack viewport properties should revert to the image's original invert setting ([#786](https://github.com/cornerstonejs/cornerstone3D/issues/786)) ([027a737](https://github.com/cornerstonejs/cornerstone3D/commit/027a73778c57e67efea2f99aa12b654f39994d97))
+
 ## [1.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.0...v1.16.1) (2023-09-14)
 
 ### Bug Fixes
