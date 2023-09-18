@@ -673,6 +673,7 @@ type CinePlayContext = {
     get numScrollSteps(): number;
     get currentStepIndex(): number;
     get frameTimeVectorEnabled(): boolean;
+    waitForRenderedCount?: number;
     scroll(delta: number): void;
 };
 
@@ -3778,6 +3779,7 @@ type PlayClipOptions = {
     loop?: boolean;
     dynamicCineEnabled?: boolean;
     frameTimeVectorSpeedMultiplier?: number;
+    waitForRendered?: number;
 };
 
 declare namespace point {
