@@ -475,14 +475,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.globalDefaultProperties = ViewportProperties;
     }
     this.perVolumeIdDefaultProperties.set(volumeId, ViewportProperties);
-
   }
 
   /**
- * Remove the global default properties of the viewport or remove default properties for a volumeId if specified
- * @param volumeId If given, we remove the default properties only for this volumeId, if not
- * the global default properties will be removed
- */
+   * Remove the global default properties of the viewport or remove default properties for a volumeId if specified
+   * @param volumeId If given, we remove the default properties only for this volumeId, if not
+   * the global default properties will be removed
+   */
   public clearDefaultProperties(volumeId?: string): void {
     if (volumeId == null) {
       this.globalDefaultProperties = {};
@@ -503,7 +502,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @param [VolumeViewportProperties.VOILUTFunction] - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
    * @param [VolumeViewportProperties.invert] - Inverts the color transfer function
    * @param [VolumeViewportProperties.colormap] - Sets the colormap
-   * @param [VolumeViewportProperties.preset] - Sets the colormap
+   * @param [VolumeViewportProperties.preset] - Sets the colormap preset
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
@@ -522,16 +521,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   ): void {
     //If the viewport hasn't been initialized, we need to set the default properties
     if (this.globalDefaultProperties == null) {
-      this.setDefaultProperties(
-        {
-          voiRange,
-          VOILUTFunction,
-          invert,
-          colormap,
-          preset,
-          slabThickness,
-        }
-      );
+      this.setDefaultProperties({
+        voiRange,
+        VOILUTFunction,
+        invert,
+        colormap,
+        preset,
+        slabThickness,
+      });
     }
 
     // Note: colormap should always be done first, since we can then
@@ -644,7 +641,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * If not given,we return the global properties of the viewport
    * @returns default viewport properties including voi, invert, interpolation type, colormap
    */
-  public getDefaultProperties = (volumeId?: string): VolumeViewportProperties => {
+  public getDefaultProperties = (
+    volumeId?: string
+  ): VolumeViewportProperties => {
     let volumeProperties;
     if (volumeId !== undefined) {
       volumeProperties = this.perVolumeIdDefaultProperties.get(volumeId);
@@ -675,7 +674,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       VOILUTFunction,
       interpolationType,
       invert,
-      slabThickness
+      slabThickness,
     } = this.viewportProperties;
 
     const voiRanges = this.getActors()
@@ -1022,7 +1021,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     // New volume actors implies resetting the inverted flag (i.e. like starting from scratch).
 
     for (let i = 0; i < volumeActorEntries.length; i++) {
-      let volumeId = volumeActorEntries[i].uid;
+      const volumeId = volumeActorEntries[i].uid;
 
       this.viewportProperties.invert = false;
     }
