@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { StackViewport, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 /**
@@ -18,6 +18,11 @@ function removeLabelmapFromElement(
 ): void {
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
+
+  if (viewport instanceof StackViewport) {
+    // Todo: we don't have stack segmentation yet
+    return;
+  }
 
   (viewport as Types.IVolumeViewport).removeVolumeActors([
     segmentationRepresentationUID,
