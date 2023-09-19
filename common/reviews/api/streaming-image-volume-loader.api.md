@@ -1342,7 +1342,6 @@ interface IVolumeViewport extends IViewport {
     resetToCenter?: boolean
     ): boolean;
     resetProperties(volumeId: string): void;
-    resetProperties(volumeId?: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,

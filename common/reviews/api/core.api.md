@@ -1946,8 +1946,6 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetProperties(volumeId: string): void;
     // (undocumented)
-    resetProperties(volumeId?: string): void;
-    // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
     setDefaultProperties(ViewportProperties: VolumeViewportProperties, volumeId?: string): void;
