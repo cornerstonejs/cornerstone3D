@@ -13,12 +13,13 @@ import { VolumeViewportProperties } from '.';
 export default interface IVolumeViewport extends IViewport {
   useCPURendering: boolean;
   getFrameOfReferenceUID: () => string;
+
   /**
- * Retrieve the viewport default properties
- * @param volumeId If given, we retrieve the default properties of a volumeId if it exists
- * If not given,we return the global properties of the viewport
- * @returns default viewport properties including voi, invert, interpolation type, colormap
- */
+   * Retrieve the viewport default properties
+   * If volumeId is given, we retrieve the default properties of a volumeId if it exists
+   * If not given,we return the global properties of the viewport
+   * default viewport properties including voi, invert, interpolation type, colormap
+   */
   getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
   /**
    * Retrieve the viewport properties
@@ -73,10 +74,10 @@ export default interface IVolumeViewport extends IViewport {
     volumeId?: string
   ): void;
   /**
-  * Remove the global default properties of the viewport or remove default properties for a volumeId if specified
-  * @param volumeId If given, we remove the default properties only for this volumeId, if not
-  * the global default properties will be removed
-  */
+   * Remove the global default properties of the viewport or remove default properties for a volumeId if specified
+   * If volumeId is given, we remove the default properties only for this volumeId, if not
+   * the global default properties will be removed
+   */
   clearDefaultProperties(volumeId?: string): void;
   /**
    * Sets the properties for the viewport. If no volumeId is provided
@@ -167,8 +168,4 @@ export default interface IVolumeViewport extends IViewport {
   getImageData(volumeId?: string): IImageData | undefined;
 
   setOrientation(orientation: OrientationAxis): void;
-  /**
-   * Reset the viewport properties to the default values
-   */
-  resetProperties(volumeId?: string): void;
 }
