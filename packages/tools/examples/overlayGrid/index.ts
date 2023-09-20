@@ -1,7 +1,14 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
+  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -95,6 +102,9 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
@@ -159,12 +169,14 @@ async function run() {
     Enums.OrientationAxis.CORONAL,
   ];
 
+  // this variable controls if the viewport is a VolumeViewport or StackViewport
+  const useVolume = false;
   // Create the viewports
   const viewportInputArray = [];
   for (let i = 0; i < elements.length; i++) {
     viewportInputArray[i] = {
       viewportId: viewportIds[i],
-      type: ViewportType.STACK,
+      type: useVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK,
       element: elements[i],
       defaultOptions: {
         orientation: orientations[i],
@@ -179,15 +191,40 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
+  let volume;
+  if (useVolume) {
+    // Define a volume in memory
+    volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds: imageStacks[0],
+    });
+    volume.load();
+  }
+
   const viewports = [];
   for (let i = 0; i < viewportIds.length; i++) {
     toolGroup.addViewport(viewportIds[i], renderingEngineId);
     viewports[i] = <Types.IStackViewport>(
       renderingEngine.getViewport(viewportIds[i])
     );
-    await viewports[i].setStack(
-      imageStacks[i],
-      Math.floor(imageStacks[i].length / 2)
+
+    if (!useVolume) {
+      await viewports[i].setStack(
+        imageStacks[i],
+        Math.floor(imageStacks[i].length / 2)
+      );
+    }
+  }
+
+  if (useVolume) {
+    await setVolumesForViewports(
+      renderingEngine,
+      [
+        {
+          volumeId,
+          callback: setCtTransferFunctionForVolumeActor,
+        },
+      ],
+      viewportIds
     );
   }
 
@@ -200,7 +237,9 @@ async function run() {
   // Add Crosshairs tool and configure it to link the three viewports
   // These viewports could use different tool groups. See the PET-CT example
   // for a more complicated used case.
-  toolGroup.addTool(OverlayGridTool.toolName);
+  toolGroup.addTool(OverlayGridTool.toolName, {
+    sourceViewportIds: [viewportIds[0]],
+  });
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
 
