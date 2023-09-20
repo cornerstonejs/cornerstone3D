@@ -69,7 +69,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
     //   this.configuration.sourceViewportId
     // ) as Types.IVolumeViewport;
 
-    // get the first axial viewport
+    // get the first viewport with required orientation
     const sourceViewport = viewports.find((viewport) => {
       const { viewPlaneNormal } = viewport.getCamera();
       return (
@@ -138,6 +138,12 @@ class OverlayGridTool extends AnnotationDisplayTool {
     this._init();
   };
 
+  /**
+   * Get the largest axis of a normal vector. We assume that indicates the image
+   * orientation ( AXIAL = 2, CORONAL = 1, SAGITTAL = 0)
+   * @param normalVector
+   * @returns
+   */
   getNormalLargestAxis = (normalVector) => {
     let largestAxis = 0;
     for (let i = 1; i < normalVector.length; i++) {
@@ -156,7 +162,12 @@ class OverlayGridTool extends AnnotationDisplayTool {
     this._init();
   };
 
-  calculateImageIdCorners = (imageId: string) => {
+  /**
+   * Calculates the point sets based on the image corners relative to an imageId
+   * @param imageId
+   * @returns
+   */
+  calculateImageIdPointSets = (imageId: string) => {
     const {
       imagePositionPatient,
       rows,
@@ -255,7 +266,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
 
     const imageIds = sourceViewport.getImageIds();
     for (let i = 0; i < imageIds.length; i++) {
-      const { pointSet1, pointSet2 } = this.calculateImageIdCorners(
+      const { pointSet1, pointSet2 } = this.calculateImageIdPointSets(
         imageIds[i]
       );
 
