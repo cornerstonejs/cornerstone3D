@@ -16,7 +16,13 @@ const addToBeginning = true;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
-  preserveExistingPool: false,
+  // Preserving the existing pool should be the default behaviour, as there might
+  // be a volume of the same series already being loaded in the pool, and we don't want
+  // to cancel it middle of the way when the other stack viewport mounts. Worst case scenario
+  // there will be a few extra images in the pool but by the time that their turn comes
+  // we will have already loaded the volume and it will get read from the CACHE,
+  // so who cares
+  preserveExistingPool: true,
 };
 
 let resetPrefetchTimeout;

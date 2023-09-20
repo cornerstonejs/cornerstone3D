@@ -527,6 +527,11 @@ class ProbeTool extends AnnotationTool {
 
       renderStatus = true;
 
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        continue;
+      }
+
       const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
         const textCanvasCoordinates = [
@@ -541,7 +546,7 @@ class ProbeTool extends AnnotationTool {
           textUID,
           textLines,
           [textCanvasCoordinates[0], textCanvasCoordinates[1]],
-          this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+          options
         );
       }
     }
