@@ -784,9 +784,10 @@ class Viewport implements IViewport {
     let parallelScale;
 
     if (boundsAspectRatio <= canvasAspectRatio) {
-      // can fit full height, so use it minus 10%
+      // can fit full height exactly
       parallelScale = heightWorld / 2;
     } else {
+      // Fitting full height would overflow the width, so scale to width instead
       const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
       // Scale to width exactly - no extra spacing at sides

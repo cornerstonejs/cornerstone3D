@@ -1220,7 +1220,6 @@ class RenderingEngine implements IRenderingEngine {
 
     const onScreenContext = canvas.getContext('2d');
 
-    const rect = canvas.getBoundingClientRect();
     onScreenContext.drawImage(
       offScreenCanvas,
       sx,
@@ -1339,7 +1338,6 @@ class RenderingEngine implements IRenderingEngine {
 
       const onScreenContext = canvas.getContext('2d');
 
-      const rect = canvas.getBoundingClientRect();
       //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
       onScreenContext.drawImage(
         offScreenCanvas,

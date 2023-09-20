@@ -1,5 +1,6 @@
 const VIEWPORT_ELEMENT = 'viewport-element';
 const CANVAS_CSS_CLASS = 'cornerstone-canvas';
+export const EPSILON = 1e-4;
 
 /**
  * Create a canvas and append it to the element
@@ -81,8 +82,8 @@ export default function getOrCreateCanvas(
   // Reset the size of the canvas to be the number of physical pixels,
   // expressed as CSS pixels, with a tiny extra amount to prevent clipping
   // to the next lower size in the physical display.
-  canvas.style.width = (width + 0.0001) / devicePixelRatio + 'px';
-  canvas.style.height = (height + 0.0001) / devicePixelRatio + 'px';
+  canvas.style.width = (width + EPSILON) / devicePixelRatio + 'px';
+  canvas.style.height = (height + EPSILON) / devicePixelRatio + 'px';
 
   return canvas;
 }

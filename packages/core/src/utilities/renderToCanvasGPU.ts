@@ -1,4 +1,6 @@
-import getOrCreateCanvas from '../RenderingEngine/helpers/getOrCreateCanvas';
+import getOrCreateCanvas, {
+  EPSILON,
+} from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
 import StackViewport from '../RenderingEngine/StackViewport';
 import { IImage } from '../types';
@@ -45,10 +47,10 @@ export default function renderToCanvasGPU(
   // The canvas width/height are set by flooring the CSS size converted
   // into physical pixels, but because these are float values, the conversion
   // isn't exact, and using the exact value sometimes leads to an off by 1
-  // in the actual size, so adding a half physical pixel to the size resolves
+  // in the actual size, so adding EPSILON to the size resolves
   // the problem.
-  element.style.width = `${originalWidth + devicePixelRatio / 2}px`;
-  element.style.height = `${originalHeight + devicePixelRatio / 2}px`;
+  element.style.width = `${originalWidth + EPSILON}px`;
+  element.style.height = `${originalHeight + EPSILON}px`;
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
 
