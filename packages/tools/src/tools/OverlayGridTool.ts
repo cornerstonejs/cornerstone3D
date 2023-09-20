@@ -69,7 +69,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
   _throttledCalculateCachedStats: any;
   editData: {
     renderingEngine: any;
-    annotations: any;
+    annotations: Map<string, Annotation>;
   } | null = {} as any;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -110,7 +110,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
 
         const FrameOfReferenceUID = sourceViewport.getFrameOfReferenceUID();
         if (!this.editData?.annotations) {
-          this.editData.annotations = {};
+          this.editData.annotations = new Map();
         }
 
         let annotation = this.editData.annotations[viewportId];
@@ -135,7 +135,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
           annotation = newAnnotation;
         }
 
-        this.editData.annotations[viewportId] = annotation;
+        this.editData.annotations.set(viewportId, annotation);
         this.editData.renderingEngine = renderingEngine;
       }
     });
@@ -179,10 +179,10 @@ class OverlayGridTool extends AnnotationDisplayTool {
     } = metaData.get('imagePlaneModule', imageId);
 
     // top left world, top right world, bottom right world, bottom left world
-    const topLeft = [...imagePositionPatient];
-    const topRight = [...imagePositionPatient];
-    const bottomLeft = [...imagePositionPatient];
-    const bottomRight = [...imagePositionPatient];
+    const topLeft = <Types.Point3>[...imagePositionPatient];
+    const topRight = <Types.Point3>[...imagePositionPatient];
+    const bottomLeft = <Types.Point3>[...imagePositionPatient];
+    const bottomRight = <Types.Point3>[...imagePositionPatient];
 
     vec3.scaleAndAdd(
       topRight,
@@ -235,7 +235,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
       return renderStatus;
     }
 
-    [...Object.values(annotations)].forEach((annotation) => {
+    [...annotations.values()].forEach((annotation) => {
       const sourceViewport = annotation.data.sourceViewport;
       if (!sourceViewport) {
         return renderStatus;
