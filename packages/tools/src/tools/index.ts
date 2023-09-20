@@ -11,6 +11,7 @@ import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
 import MagnifyTool from './MagnifyTool';
 import ReferenceLinesTool from './ReferenceLinesTool';
+import OverlayGridTool from './OverlayGridTool';
 //
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
@@ -58,6 +59,7 @@ export {
   // Annotation Tools
   CrosshairsTool,
   ReferenceLinesTool,
+  OverlayGridTool,
   BidirectionalTool,
   LengthTool,
   ProbeTool,
