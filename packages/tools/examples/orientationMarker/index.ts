@@ -167,7 +167,11 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
-  toolGroup.addTool(OrientationMarkerTool.toolName, { overlayMarkerType: 3 });
+  toolGroup.addTool(OrientationMarkerTool.toolName, {
+    overlayMarkerType: 3,
+    polyDataURL: '/Human.vtp',
+  });
+
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(TrackballRotateTool.toolName);

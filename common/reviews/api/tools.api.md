@@ -3616,6 +3616,7 @@ export class OrientationMarkerTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
         configuration: {
             overlayMarkerType: number;
+            polyDataURL: string;
         };
     });
     // (undocumented)
@@ -3628,8 +3629,6 @@ export class OrientationMarkerTool extends BaseTool {
     onSetToolEnabled: () => void;
     // (undocumented)
     orientationMarkers: any;
-    // (undocumented)
-    polyDataURL: any;
     // (undocumented)
     static toolName: any;
 }

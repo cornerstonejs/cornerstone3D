@@ -35,21 +35,18 @@ async function getXML(url) {
 class OrientationMarkerTool extends BaseTool {
   static toolName;
   orientationMarkers;
-  polyDataURL;
 
   constructor(
     toolProps = {},
     defaultToolProps = {
       configuration: {
         overlayMarkerType: 1,
+        polyDataURL: '',
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
-    this.polyDataURL =
-      'https://raw.githubusercontent.com/Slicer/Slicer/80ad0a04dacf134754459557bf2638c63f3d1d1b/Base/Logic/Resources/OrientationMarkers/Human.vtp';
-    // '/Human.vtp';
   }
 
   initViewports() {
@@ -77,7 +74,7 @@ class OrientationMarkerTool extends BaseTool {
 
   async addAxisActorInViewport(viewport) {
     const viewportId = viewport.id;
-    const type = 1; // this.configuration.overlayMarkerType;
+    const type = this.configuration.overlayMarkerType;
     if (!this.orientationMarkers[viewportId]) {
       let axes;
       if (type === 1) {
@@ -124,7 +121,7 @@ class OrientationMarkerTool extends BaseTool {
       } else if (type === 2) {
         axes = vtkAxesActor.newInstance();
       } else if (type === 3) {
-        const { actor } = await getXML(this.polyDataURL);
+        const { actor } = await getXML(this.configuration.polyDataURL);
         axes = actor;
         axes.rotateZ(180);
       }
