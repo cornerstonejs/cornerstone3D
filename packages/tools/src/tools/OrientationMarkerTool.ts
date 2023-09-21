@@ -63,6 +63,7 @@ class OrientationMarkerTool extends BaseTool {
 
     let viewports = renderingEngine.getViewports();
     viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
+    console.debug('🚀 ~ viewports:', viewports);
     viewports.forEach((viewport) => this.addAxisActorInViewport(viewport));
   }
 
@@ -76,7 +77,7 @@ class OrientationMarkerTool extends BaseTool {
 
   async addAxisActorInViewport(viewport) {
     const viewportId = viewport.id;
-    const type = this.configuration.overlayMarkerType;
+    const type = 1; // this.configuration.overlayMarkerType;
     if (!this.orientationMarkers[viewportId]) {
       let axes;
       if (type === 1) {
@@ -136,10 +137,11 @@ class OrientationMarkerTool extends BaseTool {
       const orientationWidget = vtkOrientationMarkerWidget.newInstance({
         actor: axes,
         interactor: renderWindow.getInteractor(),
+        parentRenderer: renderer,
       });
       orientationWidget.setEnabled(true);
       orientationWidget.setViewportCorner(
-        vtkOrientationMarkerWidget.Corners.TOP_RIGHT
+        vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT
       );
       orientationWidget.setViewportSize(0.15);
       orientationWidget.setMinPixelSize(100);

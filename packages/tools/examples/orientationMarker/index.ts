@@ -121,7 +121,7 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const elements = [];
-const numberOfElements = 1;
+const numberOfElements = 3;
 for (let i = 0; i < numberOfElements; i++) {
   const element = document.createElement('div');
   element.style.width = size;
@@ -141,98 +141,25 @@ instructions.innerText = `
 content.append(instructions);
 
 // ============================= //
+// this variable controls if the viewport is a VolumeViewport or StackViewport
+const useVolume = true;
 
 const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'].slice(
   0,
   numberOfElements
 );
 
+const renderingEngineId = 'myRenderingEngine';
+
 /**
  * Runs the demo
  */
 async function run() {
-  // Init Cornerstone and related libraries
-  await initDemo();
-
-  // Instantiate a rendering engine
-  const renderingEngineIds = [
-    'myRenderingEngine1',
-    'myRenderingEngine2',
-    'myRenderingEngine3',
-  ].slice(0, numberOfElements);
-  const renderingEngines = renderingEngineIds.map(
-    (renderingEngineId) => new RenderingEngine(renderingEngineId)
-  );
-  const orientations = [
-    Enums.OrientationAxis.AXIAL,
-    Enums.OrientationAxis.SAGITTAL,
-    Enums.OrientationAxis.CORONAL,
-  ].slice(0, numberOfElements);
-
-  // this variable controls if the viewport is a VolumeViewport or StackViewport
-  const useVolume = true;
-  // Create the viewports
-  const viewportInputArray = [];
-  for (let i = 0; i < elements.length; i++) {
-    viewportInputArray[i] = {
-      viewportId: viewportIds[i],
-      type: useVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK,
-      element: elements[i],
-      defaultOptions: {
-        orientation: orientations[i],
-        background: <Types.Point3>[0, 0, 0],
-      },
-    };
-  }
-  for (let i = 0; i < numberOfElements; i++) {
-    renderingEngines[i].setViewports([viewportInputArray[i]]);
-  }
-
-  const imageStacks = await getImageStacks();
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  let volume;
-  if (useVolume) {
-    // Define a volume in memory
-    volume = await volumeLoader.createAndCacheVolume(volumeId, {
-      imageIds: imageStacks[0],
-    });
-    volume.load();
-  }
-
-  const viewports = [];
-  for (let i = 0; i < viewportIds.length; i++) {
-    toolGroup.addViewport(viewportIds[i], renderingEngineIds[i]);
-    viewports[i] = <Types.IStackViewport>(
-      renderingEngines[i].getViewport(viewportIds[i])
-    );
-
-    if (!useVolume) {
-      await viewports[i].setStack(
-        imageStacks[i],
-        Math.floor(imageStacks[i].length / 2)
-      );
-    }
-  }
-
-  if (useVolume) {
-    for (let i = 0; i < numberOfElements; i++) {
-      await setVolumesForViewports(
-        renderingEngines[i],
-        [
-          {
-            volumeId,
-            callback: setCtTransferFunctionForVolumeActor,
-            blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-            slabThickness: 10000,
-          },
-        ],
-        [viewportIds[i]]
-      );
-    }
-  }
+  // Init Cornerstone and related libraries
+  await initDemo();
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(OrientationMarkerTool);
@@ -245,7 +172,6 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(TrackballRotateTool.toolName);
 
-  toolGroup.setToolActive(OrientationMarkerTool.toolName);
   toolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
@@ -253,25 +179,74 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
+
+  // Instantiate a rendering engine
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Create the viewports
+  const viewportInputArray = [
+    {
+      viewportId: viewportIds[0],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: elements[0],
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
       },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
+    },
+    {
+      viewportId: viewportIds[1],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: elements[1],
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
-    ],
+    },
+    {
+      viewportId: viewportIds[2],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: elements[2],
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
+  ];
+
+  renderingEngine.setViewports(viewportInputArray);
+
+  const usedViewportIds = viewportInputArray.map(
+    ({ viewportId }) => viewportId
+  );
+  // Add tools to the viewports
+  usedViewportIds.map(({ viewportId }) => {
+    toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
+  const imageStacks = await getImageStacks();
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds: imageStacks[0],
+  });
+  volume.load();
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+        slabThickness: 10000,
+      },
+    ],
+    usedViewportIds
+  );
+
+  // Todo: Handle this
+  toolGroup.setToolActive(OrientationMarkerTool.toolName);
+
   // Render the image
-  for (let i = 0; i < numberOfElements; i++) {
-    renderingEngines[i].renderViewports([viewportIds[i]]);
-  }
+  renderingEngine.render();
 }
 
 run();
