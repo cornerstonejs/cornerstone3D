@@ -1,34 +1,81 @@
-import { getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import vtkAxesActor from '@kitware/vtk.js/Rendering/Core/AxesActor';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import { getRenderingEngines } from '@cornerstonejs/core';
+import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
+
+async function getXML(url) {
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  const vtpReader = vtkXMLPolyDataReader.newInstance();
+  vtpReader.parseAsArrayBuffer(arrayBuffer);
+  vtpReader.update();
+
+  const polyData = vtkPolyData.newInstance();
+  polyData.shallowCopy(vtpReader.getOutputData());
+  polyData.getPointData().setActiveScalars('Color');
+  const mapper = vtkMapper.newInstance();
+  mapper.setInputData(polyData);
+  mapper.setColorModeToDirectScalars();
+
+  const actor = vtkActor.newInstance();
+  actor.setMapper(mapper);
+  return { actor, mapper };
+}
+
 /**
  * The OrientationMarker is a tool that includes an orientation marker in viewports
  * when activated
  */
 class OrientationMarkerTool extends BaseTool {
   static toolName;
-  _configuration: any;
   orientationMarkers;
+  polyDataURL;
 
   constructor(
     toolProps = {},
     defaultToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        invert: false,
-        debounceIfNotLoaded: true,
-        loop: false,
+        overlayMarkerType: 1,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
+    this.polyDataURL =
+      'https://raw.githubusercontent.com/Slicer/Slicer/80ad0a04dacf134754459557bf2638c63f3d1d1b/Base/Logic/Resources/OrientationMarkers/Human.vtp';
   }
 
-  addAxisActorInViewport(viewport, type = 2): void {
+  initViewports() {
+    const renderingEngines = getRenderingEngines();
+    const renderingEngine = renderingEngines[0];
+
+    // Todo: handle this case where it is too soon to get the rendering engine
+    if (!renderingEngine) {
+      return;
+    }
+
+    let viewports = renderingEngine.getViewports();
+    viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
+    viewports.forEach((viewport) => this.addAxisActorInViewport(viewport));
+  }
+
+  onSetToolEnabled = (): void => {
+    this.initViewports();
+  };
+
+  onSetToolActive = (): void => {
+    this.initViewports();
+  };
+
+  async addAxisActorInViewport(viewport) {
     const viewportId = viewport.id;
+    const type = this.configuration.overlayMarkerType;
     if (!this.orientationMarkers[viewportId]) {
       let axes;
       if (type === 1) {
@@ -57,7 +104,8 @@ class OrientationMarkerTool extends BaseTool {
         });
         axes.setYPlusFaceProperty({
           text: 'P',
-          faceColor: '#00ff00',
+          faceColor: '#00ffff',
+          fontColor: 'white',
           faceRotation: 180,
         });
         axes.setYMinusFaceProperty({
@@ -67,14 +115,16 @@ class OrientationMarkerTool extends BaseTool {
         });
         axes.setZPlusFaceProperty({
           text: 'S',
-          edgeColor: 'yellow',
         });
         axes.setZMinusFaceProperty({
           text: 'I',
-          edgeThickness: 0,
         });
       } else if (type === 2) {
         axes = vtkAxesActor.newInstance();
+      } else if (type === 3) {
+        const { actor } = await getXML(this.polyDataURL);
+        axes = actor;
+        axes.rotateZ(180);
       }
 
       const renderer = viewport.getRenderer();
@@ -102,26 +152,7 @@ class OrientationMarkerTool extends BaseTool {
       renderer.resetCamera();
       renderWindow.render();
     }
-    const actorEntries = viewport.getActors();
-    const actorEntry = actorEntries.find(
-      (actorEntry) => actorEntry.uid === 'orientationMarker'
-    );
-
-    if (!actorEntry) {
-      viewport.addActor({
-        uid: 'orientationMarker',
-        actor: this.orientationMarkers[viewportId].actor,
-      });
-    }
   }
-
-  onCameraModified = (evt) => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const viewport = enabledElement.viewport;
-    this.addAxisActorInViewport(viewport);
-  };
 }
 
 OrientationMarkerTool.toolName = 'OrientationMarker';

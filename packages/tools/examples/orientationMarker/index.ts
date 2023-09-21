@@ -92,10 +92,8 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   OrientationMarkerTool,
-  ReferenceLines,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 
@@ -122,17 +120,16 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-const element3 = document.createElement('div');
-const elements = [element1, element2, element3];
-
-for (let i = 0; i < elements.length; i++) {
-  elements[i].style.width = size;
-  elements[i].style.height = size;
+const elements = [];
+const numberOfElements = 1;
+for (let i = 0; i < numberOfElements; i++) {
+  const element = document.createElement('div');
+  element.style.width = size;
+  element.style.height = size;
   // Disable right click context menu so we can have right click tools
-  elements[i].oncontextmenu = (e) => e.preventDefault();
-  viewportGrid.appendChild(elements[i]);
+  element.oncontextmenu = (e) => e.preventDefault();
+  viewportGrid.appendChild(element);
+  elements.push(element);
 }
 
 content.appendChild(viewportGrid);
@@ -145,7 +142,10 @@ content.append(instructions);
 
 // ============================= //
 
-const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'];
+const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'].slice(
+  0,
+  numberOfElements
+);
 
 /**
  * Runs the demo
@@ -154,22 +154,20 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(OrientationMarkerTool);
-  cornerstoneTools.addTool(ReferenceLines);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
-
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  const renderingEngineIds = [
+    'myRenderingEngine1',
+    'myRenderingEngine2',
+    'myRenderingEngine3',
+  ].slice(0, numberOfElements);
+  const renderingEngines = renderingEngineIds.map(
+    (renderingEngineId) => new RenderingEngine(renderingEngineId)
+  );
   const orientations = [
     Enums.OrientationAxis.AXIAL,
     Enums.OrientationAxis.SAGITTAL,
     Enums.OrientationAxis.CORONAL,
-  ];
+  ].slice(0, numberOfElements);
 
   // this variable controls if the viewport is a VolumeViewport or StackViewport
   const useVolume = true;
@@ -186,7 +184,9 @@ async function run() {
       },
     };
   }
-  renderingEngine.setViewports(viewportInputArray);
+  for (let i = 0; i < numberOfElements; i++) {
+    renderingEngines[i].setViewports([viewportInputArray[i]]);
+  }
 
   const imageStacks = await getImageStacks();
 
@@ -204,9 +204,9 @@ async function run() {
 
   const viewports = [];
   for (let i = 0; i < viewportIds.length; i++) {
-    toolGroup.addViewport(viewportIds[i], renderingEngineId);
+    toolGroup.addViewport(viewportIds[i], renderingEngineIds[i]);
     viewports[i] = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportIds[i])
+      renderingEngines[i].getViewport(viewportIds[i])
     );
 
     if (!useVolume) {
@@ -218,37 +218,34 @@ async function run() {
   }
 
   if (useVolume) {
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId,
-          callback: setCtTransferFunctionForVolumeActor,
-          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-          slabThickness: 10000,
-        },
-      ],
-      viewportIds
-    );
+    for (let i = 0; i < numberOfElements; i++) {
+      await setVolumesForViewports(
+        renderingEngines[i],
+        [
+          {
+            volumeId,
+            callback: setCtTransferFunctionForVolumeActor,
+            blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+            slabThickness: 10000,
+          },
+        ],
+        [viewportIds[i]]
+      );
+    }
   }
 
-  const idSelected = 0;
-  // Manipulation Tools
-  toolGroup.addTool(ReferenceLines.toolName, {
-    sourceViewportId: viewportIds[idSelected],
-  });
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  // Add Crosshairs tool and configure it to link the three viewports
-  // These viewports could use different tool groups. See the PET-CT example
-  // for a more complicated used case.
-  toolGroup.addTool(OrientationMarkerTool.toolName);
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
+
+  toolGroup.addTool(OrientationMarkerTool.toolName, { overlayMarkerType: 3 });
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(TrackballRotateTool.toolName);
 
   toolGroup.setToolActive(OrientationMarkerTool.toolName);
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolEnabled(ReferenceLines.toolName);
   toolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
@@ -272,7 +269,9 @@ async function run() {
   });
 
   // Render the image
-  renderingEngine.renderViewports(viewportIds);
+  for (let i = 0; i < numberOfElements; i++) {
+    renderingEngines[i].renderViewports([viewportIds[i]]);
+  }
 }
 
 run();
