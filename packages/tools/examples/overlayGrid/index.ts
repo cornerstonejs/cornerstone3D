@@ -1,4 +1,5 @@
 import {
+  metaData,
   RenderingEngine,
   Types,
   Enums,
@@ -12,9 +13,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { sortImageIdsAndGetSpacing } from '../../../streaming-image-volume-loader/src/helpers';
+import { helpers } from '@cornerstonejs/streaming-image-volume-loader';
 import { vec3 } from 'gl-matrix';
-import { metaData } from '@cornerstonejs/core';
 
 /**
  * Calculates the plane normal given the image orientation vector
@@ -41,7 +41,7 @@ function sortImageIds(imageIds) {
     imageIds[0]
   );
   const scanAxisNormal = calculatePlaneNormal(imageOrientationPatient);
-  const { sortedImageIds } = sortImageIdsAndGetSpacing(
+  const { sortedImageIds } = helpers.sortImageIdsAndGetSpacing(
     imageIds,
     scanAxisNormal
   );
