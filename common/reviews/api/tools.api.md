@@ -3622,6 +3622,10 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     addAxisActorInViewport(viewport: any): Promise<void>;
     // (undocumented)
+    static AXIS: number;
+    // (undocumented)
+    static CUBE: number;
+    // (undocumented)
     initViewports(): void;
     // (undocumented)
     onSetToolActive: () => void;
@@ -3631,6 +3635,8 @@ export class OrientationMarkerTool extends BaseTool {
     orientationMarkers: any;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    static VTPFILE: number;
 }
 
 // @public

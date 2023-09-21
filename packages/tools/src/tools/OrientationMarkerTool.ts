@@ -34,6 +34,9 @@ async function getXML(url) {
  */
 class OrientationMarkerTool extends BaseTool {
   static toolName;
+  static CUBE = 1;
+  static AXIS = 2;
+  static VTPFILE = 3;
   orientationMarkers;
 
   constructor(
