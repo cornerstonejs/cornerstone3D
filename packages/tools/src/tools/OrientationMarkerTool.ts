@@ -49,6 +49,7 @@ class OrientationMarkerTool extends BaseTool {
     this.orientationMarkers = {};
     this.polyDataURL =
       'https://raw.githubusercontent.com/Slicer/Slicer/80ad0a04dacf134754459557bf2638c63f3d1d1b/Base/Logic/Resources/OrientationMarkers/Human.vtp';
+    // '/Human.vtp';
   }
 
   initViewports() {

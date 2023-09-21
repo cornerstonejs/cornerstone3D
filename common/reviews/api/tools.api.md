@@ -3611,6 +3611,29 @@ declare namespace orientation_2 {
     }
 }
 
+// @public (undocumented)
+export class OrientationMarkerTool extends BaseTool {
+    constructor(toolProps?: {}, defaultToolProps?: {
+        configuration: {
+            overlayMarkerType: number;
+        };
+    });
+    // (undocumented)
+    addAxisActorInViewport(viewport: any): Promise<void>;
+    // (undocumented)
+    initViewports(): void;
+    // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    orientationMarkers: any;
+    // (undocumented)
+    polyDataURL: any;
+    // (undocumented)
+    static toolName: any;
+}
+
 // @public
 type OrientationVectors = {
     viewPlaneNormal: Point3;
