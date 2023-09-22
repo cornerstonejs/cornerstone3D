@@ -1,20 +1,29 @@
-import {
-  metaData,
-  RenderingEngine,
-  Types,
-  Enums,
-  volumeLoader,
-  setVolumesForViewports,
-} from '@cornerstonejs/core';
+import { metaData, RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { helpers } from '@cornerstonejs/streaming-image-volume-loader';
 import { vec3 } from 'gl-matrix';
+
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
+const {
+  ToolGroupManager,
+  Enums: csToolsEnums,
+  OverlayGridTool,
+  ZoomTool,
+  PanTool,
+  StackScrollMouseWheelTool,
+} = cornerstoneTools;
+
+const { MouseBindings } = csToolsEnums;
+const { ViewportType } = Enums;
 
 /**
  * Calculates the plane normal given the image orientation vector
@@ -83,28 +92,7 @@ async function getImageStacks() {
   ];
   return imageStacks;
 }
-// This is for debugging purposes
-console.warn(
-  'Click on index.ts to open source code for this example --------->'
-);
 
-const {
-  ToolGroupManager,
-  Enums: csToolsEnums,
-  OverlayGridTool,
-  ReferenceLines,
-  ZoomTool,
-  PanTool,
-  StackScrollMouseWheelTool,
-} = cornerstoneTools;
-
-const { MouseBindings } = csToolsEnums;
-const { ViewportType } = Enums;
-
-// Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
@@ -138,6 +126,9 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
+Basic controls:
+- Left click : pan images
+- Right click : zoom images
   `;
 
 content.append(instructions);
@@ -156,7 +147,6 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(OverlayGridTool);
-  cornerstoneTools.addTool(ReferenceLines);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
 
@@ -169,14 +159,12 @@ async function run() {
     Enums.OrientationAxis.CORONAL,
   ];
 
-  // this variable controls if the viewport is a VolumeViewport or StackViewport
-  const useVolume = false;
   // Create the viewports
   const viewportInputArray = [];
   for (let i = 0; i < elements.length; i++) {
     viewportInputArray[i] = {
       viewportId: viewportIds[i],
-      type: useVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK,
+      type: ViewportType.STACK,
       element: elements[i],
       defaultOptions: {
         orientation: orientations[i],
@@ -191,15 +179,6 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  let volume;
-  if (useVolume) {
-    // Define a volume in memory
-    volume = await volumeLoader.createAndCacheVolume(volumeId, {
-      imageIds: imageStacks[0],
-    });
-    volume.load();
-  }
-
   const viewports = [];
   for (let i = 0; i < viewportIds.length; i++) {
     toolGroup.addViewport(viewportIds[i], renderingEngineId);
@@ -207,49 +186,26 @@ async function run() {
       renderingEngine.getViewport(viewportIds[i])
     );
 
-    if (!useVolume) {
-      await viewports[i].setStack(
-        imageStacks[i],
-        Math.floor(imageStacks[i].length / 2)
-      );
-    }
-  }
-
-  if (useVolume) {
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId,
-          callback: setCtTransferFunctionForVolumeActor,
-        },
-      ],
-      viewportIds
+    await viewports[i].setStack(
+      imageStacks[i],
+      Math.floor(imageStacks[i].length / 2)
     );
   }
 
-  const idSelected = 0;
   // Manipulation Tools
-  toolGroup.addTool(ReferenceLines.toolName, {
-    sourceViewportId: viewportIds[idSelected],
-  });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  // Add Crosshairs tool and configure it to link the three viewports
-  // These viewports could use different tool groups. See the PET-CT example
-  // for a more complicated used case.
   toolGroup.addTool(OverlayGridTool.toolName, {
-    sourceViewportIds: [viewportIds[0]],
+    sourceImageIds: imageStacks[0],
   });
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
 
   toolGroup.setToolEnabled(OverlayGridTool.toolName);
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolEnabled(ReferenceLines.toolName);
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Middle Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });

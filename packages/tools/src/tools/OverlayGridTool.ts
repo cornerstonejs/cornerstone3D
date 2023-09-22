@@ -1,60 +1,33 @@
 import { vec3 } from 'gl-matrix';
 import {
   metaData,
-  getRenderingEngines,
   CONSTANTS,
+  getRenderingEngine,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { addAnnotation } from '../stateManagement/annotation/annotationState';
+import {
+  addAnnotation,
+  getAnnotations,
+} from '../stateManagement/annotation/annotationState';
+
+import { getToolGroup } from '../store/ToolGroupManager';
 
 import { drawLine as drawLineSvg } from '../drawingSvg';
-import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
 import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { Annotation } from '../types';
-import { render } from 'react-dom';
 
 const { EPSILON } = CONSTANTS;
 
-/**
- * Get the largest axis of a normal vector. We assume that indicates the image
- * orientation ( AXIAL = 2, CORONAL = 1, SAGITTAL = 0)
- * @param normalVector
- * @returns
- */
-function getNormalLargestAxis(normalVector) {
-  let largestAxis = 0;
-  for (let i = 1; i < normalVector.length; i++) {
-    if (Math.abs(normalVector[i]) > Math.abs(normalVector[largestAxis])) {
-      largestAxis = i;
-    }
-  }
-  return largestAxis;
-}
-
-/**
- * Get the largest normal axis of the a viewport first imageId
- * @param viewport
- * @returns
- */
-function getViewportImageIdNormalAxis(viewport) {
-  const imageIds = viewport.getImageIds();
-  const { rowCosines, columnCosines } = metaData.get(
-    'imagePlaneModule',
-    imageIds[0]
-  );
-  const scanAxisNormal = vec3.cross(vec3.create(), rowCosines, columnCosines);
-  return getNormalLargestAxis(scanAxisNormal);
-}
-
 export interface OverlayGridAnnotation extends Annotation {
   data: {
-    sourceViewport;
+    annotations: Map<string, object>;
+    pointSets: Array<object>;
   };
 }
 
@@ -67,10 +40,6 @@ class OverlayGridTool extends AnnotationDisplayTool {
   public touchDragCallback: any;
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
-  editData: {
-    renderingEngine: any;
-    annotations: Map<string, Annotation>;
-  } | null = {} as any;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -79,7 +48,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        sourceViewportIds: [],
+        sourceImageIds: [],
       },
     }
   ) {
@@ -87,63 +56,44 @@ class OverlayGridTool extends AnnotationDisplayTool {
   }
 
   _init = (): void => {
-    const renderingEngines = getRenderingEngines();
-    const renderingEngine = renderingEngines[0];
+    if (this.configuration.sourceImageIds?.length) {
+      const { frameOfReferenceUID } = metaData.get(
+        'imagePlaneModule',
+        this.configuration.sourceImageIds[0]
+      );
+      const viewportsInfo = getToolGroup(this.toolGroupId).viewportsInfo;
 
-    // Todo: handle this case where it is too soon to get the rendering engine
-    if (!renderingEngine) {
-      return;
-    }
+      const annotations = getAnnotations(
+        this.getToolName(),
+        frameOfReferenceUID
+      );
 
-    let viewports = renderingEngine.getViewports();
-    viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
+      if (!annotations?.length) {
+        const newAnnotation: OverlayGridAnnotation = {
+          highlighted: true,
+          invalidated: true,
+          metadata: {
+            toolName: this.getToolName(),
+            FrameOfReferenceUID: frameOfReferenceUID,
+            referencedImageId: null,
+          },
+          data: {
+            annotations: new Map(),
+            pointSets: [],
+          },
+        };
 
-    // const sourceViewport = renderingEngine.getViewport(
-    //   this.configuration.sourceViewportId
-    // ) as Types.IVolumeViewport;
-
-    this.configuration.sourceViewportIds.forEach((viewportId) => {
-      const sourceViewport = renderingEngine.getViewport(viewportId);
-      if (sourceViewport || sourceViewport.getImageData()) {
-        const { element } = sourceViewport;
-        const { viewUp, viewPlaneNormal } = sourceViewport.getCamera();
-
-        const FrameOfReferenceUID = sourceViewport.getFrameOfReferenceUID();
-        if (!this.editData?.annotations) {
-          this.editData.annotations = new Map();
-        }
-
-        let annotation = this.editData.annotations[viewportId];
-
-        if (!annotation) {
-          const newAnnotation: OverlayGridAnnotation = {
-            highlighted: true,
-            invalidated: true,
-            metadata: {
-              toolName: this.getToolName(),
-              viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-              viewUp: <Types.Point3>[...viewUp],
-              FrameOfReferenceUID,
-              referencedImageId: null,
-            },
-            data: {
-              sourceViewport,
-            },
-          };
-
-          addAnnotation(newAnnotation, element);
-          annotation = newAnnotation;
-        }
-
-        this.editData.annotations.set(viewportId, annotation);
-        this.editData.renderingEngine = renderingEngine;
+        addAnnotation(newAnnotation, frameOfReferenceUID);
       }
-    });
+      if (!viewportsInfo?.length) {
+        return;
+      }
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewports.map((viewport) => viewport.id)
-    );
+      triggerAnnotationRenderForViewportIds(
+        getRenderingEngine(viewportsInfo[0].renderingEngineId),
+        viewportsInfo.map(({ viewportId }) => viewportId)
+      );
+    }
   };
 
   onSetToolEnabled = (): void => {
@@ -151,14 +101,6 @@ class OverlayGridTool extends AnnotationDisplayTool {
   };
 
   onSetToolActive = (): void => {
-    this._init();
-  };
-
-  onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
-    // If the camera is modified, we need to update the reference lines
-    // we really don't care which viewport triggered the
-    // camera modification, since we want to update all of them
-    // with respect to the targetViewport
     this._init();
   };
 
@@ -210,6 +152,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
 
     return { pointSet1, pointSet2 };
   };
+
   /**
    * it is used to draw the length annotation in each
    * request animation frame. It calculates the updated cached statistics if
@@ -223,66 +166,66 @@ class OverlayGridTool extends AnnotationDisplayTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const { viewport: targetViewport } = enabledElement;
+    if (!this.configuration.sourceImageIds?.length) {
+      return renderStatus;
+    }
 
+    const { viewport: targetViewport, FrameOfReferenceUID } = enabledElement;
     const targetImageIds = targetViewport.getImageIds();
     if (targetImageIds.length < 2) {
       return renderStatus;
     }
 
-    const { annotations } = this.editData;
+    const annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
     if (!annotations) {
       return renderStatus;
     }
+    const annotation = annotations[0];
+    const { annotationUID } = annotation;
 
-    [...annotations.values()].forEach((annotation) => {
-      const sourceViewport = annotation.data.sourceViewport;
-      if (!sourceViewport) {
-        return renderStatus;
-      }
+    const sourceImageIds = this.configuration.sourceImageIds;
+    const { focalPoint, viewPlaneNormal } = targetViewport.getCamera();
 
-      if (sourceViewport.id === targetViewport.id) {
-        // If the source viewport is the same as the current viewport, we don't need to render
-        return renderStatus;
-      }
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+    const imageIdNormal = <Types.Point3>(
+      this.getImageIdNormal(sourceImageIds[0])
+    );
 
-      if (
-        sourceViewport.getFrameOfReferenceUID() !==
-        targetViewport.getFrameOfReferenceUID()
-      ) {
-        return renderStatus;
-      }
+    if (this.isParallel(viewPlaneNormal, imageIdNormal)) {
+      // If the source and target viewports are parallel, we don't need to render
+      return renderStatus;
+    }
 
-      if (!annotation) {
-        return renderStatus;
-      }
+    const targetViewportPlane = csUtils.planar.planeEquation(
+      viewPlaneNormal,
+      focalPoint
+    );
 
-      const styleSpecifier: StyleSpecifier = {
-        toolGroupId: this.toolGroupId,
-        toolName: this.getToolName(),
-        viewportId: enabledElement.viewport.id,
-      };
-
-      const { focalPoint, viewPlaneNormal } = targetViewport.getCamera();
-      const { viewPlaneNormal: sourceViewPlaneNormal } =
-        sourceViewport.getCamera();
-
-      if (this.isParallel(viewPlaneNormal, sourceViewPlaneNormal)) {
-        // If the source and target viewports are parallel, we don't need to render
-        return renderStatus;
-      }
-
-      const targetViewportPlane = csUtils.planar.planeEquation(
-        viewPlaneNormal,
-        focalPoint
-      );
-
-      const imageIds = sourceViewport.getImageIds();
-      for (let i = 0; i < imageIds.length; i++) {
-        const { pointSet1, pointSet2 } = this.calculateImageIdPointSets(
-          imageIds[i]
+    for (let i = 0; i < sourceImageIds.length; i++) {
+      // check if pointSets for the imageId was calculated. If not calculate and store
+      if (!annotation.data.pointSets[i]) {
+        annotation.data.pointSets[i] = this.calculateImageIdPointSets(
+          sourceImageIds[i]
         );
+      }
+      const { pointSet1, pointSet2 } = annotation.data.pointSets[i];
 
+      if (!annotation.data.annotations.get(targetViewport.id)) {
+        annotation.data.annotations.set(targetViewport.id, {
+          pointSetsToUse: [],
+          lineStartsWorld: [],
+          lineEndsWorld: [],
+        });
+      }
+
+      // check if pointSetToUse was calculated. If not calculate and store
+      if (
+        !annotation.data.annotations.get(targetViewport.id).pointSetsToUse[i]
+      ) {
         let pointSetToUse = pointSet1;
 
         let topBottomVec = vec3.subtract(
@@ -302,68 +245,62 @@ class OverlayGridTool extends AnnotationDisplayTool {
         );
         topRightVec = vec3.normalize(vec3.create(), topRightVec);
 
-        const newNormal = vec3.cross(
-          vec3.create(),
-          topBottomVec,
-          topRightVec
-        ) as Types.Point3;
-
-        if (this.isParallel(newNormal, viewPlaneNormal)) {
-          return renderStatus;
-        }
-
         // check if it is perpendicular to the viewPlaneNormal which means
         // the line does not intersect the viewPlaneNormal
         if (this.isPerpendicular(topBottomVec, viewPlaneNormal)) {
           // 'use pointSet2';
           pointSetToUse = pointSet2;
         }
+        annotation.data.annotations.get(targetViewport.id).pointSetsToUse[i] =
+          pointSetToUse;
 
-        const lineStartWorld = csUtils.planar.linePlaneIntersection(
-          pointSetToUse[0],
-          pointSetToUse[1],
-          targetViewportPlane
-        );
+        annotation.data.annotations.get(targetViewport.id).lineStartsWorld[i] =
+          csUtils.planar.linePlaneIntersection(
+            pointSetToUse[0],
+            pointSetToUse[1],
+            targetViewportPlane
+          );
 
-        const lineEndWorld = csUtils.planar.linePlaneIntersection(
-          pointSetToUse[2],
-          pointSetToUse[3],
-          targetViewportPlane
-        );
-        const { annotationUID } = annotation;
-
-        styleSpecifier.annotationUID = annotationUID;
-        const lineWidth = this.getStyle(
-          'lineWidth',
-          styleSpecifier,
-          annotation
-        );
-        const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-        const color = this.getStyle('color', styleSpecifier, annotation);
-        const shadow = this.getStyle('shadow', styleSpecifier, annotation);
-
-        const canvasCoordinates = [lineStartWorld, lineEndWorld].map((world) =>
-          targetViewport.worldToCanvas(world)
-        );
-
-        const dataId = `${annotationUID}-line`;
-        const lineUID = `${i}`;
-        drawLineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          lineUID,
-          canvasCoordinates[0],
-          canvasCoordinates[1],
-          {
-            color,
-            width: lineWidth,
-            lineDash,
-            shadow,
-          },
-          dataId
-        );
+        annotation.data.annotations.get(targetViewport.id).lineEndsWorld[i] =
+          csUtils.planar.linePlaneIntersection(
+            pointSetToUse[2],
+            pointSetToUse[3],
+            targetViewportPlane
+          );
       }
-    });
+
+      const lineStartWorld = annotation.data.annotations.get(targetViewport.id)
+        .lineStartsWorld[i];
+      const lineEndWorld = annotation.data.annotations.get(targetViewport.id)
+        .lineEndsWorld[i];
+
+      styleSpecifier.annotationUID = annotationUID;
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
+      const shadow = this.getStyle('shadow', styleSpecifier, annotation);
+
+      const canvasCoordinates = [lineStartWorld, lineEndWorld].map((world) =>
+        targetViewport.worldToCanvas(world)
+      );
+
+      const dataId = `${annotationUID}-line`;
+      const lineUID = `${i}`;
+      drawLineSvg(
+        svgDrawingHelper,
+        annotationUID,
+        lineUID,
+        canvasCoordinates[0],
+        canvasCoordinates[1],
+        {
+          color,
+          width: lineWidth,
+          lineDash,
+          shadow,
+        },
+        dataId
+      );
+    }
 
     renderStatus = true;
 
@@ -377,6 +314,24 @@ class OverlayGridTool extends AnnotationDisplayTool {
 
   isParallel(vec1: Types.Point3, vec2: Types.Point3): boolean {
     return Math.abs(vec3.dot(vec1, vec2)) > 1 - EPSILON;
+  }
+
+  getImageIdNormal(imageId: string): vec3 {
+    const { imageOrientationPatient } = metaData.get(
+      'imagePlaneModule',
+      imageId
+    );
+    const rowCosineVec = vec3.fromValues(
+      imageOrientationPatient[0],
+      imageOrientationPatient[1],
+      imageOrientationPatient[2]
+    );
+    const colCosineVec = vec3.fromValues(
+      imageOrientationPatient[3],
+      imageOrientationPatient[4],
+      imageOrientationPatient[5]
+    );
+    return vec3.cross(vec3.create(), rowCosineVec, colCosineVec);
   }
 }
 
