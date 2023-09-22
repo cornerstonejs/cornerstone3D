@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.16.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+### Bug Fixes
+
+- **stackPrefetch:** disable function not working ([#793](https://github.com/cornerstonejs/cornerstone3D/issues/793)) ([7ced76e](https://github.com/cornerstonejs/cornerstone3D/commit/7ced76ed43c523f380e7252790f67afa005c1935))
+
 ## [1.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.4...v1.16.5) (2023-09-19)
 
 **Note:** Version bump only for package @cornerstonejs/tools
