@@ -72,6 +72,8 @@ interface IImage {
   sliceThickness?: number;
   /** whether image pixels are inverted in color */
   invert: boolean;
+  /** image photometric interpretation */
+  photometricInterpretation?: string;
   /** image size in number of bytes */
   sizeInBytes: number;
   /** CPU: custom modality LUT for image  */

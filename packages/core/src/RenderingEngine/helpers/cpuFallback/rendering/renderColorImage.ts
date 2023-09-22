@@ -72,10 +72,12 @@ function getRenderCanvas(
   const renderCanvas = enabledElement.renderingTools.renderCanvas;
 
   // The ww/wc is identity and not inverted - get a canvas with the image rendered into it for
-  // Fast drawing
+  // Fast drawing.  Note that this is 256/128, and NOT 255/127, per the DICOM
+  // standard, but allow either.
+  const { windowWidth, windowCenter } = enabledElement.viewport.voi;
   if (
-    enabledElement.viewport.voi.windowWidth === 255 &&
-    enabledElement.viewport.voi.windowCenter === 127 &&
+    (windowWidth === 256 || windowWidth === 255) &&
+    (windowCenter === 128 || windowCenter === 127) &&
     enabledElement.viewport.invert === false &&
     image.getCanvas &&
     image.getCanvas()

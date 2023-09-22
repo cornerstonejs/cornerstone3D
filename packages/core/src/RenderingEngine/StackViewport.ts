@@ -130,6 +130,8 @@ class StackViewport extends Viewport implements IStackViewport {
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
+  // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
+  private initialInvert = false;
   private interpolationType: InterpolationType;
 
   // Helpers
@@ -606,7 +608,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
     imagePlaneModule.calibration = calibration;
 
-    if (!isUpdated) return imagePlaneModule;
+    if (!isUpdated) {
+      return imagePlaneModule;
+    }
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
@@ -728,7 +732,7 @@ class StackViewport extends Viewport implements IStackViewport {
       this.setRotation(0);
     }
     this.setInterpolationType(InterpolationType.LINEAR);
-    this.setInvertColor(false);
+    this.setInvertColor(this.initialInvert);
   }
 
   private _setPropertiesFromCache(): void {
@@ -1755,10 +1759,17 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        //If Photometric Interpretation is not the same for the next image we are trying to load, invalidate the stack to recreate the VTK imageData
+        // If Photometric Interpretation is not the same for the next image we are trying to load
+        // invalidate the stack to recreate the VTK imageData
+        const csImgFrame = this.csImage?.imageFrame;
+        const imgFrame = image?.imageFrame;
+
+        // if a volume is decached into images then the imageFrame will be undefined
         if (
-          this.csImage?.imageFrame.photometricInterpretation !==
-          image?.imageFrame?.photometricInterpretation
+          csImgFrame?.photometricInterpretation !==
+            imgFrame?.photometricInterpretation ||
+          this.csImage?.photometricInterpretation !==
+            image?.photometricInterpretation
         ) {
           this.stackInvalidated = true;
         }
@@ -2057,8 +2068,10 @@ class StackViewport extends Viewport implements IStackViewport {
       forceRecreateLUTFunction: !!monochrome1,
     });
 
+    this.initialInvert = !!monochrome1;
+
     // should carry over the invert color from the previous image if has been applied
-    this.setInvertColor(this.invert || !!monochrome1);
+    this.setInvertColor(this.invert || this.initialInvert);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
@@ -2142,6 +2155,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
     this.hasPixelSpacing = true;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
@@ -2564,7 +2578,9 @@ class StackViewport extends Viewport implements IStackViewport {
   public hasImageURI = (imageURI: string): boolean => {
     const imageIds = this.imageIds;
     for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+      if (imageIdToURI(imageIds[i]) === imageURI) {
+        return true;
+      }
     }
 
     return false;

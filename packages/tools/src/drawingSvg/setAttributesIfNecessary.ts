@@ -1,4 +1,4 @@
-export function _setAttributesIfNecessary(attributes, svgNode) {
+export function setAttributesIfNecessary(attributes, svgNode) {
   Object.keys(attributes).forEach((key) => {
     const currentValue = svgNode.getAttribute(key);
     const newValue = attributes[key];
@@ -10,4 +10,4 @@ export function _setAttributesIfNecessary(attributes, svgNode) {
   });
 }
 
-export default _setAttributesIfNecessary;
+export default setAttributesIfNecessary;

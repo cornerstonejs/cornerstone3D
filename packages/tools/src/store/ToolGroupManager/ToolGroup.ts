@@ -2,6 +2,8 @@ import { MouseBindings, ToolModes } from '../../enums';
 import cloneDeep from 'lodash.clonedeep';
 import get from 'lodash.get';
 import {
+  triggerEvent,
+  eventTarget,
   getRenderingEngine,
   getRenderingEngines,
   getEnabledElementByIds,
@@ -9,6 +11,8 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { Events } from '../../enums';
+import { ToolActivatedEventDetail } from '../../types/EventTypes';
 import { state } from '../index';
 import {
   IToolBinding,
@@ -16,6 +20,7 @@ import {
   IToolGroup,
   SetToolBindingsType,
   ToolOptionsType,
+  ToolConfiguration,
 } from '../../types';
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
@@ -69,7 +74,7 @@ export default class ToolGroup implements IToolGroup {
     const toolInstance = this._toolInstances[toolInstanceName];
     if (!toolInstance) {
       console.warn(
-        `'${toolInstanceName}' is not registered with this toolGroup.`
+        `'${toolInstanceName}' is not registered with this toolGroup (${this.id}).`
       );
       return;
     }
@@ -83,9 +88,9 @@ export default class ToolGroup implements IToolGroup {
    * to set the tool to be active or passive or in other states.
    *
    * @param toolName - string
-   * @param configuration - Tool configuration objects
+   * @param configuration - Tool configuration objects and a custom statistics calculator if needed
    */
-  addTool(toolName: string, configuration = {}): void {
+  addTool(toolName: string, configuration: ToolConfiguration = {}): void {
     const toolDefinition = state.tools[toolName];
     const hasToolName = typeof toolName !== 'undefined' && toolName !== '';
     const localToolInstance = this.toolOptions[toolName];
@@ -372,6 +377,14 @@ export default class ToolGroup implements IToolGroup {
       toolInstance.onSetToolActive();
     }
     this._renderViewports();
+
+    const eventDetail: ToolActivatedEventDetail = {
+      toolGroupId: this.id,
+      toolName,
+      toolBindingsOptions,
+    };
+
+    triggerEvent(eventTarget, Events.TOOL_ACTIVATED, eventDetail);
   }
 
   /**
@@ -593,7 +606,7 @@ export default class ToolGroup implements IToolGroup {
    */
   public setToolConfiguration(
     toolName: string,
-    configuration: Record<any, any>,
+    configuration: ToolConfiguration,
     overwrite?: boolean
   ): boolean {
     if (this._toolInstances[toolName] === undefined) {
@@ -608,7 +621,10 @@ export default class ToolGroup implements IToolGroup {
     if (overwrite) {
       _configuration = configuration;
     } else {
-      _configuration = csUtils.deepMerge(
+      // We should not deep copy here, it is the job of the application to
+      // deep copy the configuration before passing it to the toolGroup, otherwise
+      // some strange appending behaviour happens for the arrays
+      _configuration = Object.assign(
         this._toolInstances[toolName].configuration,
         configuration
       );
