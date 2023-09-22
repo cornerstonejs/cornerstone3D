@@ -7,6 +7,7 @@
 import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
+import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -3626,10 +3627,7 @@ export class OverlayGridTool extends AnnotationDisplayTool {
         pointSet2: Types_2.Point3[];
     };
     // (undocumented)
-    editData: {
-        renderingEngine: any;
-        annotations: Map<string, Annotation>;
-    } | null;
+    getImageIdNormal(imageId: string): vec3;
     // (undocumented)
     _init: () => void;
     // (undocumented)
@@ -3642,8 +3640,6 @@ export class OverlayGridTool extends AnnotationDisplayTool {
     isPerpendicular: (vec1: Types_2.Point3, vec2: Types_2.Point3) => boolean;
     // (undocumented)
     mouseDragCallback: any;
-    // (undocumented)
-    onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
     // (undocumented)
     onSetToolActive: () => void;
     // (undocumented)
