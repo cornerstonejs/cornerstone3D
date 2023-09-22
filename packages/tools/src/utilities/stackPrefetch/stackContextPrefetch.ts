@@ -18,9 +18,11 @@ import {
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
-  // Fetch up to 1 image before and 50 after
-  minBefore: 1,
-  maxAfter: 5,
+  // Fetch up to 2 image before and after
+  minBefore: 2,
+  maxAfter: 2,
+  // Increment the cache size by 10 images
+  directionExtraImages: 10,
   preserveExistingPool: false,
 };
 
@@ -105,14 +107,28 @@ function prefetch(element) {
     imageLoadPoolManager.filterRequests(clearFromImageIds(stack));
   }
 
-  function doneCallback(image) {
-    const imageIdIndex = stack.imageIds.indexOf(image.imageId);
+  function doneCallback(imageId) {
+    const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
+
+    if (!stackPrefetch.indicesToRequest.length) {
+      const image = cache.getCachedImageBasedOnImageURI(imageId);
+      if (image?.sizeInBytes) {
+        const { sizeInBytes } = image;
+        const usage = cache.getMaxCacheSize() / 4 / sizeInBytes;
+        if (!stackPrefetch.cacheFill) {
+          updateToolState(element, usage);
+          prefetch(element);
+        }
+      }
+    }
   }
 
   const requestFn = (imageId, options) =>
-    imageLoader.loadAndCacheImage(imageId, options);
+    imageLoader
+      .loadAndCacheImage(imageId, options)
+      .then(() => doneCallback(imageId));
 
   const { useNorm16Texture } = getCoreConfiguration().rendering;
 
@@ -164,7 +180,7 @@ function onImageUpdated(e) {
 // Not a full signum, but good enough for direction.
 const signum = (x) => (x < 0 ? -1 : 1);
 
-const updateToolState = (element) => {
+const updateToolState = (element, usage?: number) => {
   const stack = getStackData(element);
   if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
@@ -172,13 +188,8 @@ const updateToolState = (element) => {
   }
 
   const { currentImageIdIndex } = stack;
-  const { maxAfter = 5, minBefore = 1 } = configuration;
-  const minIndex = Math.max(0, currentImageIdIndex - minBefore);
-
-  const maxIndex = Math.min(
-    stack.imageIds.length - 1,
-    currentImageIdIndex + maxAfter
-  );
+  let { maxAfter = 2, minBefore = 2 } = configuration;
+  const { directionExtraImages = 10 } = configuration;
   // Use the currentImageIdIndex from the stack as the initialImageIdIndex
   const stackPrefetchData = getToolState(element) || {
     indicesToRequest: [],
@@ -187,43 +198,52 @@ const updateToolState = (element) => {
     enabled: true,
     direction: 1,
   };
-
   const delta = currentImageIdIndex - stackPrefetchData.currentImageIdIndex;
   stackPrefetchData.direction = signum(delta);
   stackPrefetchData.currentImageIdIndex = currentImageIdIndex;
   stackPrefetchData.enabled = true;
-  stackPrefetchData.indicesToRequest = range(minIndex, maxIndex);
 
-  if (delta > 0 && delta < maxAfter) {
-    // Cache extra images when navigating small amounts
-    // The exact amount is hard to determine, but trial and error suggest
-    // that fairly long precache lists work best.
-    try {
-      const lastMax =
-        maxIndex + Math.max(stackPrefetchData.stackCount - maxAfter - 1, 0);
-      if (stackPrefetchData.stackCount < 100) {
-        stackPrefetchData.stackCount += maxAfter;
-      }
-      const maxExtraStack = Math.min(
-        stack.imageIds.length - 1,
-        currentImageIdIndex + stackPrefetchData.stackCount
-      );
-      for (let i = lastMax + 1; i < maxExtraStack; i++) {
-        stackPrefetchData.indicesToRequest.push(i);
-      }
-    } catch (e) {
-      console.warn('Caught', e);
-    }
-  } else {
+  if (stackPrefetchData.stackCount < 100) {
+    stackPrefetchData.stackCount += directionExtraImages;
+  }
+
+  if (Math.abs(delta) > maxAfter || !delta) {
     // Not incrementing by 1, so stop increasing the data size
     // TODO - consider reversing the CINE playback
     stackPrefetchData.stackCount = 0;
+    if (usage) {
+      // The usage of the cache that this stack can use
+      const positionFraction = currentImageIdIndex / stack.imageIds.length;
+      minBefore = Math.ceil(usage * positionFraction);
+      maxAfter = Math.ceil(usage * (1 - positionFraction));
+      stackPrefetchData.cacheFill = true;
+    } else {
+      stackPrefetchData.cacheFill = false;
+    }
+  } else if (delta < 0) {
+    minBefore += stackPrefetchData.stackCount;
+    maxAfter = 0;
+  } else {
+    maxAfter += stackPrefetchData.stackCount;
+    minBefore = 0;
   }
 
-  // Remove the currentImageIdIndex from the list to request
-  const indexOfCurrentImage =
-    stackPrefetchData.indicesToRequest.indexOf(currentImageIdIndex);
-  stackPrefetchData.indicesToRequest.splice(indexOfCurrentImage, 1);
+  const minIndex = Math.max(0, currentImageIdIndex - minBefore);
+
+  const maxIndex = Math.min(
+    stack.imageIds.length - 1,
+    currentImageIdIndex + maxAfter
+  );
+
+  // Order these correctly initially
+  const indicesToRequest = [];
+  for (let i = currentImageIdIndex + 1; i <= maxIndex; i++) {
+    indicesToRequest.push(i);
+  }
+  for (let i = currentImageIdIndex - 1; i >= minIndex; i--) {
+    indicesToRequest.push(i);
+  }
+  stackPrefetchData.indicesToRequest = indicesToRequest;
 
   addToolState(element, stackPrefetchData);
 };
@@ -231,7 +251,22 @@ const updateToolState = (element) => {
 /**
  * Listen to newly added stacks enabled elements and then listen for
  * STACK_NEW_IMAGE to detect when a new image is displayed.  When it is,
- * update the prefetch stack for [index-min...index+max]
+ * update the prefetch stack.  This is done in a context sensitive manner,
+ * where it is sensitive to the current position, the direction of travel,
+ * and the total cache size.  The behaviour is:
+ *
+ * 1. On navigating to a new image initially, or one that is at a different position:
+ *  * Fetch the next/previous 2 images
+ * 2. If all the images in a given prefetch have compelted, then:
+ *  * Fetch up to 1/4 of hte cache size images near the current image
+ * 3. If the user is navigating forward/backward just a bit, then
+ *  * Prefetch additional images in the direction of navigation
+ *
+ * This is designed to:
+ *   * Get nearby images immediately so that they are available for navigation
+ *   * Not interfere with loading other viewports if they are still loading
+ *   * Load an entire series if it will fit in memory
+ *   * Have images available for CINE/navigation in one direction
  *
  * @param element to prefetch on
  */
