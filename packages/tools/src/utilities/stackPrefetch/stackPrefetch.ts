@@ -310,8 +310,8 @@ function getPromiseRemovedHandler(element) {
 
     if (
       !stackPrefetchData ||
-      !stackPrefetchData.data ||
-      !stackPrefetchData.data.length
+      !stackPrefetchData.indicesToRequest ||
+      !stackPrefetchData.indicesToRequest.length
     ) {
       return;
     }
@@ -392,7 +392,7 @@ function disable(element) {
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it
 
-  if (stackPrefetchData && stackPrefetchData.data.length) {
+  if (stackPrefetchData && stackPrefetchData.indicesToRequest.length) {
     stackPrefetchData.enabled = false;
 
     // Clear current prefetch requests from the requestPool
