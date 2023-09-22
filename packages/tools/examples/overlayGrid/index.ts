@@ -1,12 +1,11 @@
-import { metaData, RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { helpers } from '@cornerstonejs/streaming-image-volume-loader';
-import { vec3 } from 'gl-matrix';
+import { sortImageIds } from './utils';
 
 // This is for debugging purposes
 console.warn(
@@ -24,38 +23,6 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-
-/**
- * Calculates the plane normal given the image orientation vector
- * @param imageOrientation
- * @returns
- */
-function calculatePlaneNormal(imageOrientation) {
-  const rowCosineVec = vec3.fromValues(
-    imageOrientation[0],
-    imageOrientation[1],
-    imageOrientation[2]
-  );
-  const colCosineVec = vec3.fromValues(
-    imageOrientation[3],
-    imageOrientation[4],
-    imageOrientation[5]
-  );
-  return vec3.cross(vec3.create(), rowCosineVec, colCosineVec);
-}
-
-function sortImageIds(imageIds) {
-  const { imageOrientationPatient } = metaData.get(
-    'imagePlaneModule',
-    imageIds[0]
-  );
-  const scanAxisNormal = calculatePlaneNormal(imageOrientationPatient);
-  const { sortedImageIds } = helpers.sortImageIdsAndGetSpacing(
-    imageIds,
-    scanAxisNormal
-  );
-  return sortedImageIds;
-}
 
 async function getImageStacks() {
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM

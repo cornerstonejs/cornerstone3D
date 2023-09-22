@@ -26,7 +26,7 @@ const { EPSILON } = CONSTANTS;
 
 export interface OverlayGridAnnotation extends Annotation {
   data: {
-    annotations: Map<string, object>;
+    viewportGridInfoMap: Map<string, object>;
     pointSets: Array<object>;
   };
 }
@@ -69,6 +69,13 @@ class OverlayGridTool extends AnnotationDisplayTool {
       );
 
       if (!annotations?.length) {
+        const sourceImageIds = this.configuration.sourceImageIds;
+        const pointSets = [];
+        for (let i = 0; i < sourceImageIds.length; i++) {
+          // check if pointSets for the imageId was calculated. If not calculate and store
+          pointSets[i] = this.calculateImageIdPointSets(sourceImageIds[i]);
+        }
+
         const newAnnotation: OverlayGridAnnotation = {
           highlighted: true,
           invalidated: true,
@@ -78,8 +85,8 @@ class OverlayGridTool extends AnnotationDisplayTool {
             referencedImageId: null,
           },
           data: {
-            annotations: new Map(),
-            pointSets: [],
+            viewportGridInfoMap: new Map(),
+            pointSets,
           },
         };
 
@@ -205,17 +212,14 @@ class OverlayGridTool extends AnnotationDisplayTool {
       focalPoint
     );
 
+    const pointSets = annotation.data.pointSets;
+    const viewportGridInfoMap = annotation.data.viewportGridInfoMap;
     for (let i = 0; i < sourceImageIds.length; i++) {
       // check if pointSets for the imageId was calculated. If not calculate and store
-      if (!annotation.data.pointSets[i]) {
-        annotation.data.pointSets[i] = this.calculateImageIdPointSets(
-          sourceImageIds[i]
-        );
-      }
-      const { pointSet1, pointSet2 } = annotation.data.pointSets[i];
+      const { pointSet1, pointSet2 } = pointSets[i];
 
-      if (!annotation.data.annotations.get(targetViewport.id)) {
-        annotation.data.annotations.set(targetViewport.id, {
+      if (!viewportGridInfoMap.get(targetViewport.id)) {
+        viewportGridInfoMap.set(targetViewport.id, {
           pointSetsToUse: [],
           lineStartsWorld: [],
           lineEndsWorld: [],
@@ -223,9 +227,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
       }
 
       // check if pointSetToUse was calculated. If not calculate and store
-      if (
-        !annotation.data.annotations.get(targetViewport.id).pointSetsToUse[i]
-      ) {
+      if (!viewportGridInfoMap.get(targetViewport.id).pointSetsToUse[i]) {
         let pointSetToUse = pointSet1;
 
         let topBottomVec = vec3.subtract(
@@ -251,17 +253,17 @@ class OverlayGridTool extends AnnotationDisplayTool {
           // 'use pointSet2';
           pointSetToUse = pointSet2;
         }
-        annotation.data.annotations.get(targetViewport.id).pointSetsToUse[i] =
+        viewportGridInfoMap.get(targetViewport.id).pointSetsToUse[i] =
           pointSetToUse;
 
-        annotation.data.annotations.get(targetViewport.id).lineStartsWorld[i] =
+        viewportGridInfoMap.get(targetViewport.id).lineStartsWorld[i] =
           csUtils.planar.linePlaneIntersection(
             pointSetToUse[0],
             pointSetToUse[1],
             targetViewportPlane
           );
 
-        annotation.data.annotations.get(targetViewport.id).lineEndsWorld[i] =
+        viewportGridInfoMap.get(targetViewport.id).lineEndsWorld[i] =
           csUtils.planar.linePlaneIntersection(
             pointSetToUse[2],
             pointSetToUse[3],
@@ -269,9 +271,9 @@ class OverlayGridTool extends AnnotationDisplayTool {
           );
       }
 
-      const lineStartWorld = annotation.data.annotations.get(targetViewport.id)
+      const lineStartWorld = viewportGridInfoMap.get(targetViewport.id)
         .lineStartsWorld[i];
-      const lineEndWorld = annotation.data.annotations.get(targetViewport.id)
+      const lineEndWorld = viewportGridInfoMap.get(targetViewport.id)
         .lineEndsWorld[i];
 
       styleSpecifier.annotationUID = annotationUID;
