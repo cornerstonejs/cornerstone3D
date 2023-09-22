@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.16.6](https://github.com/dcmjs-org/dcmjs/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.16.5](https://github.com/dcmjs-org/dcmjs/compare/v1.16.4...v1.16.5) (2023-09-19)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
