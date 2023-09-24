@@ -1,4 +1,4 @@
-import { state } from '../index';
+import { state } from '../../store/state';
 import Synchronizer from './Synchronizer';
 
 /**
