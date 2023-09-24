@@ -1,6 +1,7 @@
 import _cloneDeep from 'lodash.clonedeep';
 
-import { IToolGroup, IToolClassReference } from '../types';
+import IToolGroup from '../types/IToolGroup';
+import IToolClassReference from '../types/IToolClassReference';
 import Synchronizer from './SynchronizerManager/Synchronizer';
 import svgNodeCache, { resetSvgNodeCache } from './svgNodeCache';
 

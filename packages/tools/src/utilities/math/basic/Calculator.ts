@@ -1,4 +1,4 @@
-import { Statistics } from '../../../types';
+import { Statistics } from '../../../types/CalculatorTypes';
 
 abstract class Calculator {
   static run: ({ value }) => void;

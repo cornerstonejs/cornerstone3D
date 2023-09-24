@@ -1,4 +1,4 @@
-import { Statistics } from '../../../types';
+import { Statistics } from '../../../types/CalculatorTypes';
 import Calculator from './Calculator';
 
 export default class BasicStatsCalculator extends Calculator {

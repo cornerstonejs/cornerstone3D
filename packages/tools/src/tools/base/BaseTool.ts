@@ -5,7 +5,8 @@ import {
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import { ToolModes } from '../../enums';
-import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
+import InteractionTypes from './../../types/InteractionTypes'
+import { ToolProps, PublicToolProps } from './../../types/ToolProps'
 
 export interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */
