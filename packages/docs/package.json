@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "1.16.6",
+  "version": "1.17.0",
   "private": true,
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
