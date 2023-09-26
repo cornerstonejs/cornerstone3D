@@ -3682,9 +3682,13 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     addAxisActorInViewport(viewport: any): Promise<void>;
     // (undocumented)
+    static AXIS: number;
+    // (undocumented)
     configuration_invalidated: boolean;
     // (undocumented)
     createAnnotatedCubeActor(): Promise<vtkAnnotatedCubeActor>;
+    // (undocumented)
+    static CUBE: number;
     // (undocumented)
     onSetToolActive: () => void;
     // (undocumented)
