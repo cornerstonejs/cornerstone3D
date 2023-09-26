@@ -1,7 +1,5 @@
 import {
-  metaData,
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setVolumesForViewports,
@@ -13,40 +11,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { sortImageIdsAndGetSpacing } from '../../../streaming-image-volume-loader/src/helpers';
-import { vec3 } from 'gl-matrix';
-
-/**
- * Calculates the plane normal given the image orientation vector
- * @param imageOrientation
- * @returns
- */
-function calculatePlaneNormal(imageOrientation) {
-  const rowCosineVec = vec3.fromValues(
-    imageOrientation[0],
-    imageOrientation[1],
-    imageOrientation[2]
-  );
-  const colCosineVec = vec3.fromValues(
-    imageOrientation[3],
-    imageOrientation[4],
-    imageOrientation[5]
-  );
-  return vec3.cross(vec3.create(), rowCosineVec, colCosineVec);
-}
-
-function sortImageIds(imageIds) {
-  const { imageOrientationPatient } = metaData.get(
-    'imagePlaneModule',
-    imageIds[0]
-  );
-  const scanAxisNormal = calculatePlaneNormal(imageOrientationPatient);
-  const { sortedImageIds } = sortImageIdsAndGetSpacing(
-    imageIds,
-    scanAxisNormal
-  );
-  return sortedImageIds;
-}
+import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
 
 async function getImageStacks() {
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
@@ -55,8 +20,6 @@ async function getImageStacks() {
     '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1';
   const seriesInstanceUIDs = [
     '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.7',
-    '1.3.6.1.4.1.25403.345050719074.3824.20170125095319.5',
-    '1.3.6.1.4.1.25403.345050719074.3824.20170125095312.3',
   ];
   const axialImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: studyInstanceUID,
@@ -64,24 +27,7 @@ async function getImageStacks() {
     wadoRsRoot,
   });
 
-  const sagittalImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: studyInstanceUID,
-    SeriesInstanceUID: seriesInstanceUIDs[1],
-    wadoRsRoot,
-  });
-
-  const coronalImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: studyInstanceUID,
-    SeriesInstanceUID: seriesInstanceUIDs[2],
-    wadoRsRoot,
-  });
-
-  const imageStacks = [
-    sortImageIds(axialImageIds),
-    sortImageIds(sagittalImageIds),
-    sortImageIds(coronalImageIds),
-  ];
-  return imageStacks;
+  return axialImageIds;
 }
 // This is for debugging purposes
 console.warn(
@@ -94,8 +40,24 @@ const {
   OrientationMarkerTool,
   ZoomTool,
   PanTool,
+  VolumeRotateMouseWheelTool,
   TrackballRotateTool,
 } = cornerstoneTools;
+
+addDropDownToToolbar({
+  options: {
+    values: Object.keys(OrientationMarkerTool.OVERLAY_MARKER_TYPES),
+    defaultValue: OrientationMarkerTool.OVERLAY_MARKER_TYPES.AXES,
+  },
+  onSelectedValueChange: (value) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    toolGroup.setToolConfiguration(OrientationMarkerTool.toolName, {
+      overlayMarkerType: OrientationMarkerTool.OVERLAY_MARKER_TYPES[value],
+    });
+
+    toolGroup.setToolEnabled(OrientationMarkerTool.toolName);
+  },
+});
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
@@ -140,10 +102,6 @@ instructions.innerText = `
 
 content.append(instructions);
 
-// ============================= //
-// this variable controls if the viewport is a VolumeViewport or StackViewport
-const useVolume = true;
-
 const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'].slice(
   0,
   numberOfElements
@@ -166,10 +124,12 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
 
-  toolGroup.addTool(OrientationMarkerTool.toolName, { overlayMarkerType: 3 });
+  toolGroup.addTool(OrientationMarkerTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(VolumeRotateMouseWheelTool.toolName);
   toolGroup.addTool(TrackballRotateTool.toolName);
 
   toolGroup.setToolActive(TrackballRotateTool.toolName, {
@@ -213,19 +173,16 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  const usedViewportIds = viewportInputArray.map(
-    ({ viewportId }) => viewportId
-  );
-  // Add tools to the viewports
-  usedViewportIds.map(({ viewportId }) => {
+  const usedViewportIds = viewportInputArray.map(({ viewportId }) => {
     toolGroup.addViewport(viewportId, renderingEngineId);
+    return viewportId;
   });
 
-  const imageStacks = await getImageStacks();
+  const imageIds = await getImageStacks();
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: imageStacks[0],
+    imageIds,
   });
   volume.load();
 
@@ -236,14 +193,22 @@ async function run() {
         volumeId,
         callback: setCtTransferFunctionForVolumeActor,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-        slabThickness: 10000,
+        // Todo: just for test
+        slabThickness: 100,
       },
     ],
     usedViewportIds
   );
 
-  // Todo: Handle this
   toolGroup.setToolActive(OrientationMarkerTool.toolName);
+  toolGroup.setToolActive(VolumeRotateMouseWheelTool.toolName);
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Left Click
+      },
+    ],
+  });
 
   // Render the image
   renderingEngine.render();

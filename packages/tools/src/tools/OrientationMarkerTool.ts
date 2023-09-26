@@ -1,4 +1,3 @@
-import { BaseTool } from './base';
 import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import vtkAxesActor from '@kitware/vtk.js/Rendering/Core/AxesActor';
@@ -6,27 +5,16 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+
+import { BaseTool } from './base';
 import { getRenderingEngines } from '@cornerstonejs/core';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 
-async function getXML(url) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  const vtpReader = vtkXMLPolyDataReader.newInstance();
-  vtpReader.parseAsArrayBuffer(arrayBuffer);
-  vtpReader.update();
-
-  const polyData = vtkPolyData.newInstance();
-  polyData.shallowCopy(vtpReader.getOutputData());
-  polyData.getPointData().setActiveScalars('Color');
-  const mapper = vtkMapper.newInstance();
-  mapper.setInputData(polyData);
-  mapper.setColorModeToDirectScalars();
-
-  const actor = vtkActor.newInstance();
-  actor.setMapper(mapper);
-  return { actor, mapper };
-}
+const OverlayMarkerType = {
+  ANNOTATED_CUBE: 1,
+  AXES: 2,
+  CUSTOM: 3,
+};
 
 /**
  * The OrientationMarker is a tool that includes an orientation marker in viewports
@@ -37,124 +25,202 @@ class OrientationMarkerTool extends BaseTool {
   orientationMarkers;
   polyDataURL;
 
+  static OVERLAY_MARKER_TYPES = OverlayMarkerType;
+
   constructor(
     toolProps = {},
     defaultToolProps = {
       configuration: {
-        overlayMarkerType: 1,
+        orientationWidget: {
+          enabled: true,
+          viewportCorner: vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT,
+          viewportSize: 0.15,
+          minPixelSize: 100,
+          maxPixelSize: 300,
+        },
+        overlayMarkerType:
+          OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
+        overlayConfiguration: {
+          [OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE]: {
+            faceProperties: {
+              xPlus: { text: 'R', faceColor: '#ffff00', faceRotation: 90 },
+              xMinus: { text: 'L', faceColor: '#ffff00', faceRotation: 270 },
+              yPlus: {
+                text: 'P',
+                faceColor: '#00ffff',
+                fontColor: 'white',
+                faceRotation: 180,
+              },
+              yMinus: { text: 'A', faceColor: '#00ffff', fontColor: 'white' },
+              zPlus: { text: 'S' },
+              zMinus: { text: 'I' },
+            },
+            defaultStyle: {
+              fontStyle: 'bold',
+              fontFamily: 'Arial',
+              fontColor: 'black',
+              fontSizeScale: (res) => res / 2,
+              faceColor: '#0000ff',
+              edgeThickness: 0.1,
+              edgeColor: 'black',
+              resolution: 400,
+            },
+          },
+          [OrientationMarkerTool.OVERLAY_MARKER_TYPES.AXES]: {},
+          [OrientationMarkerTool.OVERLAY_MARKER_TYPES.CUSTOM]: {
+            polyDataURL:
+              'https://raw.githubusercontent.com/Slicer/Slicer/80ad0a04dacf134754459557bf2638c63f3d1d1b/Base/Logic/Resources/OrientationMarkers/Human.vtp',
+          },
+        },
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
-    this.polyDataURL =
-      'https://raw.githubusercontent.com/Slicer/Slicer/80ad0a04dacf134754459557bf2638c63f3d1d1b/Base/Logic/Resources/OrientationMarkers/Human.vtp';
-    // '/Human.vtp';
-  }
-
-  initViewports() {
-    const renderingEngines = getRenderingEngines();
-    const renderingEngine = renderingEngines[0];
-
-    // Todo: handle this case where it is too soon to get the rendering engine
-    if (!renderingEngine) {
-      return;
-    }
-
-    let viewports = renderingEngine.getViewports();
-    viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
-    console.debug('🚀 ~ viewports:', viewports);
-    viewports.forEach((viewport) => this.addAxisActorInViewport(viewport));
+    this.configuration_invalidated = true;
   }
 
   onSetToolEnabled = (): void => {
     this.initViewports();
+    this.configuration_invalidated = true;
   };
 
   onSetToolActive = (): void => {
     this.initViewports();
   };
 
+  private initViewports() {
+    const renderingEngines = getRenderingEngines();
+    const renderingEngine = renderingEngines[0];
+
+    if (!renderingEngine) {
+      return;
+    }
+
+    let viewports = renderingEngine.getViewports();
+    viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
+    viewports.forEach((viewport) => this.addAxisActorInViewport(viewport));
+  }
+
   async addAxisActorInViewport(viewport) {
     const viewportId = viewport.id;
-    const type = 1; // this.configuration.overlayMarkerType;
-    if (!this.orientationMarkers[viewportId]) {
-      let axes;
-      if (type === 1) {
-        axes = vtkAnnotatedCubeActor.newInstance();
-        axes.setDefaultStyle({
-          fontStyle: 'bold',
-          fontFamily: 'Arial',
-          fontColor: 'black',
-          fontSizeScale: (res) => res / 2,
-          faceColor: '#0000ff',
-          edgeThickness: 0.1,
-          edgeColor: 'black',
-          resolution: 400,
-        });
-        axes.setXPlusFaceProperty({
-          text: 'R',
-          faceColor: '#ffff00',
-          faceRotation: 90,
-          //fontStyle: 'italic',
-        });
-        axes.setXMinusFaceProperty({
-          text: 'L',
-          faceColor: '#ffff00',
-          faceRotation: 270,
-          //fontStyle: 'italic',
-        });
-        axes.setYPlusFaceProperty({
-          text: 'P',
-          faceColor: '#00ffff',
-          fontColor: 'white',
-          faceRotation: 180,
-        });
-        axes.setYMinusFaceProperty({
-          text: 'A',
-          faceColor: '#00ffff',
-          fontColor: 'white',
-        });
-        axes.setZPlusFaceProperty({
-          text: 'S',
-        });
-        axes.setZMinusFaceProperty({
-          text: 'I',
-        });
-      } else if (type === 2) {
-        axes = vtkAxesActor.newInstance();
-      } else if (type === 3) {
-        const { actor } = await getXML(this.polyDataURL);
-        axes = actor;
-        axes.rotateZ(180);
-      }
+    const type = this.configuration.overlayMarkerType;
 
-      const renderer = viewport.getRenderer();
-      const renderWindow = viewport
-        .getRenderingEngine()
-        .offscreenMultiRenderWindow.getRenderWindow();
-      // create orientation widget
-      const orientationWidget = vtkOrientationMarkerWidget.newInstance({
-        actor: axes,
-        interactor: renderWindow.getInteractor(),
-        parentRenderer: renderer,
-      });
-      orientationWidget.setEnabled(true);
-      orientationWidget.setViewportCorner(
-        vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT
-      );
-      orientationWidget.setViewportSize(0.15);
-      orientationWidget.setMinPixelSize(100);
-      orientationWidget.setMaxPixelSize(300);
+    const overlayConfiguration = this.configuration.overlayConfiguration[type];
 
-      orientationWidget.updateMarkerOrientation();
-      this.orientationMarkers[viewportId] = {
-        orientationWidget,
-        actor: axes,
-      };
-      renderer.resetCamera();
-      renderWindow.render();
+    if (this.orientationMarkers[viewportId]) {
+      const { actor, orientationWidget } = this.orientationMarkers[viewportId];
+      // remove the previous one
+      viewport.getRenderer().removeActor(actor);
+      orientationWidget.setEnabled(false);
     }
+
+    let actor;
+    if (type === 1) {
+      actor = this.createAnnotationCube(overlayConfiguration);
+    } else if (type === 2) {
+      actor = vtkAxesActor.newInstance();
+    } else if (type === 3) {
+      actor = await this.createCustomActor();
+    }
+
+    const renderer = viewport.getRenderer();
+    const renderWindow = viewport
+      .getRenderingEngine()
+      .offscreenMultiRenderWindow.getRenderWindow();
+
+    const {
+      enabled,
+      viewportCorner,
+      viewportSize,
+      minPixelSize,
+      maxPixelSize,
+    } = this.configuration.orientationWidget;
+
+    const orientationWidget = vtkOrientationMarkerWidget.newInstance({
+      actor,
+      interactor: renderWindow.getInteractor(),
+      parentRenderer: renderer,
+    });
+
+    orientationWidget.setEnabled(enabled);
+    orientationWidget.setViewportCorner(viewportCorner);
+    orientationWidget.setViewportSize(viewportSize);
+    orientationWidget.setMinPixelSize(minPixelSize);
+    orientationWidget.setMaxPixelSize(maxPixelSize);
+
+    orientationWidget.updateMarkerOrientation();
+    this.orientationMarkers[viewportId] = {
+      orientationWidget,
+      actor,
+    };
+    renderer.resetCamera();
+    renderWindow.render();
+    viewport.getRenderingEngine().render();
+  }
+
+  private async createCustomActor() {
+    const url =
+      this.configuration.overlayConfiguration[OverlayMarkerType.CUSTOM]
+        .polyDataURL;
+
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const vtpReader = vtkXMLPolyDataReader.newInstance();
+    vtpReader.parseAsArrayBuffer(arrayBuffer);
+    vtpReader.update();
+
+    const polyData = vtkPolyData.newInstance();
+    polyData.shallowCopy(vtpReader.getOutputData());
+    polyData.getPointData().setActiveScalars('Color');
+    const mapper = vtkMapper.newInstance();
+    mapper.setInputData(polyData);
+    mapper.setColorModeToDirectScalars();
+
+    const actor = vtkActor.newInstance();
+    actor.setMapper(mapper);
+    actor.rotateZ(180);
+    return actor;
+  }
+
+  private createAnnotationCube(overlayConfiguration: any) {
+    const actor = vtkAnnotatedCubeActor.newInstance();
+    actor.setDefaultStyle({ ...overlayConfiguration.defaultStyle });
+    actor.setXPlusFaceProperty({
+      ...overlayConfiguration.faceProperties.xPlus,
+    });
+    actor.setXMinusFaceProperty({
+      ...overlayConfiguration.faceProperties.xMinus,
+    });
+    actor.setYPlusFaceProperty({
+      ...overlayConfiguration.faceProperties.yPlus,
+    });
+    actor.setYMinusFaceProperty({
+      ...overlayConfiguration.faceProperties.yMinus,
+    });
+    actor.setZPlusFaceProperty({
+      ...overlayConfiguration.faceProperties.zPlus,
+    });
+    actor.setZMinusFaceProperty({
+      ...overlayConfiguration.faceProperties.zMinus,
+    });
+    return actor;
+  }
+
+  async createAnnotatedCubeActor() {
+    const axes = vtkAnnotatedCubeActor.newInstance();
+    const { faceProperties, defaultStyle } = this.configuration.annotatedCube;
+
+    axes.setDefaultStyle(defaultStyle);
+
+    Object.keys(faceProperties).forEach((key) => {
+      const methodName = `set${
+        key.charAt(0).toUpperCase() + key.slice(1)
+      }FaceProperty`;
+      axes[methodName](faceProperties[key]);
+    });
+
+    return axes;
   }
 }
 
