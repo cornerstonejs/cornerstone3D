@@ -58,6 +58,7 @@ import {
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  OrientationMarkerTool,
   OverlayGridTool,
 } from './tools';
 
@@ -112,6 +113,7 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  OrientationMarkerTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

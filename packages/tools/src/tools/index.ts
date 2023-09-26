@@ -39,6 +39,7 @@ import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool'
 import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
+import OrientationMarkerTool from './OrientationMarkerTool';
 
 export {
   // ~~ BASE
@@ -84,4 +85,5 @@ export {
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  OrientationMarkerTool,
 };
