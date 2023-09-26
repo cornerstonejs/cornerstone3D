@@ -3701,6 +3701,8 @@ export class OrientationMarkerTool extends BaseTool {
     polyDataURL: any;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    static VTPFILE: number;
 }
 
 // @public
