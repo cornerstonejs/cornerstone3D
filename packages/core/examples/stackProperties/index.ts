@@ -133,7 +133,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    viewport.removeDefaultProperties(viewport.getCurrentImageId());
+    viewport.clearDefaultProperties(viewport.getCurrentImageId());
   },
 });
 
