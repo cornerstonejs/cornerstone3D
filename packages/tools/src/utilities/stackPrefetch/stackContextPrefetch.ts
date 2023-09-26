@@ -111,15 +111,45 @@ function prefetch(element) {
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
+    const image = cache.getCachedImageBasedOnImageURI(imageId);
+    const { stats } = stackPrefetch;
+    const decodeTimeInMS = image?.image?.decodeTimeInMS || 0;
+    if (decodeTimeInMS) {
+      stats.imageIds.set(imageId, decodeTimeInMS);
+      stats.decodeTimeInMS += decodeTimeInMS;
+      const loadTimeInMS = image?.image?.loadTimeInMS || 0;
+      stats.loadTimeInMS += loadTimeInMS;
+    }
 
     if (!stackPrefetch.indicesToRequest.length) {
-      const image = cache.getCachedImageBasedOnImageURI(imageId);
       if (image?.sizeInBytes) {
         const { sizeInBytes } = image;
         const usage = cache.getMaxCacheSize() / 4 / sizeInBytes;
         if (!stackPrefetch.cacheFill) {
+          stats.initialTime = Date.now() - stats.start;
+          stats.initialSize = stats.imageIds.size;
           updateToolState(element, usage);
           prefetch(element);
+        } else if (stats.imageIds.size) {
+          stats.fillTime = Date.now() - stats.start;
+          const { size } = stats.imageIds;
+          stats.fillSize = size;
+          console.log(
+            'Done cache fill',
+            stats.fillTime,
+            'ms',
+            size,
+            'items',
+            'average total time',
+            Math.round(stats.fillTime / size),
+            'ms',
+            'average load',
+            Math.round(stats.loadTimeInMS / size),
+            'ms',
+            'average decode',
+            Math.round(stats.decodeTimeInMS / size),
+            'ms'
+          );
         }
       }
     }
@@ -197,6 +227,13 @@ const updateToolState = (element, usage?: number) => {
     stackCount: 0,
     enabled: true,
     direction: 1,
+    stats: {
+      start: Date.now(),
+      imageIds: new Map(),
+      decodeTimeInMS: 0,
+      loadTimeInMS: 0,
+      totalBytes: 0,
+    },
   };
   const delta = currentImageIdIndex - stackPrefetchData.currentImageIdIndex;
   stackPrefetchData.direction = signum(delta);
