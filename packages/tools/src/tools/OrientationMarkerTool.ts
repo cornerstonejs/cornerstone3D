@@ -27,6 +27,8 @@ class OrientationMarkerTool extends BaseTool {
 
   static OVERLAY_MARKER_TYPES = OverlayMarkerType;
 
+  configuration_invalidated = true;
+
   constructor(
     toolProps = {},
     defaultToolProps = {
@@ -157,6 +159,8 @@ class OrientationMarkerTool extends BaseTool {
     renderer.resetCamera();
     renderWindow.render();
     viewport.getRenderingEngine().render();
+
+    this.configuration_invalidated = false;
   }
 
   private async createCustomActor() {
