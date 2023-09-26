@@ -15,6 +15,7 @@ import {
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
+import roundNumber from '../roundNumber';
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -141,13 +142,13 @@ function prefetch(element) {
             size,
             'items',
             'average total time',
-            Math.round(stats.fillTime / size),
+            roundNumber(stats.fillTime / size),
             'ms',
             'average load',
-            Math.round(stats.loadTimeInMS / size),
+            roundNumber(stats.loadTimeInMS / size),
             'ms',
             'average decode',
-            Math.round(stats.decodeTimeInMS / size),
+            roundNumber(stats.decodeTimeInMS / size),
             'ms'
           );
         }
