@@ -130,6 +130,8 @@ class StackViewport extends Viewport implements IStackViewport {
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
+  // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
+  private initialInvert = false;
   private interpolationType: InterpolationType;
 
   // Helpers
@@ -730,7 +732,7 @@ class StackViewport extends Viewport implements IStackViewport {
       this.setRotation(0);
     }
     this.setInterpolationType(InterpolationType.LINEAR);
-    this.setInvertColor(false);
+    this.setInvertColor(this.initialInvert);
   }
 
   private _setPropertiesFromCache(): void {
@@ -2066,8 +2068,10 @@ class StackViewport extends Viewport implements IStackViewport {
       forceRecreateLUTFunction: !!monochrome1,
     });
 
+    this.initialInvert = !!monochrome1;
+
     // should carry over the invert color from the previous image if has been applied
-    this.setInvertColor(this.invert || !!monochrome1);
+    this.setInvertColor(this.invert || this.initialInvert);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;

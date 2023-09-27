@@ -58,6 +58,8 @@ import {
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  OrientationMarkerTool,
+  OverlayGridTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -88,6 +90,7 @@ export {
   LengthTool,
   CrosshairsTool,
   ReferenceLinesTool,
+  OverlayGridTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -110,6 +113,7 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  OrientationMarkerTool,
   // Synchronizers
   synchronizers,
   Synchronizer,
