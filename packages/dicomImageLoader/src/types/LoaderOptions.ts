@@ -1,4 +1,5 @@
 import { LoaderDecodeOptions } from './LoaderDecodeOptions';
+import { WADORSMetaData } from './WADORSMetaData';
 import { LoaderXhrRequestError, LoaderXhrRequestParams } from './XHRRequest';
 
 export interface LoaderOptions {
@@ -43,7 +44,9 @@ export interface LoaderOptions {
    * request. This can be helpful to establish a rough minimum initial image
    * quality, although this will vary by modality.
    */
-  initialBytes?: number;
+  initialBytes?:
+    | number
+    | ((metaData: WADORSMetaData, imageId: string) => number);
 
   /**
    * If using byte ranges, how many total byte range requests should be used
@@ -60,13 +63,17 @@ export interface LoaderOptions {
    * Setting `totalRanges` to 2 will load the remainder of the file on the
    * second request after `initialBytes` are loaded.
    */
-  totalRanges?: number;
+  totalRanges?:
+    | number
+    | ((metaData: WADORSMetaData, imageId: string) => number);
 
   /**
    * If using web streams, set the minimum chunk size before sending another
    * decode request.
    */
-  minChunkSize?: number;
+  minChunkSize?:
+    | number
+    | ((metaData: WADORSMetaData, imageId: string) => number);
 
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;

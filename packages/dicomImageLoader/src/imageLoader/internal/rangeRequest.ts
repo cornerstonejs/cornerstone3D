@@ -5,6 +5,7 @@ import {
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,
 } from '../../types';
+import metaDataManager from '../wadors/metaDataManager';
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 
@@ -92,8 +93,26 @@ export default function rangeRequest(
   const { cornerstone } = external;
   const options = getOptions();
 
-  const initialBytes = options.initialBytes;
-  const totalRanges = options.totalRanges;
+  let initialBytes = options.initialBytes;
+  if (typeof initialBytes === 'function') {
+    const metaData = metaDataManager.get(imageId);
+    initialBytes = initialBytes(metaData, imageId);
+  }
+  if (!Number.isInteger(initialBytes)) {
+    throw new Error(
+      `initialBytes must be an integer or function that returns an integer.`
+    );
+  }
+  let totalRanges = options.totalRanges;
+  if (typeof totalRanges === 'function') {
+    const metaData = metaDataManager.get(imageId);
+    totalRanges = totalRanges(metaData, imageId);
+  }
+  if (!Number.isInteger(totalRanges)) {
+    throw new Error(
+      `totalRanges must be an integer or function that returns an integer.`
+    );
+  }
 
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
@@ -135,8 +154,8 @@ export default function rangeRequest(
       );
 
       streamCache[imageId] = {
-        initialBytes: initialBytes,
-        totalRanges: totalRanges,
+        initialBytes: initialBytes as number,
+        totalRanges: totalRanges as number,
         rangesFetched: 0,
       };
 
@@ -144,7 +163,7 @@ export default function rangeRequest(
         url,
         imageId,
         headers,
-        [0, initialBytes]
+        [0, initialBytes as number]
       );
 
       // Resolve promise with the first range, so it can be passed through to
@@ -171,7 +190,8 @@ export default function rangeRequest(
               const rangesFetched = streamCache[imageId].rangesFetched;
               const rangeEnd =
                 Math.ceil(
-                  (totalBytes - loadedBytes) / (totalRanges - rangesFetched)
+                  (totalBytes - loadedBytes) /
+                    ((totalRanges as number) - rangesFetched)
                 ) + loadedBytes;
 
               const { bytes } = await fetchRangeAndAppend(

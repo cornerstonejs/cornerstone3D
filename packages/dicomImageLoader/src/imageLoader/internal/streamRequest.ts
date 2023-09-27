@@ -5,20 +5,21 @@ import {
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,
 } from '../../types';
+import metaDataManager from '../wadors/metaDataManager';
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 
 const streamCache: {
   [key: string]: { byteArray: Uint8Array; currentChunkSize: number };
 } = {};
-const minChunkSize = getOptions().minChunkSize;
 
 function appendChunk(options: {
   imageId: string;
+  minChunkSize: number;
   chunk?: Uint8Array;
   complete?: boolean;
 }) {
-  const { imageId, chunk, complete } = options;
+  const { imageId, chunk, complete, minChunkSize } = options;
 
   // If we have a new chunk of data to append, append it to the Uint8Array for
   // that imageId
@@ -67,6 +68,17 @@ export default function streamRequest(
 ): LoaderXhrRequestPromise<{ contentType: string; imageFrame: Uint8Array }> {
   const { cornerstone } = external;
   const options = getOptions();
+
+  let minChunkSize = options.minChunkSize;
+  if (typeof minChunkSize === 'function') {
+    const metaData = metaDataManager.get(imageId);
+    minChunkSize = minChunkSize(metaData, imageId);
+  }
+  if (!Number.isInteger(minChunkSize)) {
+    throw new Error(
+      `minChunkSize must be an integer or function that returns an integer.`
+    );
+  }
 
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
@@ -129,6 +141,7 @@ export default function streamRequest(
             const imageFrame = appendChunk({
               imageId,
               complete: true,
+              minChunkSize: minChunkSize as number,
             });
             loadTracking[imageId].loaded = imageFrame.length;
             console.log(
@@ -156,7 +169,11 @@ export default function streamRequest(
             );
             break;
           }
-          const imageFrame = appendChunk({ imageId, chunk: value });
+          const imageFrame = appendChunk({
+            imageId,
+            chunk: value,
+            minChunkSize: minChunkSize as number,
+          });
           if (!imageFrame) continue;
 
           // When the first chunk of the downloaded image arrives, resolve the
