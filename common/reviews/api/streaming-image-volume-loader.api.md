@@ -8,6 +8,7 @@ import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
+import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -33,6 +34,14 @@ type ActorSliceRange = {
     max: number;
     current: number;
 };
+
+// @public (undocumented)
+type AffineMatrix = [
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number],
+[number, number, number, number]
+];
 
 // @public
 enum BlendModes {
@@ -567,6 +576,7 @@ enum GeometryType {
 // @public (undocumented)
 export const helpers: {
     getDynamicVolumeInfo: typeof getDynamicVolumeInfo;
+    sortImageIdsAndGetSpacing: typeof sortImageIdsAndGetSpacing;
 };
 
 // @public (undocumented)
@@ -1347,17 +1357,9 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 =
+| [number, number, number, number, number, number, number, number, number]
+| Float32Array;
 
 // @public
 type Metadata = {
@@ -1612,6 +1614,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    interpolationType?: InterpolationType;
 };
 
 // @public (undocumented)

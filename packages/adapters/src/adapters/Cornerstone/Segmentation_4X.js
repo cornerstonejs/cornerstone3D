@@ -7,7 +7,6 @@ import {
 } from "dcmjs";
 import ndarray from "ndarray";
 import cloneDeep from "lodash.clonedeep";
-import { Buffer } from "buffer";
 
 import { Events } from "../enums";
 
@@ -19,8 +18,7 @@ const {
     nearlyEqual
 } = utilities.orientation;
 
-const { datasetToDict, BitArray, DicomMessage, DicomMetaDictionary } =
-    dcmjsData;
+const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
@@ -61,12 +59,13 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
 }
 
 /**
- * fillSegmentation - Fills a derived segmentation dataset with cornerstoneTools `LabelMap3D` data.
+ * Fills a given segmentation object with data from the input labelmaps3D
  *
- * @param  {object[]} segmentation An empty segmentation derived dataset.
- * @param  {Object|Object[]} inputLabelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
- * @param  {Object} userOptions Options object to override default options.
- * @returns {Blob}           description
+ * @param segmentation - The segmentation object to be filled.
+ * @param inputLabelmaps3D - An array of 3D labelmaps, or a single 3D labelmap.
+ * @param userOptions - Optional configuration settings. Will override the default options.
+ *
+ * @returns {object} The filled segmentation object.
  */
 function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
     const options = Object.assign(
@@ -191,10 +190,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
         segmentation.bitPackPixelData();
     }
 
-    const buffer = Buffer.from(datasetToDict(segmentation.dataset).write());
-    const segBlob = new Blob([buffer], { type: "application/dicom" });
-
-    return segBlob;
+    return segmentation;
 }
 
 function _getLabelmapsFromReferencedFrameIndicies(

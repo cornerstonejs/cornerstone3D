@@ -899,6 +899,17 @@ class PlanarFreehandROITool extends AnnotationTool {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
 
+    const styleSpecifier: AnnotationStyle.StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
+    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!options.visibility) {
+      return;
+    }
+
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
@@ -918,12 +929,6 @@ class PlanarFreehandROITool extends AnnotationTool {
       data.handles.textBox.worldPosition
     );
 
-    const styleSpecifier: AnnotationStyle.StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
-
     const textBoxUID = '1';
     const boundingBox = drawLinkedTextBox(
       svgDrawingHelper,
@@ -933,7 +938,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       textBoxPosition,
       canvasCoordinates,
       {},
-      this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+      options
     );
 
     const { x: left, y: top, width, height } = boundingBox;

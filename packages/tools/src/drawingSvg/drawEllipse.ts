@@ -2,8 +2,8 @@ import type { Types } from '@cornerstonejs/core';
 import { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
 
 function drawEllipse(
   svgDrawingHelper: SVGDrawingHelper,
@@ -52,7 +52,7 @@ function drawEllipse(
   };
 
   if (existingEllipse) {
-    _setAttributesIfNecessary(attributes, existingEllipse);
+    setAttributesIfNecessary(attributes, existingEllipse);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -62,7 +62,7 @@ function drawEllipse(
       svgEllipseElement.setAttribute('data-id', dataId);
     }
 
-    _setNewAttributesIfValid(attributes, svgEllipseElement);
+    setNewAttributesIfValid(attributes, svgEllipseElement);
 
     svgDrawingHelper.appendNode(svgEllipseElement, svgNodeHash);
   }
