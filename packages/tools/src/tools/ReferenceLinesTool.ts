@@ -11,7 +11,6 @@ import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-
 import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../types/AnnotationStyle';
@@ -245,75 +244,14 @@ class ReferenceLines extends AnnotationDisplayTool {
     );
 
     if (this.configuration.showFullDimension) {
-      const renderingEngine = targetViewport.getRenderingEngine();
-      const targetId = this.getTargetId(targetViewport);
-      const targetImage = this.getTargetIdImage(targetId, renderingEngine);
-
-      const referencedImageId = this.getReferencedImageId(
+      canvasCoordinates = this.handleFullDimension(
         targetViewport,
         lineStartWorld,
         viewPlaneNormal,
-        viewUp
+        viewUp,
+        lineEndWorld,
+        canvasCoordinates
       );
-
-      if (referencedImageId && targetImage) {
-        try {
-          const { imageData, dimensions } = targetImage;
-
-          // Calculate bound image coordinates
-          const [
-            topLeftImageCoord,
-            topRightImageCoord,
-            bottomRightImageCoord,
-            bottomLeftImageCoord,
-          ] = [
-            imageData.indexToWorld([0, 0, 0]) as Types.Point3,
-            imageData.indexToWorld([dimensions[0] - 1, 0, 0]) as Types.Point3,
-            imageData.indexToWorld([
-              dimensions[0] - 1,
-              dimensions[1] - 1,
-              0,
-            ]) as Types.Point3,
-            imageData.indexToWorld([0, dimensions[1] - 1, 0]) as Types.Point3,
-          ].map((world) =>
-            csUtils.worldToImageCoords(referencedImageId, world)
-          );
-
-          // Calculate line start and end image coordinates
-          const [lineStartImageCoord, lineEndImageCoord] = [
-            lineStartWorld,
-            lineEndWorld,
-          ].map((world) =>
-            csUtils.worldToImageCoords(referencedImageId, world)
-          );
-
-          // Calculate intersection points between line and image bounds
-          canvasCoordinates = [
-            [topLeftImageCoord, topRightImageCoord],
-            [topRightImageCoord, bottomRightImageCoord],
-            [bottomLeftImageCoord, bottomRightImageCoord],
-            [topLeftImageCoord, bottomLeftImageCoord],
-          ]
-            .map(([start, end]) =>
-              this.intersectLine(
-                start,
-                end,
-                lineStartImageCoord,
-                lineEndImageCoord
-              )
-            )
-            .filter((point) => point && this.isInBound(point, dimensions))
-            .map((point) => {
-              const world = csUtils.imageToWorldCoords(
-                referencedImageId,
-                point as Types.Point2
-              );
-              return targetViewport.worldToCanvas(world);
-            });
-        } catch (err) {
-          console.log(err);
-        }
-      }
     }
 
     const dataId = `${annotationUID}-line`;
@@ -343,21 +281,84 @@ class ReferenceLines extends AnnotationDisplayTool {
     return Math.abs(dot) < EPSILON;
   };
 
-  isParallel(vec1: Types.Point3, vec2: Types.Point3): boolean {
-    return Math.abs(vec3.dot(vec1, vec2)) > 1 - EPSILON;
-  }
+  private handleFullDimension(
+    targetViewport: Types.IStackViewport | Types.IVolumeViewport,
+    lineStartWorld: Types.Point3,
+    viewPlaneNormal: Types.Point3,
+    viewUp: Types.Point3,
+    lineEndWorld: Types.Point3,
+    canvasCoordinates: Types.Point2[]
+  ) {
+    const renderingEngine = targetViewport.getRenderingEngine();
+    const targetId = this.getTargetId(targetViewport);
+    const targetImage = this.getTargetIdImage(targetId, renderingEngine);
 
-  isInBound(point: number[], dimensions: Types.Point3): boolean {
-    return (
-      point[0] >= 0 &&
-      point[0] <= dimensions[0] &&
-      point[1] >= 0 &&
-      point[1] <= dimensions[1]
+    const referencedImageId = this.getReferencedImageId(
+      targetViewport,
+      lineStartWorld,
+      viewPlaneNormal,
+      viewUp
     );
+
+    if (referencedImageId && targetImage) {
+      try {
+        const { imageData, dimensions } = targetImage;
+
+        // Calculate bound image coordinates
+        const [
+          topLeftImageCoord,
+          topRightImageCoord,
+          bottomRightImageCoord,
+          bottomLeftImageCoord,
+        ] = [
+          imageData.indexToWorld([0, 0, 0]) as Types.Point3,
+          imageData.indexToWorld([dimensions[0] - 1, 0, 0]) as Types.Point3,
+          imageData.indexToWorld([
+            dimensions[0] - 1,
+            dimensions[1] - 1,
+            0,
+          ]) as Types.Point3,
+          imageData.indexToWorld([0, dimensions[1] - 1, 0]) as Types.Point3,
+        ].map((world) => csUtils.worldToImageCoords(referencedImageId, world));
+
+        // Calculate line start and end image coordinates
+        const [lineStartImageCoord, lineEndImageCoord] = [
+          lineStartWorld,
+          lineEndWorld,
+        ].map((world) => csUtils.worldToImageCoords(referencedImageId, world));
+
+        // Calculate intersection points between line and image bounds
+        canvasCoordinates = [
+          [topLeftImageCoord, topRightImageCoord],
+          [topRightImageCoord, bottomRightImageCoord],
+          [bottomLeftImageCoord, bottomRightImageCoord],
+          [topLeftImageCoord, bottomLeftImageCoord],
+        ]
+          .map(([start, end]) =>
+            this.intersectInfiniteLines(
+              start,
+              end,
+              lineStartImageCoord,
+              lineEndImageCoord
+            )
+          )
+          .filter((point) => point && this.isInBound(point, dimensions))
+          .map((point) => {
+            const world = csUtils.imageToWorldCoords(
+              referencedImageId,
+              point as Types.Point2
+            );
+            return targetViewport.worldToCanvas(world);
+          });
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    return canvasCoordinates;
   }
 
   // get the intersection point between two infinite lines, not line segments
-  intersectLine(
+  intersectInfiniteLines(
     line1Start: Types.Point2,
     line1End: Types.Point2,
     line2Start: Types.Point2,
@@ -386,6 +387,19 @@ class ReferenceLines extends AnnotationDisplayTool {
     const y = (a2 * c1 - a1 * c2) / (a1 * b2 - a2 * b1);
 
     return [x, y];
+  }
+
+  isParallel(vec1: Types.Point3, vec2: Types.Point3): boolean {
+    return Math.abs(vec3.dot(vec1, vec2)) > 1 - EPSILON;
+  }
+
+  isInBound(point: number[], dimensions: Types.Point3): boolean {
+    return (
+      point[0] >= 0 &&
+      point[0] <= dimensions[0] &&
+      point[1] >= 0 &&
+      point[1] <= dimensions[1]
+    );
   }
 }
 
