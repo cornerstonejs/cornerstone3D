@@ -755,23 +755,24 @@ class PlanarFreehandROITool extends AnnotationTool {
       // Using an arbitrary start point (canvasPoint), calculate the
       // mm spacing for the canvas in the X and Y directions.
       const canvasPoint = canvasCoordinates[0];
-      const deltaX = viewport.canvasToWorld([
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
         canvasPoint[0] + 1,
         canvasPoint[1],
       ]);
-      const deltaY = viewport.canvasToWorld([
+      const deltaYPoint = viewport.canvasToWorld([
         canvasPoint[0],
         canvasPoint[1] + 1,
       ]);
 
-      const canvasSpacingX = vec3.distance(points[0], deltaX);
-      const canvasSpacingY = vec3.distance(points[0], deltaY);
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const scale = getCalibratedScale(image);
       let area =
         polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
       // Convert from canvas_pixels ^2 to mm^2
-      area *= canvasSpacingX * canvasSpacingY;
+      area *= deltaInX * deltaInY;
 
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
