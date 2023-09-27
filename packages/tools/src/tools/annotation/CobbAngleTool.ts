@@ -485,40 +485,44 @@ class CobbAngleTool extends AnnotationTool {
 
   cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
-    if (this.isDrawing) {
-      this.isDrawing = false;
-      this._deactivateDraw(element);
-      this._deactivateModify(element);
-      resetElementCursor(element);
-
-      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
-      const { data } = annotation;
-
-      annotation.highlighted = false;
-      data.handles.activeHandleIndex = null;
-
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
-
-      if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
-      }
-
-      this.editData = null;
-      this.angleStartedNotYetCompleted = false;
-      return annotation.annotationUID;
+    if (!this.isDrawing) {
+      return;
     }
+
+    this.isDrawing = false;
+    this._deactivateDraw(element);
+    this._deactivateModify(element);
+    resetElementCursor(element);
+
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+    const { data } = annotation;
+
+    if (data.handles.points.length < 4) {
+      // If it is mid-draw
+      removeAnnotation(annotation.annotationUID);
+    }
+
+    annotation.highlighted = false;
+    data.handles.activeHandleIndex = null;
+
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
+
+    this.editData = null;
+    this.angleStartedNotYetCompleted = false;
+    return annotation.annotationUID;
   };
 
   _activateModify = (element: HTMLDivElement) => {
@@ -721,13 +725,22 @@ class CobbAngleTool extends AnnotationTool {
         );
       }
 
-      let lineUID = '1';
+      const firstLine = [canvasCoordinates[0], canvasCoordinates[1]] as [
+        Types.Point2,
+        Types.Point2
+      ];
+      const secondLine = [canvasCoordinates[2], canvasCoordinates[3]] as [
+        Types.Point2,
+        Types.Point2
+      ];
+
+      let lineUID = 'line1';
       drawLineSvg(
         svgDrawingHelper,
         annotationUID,
         lineUID,
-        canvasCoordinates[0],
-        canvasCoordinates[1],
+        firstLine[0],
+        firstLine[1],
         {
           color,
           width: lineWidth,
@@ -737,19 +750,19 @@ class CobbAngleTool extends AnnotationTool {
 
       renderStatus = true;
 
-      // Don't add textBox until annotation has 4 anchor points
+      // Don't add the stats until annotation has 4 anchor points
       if (canvasCoordinates.length < 4) {
         return renderStatus;
       }
 
-      lineUID = '2';
+      lineUID = 'line2';
 
       drawLineSvg(
         svgDrawingHelper,
         annotationUID,
         lineUID,
-        canvasCoordinates[2],
-        canvasCoordinates[3],
+        secondLine[0],
+        secondLine[1],
         {
           color,
           width: lineWidth,
@@ -757,14 +770,52 @@ class CobbAngleTool extends AnnotationTool {
         }
       );
 
-      lineUID = '3';
-      const mid1 = midPoint2(canvasCoordinates[0], canvasCoordinates[1]);
-      const mid2 = midPoint2(canvasCoordinates[2], canvasCoordinates[3]);
+      lineUID = 'linkLine';
+      const mid1 = midPoint2(firstLine[0], firstLine[1]);
+      const mid2 = midPoint2(secondLine[0], secondLine[1]);
       drawLineSvg(svgDrawingHelper, annotationUID, lineUID, mid1, mid2, {
         color,
         lineWidth: '1',
         lineDash: '1,4',
       });
+
+      // Calculating the arcs
+
+      const { arc1Start, arc1End, arc2End, arc2Start } =
+        this.getArcsStartEndPoints({
+          firstLine,
+          secondLine,
+          mid1,
+          mid2,
+        });
+
+      lineUID = 'arc1';
+
+      drawLineSvg(
+        svgDrawingHelper,
+        annotationUID,
+        lineUID,
+        arc1Start,
+        arc1End,
+        {
+          color,
+          lineWidth: '1',
+        }
+      );
+
+      lineUID = 'arc2';
+
+      drawLineSvg(
+        svgDrawingHelper,
+        annotationUID,
+        lineUID,
+        arc2Start,
+        arc2End,
+        {
+          color,
+          lineWidth: '1',
+        }
+      );
 
       if (!data.cachedStats[targetId]?.angle) {
         continue;
@@ -798,7 +849,7 @@ class CobbAngleTool extends AnnotationTool {
         data.handles.textBox.worldPosition
       );
 
-      const textBoxUID = '1';
+      const textBoxUID = 'text1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
         annotationUID,
@@ -865,10 +916,9 @@ class CobbAngleTool extends AnnotationTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const angle = angleBetweenLines(seg1, seg2);
 
       cachedStats[targetId] = {
-        angle,
+        angle: angleBetweenLines(seg1, seg2),
       };
     }
 
@@ -886,6 +936,106 @@ class CobbAngleTool extends AnnotationTool {
 
     return cachedStats;
   }
+
+  getArcsStartEndPoints = ({ firstLine, secondLine, mid1, mid2 }) => {
+    const linkLine = [mid1, mid2] as [Types.Point2, Types.Point2];
+
+    const arc1Angle = angleBetweenLines(firstLine, linkLine);
+    const arc2Angle = angleBetweenLines(secondLine, linkLine);
+
+    const arc1Side = arc1Angle > 90 ? 1 : 0;
+    const arc2Side = arc2Angle > 90 ? 0 : 1;
+
+    const midLinkLine = midPoint2(linkLine[0], linkLine[1]);
+
+    const linkLineLength = Math.sqrt(
+      (linkLine[1][0] - linkLine[0][0]) ** 2 +
+        (linkLine[1][1] - linkLine[0][1]) ** 2
+    );
+    const ratio = 0.1; // 10% of the line length
+
+    const midFirstLine = midPoint2(firstLine[0], firstLine[1]);
+    const midSecondLine = midPoint2(secondLine[0], secondLine[1]);
+
+    // For arc1Start
+    const directionVectorStartArc1 = [
+      firstLine[arc1Side][0] - midFirstLine[0],
+      firstLine[arc1Side][1] - midFirstLine[1],
+    ];
+    const magnitudeStartArc1 = Math.sqrt(
+      directionVectorStartArc1[0] ** 2 + directionVectorStartArc1[1] ** 2
+    );
+    const normalizedDirectionStartArc1 = [
+      directionVectorStartArc1[0] / magnitudeStartArc1,
+      directionVectorStartArc1[1] / magnitudeStartArc1,
+    ];
+    const arc1Start = [
+      midFirstLine[0] +
+        normalizedDirectionStartArc1[0] * linkLineLength * ratio,
+      midFirstLine[1] +
+        normalizedDirectionStartArc1[1] * linkLineLength * ratio,
+    ];
+
+    // Existing logic for arc1End
+    const directionVectorEndArc1 = [
+      midLinkLine[0] - mid1[0],
+      midLinkLine[1] - mid1[1],
+    ];
+    const magnitudeEndArc1 = Math.sqrt(
+      directionVectorEndArc1[0] ** 2 + directionVectorEndArc1[1] ** 2
+    );
+    const normalizedDirectionEndArc1 = [
+      directionVectorEndArc1[0] / magnitudeEndArc1,
+      directionVectorEndArc1[1] / magnitudeEndArc1,
+    ];
+    const arc1End = [
+      mid1[0] + normalizedDirectionEndArc1[0] * linkLineLength * ratio,
+      mid1[1] + normalizedDirectionEndArc1[1] * linkLineLength * ratio,
+    ];
+
+    // Similar logic for arc2Start
+    const directionVectorStartArc2 = [
+      secondLine[arc2Side][0] - midSecondLine[0],
+      secondLine[arc2Side][1] - midSecondLine[1],
+    ];
+    const magnitudeStartArc2 = Math.sqrt(
+      directionVectorStartArc2[0] ** 2 + directionVectorStartArc2[1] ** 2
+    );
+    const normalizedDirectionStartArc2 = [
+      directionVectorStartArc2[0] / magnitudeStartArc2,
+      directionVectorStartArc2[1] / magnitudeStartArc2,
+    ];
+    const arc2Start = [
+      midSecondLine[0] +
+        normalizedDirectionStartArc2[0] * linkLineLength * ratio,
+      midSecondLine[1] +
+        normalizedDirectionStartArc2[1] * linkLineLength * ratio,
+    ];
+
+    // Similar logic for arc2End
+    const directionVectorEndArc2 = [
+      midLinkLine[0] - mid2[0],
+      midLinkLine[1] - mid2[1],
+    ];
+    const magnitudeEndArc2 = Math.sqrt(
+      directionVectorEndArc2[0] ** 2 + directionVectorEndArc2[1] ** 2
+    );
+    const normalizedDirectionEndArc2 = [
+      directionVectorEndArc2[0] / magnitudeEndArc2,
+      directionVectorEndArc2[1] / magnitudeEndArc2,
+    ];
+    const arc2End = [
+      mid2[0] + normalizedDirectionEndArc2[0] * linkLineLength * ratio,
+      mid2[1] + normalizedDirectionEndArc2[1] * linkLineLength * ratio,
+    ];
+
+    return {
+      arc1Start,
+      arc1End,
+      arc2Start,
+      arc2End,
+    };
+  };
 }
 
 function defaultGetTextLines(data, targetId): string[] {
