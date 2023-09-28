@@ -24,6 +24,7 @@
         "build:esm": "rollup -c rollup.config.mjs",
         "build:esm:watch": "rollup --watch -c rollup.config.mjs",
         "dev": "rollup --watch  -c rollup.config.mjs",
+        "dependency-test": "npx madge --circular --extensions ts ./src",
         "build:all": "yarn build",
         "build:update-api": "yarn run build && api-extractor run --local",
         "start": "rollup --watch -c rollup.config.mjs",
