@@ -12,15 +12,11 @@ import { vec2 } from 'gl-matrix';
 import AnnotationDisplayTool from './AnnotationDisplayTool';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import {
-  Annotation,
-  Annotations,
-  EventTypes,
-  ToolHandle,
-  InteractionTypes,
-  ToolProps,
-  PublicToolProps,
-} from '../../types';
+import {Annotation, Annotations} from '../../types/AnnotationTypes';
+import {InteractionEventType,MouseMoveEventType} from '../../types/EventTypes'
+import {ToolProps, PublicToolProps} from '../../types/ToolProps'
+import ToolHandle from '../../types/ToolHandle'
+import InteractionTypes from '../../types/InteractionTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**-q
@@ -59,7 +55,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param interactionType -  The interaction type used to add the annotation.
    */
   abstract addNewAnnotation(
-    evt: EventTypes.InteractionEventType,
+    evt: InteractionEventType,
     interactionType: InteractionTypes
   ): Annotation;
 
@@ -78,7 +74,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param interactionType - The interaction type the handle was selected with.
    */
   abstract handleSelectedCallback(
-    evt: EventTypes.InteractionEventType,
+    evt: InteractionEventType,
     annotation: Annotation,
     handle: ToolHandle,
     interactionType: InteractionTypes
@@ -92,7 +88,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param interactionType - The interaction type used to select the tool.
    */
   abstract toolSelectedCallback(
-    evt: EventTypes.InteractionEventType,
+    evt: InteractionEventType,
     annotation: Annotation,
     interactionType: InteractionTypes
   ): void;
@@ -125,7 +121,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
    */
   public mouseMoveCallback = (
-    evt: EventTypes.MouseMoveEventType,
+    evt: MouseMoveEventType,
     filteredAnnotations?: Annotations
   ): boolean => {
     if (!filteredAnnotations) {

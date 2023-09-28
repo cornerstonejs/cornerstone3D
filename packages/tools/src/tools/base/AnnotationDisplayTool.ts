@@ -1,7 +1,6 @@
 import {
   utilities,
   getEnabledElement,
-  VolumeViewport,
   StackViewport,
   cache,
 } from '@cornerstonejs/core';
@@ -9,7 +8,8 @@ import type { Types } from '@cornerstonejs/core';
 
 import BaseTool from './BaseTool';
 import { getAnnotationManager } from '../../stateManagement/annotation/annotationState';
-import { Annotation, Annotations, SVGDrawingHelper } from '../../types';
+import { Annotation, Annotations } from '../../types/AnnotationTypes';
+import SVGDrawingHelper from '../../types/SVGDrawingHelper';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';

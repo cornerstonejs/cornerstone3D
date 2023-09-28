@@ -1,4 +1,6 @@
-import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
+import BaseTool from './base/BaseTool';
+import AnnotationTool from './base/AnnotationTool'
+import AnnotationDisplayTool from './base/AnnotationDisplayTool'
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import WindowLevelTool from './WindowLevelTool';

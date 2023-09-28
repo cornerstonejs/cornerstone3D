@@ -6,7 +6,8 @@ import {
   GroupSpecificAnnotations,
 } from '../../types/AnnotationTypes';
 
-import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
+import IAnnotationManager from '../../types/IAnnotationManager';
+import AnnotationGroupSelector from '../../types/AnnotationGroupSelector'
 
 import {
   Enums,

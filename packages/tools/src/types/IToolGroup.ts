@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
 import { MouseBindings } from '../enums';
-import { ToolConfiguration } from '../types';
+import { ToolConfiguration } from './ToolProps';
 /**
  * ToolGroup interface
  */
