@@ -1,15 +1,20 @@
 export default function addButtonToToolbar({
+  id,
   title,
+  container,
   onClick,
 }: {
+  id?: string;
   title: string;
+  container?: HTMLElement;
   onClick: () => void;
 }) {
-  const toolbar = document.getElementById('demo-toolbar');
   const button = document.createElement('button');
 
+  button.id = id;
   button.innerHTML = title;
   button.onclick = onClick;
 
-  toolbar.append(button);
+  container = container ?? document.getElementById('demo-toolbar');
+  container.append(button);
 }

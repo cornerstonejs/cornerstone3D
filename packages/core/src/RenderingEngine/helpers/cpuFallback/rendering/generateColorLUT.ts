@@ -13,7 +13,7 @@ import { IImage, CPUFallbackLUT } from '../../../../types';
  *
  * @returns A lookup table to apply to the image
  */
-export default function (
+export default function generateColorLUT(
   image: IImage,
   windowWidth: number | number[],
   windowCenter: number | number[],

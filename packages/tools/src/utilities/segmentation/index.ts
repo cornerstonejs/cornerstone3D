@@ -14,6 +14,7 @@ import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
+import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 
 export {
   thresholdVolumeByRange,
@@ -28,4 +29,5 @@ export {
   setBrushSizeForToolGroup,
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
+  thresholdSegmentationByRange,
 };

@@ -2,7 +2,12 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import { state } from '../../../store';
 import { Events } from '../../../enums';
 import { hideElementCursor } from '../../../cursors/elementCursor';
-import type { EventTypes, Annotation } from '../../../types';
+import type {
+  EventTypes,
+  Annotation,
+  ToolHandle,
+  TextBoxHandle,
+} from '../../../types';
 import { polyline } from '../../../utilities/math';
 
 const { getSubPixelSpacingAndXYDirections } = polyline;
@@ -14,7 +19,8 @@ const { getSubPixelSpacingAndXYDirections } = polyline;
 function activateOpenContourEndEdit(
   evt: EventTypes.InteractionEventType,
   annotation: Annotation,
-  viewportIdsToRender: string[]
+  viewportIdsToRender: string[],
+  handle: ToolHandle | null
 ): void {
   this.isDrawing = true;
 
@@ -37,6 +43,11 @@ function activateOpenContourEndEdit(
     canvasPoints.reverse();
   }
 
+  let movingTextBox = false;
+  if ((handle as TextBoxHandle).worldPosition) {
+    movingTextBox = true;
+  }
+
   this.drawData = {
     canvasPoints: canvasPoints,
     polylineIndex: canvasPoints.length - 1,
@@ -48,6 +59,7 @@ function activateOpenContourEndEdit(
     spacing,
     xDir,
     yDir,
+    movingTextBox,
   };
 
   state.isInteractingWithTool = true;

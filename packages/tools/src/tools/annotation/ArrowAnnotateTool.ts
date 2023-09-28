@@ -25,7 +25,10 @@ import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { AnnotationCompletedEventDetail } from '../../types/EventTypes';
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -108,6 +111,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     );
 
     const { arrowFirst } = this.configuration;
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     const annotation = {
       highlighted: true,
@@ -116,7 +120,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -140,7 +144,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -309,19 +313,19 @@ class ArrowAnnotateTool extends AnnotationTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { viewportId, renderingEngineId, renderingEngine } = enabledElement;
 
     if (
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     if (newAnnotation) {
       this.configuration.getTextCallback((text) => {
         if (!text) {
-          removeAnnotation(annotation.annotationUID, element);
+          removeAnnotation(annotation.annotationUID);
           triggerAnnotationRenderForViewportIds(
             renderingEngine,
             viewportIdsToRender
@@ -345,6 +349,16 @@ class ArrowAnnotateTool extends AnnotationTool {
           viewportIdsToRender
         );
       });
+    } else {
+      const eventType = Events.ANNOTATION_MODIFIED;
+
+      const eventDetail: AnnotationModifiedEventDetail = {
+        annotation,
+        viewportId,
+        renderingEngineId,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
     }
 
     this.editData = null;
@@ -412,15 +426,14 @@ class ArrowAnnotateTool extends AnnotationTool {
   doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
     );
 
-    if (!annotations) {
+    if (!annotations?.length) {
       return;
     }
 
@@ -659,7 +672,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
@@ -763,9 +776,25 @@ class ArrowAnnotateTool extends AnnotationTool {
         continue;
       }
 
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
+
       // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        // linked to the point that doesn't have the arrowhead by default
+        const canvasTextBoxCoords = canvasCoordinates[1];
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
@@ -784,7 +813,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;

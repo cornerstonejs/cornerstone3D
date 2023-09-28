@@ -13,7 +13,10 @@ import { VolumeViewportProperties } from '.';
 export default interface IVolumeViewport extends IViewport {
   useCPURendering: boolean;
   getFrameOfReferenceUID: () => string;
-  getProperties: () => any;
+  /**
+   * Retrieve the viewport properties
+   */
+  getProperties: () => VolumeViewportProperties;
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
    * projected onto the plane defined by the `Viewport`'s `vtkCamera`'s focal point
@@ -25,6 +28,10 @@ export default interface IVolumeViewport extends IViewport {
    * projected onto the `Viewport`'s `canvas`.
    */
   worldToCanvas: (worldPos: Point3) => Point2;
+  /**
+   * Returns the list of image Ids for the current viewport
+   */
+  getImageIds: (volumeId?: string) => string[];
   /**
    * Uses viewport camera and volume actor to decide if the viewport
    * is looking at the volume in the direction of acquisition (imageIds).
@@ -135,4 +142,8 @@ export default interface IVolumeViewport extends IViewport {
   getImageData(volumeId?: string): IImageData | undefined;
 
   setOrientation(orientation: OrientationAxis): void;
+  /**
+   * Reset the viewport properties to the default values
+   */
+  resetProperties(volumeId?: string): void;
 }

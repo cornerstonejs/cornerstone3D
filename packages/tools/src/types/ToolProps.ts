@@ -1,8 +1,14 @@
+import { Calculator } from '../utilities/math/basic';
+
 type SharedToolProp = {
   /** supported interactions for the tool */
   supportedInteractionTypes?: Array<string>;
   /** tool specific tool configuration */
-  configuration?: Record<string, any>;
+  configuration?: ToolConfiguration;
+};
+
+export type ToolConfiguration = Record<string, any> & {
+  statsCalculator?: Calculator;
 };
 
 export type ToolProps = SharedToolProp;

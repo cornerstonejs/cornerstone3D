@@ -8,17 +8,13 @@ import type { Types } from '@cornerstonejs/core';
  * @returns The array is being scaled
  */
 export default function scaleArray(
-  array: Float32Array | Uint8Array,
+  array: Float32Array | Uint8Array | Uint16Array | Int16Array,
   scalingParameters: Types.ScalingParameters
-): Float32Array | Uint8Array {
+): Float32Array | Uint8Array | Uint16Array | Int16Array {
   const arrayLength = array.length;
   const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
 
-  if (scalingParameters.modality === 'PT') {
-    if (typeof suvbw !== 'number') {
-      return array;
-    }
-
+  if (scalingParameters.modality === 'PT' && typeof suvbw === 'number') {
     for (let i = 0; i < arrayLength; i++) {
       array[i] = suvbw * (array[i] * rescaleSlope + rescaleIntercept);
     }

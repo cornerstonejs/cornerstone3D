@@ -44,6 +44,7 @@ create Annotations for the interaction. Example `AnnotationTool`s include:
 
 - Bidirectional
 - EllipticalROI
+- CircleROI
 - Length
 - Probe
 - RectangleROI

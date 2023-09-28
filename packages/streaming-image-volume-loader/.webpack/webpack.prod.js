@@ -32,19 +32,12 @@ module.exports = (env, argv) => {
       minimize: true,
     },
     externals: [
-      /\b(vtk.js)/,
       {
         '@cornerstonejs/core': {
           root: 'cornerstone3D',
           commonjs: '@cornerstonejs/core',
           commonjs2: '@cornerstonejs/core',
           amd: '@cornerstonejs/core',
-        },
-        'gl-matrix': {
-          root: 'window',
-          commonjs: 'gl-matrix',
-          commonjs2: 'gl-matrix',
-          amd: 'gl-matrix',
         },
       },
     ],

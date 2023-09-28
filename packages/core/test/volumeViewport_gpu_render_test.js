@@ -92,8 +92,8 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.SAGITTAL,
-        1000,
-        1000,
+        300,
+        300,
         ViewportType.VOLUME_3D
       );
       this.DOMElements.push(element);
@@ -770,7 +770,6 @@ describe('Volume Viewport GPU -- ', () => {
       });
 
       const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setIndependentComponents(false);
         volumeActor.getProperty().setInterpolationTypeToNearest();
       };
 
@@ -814,7 +813,6 @@ describe('Volume Viewport GPU -- ', () => {
       });
 
       const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setIndependentComponents(false);
         volumeActor.getProperty().setInterpolationTypeToLinear();
       };
 

@@ -1,4 +1,5 @@
-import { Point3, Scaling, Mat3 } from '../types';
+import { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
+import IImageCalibration from './IImageCalibration';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;
@@ -8,7 +9,7 @@ type CPUImageData = {
   /** Last spacing is always EPSILON */
   getSpacing?: () => Point3;
   getDirection?: () => Mat3;
-  getScalarData?: () => number[];
+  getScalarData?: () => PixelDataTypedArray;
   /** Last index is always 1 */
   getDimensions?: () => Point3;
 };
@@ -20,10 +21,12 @@ type CPUIImageData = {
   origin: Point3;
   imageData: CPUImageData;
   metadata: { Modality: string };
-  scalarData: number[];
+  scalarData: PixelDataTypedArray;
   scaling: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
+  calibration?: IImageCalibration;
+
   /** preScale object */
   preScale?: {
     /** boolean flag to indicate whether the image has been scaled */

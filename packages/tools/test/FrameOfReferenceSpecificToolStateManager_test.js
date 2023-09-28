@@ -1,8 +1,7 @@
 import * as csTools from '../src/index';
 import * as cornerstone3D from '@cornerstonejs/core';
 
-const annotationManager =
-  csTools.annotation.state.getDefaultAnnotationManager();
+const annotationManager = csTools.annotation.state.getAnnotationManager();
 
 const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID';
 
@@ -30,7 +29,7 @@ function addAndReturnToolName0Annotation() {
     },
   };
 
-  annotationManager.addAnnotation(annotation);
+  annotationManager.addAnnotation(annotation, FrameOfReferenceUID);
 
   return annotation;
 }
@@ -53,7 +52,7 @@ function addAndReturnToolName1Annotation() {
     },
   };
 
-  annotationManager.addAnnotation(annotation);
+  annotationManager.addAnnotation(annotation, FrameOfReferenceUID);
 
   return annotation;
 }
@@ -91,17 +90,10 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
       annotationManager.getAnnotation(annotationUID);
 
     const annotationFoundByAnnotationUIDAndFoR =
-      annotationManager.getAnnotation(annotationUID, {
-        FrameOfReferenceUID,
-      });
+      annotationManager.getAnnotation(annotationUID);
 
-    const annotationFoundByToolAllFilters = annotationManager.getAnnotation(
-      annotationUID,
-      {
-        FrameOfReferenceUID,
-        toolName,
-      }
-    );
+    const annotationFoundByToolAllFilters =
+      annotationManager.getAnnotation(annotationUID);
 
     expect(annotation).toEqual(annotationFoundByAnnotationUID);
     expect(annotation).toEqual(annotationFoundByAnnotationUIDAndFoR);
@@ -126,6 +118,7 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     expect(frameOfReferenceSpecificAnnotations[toolName]).toBeDefined();
     expect(annotations[FrameOfReferenceUID]).toBeDefined();
   });
+
   it('should restore various parts of the annotations to the annotationManager', () => {
     const annotation_0 = addAndReturnToolName0Annotation();
     const annotation_1 = addAndReturnToolName1Annotation();
@@ -213,9 +206,7 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     annotationManager.restoreAnnotations(annotationsSnapshot);
 
     // Remove annotation by UID and FrameOfReferenceUID, and check it was removed.
-    annotationManager.removeAnnotation(annotationUID, {
-      FrameOfReferenceUID,
-    });
+    annotationManager.removeAnnotation(annotationUID);
     undefinedAnnotation = annotationManager.getAnnotation(annotationUID);
     expect(undefinedAnnotation).toBeUndefined();
 
@@ -223,10 +214,7 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     annotationManager.restoreAnnotations(annotationsSnapshot);
 
     // Remove annotation by UID, FrameOfReferenceUID and toolName, and check it was removed.
-    annotationManager.removeAnnotation(annotationUID, {
-      FrameOfReferenceUID,
-      toolName,
-    });
+    annotationManager.removeAnnotation(annotationUID);
     undefinedAnnotation = annotationManager.getAnnotation(annotationUID);
     expect(undefinedAnnotation).toBeUndefined();
   });

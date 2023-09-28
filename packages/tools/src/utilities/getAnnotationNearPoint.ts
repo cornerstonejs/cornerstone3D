@@ -98,11 +98,13 @@ function findAnnotationNearPointByTool(
   // Todo: this function does not return closest annotation. It just returns
   // the first annotation that is found in the proximity. BUT, we are not using
   // the function anywhere.
+  const { viewport } = enabledElement;
+
   const annotations = getAnnotations(
-    enabledElement.viewport.element,
-    (tool.constructor as typeof BaseTool).toolName
+    (tool.constructor as typeof BaseTool).toolName,
+    viewport?.element
   );
-  const currentId = enabledElement.viewport?.getCurrentImageId?.();
+  const currentId = viewport?.getCurrentImageId?.();
   if (annotations?.length) {
     const { element } = enabledElement.viewport;
     for (const annotation of annotations) {

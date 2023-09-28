@@ -1,5 +1,5 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 
 import {
   cache,
@@ -8,11 +8,14 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import Representations from '../../../enums/SegmentationRepresentations';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
-import type { LabelmapConfig } from '../../../types/LabelmapTypes';
+import type {
+  LabelmapConfig,
+  LabelmapRenderingConfig,
+} from '../../../types/LabelmapTypes';
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
@@ -21,7 +24,6 @@ import {
 
 import addLabelmapToElement from './addLabelmapToElement';
 
-import { deepMerge } from '../../../utilities';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 
 const MAX_NUMBER_COLORS = 255;
@@ -46,7 +48,6 @@ async function addSegmentationRepresentation(
 
   // Todo: make these configurable during representation input by user
   const segmentsHidden = new Set() as Set<number>;
-  const visibility = true;
   const colorLUTIndex = 0;
   const active = true;
   const cfun = vtkColorTransferFunction.newInstance();
@@ -59,7 +60,6 @@ async function addSegmentationRepresentation(
     segmentationRepresentationUID,
     type: Representations.Labelmap,
     segmentsHidden,
-    visibility,
     colorLUTIndex,
     active,
     segmentationRepresentationSpecificConfig: {},
@@ -78,7 +78,7 @@ async function addSegmentationRepresentation(
     const currentToolGroupConfig =
       SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
 
-    const mergedConfig = deepMerge(
+    const mergedConfig = utilities.deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     );
@@ -135,6 +135,40 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Checks if a segmentation data have the same frameOfReference as the series
+ * displayed in a given viewport
+ * @param viewport
+ * @param referencedVolumeId volume id of the segmentation reference series
+ * @returns
+ */
+function isSameFrameOfReference(viewport, referencedVolumeId) {
+  // if the referencedVolumeId is not defined, we acted as before to not break
+  // applications as referencedVolumeId is inserted in this change
+  // Can modify that in the future commits
+  if (!referencedVolumeId) {
+    return true;
+  }
+  const defaultActor = viewport.getDefaultActor();
+  if (!defaultActor) {
+    return false;
+  }
+  const { uid: defaultActorUID } = defaultActor;
+  const volume = cache.getVolume(defaultActorUID);
+
+  if (volume) {
+    const referencedVolume = cache.getVolume(referencedVolumeId);
+    if (
+      referencedVolume &&
+      volume.metadata.FrameOfReferenceUID ===
+        referencedVolume.metadata.FrameOfReferenceUID
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
  * @param enabledElement - The cornerstone enabled element
@@ -151,7 +185,6 @@ async function render(
     active,
     segmentationId,
     segmentationRepresentationUID,
-    visibility,
     segmentsHidden,
     config: renderingConfig,
   } = representation;
@@ -167,6 +200,9 @@ async function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
+  if (!isSameFrameOfReference(viewport, labelmapData?.referencedVolumeId)) {
+    return;
+  }
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
 
   if (!actorEntry) {
@@ -183,7 +219,11 @@ async function render(
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
 
-  const { cfun, ofun } = renderingConfig;
+  if (!actorEntry) {
+    return;
+  }
+
+  const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
 
   const renderInactiveSegmentations =
     toolGroupConfig.renderInactiveSegmentations;
@@ -198,8 +238,7 @@ async function render(
     representation,
     active,
     renderInactiveSegmentations,
-    segmentsHidden,
-    visibility
+    segmentsHidden
   );
 }
 
@@ -213,8 +252,7 @@ function _setLabelmapColorAndOpacity(
   segmentationRepresentation: ToolGroupSpecificRepresentation,
   isActiveLabelmap: boolean,
   renderInactiveSegmentations: boolean,
-  segmentsHidden: Set<number>,
-  visibility = true
+  segmentsHidden: Set<number>
 ): void {
   const { segmentSpecificConfig, segmentationRepresentationSpecificConfig } =
     segmentationRepresentation;
@@ -238,6 +276,9 @@ function _setLabelmapColorAndOpacity(
     isActiveLabelmap
   );
 
+  // Todo: the below loop probably can be optimized so that we don't hit it
+  // unless a config has changed. Right now we get into the following loop
+  // even for brush drawing which does not makes sense
   for (let i = 0; i < numColors; i++) {
     const segmentIndex = i;
     const segmentColor = colorLUT[segmentIndex];
@@ -302,8 +343,7 @@ function _setLabelmapColorAndOpacity(
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
-  const visible =
-    visibility && (isActiveLabelmap || renderInactiveSegmentations);
+  const visible = isActiveLabelmap || renderInactiveSegmentations;
   volumeActor.setVisibility(visible);
 }
 
@@ -414,7 +454,7 @@ function _needsTransferFunctionUpdate(
     renderFill,
     renderOutline,
     outlineWidth,
-    segmentColor,
+    segmentColor: segmentColor.slice(), // Create a copy
     segmentsHidden: new Set(segmentsHidden), // Create a copy
   });
 

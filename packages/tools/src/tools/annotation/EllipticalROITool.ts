@@ -9,6 +9,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -56,8 +61,12 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -107,8 +116,10 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
+
 class EllipticalROITool extends AnnotationTool {
   static toolName;
+
   touchDragCallback: any;
   mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
@@ -137,6 +148,8 @@ class EllipticalROITool extends AnnotationTool {
         // Radius of the circle to draw  at the center point of the ellipse.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -180,6 +193,8 @@ class EllipticalROITool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -187,7 +202,7 @@ class EllipticalROITool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -212,10 +227,11 @@ class EllipticalROITool extends AnnotationTool {
           activeHandleIndex: null,
         },
         cachedStats: {},
+        initialRotation: viewport.getRotation(),
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -440,7 +456,7 @@ class EllipticalROITool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -723,7 +739,7 @@ class EllipticalROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
       return renderStatus;
@@ -763,11 +779,36 @@ class EllipticalROITool extends AnnotationTool {
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
       ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
-      const canvasCorners = <Array<Types.Point2>>(
-        getCanvasEllipseCorners(canvasCoordinates)
+
+      const rotation = Math.abs(
+        viewport.getRotation() - (data.initialRotation || 0)
       );
+      let canvasCorners;
+
+      if (rotation == 90 || rotation == 270) {
+        canvasCorners = <Array<Types.Point2>>getCanvasEllipseCorners([
+          canvasCoordinates[2], // bottom
+          canvasCoordinates[3], // top
+          canvasCoordinates[0], // left
+          canvasCoordinates[1], // right
+        ]);
+      } else {
+        canvasCorners = <Array<Types.Point2>>(
+          getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
+        );
+      }
 
       const { centerPointRadius } = this.configuration;
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -788,14 +829,16 @@ class EllipticalROITool extends AnnotationTool {
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enabledElement,
+          modalityUnitOptions
         );
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -893,7 +936,7 @@ class EllipticalROITool extends AnnotationTool {
           drawCircleSvg(
             svgDrawingHelper,
             annotationUID,
-            ellipseUID,
+            `${ellipseUID}-center`,
             centerPoint,
             centerPointRadius,
             {
@@ -907,9 +950,22 @@ class EllipticalROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
 
-      const textLines = this._getTextLines(data, targetId, isPreScaled);
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -937,7 +993,7 @@ class EllipticalROITool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -953,41 +1009,12 @@ class EllipticalROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
-      cachedVolumeStats;
-
-    const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
-
-    if (area) {
-      const areaLine = isEmptyArea
-        ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
-      textLines.push(areaLine);
-    }
-
-    if (mean) {
-      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
-    }
-
-    if (max) {
-      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
-    }
-
-    if (stdDev) {
-      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
-    }
-
-    return textLines;
-  };
-
   _calculateCachedStats = (
     annotation,
     viewport,
     renderingEngine,
-    enabledElement
+    enabledElement,
+    modalityUnitOptions: ModalityUnitOptions
   ) => {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -1074,55 +1101,38 @@ class EllipticalROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2);
+        const scale = getCalibratedScale(image);
+        const area =
+          Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
+          scale /
+          scale;
 
-        let count = 0;
-        let mean = 0;
-        let stdDev = 0;
-        let max = -Infinity;
+        const modalityUnit = getModalityUnit(
+          metadata.Modality,
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
+        );
 
-        const meanMaxCalculator = ({ value: newValue }) => {
-          if (newValue > max) {
-            max = newValue;
-          }
-
-          mean += newValue;
-          count += 1;
-        };
-
-        pointInShapeCallback(
+        const pointsInShape = pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          meanMaxCalculator,
+          this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 
-        mean /= count;
-
-        const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean;
-
-          stdDev += valueMinusMean * valueMinusMean;
-        };
-
-        pointInShapeCallback(
-          imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-          stdCalculator,
-          boundsIJK
-        );
-
-        stdDev /= count;
-        stdDev = Math.sqrt(stdDev);
+        const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean,
-          max,
-          stdDev,
+          mean: stats[1]?.value,
+          max: stats[0]?.value,
+          stdDev: stats[2]?.value,
+          statsArray: stats,
+          pointsInShape: pointsInShape,
           isEmptyArea,
-          areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          areaUnit: getCalibratedAreaUnits(null, image),
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -1199,6 +1209,35 @@ class EllipticalROITool extends AnnotationTool {
       (topLeft[1] + bottomRight[1]) / 2,
     ] as Types.Point2;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+    cachedVolumeStats;
+
+  const textLines: string[] = [];
+
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
+
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
+
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
+
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  return textLines;
 }
 
 EllipticalROITool.toolName = 'EllipticalROI';

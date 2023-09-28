@@ -1,11 +1,45 @@
-import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import { cache, Types } from '@cornerstonejs/core';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
 import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+
+function getSegmentationIndices(segmentationId) {
+  const segmentation = SegmentationState.getSegmentation(segmentationId);
+
+  if (segmentation.type === SegmentationRepresentations.Labelmap) {
+    const volume = cache.getVolume(segmentationId);
+    const scalarData = volume.getScalarData();
+
+    const keySet = {};
+    for (let i = 0; i < scalarData.length; i++) {
+      const segmentIndex = scalarData[i];
+      if (segmentIndex !== 0 && !keySet[segmentIndex]) {
+        keySet[segmentIndex] = true;
+      }
+    }
+    return Object.keys(keySet).map((it) => parseInt(it, 10));
+  } else if (segmentation.type === SegmentationRepresentations.Contour) {
+    const geometryIds = segmentation.representationData.CONTOUR?.geometryIds;
+
+    if (!geometryIds) {
+      throw new Error(
+        `No geometryIds found for segmentationId ${segmentationId}`
+      );
+    }
+
+    return geometryIds.map((geometryId) => {
+      const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
+      return (geometry.data as Types.IContourSet).getSegmentIndex();
+    });
+  }
+}
 
 /**
  * Set the visibility of a segmentation representation for a given tool group. It fires
- * a SEGMENTATION_REPRESENTATION_MODIFIED event.
+ * a SEGMENTATION_REPRESENTATION_MODIFIED event. Visibility true will show all segments
+ * and visibility false will hide all segments"
  *
  * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  * @param toolGroupId - The Id of the tool group that contains the segmentation.
@@ -24,19 +58,34 @@ function setSegmentationVisibility(
     return;
   }
 
-  toolGroupSegmentationRepresentations.forEach(
-    (representation: ToolGroupSpecificRepresentation) => {
-      if (
-        representation.segmentationRepresentationUID ===
-        segmentationRepresentationUID
-      ) {
-        representation.visibility = visibility;
-        triggerSegmentationRepresentationModified(
-          toolGroupId,
-          representation.segmentationRepresentationUID
-        );
-      }
-    }
+  const representation = toolGroupSegmentationRepresentations.find(
+    (representation: ToolGroupSpecificRepresentation) =>
+      representation.segmentationRepresentationUID ===
+      segmentationRepresentationUID
+  );
+
+  if (!representation) {
+    return;
+  }
+
+  const { segmentsHidden, segmentationId } = representation;
+
+  const indices = getSegmentationIndices(segmentationId);
+
+  // if visibility is set to be true, we need to remove all the segments
+  // from the segmentsHidden set, otherwise we need to add all the segments
+  // to the segmentsHidden set
+  if (visibility) {
+    segmentsHidden.clear();
+  } else {
+    indices.forEach((index) => {
+      segmentsHidden.add(index);
+    });
+  }
+
+  triggerSegmentationRepresentationModified(
+    toolGroupId,
+    representation.segmentationRepresentationUID
   );
 }
 
@@ -53,23 +102,65 @@ function getSegmentationVisibility(
   toolGroupId: string,
   segmentationRepresentationUID: string
 ): boolean | undefined {
-  const toolGroupSegRepresentations =
+  const toolGroupSegmentationRepresentations =
     getSegmentationRepresentations(toolGroupId);
 
-  const segmentationData = toolGroupSegRepresentations.find(
+  const representation = toolGroupSegmentationRepresentations.find(
     (representation: ToolGroupSpecificRepresentation) =>
       representation.segmentationRepresentationUID ===
       segmentationRepresentationUID
   );
 
-  if (!segmentationData) {
+  if (!representation) {
     return;
   }
 
-  return segmentationData.visibility;
+  const { segmentsHidden } = representation;
+
+  return segmentsHidden.size === 0;
 }
 
-function setVisibilityForSegmentIndex(
+/**
+ * Set the visibility of the given segment indices to the given visibility. This
+ * is a helper to set the visibility of multiple segments at once and reduces
+ * the number of events fired.
+ *
+ * @param toolGroupId -  The tool group id of the segmentation representation.
+ * @param segmentationRepresentationUID -  The UID of the segmentation
+ * representation.
+ * @param segmentIndices -  The indices of the segments to be hidden/shown.
+ * @param visibility -  The visibility to set the segments to.
+ *
+ */
+function setSegmentsVisibility(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  segmentIndices: number[],
+  visibility: boolean
+): void {
+  const segRepresentation =
+    SegmentationState.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+  if (!segRepresentation) {
+    return;
+  }
+
+  segmentIndices.forEach((segmentIndex) => {
+    visibility
+      ? segRepresentation.segmentsHidden.delete(segmentIndex)
+      : segRepresentation.segmentsHidden.add(segmentIndex);
+  });
+
+  triggerSegmentationRepresentationModified(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+}
+
+function setSegmentVisibility(
   toolGroupId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number,
@@ -85,11 +176,9 @@ function setVisibilityForSegmentIndex(
     return;
   }
 
-  if (visibility) {
-    segRepresentation.segmentsHidden.delete(segmentIndex);
-  } else {
-    segRepresentation.segmentsHidden.add(segmentIndex);
-  }
+  visibility
+    ? segRepresentation.segmentsHidden.delete(segmentIndex)
+    : segRepresentation.segmentsHidden.add(segmentIndex);
 
   triggerSegmentationRepresentationModified(
     toolGroupId,
@@ -100,5 +189,6 @@ function setVisibilityForSegmentIndex(
 export {
   setSegmentationVisibility,
   getSegmentationVisibility,
-  setVisibilityForSegmentIndex,
+  setSegmentVisibility,
+  setSegmentsVisibility,
 };

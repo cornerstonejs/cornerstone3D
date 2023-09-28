@@ -7,7 +7,7 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 - **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
 - **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
 
-[Learn how to use Cornerstone in your project](https://cornerstonejs.org/docs/introduction/overview).
+[Learn how to use Cornerstone in your project](https://www.cornerstonejs.org/docs/getting-started/overview).
 
 ## Documentation
 

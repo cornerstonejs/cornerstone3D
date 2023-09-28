@@ -37,14 +37,18 @@ module.exports = (env, argv, { DIST_DIR }) => {
             envName: mode,
           },
         },
+        {
+          test: /\.wasm/,
+          type: 'asset/resource',
+        },
       ],
     },
     resolve: {
       modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       alias: {
-        'cornerstone-wado-image-loader':
-          'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+        '@cornerstonejs/dicom-image-loader':
+          '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
       },
       fallback: {
         fs: false,
@@ -70,7 +74,7 @@ module.exports = (env, argv, { DIST_DIR }) => {
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds
-      new CleanWebpackPlugin()
+      new CleanWebpackPlugin(),
     ],
   };
 

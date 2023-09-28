@@ -7,10 +7,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { vec4 } from 'gl-matrix';
-
 import BaseTool from './BaseTool';
-import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState';
+import { getAnnotationManager } from '../../stateManagement/annotation/annotationState';
 import { Annotation, Annotations, SVGDrawingHelper } from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
@@ -30,6 +28,7 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
  */
 abstract class AnnotationDisplayTool extends BaseTool {
   static toolName;
+
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
@@ -83,31 +82,16 @@ abstract class AnnotationDisplayTool extends BaseTool {
   public onImageSpacingCalibrated = (
     evt: Types.EventTypes.ImageSpacingCalibratedEvent
   ) => {
-    const {
-      element,
-      rowScale,
-      columnScale,
-      imageId,
-      imageData: calibratedImageData,
-      worldToIndex: noneCalibratedWorldToIndex,
-    } = evt.detail;
-
-    const { viewport } = getEnabledElement(element);
-
-    if (viewport instanceof VolumeViewport) {
-      throw new Error('Cannot calibrate a volume viewport');
-    }
-
-    const calibratedIndexToWorld = calibratedImageData.getIndexToWorld();
+    const { element, imageId } = evt.detail;
 
     const imageURI = utilities.imageIdToURI(imageId);
-    const stateManager = getViewportSpecificAnnotationManager(element);
-    const framesOfReference = stateManager.getFramesOfReference();
+    const annotationManager = getAnnotationManager();
+    const framesOfReference = annotationManager.getFramesOfReference();
 
     // For each frame Of Reference
     framesOfReference.forEach((frameOfReference) => {
       const frameOfReferenceSpecificAnnotations =
-        stateManager.getFrameOfReferenceAnnotations(frameOfReference);
+        annotationManager.getAnnotations(frameOfReference);
 
       const toolSpecificAnnotations =
         frameOfReferenceSpecificAnnotations[this.getToolName()];
@@ -118,6 +102,10 @@ abstract class AnnotationDisplayTool extends BaseTool {
 
       // for this specific tool
       toolSpecificAnnotations.forEach((annotation) => {
+        if (!annotation.metadata?.referencedImageId) {
+          return;
+        }
+
         // if the annotation is drawn on the same imageId
         const referencedImageURI = utilities.imageIdToURI(
           annotation.metadata.referencedImageId
@@ -128,44 +116,8 @@ abstract class AnnotationDisplayTool extends BaseTool {
           // we can update the cachedStats and also rendering
           annotation.invalidated = true;
           annotation.data.cachedStats = {};
-
-          // Update annotation points to the new calibrated points. Basically,
-          // using the worldToIndex function we get the index on the non-calibrated
-          // image and then using the calibratedIndexToWorld function we get the
-          // corresponding point on the calibrated image world.
-          annotation.data.handles.points = annotation.data.handles.points.map(
-            (point) => {
-              const p = vec4.fromValues(...point, 1);
-              const pCalibrated = vec4.fromValues(0, 0, 0, 1);
-              const nonCalibratedIndexVec4 = vec4.create();
-              vec4.transformMat4(
-                nonCalibratedIndexVec4,
-                p,
-                noneCalibratedWorldToIndex
-              );
-              const calibratedIndex = [
-                columnScale * nonCalibratedIndexVec4[0],
-                rowScale * nonCalibratedIndexVec4[1],
-                nonCalibratedIndexVec4[2],
-              ];
-
-              vec4.transformMat4(
-                pCalibrated,
-                vec4.fromValues(
-                  calibratedIndex[0],
-                  calibratedIndex[1],
-                  calibratedIndex[2],
-                  1
-                ),
-                calibratedIndexToWorld
-              );
-
-              return pCalibrated.slice(0, 3) as Types.Point3;
-            }
-          );
         }
       });
-
       triggerAnnotationRender(element);
     });
   };
@@ -189,8 +141,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
       referencedImageId = utilities.getClosestImageId(
         imageVolume,
         worldPos,
-        viewPlaneNormal,
-        viewUp
+        viewPlaneNormal
       );
     }
 

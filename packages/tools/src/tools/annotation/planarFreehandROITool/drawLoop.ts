@@ -57,6 +57,7 @@ function activateDraw(
     spacing,
     xDir,
     yDir,
+    movingTextBox: false,
   };
 
   state.isInteractingWithTool = true;
@@ -98,7 +99,14 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, viewport } = enabledElement;
 
-  const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
+  const {
+    annotation,
+    viewportIdsToRender,
+    xDir,
+    yDir,
+    spacing,
+    movingTextBox,
+  } = this.commonData;
   const { polylineIndex, canvasPoints } = this.drawData;
 
   const lastCanvasPoint = canvasPoints[canvasPoints.length - 1];
@@ -117,21 +125,38 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
     return;
   }
 
-  const crossingIndex = this.findCrossingIndexDuringCreate(evt);
+  if (movingTextBox) {
+    this.isDrawing = false;
 
-  if (crossingIndex !== undefined) {
-    // If we have crossed our drawing line, create a closed contour and then
-    // start an edit.
-    this.applyCreateOnCross(evt, crossingIndex);
+    // Drag mode - Move the text boxes world position
+    const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
+    const worldPosDelta = deltaPoints.world;
+
+    const { textBox } = annotation.data.handles;
+    const { worldPosition } = textBox;
+
+    worldPosition[0] += worldPosDelta[0];
+    worldPosition[1] += worldPosDelta[1];
+    worldPosition[2] += worldPosDelta[2];
+
+    textBox.hasMoved = true;
   } else {
-    const numPointsAdded = addCanvasPointsToArray(
-      element,
-      canvasPoints,
-      canvasPos,
-      this.commonData
-    );
+    const crossingIndex = this.findCrossingIndexDuringCreate(evt);
 
-    this.drawData.polylineIndex = polylineIndex + numPointsAdded;
+    if (crossingIndex !== undefined) {
+      // If we have crossed our drawing line, create a closed contour and then
+      // start an edit.
+      this.applyCreateOnCross(evt, crossingIndex);
+    } else {
+      const numPointsAdded = addCanvasPointsToArray(
+        element,
+        canvasPoints,
+        canvasPos,
+        this.commonData
+      );
+
+      this.drawData.polylineIndex = polylineIndex + numPointsAdded;
+    }
   }
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -204,8 +229,11 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
 
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = false;
+  const { textBox } = annotation.data.handles;
 
-  this.triggerAnnotationCompleted(annotation);
+  if (!textBox.hasMoved) {
+    this.triggerAnnotationCompleted(annotation);
+  }
 
   this.isDrawing = false;
   this.drawData = undefined;
@@ -271,6 +299,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
 
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = true;
+  const { textBox } = annotation.data.handles;
 
   // Add the first and last points to the list of handles. These means they
   // will render handles on mouse hover.
@@ -285,7 +314,9 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
       findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
   }
 
-  this.triggerAnnotationCompleted(annotation);
+  if (!textBox.hasMoved) {
+    this.triggerAnnotationCompleted(annotation);
+  }
 
   this.isDrawing = false;
   this.drawData = undefined;

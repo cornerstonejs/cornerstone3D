@@ -21,7 +21,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 //         new CopyPlugin({
 //           patterns: [
 //             {
-//               from: '../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import/',
+//               from: '../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import/',
 //             },
 //           ],
 //         }),
@@ -41,7 +41,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 //           ),
 //           // We use this alias and the CopyPlugin to support using the dynamic-import version
 //           // of WADO Image Loader
-//           'cornerstone-wado-image-loader': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+//           '@cornerstonejs/dicom-image-loader': '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
 //         },
 //       },
 //       devServer: {

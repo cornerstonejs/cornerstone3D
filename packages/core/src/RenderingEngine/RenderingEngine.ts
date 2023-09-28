@@ -20,7 +20,7 @@ import type {
   InternalViewportInput,
   NormalizedViewportInput,
 } from '../types/IViewport';
-import { OrientationAxis } from '../enums';
+import { OrientationAxis, ViewportStatus } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {
@@ -33,6 +33,9 @@ type ViewportDisplayCoords = {
   sWidth: number;
   sHeight: number;
 };
+
+// Rendering engines seem to not like rendering things less than 2 pixels per side
+const VIEWPORT_MIN_SIZE = 2;
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -50,6 +53,7 @@ type ViewportDisplayCoords = {
  * way to do this is to call `renderViewports([viewportId])` on the rendering engine to
  * trigger a render on a specific viewport(s). Each viewport also has a `.render` method which can be used to trigger a render on that
  * viewport.
+ *
  *
  * Rendering engine uses `detect-gpu` external library to detect if GPU is available and
  * it has minimum requirement to be able to render a volume with vtk.js. If GPU is not available
@@ -113,7 +117,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) Adds the viewport
    *
    *
-   * ```typescript
+   * ```
    * renderingEngine.enableElement({
    *  viewportId: viewportId,
    *  type: ViewportType.ORTHOGRAPHIC,
@@ -145,9 +149,9 @@ class RenderingEngine implements IRenderingEngine {
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
+      console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
-      // todo: if only removing the viewport, make sure resize also happens
-      // this._removeViewport(viewportId)
+      console.log(`Viewport ${viewportId} disabled`);
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
@@ -324,13 +328,17 @@ class RenderingEngine implements IRenderingEngine {
       }
     });
 
-    this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    if (vtkDrivenViewports.length) {
+      this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    }
 
-    this._resizeUsingCustomResizeHandler(
-      customRenderingViewports,
-      keepCamera,
-      immediate
-    );
+    if (customRenderingViewports.length) {
+      this._resizeUsingCustomResizeHandler(
+        customRenderingViewports,
+        keepCamera,
+        immediate
+      );
+    }
   }
 
   /**
@@ -502,6 +510,7 @@ class RenderingEngine implements IRenderingEngine {
       options = {
         background: [0, 0, 0],
         orientation: null,
+        displayArea: null,
       };
 
       if (type === ViewportType.ORTHOGRAPHIC) {
@@ -539,7 +548,9 @@ class RenderingEngine implements IRenderingEngine {
   ) {
     // 1. If viewport has a custom resize method, call it here.
     customRenderingViewports.forEach((vp) => {
-      if (typeof vp.resize === 'function') vp.resize();
+      if (typeof vp.resize === 'function') {
+        vp.resize();
+      }
     });
 
     // 3. Reset viewport cameras
@@ -1099,6 +1110,7 @@ class RenderingEngine implements IRenderingEngine {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
         eventDetailArray.push(eventDetail);
+        viewport.setRendered();
 
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(viewport.id);
@@ -1115,6 +1127,10 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameHandle = null;
 
     eventDetailArray.forEach((eventDetail) => {
+      // Very small viewports won't have an element
+      if (!eventDetail?.element) {
+        return;
+      }
       triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
     });
   };
@@ -1165,6 +1181,15 @@ class RenderingEngine implements IRenderingEngine {
   ): EventTypes.ImageRenderedEventDetail[] {
     let eventDetail;
 
+    // Rendering engines start having issues without at least two pixels
+    // in each direction
+    if (
+      viewport.sWidth < VIEWPORT_MIN_SIZE ||
+      viewport.sHeight < VIEWPORT_MIN_SIZE
+    ) {
+      console.log('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      return;
+    }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
       eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
@@ -1232,6 +1257,7 @@ class RenderingEngine implements IRenderingEngine {
       suppressEvents,
       viewportId,
       renderingEngineId,
+      viewportStatus: viewport.viewportStatus,
     };
   }
 

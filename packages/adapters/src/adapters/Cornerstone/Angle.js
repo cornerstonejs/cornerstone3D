@@ -3,13 +3,13 @@ import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
 
-const { CobbAngle: TID300CobbAngle } = utilities.TID300;
+const { Angle: TID300Angle } = utilities.TID300;
 
 const ANGLE = "Angle";
 
 class Angle {
     /**
-     * Generate TID300 measurement data for a plane angle measurement - use a CobbAngle, but label it as Angle
+     * Generate TID300 measurement data for a plane angle measurement - use a Angle, but label it as Angle
      */
     static getMeasurementData(MeasurementGroup) {
         const { defaultState, NUMGroup, SCOORDGroup } =
@@ -72,7 +72,7 @@ class Angle {
 
 Angle.toolType = ANGLE;
 Angle.utilityToolType = ANGLE;
-Angle.TID300Representation = TID300CobbAngle;
+Angle.TID300Representation = TID300Angle;
 Angle.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
     if (!TrackingIdentifier.includes(":")) {
         return false;

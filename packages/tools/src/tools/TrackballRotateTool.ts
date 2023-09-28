@@ -113,19 +113,22 @@ class TrackballRotateTool extends BaseTool {
         rotateIncrementDegrees;
 
       const upVec = camera.viewUp;
+      const atV = camera.viewPlaneNormal;
+      const rightV: Types.Point3 = [0, 0, 0];
+      const forwardV: Types.Point3 = [0, 0, 0];
+
+      vtkMath.cross(upVec, atV, rightV);
+      vtkMath.normalize(rightV);
+
+      vtkMath.cross(atV, rightV, forwardV);
+      vtkMath.normalize(forwardV);
       vtkMath.normalize(upVec);
 
-      this.rotateCamera(viewport, centerWorld, upVec, angleX);
+      this.rotateCamera(viewport, centerWorld, forwardV, angleX);
 
       const angleY =
         (normalizedPreviousPosition[1] - normalizedPosition[1]) *
         rotateIncrementDegrees;
-
-      const atV = camera.viewPlaneNormal;
-      const upV = camera.viewUp;
-      const rightV: Types.Point3 = [0, 0, 0];
-      vtkMath.cross(upV, atV, rightV);
-      vtkMath.normalize(rightV);
 
       this.rotateCamera(viewport, centerWorld, rightV, angleY);
 

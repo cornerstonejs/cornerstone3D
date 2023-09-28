@@ -58,6 +58,7 @@ function activateClosedContourEdit(
     spacing,
     xDir,
     yDir,
+    movingTextBox: false,
   };
 
   state.isInteractingWithTool = true;
@@ -442,6 +443,8 @@ function completeClosedContourEdit(element: HTMLDivElement) {
     );
     annotation.data.polyline = worldPoints;
     annotation.data.isOpenContour = false;
+
+    annotation.invalidated = true;
 
     this.triggerAnnotationModified(annotation, enabledElement);
   }

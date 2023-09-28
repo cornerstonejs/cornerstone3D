@@ -1,6 +1,6 @@
+import { BlendModes, OrientationAxis } from '../enums';
 import type { ViewportInput } from '../types/IViewport';
 import BaseVolumeViewport from './BaseVolumeViewport';
-import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
@@ -13,12 +13,16 @@ class VolumeViewport3D extends BaseVolumeViewport {
   constructor(props: ViewportInput) {
     super(props);
 
-    const { parallelProjection } = this.options;
+    const { parallelProjection, orientation } = this.options;
 
     const activeCamera = this.getVtkActiveCamera();
 
     if (parallelProjection != null) {
       activeCamera.setParallelProjection(parallelProjection);
+    }
+
+    if (orientation && orientation !== OrientationAxis.ACQUISITION) {
+      this.applyViewOrientation(orientation);
     }
   }
 
@@ -30,6 +34,35 @@ class VolumeViewport3D extends BaseVolumeViewport {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
     this.resetVolumeViewportClippingRange();
     return;
+  }
+
+  getRotation = (): number => 0;
+
+  getCurrentImageIdIndex = (): number | undefined => {
+    return undefined;
+  };
+
+  getCurrentImageId = (): string => {
+    return null;
+  };
+
+  setSlabThickness(
+    slabThickness: number,
+    filterActorUIDs?: Array<string>
+  ): void {
+    return null;
+  }
+
+  setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: string[],
+    immediate?: boolean
+  ): void {
+    return null;
+  }
+
+  resetProperties(volumeId?: string): void {
+    return null;
   }
 }
 

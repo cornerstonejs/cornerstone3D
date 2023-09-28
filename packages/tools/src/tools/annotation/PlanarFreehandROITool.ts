@@ -9,6 +9,12 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {
@@ -17,6 +23,7 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
+import throttle from '../../utilities/throttle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import registerDrawLoop from './planarFreehandROITool/drawLoop';
@@ -34,13 +41,24 @@ import {
   ToolHandle,
   Annotation,
   Annotations,
+  AnnotationStyle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
+import { drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
+
+import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
+import pointInShapeCallback from '../../utilities/pointInShapeCallback';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -106,6 +124,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *
  * Read more in the Docs section of the website.
  */
+
 class PlanarFreehandROITool extends AnnotationTool {
   static toolName;
 
@@ -135,7 +154,8 @@ class PlanarFreehandROITool extends AnnotationTool {
   private activateOpenContourEndEdit: (
     evt: EventTypes.InteractionEventType,
     annotation: PlanarFreehandROIAnnotation,
-    viewportIdsToRender: string[]
+    viewportIdsToRender: string[],
+    handle: ToolHandle | null
   ) => void;
   private cancelDrawing: (element: HTMLDivElement) => void;
   private cancelClosedContourEdit: (element: HTMLDivElement) => void;
@@ -195,6 +215,9 @@ class PlanarFreehandROITool extends AnnotationTool {
           knotsRatioPercentageOnAdd: 40,
           knotsRatioPercentageOnEdit: 40,
         },
+        calculateStats: false,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
       },
     }
   ) {
@@ -208,6 +231,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     registerOpenContourEditLoop(this);
     registerOpenContourEndEditLoop(this);
     registerRenderMethods(this);
+
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    );
   }
 
   /**
@@ -239,13 +268,15 @@ class PlanarFreehandROITool extends AnnotationTool {
       this.getToolName()
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation: PlanarFreehandROIAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
         toolName: this.getToolName(),
       },
@@ -266,10 +297,11 @@ class PlanarFreehandROITool extends AnnotationTool {
         },
         polyline: [<Types.Point3>[...worldPos]], // Polyline coordinates
         label: '',
+        cachedStats: {},
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
 
@@ -291,7 +323,8 @@ class PlanarFreehandROITool extends AnnotationTool {
    */
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: PlanarFreehandROIAnnotation
+    annotation: PlanarFreehandROIAnnotation,
+    handle: ToolHandle
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -301,7 +334,12 @@ class PlanarFreehandROITool extends AnnotationTool {
       this.getToolName()
     );
 
-    this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
+    this.activateOpenContourEndEdit(
+      evt,
+      annotation,
+      viewportIdsToRender,
+      handle
+    );
   };
 
   /**
@@ -553,12 +591,14 @@ class PlanarFreehandROITool extends AnnotationTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
-    const renderStatus = false;
-    const { viewport } = enabledElement;
+    let renderStatus = false;
+    const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
 
+    const targetId = this.getTargetId(viewport);
+
     let annotations = <PlanarFreehandROIAnnotation[]>(
-      getAnnotations(element, this.getToolName())
+      getAnnotations(this.getToolName(), element)
     );
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
@@ -582,51 +622,364 @@ class PlanarFreehandROITool extends AnnotationTool {
     if (!(isDrawing || isEditingOpen || isEditingClosed)) {
       // No annotations are currently being modified, so we can just use the
       // render contour method to render all of them
-      annotations.forEach((annotation) =>
-        this.renderContour(enabledElement, svgDrawingHelper, annotation)
-      );
+      annotations.forEach((annotation) => {
+        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      });
+    } else {
+      // One of the annotations will need special rendering treatment, render all
+      // other annotations not being interacted with using the standard renderContour
+      // rendering path.
+      const activeAnnotationUID = this.commonData.annotation.annotationUID;
 
-      return renderStatus;
+      annotations.forEach((annotation) => {
+        if (annotation.annotationUID === activeAnnotationUID) {
+          if (isDrawing) {
+            this.renderContourBeingDrawn(
+              enabledElement,
+              svgDrawingHelper,
+              annotation
+            );
+          } else if (isEditingClosed) {
+            this.renderClosedContourBeingEdited(
+              enabledElement,
+              svgDrawingHelper,
+              annotation
+            );
+          } else if (isEditingOpen) {
+            this.renderOpenContourBeingEdited(
+              enabledElement,
+              svgDrawingHelper,
+              annotation
+            );
+          } else {
+            throw new Error(
+              `Unknown ${this.getToolName()} annotation rendering state`
+            );
+          }
+        } else {
+          this.renderContour(enabledElement, svgDrawingHelper, annotation);
+        }
+      });
+
+      // Todo: return boolean flag for each rendering route in the planar tool.
+      renderStatus = true;
     }
 
-    // One of the annotations will need special rendering treatment, render all
-    // other annotations not being interacted with using the standard renderContour
-    // rendering path.
-    const activeAnnotationUID = this.commonData.annotation.annotationUID;
+    if (!this.configuration.calculateStats) {
+      return;
+    }
 
     annotations.forEach((annotation) => {
-      if (annotation.annotationUID === activeAnnotationUID) {
-        if (isDrawing) {
-          this.renderContourBeingDrawn(
+      const activeAnnotationUID = this.commonData?.annotation.annotationUID;
+      if (
+        annotation.annotationUID === activeAnnotationUID &&
+        !this.commonData?.movingTextBox
+      ) {
+        return;
+      }
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
+
+      if (!this.commonData?.movingTextBox) {
+        const { data } = annotation;
+        if (
+          !data.cachedStats[targetId] ||
+          data.cachedStats[targetId].areaUnit === undefined
+        ) {
+          data.cachedStats[targetId] = {
+            Modality: null,
+            area: null,
+            max: null,
+            mean: null,
+            stdDev: null,
+            areaUnit: null,
+          };
+
+          this._calculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
             enabledElement,
-            svgDrawingHelper,
-            annotation
+            modalityUnitOptions
           );
-        } else if (isEditingClosed) {
-          this.renderClosedContourBeingEdited(
+        } else if (annotation.invalidated) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
             enabledElement,
-            svgDrawingHelper,
-            annotation
-          );
-        } else if (isEditingOpen) {
-          this.renderOpenContourBeingEdited(
-            enabledElement,
-            svgDrawingHelper,
-            annotation
-          );
-        } else {
-          throw new Error(
-            `Unknown ${this.getToolName()} annotation rendering state`
+            modalityUnitOptions
           );
         }
-      } else {
-        this.renderContour(enabledElement, svgDrawingHelper, annotation);
       }
+
+      this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
     });
 
-    // Todo: return boolean flag for each rendering route in the planar tool.
-    return true;
+    return renderStatus;
   };
+
+  _calculateCachedStats = (
+    annotation,
+    viewport,
+    renderingEngine,
+    enabledElement,
+    modalityUnitOptions: ModalityUnitOptions
+  ) => {
+    const data = annotation.data;
+    const { cachedStats, polyline: points } = data;
+
+    const targetIds = Object.keys(cachedStats);
+
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i];
+      const image = this.getTargetIdImage(targetId, renderingEngine);
+
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!image) {
+        continue;
+      }
+
+      const { imageData, metadata } = image;
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
+      const scale = getCalibratedScale(image);
+      let area =
+        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
+
+      const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
+      worldPosIndex[0] = Math.floor(worldPosIndex[0]);
+      worldPosIndex[1] = Math.floor(worldPosIndex[1]);
+      worldPosIndex[2] = Math.floor(worldPosIndex[2]);
+
+      let iMin = worldPosIndex[0];
+      let iMax = worldPosIndex[0];
+
+      let jMin = worldPosIndex[1];
+      let jMax = worldPosIndex[1];
+
+      let kMin = worldPosIndex[2];
+      let kMax = worldPosIndex[2];
+
+      for (let j = 1; j < points.length; j++) {
+        const worldPosIndex = csUtils.transformWorldToIndex(
+          imageData,
+          points[j]
+        );
+        worldPosIndex[0] = Math.floor(worldPosIndex[0]);
+        worldPosIndex[1] = Math.floor(worldPosIndex[1]);
+        worldPosIndex[2] = Math.floor(worldPosIndex[2]);
+        iMin = Math.min(iMin, worldPosIndex[0]);
+        iMax = Math.max(iMax, worldPosIndex[0]);
+
+        jMin = Math.min(jMin, worldPosIndex[1]);
+        jMax = Math.max(jMax, worldPosIndex[1]);
+
+        kMin = Math.min(kMin, worldPosIndex[2]);
+        kMax = Math.max(kMax, worldPosIndex[2]);
+      }
+
+      // Expand bounding box
+      const iDelta = 0.01 * (iMax - iMin);
+      const jDelta = 0.01 * (jMax - jMin);
+      const kDelta = 0.01 * (kMax - kMin);
+
+      iMin = Math.floor(iMin - iDelta);
+      iMax = Math.ceil(iMax + iDelta);
+      jMin = Math.floor(jMin - jDelta);
+      jMax = Math.ceil(jMax + jDelta);
+      kMin = Math.floor(kMin - kDelta);
+      kMax = Math.ceil(kMax + kDelta);
+
+      const boundsIJK = [
+        [iMin, iMax],
+        [jMin, jMax],
+        [kMin, kMax],
+      ] as [Types.Point2, Types.Point2, Types.Point2];
+
+      const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
+      const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
+
+      let curRow = 0;
+      let intersections = [];
+      let intersectionCounter = 0;
+      const pointsInShape = pointInShapeCallback(
+        imageData,
+        (pointLPS, pointIJK) => {
+          let result = true;
+          const point = viewport.worldToCanvas(pointLPS);
+          if (point[1] != curRow) {
+            intersectionCounter = 0;
+            curRow = point[1];
+            intersections = getIntersectionCoordinatesWithPolyline(
+              canvasCoordinates,
+              point,
+              [canvasPosEnd[0], point[1]]
+            );
+            intersections.sort(
+              (function (index) {
+                return function (a, b) {
+                  return a[index] === b[index]
+                    ? 0
+                    : a[index] < b[index]
+                    ? -1
+                    : 1;
+                };
+              })(0)
+            );
+          }
+          if (intersections.length && point[0] > intersections[0][0]) {
+            intersections.shift();
+            intersectionCounter++;
+          }
+          if (intersectionCounter % 2 === 0) {
+            result = false;
+          }
+          return result;
+        },
+        this.configuration.statsCalculator.statsCallback,
+        boundsIJK
+      );
+
+      const modalityUnit = getModalityUnit(
+        metadata.Modality,
+        annotation.metadata.referencedImageId,
+        modalityUnitOptions
+      );
+
+      const stats = this.configuration.statsCalculator.getStatistics();
+
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        mean: stats[1]?.value,
+        max: stats[0]?.value,
+        stdDev: stats[3]?.value,
+        statsArray: stats,
+        pointsInShape: pointsInShape,
+        areaUnit: getCalibratedAreaUnits(null, image),
+        modalityUnit,
+      };
+    }
+
+    this.triggerAnnotationModified(annotation, enabledElement);
+
+    annotation.invalidated = false;
+
+    return cachedStats;
+  };
+
+  _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
+    const data = annotation.data;
+    const targetId = this.getTargetId(viewport);
+
+    const styleSpecifier: AnnotationStyle.StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
+    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!options.visibility) {
+      return;
+    }
+
+    const textLines = this.configuration.getTextLines(data, targetId);
+    if (!textLines || textLines.length === 0) {
+      return;
+    }
+
+    const canvasCoordinates = data.polyline.map((p) =>
+      viewport.worldToCanvas(p)
+    );
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const textBoxUID = '1';
+    const boundingBox = drawLinkedTextBox(
+      svgDrawingHelper,
+      annotation.annotationUID ?? '',
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      options
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+  };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+    cachedVolumeStats;
+
+  const textLines: string[] = [];
+
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+    textLines.push(areaLine);
+  }
+
+  if (mean) {
+    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  }
+
+  if (max) {
+    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  }
+
+  if (stdDev) {
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  return textLines;
 }
 
 PlanarFreehandROITool.toolName = 'PlanarFreehandROI';

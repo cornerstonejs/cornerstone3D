@@ -1,31 +1,68 @@
 import { getGPUTier } from 'detect-gpu';
 import { SharedArrayBufferModes } from './enums';
-
+import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
-let useCPURendering = false;
 let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
+import { deepMerge } from './utilities';
+import { Cornerstone3DConfig } from './types';
+// TODO: move sharedArrayBuffer into config.
+// TODO: change config into a class with methods to better control get/set
+const defaultConfig: Cornerstone3DConfig = {
+  gpuTier: undefined,
+  detectGPUConfig: {},
+  rendering: {
+    useCPURendering: false,
+    // GPU rendering options
+    preferSizeOverAccuracy: false,
+    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    strictZSpacingForVolumeViewport: true,
+  },
+  // cache
+  // ...
+};
 
-// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
-function hasActiveWebGLContext() {
+let config: Cornerstone3DConfig = {
+  gpuTier: undefined,
+  detectGPUConfig: {},
+  rendering: {
+    useCPURendering: false,
+    // GPU rendering options
+    preferSizeOverAccuracy: false,
+    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    strictZSpacingForVolumeViewport: true,
+  },
+  // cache
+  // ...
+};
+
+function _getGLContext(): RenderingContext {
   // Create canvas element. The canvas is not added to the
   // document itself, so it is never displayed in the
   // browser window.
   const canvas = document.createElement('canvas');
   // Get WebGLRenderingContext from canvas element.
   const gl =
-    canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    canvas.getContext('webgl2') ||
+    canvas.getContext('webgl') ||
+    canvas.getContext('experimental-webgl');
 
-  // Report the result.
-  if (gl && gl instanceof WebGLRenderingContext) {
-    return true;
-  }
+  return gl;
+}
 
-  return false;
+// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
+function _hasActiveWebGLContext() {
+  const gl = _getGLContext();
+
+  // Check if the context is either WebGLRenderingContext or WebGL2RenderingContext
+  return (
+    gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext
+  );
 }
 
 function hasSharedArrayBuffer() {
   try {
+    /*eslint-disable no-constant-condition */
     if (new SharedArrayBuffer(0)) {
       return true;
     } else {
@@ -36,36 +73,58 @@ function hasSharedArrayBuffer() {
   }
 }
 
+// Todo: commenting this out until proper support for int16 textures
+// are added to browsers, current implementation is buggy
+// function _hasNorm16TextureSupport() {
+//   const gl = _getGLContext();
+
+//   if (gl) {
+//     const ext = (gl as WebGL2RenderingContext).getExtension(
+//       'EXT_texture_norm16'
+//     );
+
+//     if (ext) {
+//       return true;
+//     }
+//   }
+
+//   return false;
+// }
+
 /**
  * Initialize the cornerstone-core. If the browser has a webgl context and
  * the detected gpu (by detect-gpu library) indicates the GPU is not low end we
  * will use webgl GPU rendering. Otherwise we will use cpu rendering.
  *
- * @param defaultConfiguration - A configuration object
+ * @param configuration - A configuration object
  * @returns A promise that resolves to true cornerstone has been initialized successfully.
  * @category Initialization
  */
-async function init(defaultConfiguration = {}): Promise<boolean> {
+async function init(configuration = config): Promise<boolean> {
   if (csRenderInitialized) {
     return csRenderInitialized;
   }
 
-  // detectGPU
-  const hasWebGLContext = hasActiveWebGLContext();
+  // merge configs
+  config = deepMerge(defaultConfig, configuration);
+
+  // gpuTier
+  const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
-    useCPURendering = true;
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
+    config.rendering.useCPURendering = true;
   } else {
-    const gpuTier = await getGPUTier();
+    config.gpuTier =
+      config.gpuTier || (await getGPUTier(config.detectGPUConfig));
     console.log(
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
-      gpuTier
+      config.gpuTier
     );
-    if (gpuTier.tier < 1) {
+    if (config.gpuTier.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );
-      useCPURendering = true;
+      config.rendering.useCPURendering = true;
     } else {
       console.log('CornerstoneRender: using GPU rendering');
     }
@@ -86,8 +145,15 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
  *
  */
 function setUseCPURendering(status: boolean): void {
-  useCPURendering = status;
+  config.rendering.useCPURendering = status;
   csRenderInitialized = true;
+  _updateRenderingPipelinesForAllViewports();
+}
+
+function setPreferSizeOverAccuracy(status: boolean): void {
+  config.rendering.preferSizeOverAccuracy = status;
+  csRenderInitialized = true;
+  _updateRenderingPipelinesForAllViewports();
 }
 
 /**
@@ -97,7 +163,8 @@ function setUseCPURendering(status: boolean): void {
  *
  */
 function resetUseCPURendering(): void {
-  useCPURendering = !hasActiveWebGLContext();
+  config.rendering.useCPURendering = !_hasActiveWebGLContext();
+  _updateRenderingPipelinesForAllViewports();
 }
 
 /**
@@ -107,7 +174,7 @@ function resetUseCPURendering(): void {
  *
  */
 function getShouldUseCPURendering(): boolean {
-  return useCPURendering;
+  return config.rendering.useCPURendering;
 }
 
 function setUseSharedArrayBuffer(mode: SharedArrayBufferModes | boolean): void {
@@ -160,6 +227,35 @@ function isCornerstoneInitialized(): boolean {
   return csRenderInitialized;
 }
 
+/**
+ * This function returns a copy of the config object. This is used to prevent the
+ * config object from being modified by other parts of the program.
+ * @returns A copy of the config object.
+ */
+function getConfiguration(): Cornerstone3DConfig {
+  // return a copy
+  // return JSON.parse(JSON.stringify(config));
+  return config;
+}
+
+function setConfiguration(c: Cornerstone3DConfig) {
+  config = c;
+  _updateRenderingPipelinesForAllViewports();
+}
+
+/**
+ * Update rendering pipelines for all viewports in all rendering engines.
+ * @returns {void}
+ * @category Initialization
+ */
+function _updateRenderingPipelinesForAllViewports(): void {
+  getRenderingEngines().forEach((engine) =>
+    engine
+      .getViewports()
+      .forEach((viewport) => viewport.updateRenderingPipeline?.())
+  );
+}
+
 export {
   init,
   getShouldUseCPURendering,
@@ -167,6 +263,9 @@ export {
   isCornerstoneInitialized,
   setUseCPURendering,
   setUseSharedArrayBuffer,
+  setPreferSizeOverAccuracy,
   resetUseCPURendering,
   resetUseSharedArrayBuffer,
+  getConfiguration,
+  setConfiguration,
 };

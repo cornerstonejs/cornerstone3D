@@ -1,29 +1,32 @@
-import cloneDeep from 'lodash.clonedeep';
 import { utilities as csUtils } from '@cornerstonejs/core';
+import cloneDeep from 'lodash.clonedeep';
 
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 
-import type {
-  SegmentationState,
-  ColorLUT,
-  Segmentation,
-  ToolGroupSpecificRepresentation,
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentations,
-  RepresentationConfig,
-  SegmentSpecificRepresentationConfig,
-} from '../../types/SegmentationStateTypes';
-import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
 import { SegmentationRepresentations } from '../../enums';
+import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
+import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import type {
+  ColorLUT,
+  RepresentationConfig,
+  Segmentation,
+  SegmentationRepresentationConfig,
+  SegmentationState,
+  SegmentSpecificRepresentationConfig,
+  ToolGroupSpecificRepresentation,
+  ToolGroupSpecificRepresentations,
+} from '../../types/SegmentationStateTypes';
 
 // Initialize the default configuration
 // Note: when we get other representations, we should set their default representations too.
 const defaultLabelmapConfig = getDefaultLabelmapConfig();
+const defaultContourConfig = getDefaultContourConfig();
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveSegmentations: true,
   representations: {
     [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
+    [SegmentationRepresentations.Contour]: defaultContourConfig,
   },
 };
 
@@ -129,6 +132,25 @@ export default class SegmentationStateManager {
     }
 
     return toolGroupSegRepresentationsWithConfig.segmentationRepresentations;
+  }
+
+  /**
+   * Returns an array of all segmentation representations for all tool groups.
+   * @returns An array of ToolGroupSpecificRepresentations.
+   */
+  getAllSegmentationRepresentations(): Record<
+    string,
+    ToolGroupSpecificRepresentation[]
+  > {
+    const toolGroupSegReps: Record<string, ToolGroupSpecificRepresentation[]> =
+      {};
+    Object.entries(this.state.toolGroups).forEach(
+      ([toolGroupId, toolGroupSegRepresentationsWithConfig]) => {
+        toolGroupSegReps[toolGroupId] =
+          toolGroupSegRepresentationsWithConfig.segmentationRepresentations;
+      }
+    );
+    return toolGroupSegReps;
   }
 
   /**

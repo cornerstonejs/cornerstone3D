@@ -126,8 +126,8 @@ describe('ProbeTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
-          element,
-          ProbeTool.toolName
+          ProbeTool.toolName,
+          element
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(1);
@@ -144,10 +144,7 @@ describe('ProbeTool (CPU):', () => {
         // The world coordinate is on the white bar so value is 255
         expect(data[targets[0]].value).toBe(255);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -214,8 +211,8 @@ describe('ProbeTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
-          element,
-          ProbeTool.toolName
+          ProbeTool.toolName,
+          element
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(2);
@@ -247,14 +244,8 @@ describe('ProbeTool (CPU):', () => {
         expect(data[targets[0]].value).toBe(0);
 
         //
-        annotation.state.removeAnnotation(
-          firstProbeAnnotation.annotationUID,
-          element
-        );
-        annotation.state.removeAnnotation(
-          secondProbeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(firstProbeAnnotation.annotationUID);
+        annotation.state.removeAnnotation(secondProbeAnnotation.annotationUID);
 
         done();
       });
@@ -344,8 +335,8 @@ describe('ProbeTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
-          element,
-          ProbeTool.toolName
+          ProbeTool.toolName,
+          element
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(1);
@@ -362,10 +353,7 @@ describe('ProbeTool (CPU):', () => {
         // The world coordinate is on the white bar so value is 255
         expect(data[targets[0]].value).toBe(255);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -430,8 +418,8 @@ describe('ProbeTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
-          element,
-          ProbeTool.toolName
+          ProbeTool.toolName,
+          element
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(1);
@@ -448,10 +436,7 @@ describe('ProbeTool (CPU):', () => {
         // The world coordinate is on the white bar so value is 255
         expect(data[targets[0]].value).toBe(0);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -517,8 +502,8 @@ describe('ProbeTool (CPU):', () => {
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const probeAnnotations = annotation.state.getAnnotations(
-          element,
-          ProbeTool.toolName
+          ProbeTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(probeAnnotations).toBeDefined();
@@ -542,10 +527,7 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][1]).toEqual(p2[1]);
         expect(handles[0][2]).toEqual(p2[2]);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -707,8 +689,8 @@ describe('ProbeTool (CPU):', () => {
 
       setTimeout(() => {
         const probeAnnotations = annotation.state.getAnnotations(
-          element,
-          ProbeTool.toolName
+          ProbeTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(probeAnnotations).toBeDefined();
@@ -733,10 +715,7 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][1]).toEqual(p2[1]);
         expect(handles[0][2]).toEqual(p2[2]);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       }, 100);
     };

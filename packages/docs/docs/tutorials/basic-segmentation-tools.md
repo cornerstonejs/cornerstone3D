@@ -385,7 +385,6 @@ Learn more about:
 - [SegmentationDisplay](../concepts/cornerstone-tools/segmentation/segmentationDisplay.md)
 - [SegmentationTools](../concepts/cornerstone-tools/segmentation/segmentation-tools.md)
 
-For advanced usage of Stack Viewport, please visit <a href="/live-examples/segmentationRendering.html" target="_blank">Segmentation Rendering</a> example page.
 
 :::note Tip
 

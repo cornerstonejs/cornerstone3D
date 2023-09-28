@@ -32,7 +32,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const { selection } = annotation;
 const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getDefaultAnnotationManager();
+  annotation.state.getAnnotationManager();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -132,6 +132,20 @@ function addToggleInterpolationButton(toolGroup) {
     },
   });
 }
+
+let shouldCalculateStats = false;
+function addToggleCalculateStatsButton(toolGroup) {
+  addButtonToToolbar({
+    title: 'Toggle calculate stats',
+    onClick: () => {
+      shouldCalculateStats = !shouldCalculateStats;
+
+      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
+        calculateStats: shouldCalculateStats,
+      });
+    },
+  });
+}
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -154,7 +168,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
@@ -187,6 +201,9 @@ async function run() {
 
   // set up toggle interpolation tool button.
   addToggleInterpolationButton(toolGroup);
+
+  // set up toggle calculate stats tool button.
+  addToggleCalculateStatsButton(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({

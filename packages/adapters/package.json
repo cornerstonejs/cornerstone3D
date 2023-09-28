@@ -1,29 +1,32 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "0.2.0",
+    "version": "1.19.1",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
-    "src": "src/index.js",
-    "main": "src/index.js",
+    "src": "src/index.ts",
+    "main": "./dist/@cornerstonejs/adapters.es.js",
+    "module": "src/index.ts",
     "files": [
-        "dist",
-        "src"
+        "dist"
     ],
     "directories": {
-        "example": "examples",
         "build": "dist"
     },
     "exports": {
-        ".": "./dist/@cornerstonejs/adapters.js",
-        "./es": "./dist/@cornerstonejs/adapters.es.js"
+        "import": "./dist/adapters.es.js"
     },
+    "types": "./dist/types/index.d.ts",
     "publishConfig": {
         "access": "public"
     },
     "scripts": {
         "test": "jest --testTimeout 60000",
-        "build": "rollup -c",
-        "build:examples": "npm run build && npx cpx 'dist/**/*.{js,map}' examples/js",
-        "start": "rollup -c -w",
+        "build": "rollup -c rollup.config.mjs",
+        "build:esm": "rollup -c rollup.config.mjs",
+        "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+        "dev": "rollup --watch  -c rollup.config.mjs",
+        "build:all": "yarn build",
+        "build:update-api": "yarn run build && api-extractor run --local",
+        "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."
     },
@@ -34,39 +37,20 @@
     "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/cornerstonejs/cornerstone3D-beta/issues"
+        "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
     },
-    "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages/adapters/README.md",
-    "devDependencies": {
-        "@babel/core": "^7.16.12",
-        "@babel/preset-env": "^7.16.11",
-        "@babel/register": "^7.13.0",
-        "acorn": "^7.1.0",
-        "acorn-jsx": "^5.2.0",
-        "eslint": "^8.17.0",
-        "eslint-config-prettier": "^8.5.0",
-        "follow-redirects": "^1.10.0",
-        "husky": "^1.3.1",
-        "jest": "^27.5.1",
-        "lint-staged": "^8.2.1",
-        "prettier": "^2.6.2",
-        "rollup": "^1.31.1",
-        "rollup-plugin-babel": "^4.3.3",
-        "rollup-plugin-commonjs": "^9.3.4",
-        "rollup-plugin-json": "^3.1.0",
-        "rollup-plugin-node-builtins": "^2.1.2",
-        "rollup-plugin-node-globals": "^1.4.0",
-        "rollup-plugin-node-resolve": "^4.2.4",
-        "unzipper": "^0.10.9",
-        "xml2js": "^0.4.23"
-    },
+    "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "dcmjs": "^0.29.4",
+        "buffer": "^6.0.3",
+        "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
-        "loglevelnext": "^3.0.1",
-        "ndarray": "^1.0.19",
-        "pako": "^2.0.4"
+        "ndarray": "^1.0.19"
+    },
+    "devDependencies": {
+        "@cornerstonejs/core": "^1.19.1",
+        "@cornerstonejs/streaming-image-volume-loader": "^1.19.1",
+        "@cornerstonejs/tools": "^1.19.1"
     }
 }

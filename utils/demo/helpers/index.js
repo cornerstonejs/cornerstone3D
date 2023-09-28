@@ -8,6 +8,7 @@ import setPetTransferFunctionForVolumeActor from './setPetTransferFunctionForVol
 import setPetColorMapTransferFunctionForVolumeActor from './setPetColorMapTransferFunctionForVolumeActor';
 import setTitleAndDescription from './setTitleAndDescription';
 import addButtonToToolbar from './addButtonToToolbar';
+import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
 import addSliderToToolbar from './addSliderToToolbar';
@@ -19,6 +20,7 @@ export {
   initDemo,
   setTitleAndDescription,
   addButtonToToolbar,
+  addCheckboxToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,
   addToggleButtonToToolbar,

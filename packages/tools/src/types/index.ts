@@ -1,8 +1,8 @@
 import type {
   Annotation,
   Annotations,
-  FrameOfReferenceSpecificAnnotations,
   AnnotationState,
+  GroupSpecificAnnotations,
 } from './AnnotationTypes';
 import type * as EventTypes from './EventTypes';
 import type * as LabelmapTypes from './LabelmapTypes';
@@ -21,7 +21,11 @@ import type * as AnnotationStyle from './AnnotationStyle';
 import type ToolHandle from './ToolHandle';
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
 import type InteractionTypes from './InteractionTypes';
-import type { ToolProps, PublicToolProps } from './ToolProps';
+import type {
+  ToolProps,
+  PublicToolProps,
+  ToolConfiguration,
+} from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type JumpToSliceOptions from './JumpToSliceOptions';
 import type ScrollOptions from './ScrollOptions';
@@ -36,6 +40,7 @@ import type {
   SegmentationRepresentationData,
   Segmentation,
   ToolGroupSpecificRepresentationState,
+  ToolGroupSpecificContourRepresentation,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   SegmentationState,
@@ -49,20 +54,26 @@ import {
 } from './FloodFillTypes';
 import IToolClassReference from './IToolClassReference';
 import { ContourSegmentationData } from './ContourTypes';
+import IAnnotationManager from './IAnnotationManager';
+import AnnotationGroupSelector from './AnnotationGroupSelector';
+import { Statistics } from './CalculatorTypes';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
-  FrameOfReferenceSpecificAnnotations,
+  IAnnotationManager,
+  GroupSpecificAnnotations,
   AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
+  AnnotationGroupSelector,
   // Geometry
   PlanarBoundingBox,
   ToolProps,
   PublicToolProps,
+  ToolConfiguration,
   // Event data
   EventTypes,
   IPoints,
@@ -87,6 +98,7 @@ export type {
   SegmentationRepresentationConfig,
   RepresentationConfig,
   ToolGroupSpecificRepresentationState,
+  ToolGroupSpecificContourRepresentation,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   RepresentationPublicInput,
@@ -108,4 +120,6 @@ export type {
   FloodFillOptions,
   // Contour
   ContourSegmentationData,
+  //Statistics
+  Statistics,
 };

@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 
 import _getHash from './_getHash';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
 import { SVGDrawingHelper } from '../types';
 
 export default function drawLine(
@@ -36,7 +36,9 @@ export default function drawLine(
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
-  const dropShadowStyle = shadow ? 'filter:url(#shadow);' : '';
+  const dropShadowStyle = shadow
+    ? `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`
+    : '';
 
   const attributes = {
     x1: `${start[0]}`,
@@ -51,7 +53,7 @@ export default function drawLine(
 
   if (existingLine) {
     // This is run to avoid re-rendering annotations that actually haven't changed
-    _setAttributesIfNecessary(attributes, existingLine);
+    setAttributesIfNecessary(attributes, existingLine);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -61,7 +63,7 @@ export default function drawLine(
       newLine.setAttribute('data-id', dataId);
     }
 
-    _setNewAttributesIfValid(attributes, newLine);
+    setNewAttributesIfValid(attributes, newLine);
 
     svgDrawingHelper.appendNode(newLine, svgNodeHash);
   }

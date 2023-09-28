@@ -1,11 +1,14 @@
-import { VOIRange } from './voi';
+import { ColormapPublic } from './Colormap';
+import { ViewportProperties } from './ViewportProperties';
 
 /**
  * Stack Viewport Properties
  */
-type VolumeViewportProperties = {
-  /** voi range (upper, lower) for the viewport */
-  voiRange?: VOIRange;
+type VolumeViewportProperties = ViewportProperties & {
+  /** color maps  */
+  colormap?: ColormapPublic;
+  /** 3d preset */
+  preset?: string;
 };
 
 export default VolumeViewportProperties;

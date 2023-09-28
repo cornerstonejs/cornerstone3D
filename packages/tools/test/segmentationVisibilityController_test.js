@@ -1,6 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
-import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import * as csTools3d from '../src/index';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_activeInactive from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_activeInactive.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT.png';
@@ -15,6 +15,7 @@ const {
   setVolumesForViewports,
   eventTarget,
   imageLoader,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
@@ -285,8 +286,6 @@ describe('Segmentation Controller --', () => {
     //       csTools3d.segmentation.state.getSegmentationRepresentations(toolGroupId)
 
     //     // expect(segmentationState.length).toBe(2)
-    //     // expect(segmentationState[0].visibility).toBe(true)
-    //     // expect(segmentationState[1].visibility).toBe(false)
     //     // expect(segmentationState[0].active).toBe(true)
     //     // expect(segmentationState[1].active).toBe(false)
 

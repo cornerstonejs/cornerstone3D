@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "0.1.4",
+  "version": "1.19.1",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -10,18 +10,28 @@
     "imaging"
   ],
   "author": "@cornerstonejs (previously Chris Hafey)",
-  "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta",
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "./dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "module": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "files": [
+    "dist/"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/cornerstonejs/cornerstone3D-beta.git"
+    "url": "https://github.com/cornerstonejs/cornerstone3D.git"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "echo 'build not implemented yet'",
+    "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
+    "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
+    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle",
+    "copy-dts": "echo 'not implemented yet'",
+    "build": "yarn run build:all && yarn run copy-dts",
+    "api-check": "echo 'not implemented yet'",
+    "build:update-api": "echo 'not implemented yet'",
     "cm": "npx git-cz",
     "clean": "npm run clean:dist && npm run clean:coverage",
     "clean:dist": "shx rm -rf dist",
@@ -34,7 +44,7 @@
     "eslint-fix": "eslint -c .eslintrc.js --fix src",
     "eslint-fix-test": "eslint -c .eslintrc.js --fix test",
     "start": "npm run webpack:dev",
-    "start:dev": "webpack-dev-server --config ./config/webpack/webpack-dev",
+    "start:dev": "webpack-dev-server --config .webpack/webpack-dev",
     "test": "npm run test:chrome",
     "test:ci": "echo 'test:ci not implemented yet'",
     "test:all": "npm run test && npm run test:chrome && npm run test:firefox",
@@ -43,39 +53,20 @@
     "test:watch": "karma start config/karma/karma-watch.js",
     "watch": "npm run clean && shx mkdir dist && npm run webpack:watch",
     "dev": "npm run webpack:dev",
-    "webpack:dev": "webpack serve --progress --config ./config/webpack/webpack-dev.js",
-    "webpack:dynamic-import": "webpack --progress --config ./config/webpack/webpack-dynamic-import",
-    "webpack:bundle": "webpack --progress --config ./config/webpack/webpack-bundle",
-    "webpack:dynamic-import:watch": "webpack --progress --watch --config ./config/webpack/webpack-dynamic-import",
-    "webpack:watch": "webpack --progress --watch  --config ./config/webpack",
-    "prepublishOnly": "echo 'prepublishOnly not implemented yet'"
-  },
-  "devDependencies": {
-    "@babel/plugin-proposal-object-rest-spread": "^7.14.7",
-    "@babel/runtime-corejs3": "^7.15.4",
-    "chai": "^4.3.4",
-    "concat": "^1.0.3",
-    "core-js": "^3.26.1",
-    "coveralls": "^3.1.1",
-    "docdash": "^1.2.0",
-    "exports-loader": "^3.0.0",
-    "fs-extra": "^10.0.0",
-    "jsdoc": "^3.6.7",
-    "karma-mocha": "^2.0.1",
-    "lodash": "^4.17.21",
-    "mocha": "^9.1.1",
-    "open-cli": "^7.0.1",
-    "puppeteer": "^10.2.0",
-    "shx": "^0.3.3"
+    "webpack:dev": "webpack serve --progress --config .webpack/webpack-dev.js",
+    "webpack:dynamic-import": "webpack --progress --config .webpack/webpack-dynamic-import",
+    "webpack:bundle": "webpack --progress --config .webpack/webpack-bundle",
+    "webpack:dynamic-import:watch": "webpack --progress --watch --config .webpack/webpack-dynamic-import",
+    "webpack:dynamic-import:debug": "webpack --progress --watch --config .webpack/webpack-dynamic-import-debug",
+    "webpack:watch": "webpack --progress --watch  --config .webpack",
+    "prepublishOnly": "yarn run build"
   },
   "dependencies": {
-    "@babel/eslint-parser": "^7.19.1",
-    "@cornerstonejs/codec-charls": "^0.1.1",
-    "@cornerstonejs/codec-libjpeg-turbo-8bit": "^0.0.7",
-    "@cornerstonejs/codec-openjpeg": "^0.1.0",
-    "@cornerstonejs/codec-openjph": "^1.0.3",
-    "coverage-istanbul-loader": "^3.0.5",
-    "date-format": "^4.0.14",
+    "@cornerstonejs/codec-charls": "^1.2.3",
+    "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
+    "@cornerstonejs/codec-openjpeg": "^1.2.2",
+    "@cornerstonejs/codec-openjph": "^2.4.2",
+    "@cornerstonejs/core": "^1.19.1",
     "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"

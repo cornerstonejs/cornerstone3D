@@ -12,7 +12,7 @@ module.exports = {
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'cornerstoneJS', // Usually your GitHub org/user name.
-  projectName: 'cornerstone3D-beta', // Usually your repo name.
+  projectName: 'cornerstone3D', // Usually your repo name.
   themeConfig: {
     algolia: {
       appId: 'OWBKNRE2E5',
@@ -59,7 +59,7 @@ module.exports = {
           position: 'right',
         },
         {
-          href: 'https://github.com/cornerstonejs/cornerstone3D-beta/',
+          href: 'https://github.com/cornerstonejs/cornerstone3D/',
           position: 'right',
           className: 'header-github-link',
           'aria-label': 'GitHub Repository',
@@ -137,11 +137,15 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/cornerstonejs/cornerstone',
+              href: 'https://github.com/cornerstonejs/cornerstone3D/',
             },
             {
               label: 'Twitter',
               href: 'https://twitter.com/OHIFviewer',
+            },
+            {
+              label: 'Slack',
+              href: 'https://join.slack.com/t/cornerstonejs/shared_invite/zt-1r8xb2zau-dOxlD6jit3TN0Uwf928w9Q',
             },
           ],
         },
@@ -162,14 +166,15 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl:
-            'https://github.com/cornerstonejs/cornerstone3D-beta/edit/main/packages/docs/',
+            'https://github.com/cornerstonejs/cornerstone3D/edit/main/packages/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
         blog: false,
-        googleAnalytics: {
-          trackingID: 'UA-110573590-1',
+        gtag: {
+          trackingID: 'G-LWTJVK40WP',
+          anonymizeIP: true,
         },
       },
     ],
@@ -199,7 +204,7 @@ module.exports = {
             (pkg) => `packages/${pkg}`
           ),
         ],
-        url: 'https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages-alireza/',
+        url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
         removeScopes: ['cornerstonejs'],
         minimal: false,
         readmes: true,

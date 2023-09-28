@@ -18,7 +18,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType } = Enums;
+const { ViewportType, Events } = Enums;
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -37,6 +37,39 @@ element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
+
+const info = document.createElement('div');
+content.appendChild(info);
+
+const rotationInfo = document.createElement('div');
+info.appendChild(rotationInfo);
+
+const flipHorizontalInfo = document.createElement('div');
+info.appendChild(flipHorizontalInfo);
+
+const flipVerticalInfo = document.createElement('div');
+info.appendChild(flipVerticalInfo);
+
+element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
+  // Get the rendering engine
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+
+  // Get the stack viewport
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportId)
+  );
+
+  if (!viewport) {
+    return;
+  }
+
+  const { flipHorizontal, flipVertical } = viewport.getCamera();
+  const { rotation } = viewport.getProperties();
+
+  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
+  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
+  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
+});
 
 addButtonToToolbar({
   title: 'Set VOI Range',
@@ -143,7 +176,7 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Rotate',
+  title: 'Rotate Random',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -156,6 +189,41 @@ addButtonToToolbar({
     const rotation = Math.random() * 360;
 
     viewport.setProperties({ rotation });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Absolute 150',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    viewport.setProperties({ rotation: 150 });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Delta 30',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    const { rotation } = viewport.getProperties();
+    viewport.setProperties({ rotation: rotation + 30 });
 
     viewport.render();
   },

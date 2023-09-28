@@ -6,6 +6,8 @@ import CPUFallbackViewport from './CPUFallbackViewport';
 import CPUFallbackTransform from './CPUFallbackTransform';
 import CPUFallbackColormap from './CPUFallbackColormap';
 import CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
+import { ImagePlaneModule } from './ImagePlaneModule';
+import { ImagePixelModule } from './ImagePixelModule';
 
 interface CPUFallbackEnabledElement {
   scale?: number;
@@ -31,40 +33,8 @@ interface CPUFallbackEnabledElement {
     /** Last spacing is always EPSILON for CPU */
     spacing?: Point3;
     origin?: Point3;
-    imagePlaneModule?: {
-      frameOfReferenceUID: string;
-      rows: number;
-      columns: number;
-      imageOrientationPatient: number[];
-      rowCosines: Point3;
-      columnCosines: Point3;
-      imagePositionPatient: number[];
-      sliceThickness?: number;
-      sliceLocation?: number;
-      pixelSpacing: Point2;
-      rowPixelSpacing: number;
-      columnPixelSpacing: number;
-    };
-    imagePixelModule?: {
-      samplesPerPixel: number;
-      photometricInterpretation: string;
-      rows: number;
-      columns: number;
-      bitsAllocated: number;
-      bitsStored: number;
-      highBit: number;
-      pixelRepresentation: number;
-      planarConfiguration?: number;
-      pixelAspectRatio?: number;
-      smallestPixelValue?: number;
-      largestPixelValue?: number;
-      redPaletteColorLookupTableDescriptor?: number[];
-      greenPaletteColorLookupTableDescriptor?: number[];
-      bluePaletteColorLookupTableDescriptor?: number[];
-      redPaletteColorLookupTableData: number[];
-      greenPaletteColorLookupTableData: number[];
-      bluePaletteColorLookupTableData: number[];
-    };
+    imagePlaneModule?: ImagePlaneModule;
+    imagePixelModule?: ImagePixelModule;
   };
 }
 

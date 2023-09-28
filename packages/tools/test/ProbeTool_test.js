@@ -13,6 +13,7 @@ const {
   Enums,
   volumeLoader,
   setVolumesForViewports,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -118,8 +119,8 @@ describe('Probe Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(1);
@@ -136,10 +137,7 @@ describe('Probe Tool: ', () => {
           // The world coordinate is on the white bar so value is 255
           expect(data[targets[0]].value).toBe(255);
 
-          annotation.state.removeAnnotation(
-            probeAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(probeAnnotation.annotationUID);
           done();
         });
       };
@@ -205,8 +203,8 @@ describe('Probe Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(2);
@@ -242,13 +240,9 @@ describe('Probe Tool: ', () => {
           expect(data[targets[0]].value).toBe(0);
 
           //
+          annotation.state.removeAnnotation(firstProbeAnnotation.annotationUID);
           annotation.state.removeAnnotation(
-            firstProbeAnnotation.annotationUID,
-            element
-          );
-          annotation.state.removeAnnotation(
-            secondProbeAnnotation.annotationUID,
-            element
+            secondProbeAnnotation.annotationUID
           );
 
           done();
@@ -339,8 +333,8 @@ describe('Probe Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(1);
@@ -357,10 +351,7 @@ describe('Probe Tool: ', () => {
           // The world coordinate is on the white bar so value is 255
           expect(data[targets[0]].value).toBe(255);
 
-          annotation.state.removeAnnotation(
-            probeAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(probeAnnotation.annotationUID);
           done();
         });
       };
@@ -425,8 +416,8 @@ describe('Probe Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(1);
@@ -443,10 +434,7 @@ describe('Probe Tool: ', () => {
           // The world coordinate is on the white bar so value is 255
           expect(data[targets[0]].value).toBe(0);
 
-          annotation.state.removeAnnotation(
-            probeAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(probeAnnotation.annotationUID);
           done();
         });
       };
@@ -511,8 +499,8 @@ describe('Probe Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined();
@@ -528,10 +516,7 @@ describe('Probe Tool: ', () => {
 
           expect(data[targets[0]].value).toBe(255);
 
-          annotation.state.removeAnnotation(
-            probeAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(probeAnnotation.annotationUID);
           done();
         });
       };
@@ -605,8 +590,8 @@ describe('Probe Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined();
@@ -628,10 +613,7 @@ describe('Probe Tool: ', () => {
 
           expect(handles[0]).toEqual(p2);
 
-          annotation.state.removeAnnotation(
-            probeAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(probeAnnotation.annotationUID);
           done();
         });
       };
@@ -831,8 +813,8 @@ describe('Probe Tool: ', () => {
 
         setTimeout(() => {
           const probeAnnotations = annotation.state.getAnnotations(
-            element,
-            ProbeTool.toolName
+            ProbeTool.toolName,
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined();
@@ -855,10 +837,7 @@ describe('Probe Tool: ', () => {
 
           expect(handles[0]).toEqual(p2);
 
-          annotation.state.removeAnnotation(
-            probeAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(probeAnnotation.annotationUID);
           done();
         }, 100);
       };

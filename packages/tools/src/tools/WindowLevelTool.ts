@@ -1,8 +1,6 @@
 import { BaseTool } from './base';
 import {
   getEnabledElement,
-  Enums,
-  triggerEvent,
   VolumeViewport,
   StackViewport,
   utilities,
@@ -40,13 +38,11 @@ class WindowLevelTool extends BaseTool {
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewportId, viewport } = enabledElement;
+    const { renderingEngine, viewport } = enabledElement;
 
     let volumeId,
-      volumeActor,
       lower,
       upper,
-      rgbTransferFunction,
       modality,
       newRange,
       viewportsContainingVolumeUID;
@@ -55,14 +51,12 @@ class WindowLevelTool extends BaseTool {
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
       volumeId = targetId.split('volumeId:')[1];
-      const actorEntry = viewport.getActor(volumeId);
-      volumeActor = actorEntry.actor as Types.VolumeActor;
-      rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
       );
-      [lower, upper] = rgbTransferFunction.getRange();
+      const properties = viewport.getProperties();
+      ({ lower, upper } = properties.voiRange);
       const volume = cache.getVolume(volumeId);
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
@@ -71,7 +65,8 @@ class WindowLevelTool extends BaseTool {
       modality = viewport.modality;
       ({ lower, upper } = properties.voiRange);
       const { preScale } = viewport.getImageData();
-      isPreScaled = preScale.scaled;
+      isPreScaled =
+        preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
     } else {
       throw new Error('Viewport is not a valid type');
     }
@@ -80,12 +75,15 @@ class WindowLevelTool extends BaseTool {
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT && isPreScaled) {
-      newRange = this.getPTNewRange({
+    if (modality === PT) {
+      newRange = this.getPTScaledNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,
         upper,
         clientHeight: element.clientHeight,
+        isPreScaled,
+        viewport,
+        volumeId,
       });
     } else {
       newRange = this.getNewRange({
@@ -97,12 +95,6 @@ class WindowLevelTool extends BaseTool {
       });
     }
 
-    const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
-      volumeId,
-      viewportId,
-      range: newRange,
-    };
-
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
         voiRange: newRange,
@@ -112,23 +104,42 @@ class WindowLevelTool extends BaseTool {
       return;
     }
 
-    // Only trigger event for volume since the stack event is triggered inside
-    // the stackViewport, Todo: we need the setProperties API on the volume viewport
-    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail);
-    rgbTransferFunction.setRange(newRange.lower, newRange.upper);
+    if (viewport instanceof VolumeViewport) {
+      viewport.setProperties({
+        voiRange: newRange,
+      });
 
-    viewportsContainingVolumeUID.forEach((vp) => {
-      vp.render();
-    });
+      viewportsContainingVolumeUID.forEach((vp) => {
+        vp.render();
+      });
+      return;
+    }
   }
 
-  getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }) {
+  getPTScaledNewRange({
+    deltaPointsCanvas,
+    lower,
+    upper,
+    clientHeight,
+    viewport,
+    volumeId,
+    isPreScaled,
+  }) {
+    let multiplier = DEFAULT_MULTIPLIER;
+
+    if (isPreScaled) {
+      multiplier = 5 / clientHeight;
+    } else {
+      multiplier =
+        this._getMultiplierFromDynamicRange(viewport, volumeId) ||
+        DEFAULT_MULTIPLIER;
+    }
+
     const deltaY = deltaPointsCanvas[1];
-    const multiplier = 5 / clientHeight;
     const wcDelta = deltaY * multiplier;
 
     upper -= wcDelta;
-    upper = Math.max(upper, 0.1);
+    upper = isPreScaled ? Math.max(upper, 0.1) : upper;
 
     return { lower, upper };
   }
@@ -160,10 +171,21 @@ class WindowLevelTool extends BaseTool {
 
     if (volumeId) {
       const imageVolume = cache.getVolume(volumeId);
-      const { dimensions, scalarData } = imageVolume;
-      imageDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
+      const { dimensions } = imageVolume;
+      const scalarData = imageVolume.getScalarData();
+      const calculatedDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
         scalarData,
         dimensions
+      );
+      const BitsStored = imageVolume?.metadata?.BitsStored;
+      const metadataDynamicRange = BitsStored ? 2 ** BitsStored : Infinity;
+      // Burned in Pixels often use pixel values above the BitsStored.
+      // This results in a multiplier which is way higher than what you would
+      // want in practice. Thus we take the min between the metadata dynamic
+      // range and actual middel slice dynamic range.
+      imageDynamicRange = Math.min(
+        calculatedDynamicRange,
+        metadataDynamicRange
       );
     } else {
       imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
@@ -176,7 +198,6 @@ class WindowLevelTool extends BaseTool {
     if (ratio > 1) {
       multiplier = Math.round(ratio);
     }
-
     return multiplier;
   }
 
@@ -220,6 +241,12 @@ class WindowLevelTool extends BaseTool {
     } else if (scalarData instanceof Uint8Array) {
       bytesPerVoxel = 1;
       TypedArrayConstructor = Uint8Array;
+    } else if (scalarData instanceof Uint16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Uint16Array;
+    } else if (scalarData instanceof Int16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Int16Array;
     }
 
     const buffer = scalarData.buffer;

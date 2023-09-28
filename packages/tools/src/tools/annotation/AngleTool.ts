@@ -16,6 +16,7 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
 import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
+import roundNumber from '../../utilities/roundNumber';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -73,6 +74,7 @@ class AngleTool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -121,6 +123,8 @@ class AngleTool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -128,7 +132,7 @@ class AngleTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -151,7 +155,7 @@ class AngleTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -198,7 +202,6 @@ class AngleTool extends AnnotationTool {
     const [point1, point2, point3] = data.handles.points;
     const canvasPoint1 = viewport.worldToCanvas(point1);
     const canvasPoint2 = viewport.worldToCanvas(point2);
-    const canvasPoint3 = viewport.worldToCanvas(point3);
 
     const line1 = {
       start: {
@@ -211,6 +214,21 @@ class AngleTool extends AnnotationTool {
       },
     };
 
+    const distanceToPoint = lineSegment.distanceToPoint(
+      [line1.start.x, line1.start.y],
+      [line1.end.x, line1.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    );
+
+    if (distanceToPoint <= proximity) {
+      return true;
+    }
+    if (!point3) {
+      return false;
+    }
+
+    const canvasPoint3 = viewport.worldToCanvas(point3);
+
     const line2 = {
       start: {
         x: canvasPoint2[0],
@@ -222,19 +240,13 @@ class AngleTool extends AnnotationTool {
       },
     };
 
-    const distanceToPoint = lineSegment.distanceToPoint(
-      [line1.start.x, line1.start.y],
-      [line1.end.x, line1.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
-
     const distanceToPoint2 = lineSegment.distanceToPoint(
       [line2.start.x, line2.start.y],
       [line2.end.x, line2.end.y],
       [canvasCoords[0], canvasCoords[1]]
     );
 
-    if (distanceToPoint <= proximity || distanceToPoint2 <= proximity) {
+    if (distanceToPoint2 <= proximity) {
       return true;
     }
 
@@ -353,7 +365,7 @@ class AngleTool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -606,7 +618,7 @@ class AngleTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
@@ -733,10 +745,26 @@ class AngleTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
+
+      const textLines = this.configuration.getTextLines(data, targetId);
 
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        // linked to the vertex by default
+        const canvasTextBoxCoords = canvasCoordinates[1];
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
@@ -755,7 +783,7 @@ class AngleTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -770,20 +798,6 @@ class AngleTool extends AnnotationTool {
 
     return renderStatus;
   };
-
-  // text line for the current active angle annotation
-  _getTextLines(data, targetId) {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { angle } = cachedVolumeStats;
-
-    if (angle === undefined) {
-      return;
-    }
-
-    const textLines = [`${angle.toFixed(2)} ${String.fromCharCode(176)}`];
-
-    return textLines;
-  }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
@@ -809,7 +823,7 @@ class AngleTool extends AnnotationTool {
       );
 
       cachedStats[targetId] = {
-        angle,
+        angle: isNaN(angle) ? 'Incomplete Angle' : angle,
       };
     }
 
@@ -827,6 +841,19 @@ class AngleTool extends AnnotationTool {
 
     return cachedStats;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { angle } = cachedVolumeStats;
+
+  if (angle === undefined) {
+    return;
+  }
+
+  const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
+
+  return textLines;
 }
 
 AngleTool.toolName = 'Angle';

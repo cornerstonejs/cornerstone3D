@@ -112,6 +112,7 @@ module.exports = {
               },
               items: [
                 'concepts/cornerstone-tools/annotation/state',
+                'concepts/cornerstone-tools/annotation/annotationManager',
                 'concepts/cornerstone-tools/annotation/selection',
                 'concepts/cornerstone-tools/annotation/locking',
                 'concepts/cornerstone-tools/annotation/config',

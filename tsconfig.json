@@ -7,7 +7,9 @@
         "streaming-image-volume-loader/src"
       ],
       "@cornerstonejs/core": ["core/src"],
-      "@cornerstonejs/tools": ["tools/src"]
+      "@cornerstonejs/tools": ["tools/src"],
+      "@cornerstonejs/dicomImageLoader": ["dicomImageLoader/src"],
+      "@cornerstonejs/nifti-volume-loader": ["nifti-volume-loader/src"],
     }
   }
 }

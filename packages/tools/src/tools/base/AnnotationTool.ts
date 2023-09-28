@@ -1,4 +1,10 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  StackViewport,
+  cache,
+  getEnabledElement,
+  metaData,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { vec2 } from 'gl-matrix';
@@ -12,10 +18,12 @@ import {
   EventTypes,
   ToolHandle,
   InteractionTypes,
+  ToolProps,
+  PublicToolProps,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
-/**
+/**-q
  * Abstract class for tools which create and display annotations on the
  * cornerstone3D canvas. In addition, it provides a base class for segmentation
  * tools that require drawing an annotation before running the segmentation strategy
@@ -30,6 +38,19 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
+
+  constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
+    super(toolProps, defaultToolProps);
+
+    if (toolProps.configuration?.getTextLines) {
+      this.configuration.getTextLines = toolProps.configuration.getTextLines;
+    }
+
+    if (toolProps.configuration?.statsCalculator) {
+      this.configuration.statsCalculator =
+        toolProps.configuration.statsCalculator;
+    }
+  }
 
   /**
    * @abstract addNewAnnotation Creates a new annotation based on the clicked mouse position
@@ -179,24 +200,26 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
     const { data } = annotation;
     const { points, textBox } = data.handles;
-    const { worldBoundingBox } = textBox;
 
-    if (worldBoundingBox) {
-      const canvasBoundingBox = {
-        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
-        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
-        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      };
+    if (textBox) {
+      const { worldBoundingBox } = textBox;
+      if (worldBoundingBox) {
+        const canvasBoundingBox = {
+          topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
+          topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
+          bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
+          bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        };
 
-      if (
-        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
-        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
-      ) {
-        data.handles.activeHandleIndex = null;
-        return textBox;
+        if (
+          canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
+          canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
+          canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
+          canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
+        ) {
+          data.handles.activeHandleIndex = null;
+          return textBox;
+        }
       }
     }
 
@@ -234,6 +257,11 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     // for the textBox.
 
     return {
+      visibility: this.getStyle(
+        'textBoxVisibility',
+        specifications,
+        annotation
+      ),
       fontFamily: this.getStyle(
         'textBoxFontFamily',
         specifications,
@@ -258,6 +286,31 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         annotation
       ),
     };
+  }
+
+  /**
+   * Returns true if the viewport is scaled to SUV units
+   * @param viewport - The viewport
+   * @param targetId - The annotation targetId
+   * @param imageId - The annotation imageId
+   * @returns
+   */
+  isSuvScaled(
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    targetId: string,
+    imageId?: string
+  ): boolean {
+    if (viewport instanceof BaseVolumeViewport) {
+      const volumeId = targetId.split('volumeId:')[1];
+      const volume = cache.getVolume(volumeId);
+      return volume.scaling?.PT !== undefined;
+    } else if (viewport instanceof StackViewport) {
+      const scalingModule: Types.ScalingParameters | undefined =
+        imageId && metaData.get('scalingModule', imageId);
+      return typeof scalingModule?.suvbw === 'number';
+    } else {
+      throw new Error('Viewport is not a valid type');
+    }
   }
 
   /**

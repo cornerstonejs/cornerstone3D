@@ -22,6 +22,9 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 //
 const DOUBLE_CLICK_TOLERANCE_MS = 400;
 
+// This tolerance is how long to accept a secondary button down
+const MULTI_BUTTON_TOLERANCE_MS = 150;
+
 // A drag (projected distance) during the double click timeout that is greater than this
 // value will cancel the timeout and suppress any double click that might occur.
 // This tolerance is particularly important on touch devices where some movement
@@ -124,24 +127,40 @@ const doubleClickState: IDoubleClickState = {
  * @private
  */
 function mouseDownListener(evt: MouseEvent) {
-  // Ignore any mouse down during the double click timeout because only
-  // the first mouse down has the potential of being handled.
   if (doubleClickState.doubleClickTimeout) {
+    // A second identical click will be a double click event, so ignore it
+    if (evt.buttons === doubleClickState.mouseDownEvent.buttons) {
+      return;
+    }
+
+    // Record the second button or the changed button event as the initial
+    // button down state so that the multi-button event can be detected
+    doubleClickState.mouseDownEvent = evt;
+
+    // If second button is added, then ensure double click timeout is terminated
+    // and do not handle three or more button gestures.
+    _doStateMouseDownAndUp();
     return;
   }
 
+  // Handle multi-button clicks by adding a delay before handling them.
+  // Double clicks (left button only) physically take the user longer, so
+  // use a longer timeout, and for multi-button at the same time, the clicks
+  // are done at the same time by the user, just the system perceives them
+  // separately, so have a short timeout to allow catching both buttons.
   doubleClickState.doubleClickTimeout = setTimeout(
     _doStateMouseDownAndUp,
-    DOUBLE_CLICK_TOLERANCE_MS
+    evt.buttons === 1 ? DOUBLE_CLICK_TOLERANCE_MS : MULTI_BUTTON_TOLERANCE_MS
   );
 
   // First mouse down of a potential double click. So save it and start
   // a timeout to determine a double click.
   doubleClickState.mouseDownEvent = evt;
+  doubleClickState.ignoreDoubleClick = false;
 
   state.element = <HTMLDivElement>evt.currentTarget;
 
-  state.mouseButton = evt.button;
+  state.mouseButton = evt.buttons;
 
   const enabledElement = getEnabledElement(state.element);
   const { renderingEngineId, viewportId } = enabledElement;
@@ -222,10 +241,8 @@ function _onMouseDrag(evt: MouseEvent) {
 
   if (doubleClickState.doubleClickTimeout) {
     if (_isDragPastDoubleClickTolerance(deltaPoints.canvas)) {
-      _doStateMouseDownAndUp();
-
       // Dragging past the tolerance means no double click should occur.
-      doubleClickState.ignoreDoubleClick = true;
+      _doStateMouseDownAndUp();
     } else {
       return;
     }
@@ -280,19 +297,7 @@ function _onMouseUp(evt: MouseEvent): void {
       state.element.addEventListener('mousemove', _onMouseMove);
     } else {
       // this is the second mouse up of a double click!
-
-      document.removeEventListener('mouseup', _onMouseUp);
-      state.element.removeEventListener('mousemove', _onMouseMove);
-
-      // Restore our global mousemove listener
-      state.element.addEventListener('mousemove', mouseMoveListener);
-
-      // ignore any mouse down and up events captured and let the double click happen
-      _clearDoubleClickTimeoutAndEvents();
-
-      doubleClickState.ignoreDoubleClick = false;
-
-      state = JSON.parse(JSON.stringify(defaultState));
+      _cleanUp();
     }
   } else {
     // Handle the actual mouse up. Note that it may have occurred during the double click timeout or
@@ -321,15 +326,7 @@ function _onMouseUp(evt: MouseEvent): void {
 
     triggerEvent(eventDetail.element, eventName, eventDetail);
 
-    document.removeEventListener('mouseup', _onMouseUp);
-
-    state.element.removeEventListener('mousemove', _onMouseMove);
-
-    // Restore our global mousemove listener
-    state.element.addEventListener('mousemove', mouseMoveListener);
-
-    // Restore `state` to `defaultState`
-    state = JSON.parse(JSON.stringify(defaultState));
+    _cleanUp();
   }
 
   // Remove the drag as soon as we get the mouse up because either we have executed
@@ -358,9 +355,6 @@ function _onMouseMove(evt: MouseEvent) {
   }
 
   _doStateMouseDownAndUp();
-
-  // Moving past the tolerance means no double click should occur.
-  doubleClickState.ignoreDoubleClick = true;
 
   // Do the move again because during the timeout the global mouse move listener was removed.
   // Now it is back.
@@ -394,8 +388,8 @@ function _preventClickHandler() {
  * or mouse move/drag tolerance is inaccurate and we do indeed get a double click event from
  * the browser later. The flag will be cleared in the mouseDoubleClickIgnoreListener should a
  * double click event get fired. If there is no eventual double click for the latest sequence,
- * the flag spills into the next sequence where it will either get set again (here) or cleared in
- * _onMouseUp if an actual double click is detected. It is perfectly safe for the flag to be
+ * the flag spills into the next sequence where it will get cleared at the beginning of that next
+ * sequence in mouseDownListener. It is perfectly safe for the flag to be
  * left true when no double click actually occurs because any future double click must start with
  * a mouse down that is handled in this module.
  *
@@ -421,11 +415,25 @@ function _doStateMouseDownAndUp() {
  * The timeout itself is also cleared so that no callback is invoked.
  */
 function _clearDoubleClickTimeoutAndEvents() {
-  clearTimeout(doubleClickState.doubleClickTimeout);
-  doubleClickState.doubleClickTimeout = null;
+  if (doubleClickState.doubleClickTimeout) {
+    clearTimeout(doubleClickState.doubleClickTimeout);
+    doubleClickState.doubleClickTimeout = null;
+  }
 
   doubleClickState.mouseDownEvent = null;
   doubleClickState.mouseUpEvent = null;
+}
+
+function _cleanUp() {
+  document.removeEventListener('mouseup', _onMouseUp);
+  state.element?.removeEventListener('mousemove', _onMouseMove);
+
+  // Restore our global mousemove listener
+  state.element?.addEventListener('mousemove', mouseMoveListener);
+
+  _clearDoubleClickTimeoutAndEvents();
+
+  state = JSON.parse(JSON.stringify(defaultState));
 }
 
 /**
@@ -503,32 +511,12 @@ export function getMouseButton(): number {
 }
 
 /**
- * Adds a capture phase double click listener to the document that ignores double
- * click events as determined by this module.
- */
-export function addIgnoreDoubleClickCaptureListener() {
-  document.addEventListener('dblclick', _mouseDoubleClickIgnoreListener, {
-    capture: true,
-  });
-}
-
-/**
- * Removes a capture phase double click listener from the document that ignores double
- * click events as determined by this module.
- */
-export function removeIgnoreDoubleClickCaptureListener() {
-  document.removeEventListener('dblclick', _mouseDoubleClickIgnoreListener, {
-    capture: true,
-  });
-}
-
-/**
  * Handles a dblclick event to determine if it should be ignored based on the
  * double click state's ignoreDoubleClick flag. stopImmediatePropagation and
- * preventDefault are used to ingore the event.
+ * preventDefault are used to ignore the event.
  * @param evt browser dblclick event
  */
-function _mouseDoubleClickIgnoreListener(evt: MouseEvent) {
+export function mouseDoubleClickIgnoreListener(evt: MouseEvent) {
   if (doubleClickState.ignoreDoubleClick) {
     doubleClickState.ignoreDoubleClick = false;
 
@@ -537,6 +525,12 @@ function _mouseDoubleClickIgnoreListener(evt: MouseEvent) {
     // that any third party listener has not already handled the event.
     evt.stopImmediatePropagation();
     evt.preventDefault();
+  } else {
+    // If the embedding application blocked the first mouse down and up
+    // of a double click sequence from reaching this module, then this module
+    // has handled the second mouse down and up and thus needs to clean them up.
+    // Doing a clean up here for the typical double click case is harmless.
+    _cleanUp();
   }
 }
 

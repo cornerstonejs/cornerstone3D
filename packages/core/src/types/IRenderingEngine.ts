@@ -8,7 +8,7 @@ export default interface IRenderingEngine {
   offscreenMultiRenderWindow: any;
   offScreenCanvasContainer: any;
   setViewports(viewports: Array<PublicViewportInput>): void;
-  resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
+  resize(immediate?: boolean, keepCamera?: boolean): void;
   getViewport(id: string): IStackViewport | IVolumeViewport;
   getViewports(): Array<IStackViewport | IVolumeViewport>;
   render(): void;

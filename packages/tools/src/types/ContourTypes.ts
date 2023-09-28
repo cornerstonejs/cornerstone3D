@@ -10,6 +10,14 @@ export type ContourConfig = {
   outlineOpacity?: number;
   /** alpha of outline for inactive segmentation */
   outlineOpacityInactive?: number;
+  /** outline visibility */
+  renderOutline?: boolean;
+  /** render fill */
+  renderFill?: boolean;
+  /** fill alpha */
+  fillAlpha?: number;
+  /** fillAlphaInactive */
+  fillAlphaInactive?: number;
 };
 
 /**

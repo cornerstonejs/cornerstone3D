@@ -16,7 +16,6 @@ import {
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 
-import { deepMerge } from '../../../utilities';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addSurfaceToElement from './addSurfaceToElement';
 
@@ -59,7 +58,7 @@ async function addSegmentationRepresentation(
     // the first one
     const currentToolGroupConfig =
       SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-    const mergedConfig = deepMerge(
+    const mergedConfig = utilities.deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     );

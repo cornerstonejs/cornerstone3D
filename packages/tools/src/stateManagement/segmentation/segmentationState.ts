@@ -1,10 +1,3 @@
-import { defaultSegmentationStateManager } from './SegmentationStateManager';
-import {
-  triggerSegmentationRepresentationModified,
-  triggerSegmentationModified,
-  triggerSegmentationRepresentationRemoved,
-  triggerSegmentationRemoved,
-} from './triggerSegmentationEvents';
 import type {
   ColorLUT,
   RepresentationConfig,
@@ -15,10 +8,15 @@ import type {
   ToolGroupSpecificRepresentation,
   ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import {
+  triggerSegmentationModified,
+  triggerSegmentationRemoved,
+  triggerSegmentationRepresentationModified,
+  triggerSegmentationRepresentationRemoved,
+} from './triggerSegmentationEvents';
 
 import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
-import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
-import { SegmentationRepresentations } from '../../enums';
 
 /**
  * It returns the defaultSegmentationStateManager.
@@ -88,12 +86,28 @@ function getSegmentationRepresentations(
 }
 
 /**
+ * Get all segmentation representations in the state
+ * @returns An array of segmentation representation objects.
+ */
+function getAllSegmentationRepresentations(): Record<
+  string,
+  ToolGroupSpecificRepresentation[]
+> {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getAllSegmentationRepresentations();
+}
+
+/**
  * Get the tool group IDs that have a segmentation representation with the given
  * segmentationId
  * @param segmentationId - The id of the segmentation
  * @returns An array of tool group IDs.
  */
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[] {
+  if (!segmentationId) {
+    throw new Error('getToolGroupIdsWithSegmentation: segmentationId is empty');
+  }
+
   const segmentationStateManager = getDefaultSegmentationStateManager();
   const state = segmentationStateManager.getState();
   const toolGroupIds = Object.keys(state.toolGroups);
@@ -385,21 +399,7 @@ function addColorLUT(colorLUT: ColorLUT, index: number): void {
   // Todo: trigger event color LUT added
 }
 
-// Initialize the default configuration
-// Note: when we get other representations, we should set their default representations too.
-const defaultLabelmapConfig = getDefaultLabelmapConfig();
-
-const newGlobalConfig: SegmentationRepresentationConfig = {
-  renderInactiveSegmentations: true,
-  representations: {
-    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
-  },
-};
-
-setGlobalConfig(newGlobalConfig, true);
-
 export {
-  // state manager
   getDefaultSegmentationStateManager,
   // Segmentation
   getSegmentation,
@@ -421,6 +421,7 @@ export {
   setSegmentSpecificRepresentationConfig,
   // helpers s
   getToolGroupIdsWithSegmentation,
+  getAllSegmentationRepresentations,
   getSegmentationRepresentationByUID,
   // color
   addColorLUT,

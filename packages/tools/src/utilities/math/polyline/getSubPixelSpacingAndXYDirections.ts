@@ -66,19 +66,19 @@ const getSubPixelSpacingAndXYDirections = (
       throw new Error('No support yet for oblique plane planar contours');
     }
 
-    const absViewPlaneNormalDotI = Math.abs(vec3.dot(viewPlaneNormal, iVector));
-    const absViewPlaneNormalDotJ = Math.abs(vec3.dot(viewPlaneNormal, jVector));
-    const absViewPlaneNormalDotK = Math.abs(vec3.dot(viewPlaneNormal, kVector));
+    const absViewUpDotI = Math.abs(vec3.dot(viewUp, iVector));
+    const absViewUpDotJ = Math.abs(vec3.dot(viewUp, jVector));
+    const absViewUpDotK = Math.abs(vec3.dot(viewUp, kVector));
 
     // Get Y spacing
     let ySpacing;
-    if (Math.abs(1 - absViewPlaneNormalDotI) < EPSILON) {
+    if (Math.abs(1 - absViewUpDotI) < EPSILON) {
       ySpacing = volumeSpacing[0];
       yDir = iVector;
-    } else if (Math.abs(1 - absViewPlaneNormalDotJ) < EPSILON) {
+    } else if (Math.abs(1 - absViewUpDotJ) < EPSILON) {
       ySpacing = volumeSpacing[1];
       yDir = jVector;
-    } else if (Math.abs(1 - absViewPlaneNormalDotK) < EPSILON) {
+    } else if (Math.abs(1 - absViewUpDotK) < EPSILON) {
       ySpacing = volumeSpacing[2];
       yDir = kVector;
     } else {

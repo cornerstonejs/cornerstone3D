@@ -16,7 +16,6 @@ class ZoomTool extends BaseTool {
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
 
-  // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -28,6 +27,7 @@ class ZoomTool extends BaseTool {
         maxZoomScale: 30,
         pinchToZoom: true,
         pan: true,
+        invert: false,
       },
     }
   ) {
@@ -146,7 +146,7 @@ class ZoomTool extends BaseTool {
     const { parallelScale, focalPoint, position } = camera;
 
     const zoomScale = 1.5 / size[1];
-    const k = deltaY * zoomScale;
+    const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
 
     let parallelScaleToSet = (1.0 - k) * parallelScale;
 
@@ -169,7 +169,7 @@ class ZoomTool extends BaseTool {
       // and the initial mouse position by some amount until ultimately we
       // reach the mouse position at the focal point
       const zoomScale = 5 / size[1];
-      const k = deltaY * zoomScale;
+      const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
       parallelScaleToSet = (1.0 - k) * parallelScale;
 
       positionToSet = vec3.scaleAndAdd(
@@ -244,7 +244,9 @@ class ZoomTool extends BaseTool {
       -viewPlaneNormal[2],
     ];
 
-    const k = deltaY * zoomScale;
+    const k = this.configuration.invert
+      ? deltaY / zoomScale
+      : deltaY * zoomScale;
 
     let tmp = k * directionOfProjection[0];
     position[0] += tmp;

@@ -1,8 +1,10 @@
 export default function addToggleButtonToToolbar({
+  id,
   title,
   onClick,
   defaultToggle = false,
 }: {
+  id?: string;
   title: string;
   onClick: (toggle: boolean) => void;
   defaultToggle?: boolean;
@@ -23,6 +25,7 @@ export default function addToggleButtonToToolbar({
 
   setBackgroundColor();
 
+  button.id = id;
   button.innerHTML = title;
   button.onclick = () => {
     toggle = !toggle;

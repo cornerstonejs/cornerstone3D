@@ -4,6 +4,8 @@ import Point3 from './Point3';
 import ViewportInputOptions from './ViewportInputOptions';
 import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
+import ViewportStatus from '../enums/ViewportStatus';
+import DisplayArea from './displayArea';
 
 /**
  * Viewport interface for cornerstone viewports
@@ -37,6 +39,10 @@ interface IViewport {
   suppressEvents: boolean;
   /** if the viewport has been disabled */
   isDisabled: boolean;
+  /** The rendering state of this viewport */
+  viewportStatus: ViewportStatus;
+  /** the rotation applied to the view */
+  getRotation: () => number;
   /** frameOfReferenceUID the viewport's default actor is rendering */
   getFrameOfReferenceUID: () => string;
   /** method to convert canvas to world coordinates */
@@ -71,12 +77,22 @@ interface IViewport {
   render(): void;
   /** set options for the viewport */
   setOptions(options: ViewportInputOptions, immediate: boolean): void;
+  /** set displayArea for the viewport */
+  setDisplayArea(
+    displayArea: DisplayArea,
+    callResetCamera?: boolean,
+    suppressEvents?: boolean
+  );
+  /** returns the displayArea */
+  getDisplayArea(): DisplayArea | undefined;
   /** reset camera and options*/
   reset(immediate: boolean): void;
   /** returns the canvas */
   getCanvas(): HTMLCanvasElement;
   /** returns camera object */
   getCamera(): ICamera;
+  /** Sets the rendered state to rendered if the render actually showed image data */
+  setRendered(): void;
   /** returns the parallel zoom relative to the default (eg returns 1 after reset) */
   getZoom(): number;
   /** Sets the relative zoom - set to 1 to reset it */
@@ -90,6 +106,7 @@ interface IViewport {
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
+  updateRenderingPipeline: () => void;
 }
 
 /**

@@ -1,12 +1,14 @@
 // @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
-
+import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
-import type IVolume from './IVolume';
+import type { IVolume, VolumeScalarData } from './IVolume';
 import type { VOI, VOIRange } from './voi';
+import type DisplayArea from './displayArea';
 import type ImageLoaderFn from './ImageLoaderFn';
 import type IImageVolume from './IImageVolume';
+import type IDynamicImageVolume from './IDynamicImageVolume';
 import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
@@ -28,6 +30,7 @@ import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
 import type ViewportInputOptions from './ViewportInputOptions';
 import type IImageData from './IImageData';
+import type IImageCalibration from './IImageCalibration';
 import type CPUIImageData from './CPUIImageData';
 import type { CPUImageData } from './CPUIImageData';
 import type IImage from './IImage';
@@ -73,16 +76,28 @@ import type { PublicSurfaceData, SurfaceData } from './SurfaceData';
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
+import type RGB from './RGB';
+import { ColormapPublic, ColormapRegistration } from './Colormap';
+import type { ViewportProperties } from './ViewportProperties';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type { ImagePixelModule } from './ImagePixelModule';
+import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { AffineMatrix } from './AffineMatrix';
 
 export type {
+  // config
+  Cornerstone3DConfig,
+  //
   ICamera,
   IStackViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
   IVolume,
+  VolumeScalarData,
   IViewportId,
   IImageVolume,
+  IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
@@ -90,6 +105,7 @@ export type {
   IStreamingImageVolume,
   IImage,
   IImageData,
+  IImageCalibration,
   CPUIImageData,
   CPUImageData,
   EventTypes,
@@ -100,6 +116,7 @@ export type {
   IViewport,
   StackViewportProperties,
   VolumeViewportProperties,
+  ViewportProperties,
   PublicViewportInput,
   VolumeActor,
   Actor,
@@ -120,6 +137,7 @@ export type {
   ViewportInputOptions,
   VOIRange,
   VOI,
+  DisplayArea,
   FlipDirection,
   ICachedImage,
   ICachedVolume,
@@ -152,4 +170,13 @@ export type {
   // Surface
   PublicSurfaceData,
   SurfaceData,
+  // Color
+  RGB,
+  ColormapPublic,
+  ColormapRegistration,
+  // PixelData
+  PixelDataTypedArray,
+  ImagePixelModule,
+  ImagePlaneModule,
+  AffineMatrix,
 };

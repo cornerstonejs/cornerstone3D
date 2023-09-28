@@ -9,7 +9,10 @@ import { VolumeActor } from '../types/IActor';
  * @param actor - The volume actor to apply the preset to.
  * @param preset - The preset to apply.
  */
-export default function applyPreset(actor: VolumeActor, preset: ViewportPreset) {
+export default function applyPreset(
+  actor: VolumeActor,
+  preset: ViewportPreset
+) {
   // Create color transfer function
   const colorTransferArray = preset.colorTransfer
     .split(' ')

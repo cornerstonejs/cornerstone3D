@@ -59,6 +59,18 @@ if (options.fromRoot === true) {
         path: 'packages/streaming-image-volume-loader/examples',
         regexp: 'index.ts',
       },
+      {
+        path: 'packages/dicomImageLoader/examples',
+        regexp: 'index.ts',
+      },
+      {
+        path: 'packages/nifti-volume-loader/examples',
+        regexp: 'index.ts',
+      },
+      {
+        path: 'packages/adapters/examples',
+        regexp: 'index.ts',
+      },
     ],
   };
 } else {
@@ -112,6 +124,14 @@ if (configuration.examples) {
     return;
   }
 
+  // say name of running example
+  const currentWD = process.cwd();
+  // run the build for dicom image loader
+  shell.cd('../../dicomImageLoader');
+  shell.exec(`yarn run webpack:dynamic-import`);
+
+  shell.cd(currentWD);
+
   const examplePaths = Object.values(allExamplePaths);
   const exampleNames = Object.keys(allExamplePaths);
   const conf = buildConfig(
@@ -140,6 +160,8 @@ if (configuration.examples) {
   if (options.build == true) {
     shell.exec(`webpack --progress --config ${webpackConfigPath}`);
   } else {
-    shell.exec(`webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`);
+    shell.exec(
+      `webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`
+    );
   }
 }

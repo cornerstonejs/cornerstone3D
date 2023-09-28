@@ -16,7 +16,7 @@
   // eslint-plugin-import
   // - import
   "plugins": [
-    "@typescript-eslint",
+    "@typescript-eslint/eslint-plugin",
     "import",
     "eslint-plugin-tsdoc",
     "prettier"
@@ -53,6 +53,8 @@
     "tsconfigRootDir": "./"
   },
   "rules": {
+    // Enforce consistent brace style for all control statements for readability
+    "curly": "error",
     "tsdoc/syntax": "warn",
     "@typescript-eslint/ban-ts-comment": "off",
     "no-console": [

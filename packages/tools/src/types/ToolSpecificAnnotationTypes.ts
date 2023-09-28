@@ -78,6 +78,33 @@ export interface LengthAnnotation extends Annotation {
   };
 }
 
+export interface CircleROIAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: [Types.Point3, Types.Point3]; // [center, end]
+      activeHandleIndex: number | null;
+      textBox?: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    label: string;
+    cachedStats?: ROICachedStats & {
+      [targetId: string]: {
+        radius: number;
+        radiusUnit: string;
+        perimeter: number;
+      };
+    };
+  };
+}
+
 export interface EllipticalROIAnnotation extends Annotation {
   data: {
     handles: {
@@ -96,6 +123,7 @@ export interface EllipticalROIAnnotation extends Annotation {
     };
     label: string;
     cachedStats?: ROICachedStats;
+    initialRotation: number;
   };
 }
 
@@ -209,6 +237,7 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
         };
       };
     };
+    cachedStats?: ROICachedStats;
   };
 }
 
@@ -270,5 +299,14 @@ export interface ReferenceLineAnnotation extends Annotation {
     handles: {
       points: Types.Point3[];
     };
+  };
+}
+
+export interface ScaleOverlayAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+    };
+    viewportId: string;
   };
 }

@@ -23,12 +23,14 @@ import * as segmentation from './stateManagement/segmentation';
 import {
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   PanTool,
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
+  PlanarRotateTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
@@ -36,6 +38,7 @@ import {
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  CircleROITool,
   BidirectionalTool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
@@ -54,6 +57,9 @@ import {
   ReferenceCursors,
   ReferenceLines,
   PaintFillTool,
+  ScaleOverlayTool,
+  OrientationMarkerTool,
+  OverlayGridTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -68,6 +74,7 @@ export {
   // Base Tools
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
@@ -75,6 +82,7 @@ export {
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
+  PlanarRotateTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
@@ -82,9 +90,11 @@ export {
   LengthTool,
   CrosshairsTool,
   ReferenceLinesTool,
+  OverlayGridTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  CircleROITool,
   BidirectionalTool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
@@ -93,6 +103,7 @@ export {
   MagnifyTool,
   ReferenceCursors,
   ReferenceLines,
+  ScaleOverlayTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
@@ -102,6 +113,7 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  OrientationMarkerTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

@@ -3,6 +3,7 @@ import * as metaData from '../metaData';
 import type { IImageVolume, Point3 } from '../types';
 
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import { EPSILON } from '../constants';
 
 /**
  * Given an image, a point in space and the viewPlaneNormal it returns the
@@ -11,15 +12,13 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection';
  * @param imageVolume - The image volume
  * @param worldPos - The position in the world coordinate system (from mouse click)
  * @param viewPlaneNormal - The normal vector of the viewport
- * @param viewUp - The viewUp vector of the camera.
  *
  * @returns The imageId for the tool.
  */
 export default function getClosestImageId(
   imageVolume: IImageVolume,
   worldPos: Point3,
-  viewPlaneNormal: Point3,
-  viewUp: Point3
+  viewPlaneNormal: Point3
 ): string {
   if (!imageVolume) {
     return;
@@ -39,7 +38,7 @@ export default function getClosestImageId(
 
   // 2.a if imagePlane is not parallel to the camera: tool is not drawn on an
   // imaging plane, return
-  if (Math.abs(dotProducts) < 0.99) {
+  if (Math.abs(dotProducts) < 1 - EPSILON) {
     return;
   }
 

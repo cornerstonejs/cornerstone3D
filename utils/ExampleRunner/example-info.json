@@ -4,16 +4,22 @@
       "description": "Basic usage"
     },
     "tools-basic": {
-      "description": "Basic usage of Tools library"
+      "description": "Tools library"
     },
     "tools-segmentation": {
-      "description": "Segmentation usage"
-    },
-    "core-advanced": {
-      "description": "Advanced usage"
+      "description": "Segmentation"
     },
     "tools-advanced": {
-      "description": "Advanced usage of Tools library"
+      "description": "Advanced Tools library"
+    },
+    "dicom-image-loader": {
+      "description": "Cornerstone dicom image loader"
+    },
+    "adapters": {
+      "description": "Cornerstone adapters"
+    },
+    "nifti": {
+      "description": "Nifti Volume loader"
     }
   },
   "examplesByCategory": {
@@ -25,6 +31,10 @@
       "stackAPI": {
         "name": "Stack Viewport API",
         "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "stackVoiSigmoid": {
+        "name": "Stack Sigmoid LUT",
+        "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
       },
       "stackEvents": {
         "name": "Stack Viewport Events",
@@ -41,6 +51,10 @@
       "volumeAPI": {
         "name": "Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "volumeVoiSigmoid": {
+        "name": "Volume Sigmoid LUT",
+        "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
       },
       "volumeViewport3D": {
         "name": "3D Volume Rendering",
@@ -73,12 +87,34 @@
       "webLoader": {
         "name": "Load Web images of PNG or JPG format",
         "description": "Demonstrates how render web images in a stack viewport"
-      }
-    },
-    "core-advanced": {
+      },
+      "dynamicCINETool": {
+        "name": "Load a dynamic 4D data",
+        "description": "Demonstrates how you can render 4D data with cornerstone 3d"
+      },
+      "renderToCanvas": {
+        "name": "Render To Canvas",
+        "description": "Demonstrates how to use the api to render to a canvas directly"
+      },
+      "changeColorMap": {
+        "name": "Change the colormap and adjusting the opacity",
+        "description": "Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity."
+      },
       "volumePriorityLoading": {
         "name": "Prioritizing Slices during Volume Loading",
         "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
+      },
+      "programaticPanZoom": {
+        "name": "Programmatic Pan/Zoom",
+        "description": "Demonstrates how to programmatically pan/zoom a stack viewport. It can be used for setting initial display area and presentation state."
+      },
+      "local": {
+        "name": "DICOM P10 from the local file system",
+        "description": "Provides an interface to load a DICOM P10 image from your local file system to the Cornerstone3D"
+      },
+      "localCPU": {
+        "name": "DICOM P10 from the local file system using CPU",
+        "description": "Cornerstone3D uses WebGL for rendering by default (if available) and a fallback to CPU. This example force rendering on CPU for debugging purposes."
       }
     },
     "tools-basic": {
@@ -98,17 +134,13 @@
         "name": "Annotation Tool Modes",
         "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
       },
-      "local": {
-        "name": "DICOM P10 from the local file system",
-        "description": "Provides an interface to load a DICOM P10 image from your local file system to the Cornerstone3D"
-      },
-      "localCPU": {
-        "name": "DICOM P10 from the local file system using CPU",
-        "description": "Cornerstone3D uses WebGL for rendering by default (if available) and a fallback to CPU. This example force rendering on CPU for debugging purposes."
-      },
       "stackAnnotationTools": {
         "name": "Stack Annotation Tools",
         "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
+      },
+      "calibrationTools": {
+        "name": "Calibration Tools",
+        "description": "Demonstrates usage of calibration tools on a Stack Viewport."
       },
       "volumeAnnotationTools": {
         "name": "Volume Annotation Tools ",
@@ -138,45 +170,9 @@
         "name": "CINE Tool",
         "description": "Demonstrates the usage of the CINE tool"
       },
-      "segmentationRendering": {
-        "name": "Labelmap Segmentation Rendering",
-        "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
-      },
-      "contourSegmentationRepresentation": {
-        "name": "Contour Segmentation Representation",
-        "description": "Demonstrates how to use the Contour Segmentation Representation"
-      },
-      "surfaceSegmentationRepresentation": {
-        "name": "Surface Segmentation Representation",
-        "description": "Demonstrates how to use the Surface Segmentation Representation"
-      },
-      "segmentationSwapping": {
-        "name": "Segmentation Swapping",
-        "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
-      },
       "planarFreehandROITool": {
         "name": "Freehand ROI Tool",
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
-      },
-      "globalSegmentationConfiguration": {
-        "name": "Global Segmentation Configuration",
-        "description": "Demonstrates how to set a global configuration for segmentation representations"
-      },
-      "toolGroupSpecificSegmentationRepresentationConfiguration": {
-        "name": "ToolGroup Specific Segmentation Configuration",
-        "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
-      },
-      "segmentSpecificConfiguration": {
-        "name": "Segment-specific Segmentation Configuration",
-        "description": "Demonstrates how to change the configuration of a specific segment"
-      },
-      "basicSegmentationTools": {
-        "name": "Segmentation Tools - Brush, Scissors",
-        "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
-      },
-      "segmentLocking": {
-        "name": "Segmentation Swapping",
-        "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
@@ -193,6 +189,60 @@
       "doubleClickWithStackAnnotationTools": {
         "name": "Double Click With Stack Annotation Tools",
         "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
+      },
+      "dynamicPetCt": {
+        "name": "Load a petCT data where PT series is 4D",
+        "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
+      }
+    },
+    "tools-segmentation" : {
+      "labelmapRendering": {
+        "name": "Labelmap Segmentation Rendering",
+        "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
+      },
+      "contourRendering": {
+        "name": "Contour Segmentation Representation",
+        "description": "Demonstrates how to use the Contour Segmentation Representation"
+      },
+      "surfaceSegmentationRepresentation": {
+        "name": "Surface Segmentation Representation",
+        "description": "Demonstrates how to use the Surface Segmentation Representation"
+      },
+      "labelmapSwapping": {
+        "name": "Labelmap Segmentation Swapping",
+        "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
+      },
+      "labelmapGlobalConfiguration": {
+        "name": "Global Labelmap Segmentation Configuration",
+        "description": "Demonstrates how to set a global configuration for segmentation representations"
+      },
+      "contourRenderingConfiguration": {
+        "name": "Contour rendering configuration ",
+        "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
+      },
+      "labelmapToolGroupSpecificConfiguration": {
+        "name": "ToolGroup Specific Labelmap Segmentation Configuration",
+        "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
+      },
+      "labelmapSegmentSpecificConfiguration": {
+        "name": "Labelmap segment-specific Configuration",
+        "description": "Demonstrates how to change the configuration of a specific segment"
+      },
+      "labelmapSegmentationTools": {
+        "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
+        "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
+      },
+      "labelmapSegmentLocking": {
+        "name": "Labelmap Segmentation Swapping",
+        "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
+      },
+      "labelmapRenderingDifferentResolutions": {
+        "name": "Rendering Labelmap with Different Resolutions",
+        "description": "Demonstrates that the segmentation resolution need not to be the same as the source data"
+      },
+      "rectangleROIThreshold": {
+        "name": "Rectangle ROI Threshold Segmentation",
+        "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
       }
     },
     "tools-advanced": {
@@ -204,9 +254,17 @@
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
       },
+      "overlayGrid": {
+        "name": "Overlay Grid",
+        "description": "Demonstrate overlay grid tool usage with three viewports one for each orientation"
+      },
       "referenceLines": {
         "name": "Reference Lines",
         "description": "Demonstrate reference line tool for rendering viewports location with respect to each other"
+      },
+      "orientationMarker": {
+        "name": "Orientation Marker",
+        "description": "Demonstrate orientation marker tool for viewports orientation it has cube, axis and custom actors"
       },
       "petCT": {
         "name": "PET-CT Fusion + MIPLayout",
@@ -224,17 +282,39 @@
         "name": "Volume Viewport Synchronization",
         "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
       },
-      "segmentationRenderingDifferentResolutions": {
-        "name": "Rendering Labelmap Segmentations with Different Resolutions",
-        "description": "Demonstrates that the segmentation resolution need not to be the same as the source data"
-      },
-      "rectangleROIThreshold": {
-        "name": "Rectangle ROI Threshold Segmentation",
-        "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
-      },
       "cancelAnnotationDrawing": {
         "name": "Cancel Annotation Drawing",
         "description": "Demonstrates how to use the keyboard (ESC) key to cancel annotation drawing."
+      },
+      "scaleOverlayTool": {
+        "name": "Scale Overlay Tool",
+        "description": "Demonstrates the scale overlay tool for rendering a scale on a viewport showing the real world size of the image."
+      },
+      "generateImageFromTimeData": {
+        "name": "Generate 3D Volume From 4D Data",
+        "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
+      }
+    },
+    "dicom-image-loader": {
+      "dicomImageLoaderWADOURI": {
+        "name": "WADO-URI (DICOM P10)",
+        "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
+      }
+    },
+    "adapters": {
+      "segmentationExport": {
+        "name": "DICOM SEG export",
+        "description": "Demonstrates how to export a segmentation to DICOM SEG"
+      }
+    },
+    "nifti": {
+      "niftiBasic": {
+        "name": "Load Nifti Volume",
+        "description": "Demonstrates how to load and render a nifti volume"
+      },
+      "niftiWithTools": {
+        "name": "Tool Usage in Nifti",
+        "description": "Demonstrates how to use manipulation and annotation tools on a nifti volume"
       }
     }
   }

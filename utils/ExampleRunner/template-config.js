@@ -2,9 +2,14 @@ const path = require('path');
 
 const csRenderBasePath = path.resolve('packages/core/src/index');
 const csToolsBasePath = path.resolve('packages/tools/src/index');
+const csAdapters = path.resolve('packages/adapters/src/index');
 const csStreamingBasePath = path.resolve(
   'packages/streaming-image-volume-loader/src/index'
 );
+const csDICOMImageLoaderDistPath = path.resolve(
+  'packages/dicomImageLoader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js'
+);
+const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
 module.exports = function buildConfig(
   name,
@@ -43,7 +48,7 @@ module.exports = {
       patterns: [
         {
           from:
-            '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
+            '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
           to: '${destPath.replace(/\\/g, '/')}',
         },
       ],
@@ -65,13 +70,21 @@ module.exports = {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/nifti-volume-loader': '${csNiftiPath.replace(
+        /\\/g,
+        '/'
+      )}',
+      '@cornerstonejs/adapters': '${csAdapters.replace(/\\/g, '/')}',
       '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
         /\\/g,
         '//'
       )}',
       // We use this alias and the CopyPlugin to support using the dynamic-import version
       // of WADO Image Loader
-      'cornerstone-wado-image-loader': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
+        /\\/g,
+        '/'
+      )}'
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

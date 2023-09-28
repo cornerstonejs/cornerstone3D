@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 
 import _getHash from './_getHash';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
 import { SVGDrawingHelper } from '../types';
 
 function drawHandles(
@@ -12,17 +12,19 @@ function drawHandles(
   handlePoints: Array<Types.Point2>,
   options = {}
 ): void {
-  const { color, handleRadius, width, lineWidth, fill, type } = Object.assign(
-    {
-      color: 'dodgerblue',
-      handleRadius: '6',
-      width: '2',
-      lineWidth: undefined,
-      fill: 'transparent',
-      type: 'circle',
-    },
-    options
-  );
+  const { color, handleRadius, width, lineWidth, fill, type, opacity } =
+    Object.assign(
+      {
+        color: 'dodgerblue',
+        handleRadius: '6',
+        width: '2',
+        lineWidth: undefined,
+        fill: 'transparent',
+        type: 'circle',
+        opacity: 1,
+      },
+      options
+    );
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
@@ -47,6 +49,7 @@ function drawHandles(
         stroke: color,
         fill,
         'stroke-width': strokeWidth,
+        opacity: opacity,
       };
     } else if (type === 'rect') {
       const handleRadiusFloat = parseFloat(handleRadius);
@@ -63,6 +66,7 @@ function drawHandles(
         fill,
         'stroke-width': strokeWidth,
         rx: `${side * 0.1}`,
+        opacity: opacity,
       };
     } else {
       throw new Error(`Unsupported handle type: ${type}`);
@@ -71,13 +75,13 @@ function drawHandles(
     const existingHandleElement = svgDrawingHelper.getSvgNode(svgNodeHash);
 
     if (existingHandleElement) {
-      _setAttributesIfNecessary(attributes, existingHandleElement);
+      setAttributesIfNecessary(attributes, existingHandleElement);
 
       svgDrawingHelper.setNodeTouched(svgNodeHash);
     } else {
       const newHandleElement = document.createElementNS(svgns, type);
 
-      _setNewAttributesIfValid(attributes, newHandleElement);
+      setNewAttributesIfValid(attributes, newHandleElement);
 
       svgDrawingHelper.appendNode(newHandleElement, svgNodeHash);
     }

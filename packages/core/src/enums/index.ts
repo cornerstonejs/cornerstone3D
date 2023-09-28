@@ -7,10 +7,15 @@ import OrientationAxis from './OrientationAxis';
 import SharedArrayBufferModes from './SharedArrayBufferModes';
 import GeometryType from './GeometryType';
 import ContourType from './ContourType';
+import VOILUTFunctionType from './VOILUTFunctionType';
+import DynamicOperatorType from './DynamicOperatorType';
+import CalibrationTypes from './CalibrationTypes';
+import ViewportStatus from './ViewportStatus';
 
 export {
   Events,
   BlendModes,
+  CalibrationTypes,
   InterpolationType,
   RequestType,
   ViewportType,
@@ -18,4 +23,7 @@ export {
   SharedArrayBufferModes,
   GeometryType,
   ContourType,
+  VOILUTFunctionType,
+  DynamicOperatorType,
+  ViewportStatus,
 };

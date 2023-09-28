@@ -1,12 +1,11 @@
 import { metaData } from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
-
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 /**
  * preloads imageIds metadata in memory
  **/
 async function prefetchMetadataInformation(imageIdsToPrefetch) {
   for (let i = 0; i < imageIdsToPrefetch.length; i++) {
-    await cornerstoneWADOImageLoader.wadouri.loadImage(imageIdsToPrefetch[i])
+    await cornerstoneDICOMImageLoader.wadouri.loadImage(imageIdsToPrefetch[i])
       .promise;
   }
 }
@@ -56,7 +55,9 @@ function convertMultiframeImageIds(imageIds) {
         const newImageId = imageIdFrameless + (i + 1);
         newImageIds.push(newImageId);
       }
-    } else newImageIds.push(imageId);
+    } else {
+      newImageIds.push(imageId);
+    }
   });
   return newImageIds;
 }
