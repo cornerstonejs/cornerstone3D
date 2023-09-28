@@ -204,7 +204,7 @@
         "name": "Contour Segmentation Representation",
         "description": "Demonstrates how to use the Contour Segmentation Representation"
       },
-      "surfaceSegmentationRepresentation": {
+      "surfaceRendering": {
         "name": "Surface Segmentation Representation",
         "description": "Demonstrates how to use the Surface Segmentation Representation"
       },
