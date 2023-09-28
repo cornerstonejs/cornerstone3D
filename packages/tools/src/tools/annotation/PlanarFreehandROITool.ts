@@ -44,14 +44,13 @@ import {
   AnnotationStyle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { drawLine, drawCircle, drawLinkedTextBox } from '../../drawingSvg';
+import { drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
-import pointInPolyline from '../../utilities/math/polyline/pointInPolyline';
+
 import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
@@ -752,9 +751,28 @@ class PlanarFreehandROITool extends AnnotationTool {
 
       const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
       const scale = getCalibratedScale(image);
-      const area =
+      let area =
         polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
 
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
@@ -882,6 +900,17 @@ class PlanarFreehandROITool extends AnnotationTool {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
 
+    const styleSpecifier: AnnotationStyle.StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
+    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!options.visibility) {
+      return;
+    }
+
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
@@ -901,12 +930,6 @@ class PlanarFreehandROITool extends AnnotationTool {
       data.handles.textBox.worldPosition
     );
 
-    const styleSpecifier: AnnotationStyle.StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
-
     const textBoxUID = '1';
     const boundingBox = drawLinkedTextBox(
       svgDrawingHelper,
@@ -916,7 +939,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       textBoxPosition,
       canvasCoordinates,
       {},
-      this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+      options
     );
 
     const { x: left, y: top, width, height } = boundingBox;

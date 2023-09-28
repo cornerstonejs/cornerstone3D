@@ -16,7 +16,13 @@ const addToBeginning = true;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
-  preserveExistingPool: false,
+  // Preserving the existing pool should be the default behaviour, as there might
+  // be a volume of the same series already being loaded in the pool, and we don't want
+  // to cancel it middle of the way when the other stack viewport mounts. Worst case scenario
+  // there will be a few extra images in the pool but by the time that their turn comes
+  // we will have already loaded the volume and it will get read from the CACHE,
+  // so who cares
+  preserveExistingPool: true,
 };
 
 let resetPrefetchTimeout;
@@ -304,8 +310,8 @@ function getPromiseRemovedHandler(element) {
 
     if (
       !stackPrefetchData ||
-      !stackPrefetchData.data ||
-      !stackPrefetchData.data.length
+      !stackPrefetchData.indicesToRequest ||
+      !stackPrefetchData.indicesToRequest.length
     ) {
       return;
     }
@@ -386,7 +392,7 @@ function disable(element) {
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it
 
-  if (stackPrefetchData && stackPrefetchData.data.length) {
+  if (stackPrefetchData && stackPrefetchData.indicesToRequest.length) {
     stackPrefetchData.enabled = false;
 
     // Clear current prefetch requests from the requestPool
