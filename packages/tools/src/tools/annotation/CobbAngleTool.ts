@@ -1145,8 +1145,8 @@ class CobbAngleTool extends AnnotationTool {
       arc1End,
       arc2Start,
       arc2End,
-      arc1Angle,
-      arc2Angle,
+      arc1Angle: arc1Angle > 90 ? 180 - arc1Angle : arc1Angle,
+      arc2Angle: arc2Angle > 90 ? 180 - arc2Angle : arc2Angle,
     };
   };
 }
