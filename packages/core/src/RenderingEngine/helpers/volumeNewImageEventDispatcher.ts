@@ -2,10 +2,9 @@ import {
   getImageSliceDataForVolumeViewport,
   triggerEvent,
 } from '../../utilities';
-import type { EventTypes } from '../../types';
+import type { EventTypes, IVolumeViewport } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';
-import BaseVolumeViewport from '../BaseVolumeViewport';
 
 // Keeping track of previous imageIndex for each viewportId
 type VolumeImageState = Record<string, number>;
@@ -33,13 +32,7 @@ function volumeNewImageEventDispatcher(
 ): void {
   const { renderingEngineId, viewportId } = cameraEvent.detail;
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId);
-
-  if (!(viewport instanceof BaseVolumeViewport)) {
-    throw new Error(
-      `volumeNewImageEventDispatcher: viewport is not a BaseVolumeViewport`
-    );
-  }
+  const viewport = renderingEngine.getViewport(viewportId) as IVolumeViewport;
 
   if (state[viewport.id] === undefined) {
     state[viewport.id] = 0;
