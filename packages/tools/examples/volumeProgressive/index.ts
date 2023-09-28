@@ -4,6 +4,7 @@ import {
   Enums,
   volumeLoader,
   setVolumesForViewports,
+  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -208,6 +209,7 @@ async function run() {
   renderingEngine.renderViewports(viewportIds);
 
   async function loadVolume(name, imageIds) {
+    cache.purgeCache();
     // Define a volume in memory
     const key = `Volume Load ${name}`;
     const start = Date.now();

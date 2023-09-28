@@ -1,4 +1,4 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Types, Enums, cache } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -42,6 +42,7 @@ content.appendChild(element);
 // ============================= //
 
 async function showStack(stack: string[], viewport) {
+  cache.purgeCache();
   console.time('imageLoad');
   const start = Date.now();
   // Set the stack on the viewport
