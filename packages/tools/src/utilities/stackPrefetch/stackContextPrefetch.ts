@@ -296,7 +296,7 @@ const updateToolState = (element, usage?: number) => {
  * 1. On navigating to a new image initially, or one that is at a different position:
  *  * Fetch the next/previous 2 images
  * 2. If all the images in a given prefetch have compelted, then:
- *  * Fetch up to 1/4 of hte cache size images near the current image
+ *  * Fetch up to 1/4 of the cache size images near the current image
  * 3. If the user is navigating forward/backward just a bit, then
  *  * Prefetch additional images in the direction of navigation
  *

@@ -45,9 +45,8 @@ export function getStackData(element) {
   const enabledElement = getEnabledElement(element);
 
   if (!enabledElement) {
-    throw new Error(
-      'stackPrefetch: element must be a valid Cornerstone enabled element'
-    );
+    // Can be not valid if the data is changed part way through prefetch
+    return null;
   }
 
   const { viewport } = enabledElement;
