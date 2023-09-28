@@ -95,6 +95,17 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
+const cancelToolDrawing = (evt) => {
+  const { element, key } = evt.detail;
+  if (key === 'Escape') {
+    cornerstoneTools.cancelActiveManipulations(element);
+  }
+};
+
+element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+  cancelToolDrawing(evt);
+});
+
 const toolsNames = [
   LengthTool.toolName,
   ProbeTool.toolName,
@@ -220,7 +231,7 @@ async function run() {
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(CobbAngleTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -235,7 +246,6 @@ async function run() {
   toolGroup.setToolPassive(CircleROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);
-  toolGroup.setToolPassive(CobbAngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM

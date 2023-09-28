@@ -64,6 +64,8 @@ class CobbAngleTool extends AnnotationTool {
     movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    isNearFirstLine?: boolean;
+    isNearSecondLine?: boolean;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -199,45 +201,13 @@ class CobbAngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { data } = annotation;
-    const [point1, point2, point3, point4] = data.handles.points;
-    const canvasPoint1 = viewport.worldToCanvas(point1);
-    const canvasPoint2 = viewport.worldToCanvas(point2);
-    const canvasPoint3 = viewport.worldToCanvas(point3);
-    const canvasPoint4 = viewport.worldToCanvas(point4);
 
-    const line1 = {
-      start: {
-        x: canvasPoint1[0],
-        y: canvasPoint1[1],
-      },
-      end: {
-        x: canvasPoint2[0],
-        y: canvasPoint2[1],
-      },
-    };
-
-    const line2 = {
-      start: {
-        x: canvasPoint3[0],
-        y: canvasPoint3[1],
-      },
-      end: {
-        x: canvasPoint4[0],
-        y: canvasPoint4[1],
-      },
-    };
-
-    const distanceToPoint = lineSegment.distanceToPoint(
-      [line1.start.x, line1.start.y],
-      [line1.end.x, line1.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
-
-    const distanceToPoint2 = lineSegment.distanceToPoint(
-      [line2.start.x, line2.start.y],
-      [line2.end.x, line2.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
+    const { distanceToPoint, distanceToPoint2 } = this.distanceToLines({
+      viewport,
+      points: data.handles.points,
+      canvasCoords,
+      proximity,
+    });
 
     if (distanceToPoint <= proximity || distanceToPoint2 <= proximity) {
       return true;
@@ -249,7 +219,9 @@ class CobbAngleTool extends AnnotationTool {
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
     annotation: AngleAnnotation,
-    interactionType: InteractionTypes
+    interactionType: InteractionTypes,
+    canvasCoords: Types.Point2,
+    proximity = 6
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -261,18 +233,27 @@ class CobbAngleTool extends AnnotationTool {
       this.getToolName()
     );
 
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, viewport } = enabledElement;
+
+    const { isNearFirstLine, isNearSecondLine } = this.distanceToLines({
+      viewport,
+      points: annotation.data.handles.points,
+      canvasCoords,
+      proximity,
+    });
+
     this.editData = {
       annotation,
       viewportIdsToRender,
       movingTextBox: false,
+      isNearFirstLine,
+      isNearSecondLine,
     };
 
     this._activateModify(element);
 
     hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
@@ -436,8 +417,14 @@ class CobbAngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      isNearFirstLine,
+      isNearSecondLine,
+    } = this.editData;
     const { data } = annotation;
 
     if (movingTextBox) {
@@ -453,21 +440,35 @@ class CobbAngleTool extends AnnotationTool {
       worldPosition[2] += worldPosDelta[2];
 
       textBox.hasMoved = true;
-    } else if (handleIndex === undefined) {
-      // Drag mode - moving handle
+    } else if (
+      handleIndex === undefined &&
+      (isNearFirstLine || isNearSecondLine)
+    ) {
+      // select tool mode - moving annotation
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
       const worldPosDelta = deltaPoints.world;
-
       const points = data.handles.points;
 
-      points.forEach((point) => {
-        point[0] += worldPosDelta[0];
-        point[1] += worldPosDelta[1];
-        point[2] += worldPosDelta[2];
-      });
+      // separate the logic for moving handles to move them separately
+      if (isNearFirstLine) {
+        const firstLinePoints = [points[0], points[1]];
+        firstLinePoints.forEach((point) => {
+          point[0] += worldPosDelta[0];
+          point[1] += worldPosDelta[1];
+          point[2] += worldPosDelta[2];
+        });
+      } else if (isNearSecondLine) {
+        const secondLinePoints = [points[2], points[3]];
+        secondLinePoints.forEach((point) => {
+          point[0] += worldPosDelta[0];
+          point[1] += worldPosDelta[1];
+          point[2] += worldPosDelta[2];
+        });
+      }
+
       annotation.invalidated = true;
     } else {
-      // Move mode - after double click, and mouse move to draw
+      // Drag handle mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
 
@@ -936,6 +937,63 @@ class CobbAngleTool extends AnnotationTool {
 
     return cachedStats;
   }
+
+  distanceToLines = ({ viewport, points, canvasCoords, proximity }) => {
+    const [point1, point2, point3, point4] = points;
+    const canvasPoint1 = viewport.worldToCanvas(point1);
+    const canvasPoint2 = viewport.worldToCanvas(point2);
+    const canvasPoint3 = viewport.worldToCanvas(point3);
+    const canvasPoint4 = viewport.worldToCanvas(point4);
+
+    const line1 = {
+      start: {
+        x: canvasPoint1[0],
+        y: canvasPoint1[1],
+      },
+      end: {
+        x: canvasPoint2[0],
+        y: canvasPoint2[1],
+      },
+    };
+
+    const line2 = {
+      start: {
+        x: canvasPoint3[0],
+        y: canvasPoint3[1],
+      },
+      end: {
+        x: canvasPoint4[0],
+        y: canvasPoint4[1],
+      },
+    };
+
+    const distanceToPoint = lineSegment.distanceToPoint(
+      [line1.start.x, line1.start.y],
+      [line1.end.x, line1.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    );
+
+    const distanceToPoint2 = lineSegment.distanceToPoint(
+      [line2.start.x, line2.start.y],
+      [line2.end.x, line2.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    );
+
+    let isNearFirstLine = false;
+    let isNearSecondLine = false;
+
+    if (distanceToPoint <= proximity) {
+      isNearFirstLine = true;
+    } else if (distanceToPoint2 <= proximity) {
+      isNearSecondLine = true;
+    }
+    return {
+      distanceToPoint,
+      distanceToPoint2,
+      isNearFirstLine,
+      isNearSecondLine,
+    };
+  };
 
   getArcsStartEndPoints = ({ firstLine, secondLine, mid1, mid2 }) => {
     const linkLine = [mid1, mid2] as [Types.Point2, Types.Point2];

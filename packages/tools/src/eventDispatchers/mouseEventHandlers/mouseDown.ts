@@ -133,7 +133,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     );
 
     toggleAnnotationSelection(annotation.annotationUID, isMultiSelect);
-    tool.toolSelectedCallback(evt, annotation, 'Mouse');
+    tool.toolSelectedCallback(evt, annotation, 'Mouse', canvasCoords);
 
     return;
   }
