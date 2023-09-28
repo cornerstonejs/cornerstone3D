@@ -29,6 +29,7 @@
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
     "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle",
     "copy-dts": "echo 'not implemented yet'",
+    "dependency-test": "npx madge --circular --extensions ts ./src",
     "build": "yarn run build:all && yarn run copy-dts",
     "api-check": "echo 'not implemented yet'",
     "build:update-api": "echo 'not implemented yet'",
