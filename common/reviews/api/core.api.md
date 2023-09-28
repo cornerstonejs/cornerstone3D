@@ -659,6 +659,12 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_LOAD_PROGRESS = "CORNERSTONE_IMAGE_LOAD_PROGRESS",
     // (undocumented)
+    IMAGE_LOAD_STREAM_COMPLETE = "CORNERSTONE_IMAGE_LOAD_STREAM_COMPLETE",
+    // (undocumented)
+    IMAGE_LOAD_STREAM_PARTIAL = "CORNERSTONE_IMAGE_LOAD_STREAM_PARTIAL",
+    // (undocumented)
+    IMAGE_LOAD_STREAM_UPDATED_IMAGE = "CORNERSTONE_IMAGE_LOAD_STREAM_UPDATED_IMAGE",
+    // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
     IMAGE_RENDERED = "CORNERSTONE_IMAGE_RENDERED",
@@ -898,7 +904,7 @@ interface ICache {
     // (undocumented)
     purgeCache: () => void;
     // (undocumented)
-    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject) => Promise<any>;
+    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject, updateCache?: boolean) => Promise<any>;
     // (undocumented)
     putVolumeLoadObject: (volumeId: string, volumeLoadObject: IVolumeLoadObject) => Promise<any>;
     // (undocumented)

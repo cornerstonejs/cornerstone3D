@@ -2277,7 +2277,8 @@ interface ICache {
     purgeCache: () => void;
     putImageLoadObject: (
     imageId: string,
-    imageLoadObject: IImageLoadObject
+    imageLoadObject: IImageLoadObject,
+    updateCache?: boolean
     ) => Promise<any>;
     putVolumeLoadObject: (
     volumeId: string,
