@@ -76,7 +76,7 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
-import { ColormapPublic, ColormapRegistration } from './Colormap';
+import type { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';

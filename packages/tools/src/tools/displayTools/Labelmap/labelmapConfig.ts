@@ -1,4 +1,4 @@
-import { LabelmapConfig } from '../../../types/LabelmapTypes';
+import type { LabelmapConfig } from '../../../types/LabelmapTypes';
 
 const defaultLabelmapConfig: LabelmapConfig = {
   renderOutline: true,

@@ -1,11 +1,11 @@
-import ICamera from './ICamera';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import ViewportInputOptions from './ViewportInputOptions';
-import { ActorEntry } from './IActor';
-import ViewportType from '../enums/ViewportType';
-import ViewportStatus from '../enums/ViewportStatus';
-import DisplayArea from './displayArea';
+import type ICamera from './ICamera';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type ViewportInputOptions from './ViewportInputOptions';
+import type { ActorEntry } from './IActor';
+import type ViewportType from '../enums/ViewportType';
+import type ViewportStatus from '../enums/ViewportStatus';
+import type DisplayArea from './displayArea';
 
 /**
  * Viewport interface for cornerstone viewports

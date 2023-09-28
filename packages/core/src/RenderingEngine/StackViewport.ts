@@ -20,7 +20,7 @@ import {
   isImageActor,
   actorIsA,
 } from '../utilities';
-import {
+import type {
   Point2,
   Point3,
   VOIRange,
@@ -42,7 +42,7 @@ import {
   ColormapRegistration,
   IImageCalibration,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
+import type { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getColormap } from './helpers/cpuFallback/colors/index';
 
@@ -64,16 +64,16 @@ import resize from './helpers/cpuFallback/rendering/resize';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
-import {
+import type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
-import { ImageActor } from '../types/IActor';
+import type { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
-import {
+import type {
   PixelDataTypedArray,
   ImagePixelModule,
   ImagePlaneModule,

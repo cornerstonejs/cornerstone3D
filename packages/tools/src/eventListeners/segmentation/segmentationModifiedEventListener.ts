@@ -1,4 +1,4 @@
-import { SegmentationModifiedEventType } from '../../types/EventTypes';
+import type { SegmentationModifiedEventType } from '../../types/EventTypes';
 import {
   getToolGroupIdsWithSegmentation,
   getSegmentationRepresentations,

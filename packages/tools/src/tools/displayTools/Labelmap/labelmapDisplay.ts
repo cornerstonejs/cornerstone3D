@@ -1,12 +1,8 @@
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 
-import {
-  cache,
-  getEnabledElementByIds,
-  Types,
-  utilities,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache, getEnabledElementByIds, utilities } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
@@ -16,7 +12,7 @@ import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
 } from '../../../types/LabelmapTypes';
-import {
+import type {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,

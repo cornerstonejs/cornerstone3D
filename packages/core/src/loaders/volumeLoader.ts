@@ -12,7 +12,7 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { uuidv4 } from '../utilities';
-import { Point3, Metadata, EventTypes, Mat3 } from '../types';
+import type { Point3, Metadata, EventTypes, Mat3 } from '../types';
 import { getConfiguration } from '../init';
 
 interface VolumeLoaderOptions {

@@ -1,4 +1,5 @@
-import { Enums, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 import triggerAnnotationRender from '../utilities/triggerAnnotationRender';
 
 /**

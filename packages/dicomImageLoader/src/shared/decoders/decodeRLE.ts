@@ -1,5 +1,5 @@
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { ImageFrame } from '../../types';
 
 async function decodeRLE(
   imageFrame: ImageFrame,

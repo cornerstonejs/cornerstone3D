@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
-  Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
@@ -8,10 +8,10 @@ import { config as segmentationConfig } from '../../stateManagement/segmentation
 import { setSegmentationVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../store/ToolGroupManager';
-import { PublicToolProps, ToolProps } from '../../types';
+import type { PublicToolProps, ToolProps } from '../../types';
 import { BaseTool } from '../base';
 
-import {
+import type {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes';

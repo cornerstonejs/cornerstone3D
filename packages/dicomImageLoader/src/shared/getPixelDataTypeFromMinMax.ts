@@ -1,4 +1,4 @@
-import { PixelDataTypedArray } from '../types';
+import type { PixelDataTypedArray } from '../types';
 
 export default function getPixelDataTypeFromMinMax(
   min: number,

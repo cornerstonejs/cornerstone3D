@@ -1,7 +1,8 @@
-import { cache, Types } from '@cornerstonejs/core';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
-import {
+import type {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
 } from '../../../types';

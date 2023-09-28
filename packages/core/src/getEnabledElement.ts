@@ -1,7 +1,7 @@
 import getRenderingEngine, {
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import { IEnabledElement } from './types';
+import type { IEnabledElement } from './types';
 
 /**
  * A convenience method to find an EnabledElement given a reference to its

@@ -3,7 +3,8 @@ import { vec3 } from 'gl-matrix';
 
 import cache from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis } from '../enums';
+import type { BlendModes } from '../enums';
+import { OrientationAxis } from '../enums';
 import type {
   ActorEntry,
   IImageVolume,
@@ -15,7 +16,7 @@ import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, getClosestImageId } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render

@@ -2,7 +2,7 @@ import {
   getImageSliceDataForVolumeViewport,
   triggerEvent,
 } from '../../utilities';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';
 import BaseVolumeViewport from '../BaseVolumeViewport';

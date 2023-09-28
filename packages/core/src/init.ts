@@ -5,7 +5,7 @@ let csRenderInitialized = false;
 let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
-import { Cornerstone3DConfig } from './types';
+import type { Cornerstone3DConfig } from './types';
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {

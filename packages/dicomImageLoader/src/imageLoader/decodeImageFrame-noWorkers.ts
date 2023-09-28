@@ -1,11 +1,11 @@
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 
 import { getOptions } from './internal/options';
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 
 import calculateMinMax from '../shared/calculateMinMax';
 import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame';
-import { ImageFrame } from '../types';
+import type { ImageFrame } from '../types';
 
 async function processDecodeTask(
   imageFrame: ImageFrame,

@@ -1,5 +1,5 @@
-import { ColormapPublic } from './Colormap';
-import { ViewportProperties } from './ViewportProperties';
+import type { ColormapPublic } from './Colormap';
+import type { ViewportProperties } from './ViewportProperties';
 
 /**
  * Stack Viewport Properties

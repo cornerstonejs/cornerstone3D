@@ -1,7 +1,7 @@
 import htmlStr from './layout';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setUseCPURendering,
   setPreferSizeOverAccuracy,

@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   addVolumesToViewports,
-  Types,
   Enums,
 } from '@cornerstonejs/core';
 

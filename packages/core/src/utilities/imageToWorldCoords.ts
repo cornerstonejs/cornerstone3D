@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { metaData } from '..';
-import { Point2, Point3 } from '../types';
+import type { Point2, Point3 } from '../types';
 
 /**
  * Given the imageId and a 2d coordinates on the image space with [0,0] being the top left corner

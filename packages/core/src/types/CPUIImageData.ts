@@ -1,5 +1,5 @@
-import { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
-import IImageCalibration from './IImageCalibration';
+import type { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
+import type IImageCalibration from './IImageCalibration';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;
@@ -47,4 +47,4 @@ type CPUIImageData = {
 
 export default CPUIImageData;
 
-export { CPUImageData };
+export type { CPUImageData };

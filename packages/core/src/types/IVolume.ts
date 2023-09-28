@@ -1,7 +1,7 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
-import Mat3 from './Mat3';
+import type Mat3 from './Mat3';
 
 type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
@@ -42,4 +42,4 @@ interface IVolume {
   };
 }
 
-export { IVolume as default, IVolume, VolumeScalarData };
+export type { IVolume as default, IVolume, VolumeScalarData };

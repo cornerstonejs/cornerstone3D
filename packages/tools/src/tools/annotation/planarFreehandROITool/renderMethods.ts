@@ -5,9 +5,9 @@ import {
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
 import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../../types/AnnotationStyle';
-import { SVGDrawingHelper } from '../../../types';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../../types/AnnotationStyle';
+import type { SVGDrawingHelper } from '../../../types';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 

@@ -39,21 +39,21 @@ import {
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   ToolProps,
   PublicToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
+import { InteractionTypes } from '../../types';
+import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInShapeCallback } from '../../utilities/';

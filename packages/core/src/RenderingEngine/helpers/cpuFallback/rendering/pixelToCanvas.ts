@@ -1,5 +1,5 @@
 import getTransform from './getTransform';
-import { CPUFallbackEnabledElement, Point2 } from '../../../../types';
+import type { CPUFallbackEnabledElement, Point2 } from '../../../../types';
 
 /**
  * Converts a point in the pixel coordinate system to the canvas coordinate system

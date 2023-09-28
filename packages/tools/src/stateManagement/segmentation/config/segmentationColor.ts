@@ -1,7 +1,7 @@
 import { utilities } from '@cornerstonejs/core';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { Color } from '../../../types/SegmentationStateTypes';
-import { ColorLUT } from '../../../types/SegmentationStateTypes';
+import type { Color } from '../../../types/SegmentationStateTypes';
+import type { ColorLUT } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import { SegmentationRepresentations } from '../../../enums';
 

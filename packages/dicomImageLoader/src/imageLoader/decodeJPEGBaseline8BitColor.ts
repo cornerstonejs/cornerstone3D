@@ -1,6 +1,6 @@
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 import getMinMax from '../shared/getMinMax';
-import { ImageFrame } from '../types';
+import type { ImageFrame } from '../types';
 
 /**
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance

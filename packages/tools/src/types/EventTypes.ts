@@ -1,10 +1,10 @@
-import { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
-import IPoints from './IPoints';
-import ITouchPoints from './ITouchPoints';
-import IDistance from './IDistance';
-import { SetToolBindingsType } from './ISetToolModeOptions';
-import { Swipe } from '../enums/Touch';
+import type { Types } from '@cornerstonejs/core';
+import type { Annotation } from './AnnotationTypes';
+import type IPoints from './IPoints';
+import type ITouchPoints from './ITouchPoints';
+import type IDistance from './IDistance';
+import type { SetToolBindingsType } from './ISetToolModeOptions';
+import type { Swipe } from '../enums/Touch';
 
 /**
  * The normalized interaction event detail
@@ -622,7 +622,7 @@ type MouseWheelEventType = Types.CustomEventType<MouseWheelEventDetail>;
 type VolumeScrollOutOfBoundsEventType =
   Types.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
-export {
+export type {
   InteractionStartType,
   InteractionEndType,
   InteractionEventType,

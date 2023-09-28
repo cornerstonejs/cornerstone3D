@@ -28,26 +28,24 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { ModalityUnitOptions } from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;

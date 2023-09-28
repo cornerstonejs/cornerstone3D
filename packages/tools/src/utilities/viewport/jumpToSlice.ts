@@ -1,11 +1,11 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   StackViewport,
   VolumeViewport,
   utilities as csUtils,
-  Types,
 } from '@cornerstonejs/core';
-import JumpToSliceOptions from '../../types/JumpToSliceOptions';
+import type JumpToSliceOptions from '../../types/JumpToSliceOptions';
 import clip from '../clip';
 import scroll from '../scroll';
 

@@ -1,4 +1,4 @@
-import PixelDataTypedArray from './PixelDataTypedArray';
+import type PixelDataTypedArray from './PixelDataTypedArray';
 
 interface ImageFrame {
   samplesPerPixel: number;

@@ -1,5 +1,5 @@
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { ImageFrame } from '../../types';
 import external from '../../externalModules';
 
 function convertLUTto8Bit(lut: number[], shift: number) {

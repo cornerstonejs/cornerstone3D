@@ -3,7 +3,7 @@ import normalizeWheel from './normalizeWheel';
 import Events from '../../enums/Events';
 // ~~ VIEWPORT LIBRARY
 import getMouseEventPoints from '../mouse/getMouseEventPoints';
-import { MouseWheelEventDetail } from '../../types/EventTypes';
+import type { MouseWheelEventDetail } from '../../types/EventTypes';
 
 /**
  * wheelListener - Captures and normalizes mouse wheel events. Emits as a

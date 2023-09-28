@@ -250,11 +250,15 @@ async function setup() {
   const updateProgress = (evt) => {
     const { data } = evt.detail;
 
-    if (!data) return;
+    if (!data) {
+      return;
+    }
 
     const { total, loaded } = data;
 
-    if (!total) return;
+    if (!total) {
+      return;
+    }
 
     const progress = Math.round((loaded / total) * 100);
 

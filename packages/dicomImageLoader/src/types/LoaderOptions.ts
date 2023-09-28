@@ -1,5 +1,8 @@
-import { LoaderDecodeOptions } from './LoaderDecodeOptions';
-import { LoaderXhrRequestError, LoaderXhrRequestParams } from './XHRRequest';
+import type { LoaderDecodeOptions } from './LoaderDecodeOptions';
+import type {
+  LoaderXhrRequestError,
+  LoaderXhrRequestParams,
+} from './XHRRequest';
 
 export interface LoaderOptions {
   // callback to open the object

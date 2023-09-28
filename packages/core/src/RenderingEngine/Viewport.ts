@@ -1,14 +1,14 @@
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
-import ViewportType from '../enums/ViewportType';
+import type ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
@@ -27,7 +27,7 @@ import type {
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
-import IImageCalibration from '../types/IImageCalibration';
+import type IImageCalibration from '../types/IImageCalibration';
 
 /**
  * An object representing a single viewport, which is a camera

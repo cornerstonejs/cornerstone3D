@@ -12,9 +12,9 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { ToolActivatedEventDetail } from '../../types/EventTypes';
+import type { ToolActivatedEventDetail } from '../../types/EventTypes';
 import { state } from '../index';
-import {
+import type {
   IToolBinding,
   IToolClassReference,
   IToolGroup,

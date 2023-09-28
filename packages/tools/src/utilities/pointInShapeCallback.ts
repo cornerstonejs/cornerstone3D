@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import BoundsIJK from '../types/BoundsIJK';
+import type BoundsIJK from '../types/BoundsIJK';
 
 export type PointInShape = {
   value: number;

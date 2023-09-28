@@ -1,4 +1,4 @@
-import { CPUFallbackColormapsData } from '../types';
+import type { CPUFallbackColormapsData } from '../types';
 
 // Colormaps
 //

@@ -1,4 +1,4 @@
-import { ScalingParameters } from '../types';
+import type { ScalingParameters } from '../types';
 
 /**
  * If the scalar data is a Uint8Array, return 'Uint8Array'. If the scalar data is a

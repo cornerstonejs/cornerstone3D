@@ -1,6 +1,6 @@
 import external from '../../externalModules';
 import { getOptions } from './options';
-import {
+import type {
   LoaderXhrRequestError,
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,

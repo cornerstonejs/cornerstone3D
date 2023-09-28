@@ -1,7 +1,8 @@
-import { cache, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
+import type { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 

@@ -19,20 +19,20 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 

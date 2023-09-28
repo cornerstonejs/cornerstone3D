@@ -2,7 +2,7 @@ import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
@@ -25,7 +25,7 @@ import {
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the

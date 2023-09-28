@@ -1,5 +1,5 @@
-import AnnotationGroupSelector from './AnnotationGroupSelector';
-import {
+import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type {
   Annotation,
   Annotations,
   GroupSpecificAnnotations,

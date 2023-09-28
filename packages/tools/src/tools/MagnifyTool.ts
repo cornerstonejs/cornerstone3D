@@ -3,7 +3,7 @@ import { Events } from '../enums';
 
 import { getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { state } from '../store';
@@ -13,7 +13,7 @@ import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
-import { IPoints } from '../types';
+import type { IPoints } from '../types';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 

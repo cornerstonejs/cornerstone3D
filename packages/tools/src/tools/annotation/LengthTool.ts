@@ -32,7 +32,7 @@ import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
@@ -42,7 +42,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -50,8 +50,8 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 

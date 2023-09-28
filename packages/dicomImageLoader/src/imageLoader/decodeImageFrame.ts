@@ -4,9 +4,9 @@ import webWorkerManager from './webWorkerManager';
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 import { inflateRaw } from 'pako/lib/inflate';
-import { ImageFrame, LoaderDecodeOptions } from '../types';
+import type { ImageFrame, LoaderDecodeOptions } from '../types';
 
 (window as any).pako = { inflateRaw };
 

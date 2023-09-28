@@ -1,4 +1,4 @@
-import { IImageLoadObject, IVolumeLoadObject } from './ILoadObject';
+import type { IImageLoadObject, IVolumeLoadObject } from './ILoadObject';
 
 interface ICache {
   /** Set the maximum cache size  */

@@ -1,6 +1,6 @@
-import { DataSet } from 'dicom-parser';
+import type { DataSet } from 'dicom-parser';
 import external from '../../externalModules';
-import {
+import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';

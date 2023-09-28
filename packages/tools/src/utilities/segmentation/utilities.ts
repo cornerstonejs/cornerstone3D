@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import BrushTool from '../../tools/segmentation/BrushTool';

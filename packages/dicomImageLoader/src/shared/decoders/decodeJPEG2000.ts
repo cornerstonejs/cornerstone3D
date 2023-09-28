@@ -12,7 +12,7 @@ import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 // const wasm = new URL('./blah.wasm', import.meta.url)
 import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
 
-import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+import type { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 
 const local: {
   codec: OpenJpegModule;

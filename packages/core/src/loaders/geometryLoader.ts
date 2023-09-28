@@ -3,7 +3,7 @@ import '@kitware/vtk.js/Rendering/Profiles/Geometry';
 import cache from '../cache';
 import { ContourSet } from '../cache/classes/ContourSet';
 import { GeometryType } from '../enums';
-import { IGeometry, PublicContourSetData } from '../types';
+import type { IGeometry, PublicContourSetData } from '../types';
 
 type GeometryOptions = {
   type: GeometryType;

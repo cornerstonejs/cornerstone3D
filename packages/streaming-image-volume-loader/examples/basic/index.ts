@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Enums,
-  init as csInit,
-  Types,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, init as csInit } from '@cornerstonejs/core';
 import { init as csTools3dInit } from '@cornerstonejs/tools';
 
 // This is for debugging purposes

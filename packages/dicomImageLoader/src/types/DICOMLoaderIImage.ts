@@ -1,6 +1,6 @@
-import { Types } from '@cornerstonejs/core';
-import { ByteArray, DataSet } from 'dicom-parser';
-import ImageFrame from './ImageFrame';
+import type { Types } from '@cornerstonejs/core';
+import type { ByteArray, DataSet } from 'dicom-parser';
+import type ImageFrame from './ImageFrame';
 
 export interface DICOMLoaderIImage extends Types.IImage {
   decodeTimeInMS: number;

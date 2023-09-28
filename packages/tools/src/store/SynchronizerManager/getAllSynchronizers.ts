@@ -1,5 +1,5 @@
 import { state } from '../../store/state';
-import Synchronizer from './Synchronizer';
+import type Synchronizer from './Synchronizer';
 
 /**
  * Return the array of synchronizers

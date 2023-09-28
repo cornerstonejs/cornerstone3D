@@ -1,4 +1,4 @@
-import { Calculator } from '../utilities/math/basic';
+import type { Calculator } from '../utilities/math/basic';
 
 type SharedToolProp = {
   /** supported interactions for the tool */

@@ -1,5 +1,5 @@
 import _cloneDeep from 'lodash.clonedeep';
-import {
+import type {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes';

@@ -1,4 +1,4 @@
-import NiftiImageVolume from './NiftiImageVolume';
+import type NiftiImageVolume from './NiftiImageVolume';
 import { fetchAndAllocateNiftiVolume } from './helpers';
 
 interface IVolumeLoader {

@@ -1,4 +1,4 @@
-import { CPUFallbackViewport, Point2 } from '../../../../types';
+import type { CPUFallbackViewport } from '../../../../types';
 
 type Shift = {
   x: number;

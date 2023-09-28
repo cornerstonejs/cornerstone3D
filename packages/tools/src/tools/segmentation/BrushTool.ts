@@ -34,7 +34,7 @@ import {
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 /**
  * @public

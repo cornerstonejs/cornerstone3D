@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
-  Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
@@ -8,7 +8,7 @@ import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
-import {
+import type {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,

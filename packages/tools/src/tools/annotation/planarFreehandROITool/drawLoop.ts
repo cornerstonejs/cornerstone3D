@@ -5,7 +5,7 @@ import {
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
-import { EventTypes } from '../../../types';
+import type { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
@@ -13,7 +13,7 @@ import {
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';

@@ -1,8 +1,8 @@
-import { DataSet } from 'dicom-parser';
+import type { DataSet } from 'dicom-parser';
 import external from '../../externalModules';
 import { xhrRequest } from '../internal/index';
 import dataSetFromPartialContent from './dataset-from-partial-content';
-import {
+import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';

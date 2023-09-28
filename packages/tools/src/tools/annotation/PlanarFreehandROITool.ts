@@ -32,11 +32,11 @@ import registerClosedContourEditLoop from './planarFreehandROITool/closedContour
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
-import {
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
-import {
+import type {
   EventTypes,
   ToolHandle,
   Annotation,
@@ -44,21 +44,19 @@ import {
   AnnotationStyle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
+import { InteractionTypes } from '../../types';
 import { drawLine, drawCircle, drawLinkedTextBox } from '../../drawingSvg';
-import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
+import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 import pointInPolyline from '../../utilities/math/polyline/pointInPolyline';
 import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import type { ModalityUnitOptions } from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { pointCanProjectOnLine } = polyline;

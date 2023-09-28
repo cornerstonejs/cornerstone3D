@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-import {
+import type {
   ToolAnnotationsPair,
   ToolsWithMoveableHandles,
 } from '../types/InternalToolTypes';

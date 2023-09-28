@@ -1,4 +1,4 @@
-import { VolumeViewport } from '../';
+import type { VolumeViewport } from '../';
 import BaseVolumeViewport from '../BaseVolumeViewport';
 import type { IVolumeInput, IRenderingEngine } from '../../types';
 

@@ -5,7 +5,7 @@ import {
   getRenderingEngines,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
@@ -15,13 +15,9 @@ import {
   drawLine as drawLineSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../drawingSvg';
-import {
-  EventTypes,
-  PublicToolProps,
-  ToolProps,
-  SVGDrawingHelper,
-} from '../types';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import { EventTypes } from '../types';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getToolGroup } from '../store/ToolGroupManager';
 
 const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';

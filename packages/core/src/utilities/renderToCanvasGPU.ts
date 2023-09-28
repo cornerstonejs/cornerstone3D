@@ -1,7 +1,7 @@
 import getOrCreateCanvas from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
-import StackViewport from '../RenderingEngine/StackViewport';
-import { IImage } from '../types';
+import type StackViewport from '../RenderingEngine/StackViewport';
+import type { IImage } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';

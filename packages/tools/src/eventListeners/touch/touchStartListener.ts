@@ -2,7 +2,7 @@ import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import { Swipe } from '../../enums/Touch';
 
-import { EventTypes, ITouchPoints, IPoints, IDistance } from '../../types';
+import type { EventTypes, ITouchPoints, IPoints, IDistance } from '../../types';
 
 import getTouchEventPoints from './getTouchEventPoints';
 import {

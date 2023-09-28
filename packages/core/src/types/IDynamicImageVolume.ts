@@ -1,4 +1,4 @@
-import { IImageVolume, VolumeScalarData } from '../types';
+import type { IImageVolume, VolumeScalarData } from '../types';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class

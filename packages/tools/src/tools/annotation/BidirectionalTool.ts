@@ -35,25 +35,24 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { InteractionTypes } from '../../types';
+import type { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-import {
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
-  MouseDragEventType,
-  MouseMoveEventType,
 } from '../../types/EventTypes';
+import { MouseDragEventType, MouseMoveEventType } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 

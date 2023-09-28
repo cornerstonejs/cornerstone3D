@@ -1,4 +1,4 @@
-import { Point3 } from '../types';
+import type { Point3 } from '../types';
 
 /**
  * - `viewUp` - An array of three floating point numbers describing a vector

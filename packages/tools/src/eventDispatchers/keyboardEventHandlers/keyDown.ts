@@ -1,6 +1,6 @@
 import { ToolGroupManager } from '../../store';
 import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
-import { KeyDownEventType } from '../../types/EventTypes';
+import type { KeyDownEventType } from '../../types/EventTypes';
 
 /**
  * KeyDown event listener to handle viewport cursor icon changes

@@ -32,4 +32,5 @@ function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
   return petSeriesModule?.units || 'unitless';
 }
 
-export { getModalityUnit, ModalityUnitOptions };
+export type { ModalityUnitOptions };
+export { getModalityUnit };

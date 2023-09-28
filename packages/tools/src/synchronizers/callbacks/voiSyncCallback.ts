@@ -1,8 +1,8 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
-  Types,
 } from '@cornerstonejs/core';
 
 /**

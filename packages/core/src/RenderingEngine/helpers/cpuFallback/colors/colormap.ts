@@ -1,6 +1,6 @@
 import LookupTable from './lookupTable';
 import CPU_COLORMAPS from '../../../../constants/cpuColormaps';
-import {
+import type {
   CPUFallbackColormap,
   CPUFallbackColormapData,
   Point4,

@@ -1,6 +1,6 @@
 import getValue from './getValue';
 import getNumberValue from './getNumberValue';
-import { WADORSMetaData } from '../../../types';
+import type { WADORSMetaData } from '../../../types';
 
 export default function getOverlayPlaneModule(metaData: WADORSMetaData) {
   const overlays = [];

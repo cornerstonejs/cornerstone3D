@@ -2,7 +2,12 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import { triggerEvent } from '../utilities';
-import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
+import type {
+  IImage,
+  ImageLoaderFn,
+  IImageLoadObject,
+  EventTypes,
+} from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 
 export interface ImageLoaderOptions {

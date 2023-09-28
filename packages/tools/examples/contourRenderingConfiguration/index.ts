@@ -1,10 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
   geometryLoader,
   RenderingEngine,
   setVolumesForViewports,
-  Types,
   utilities,
   volumeLoader,
 } from '@cornerstonejs/core';

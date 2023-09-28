@@ -6,8 +6,8 @@ import type {
 import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
 import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
 
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 
 const local: {
   codec: CharlsModule;

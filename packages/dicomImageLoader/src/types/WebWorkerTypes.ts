@@ -1,7 +1,7 @@
-import { ByteArray } from 'dicom-parser';
-import ImageFrame from './ImageFrame';
-import { LoaderOptions } from './LoaderOptions';
-import { LoaderDecodeOptions } from './LoaderDecodeOptions';
+import type { ByteArray } from 'dicom-parser';
+import type ImageFrame from './ImageFrame';
+import type { LoaderOptions } from './LoaderOptions';
+import type { LoaderDecodeOptions } from './LoaderDecodeOptions';
 
 export interface WebWorkerOptions {
   maxWebWorkers?: number;

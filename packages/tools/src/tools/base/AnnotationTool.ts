@@ -12,12 +12,15 @@ import { vec2 } from 'gl-matrix';
 import AnnotationDisplayTool from './AnnotationDisplayTool';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import {Annotation, Annotations} from '../../types/AnnotationTypes';
-import {InteractionEventType,MouseMoveEventType} from '../../types/EventTypes'
-import {ToolProps, PublicToolProps} from '../../types/ToolProps'
-import ToolHandle from '../../types/ToolHandle'
-import InteractionTypes from '../../types/InteractionTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { Annotation, Annotations } from '../../types/AnnotationTypes';
+import type {
+  InteractionEventType,
+  MouseMoveEventType,
+} from '../../types/EventTypes';
+import type { ToolProps, PublicToolProps } from '../../types/ToolProps';
+import type ToolHandle from '../../types/ToolHandle';
+import type InteractionTypes from '../../types/InteractionTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**-q
  * Abstract class for tools which create and display annotations on the

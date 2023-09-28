@@ -1,5 +1,5 @@
-import { Point3 } from '.';
-import { ContourType } from '../enums';
+import type { Point3 } from '.';
+import type { ContourType } from '../enums';
 
 export interface IContour {
   readonly id: string;

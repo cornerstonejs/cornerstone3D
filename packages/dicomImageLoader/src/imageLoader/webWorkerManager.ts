@@ -3,7 +3,7 @@
 // import cornerstoneDICOMImageLoaderWebWorker from 'worker-loader!../webWorker/index.worker';
 import cornerstoneDICOMImageLoaderWebWorker from '../webWorker/index.worker';
 
-import {
+import type {
   WebWorkerOptions,
   WorkerTaskTypes,
   WorkerTask,

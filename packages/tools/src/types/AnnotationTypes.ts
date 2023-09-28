@@ -106,4 +106,9 @@ type AnnotationState = {
   [key: string]: GroupSpecificAnnotations;
 };
 
-export { Annotation, Annotations, GroupSpecificAnnotations, AnnotationState };
+export type {
+  Annotation,
+  Annotations,
+  GroupSpecificAnnotations,
+  AnnotationState,
+};

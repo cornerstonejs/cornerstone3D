@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
+import type { vec3 } from 'gl-matrix';
 
 type Sphere = {
   center: Types.Point3 | vec3;

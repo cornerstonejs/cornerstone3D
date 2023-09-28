@@ -1,4 +1,4 @@
-import Point4 from './Point4';
+import type Point4 from './Point4';
 
 type CPUFallbackColormapData = {
   name: string;

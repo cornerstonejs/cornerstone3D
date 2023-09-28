@@ -1,4 +1,4 @@
-import { ImageFrame } from '../types';
+import type { ImageFrame } from '../types';
 
 function isJPEGBaseline8BitColor(
   imageFrame: ImageFrame,

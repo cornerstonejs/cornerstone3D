@@ -1,19 +1,19 @@
 import cloneDeep from 'lodash.clonedeep';
-import {
+import type {
   Annotation,
   Annotations,
   AnnotationState,
   GroupSpecificAnnotations,
 } from '../../types/AnnotationTypes';
 
-import IAnnotationManager from '../../types/IAnnotationManager';
-import AnnotationGroupSelector from '../../types/AnnotationGroupSelector'
+import type IAnnotationManager from '../../types/IAnnotationManager';
+import type AnnotationGroupSelector from '../../types/AnnotationGroupSelector';
 
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
   eventTarget,
   getEnabledElement,
-  Types,
   utilities,
 } from '@cornerstonejs/core';
 

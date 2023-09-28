@@ -1,5 +1,5 @@
-import { InterpolationType, VOILUTFunctionType } from '../enums';
-import { VOIRange } from './voi';
+import type { InterpolationType, VOILUTFunctionType } from '../enums';
+import type { VOIRange } from './voi';
 
 /**
  * Shared Viewport Properties between Stack and Volume Viewports

@@ -1,5 +1,5 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
+import type { Types, ImageVolume } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';

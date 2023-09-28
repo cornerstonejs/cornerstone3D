@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import {
+import type {
   WebWorkerData,
   WebWorkerDecodeData,
   WebWorkerInitializeData,

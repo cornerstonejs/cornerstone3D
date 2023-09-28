@@ -1,4 +1,4 @@
-import { ColormapRegistration } from '../types';
+import type { ColormapRegistration } from '../types';
 
 const _colormaps = new Map();
 

@@ -5,9 +5,9 @@ import {
 } from '@cornerstonejs/core';
 import { Events } from '../../enums';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
-import { Annotations, Annotation } from '../../types/AnnotationTypes';
-import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
-import { AnnotationGroupSelector } from '../../types';
+import type { Annotations, Annotation } from '../../types/AnnotationTypes';
+import type { AnnotationRemovedEventDetail } from '../../types/EventTypes';
+import type { AnnotationGroupSelector } from '../../types';
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,

@@ -1,8 +1,8 @@
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
-import {
+import type {
   DICOMLoaderImageOptions,
   MetadataImagePlaneModule,
   MetadataSopCommonModule,

@@ -1,5 +1,5 @@
-import CPUFallbackLookupTable from './CPUFallbackLookupTable';
-import CPUFallbackLUT from './CPUFallbackLUT';
+import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
+import type CPUFallbackLUT from './CPUFallbackLUT';
 
 type CPUFallbackRenderingTools = {
   renderCanvas?: HTMLCanvasElement;

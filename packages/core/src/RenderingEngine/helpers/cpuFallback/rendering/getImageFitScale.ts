@@ -1,6 +1,6 @@
 import { validateParameterUndefinedOrNull } from './validator';
 import getImageSize from './getImageSize';
-import { IImage } from '../../../../types';
+import type { IImage } from '../../../../types';
 
 /**
  * Calculates the horizontal, vertical and minimum scale factor for an image

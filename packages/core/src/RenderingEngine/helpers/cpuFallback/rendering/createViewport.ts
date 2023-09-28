@@ -1,5 +1,5 @@
 import { state } from './setDefaultViewport';
-import {
+import type {
   CPUFallbackViewportDisplayedArea,
   CPUFallbackViewport,
 } from '../../../../types';

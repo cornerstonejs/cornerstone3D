@@ -1,4 +1,4 @@
-import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
+import type { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
 import { getDefaultSegmentationStateManager } from './segmentationState';
 import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
 

@@ -1,4 +1,4 @@
-import { MetadataGeneralSeriesModule } from '../types';
+import type { MetadataGeneralSeriesModule } from '../types';
 
 /**
  * It returns the scaling parameters for the image with the given imageId. This can be

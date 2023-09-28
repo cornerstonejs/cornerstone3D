@@ -5,7 +5,7 @@ import {
   getSegmentationRepresentations,
   getSegmentations,
 } from '../../stateManagement/segmentation/segmentationState';
-import {
+import type {
   SegmentationRepresentationModifiedEventDetail,
   SegmentationDataModifiedEventDetail,
   SegmentationModifiedEventDetail,

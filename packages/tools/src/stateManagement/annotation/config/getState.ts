@@ -1,4 +1,4 @@
-import { Annotation } from '../../../types';
+import type { Annotation } from '../../../types';
 import { isAnnotationLocked } from '../annotationLocking';
 import { isAnnotationSelected } from '../annotationSelection';
 import { AnnotationStyleStates } from '../../../enums';

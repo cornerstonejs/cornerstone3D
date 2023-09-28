@@ -1,5 +1,5 @@
 import external from '../externalModules';
-import { ImageFrame, MetadataImagePixelModule } from '../types';
+import type { ImageFrame, MetadataImagePixelModule } from '../types';
 
 function getImageFrame(imageId: string): ImageFrame {
   const { cornerstone } = external;

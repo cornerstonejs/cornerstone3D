@@ -1,5 +1,5 @@
-import { Types } from '@cornerstonejs/core';
-import { LoadRequestFunction } from './LoadRequestFunction';
+import type { Types } from '@cornerstonejs/core';
+import type { LoadRequestFunction } from './LoadRequestFunction';
 
 export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;

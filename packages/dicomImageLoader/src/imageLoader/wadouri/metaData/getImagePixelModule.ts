@@ -1,5 +1,5 @@
-import { MetadataImagePixelModule } from '../../../types';
-import { DataSet } from 'dicom-parser';
+import type { MetadataImagePixelModule } from '../../../types';
+import type { DataSet } from 'dicom-parser';
 
 function getLutDescriptor(dataSet: DataSet, tag: string) {
   if (!dataSet.elements[tag] || dataSet.elements[tag].length !== 6) {

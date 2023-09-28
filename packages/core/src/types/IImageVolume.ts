@@ -1,5 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import {
+import type {
   Metadata,
   VolumeScalarData,
   Point3,

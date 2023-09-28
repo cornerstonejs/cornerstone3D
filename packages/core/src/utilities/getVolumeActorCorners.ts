@@ -1,4 +1,4 @@
-import { Point3 } from '../types';
+import type { Point3 } from '../types';
 
 /**
  * Converts `vtkVolumeActor` bounds to corners in world space.

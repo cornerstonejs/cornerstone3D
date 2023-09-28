@@ -1,4 +1,4 @@
-import { IImage, IImageLoadObject } from '../types';
+import type { IImage, IImageLoadObject } from '../types';
 
 interface ICachedImage {
   image?: IImage;

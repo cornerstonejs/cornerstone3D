@@ -1,4 +1,5 @@
-import { Enums, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 
 /**
  * Gets the scalar data for a series of time frames from a 4D volume, returns an

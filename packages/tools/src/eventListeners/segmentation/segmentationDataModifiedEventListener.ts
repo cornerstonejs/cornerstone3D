@@ -3,7 +3,7 @@ import { cache } from '@cornerstonejs/core';
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
+import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.

@@ -1,12 +1,12 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   StackViewport,
   VolumeViewport,
-  Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
-import { Annotations } from '../../types';
+import type { Annotations } from '../../types';
 
 /**
  * Given the viewport and the annotations, it filters the annotations array and only

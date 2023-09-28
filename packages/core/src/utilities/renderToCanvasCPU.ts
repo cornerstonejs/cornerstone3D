@@ -1,4 +1,4 @@
-import { IImage, CPUFallbackEnabledElement } from '../types';
+import type { IImage, CPUFallbackEnabledElement } from '../types';
 
 import getDefaultViewport from '../RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 import calculateTransform from '../RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';

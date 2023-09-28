@@ -5,9 +5,9 @@ import {
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
 import { Events } from '../../../enums';
-import { Annotation } from '../../../types/AnnotationTypes';
+import type { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
-import { AnnotationAddedEventDetail } from '../../../types/EventTypes';
+import type { AnnotationAddedEventDetail } from '../../../types/EventTypes';
 
 /**
  * It triggers an event for the element when an annotation is added

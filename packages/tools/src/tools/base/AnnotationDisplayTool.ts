@@ -8,13 +8,13 @@ import type { Types } from '@cornerstonejs/core';
 
 import BaseTool from './BaseTool';
 import { getAnnotationManager } from '../../stateManagement/annotation/annotationState';
-import { Annotation, Annotations } from '../../types/AnnotationTypes';
-import SVGDrawingHelper from '../../types/SVGDrawingHelper';
+import type { Annotation, Annotations } from '../../types/AnnotationTypes';
+import type SVGDrawingHelper from '../../types/SVGDrawingHelper';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * Abstract class for tools which create and display annotations on the

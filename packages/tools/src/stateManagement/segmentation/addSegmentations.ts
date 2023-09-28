@@ -1,5 +1,5 @@
 import _cloneDeep from 'lodash.clonedeep';
-import { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
+import type { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
 import { validateSegmentationInput } from './helpers';
 import { addSegmentation as addSegmentationToState } from './segmentationState';
 /**

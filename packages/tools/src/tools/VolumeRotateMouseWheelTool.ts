@@ -3,8 +3,8 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { mat4, vec3 } from 'gl-matrix';
-import { PublicToolProps, ToolProps } from '../types';
-import { MouseWheelEventType } from '../types/EventTypes';
+import type { PublicToolProps, ToolProps } from '../types';
+import type { MouseWheelEventType } from '../types/EventTypes';
 
 const DIRECTIONS = {
   X: [1, 0, 0],

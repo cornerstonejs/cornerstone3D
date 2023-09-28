@@ -1,5 +1,5 @@
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
-import { SegmentationRepresentationRemovedEventType } from '../../types/EventTypes';
+import type { SegmentationRepresentationRemovedEventType } from '../../types/EventTypes';
 
 /** A function that listens to the `segmentationRepresentationRemoved` event and triggers
  * the `triggerSegmentationRender` function. This function is called when the

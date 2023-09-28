@@ -20,16 +20,16 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import type { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,

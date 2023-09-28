@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 // <rect x="120" y="100" width="100" height="100" />
 export default function drawRect(

@@ -1,5 +1,5 @@
 import RequestType from '../enums/RequestType';
-import { IImage } from '../types';
+import type { IImage } from '../types';
 import { uuidv4 } from '../utilities';
 
 type AdditionalDetails = {

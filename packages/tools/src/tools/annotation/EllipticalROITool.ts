@@ -41,30 +41,27 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { InteractionTypes } from '../../types';
+import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-import {
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
-  MouseDragEventType,
-  MouseMoveEventType,
 } from '../../types/EventTypes';
+import { MouseDragEventType, MouseMoveEventType } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { ModalityUnitOptions } from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 

@@ -10,7 +10,7 @@ import type { VOIRange } from './voi';
 import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
 import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
-import IImageCalibration from './IImageCalibration';
+import type IImageCalibration from './IImageCalibration';
 
 /**
  * CAMERA_MODIFIED Event's data

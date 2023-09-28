@@ -1,19 +1,19 @@
-import ImageFrame from './ImageFrame';
-import PixelDataTypedArray from './PixelDataTypedArray';
-import {
+import type ImageFrame from './ImageFrame';
+import type PixelDataTypedArray from './PixelDataTypedArray';
+import type {
   LoaderXhrRequestError,
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,
 } from './XHRRequest';
-import { WADORSMetaData, WADORSMetaDataElement } from './WADORSMetaData';
-import { LoaderOptions } from './LoaderOptions';
-import { LoaderDecodeOptions } from './LoaderDecodeOptions';
-import { DICOMLoaderIImage } from './DICOMLoaderIImage';
-import { DICOMLoaderImageOptions } from './DICOMLoaderImageOptions';
-import { LutType } from './LutType';
-import { LoadRequestFunction } from './LoadRequestFunction';
-import { DICOMLoaderDataSetWithFetchMore } from './DICOMLoaderDataSetWithFetchMore';
-import {
+import type { WADORSMetaData, WADORSMetaDataElement } from './WADORSMetaData';
+import type { LoaderOptions } from './LoaderOptions';
+import type { LoaderDecodeOptions } from './LoaderDecodeOptions';
+import type { DICOMLoaderIImage } from './DICOMLoaderIImage';
+import type { DICOMLoaderImageOptions } from './DICOMLoaderImageOptions';
+import type { LutType } from './LutType';
+import type { LoadRequestFunction } from './LoadRequestFunction';
+import type { DICOMLoaderDataSetWithFetchMore } from './DICOMLoaderDataSetWithFetchMore';
+import type {
   MetaDataTypes,
   MetadataGeneralSeriesModule,
   MetadataImagePixelModule,
@@ -25,7 +25,7 @@ import {
   DicomTimeObject,
 } from './MetadataModules';
 
-import {
+import type {
   WebWorkerOptions,
   WebWorkerDecodeConfig,
   WebWorkerTaskOptions,
@@ -40,7 +40,7 @@ import {
   WebWorkerDeferredObject,
 } from './WebWorkerTypes';
 
-export {
+export type {
   ImageFrame,
   LoaderDecodeOptions,
   LoaderOptions,

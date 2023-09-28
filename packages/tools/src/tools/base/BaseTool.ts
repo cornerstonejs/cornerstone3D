@@ -3,10 +3,10 @@ import {
   utilities,
   BaseVolumeViewport,
 } from '@cornerstonejs/core';
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { ToolModes } from '../../enums';
-import InteractionTypes from './../../types/InteractionTypes'
-import { ToolProps, PublicToolProps } from './../../types/ToolProps'
+import type InteractionTypes from './../../types/InteractionTypes';
+import type { ToolProps, PublicToolProps } from './../../types/ToolProps';
 
 export interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */

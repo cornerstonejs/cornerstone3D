@@ -1,5 +1,5 @@
-import Point4 from './Point4';
-import CPUFallbackLookupTable from './CPUFallbackLookupTable';
+import type Point4 from './Point4';
+import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
 
 interface CPUFallbackColormap {
   /** Get id of colormap */

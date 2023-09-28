@@ -2,7 +2,7 @@ import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2
 import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS';
 import calculateMinMax from '../shared/calculateMinMax';
 import decodeImageFrame from '../shared/decodeImageFrame';
-import {
+import type {
   WebWorkerTaskOptions,
   WebWorkerDecodeData,
   ImageFrame,

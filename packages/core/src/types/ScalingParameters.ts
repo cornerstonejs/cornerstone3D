@@ -30,4 +30,4 @@ type Scaling = {
   PT?: PTScaling;
 };
 
-export { PTScaling, Scaling, ScalingParameters };
+export type { PTScaling, Scaling, ScalingParameters };

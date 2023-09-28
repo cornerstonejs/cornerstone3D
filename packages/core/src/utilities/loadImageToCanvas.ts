@@ -1,4 +1,4 @@
-import { IImage } from '../types';
+import type { IImage } from '../types';
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import * as metaData from '../metaData';

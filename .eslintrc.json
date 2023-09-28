@@ -16,7 +16,7 @@
   // eslint-plugin-import
   // - import
   "plugins": [
-    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint",
     "import",
     "eslint-plugin-tsdoc",
     "prettier"
@@ -55,6 +55,10 @@
   "rules": {
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      { "prefer": "type-imports" }
+    ],
     "tsdoc/syntax": "warn",
     "@typescript-eslint/ban-ts-comment": "off",
     "no-console": [

@@ -1,4 +1,4 @@
-import RGB from './RGB';
+import type RGB from './RGB';
 
 type ColormapRegistration = {
   ColorSpace: string;

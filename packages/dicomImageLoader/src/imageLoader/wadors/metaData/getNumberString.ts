@@ -1,4 +1,4 @@
-import { WADORSMetaDataElement } from '../../../types';
+import type { WADORSMetaDataElement } from '../../../types';
 import getValue from './getValue';
 
 /**

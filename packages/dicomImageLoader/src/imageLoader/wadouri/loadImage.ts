@@ -1,9 +1,9 @@
-import { DataSet } from 'dicom-parser';
-import { Types } from '@cornerstonejs/core';
+import type { DataSet } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core';
 import createImage from '../createImage';
 import { xhrRequest } from '../internal/index';
 import dataSetCacheManager from './dataSetCacheManager';
-import {
+import type {
   LoadRequestFunction,
   DICOMLoaderIImage,
   DICOMLoaderImageOptions,

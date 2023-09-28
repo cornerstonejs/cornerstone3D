@@ -1,6 +1,6 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import {
+import type {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
 } from '../../../types';

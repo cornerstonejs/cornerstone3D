@@ -1,5 +1,5 @@
 /* eslint-disable complexity */
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 
 import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
@@ -12,7 +12,11 @@ import decodeJPEGLS from './decoders/decodeJPEGLS';
 import decodeJPEG2000 from './decoders/decodeJPEG2000';
 import decodeHTJ2K from './decoders/decodeHTJ2K';
 import scaleArray from './scaling/scaleArray';
-import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
+import type {
+  ImageFrame,
+  LoaderDecodeOptions,
+  PixelDataTypedArray,
+} from '../types';
 import getMinMax from './getMinMax';
 import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
 import isColorImage from './isColorImage';

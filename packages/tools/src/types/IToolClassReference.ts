@@ -1,4 +1,4 @@
-import { BaseTool } from '../tools';
+import type { BaseTool } from '../tools';
 
 type IToolClassReference = new <T extends BaseTool>(config: any) => T;
 

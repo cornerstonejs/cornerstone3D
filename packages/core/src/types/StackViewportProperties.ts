@@ -1,5 +1,5 @@
-import InterpolationType from '../enums/InterpolationType';
-import { ViewportProperties } from './ViewportProperties';
+import type InterpolationType from '../enums/InterpolationType';
+import type { ViewportProperties } from './ViewportProperties';
 
 /**
  * Stack Viewport Properties

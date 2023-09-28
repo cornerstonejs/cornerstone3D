@@ -1,14 +1,14 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData';
-import CPUIImageData from './CPUIImageData';
-import ICamera from './ICamera';
-import IImageData from './IImageData';
-import { IViewport } from './IViewport';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { Scaling } from './ScalingParameters';
-import StackViewportProperties from './StackViewportProperties';
-import { ColormapRegistration } from './Colormap';
-import IImage from './IImage';
+import type CPUFallbackColormapData from './CPUFallbackColormapData';
+import type CPUIImageData from './CPUIImageData';
+import type ICamera from './ICamera';
+import type IImageData from './IImageData';
+import type { IViewport } from './IViewport';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type { Scaling } from './ScalingParameters';
+import type StackViewportProperties from './StackViewportProperties';
+import type { ColormapRegistration } from './Colormap';
+import type IImage from './IImage';
 
 /**
  * Interface for Stack Viewport

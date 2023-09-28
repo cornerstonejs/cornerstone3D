@@ -1,5 +1,5 @@
-import * as Enums from '../enums';
-import {
+import type * as Enums from '../enums';
+import type {
   ContourConfig,
   ContourRenderingConfig,
   ContourSegmentationData,
