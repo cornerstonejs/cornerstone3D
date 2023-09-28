@@ -23,6 +23,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
+  drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -782,7 +783,7 @@ class CobbAngleTool extends AnnotationTool {
 
       // Calculating the arcs
 
-      const { arc1Start, arc1End, arc2End, arc2Start } =
+      const { arc1Start, arc1End, arc2End, arc2Start, arc1Angle, arc2Angle } =
         this.getArcsStartEndPoints({
           firstLine,
           secondLine,
@@ -796,8 +797,8 @@ class CobbAngleTool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         lineUID,
-        arc1Start,
-        arc1End,
+        arc1Start as Types.Point2,
+        arc1End as Types.Point2,
         {
           color,
           lineWidth: '1',
@@ -810,8 +811,8 @@ class CobbAngleTool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         lineUID,
-        arc2Start,
-        arc2End,
+        arc2Start as Types.Point2,
+        arc2End as Types.Point2,
         {
           color,
           lineWidth: '1',
@@ -850,7 +851,7 @@ class CobbAngleTool extends AnnotationTool {
         data.handles.textBox.worldPosition
       );
 
-      const textBoxUID = 'text1';
+      const textBoxUID = 'cobbAngleText';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
         annotationUID,
@@ -870,6 +871,46 @@ class CobbAngleTool extends AnnotationTool {
         bottomLeft: viewport.canvasToWorld([left, top + height]),
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
+
+      const arc1TextBoxUID = 'arcAngle1';
+
+      const arc1TextLine = [
+        `${arc1Angle.toFixed(2)} ${String.fromCharCode(176)}`,
+      ];
+
+      const arch1TextPosCanvas = midPoint2(arc1Start, arc1End);
+
+      drawTextBoxSvg(
+        svgDrawingHelper,
+        annotationUID,
+        arc1TextBoxUID,
+        arc1TextLine,
+        arch1TextPosCanvas,
+        {
+          ...options,
+          padding: 3,
+        }
+      );
+
+      const arc2TextBoxUID = 'arcAngle2';
+
+      const arc2TextLine = [
+        `${arc2Angle.toFixed(2)} ${String.fromCharCode(176)}`,
+      ];
+
+      const arch2TextPosCanvas = midPoint2(arc2Start, arc2End);
+
+      drawTextBoxSvg(
+        svgDrawingHelper,
+        annotationUID,
+        arc2TextBoxUID,
+        arc2TextLine,
+        arch2TextPosCanvas,
+        {
+          ...options,
+          padding: 3,
+        }
+      );
     }
 
     return renderStatus;
@@ -995,7 +1036,19 @@ class CobbAngleTool extends AnnotationTool {
     };
   };
 
-  getArcsStartEndPoints = ({ firstLine, secondLine, mid1, mid2 }) => {
+  getArcsStartEndPoints = ({
+    firstLine,
+    secondLine,
+    mid1,
+    mid2,
+  }): {
+    arc1Start: Types.Point2;
+    arc1End: Types.Point2;
+    arc2Start: Types.Point2;
+    arc2End: Types.Point2;
+    arc1Angle: number;
+    arc2Angle: number;
+  } => {
     const linkLine = [mid1, mid2] as [Types.Point2, Types.Point2];
 
     const arc1Angle = angleBetweenLines(firstLine, linkLine);
@@ -1032,7 +1085,7 @@ class CobbAngleTool extends AnnotationTool {
         normalizedDirectionStartArc1[0] * linkLineLength * ratio,
       midFirstLine[1] +
         normalizedDirectionStartArc1[1] * linkLineLength * ratio,
-    ];
+    ] as Types.Point2;
 
     // Existing logic for arc1End
     const directionVectorEndArc1 = [
@@ -1049,7 +1102,7 @@ class CobbAngleTool extends AnnotationTool {
     const arc1End = [
       mid1[0] + normalizedDirectionEndArc1[0] * linkLineLength * ratio,
       mid1[1] + normalizedDirectionEndArc1[1] * linkLineLength * ratio,
-    ];
+    ] as Types.Point2;
 
     // Similar logic for arc2Start
     const directionVectorStartArc2 = [
@@ -1068,7 +1121,7 @@ class CobbAngleTool extends AnnotationTool {
         normalizedDirectionStartArc2[0] * linkLineLength * ratio,
       midSecondLine[1] +
         normalizedDirectionStartArc2[1] * linkLineLength * ratio,
-    ];
+    ] as Types.Point2;
 
     // Similar logic for arc2End
     const directionVectorEndArc2 = [
@@ -1085,13 +1138,15 @@ class CobbAngleTool extends AnnotationTool {
     const arc2End = [
       mid2[0] + normalizedDirectionEndArc2[0] * linkLineLength * ratio,
       mid2[1] + normalizedDirectionEndArc2[1] * linkLineLength * ratio,
-    ];
+    ] as Types.Point2;
 
     return {
       arc1Start,
       arc1End,
       arc2Start,
       arc2End,
+      arc1Angle,
+      arc2Angle,
     };
   };
 }

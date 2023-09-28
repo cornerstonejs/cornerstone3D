@@ -358,7 +358,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    abstract toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes): void;
+    abstract toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes, canvasCoords?: Types_2.Point2): void;
 }
 
 // @public (undocumented)
@@ -838,6 +838,18 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
+    distanceToLines: ({ viewport, points, canvasCoords, proximity }: {
+        viewport: any;
+        points: any;
+        canvasCoords: any;
+        proximity: any;
+    }) => {
+        distanceToPoint: number;
+        distanceToPoint2: number;
+        isNearFirstLine: boolean;
+        isNearSecondLine: boolean;
+    };
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -845,7 +857,23 @@ export class CobbAngleTool extends AnnotationTool {
         movingTextBox?: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
+        isNearFirstLine?: boolean;
+        isNearSecondLine?: boolean;
     } | null;
+    // (undocumented)
+    getArcsStartEndPoints: ({ firstLine, secondLine, mid1, mid2, }: {
+        firstLine: any;
+        secondLine: any;
+        mid1: any;
+        mid2: any;
+    }) => {
+        arc1Start: Types_2.Point2;
+        arc1End: Types_2.Point2;
+        arc2Start: Types_2.Point2;
+        arc2End: Types_2.Point2;
+        arc1Angle: number;
+        arc2Angle: number;
+    };
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
@@ -869,7 +897,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
     // (undocumented)
     touchDragCallback: any;
 }
