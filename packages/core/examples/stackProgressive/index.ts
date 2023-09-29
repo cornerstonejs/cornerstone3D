@@ -3,7 +3,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  ctVoiRange,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -20,6 +19,7 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
+const { cornerstone } = window;
 
 const instructions = document.createElement('p');
 instructions.innerText = 'Click on a button to perform the given load type';
@@ -52,7 +52,13 @@ async function showStack(stack: string[], viewport) {
   viewport.render();
   console.timeEnd('imageLoad');
   const end = Date.now();
-  timingInfo.innerText = `Loading ${stack[0]} took ${end - start}`;
+  const { transferSyntaxUID } = cornerstone.metaData.get(
+    'transferSyntax',
+    stack[0]
+  );
+  timingInfo.innerText = `Loading ${stack[0]} took ${
+    end - start
+  } in ${transferSyntaxUID}`;
 }
 
 /**

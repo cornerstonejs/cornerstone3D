@@ -15,7 +15,9 @@ function imageIdIsStreamable(imageId: string) {
   const { transferSyntaxUID } = metaDataProvider('transferSyntax', imageId) as
     | { transferSyntaxUID: string }
     | undefined;
-  if (!transferSyntaxUID) return false;
+  if (!transferSyntaxUID) {
+    return false;
+  }
   return streamableTransferSyntaxes.includes(transferSyntaxUID);
 }
 
@@ -103,7 +105,7 @@ const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
 let listeningForPartialImages = false;
 async function handlePartialImageFrame(event: any) {
   const { cornerstone } = external;
-  const { imageId, contentType, imageFrame: pixelData, decodeLevel } = event.detail;
+  const { imageId, contentType, imageFrame, decodeLevel } = event.detail;
   const options = optionsCache[imageId];
   const transferSyntax = getTransferSyntaxForContentType(contentType);
 
@@ -113,7 +115,7 @@ async function handlePartialImageFrame(event: any) {
 
   const imagePromise = createImage(
     imageId,
-    pixelData,
+    imageFrame?.pixelData,
     transferSyntax,
     options
   );
@@ -130,7 +132,9 @@ async function handlePartialImageFrame(event: any) {
   });
 }
 function listenForStreamingPartialImages() {
-  if (listeningForPartialImages) return;
+  if (listeningForPartialImages) {
+    return;
+  }
   listeningForPartialImages = true;
   const { cornerstone } = external;
   cornerstone.eventTarget.addEventListener(
@@ -178,7 +182,8 @@ function loadImage(
       // get the pixel data from the server
       const isStreamable = imageIdIsStreamable(imageId);
       const loaderOptions = getOptions();
-      const progressivelyRender = isStreamable && loaderOptions.progressivelyRender;
+      const progressivelyRender =
+        isStreamable && loaderOptions.progressivelyRender;
       if (progressivelyRender) {
         listenForStreamingPartialImages();
         optionsCache[imageId] = options;
@@ -188,10 +193,10 @@ function loadImage(
           const transferSyntax = getTransferSyntaxForContentType(
             result.contentType
           );
-          const decodeLevel = result.imageFrame.decodeLevel;
+          const decodeLevel = result.imageFrame?.decodeLevel;
           options.decodeLevel = decodeLevel;
 
-          const pixelData = result.imageFrame.pixelData;
+          const pixelData = result.imageFrame?.pixelData || result.imageFrame;
           const imagePromise = createImage(
             imageId,
             pixelData,

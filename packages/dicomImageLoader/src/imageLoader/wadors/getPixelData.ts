@@ -4,34 +4,7 @@ import streamRequest from '../internal/streamRequest';
 import findIndexOfString from './findIndexOfString';
 import external from '../../externalModules';
 import imageIdToURI from '../imageIdToURI';
-
-function findBoundary(header: string[]): string {
-  for (let i = 0; i < header.length; i++) {
-    if (header[i].substr(0, 2) === '--') {
-      return header[i];
-    }
-  }
-}
-
-function findContentType(header: string[]): string {
-  for (let i = 0; i < header.length; i++) {
-    if (header[i].substr(0, 13) === 'Content-Type:') {
-      return header[i].substr(13).trim();
-    }
-  }
-}
-
-function uint8ArrayToString(data, offset, length) {
-  offset = offset || 0;
-  length = length || data.length - offset;
-  let str = '';
-
-  for (let i = offset; i < offset + length; i++) {
-    str += String.fromCharCode(data[i]);
-  }
-
-  return str;
-}
+import extractMultipart from './extractMultipart';
 
 function getPixelData(
   uri: string,
@@ -58,15 +31,11 @@ function getPixelData(
           imageId,
           headers
         );
+        console.log('Got next web streams', uri, imageId, headers);
 
         // Resolve the promise with the first streaming result (low quality
         // presumably)
-        return resolve({
-          contentType: contentType || 'application/octet-stream',
-          imageFrame: {
-            pixelData: imageFrame,
-          },
-        });
+        return resolve(imageFrame);
       } else {
         // Using range request method
 
@@ -83,7 +52,7 @@ function getPixelData(
         });
 
         let fetches = 1;
-        let maxFetches = 5;
+        const maxFetches = 5;
         let loadComplete = complete;
         while (loadComplete === false && fetches <= maxFetches) {
           const { complete, imageFrame, contentType } = await loadNextRange();
@@ -95,8 +64,7 @@ function getPixelData(
               cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
               {
                 imageId,
-                contentType,
-                imageFrame,
+                ...extractMultipart(contentType, imageFrame, true),
               }
             );
           } else {
@@ -110,8 +78,7 @@ function getPixelData(
               cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
               {
                 imageId,
-                contentType,
-                imageFrame,
+                ...extractMultipart(contentType, imageFrame),
               }
             );
           }
@@ -129,61 +96,13 @@ function getPixelData(
     const { xhr } = loadPromise;
 
     loadPromise.then(function (imageFrameAsArrayBuffer /* , xhr*/) {
-      // request succeeded, Parse the multi-part mime response
-      const response = new Uint8Array(imageFrameAsArrayBuffer);
-
       const contentType =
         xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
-      let decodeLevel = xhr.getResponseHeader('X-Decode-Level')
-        ? Number(xhr.getResponseHeader('X-Decode-Level'))
-        : undefined;
+      // const decodeLevel = xhr.getResponseHeader('X-Decode-Level')
+      //   ? Number(xhr.getResponseHeader('X-Decode-Level'))
+      //   : undefined;
 
-      if (contentType.indexOf('multipart') === -1) {
-        resolve({
-          contentType,
-          imageFrame: {
-            pixelData: response,
-            decodeLevel,
-          },
-        });
-
-        return;
-      }
-
-      // First look for the multipart mime header
-      const tokenIndex = findIndexOfString(response, '\r\n\r\n');
-
-      if (tokenIndex === -1) {
-        reject(new Error('invalid response - no multipart mime header'));
-      }
-      const header = uint8ArrayToString(response, 0, tokenIndex);
-      // Now find the boundary  marker
-      const split = header.split('\r\n');
-      const boundary = findBoundary(split);
-
-      if (!boundary) {
-        reject(new Error('invalid response - no boundary marker'));
-      }
-      const offset = tokenIndex + 4; // skip over the \r\n\r\n
-
-      // find the terminal boundary marker
-      const endIndex = findIndexOfString(response, boundary, offset);
-
-      if (endIndex === -1) {
-        reject(new Error('invalid response - terminating boundary not found'));
-      }
-
-      // Remove \r\n from the length
-      const length = endIndex - offset - 2;
-
-      // return the info for this pixel data
-      resolve({
-        contentType: findContentType(split),
-        imageFrame: {
-          pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
-          decodeLevel,
-        },
-      });
+      resolve(extractMultipart(contentType, imageFrameAsArrayBuffer));
     }, reject);
   });
 }

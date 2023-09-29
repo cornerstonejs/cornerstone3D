@@ -1443,7 +1443,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
-    this.viewportStatus = ViewportStatus.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1462,6 +1461,7 @@ class StackViewport extends Viewport implements IStackViewport {
     };
 
     triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
+    this.viewportStatus = ViewportStatus.LOADING;
 
     return imageId;
   }
@@ -1736,6 +1736,7 @@ class StackViewport extends Viewport implements IStackViewport {
             }
           }
         );
+        console.log('loadAndCacheImage', imageId, options);
         return loadAndCacheImage(imageId, options).then(
           (image) => {
             handleNewPixelData.call(this, image, imageIdIndex, imageId);
@@ -1755,6 +1756,8 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: true,
+        progressivelyRender: true,
+        streamMethod: 'web-streams',
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {

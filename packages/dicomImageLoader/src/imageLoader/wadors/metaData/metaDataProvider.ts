@@ -251,8 +251,13 @@ function metaDataProvider(type, imageId) {
   // Note: this is not a DICOM module, but a useful metadata that can be
   // retrieved from the image
   if (type === 'transferSyntax') {
+    // Get either the FMI, which is NOT permitted in the DICOMweb data, but
+    // is sometimes found there anyways, or the available transfer syntax, which
+    // is the recommended way of getting it.
     return {
-      transferSyntaxUID: getValue<string>(metaData['00020010']),
+      transferSyntaxUID:
+        getValue<string>(metaData['00020010']) ||
+        getValue<string>(metaData['00083002']),
     };
   }
 

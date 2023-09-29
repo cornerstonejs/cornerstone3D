@@ -6,6 +6,7 @@ import {
   LoaderXhrRequestPromise,
 } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
+import extractMultipart from '../wadors/extractMultipart';
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 
@@ -13,59 +14,14 @@ const streamCache: {
   [key: string]: { byteArray: Uint8Array; currentChunkSize: number };
 } = {};
 
-function appendChunk(options: {
-  imageId: string;
-  minChunkSize: number;
-  chunk?: Uint8Array;
-  complete?: boolean;
-}) {
-  const { imageId, chunk, complete, minChunkSize } = options;
-
-  // If we have a new chunk of data to append, append it to the Uint8Array for
-  // that imageId
-  if (!complete) {
-    const existingDataForImageId = streamCache[imageId];
-    if (!existingDataForImageId) {
-      streamCache[imageId] = {
-        byteArray: chunk,
-        currentChunkSize: 0,
-      };
-    } else {
-      const newDataArray = new Uint8Array(
-        existingDataForImageId.byteArray.length + chunk.length
-      );
-      newDataArray.set(existingDataForImageId.byteArray, 0);
-      newDataArray.set(chunk, existingDataForImageId.byteArray.length);
-      streamCache[imageId].byteArray = newDataArray;
-    }
-  }
-
-  const currentFrameByteArray = streamCache[imageId].byteArray;
-
-  // If the file has been completely downloaded, just return the full byte array
-  // from the cache.
-  if (complete) {
-    streamCache[imageId] = undefined;
-    return currentFrameByteArray;
-  }
-
-  // Manually limit the minimum size of each "chunk" to be rendered, so that we
-  // aren't calling the render pipeline a ton for tiny incremental changes.
-  streamCache[imageId].currentChunkSize += chunk.length;
-
-  if (streamCache[imageId].currentChunkSize >= minChunkSize) {
-    streamCache[imageId].currentChunkSize = 0;
-    return currentFrameByteArray;
-  } else {
-    return undefined;
-  }
-}
-
 export default function streamRequest(
   url: string,
   imageId: string,
   defaultHeaders: Record<string, string> = {}
-): LoaderXhrRequestPromise<{ contentType: string; imageFrame: Uint8Array }> {
+): LoaderXhrRequestPromise<{
+  contentType: string;
+  imageFrame: { pixelData: Uint8Array };
+}> {
   const { cornerstone } = external;
   const options = getOptions();
 
@@ -127,7 +83,10 @@ export default function streamRequest(
         const responseReader = response.body.getReader();
         const responseHeaders = response.headers;
 
+        const contentType = responseHeaders.get('content-type');
+
         const totalBytes = responseHeaders.get('Content-Length');
+        console.log('totalBytes=', totalBytes);
         loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
 
         // for await (const chunk of response.body as unknown as Iterable<
@@ -163,8 +122,7 @@ export default function streamRequest(
               {
                 url,
                 imageId,
-                contentType: responseHeaders.get('content-type'),
-                imageFrame,
+                ...extractMultipart(contentType, imageFrame, true),
               }
             );
             break;
@@ -174,17 +132,17 @@ export default function streamRequest(
             chunk: value,
             minChunkSize: minChunkSize as number,
           });
-          if (!imageFrame) continue;
+          if (!imageFrame) {
+            continue;
+          }
 
           // When the first chunk of the downloaded image arrives, resolve the
           // request promise with that chunk, so it can be passed through to
           // cornerstone via the usual image loading pathway. All subsequent
           // chunks will be passed and decoded via events.
           if (!hasResolved) {
-            resolve({
-              contentType: responseHeaders.get('content-type'),
-              imageFrame,
-            });
+            console.log('resolving', contentType);
+            resolve(extractMultipart(contentType, imageFrame, true));
             hasResolved = true;
           } else {
             cornerstone.triggerEvent(
@@ -193,8 +151,7 @@ export default function streamRequest(
               {
                 url,
                 imageId,
-                contentType: responseHeaders.get('content-type'),
-                imageFrame,
+                ...extractMultipart(contentType, imageFrame, true),
               }
             );
           }
@@ -208,4 +165,52 @@ export default function streamRequest(
   );
 
   return promise;
+}
+
+function appendChunk(options: {
+  imageId: string;
+  minChunkSize: number;
+  chunk?: Uint8Array;
+  complete?: boolean;
+}) {
+  const { imageId, chunk, complete, minChunkSize } = options;
+
+  // If we have a new chunk of data to append, append it to the Uint8Array for
+  // that imageId
+  if (!complete) {
+    const existingDataForImageId = streamCache[imageId];
+    if (!existingDataForImageId) {
+      streamCache[imageId] = {
+        byteArray: chunk,
+        currentChunkSize: 0,
+      };
+    } else {
+      const newDataArray = new Uint8Array(
+        existingDataForImageId.byteArray.length + chunk.length
+      );
+      newDataArray.set(existingDataForImageId.byteArray, 0);
+      newDataArray.set(chunk, existingDataForImageId.byteArray.length);
+      streamCache[imageId].byteArray = newDataArray;
+    }
+  }
+
+  const currentFrameByteArray = streamCache[imageId].byteArray;
+
+  // If the file has been completely downloaded, just return the full byte array
+  // from the cache.
+  if (complete) {
+    streamCache[imageId] = undefined;
+    return currentFrameByteArray;
+  }
+
+  // Manually limit the minimum size of each "chunk" to be rendered, so that we
+  // aren't calling the render pipeline a ton for tiny incremental changes.
+  streamCache[imageId].currentChunkSize += chunk.length;
+
+  if (streamCache[imageId].currentChunkSize >= minChunkSize) {
+    streamCache[imageId].currentChunkSize = 0;
+    return currentFrameByteArray;
+  } else {
+    return undefined;
+  }
 }
