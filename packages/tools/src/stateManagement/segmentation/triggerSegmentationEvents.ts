@@ -1,10 +1,7 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 import { Events } from '../../enums';
-import {
-  getSegmentationRepresentations,
-  getSegmentations,
-} from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentations, getSegmentations } from './state/get';
 import type {
   SegmentationRepresentationModifiedEventDetail,
   SegmentationDataModifiedEventDetail,
