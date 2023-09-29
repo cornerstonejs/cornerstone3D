@@ -9,7 +9,6 @@ import {
 import { addToolState, getToolState } from './state';
 import {
   getStackData,
-  range,
   requestType,
   priority,
   clearFromImageIds,
@@ -31,6 +30,63 @@ let resetPrefetchTimeout;
 // Starting the prefetch quickly isn't an issue as the main image is already being
 // loaded, so a 5 ms prefetch delay is fine
 const resetPrefetchDelay = 5;
+
+/**
+ * Call this to enable stack context sensitive prefetch.  Should be called
+ * before stack data is set in order to start prefetch after load first image.
+ * This will add a STACK_NEW_IMAGE to detect when a new image is displayed, and then
+ * update the prefetch stack.  The context sensitive prefetch reacts to the
+ * initial display, or significant moves, the already loaded images, the
+ * cache size and the direction of navigation.  The behaviour is:
+ *
+ * 1. On navigating to a new image initially, or one that is at a different position:
+ *  * Fetch the next/previous 2 images
+ * 2. If the user is navigating forward/backward by less than 5 images, then
+ *  * Prefetch additional images in the direction of navigation, up to 100
+ * 3. If all the images in a given prefetch have completed, then:
+ *  * Use the last prefetched image size as an image size for the stack
+ *  * Fetch up to 1/4 of the cache size images near the current image
+ *
+ * This is designed to:
+ *   * Get nearby images immediately so that they are available for navigation
+ *     * Under the assumption that users might click and view an image, then
+ *       navigate to next/previous image to see the exact image they want
+ *   * Not interfere with loading other viewports if they are still loading
+ *     * Load priority is prefetch, and minimal images are requested initially
+ *   * Load an entire series if it will fit in memory
+ *     * Allows navigating to other parts of the series and display images immediately
+ *   * Have images available for CINE/navigation in one direction even when
+ *     there is more image data than will fit in memory.
+ *     * Up to 100 images in the direction of travel will be prefetched
+ *
+ * @param element - to prefetch on
+ */
+const enable = (element): void => {
+  const stack = getStackData(element);
+
+  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    return;
+  }
+
+  updateToolState(element);
+
+  prefetch(element);
+
+  element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
+  element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
+
+  const promiseRemovedHandler = getPromiseRemovedHandler(element);
+
+  eventTarget.removeEventListener(
+    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
+    promiseRemovedHandler
+  );
+  eventTarget.addEventListener(
+    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
+    promiseRemovedHandler
+  );
+};
 
 function prefetch(element) {
   const stack = getStackData(element);
@@ -284,55 +340,6 @@ const updateToolState = (element, usage?: number) => {
   stackPrefetchData.indicesToRequest = indicesToRequest;
 
   addToolState(element, stackPrefetchData);
-};
-
-/**
- * Listen to newly added stacks enabled elements and then listen for
- * STACK_NEW_IMAGE to detect when a new image is displayed.  When it is,
- * update the prefetch stack.  This is done in a context sensitive manner,
- * where it is sensitive to the current position, the direction of travel,
- * and the total cache size.  The behaviour is:
- *
- * 1. On navigating to a new image initially, or one that is at a different position:
- *  * Fetch the next/previous 2 images
- * 2. If all the images in a given prefetch have compelted, then:
- *  * Fetch up to 1/4 of the cache size images near the current image
- * 3. If the user is navigating forward/backward just a bit, then
- *  * Prefetch additional images in the direction of navigation
- *
- * This is designed to:
- *   * Get nearby images immediately so that they are available for navigation
- *   * Not interfere with loading other viewports if they are still loading
- *   * Load an entire series if it will fit in memory
- *   * Have images available for CINE/navigation in one direction
- *
- * @param element to prefetch on
- */
-const enable = (element): void => {
-  const stack = getStackData(element);
-
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
-    return;
-  }
-
-  updateToolState(element);
-
-  prefetch(element);
-
-  element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
-  element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
-
-  const promiseRemovedHandler = getPromiseRemovedHandler(element);
-
-  eventTarget.removeEventListener(
-    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
-    promiseRemovedHandler
-  );
-  eventTarget.addEventListener(
-    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
-    promiseRemovedHandler
-  );
 };
 
 function disable(element) {
