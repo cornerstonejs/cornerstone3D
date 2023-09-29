@@ -21,6 +21,7 @@ import { default as webWorkerManager } from './webWorkerManager';
 import { default as getPixelData } from './wadors/getPixelData';
 import { internal } from './internal/index';
 import { default as external } from '../externalModules';
+import { init } from '../init';
 
 const cornerstoneDICOMImageLoader = {
   convertRGBColorByPixel,
@@ -43,6 +44,7 @@ const cornerstoneDICOMImageLoader = {
   webWorkerManager,
   internal,
   external,
+  init,
 };
 
 export {
@@ -66,6 +68,7 @@ export {
   webWorkerManager,
   internal,
   external,
+  init,
 };
 
 export default cornerstoneDICOMImageLoader;

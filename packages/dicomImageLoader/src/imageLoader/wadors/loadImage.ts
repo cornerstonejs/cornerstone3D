@@ -7,8 +7,8 @@ import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
- * @param {string} contentType The value of the content-type header as returned by the WADO-RS server.
- * @return The transfer-syntax as announced by the server, or Implicit Little Endian by default.
+ * @param contentType - The value of the content-type header as returned by the WADO-RS server.
+ * @returns The transfer-syntax as announced by the server, or Implicit Little Endian by default.
  */
 export function getTransferSyntaxForContentType(contentType: string): string {
   const defaultTransferSyntax = '1.2.840.10008.1.2'; // Default is Implicit Little Endian.

@@ -40,6 +40,8 @@ import type {
   WebWorkerDeferredObject,
 } from './WebWorkerTypes';
 
+import type { InitConfiguration } from './InitConfiguration';
+
 export type {
   ImageFrame,
   LoaderDecodeOptions,
@@ -76,4 +78,5 @@ export type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
   PixelDataTypedArray,
+  InitConfiguration,
 };

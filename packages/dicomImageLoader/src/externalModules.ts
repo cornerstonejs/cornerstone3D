@@ -1,5 +1,4 @@
 /* eslint import/extensions:0 */
-import registerLoaders from './imageLoader/registerLoaders';
 
 let cornerstone;
 let dicomParser;
@@ -7,8 +6,6 @@ let dicomParser;
 const external = {
   set cornerstone(cs) {
     cornerstone = cs;
-
-    registerLoaders(cornerstone);
   },
   get cornerstone() {
     if (!cornerstone) {
@@ -19,8 +16,6 @@ const external = {
           'cornerstoneDICOMImageLoader requires a copy of Cornerstone to work properly. Please add cornerstoneDICOMImageLoader.external.cornerstone = cornerstone; to your application.'
         );
       }
-
-      registerLoaders(cornerstone);
     }
 
     return cornerstone;
