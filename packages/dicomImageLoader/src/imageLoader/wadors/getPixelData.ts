@@ -25,17 +25,15 @@ function getPixelData(
     if (progressivelyRender && !fsiz) {
       const { cornerstone } = external;
 
+      // TODO - move all the rendering into a single stream response
+      // provided by an iterator.
       if (streamMethod === 'web-streams') {
-        const { contentType, imageFrame } = await streamRequest(
-          uri,
-          imageId,
-          headers
-        );
-        console.log('Got next web streams', uri, imageId, headers);
-
-        // Resolve the promise with the first streaming result (low quality
-        // presumably)
-        return resolve(imageFrame);
+        streamRequest(uri, imageId, headers).then((imageData) => {
+          console.log('Resolving stream request response', imageData);
+          resolve(imageData);
+        });
+        console.log('Initiated web streams');
+        return;
       } else {
         // Using range request method
 
@@ -58,28 +56,20 @@ function getPixelData(
           const { complete, imageFrame, contentType } = await loadNextRange();
           loadComplete = complete;
           fetches += 1;
-          if (!complete) {
-            cornerstone.triggerEvent(
-              cornerstone.eventTarget,
-              cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-              {
-                imageId,
-                ...extractMultipart(contentType, imageFrame, true),
-              }
-            );
-          } else {
+          cornerstone.triggerEvent(
+            cornerstone.eventTarget,
+            cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
+            {
+              imageId,
+              complete,
+              ...extractMultipart(contentType, imageFrame, true),
+            }
+          );
+          if (complete) {
             cornerstone.triggerEvent(
               cornerstone.eventTarget,
               cornerstone.EVENTS.IMAGE_LOADED,
               { imageId }
-            );
-            cornerstone.triggerEvent(
-              cornerstone.eventTarget,
-              cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
-              {
-                imageId,
-                ...extractMultipart(contentType, imageFrame),
-              }
             );
           }
         }

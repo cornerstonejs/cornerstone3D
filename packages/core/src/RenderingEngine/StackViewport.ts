@@ -1715,6 +1715,12 @@ class StackViewport extends Viewport implements IStackViewport {
           imageIdIndex: number,
           imageId: string
         ) {
+          console.log(
+            'StackViewport.handleNewPixelData',
+            this.id,
+            imageId,
+            image
+          );
           successCallback.call(this, image, imageIdIndex, imageId);
         }
         eventTarget.addEventListener(
@@ -1736,13 +1742,13 @@ class StackViewport extends Viewport implements IStackViewport {
             }
           }
         );
-        console.log('loadAndCacheImage', imageId, options);
         return loadAndCacheImage(imageId, options).then(
           (image) => {
             handleNewPixelData.call(this, image, imageIdIndex, imageId);
             // successCallback.call(this, image, imageIdIndex, imageId);
           },
           (error) => {
+            console.warn('StackViewport - failed to deliver');
             errorCallback.call(this, error, imageIdIndex, imageId);
           }
         );
@@ -1790,6 +1796,7 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
+        console.log('successCallback delivering new image', imageId, image);
         // If Photometric Interpretation is not the same for the next image we are trying to load
         // invalidate the stack to recreate the VTK imageData
         const csImgFrame = this.csImage?.imageFrame;
@@ -1850,6 +1857,7 @@ class StackViewport extends Viewport implements IStackViewport {
           Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
           (event) => {
             if (event.detail.imageId === imageId) {
+              console.log('Stack delivered event', this.id, event.detail);
               // Update cache
               cache.putImageLoadObject(
                 imageId,
@@ -1867,6 +1875,7 @@ class StackViewport extends Viewport implements IStackViewport {
         );
         return loadAndCacheImage(imageId, options).then(
           (image) => {
+            console.log('stack delivered promise result', imageId, image);
             handleNewPixelData.call(this, image, imageIdIndex, imageId);
             // successCallback.call(this, image, imageIdIndex, imageId);
           },

@@ -6,7 +6,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const outputPath = path.join(rootPath, 'dist', 'dynamic-import');
 
 const prodConfig = {
-  mode: 'production',
+  mode: 'development',
   stats: {
     children: true,
   },

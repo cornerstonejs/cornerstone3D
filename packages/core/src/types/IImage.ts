@@ -111,6 +111,12 @@ interface IImage {
     modalityLUT?: unknown;
     voiLUT?: CPUFallbackLUT;
   };
+
+  // Indicator if the image is complete, that is fully loaded.
+  complete?: boolean;
+  // The level to which this image has been loaded.  Allows for not replacing
+  // newer/more complete versions with older/less complete versions.
+  level?: number;
 }
 
 export default IImage;

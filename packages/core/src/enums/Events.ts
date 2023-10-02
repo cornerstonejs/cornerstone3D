@@ -187,13 +187,6 @@ enum Events {
 
   /**
    * Triggers on the eventTarget when a streaming or byte range partial image
-   * request has completed, i.e. all chunks have been loaded. This fires prior
-   * to image decode.
-   */
-  IMAGE_LOAD_STREAM_COMPLETE = 'CORNERSTONE_IMAGE_LOAD_STREAM_COMPLETE',
-
-  /**
-   * Triggers on the eventTarget when a streaming or byte range partial image
    * request updates, i.e. a new chunk has loaded but the file is not yet
    * completely downloaded.
    */

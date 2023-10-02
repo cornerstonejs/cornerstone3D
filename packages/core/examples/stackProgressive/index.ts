@@ -58,7 +58,7 @@ async function showStack(stack: string[], viewport) {
   );
   timingInfo.innerText = `Loading ${stack[0]} took ${
     end - start
-  } in ${transferSyntaxUID}`;
+  } for first decode using ${transferSyntaxUID}`;
 }
 
 /**
@@ -74,7 +74,7 @@ async function run() {
       '1.3.6.1.4.1.9590.100.1.2.19841440611855834937505752510708699165',
     SeriesInstanceUID:
       '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
-    wadoRsRoot: 'http://localhost:25080/dicomweb',
+    wadoRsRoot: 'http://localhost:5000/dicomweb',
   });
 
   // Instantiate a rendering engine

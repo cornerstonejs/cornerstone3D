@@ -105,7 +105,8 @@ const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
 let listeningForPartialImages = false;
 async function handlePartialImageFrame(event: any) {
   const { cornerstone } = external;
-  const { imageId, contentType, imageFrame, decodeLevel } = event.detail;
+  const { imageId, contentType, imageFrame, decodeLevel, complete } =
+    event.detail;
   const options = optionsCache[imageId];
   const transferSyntax = getTransferSyntaxForContentType(contentType);
 
@@ -121,6 +122,13 @@ async function handlePartialImageFrame(event: any) {
   );
 
   imagePromise.then((image: any) => {
+    console.log(
+      'Triggering image load stream updated image',
+      imageId,
+      complete,
+      image
+    );
+    image.complete = complete;
     cornerstone.triggerEvent(
       cornerstone.eventTarget,
       cornerstone.EVENTS.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
@@ -141,11 +149,8 @@ function listenForStreamingPartialImages() {
     cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
     handlePartialImageFrame
   );
-  cornerstone.eventTarget.addEventListener(
-    cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
-    handlePartialImageFrame
-  );
 }
+
 function stopListeningForStreamingPartialImages() {
   const { cornerstone } = external;
   cornerstone.eventTarget.removeEventListener(
@@ -193,10 +198,17 @@ function loadImage(
           const transferSyntax = getTransferSyntaxForContentType(
             result.contentType
           );
-          const decodeLevel = result.imageFrame?.decodeLevel;
+          const { complete } = result;
+          const decodeLevel =
+            result.imageFrame?.decodeLevel || complete ? 0 : 4;
           options.decodeLevel = decodeLevel;
 
           const pixelData = result.imageFrame?.pixelData || result.imageFrame;
+          console.log(
+            'Received compressed data, about to decompress',
+            complete ? 'complete' : 'partial',
+            pixelData.length
+          );
           const imagePromise = createImage(
             imageId,
             pixelData,
@@ -209,10 +221,16 @@ function loadImage(
             const end = new Date().getTime();
 
             image.loadTimeInMS = end - start;
+            console.log(
+              'Received uncompressed data, delivering to resolve',
+              end - start,
+              image
+            );
             resolve(image);
           }, reject);
         }, reject)
         .catch((error) => {
+          console.warn('Rejecting image load:', error);
           reject(error);
         });
     }

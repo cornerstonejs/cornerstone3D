@@ -43,126 +43,135 @@ export default function streamRequest(
     }
   };
 
+  console.time('Full Image');
+  const start = Date.now();
+
   // Make the request for the streamable image frame (i.e. HTJ2K)
-  const promise = new Promise<{ contentType: string; imageFrame: Uint8Array }>(
-    async (resolve, reject) => {
-      let hasResolved = false;
+  const promise = new Promise<{
+    contentType: string;
+    imageFrame: Uint8Array;
+    complete: boolean;
+  }>(async (resolve, reject) => {
+    let hasResolved = false;
 
-      const headers = Object.assign({}, defaultHeaders /* beforeSendHeaders */);
+    const headers = Object.assign({}, defaultHeaders /* beforeSendHeaders */);
 
-      Object.keys(headers).forEach(function (key) {
-        if (headers[key] === null) {
-          headers[key] = undefined;
-        }
-        if (key === 'Accept' && url.indexOf('accept=') !== -1) {
-          headers[key] = undefined;
-        }
-      });
-
-      try {
-        cornerstone.triggerEvent(
-          cornerstone.eventTarget,
-          'cornerstoneimageloadstart',
-          {
-            url,
-            imageId,
-          }
-        );
-
-        const response = await fetch(url, {
-          headers: defaultHeaders,
-          signal: undefined,
-        });
-        // const streamQueueingStrategy = new ByteLengthQueuingStrategy({
-        //   highWaterMark: 65536,
-        // });
-        // const responseStream = new ReadableStream(
-        //   response.body,
-        //   streamQueueingStrategy
-        // );
-        const responseReader = response.body.getReader();
-        const responseHeaders = response.headers;
-
-        const contentType = responseHeaders.get('content-type');
-
-        const totalBytes = responseHeaders.get('Content-Length');
-        console.log('totalBytes=', totalBytes);
-        loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
-
-        // for await (const chunk of response.body as unknown as Iterable<
-        //   ReadableStream<Uint8Array>
-        // >) {
-
-        // }
-        while (true) {
-          const { done, value } = await responseReader.read();
-          if (done) {
-            const imageFrame = appendChunk({
-              imageId,
-              complete: true,
-              minChunkSize: minChunkSize as number,
-            });
-            loadTracking[imageId].loaded = imageFrame.length;
-            console.log(
-              'LOADED: ',
-              Object.values(loadTracking).filter((v) => v.loaded === v.total)
-                .length,
-              '/',
-              Object.keys(loadTracking).length
-            );
-            console.log('Finished reading streaming file');
-            cornerstone.triggerEvent(
-              cornerstone.eventTarget,
-              cornerstone.EVENTS.IMAGE_LOADED,
-              { url, imageId }
-            );
-            cornerstone.triggerEvent(
-              cornerstone.eventTarget,
-              cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
-              {
-                url,
-                imageId,
-                ...extractMultipart(contentType, imageFrame, true),
-              }
-            );
-            break;
-          }
-          const imageFrame = appendChunk({
-            imageId,
-            chunk: value,
-            minChunkSize: minChunkSize as number,
-          });
-          if (!imageFrame) {
-            continue;
-          }
-
-          // When the first chunk of the downloaded image arrives, resolve the
-          // request promise with that chunk, so it can be passed through to
-          // cornerstone via the usual image loading pathway. All subsequent
-          // chunks will be passed and decoded via events.
-          if (!hasResolved) {
-            console.log('resolving', contentType);
-            resolve(extractMultipart(contentType, imageFrame, true));
-            hasResolved = true;
-          } else {
-            cornerstone.triggerEvent(
-              cornerstone.eventTarget,
-              cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-              {
-                url,
-                imageId,
-                ...extractMultipart(contentType, imageFrame, true),
-              }
-            );
-          }
-        }
-      } catch (err: any) {
-        errorInterceptor(err);
-        console.error(err);
-        reject(err);
+    Object.keys(headers).forEach(function (key) {
+      if (headers[key] === null) {
+        headers[key] = undefined;
       }
+      if (key === 'Accept' && url.indexOf('accept=') !== -1) {
+        headers[key] = undefined;
+      }
+    });
+
+    try {
+      cornerstone.triggerEvent(
+        cornerstone.eventTarget,
+        'cornerstoneimageloadstart',
+        {
+          url,
+          imageId,
+        }
+      );
+
+      const response = await fetch(url, {
+        headers: defaultHeaders,
+        signal: undefined,
+      });
+      // const streamQueueingStrategy = new ByteLengthQueuingStrategy({
+      //   highWaterMark: 65536,
+      // });
+      // const responseStream = new ReadableStream(
+      //   response.body,
+      //   streamQueueingStrategy
+      // );
+      const responseReader = response.body.getReader();
+      const responseHeaders = response.headers;
+
+      const contentType = responseHeaders.get('content-type');
+
+      const totalBytes = responseHeaders.get('Content-Length');
+      console.log('totalBytes=', totalBytes);
+      loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
+
+      // for await (const chunk of response.body as unknown as Iterable<
+      //   ReadableStream<Uint8Array>
+      // >) {
+
+      // }
+      while (true) {
+        const { done: complete, value } = await responseReader.read();
+        const imageFrame = appendChunk({
+          imageId,
+          chunk: value,
+          complete: complete,
+          minChunkSize: minChunkSize as number,
+        });
+        if (!imageFrame) {
+          if (complete) {
+            throw new Error(`Done but no image frame available ${imageId}`);
+          }
+          continue;
+        }
+
+        const extracted = extractMultipart(contentType, imageFrame, !complete);
+        const detail = {
+          url,
+          imageId,
+          ...extracted,
+        };
+
+        if (complete) {
+          console.timeEnd('Full Image');
+        }
+        // When the first chunk of the downloaded image arrives, resolve the
+        // request promise with that chunk, so it can be passed through to
+        // cornerstone via the usual image loading pathway. All subsequent
+        // chunks will be passed and decoded via events.
+        if (!hasResolved) {
+          console.log('resolving stream request', extracted.complete, detail);
+          resolve(detail);
+          hasResolved = true;
+        } else if (complete) {
+          console.log(
+            'image_load_stream_partial',
+            complete ? 'complete' : 'partial',
+            Date.now() - start,
+            'ms',
+            imageId,
+            imageFrame.length
+          );
+          cornerstone.triggerEvent(
+            cornerstone.eventTarget,
+            cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
+            detail
+          );
+        }
+
+        if (complete) {
+          loadTracking[imageId].loaded = imageFrame.length;
+          console.log(
+            'IMAGE_LOADED: ',
+            Object.values(loadTracking).filter((v) => v.loaded === v.total)
+              .length,
+            '/',
+            Object.keys(loadTracking).length
+          );
+          cornerstone.triggerEvent(
+            cornerstone.eventTarget,
+            cornerstone.EVENTS.IMAGE_LOADED,
+            { url, imageId }
+          );
+          break;
+        }
+      }
+    } catch (err: any) {
+      errorInterceptor(err);
+      console.error(err);
+      reject(err);
     }
-  );
+  });
 
   return promise;
 }
