@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.1...v1.19.2) (2023-10-02)
+
+### Bug Fixes
+
+- Prefetch that is actually position aware and multi-viewport capable ([#726](https://github.com/cornerstonejs/cornerstone3D/issues/726)) ([abbc6f1](https://github.com/cornerstonejs/cornerstone3D/commit/abbc6f156c1162d6eea13fce99651f3891d6dc35))
+
 ## [1.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.0...v1.19.1) (2023-09-27)
 
 **Note:** Version bump only for package @cornerstonejs/core
