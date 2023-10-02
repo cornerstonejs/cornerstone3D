@@ -1,4 +1,4 @@
-import { generateROIContoursFromSegmentations } from "./generateROIContourFromSegmentation";
+import { generateContourSetFromSegmentation } from "./generateContourSetFromSegmentation";
 import RTSS from "./RTSS";
 
-export { generateROIContoursFromSegmentations, RTSS };
+export { generateContourSetFromSegmentation, RTSS };

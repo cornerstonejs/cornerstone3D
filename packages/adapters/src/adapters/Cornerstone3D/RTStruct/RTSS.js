@@ -1,8 +1,15 @@
 // Code and structure based on OHIF Viewer:
 // extensions\tmtv\src\utils\dicomRTAnnotationExport\RTStructureSet\RTSSReport.js
 
-import { generateROIContoursFromSegmentations } from "./generateROIContourFromSegmentation";
+import { generateContourSetFromSegmentation } from "./generateContourSetFromSegmentation";
 import dcmjs from "dcmjs";
+import {
+    getPatientModule,
+    getReferencedFrameOfReferenceSequence,
+    getReferencedSeriesSequence,
+    getRTSeriesModule,
+    getStructureSetModule
+} from "./utilities";
 
 const { DicomMetaDictionary } = dcmjs.data;
 
@@ -13,9 +20,11 @@ export default class RTSS {
      * Note: current WIP and using segmentations to contour conversion,
      * routine that is not fully tested
      *
-     * @param segmentations Array of Cornerstone tool segmentation data
-     * @param metadataProvider Metadata provider
-     * @param DicomMetadataStore metadata storage -> possibly redundant?
+     * @param segmentations - Array of Cornerstone tool segmentation data
+     * @param metadataProvider - Metadata provider
+     * @param DicomMetadataStore - metadata store instance
+     * @param cs - cornerstone instance
+     * @param csTools - cornerstone tool instance
      * @returns Report object containing the dataset
      */
     static async generateRTSS(
@@ -25,22 +34,105 @@ export default class RTSS {
         cs,
         csTools
     ) {
-        console.log(">>RTSS");
         // Convert segmentations to ROIContours
-        const roiContours = await generateROIContoursFromSegmentations(
-            segmentations,
-            metadataProvider,
-            cs,
-            csTools
-        );
-        console.log(roiContours);
+        const roiContours = [];
+        await segmentations.forEach(async (segmentation, segIndex) => {
+            const contourSet = await generateContourSetFromSegmentation(
+                segmentation,
+                cs,
+                csTools
+            );
+
+            // Check contour set isn't undefined
+            if (contourSet) {
+                const contourSequence = [];
+                contourSet.sliceContours.forEach(sliceContour => {
+                    /**
+                     * addContour - Adds a new ROI with related contours to ROIContourSequence
+                     *
+                     * @param newContour - cornerstoneTools `ROIContour` object
+                     *
+                     * newContour = {
+                     *   name: string,
+                     *   description: string,
+                     *   contourSequence: array[contour]
+                     *   color: array[number],
+                     *   metadata: {
+                     *       referencedImageId: string,
+                     *       FrameOfReferenceUID: string
+                     *     }
+                     * }
+                     *
+                     * contour = {
+                     *   ContourImageSequence: array[
+                     *       { ReferencedSOPClassUID: string, ReferencedSOPInstanceUID: string}
+                     *     ]
+                     *   ContourGeometricType: string,
+                     *   NumberOfContourPoints: number,
+                     *   ContourData: array[number]
+                     * }
+                     */
+                    // Note: change needed if support non-planar contour representation is needed
+                    const sopCommon = metadataProvider.get(
+                        "sopCommonModule",
+                        sliceContour.referencedImageId
+                    );
+                    const ReferencedSOPClassUID = sopCommon.sopClassUID;
+                    const ReferencedSOPInstanceUID = sopCommon.sopInstanceUID;
+                    const ContourImageSequence = [
+                        { ReferencedSOPClassUID, ReferencedSOPInstanceUID } // NOTE: replace in dcmjs?
+                    ];
+
+                    const sliceContourPolyData = sliceContour.polyData;
+
+                    sliceContour.contours.forEach((contour, index) => {
+                        const ContourGeometricType = contour.type;
+                        const NumberOfContourPoints =
+                            contour.contourPoints.length;
+                        const ContourData = [];
+
+                        contour.contourPoints.forEach(point => {
+                            const pointData =
+                                sliceContourPolyData.points[point];
+                            pointData[0] = +pointData[0].toFixed(2);
+                            pointData[1] = +pointData[1].toFixed(2);
+                            pointData[2] = +pointData[2].toFixed(2);
+                            ContourData.push(pointData[0]);
+                            ContourData.push(pointData[1]);
+                            ContourData.push(pointData[2]);
+                        });
+
+                        contourSequence.push({
+                            ContourImageSequence,
+                            ContourGeometricType,
+                            NumberOfContourPoints,
+                            ContourNumber: index + 1,
+                            ContourData
+                        });
+                    });
+                });
+
+                const segLabel =
+                    contourSet.label || `Segmentation ${segIndex + 1}`;
+
+                const ROIContour = {
+                    name: segLabel,
+                    description: segLabel,
+                    contourSequence,
+                    color: contourSet.color,
+                    metadata: contourSet.metadata
+                };
+
+                roiContours.push(ROIContour);
+            }
+        });
+
         let dataset = initializeDataset(
             roiContours[0].metadata,
             metadataProvider
         );
 
         roiContours.forEach((contour, index) => {
-            // TOTO: set colour based on segmentation
             const roiContour = {
                 ROIDisplayColor: contour.color || [255, 0, 0],
                 ContourSequence: contour.contourSequence,
@@ -54,7 +146,6 @@ export default class RTSS {
             dataset.ROIContourSequence.push(roiContour);
 
             // ReferencedSeriesSequence
-            // Todo: handle more than one series
             dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
                 contour,
                 index,
@@ -95,8 +186,6 @@ export default class RTSS {
 
         dataset._meta = _meta;
 
-        console.log(dataset);
-        console.log("<<RTSS");
         return dataset;
     }
 
@@ -110,7 +199,7 @@ export default class RTSS {
     //static generateToolState(_dataset, _hooks = {}) {
     static generateToolState() {
         // Todo
-        console.warn("RTSSReport.generateToolState not implemented");
+        console.warn("RTSS.generateToolState not implemented");
     }
 }
 
@@ -119,7 +208,6 @@ function initializeDataset(metadata, metadataProvider) {
 
     // get the first annotation data
     const { referencedImageId: imageId, FrameOfReferenceUID } = metadata;
-    console.log(imageId);
 
     const { studyInstanceUID } = metadataProvider.get(
         "generalSeriesModule",
@@ -127,7 +215,7 @@ function initializeDataset(metadata, metadataProvider) {
     );
 
     const patientModule = getPatientModule(imageId, metadataProvider);
-    const rtSeriesModule = getRTSeriesModule(imageId, metadataProvider);
+    const rtSeriesModule = getRTSeriesModule(DicomMetaDictionary);
 
     return {
         StructureSetROISequence: [],
@@ -152,138 +240,3 @@ function initializeDataset(metadata, metadataProvider) {
         StructureSetTime: DicomMetaDictionary.time()
     };
 }
-
-function getPatientModule(imageId, metadataProvider) {
-    const generalSeriesModule = metadataProvider.get(
-        "generalSeriesModule",
-        imageId
-    );
-    const generalStudyModule = metadataProvider.get(
-        "generalStudyModule",
-        imageId
-    );
-    const patientStudyModule = metadataProvider.get(
-        "patientStudyModule",
-        imageId
-    );
-    const patientModule = metadataProvider.get("patientModule", imageId);
-    const patientDemographicModule = metadataProvider.get(
-        "patientDemographicModule",
-        imageId
-    );
-
-    return {
-        Modality: generalSeriesModule.modality,
-        PatientID: patientModule.patientId,
-        PatientName: patientModule.patientName,
-        PatientBirthDate: "",
-        PatientAge: patientStudyModule.patientAge,
-        PatientSex: patientDemographicModule.patientSex,
-        PatientWeight: patientStudyModule.patientWeight,
-        StudyDate: generalStudyModule.studyDate,
-        StudyTime: generalStudyModule.studyTime,
-        StudyID: "ToDo",
-        AccessionNumber: generalStudyModule.accessionNumber
-    };
-}
-
-function getReferencedFrameOfReferenceSequence(
-    contour,
-    metadataProvider,
-    dataset
-) {
-    const { referencedImageId: imageId, FrameOfReferenceUID } =
-        contour.metadata;
-    const instance = metadataProvider.get("instance", imageId);
-    const { SeriesInstanceUID } = instance;
-
-    const { ReferencedSeriesSequence } = dataset;
-
-    return [
-        {
-            FrameOfReferenceUID,
-            RTReferencedStudySequence: [
-                {
-                    ReferencedSOPClassUID: dataset.SOPClassUID,
-                    ReferencedSOPInstanceUID: dataset.SOPInstanceUID,
-                    RTReferencedSeriesSequence: [
-                        {
-                            SeriesInstanceUID,
-                            ContourImageSequence: [
-                                ...ReferencedSeriesSequence[0]
-                                    .ReferencedInstanceSequence
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-    ];
-}
-
-function getReferencedSeriesSequence(
-    contour,
-    _index,
-    metadataProvider,
-    DicomMetadataStore
-) {
-    // grab imageId from toolData
-    const { referencedImageId: imageId } = contour.metadata;
-    const instance = metadataProvider.get("instance", imageId);
-    const { SeriesInstanceUID, StudyInstanceUID } = instance;
-
-    const ReferencedSeriesSequence = [];
-    if (SeriesInstanceUID) {
-        const series = DicomMetadataStore.getSeries(
-            StudyInstanceUID,
-            SeriesInstanceUID
-        );
-
-        const ReferencedSeries = {
-            SeriesInstanceUID,
-            ReferencedInstanceSequence: []
-        };
-
-        series.instances.forEach(instance => {
-            const { SOPInstanceUID, SOPClassUID } = instance;
-            ReferencedSeries.ReferencedInstanceSequence.push({
-                ReferencedSOPClassUID: SOPClassUID,
-                ReferencedSOPInstanceUID: SOPInstanceUID
-            });
-        });
-
-        ReferencedSeriesSequence.push(ReferencedSeries);
-    }
-
-    return ReferencedSeriesSequence;
-}
-
-//function getRTSeriesModule(_imageId, _metadataProvider) {
-function getRTSeriesModule() {
-    return {
-        SeriesInstanceUID: DicomMetaDictionary.uid(), // generate a new series instance uid
-        SeriesNumber: "99" // Todo:: what should be the series number?
-    };
-}
-
-//function getStructureSetModule(contour, index, _metadataProvider) {
-function getStructureSetModule(contour, index) {
-    const { FrameOfReferenceUID } = contour.metadata;
-
-    return {
-        ROINumber: index + 1,
-        ROIName: contour.name || `Todo: name ${index + 1}`,
-        ROIDescription: `Todo: description ${index + 1}`,
-        ROIGenerationAlgorithm: "Todo: algorithm",
-        ReferencedFrameOfReferenceUID: FrameOfReferenceUID
-    };
-}
-
-//function getRTROIObservationsSequence(toolData, index, metadataProvider) {
-//  return {
-//    ObservationNumber: index + 1,
-//    ReferencedROINumber: index + 1,
-//    RTROIInterpretedType: 'Todo: type',
-//    ROIInterpreter: 'Todo: interpreter',
-//  };
-//}
