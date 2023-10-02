@@ -93,6 +93,8 @@ interface IImage {
       suvbwToSuvbsa?: number;
     };
   };
+  loadTimeInMS?: number;
+  decodeTimeInMS?: number;
   /** CPU: image statistics for rendering */
   stats?: {
     lastStoredPixelDataToCanvasImageDataTime?: number;
