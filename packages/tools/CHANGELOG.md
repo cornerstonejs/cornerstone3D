@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.2...v1.19.3) (2023-10-02)
+
+### Bug Fixes
+
+- **segmentation:** should be able to change color ([#804](https://github.com/cornerstonejs/cornerstone3D/issues/804)) ([9394787](https://github.com/cornerstonejs/cornerstone3D/commit/939478765dc6c24d828689a013314c9bdf2dde7b))
+
 ## [1.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.1...v1.19.2) (2023-10-02)
 
 ### Bug Fixes
