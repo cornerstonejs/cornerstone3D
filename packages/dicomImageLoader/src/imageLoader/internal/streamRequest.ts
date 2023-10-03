@@ -1,12 +1,11 @@
+import { utilities } from '@cornerstonejs/core';
 import external from '../../externalModules';
 import { getOptions } from './options';
-import {
-  LoaderXhrRequestError,
-  LoaderXhrRequestParams,
-  LoaderXhrRequestPromise,
-} from '../../types';
+import { LoaderXhrRequestError } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
+
+const { ProgressiveIterator } = utilities;
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 
@@ -14,14 +13,21 @@ const streamCache: {
   [key: string]: { byteArray: Uint8Array; currentChunkSize: number };
 } = {};
 
+/**
+ * This function does a streaming parse from an http request, delivering
+ * combined/subsequent parts of the result as iterations on a
+ * ProgressiveIterator instance.
+ *
+ * @param url - to request and parse as either multipart or singlepart.
+ * @param imageId
+ * @param defaultHeaders
+ * @returns
+ */
 export default function streamRequest(
   url: string,
   imageId: string,
   defaultHeaders: Record<string, string> = {}
-): LoaderXhrRequestPromise<{
-  contentType: string;
-  imageFrame: { pixelData: Uint8Array };
-}> {
+) {
   const { cornerstone } = external;
   const options = getOptions();
 
@@ -43,17 +49,12 @@ export default function streamRequest(
     }
   };
 
+  console.log('streamRequest:Start of load');
   console.time('Full Image');
   const start = Date.now();
 
   // Make the request for the streamable image frame (i.e. HTJ2K)
-  const promise = new Promise<{
-    contentType: string;
-    imageFrame: Uint8Array;
-    complete: boolean;
-  }>(async (resolve, reject) => {
-    let hasResolved = false;
-
+  const loadIterator = new ProgressiveIterator(async (iterator, reject) => {
     const headers = Object.assign({}, defaultHeaders /* beforeSendHeaders */);
 
     Object.keys(headers).forEach(function (key) {
@@ -66,26 +67,10 @@ export default function streamRequest(
     });
 
     try {
-      cornerstone.triggerEvent(
-        cornerstone.eventTarget,
-        'cornerstoneimageloadstart',
-        {
-          url,
-          imageId,
-        }
-      );
-
       const response = await fetch(url, {
         headers: defaultHeaders,
         signal: undefined,
       });
-      // const streamQueueingStrategy = new ByteLengthQueuingStrategy({
-      //   highWaterMark: 65536,
-      // });
-      // const responseStream = new ReadableStream(
-      //   response.body,
-      //   streamQueueingStrategy
-      // );
       const responseReader = response.body.getReader();
       const responseHeaders = response.headers;
 
@@ -95,85 +80,58 @@ export default function streamRequest(
       console.log('totalBytes=', totalBytes);
       loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
 
-      // for await (const chunk of response.body as unknown as Iterable<
-      //   ReadableStream<Uint8Array>
-      // >) {
-
-      // }
-      while (true) {
-        const { done: complete, value } = await responseReader.read();
-        const imageFrame = appendChunk({
+      let readDone = false;
+      let imageFrame;
+      while (!readDone) {
+        const { done, value } = await responseReader.read();
+        readDone = done;
+        imageFrame = appendChunk({
           imageId,
           chunk: value,
-          complete: complete,
+          complete: readDone,
           minChunkSize: minChunkSize as number,
         });
         if (!imageFrame) {
-          if (complete) {
+          if (readDone) {
             throw new Error(`Done but no image frame available ${imageId}`);
           }
           continue;
         }
 
-        const extracted = extractMultipart(contentType, imageFrame, !complete);
+        const extracted = extractMultipart(contentType, imageFrame, !readDone);
         const detail = {
           url,
           imageId,
           ...extracted,
         };
 
-        if (complete) {
-          console.timeEnd('Full Image');
-        }
         // When the first chunk of the downloaded image arrives, resolve the
         // request promise with that chunk, so it can be passed through to
         // cornerstone via the usual image loading pathway. All subsequent
         // chunks will be passed and decoded via events.
-        if (!hasResolved) {
-          console.log('resolving stream request', extracted.complete, detail);
-          resolve(detail);
-          hasResolved = true;
-        } else if (complete) {
-          console.log(
-            'image_load_stream_partial',
-            complete ? 'complete' : 'partial',
-            Date.now() - start,
-            'ms',
-            imageId,
-            imageFrame.length
-          );
-          cornerstone.triggerEvent(
-            cornerstone.eventTarget,
-            cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-            detail
-          );
-        }
-
-        if (complete) {
-          loadTracking[imageId].loaded = imageFrame.length;
-          console.log(
-            'IMAGE_LOADED: ',
-            Object.values(loadTracking).filter((v) => v.loaded === v.total)
-              .length,
-            '/',
-            Object.keys(loadTracking).length
-          );
-          cornerstone.triggerEvent(
-            cornerstone.eventTarget,
-            cornerstone.EVENTS.IMAGE_LOADED,
-            { url, imageId }
-          );
-          break;
-        }
+        iterator.add(detail, readDone);
       }
-    } catch (err: any) {
+      loadTracking[imageId].loaded = imageFrame.length;
+      console.log(
+        'IMAGE_LOADED: ',
+        Object.values(loadTracking).filter((v) => v.loaded === v.total).length,
+        '/',
+        Object.keys(loadTracking).length
+      );
+      cornerstone.triggerEvent(
+        cornerstone.eventTarget,
+        cornerstone.EVENTS.IMAGE_LOADED,
+        { url, imageId }
+      );
+      console.timeEnd('Full Image');
+    } catch (err) {
       errorInterceptor(err);
       console.error(err);
       reject(err);
     }
   });
 
-  return promise;
+  return loadIterator.getNextPromise();
 }
 
 function appendChunk(options: {

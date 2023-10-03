@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
 
 import external from '../../externalModules';
 import createImage from '../createImage';
@@ -6,19 +6,19 @@ import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { metaDataProvider } from './metaData';
 import { getOptions } from '../internal';
+const { ProgressiveIterator } = utilities;
+
+const streamableTransferSyntaxes = new Set<string>();
+streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
 
 function imageIdIsStreamable(imageId: string) {
-  const streamableTransferSyntaxes = [
-    '3.2.840.10008.1.2.4.96', // 'jphc':
-    // '1.2.840.10008.1.2.4.140', // 'jxl' Have not tested JXL yet
-  ];
   const { transferSyntaxUID } = metaDataProvider('transferSyntax', imageId) as
     | { transferSyntaxUID: string }
     | undefined;
   if (!transferSyntaxUID) {
     return false;
   }
-  return streamableTransferSyntaxes.includes(transferSyntaxUID);
+  return streamableTransferSyntaxes.has(transferSyntaxUID);
 }
 
 /**
@@ -100,69 +100,15 @@ export interface CornerstoneWadoRsLoaderOptions
 
 const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
 
-// If streaming transfer syntax, listen for partial imageFrame byte arrays,
-// decompress, and emit event with pixel data
-let listeningForPartialImages = false;
-async function handlePartialImageFrame(event: any) {
-  const { cornerstone } = external;
-  const { imageId, contentType, imageFrame, decodeLevel, complete } =
-    event.detail;
-  const options = optionsCache[imageId];
-  const transferSyntax = getTransferSyntaxForContentType(contentType);
+// TODO: load bulk data items that we might need
 
-  // This is here for the future, but for now we are not doing subresolutions
-  // for partial image rendering so decodeLevel will always be undefined.
-  options.decodeLevel = decodeLevel;
-
-  const imagePromise = createImage(
-    imageId,
-    imageFrame?.pixelData,
-    transferSyntax,
-    options
-  );
-
-  imagePromise.then((image: any) => {
-    console.log(
-      'Triggering image load stream updated image',
-      imageId,
-      complete,
-      image
-    );
-    image.complete = complete;
-    cornerstone.triggerEvent(
-      cornerstone.eventTarget,
-      cornerstone.EVENTS.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
-      {
-        imageId,
-        image,
-      }
-    );
-  });
-}
-function listenForStreamingPartialImages() {
-  if (listeningForPartialImages) {
-    return;
-  }
-  listeningForPartialImages = true;
-  const { cornerstone } = external;
-  cornerstone.eventTarget.addEventListener(
-    cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-    handlePartialImageFrame
-  );
-}
-
-function stopListeningForStreamingPartialImages() {
-  const { cornerstone } = external;
-  cornerstone.eventTarget.removeEventListener(
-    cornerstone.EVENTS.IMAGE_LOAD_STREAM_PARTIAL,
-    handlePartialImageFrame
-  );
-  cornerstone.eventTarget.removeEventListener(
-    cornerstone.EVENTS.IMAGE_LOAD_STREAM_COMPLETE,
-    handlePartialImageFrame
-  );
-  listeningForPartialImages = false;
-}
+// Uncomment this on to test jpegls codec in OHIF
+// const mediaType = 'multipart/related; type="image/x-jls"';
+// const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
+const mediaType =
+  'multipart/related; type=application/octet-stream; transfer-syntax=*';
+// const mediaType =
+//   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
 
 function loadImage(
   imageId: string,
@@ -172,89 +118,90 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const promise = new Promise<DICOMLoaderIImage>((resolve, reject) => {
-    // TODO: load bulk data items that we might need
-
-    // Uncomment this on to test jpegls codec in OHIF
-    // const mediaType = 'multipart/related; type="image/x-jls"';
-    // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
-    const mediaType =
-      'multipart/related; type=application/octet-stream; transfer-syntax=*';
-    // const mediaType =
-    //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
-
-    function sendXHR(imageURI: string, imageId: string, mediaType: string) {
+  const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>();
+  console.log('loadImage:Start of load image', imageId, options);
+  const failureCount = 0;
+  async function sendXHR(imageURI: string, imageId: string, mediaType: string) {
+    uncompressedIterator.process(async (it, reject) => {
       // get the pixel data from the server
       const isStreamable = imageIdIsStreamable(imageId);
       const loaderOptions = getOptions();
       const progressivelyRender =
         isStreamable && loaderOptions.progressivelyRender;
       if (progressivelyRender) {
-        listenForStreamingPartialImages();
         optionsCache[imageId] = options;
       }
-      return getPixelData(imageURI, imageId, mediaType, progressivelyRender)
-        .then((result) => {
-          const transferSyntax = getTransferSyntaxForContentType(
-            result.contentType
-          );
-          const { complete } = result;
-          const decodeLevel =
-            result.imageFrame?.decodeLevel || complete ? 0 : 4;
-          options.decodeLevel = decodeLevel;
+      const compressedIt = ProgressiveIterator.as(
+        getPixelData(imageURI, imageId, mediaType, progressivelyRender)
+      );
+      let lastDecodeLevel = 4;
+      for await (const result of compressedIt) {
+        const transferSyntax = getTransferSyntaxForContentType(
+          result.contentType
+        );
+        const { complete } = result;
+        const completeText = complete ? 'complete' : 'partial';
+        if (!streamableTransferSyntaxes.has(transferSyntax) && !complete) {
+          continue;
+        }
+        const decodeLevel =
+          result.imageFrame?.decodeLevel || complete ? 0 : lastDecodeLevel;
+        options.decodeLevel = decodeLevel;
 
-          const pixelData = result.imageFrame?.pixelData || result.imageFrame;
-          console.log(
-            'Received compressed data, about to decompress',
-            complete ? 'complete' : 'partial',
-            pixelData.length
-          );
-          const imagePromise = createImage(
+        const pixelData = result.imageFrame?.pixelData || result.imageFrame;
+        try {
+          const image = await createImage(
             imageId,
             pixelData,
             transferSyntax,
             options
           );
 
-          imagePromise.then((image: any) => {
-            // add the loadTimeInMS property
-            const end = new Date().getTime();
+          // add the loadTimeInMS property
+          const end = new Date().getTime();
 
-            image.loadTimeInMS = end - start;
-            console.log(
-              'Received uncompressed data, delivering to resolve',
-              end - start,
-              image
-            );
-            resolve(image);
-          }, reject);
-        }, reject)
-        .catch((error) => {
-          console.warn('Rejecting image load:', error);
-          reject(error);
-        });
-    }
+          image.loadTimeInMS = end - start;
+          image.complete = complete;
+          console.log(
+            'loadImage:Received uncompressed data in',
+            end - start,
+            'ms',
+            image
+          );
+          it.add(image, complete);
+          if (lastDecodeLevel > 2) {
+            // Try higher resolution now
+            lastDecodeLevel -= 1;
+          }
+        } catch (e) {
+          console.warn("Couldn't decode" + completeText, e);
+          if (complete) {
+            throw e;
+          }
+        }
+      }
+      // Cache in the pool when done
+      return uncompressedIterator.getNextPromise();
+    });
+  }
 
-    const requestType = options.requestType || 'interaction';
-    const additionalDetails = options.additionalDetails || { imageId };
-    const priority = options.priority === undefined ? 5 : options.priority;
-    const addToBeginning = options.addToBeginning || false;
-    const uri = imageId.substring(7);
+  const requestType = options.requestType || 'interaction';
+  const additionalDetails = options.additionalDetails || { imageId };
+  const priority = options.priority === undefined ? 5 : options.priority;
+  const addToBeginning = options.addToBeginning || false;
+  const uri = imageId.substring(7);
 
-    /**
-     * @todo check arguments
-     */
-    imageRetrievalPool.addRequest(
-      sendXHR.bind(this, uri, imageId, mediaType),
-      requestType,
-      additionalDetails,
-      priority,
-      addToBeginning
-    );
-  });
+  console.log('Adding retriever function to addRequest pool');
+  imageRetrievalPool.addRequest(
+    sendXHR.bind(this, uri, imageId, mediaType),
+    requestType,
+    additionalDetails,
+    priority,
+    addToBeginning
+  );
 
   return {
-    promise,
+    promise: uncompressedIterator.getNextPromise(),
     cancelFn: undefined,
   };
 }

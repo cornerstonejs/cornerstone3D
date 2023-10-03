@@ -37,7 +37,6 @@ export default function extractMultipart(
   const response = new Uint8Array(imageFrameAsArrayBuffer);
 
   if (contentType.indexOf('multipart') === -1) {
-    console.log('Returning single part response', contentType, !isPartial);
     return {
       contentType,
       complete: !isPartial,
@@ -73,7 +72,6 @@ export default function extractMultipart(
   const length = endIndex === -1 ? response.length : endIndex - offset - 2;
 
   const multipartContentType = findContentType(split);
-  console.log('Extracting pixel data', multipartContentType, offset, length);
 
   // return the info for this pixel data
   return {

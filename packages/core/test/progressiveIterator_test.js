@@ -1,4 +1,4 @@
-import ProgressiveIterator from '../src/utilities/progressiveIterator';
+import ProgressiveIterator from '../src/utilities/ProgressiveIterator';
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

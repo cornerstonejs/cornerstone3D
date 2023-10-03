@@ -32,10 +32,11 @@ const timingInfo = document.createElement('div');
 timingInfo.innerText = 'Timing Info Here';
 content.appendChild(timingInfo);
 
+const devicePixelRatio = window.devicePixelRatio || 1;
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = `${3036 / devicePixelRatio}px`;
+element.style.height = `${3036 / devicePixelRatio}px`;
 
 content.appendChild(element);
 
@@ -56,7 +57,7 @@ async function showStack(stack: string[], viewport) {
     'transferSyntax',
     stack[0]
   );
-  timingInfo.innerText = `Loading ${stack[0]} took ${
+  timingInfo.innerText = `Took ${
     end - start
   } for first decode using ${transferSyntaxUID}`;
 }
