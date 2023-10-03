@@ -28,6 +28,8 @@ import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
+import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
+import vtkPolyDataNormals from '@kitware/vtk.js/Filters/Core/PolyDataNormals';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -1144,7 +1146,9 @@ class Viewport implements IViewport {
       }
 
       const mapper = actorEntry.actor.getMapper();
-      const vtkPlanes = mapper.getClippingPlanes();
+      const vtkPlanes = actorEntry?.vtkPlanes
+        ? actorEntry?.vtkPlanes
+        : mapper.getClippingPlanes();
 
       let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
       if (actorEntry.slabThickness) {
@@ -1159,6 +1163,37 @@ class Viewport implements IViewport {
         viewPlaneNormal,
         focalPoint
       );
+      if (actorEntry?.vtkPlanes && actorEntry?.outline) {
+        const usePolyDataNormalsFilter = false;
+        if (usePolyDataNormalsFilter) {
+          const normals = vtkPolyDataNormals.newInstance();
+          normals.setInputData(actorEntry.polydata);
+          normals.update();
+          const filter = vtkClipClosedSurface.newInstance({
+            clippingPlanes: actorEntry.vtkPlanes,
+            activePlaneId: 2,
+            passPointData: false,
+          });
+          filter.setInputData(normals.getOutputData());
+          filter.setGenerateOutline(true);
+          filter.setGenerateFaces(false);
+          filter.update();
+          const filterData = filter.getOutputData();
+          mapper.setInputData(filterData);
+        } else {
+          const filter = vtkClipClosedSurface.newInstance({
+            clippingPlanes: actorEntry.vtkPlanes,
+            activePlaneId: 2,
+            passPointData: false,
+          });
+          filter.setInputData(actorEntry.polydata);
+          filter.setGenerateOutline(true);
+          filter.setGenerateFaces(false);
+          filter.update();
+          const filterData = filter.getOutputData();
+          mapper.setInputData(filterData);
+        }
+      }
     });
   }
 

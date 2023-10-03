@@ -14,7 +14,11 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import surface from './Surface.json';
+import surface13 from './lung13.json';
+import surface14 from './lung14.json';
+import surface15 from './lung15.json';
+import surface16 from './lung16.json';
+import surface17 from './lung17.json';
 
 // This is for debugging purposes
 console.warn(
@@ -75,44 +79,32 @@ const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
 
+const surfaces = [surface13, surface14, surface15, surface16, surface17];
 async function addSegmentationsToState() {
-  // load the contour data
-  const geometryIds = [];
-  // const promises = surface.closedSurface.map((contourSet) => {
-  //   const geometryId = contourSet.id;
-  //   geometryIds.push(geometryId);
-  //   return geometryLoader.createAndCacheGeometry(geometryId, {
-  //     type: GeometryType.CONTOUR,
-  //     geometryData: contourSet as Types.PublicContourSetData,
-  //   });
-  // });
-
-  // await Promise.all(promises);
-  const geometryId = surface.closedSurface.id;
-
-  const closedSurface = geometryLoader.createAndCacheGeometry(
-    surface.closedSurface.id,
-    {
+  surfaces.forEach((surface) => {
+    const geometryId = surface.closedSurface.id;
+    const segmentationId = geometryId;
+    geometryLoader.createAndCacheGeometry(surface.closedSurface.id, {
       type: GeometryType.SURFACE,
       geometryData: surface.closedSurface as Types.PublicSurfaceData,
-    }
-  );
+    });
 
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-        // The actual segmentation data, in the case of contour geometry
-        // this is a reference to the geometry data
-        data: {
-          geometryId,
+    // Add the segmentations to state
+    segmentation.addSegmentations([
+      {
+        segmentationId,
+        representation: {
+          // The type of segmentation
+          type: csToolsEnums.SegmentationRepresentations.Surface,
+          // The actual segmentation data, in the case of contour geometry
+          // this is a reference to the geometry data
+          data: {
+            geometryId,
+          },
         },
       },
-    },
-  ]);
+    ]);
+  });
 }
 
 /**
@@ -243,7 +235,9 @@ async function run() {
     const volumeActor = viewport3d.getDefaultActor().actor as Types.VolumeActor;
     utilities.applyPreset(
       volumeActor,
-      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+      CONSTANTS.VIEWPORT_PRESETS.find(
+        (preset) => preset.name === 'CT-Chest-Contrast-Enhanced'
+      )
     );
 
     const renderer = viewport3d.getRenderer();
@@ -253,20 +247,24 @@ async function run() {
     viewport3d.render();
   });
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
-    },
-  ]);
+  surfaces.forEach(async (surface) => {
+    const segmentationId = surface.closedSurface.id;
 
-  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
-    },
-  ]);
+    // // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+      },
+    ]);
+
+    await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+      },
+    ]);
+  });
 
   // Render the image
   renderingEngine.render();
