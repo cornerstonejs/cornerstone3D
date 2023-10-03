@@ -62,6 +62,7 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
+  EraserTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -111,6 +112,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  EraserTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
