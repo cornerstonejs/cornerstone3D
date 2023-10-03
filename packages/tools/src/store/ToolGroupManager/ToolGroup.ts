@@ -20,6 +20,7 @@ import {
   IToolGroup,
   SetToolBindingsType,
   ToolOptionsType,
+  ToolConfiguration,
 } from '../../types';
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
@@ -87,9 +88,9 @@ export default class ToolGroup implements IToolGroup {
    * to set the tool to be active or passive or in other states.
    *
    * @param toolName - string
-   * @param configuration - Tool configuration objects
+   * @param configuration - Tool configuration objects and a custom statistics calculator if needed
    */
-  addTool(toolName: string, configuration = {}): void {
+  addTool(toolName: string, configuration: ToolConfiguration = {}): void {
     const toolDefinition = state.tools[toolName];
     const hasToolName = typeof toolName !== 'undefined' && toolName !== '';
     const localToolInstance = this.toolOptions[toolName];
@@ -605,7 +606,7 @@ export default class ToolGroup implements IToolGroup {
    */
   public setToolConfiguration(
     toolName: string,
-    configuration: Record<any, any>,
+    configuration: ToolConfiguration,
     overwrite?: boolean
   ): boolean {
     if (this._toolInstances[toolName] === undefined) {
@@ -620,7 +621,10 @@ export default class ToolGroup implements IToolGroup {
     if (overwrite) {
       _configuration = configuration;
     } else {
-      _configuration = csUtils.deepMerge(
+      // We should not deep copy here, it is the job of the application to
+      // deep copy the configuration before passing it to the toolGroup, otherwise
+      // some strange appending behaviour happens for the arrays
+      _configuration = Object.assign(
         this._toolInstances[toolName].configuration,
         configuration
       );

@@ -307,7 +307,7 @@ class RequestPoolManager {
     const priorities = Object.keys(this.requestPool[type])
       .map(Number)
       .filter((priority) => this.requestPool[type][priority].length)
-      .sort();
+      .sort((a, b) => a - b);
     return priorities;
   }
 

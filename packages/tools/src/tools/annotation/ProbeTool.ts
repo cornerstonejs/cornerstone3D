@@ -94,6 +94,7 @@ const { transformWorldToIndex } = csUtils;
  * Read more in the Docs section of the website.
  *
  */
+
 class ProbeTool extends AnnotationTool {
   static toolName;
 
@@ -118,6 +119,7 @@ class ProbeTool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -525,7 +527,12 @@ class ProbeTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        continue;
+      }
+
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
         const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
@@ -539,30 +546,13 @@ class ProbeTool extends AnnotationTool {
           textUID,
           textLines,
           [textCanvasCoordinates[0], textCanvasCoordinates[1]],
-          this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+          options
         );
       }
     }
 
     return renderStatus;
   };
-
-  _getTextLines(data, targetId: string): string[] | undefined {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { index, value, modalityUnit } = cachedVolumeStats;
-
-    if (value === undefined) {
-      return;
-    }
-
-    const textLines = [];
-
-    textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
-
-    textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
-
-    return textLines;
-  }
 
   _calculateCachedStats(
     annotation,
@@ -660,6 +650,23 @@ class ProbeTool extends AnnotationTool {
 
     return cachedStats;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 ProbeTool.toolName = 'Probe';
