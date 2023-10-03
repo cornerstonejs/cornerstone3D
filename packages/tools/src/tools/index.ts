@@ -27,6 +27,7 @@ import CobbAngleTool from './annotation/CobbAngleTool';
 import ReferenceCursors from './ReferenceCursors';
 import ReferenceLines from './ReferenceLinesTool';
 import ScaleOverlayTool from './ScaleOverlayTool';
+import EraserTool from './EraserTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -72,6 +73,7 @@ export {
   AngleTool,
   CobbAngleTool,
   ReferenceCursors,
+  EraserTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools

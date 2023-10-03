@@ -60,6 +60,7 @@ import {
   ScaleOverlayTool,
   OrientationMarkerTool,
   OverlayGridTool,
+  EraserTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -104,6 +105,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  EraserTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
