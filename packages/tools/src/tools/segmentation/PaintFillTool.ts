@@ -90,7 +90,10 @@ class PaintFillTool extends BaseTool {
 
     const index = transformWorldToIndex(segmentation.imageData, worldPos);
 
-    const fixedDimension = this.getFixedDimension(viewPlaneNormal, direction);
+    const fixedDimension = this.getFixedDimension(
+      viewPlaneNormal,
+      direction as number[]
+    );
 
     if (fixedDimension === undefined) {
       console.warn('Oblique paint fill not yet supported');

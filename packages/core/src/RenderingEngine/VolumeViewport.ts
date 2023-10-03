@@ -14,6 +14,8 @@ import type {
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, getClosestImageId } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
+import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -350,6 +352,38 @@ class VolumeViewport extends BaseVolumeViewport {
   };
 
   getRotation = (): number => 0;
+
+  /**
+   * Reset the viewport properties to the default values
+   *
+
+   * @param volumeId - Optional volume ID to specify which volume properties to reset.
+   * If not provided, it will reset the properties of the default actor.
+   *
+   * @returns void
+   */
+  public resetProperties(volumeId?: string): void {
+    this._resetProperties(volumeId);
+  }
+
+  private _resetProperties(volumeId?: string) {
+    // Get the actor based on the volumeId if provided, otherwise use the default actor.
+    const volumeActor = volumeId
+      ? this.getActor(volumeId)
+      : this.getDefaultActor();
+
+    if (!volumeActor) {
+      throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+    }
+
+    const imageVolume = cache.getVolume(volumeActor.uid);
+    if (!imageVolume) {
+      throw new Error(
+        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+      );
+    }
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+  }
 }
 
 export default VolumeViewport;

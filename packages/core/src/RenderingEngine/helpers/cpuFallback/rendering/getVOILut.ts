@@ -15,6 +15,11 @@
  */
 
 /**
+ * Generates the linear VOI LUT function.
+ * From the DICOM standard:
+ * https://dicom.nema.org/medical/dicom/current/output/html/part03.html#sect_C.11.2.1.2.1
+ * ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
+ * clipped to the ymin...ymax range
  *
  * @param {Number} windowWidth Window Width
  * @param {Number} windowCenter Window Center
@@ -23,7 +28,10 @@
  */
 function generateLinearVOILUT(windowWidth: number, windowCenter: number) {
   return function (modalityLutValue) {
-    return ((modalityLutValue - windowCenter) / windowWidth + 0.5) * 255.0;
+    const value =
+      ((modalityLutValue - (windowCenter - 0.5)) / (windowWidth - 1) + 0.5) *
+      255.0;
+    return Math.min(Math.max(value, 0), 255);
   };
 }
 

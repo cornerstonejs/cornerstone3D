@@ -3,6 +3,13 @@ import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import BoundsIJK from '../types/BoundsIJK';
 
+export type PointInShape = {
+  value: number;
+  index: number;
+  pointIJK: Types.Point3;
+  pointLPS: Types.Point3;
+};
+
 export type PointInShapeCallback = ({
   value,
   index,
@@ -37,9 +44,9 @@ export type ShapeFnCriteria = (
 export default function pointInShapeCallback(
   imageData: vtkImageData | Types.CPUImageData,
   pointInShapeFn: ShapeFnCriteria,
-  callback: PointInShapeCallback,
+  callback?: PointInShapeCallback,
   boundsIJK?: BoundsIJK
-): void {
+): Array<PointInShape> {
   let iMin, iMax, jMin, jMax, kMin, kMax;
 
   let scalarData;
@@ -101,6 +108,7 @@ export default function pointInShapeCallback(
   const yMultiple = dimensions[0];
   const zMultiple = dimensions[0] * dimensions[1];
 
+  const pointsInShape: Array<PointInShape> = [];
   for (let k = kMin; k <= kMax; k++) {
     for (let j = jMin; j <= jMax; j++) {
       for (let i = iMin; i <= iMax; i++) {
@@ -130,9 +138,13 @@ export default function pointInShapeCallback(
           const index = k * zMultiple + j * yMultiple + i;
           const value = scalarData[index];
 
-          callback({ value, index, pointIJK, pointLPS });
+          pointsInShape.push({ value, index, pointIJK, pointLPS });
+          if (callback !== null) {
+            callback({ value, index, pointIJK, pointLPS });
+          }
         }
       }
     }
   }
+  return pointsInShape;
 }

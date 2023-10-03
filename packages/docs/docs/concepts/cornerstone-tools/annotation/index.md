@@ -12,7 +12,7 @@ In `Cornerstone3DTools`, Annotation Tools keep their state in a `state` object. 
 used to store the state of the annotation instance. Information such as the statistics of the annotation, its data
 and camera position are stored in this object.
 
-There are various methods for adding/removing, selection, locking and locking of annotations. They can be accessed via the `annotations` name space in the `Cornerstone3DTools` by calling:
+There are various methods for adding/removing, selection, locking and unlocking of annotations. They can be accessed via the `annotations` name space in the `Cornerstone3DTools` by calling:
 
 ```js
 import { annotations } from '@cornerstonejs/tools';

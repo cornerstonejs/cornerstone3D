@@ -39,7 +39,7 @@ export default function voiSyncCallback(
     voiRange: range,
   };
 
-  if (options.syncInvertState && invertStateChanged) {
+  if (options?.syncInvertState && invertStateChanged) {
     tProperties.invert = invert;
   }
 
