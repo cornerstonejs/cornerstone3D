@@ -2,14 +2,18 @@ import vtkImageMarchingSquares from "@kitware/vtk.js/Filters/General/ImageMarchi
 
 import * as contourUtils from "./utilities";
 
-async function generateContourSetFromSegmentation(segmentation, cs, csTools) {
-    const LABELMAP = csTools.Enums.SegmentationRepresentations.Labelmap;
+async function generateContourSetFromSegmentation(
+    segmentation,
+    cornerstoneCache,
+    cornerstoneToolsEnums
+) {
+    const LABELMAP = cornerstoneToolsEnums.SegmentationRepresentations.Labelmap;
 
     const { representationData } = segmentation;
     const { volumeId: segVolumeId } = representationData[LABELMAP];
 
     // Get segmentation volume
-    const vol = cs.cache.getVolume(segVolumeId);
+    const vol = cornerstoneCache.getVolume(segVolumeId);
     if (!vol) {
         console.warn(`No volume found for ${segVolumeId}`);
         return;
@@ -18,7 +22,7 @@ async function generateContourSetFromSegmentation(segmentation, cs, csTools) {
     const numSlices = vol.dimensions[2];
 
     // Get image volume segmentation references
-    const imageVol = cs.cache.getVolume(vol.referencedVolumeId);
+    const imageVol = cornerstoneCache.getVolume(vol.referencedVolumeId);
     if (!imageVol) {
         console.warn(`No volume found for ${vol.referencedVolumeId}`);
         return;

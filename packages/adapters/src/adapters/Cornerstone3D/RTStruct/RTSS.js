@@ -31,16 +31,16 @@ export default class RTSS {
         segmentations,
         metadataProvider,
         DicomMetadataStore,
-        cs,
-        csTools
+        cornerstoneCache,
+        cornerstoneToolsEnums
     ) {
         // Convert segmentations to ROIContours
         const roiContours = [];
         await segmentations.forEach(async (segmentation, segIndex) => {
             const contourSet = await generateContourSetFromSegmentation(
                 segmentation,
-                cs,
-                csTools
+                cornerstoneCache,
+                cornerstoneToolsEnums
             );
 
             // Check contour set isn't undefined
