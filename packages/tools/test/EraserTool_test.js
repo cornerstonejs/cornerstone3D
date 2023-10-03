@@ -192,7 +192,6 @@ describe('EraserTool:', () => {
         });
 
         addEventListenerForAnnotationRemoved();
-        state.isInteractingWithTool = false;
         document.dispatchEvent(evt);
       });
 
