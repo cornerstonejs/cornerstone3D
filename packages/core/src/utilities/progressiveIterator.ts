@@ -62,10 +62,7 @@ export default class ProgressiveIterator<T> {
         throw this.rejectReason;
       }
       if (this.nextValue !== undefined) {
-        const value = this.nextValue;
-        this.nextValue = undefined;
-        yield value;
-        continue;
+        yield this.nextValue;
       }
       if (!this.waiting) {
         this.waiting = {};
@@ -75,14 +72,6 @@ export default class ProgressiveIterator<T> {
         });
       }
       await this.waiting.promise;
-      // Need to record the done before the yield to prevent it being
-      // changed in the iteration process
-      const done = this.done;
-      yield this.nextValue;
-      if (done) {
-        // Prevent an extra delivery value when waiting on last value
-        return;
-      }
     }
     yield this.nextValue;
   }

@@ -163,10 +163,9 @@ function loadImage(
           image.loadTimeInMS = end - start;
           image.complete = complete;
           console.log(
-            'loadImage:Received uncompressed data in',
+            `loadImage:Received ${completeText} uncompressed data in`,
             end - start,
-            'ms',
-            image
+            'ms'
           );
           it.add(image, complete);
           if (lastDecodeLevel > 2) {
@@ -191,7 +190,6 @@ function loadImage(
   const addToBeginning = options.addToBeginning || false;
   const uri = imageId.substring(7);
 
-  console.log('Adding retriever function to addRequest pool');
   imageRetrievalPool.addRequest(
     sendXHR.bind(this, uri, imageId, mediaType),
     requestType,
