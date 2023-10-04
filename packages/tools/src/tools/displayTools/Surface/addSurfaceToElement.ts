@@ -4,6 +4,8 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import { VolumeViewport } from '@cornerstonejs/core';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import vtkContourTriangulator from '@kitware/vtk.js/Filters/General/ContourTriangulator';
 
 function addSurfaceToElement(
   element: HTMLDivElement,
@@ -22,7 +24,11 @@ function addSurfaceToElement(
 
   const polydata = vtkPolyData.newInstance();
   polydata.getPoints().setData(points, 3);
-  polydata.getPolys().setData(polys);
+
+  const triangles = vtkCellArray.newInstance({
+    values: Float32Array.from(polys),
+  });
+  polydata.setPolys(triangles);
 
   const mapper = vtkMapper.newInstance({});
   let clippingFilter;
@@ -36,8 +42,8 @@ function addSurfaceToElement(
     clippingFilter.setGenerateOutline(true);
     clippingFilter.setGenerateFaces(false);
     clippingFilter.update();
-    const filterData = clippingFilter.getOutputData();
-    mapper.setInputData(filterData);
+    const filteredData = clippingFilter.getOutputData();
+    mapper.setInputData(filteredData);
   } else {
     mapper.setInputData(polydata);
   }
@@ -51,6 +57,7 @@ function addSurfaceToElement(
     actor,
     uid: actorUID,
     clippingFilter,
+    polyDataMapper: new Map(),
   });
 }
 

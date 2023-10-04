@@ -14,6 +14,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import surface from './Surface.json';
 import surface13 from './lung13.json';
 import surface14 from './lung14.json';
 import surface15 from './lung15.json';
@@ -42,7 +43,6 @@ const { ViewportType, GeometryType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 
@@ -79,6 +79,7 @@ const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
 
+//const surfaces = [surface];
 const surfaces = [surface13, surface14, surface15, surface16, surface17];
 async function addSegmentationsToState() {
   surfaces.forEach((surface) => {
