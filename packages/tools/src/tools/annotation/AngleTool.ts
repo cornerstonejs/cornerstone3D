@@ -658,7 +658,10 @@ class AngleTool extends AnnotationTool {
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetId]) {
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].angle == null
+      ) {
         data.cachedStats[targetId] = {
           angle: null,
         };
