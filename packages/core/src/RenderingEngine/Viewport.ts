@@ -1084,20 +1084,34 @@ class Viewport implements IViewport {
       vtkCamera.setClippingRange(clippingRange);
     }
 
-    // update clippingPlanes if volume viewports
-    const actorEntry = this.getDefaultActor();
+    // update clipping range only if focal point changed of a new actor is added
+    const oldCamera = previousCamera;
+    const oldFocalPoint = oldCamera.focalPoint;
+    if (oldFocalPoint && focalPoint) {
+      const currentViewPlaneNormal = <Point3>vtkCamera.getViewPlaneNormal();
+      const deltaCamera = <Point3>[
+        focalPoint[0] - oldFocalPoint[0],
+        focalPoint[1] - oldFocalPoint[1],
+        focalPoint[2] - oldFocalPoint[2],
+      ];
 
-    if (!actorEntry || !actorEntry.actor) {
-      return;
-    }
+      const cameraModifiedInPlane =
+        Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > 1e-2;
 
-    const isImageSlice = actorIsA(actorEntry, 'vtkImageSlice');
+      if (cameraModifiedInPlane || this.newActorAdded) {
+        const actorEntry = this.getDefaultActor();
+        if (!actorEntry || !actorEntry.actor) {
+          return;
+        }
 
-    if (!isImageSlice) {
-      this.updateClippingPlanesForActors(updatedCamera);
-    } else {
-      const renderer = this.getRenderer();
-      renderer.resetCameraClippingRange();
+        const isImageSlice = actorIsA(actorEntry, 'vtkImageSlice');
+        if (!isImageSlice) {
+          this.updateClippingPlanesForActors(updatedCamera);
+        } else {
+          const renderer = this.getRenderer();
+          renderer.resetCameraClippingRange();
+        }
+      }
     }
 
     if (storeAsInitialCamera) {
