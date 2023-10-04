@@ -1152,16 +1152,6 @@ class Viewport implements IViewport {
    * @param updatedCamera - ICamera
    */
   protected async updateClippingPlanesForActors(updatedCamera: ICamera): void {
-    function pointToString(point) {
-      return (
-        parseFloat(point[0]).toFixed(5) +
-        ',' +
-        parseFloat(point[1]).toFixed(5) +
-        ',' +
-        parseFloat(point[2]).toFixed(5) +
-        ','
-      );
-    }
     const actorEntries = this.getActors();
     await actorEntries.forEach(async (actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
@@ -1193,19 +1183,11 @@ class Viewport implements IViewport {
         viewPlaneNormal,
         focalPoint
       );
-      if (actorEntry?.clippingFilter) {
-        let polyData;
-        const focalIndex = pointToString(focalPoint);
-        polyData = actorEntry.polyDataMapper.get(focalIndex);
-        if (!polyData) {
-          const clippingFilter = actorEntry.clippingFilter;
-          clippingFilter.setClippingPlanes(vtkPlanes);
-          clippingFilter.update();
-          polyData = clippingFilter.getOutputData();
-          actorEntry.polyDataMapper.set(focalIndex, polyData);
-        }
-        mapper.setInputData(polyData);
-      }
+      triggerEvent(this.element, Events.UPDATE_CLIPPING_PLANES, {
+        actorEntry,
+        focalPoint,
+        vtkPlanes,
+      });
     });
     if (this.newActorAdded) {
       const renderer = this.getRenderer();

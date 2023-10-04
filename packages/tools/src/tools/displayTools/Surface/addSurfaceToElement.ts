@@ -1,11 +1,58 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, Enums } from '@cornerstonejs/core';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import { VolumeViewport } from '@cornerstonejs/core';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import vtkContourTriangulator from '@kitware/vtk.js/Filters/General/ContourTriangulator';
+
+const polyDataCache = new Map();
+
+/**
+ * Transforms a point into an string, by converting the numbers with five decimals
+ * @param point
+ * @returns
+ */
+function pointToString(point) {
+  return (
+    parseFloat(point[0]).toFixed(5) +
+    ',' +
+    parseFloat(point[1]).toFixed(5) +
+    ',' +
+    parseFloat(point[2]).toFixed(5) +
+    ','
+  );
+}
+
+/**
+ * Updates the clipping planes ofa surface and caches the resulting poly data
+ * @param evt
+ */
+function updateClippingPlanes(evt) {
+  const { actorEntry, focalPoint, vtkPlanes } = evt.detail;
+  if (actorEntry?.clippingFilter) {
+    const mapper = actorEntry.actor.getMapper();
+    const focalIndex = pointToString(focalPoint);
+    let actorCache = polyDataCache.get(actorEntry.uid);
+    if (!actorCache) {
+      actorCache = new Map();
+      polyDataCache.set(actorEntry.uid, actorCache);
+    }
+    let polyData = actorCache.get(focalIndex);
+    if (!polyData) {
+      const clippingFilter = actorEntry.clippingFilter;
+      clippingFilter.setClippingPlanes(vtkPlanes);
+      try {
+        clippingFilter.update();
+        polyData = clippingFilter.getOutputData();
+        actorCache.set(focalIndex, polyData);
+      } catch {
+        console.error('Error clipping surface');
+      }
+    }
+    mapper.setInputData(polyData);
+  }
+}
 
 function addSurfaceToElement(
   element: HTMLDivElement,
@@ -57,8 +104,12 @@ function addSurfaceToElement(
     actor,
     uid: actorUID,
     clippingFilter,
-    polyDataMapper: new Map(),
   });
+
+  element.addEventListener(
+    Enums.Events.UPDATE_CLIPPING_PLANES,
+    updateClippingPlanes
+  );
 }
 
 export default addSurfaceToElement;
