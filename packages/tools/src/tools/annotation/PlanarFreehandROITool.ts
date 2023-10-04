@@ -691,7 +691,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         const { data } = annotation;
         if (
           !data.cachedStats[targetId] ||
-          data.cachedStats[targetId].areaUnit === undefined
+          data.cachedStats[targetId].areaUnit == null
         ) {
           data.cachedStats[targetId] = {
             Modality: null,

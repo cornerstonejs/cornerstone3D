@@ -662,7 +662,7 @@ class LengthTool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].unit === undefined
+        data.cachedStats[targetId].unit == null
       ) {
         data.cachedStats[targetId] = {
           length: null,
