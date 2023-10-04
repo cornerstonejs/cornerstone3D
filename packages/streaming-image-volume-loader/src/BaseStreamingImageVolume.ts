@@ -628,14 +628,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
             isUpdatedImage
           );
         }
-        eventTarget.addEventListener(
-          Enums.Events.IMAGE_LOAD_STREAM_UPDATED_IMAGE,
-          (event) => {
-            if (event.detail.imageId === imageId) {
-              handleNewPixelData(event.detail.image, true);
-            }
-          }
-        );
+        // TODO - update this as an iterator instead
         return imageLoader.loadImage(imageId, options).then(
           (image) => {
             handleNewPixelData(image);

@@ -2,6 +2,8 @@ export class PromiseIterator<T> extends Promise<T> {
   iterator?: ProgressiveIterator<T>;
 }
 
+export type ErrorCallback = (message: string | Error) => void;
+
 /**
  * A progressive iterator is an async iterator that can have data delivered
  * to it, with newer ones replacing older iterations which have not yet been
@@ -9,15 +11,15 @@ export class PromiseIterator<T> extends Promise<T> {
  * but always getting the most recent instance.
  */
 export default class ProgressiveIterator<T> {
+  public done;
+  public name?: string;
+
   private nextValue;
-  private done;
   private waiting;
   private rejectReason;
 
-  constructor(processFunction?) {
-    if (processFunction) {
-      this.process(processFunction);
-    }
+  constructor(name?) {
+    this.name = name || 'unknown';
   }
 
   /** Casts a promise, progressive iterator or promise iterator to a
@@ -27,9 +29,14 @@ export default class ProgressiveIterator<T> {
     if (promise.iterator) {
       return promise.iterator;
     }
-    return new ProgressiveIterator((resolver, reject) => {
-      promise.then((v) => resolver.add(v, true), reject);
+    const iterator = new ProgressiveIterator('as iterator');
+    iterator.process((iterator) => {
+      return promise.then(
+        (v) => iterator.add(v, true),
+        (reason) => iterator.reject(reason)
+      );
     });
+    return;
   }
 
   /** Add a most recent result, indicating if the result is the final one */
@@ -62,7 +69,11 @@ export default class ProgressiveIterator<T> {
         throw this.rejectReason;
       }
       if (this.nextValue !== undefined) {
+        //console.log('Yielding on', this.name, this.nextValue);
         yield this.nextValue;
+        if (this.done) {
+          break;
+        }
       }
       if (!this.waiting) {
         this.waiting = {};
@@ -71,12 +82,14 @@ export default class ProgressiveIterator<T> {
           this.waiting.reject = reject;
         });
       }
+      //console.log('Awaiting on', this.name);
       await this.waiting.promise;
     }
+    console.log('Final yield on', this.name);
     yield this.nextValue;
   }
 
-  public process(processFunction) {
+  public process(processFunction, errorCallback?: ErrorCallback): Promise<any> {
     return processFunction(this, this.reject.bind(this)).then(
       () => {
         if (!this.done) {
@@ -85,12 +98,16 @@ export default class ProgressiveIterator<T> {
         }
       },
       (reason) => {
-        console.warn("Couldn't process because", reason);
+        if (errorCallback) {
+          errorCallback(reason);
+        } else {
+          console.warn("Couldn't process because", reason);
+        }
       }
     );
   }
 
-  async nextPromise(): PromiseIterator<T> {
+  async nextPromise(): Promise<T> {
     for await (const i of this) {
       if (i) {
         return i;
@@ -99,7 +116,7 @@ export default class ProgressiveIterator<T> {
     throw new Error('Nothing found');
   }
 
-  async donePromise(): PromiseIterator<T> {
+  async donePromise(): Promise<T> {
     for await (const i of this) {
       if (i) {
         return i;
@@ -108,14 +125,14 @@ export default class ProgressiveIterator<T> {
     throw new Error('Nothing found');
   }
 
-  public getNextPromise(): PromiseIterator<T> {
-    const promise = this.nextPromise();
+  public getNextPromise() {
+    const promise = this.nextPromise() as PromiseIterator<T>;
     promise.iterator = this;
     return promise;
   }
 
-  public getDonePromise(): PromiseIterator<T> {
-    const promise = this.donePromise();
+  public getDonePromise() {
+    const promise = this.donePromise() as PromiseIterator<T>;
     promise.iterator = this;
     return promise;
   }

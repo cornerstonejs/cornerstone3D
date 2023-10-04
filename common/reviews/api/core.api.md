@@ -657,14 +657,6 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_LOAD_FAILED = "CORNERSTONE_IMAGE_LOAD_FAILED",
     // (undocumented)
-    IMAGE_LOAD_PROGRESS = "CORNERSTONE_IMAGE_LOAD_PROGRESS",
-    // (undocumented)
-    IMAGE_LOAD_STREAM_COMPLETE = "CORNERSTONE_IMAGE_LOAD_STREAM_COMPLETE",
-    // (undocumented)
-    IMAGE_LOAD_STREAM_PARTIAL = "CORNERSTONE_IMAGE_LOAD_STREAM_PARTIAL",
-    // (undocumented)
-    IMAGE_LOAD_STREAM_UPDATED_IMAGE = "CORNERSTONE_IMAGE_LOAD_STREAM_UPDATED_IMAGE",
-    // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
     IMAGE_RENDERED = "CORNERSTONE_IMAGE_RENDERED",
@@ -1112,6 +1104,8 @@ interface IImage {
     // (undocumented)
     columns: number;
     // (undocumented)
+    complete?: boolean;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     // (undocumented)
     getPixelData: () => PixelDataTypedArray;
@@ -1125,6 +1119,8 @@ interface IImage {
     invert: boolean;
     // (undocumented)
     isPreScaled?: boolean;
+    // (undocumented)
+    level?: number;
     // (undocumented)
     maxPixelValue: number;
     // (undocumented)
@@ -2071,6 +2067,35 @@ type PreStackNewImageEventDetail = {
 };
 
 // @public (undocumented)
+class ProgressiveIterator<T> {
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncGenerator<any, void, unknown>;
+    constructor(name?: any);
+    // (undocumented)
+    add(x: T, done?: boolean): void;
+    // (undocumented)
+    static as(promise: any): any;
+    // (undocumented)
+    done: any;
+    // (undocumented)
+    donePromise(): Promise<T>;
+    // (undocumented)
+    getDonePromise(): PromiseIterator<T>;
+    // (undocumented)
+    getNextPromise(): PromiseIterator<T>;
+    // (undocumented)
+    getRecent(): T;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    nextPromise(): Promise<T>;
+    // (undocumented)
+    process(processFunction: any, errorCallback?: ErrorCallback_2): Promise<any>;
+    // (undocumented)
+    reject(reason: Error): void;
+}
+
+// @public (undocumented)
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
@@ -2573,7 +2598,8 @@ declare namespace utilities {
         getScalingParameters,
         getScalarDataType,
         colormap,
-        getImageLegacy
+        getImageLegacy,
+        ProgressiveIterator
     }
 }
 export { utilities }

@@ -118,9 +118,9 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>();
-  console.log('loadImage:Start of load image', imageId, options);
-  const failureCount = 0;
+  const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
+    'decompress'
+  );
   async function sendXHR(imageURI: string, imageId: string, mediaType: string) {
     uncompressedIterator.process(async (it, reject) => {
       // get the pixel data from the server
@@ -134,7 +134,7 @@ function loadImage(
       const compressedIt = ProgressiveIterator.as(
         getPixelData(imageURI, imageId, mediaType, progressivelyRender)
       );
-      let lastDecodeLevel = 4;
+      let lastDecodeLevel = 10;
       for await (const result of compressedIt) {
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
@@ -144,8 +144,15 @@ function loadImage(
         if (!streamableTransferSyntaxes.has(transferSyntax) && !complete) {
           continue;
         }
+        const { percentComplete } = result;
         const decodeLevel =
-          result.imageFrame?.decodeLevel || complete ? 0 : lastDecodeLevel;
+          result.imageFrame?.decodeLevel || complete
+            ? 0
+            : decodeLevelFromComplete(percentComplete);
+        if (!complete && lastDecodeLevel <= decodeLevel) {
+          // No point trying again yet
+          continue;
+        }
         options.decodeLevel = decodeLevel;
 
         const pixelData = result.imageFrame?.pixelData || result.imageFrame;
@@ -168,10 +175,7 @@ function loadImage(
             'ms'
           );
           it.add(image, complete);
-          if (lastDecodeLevel > 2) {
-            // Try higher resolution now
-            lastDecodeLevel -= 1;
-          }
+          lastDecodeLevel = decodeLevel;
         } catch (e) {
           console.warn("Couldn't decode" + completeText, e);
           if (complete) {
@@ -202,6 +206,24 @@ function loadImage(
     promise: uncompressedIterator.getNextPromise(),
     cancelFn: undefined,
   };
+}
+
+/** The decode level is based on how much of hte data is needed for
+ * each level.  It is a square function, so
+ * level 4 only needs 1/25 of the data (eg (4+1)^2).  Add 2% to ensure
+ * there is enough space
+ */
+function decodeLevelFromComplete(percent: number) {
+  if (percent < 8) {
+    return 4;
+  }
+  if (percent < 13) {
+    return 3;
+  }
+  if (percent < 27) {
+    return 2;
+  }
+  return 1;
 }
 
 export default loadImage;

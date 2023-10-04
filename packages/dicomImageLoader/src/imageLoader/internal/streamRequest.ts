@@ -49,12 +49,12 @@ export default function streamRequest(
     }
   };
 
-  console.log('streamRequest:Start of load');
   console.time('Full Image');
   const start = Date.now();
 
   // Make the request for the streamable image frame (i.e. HTJ2K)
-  const loadIterator = new ProgressiveIterator(async (iterator, reject) => {
+  const loadIterator = new ProgressiveIterator('streamRequest');
+  loadIterator.process(async (iterator, reject) => {
     const headers = Object.assign({}, defaultHeaders /* beforeSendHeaders */);
 
     Object.keys(headers).forEach(function (key) {
@@ -77,7 +77,6 @@ export default function streamRequest(
       const contentType = responseHeaders.get('content-type');
 
       const totalBytes = responseHeaders.get('Content-Length');
-      console.log('totalBytes=', totalBytes);
       loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
 
       let readDone = false;
@@ -103,6 +102,8 @@ export default function streamRequest(
           url,
           imageId,
           ...extracted,
+          percentComplete:
+            (extracted.imageFrame.pixelData.length * 100) / totalBytes,
         };
 
         // When the first chunk of the downloaded image arrives, resolve the

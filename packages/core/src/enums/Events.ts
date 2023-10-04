@@ -176,28 +176,6 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageSpacingCalibratedEventDetail | ImageSpacingCalibrated Event Detail }
    */
   IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
-  /**
-   * Triggers on the eventTarget when there is a progress in the image load process. Note: this event
-   * is being used in the dicom-image-loader repository. See {@link https://github.com/cornerstonejs/cornerstoneDICOMImageLoader/blob/master/src/imageLoader/internal/xhrRequest.js | here}
-   *
-   * Make use of {@link EventTypes.ImageLoadProgress | ImageLoadProgress Event Type } for typing your event listeners for IMAGE_LOAD_PROGRESS event,
-   * and see what event detail is included in {@link EventTypes.ImageLoadProgressEventDetail | ImageLoadProgress Event Detail }
-   */
-  IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
-
-  /**
-   * Triggers on the eventTarget when a streaming or byte range partial image
-   * request updates, i.e. a new chunk has loaded but the file is not yet
-   * completely downloaded.
-   */
-  IMAGE_LOAD_STREAM_PARTIAL = 'CORNERSTONE_IMAGE_LOAD_STREAM_PARTIAL',
-
-  /**
-   * Triggers on the eventTarget when a streaming or byte range partial image
-   * request has been decoded, and a new image object has been created. The
-   * event data contains the new image object.
-   */
-  IMAGE_LOAD_STREAM_UPDATED_IMAGE = 'CORNERSTONE_IMAGE_LOAD_STREAM_UPDATED_IMAGE', // Decoded partial streamed image frame
 
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.

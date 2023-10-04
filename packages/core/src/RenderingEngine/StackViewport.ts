@@ -1714,20 +1714,21 @@ class StackViewport extends Viewport implements IStackViewport {
         const uncompressedIterator = ProgressiveIterator.as(
           loadAndCacheImage(imageId, options)
         );
-        const displayedIterator = new ProgressiveIterator(
-          async (it, reject) => {
-            for await (const image of uncompressedIterator) {
-              // Update cache
-              cache.putImageLoadObject(
-                imageId,
-                { promise: Promise.resolve(image) },
-                true
-              );
-              successCallback.call(this, image, imageIdIndex, imageId);
-              it.add(image, uncompressedIterator.done);
-            }
-          }
+        const displayedIterator = new ProgressiveIterator<void | IImage>(
+          'displayed'
         );
+        displayedIterator.process(async (it, reject) => {
+          for await (const image of uncompressedIterator) {
+            // Update cache
+            cache.putImageLoadObject(
+              imageId,
+              { promise: Promise.resolve(image) },
+              true
+            );
+            successCallback.call(this, image, imageIdIndex, imageId);
+            it.add(image, uncompressedIterator.done);
+          }
+        });
         return displayedIterator.getDonePromise();
       }
 
@@ -1761,7 +1762,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
-    function errorCallback(error, imageIdIndex, imageId) {
+    function errorCallback(imageIdIndex, imageId, error) {
       const eventDetail = {
         error,
         imageIdIndex,
@@ -1772,15 +1773,12 @@ class StackViewport extends Viewport implements IStackViewport {
       displayedIterator.reject(error);
     }
 
-    const displayedIterator = new ProgressiveIterator();
+    const displayedIterator = new ProgressiveIterator<void | IImage>(
+      'displayed'
+    );
 
     function sendRequest(imageId, imageIdIndex, options) {
       const loadedPromise = loadAndCacheImage(imageId, options);
-      console.log(
-        'StackViewport:loadedPromise is progressive',
-        !!loadedPromise.iterator,
-        loadedPromise
-      );
       const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
       displayedIterator.process(async (it) => {
         for await (const image of uncompressedIterator) {
@@ -1835,7 +1833,7 @@ class StackViewport extends Viewport implements IStackViewport {
           this.currentImageIdIndex = imageIdIndex;
           it.add(image, uncompressedIterator.done);
         }
-      });
+      }, errorCallback.bind(null, imageIdIndex, imageId));
       return displayedIterator.getDonePromise();
     }
 

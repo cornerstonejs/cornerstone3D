@@ -42,9 +42,31 @@ content.appendChild(element);
 
 // ============================= //
 
+let lastImageSize;
+
+async function newImageFunction(evt) {
+  const { image } = evt.detail;
+  const { complete, decodeTimeInMS, loadTimeInMS } = image;
+  if (complete) {
+    element.removeEventListener(
+      cornerstone.EVENTS.STACK_NEW_IMAGE,
+      newImageFunction
+    );
+  }
+  const completeText = complete ? 'final' : 'partial';
+  console.log('new image', image);
+  timingInfo.innerHTML += `<p>Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode</p>`;
+}
+
 async function showStack(stack: string[], viewport) {
   cache.purgeCache();
   console.time('imageLoad');
+  lastImageSize = null;
+  timingInfo.innerHTML = `<p>Loading ${stack[0]}</p>`;
+  element.addEventListener(
+    cornerstone.EVENTS.STACK_NEW_IMAGE,
+    newImageFunction
+  );
   const start = Date.now();
   // Set the stack on the viewport
   await viewport.setStack(stack);
@@ -57,9 +79,9 @@ async function showStack(stack: string[], viewport) {
     'transferSyntax',
     stack[0]
   );
-  timingInfo.innerText = `Took ${
+  timingInfo.innerHTML += `<p>Stack render took ${
     end - start
-  } for first decode using ${transferSyntaxUID}`;
+  } using ${transferSyntaxUID}</p>`;
 }
 
 /**
