@@ -234,11 +234,9 @@ class VolumeViewport extends BaseVolumeViewport {
         return;
       }
       const mapper = actorEntry.actor.getMapper();
-      const vtkPlanes = actorEntry?.vtkPlanes
-        ? actorEntry.vtkPlanes
-        : mapper.getClippingPlanes();
+      const vtkPlanes = mapper.getClippingPlanes();
 
-      if (vtkPlanes.length === 0) {
+      if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {
         const clipPlane1 = vtkPlane.newInstance();
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];

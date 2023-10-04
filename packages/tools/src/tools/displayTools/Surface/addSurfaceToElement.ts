@@ -2,8 +2,8 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { VolumeViewport } from '@cornerstonejs/core';
+import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 
 function addSurfaceToElement(
   element: HTMLDivElement,
@@ -25,7 +25,22 @@ function addSurfaceToElement(
   polydata.getPolys().setData(polys);
 
   const mapper = vtkMapper.newInstance({});
-  mapper.setInputData(polydata);
+  let clippingFilter;
+  if (viewport instanceof VolumeViewport) {
+    clippingFilter = vtkClipClosedSurface.newInstance({
+      clippingPlanes: [],
+      activePlaneId: 2,
+      passPointData: false,
+    });
+    clippingFilter.setInputData(polydata);
+    clippingFilter.setGenerateOutline(true);
+    clippingFilter.setGenerateFaces(false);
+    clippingFilter.update();
+    const filterData = clippingFilter.getOutputData();
+    mapper.setInputData(filterData);
+  } else {
+    mapper.setInputData(polydata);
+  }
 
   const actor = vtkActor.newInstance();
   actor.setMapper(mapper);
@@ -35,9 +50,7 @@ function addSurfaceToElement(
   viewport.addActor({
     actor,
     uid: actorUID,
-    polydata,
-    vtkPlanes: [vtkPlane.newInstance(), vtkPlane.newInstance()],
-    outline: viewport instanceof VolumeViewport,
+    clippingFilter,
   });
 }
 

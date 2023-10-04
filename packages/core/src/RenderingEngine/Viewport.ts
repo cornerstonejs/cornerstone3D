@@ -28,8 +28,6 @@ import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
-import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
-import vtkPolyDataNormals from '@kitware/vtk.js/Filters/Core/PolyDataNormals';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -73,6 +71,8 @@ class Viewport implements IViewport {
   readonly defaultOptions: any;
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
+  /** informs if a new actor was added before a resetCameraClippingRange phase */
+  protected newActorAdded;
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
@@ -111,6 +111,7 @@ class Viewport implements IViewport {
       : false;
     this.options = _cloneDeep(props.defaultOptions);
     this.isDisabled = false;
+    this.newActorAdded = false;
   }
 
   getRotation: () => number;
@@ -483,6 +484,7 @@ class Viewport implements IViewport {
     const renderer = this.getRenderer();
     renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
+    this.newActorAdded = true;
   }
 
   /**
@@ -1135,9 +1137,9 @@ class Viewport implements IViewport {
    * Updates the actors clipping planes orientation from the camera properties
    * @param updatedCamera - ICamera
    */
-  protected updateClippingPlanesForActors(updatedCamera: ICamera): void {
+  protected async updateClippingPlanesForActors(updatedCamera: ICamera): void {
     const actorEntries = this.getActors();
-    actorEntries.forEach((actorEntry) => {
+    await actorEntries.forEach(async (actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping. Update clipping planes only if the actor is
       // a vtkVolume
@@ -1146,9 +1148,13 @@ class Viewport implements IViewport {
       }
 
       const mapper = actorEntry.actor.getMapper();
-      const vtkPlanes = actorEntry?.vtkPlanes
-        ? actorEntry?.vtkPlanes
+      let vtkPlanes = actorEntry?.clippingFilter
+        ? actorEntry.clippingFilter.getClippingPlanes()
         : mapper.getClippingPlanes();
+
+      if (!vtkPlanes?.length) {
+        vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+      }
 
       let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
       if (actorEntry.slabThickness) {
@@ -1163,38 +1169,19 @@ class Viewport implements IViewport {
         viewPlaneNormal,
         focalPoint
       );
-      if (actorEntry?.vtkPlanes && actorEntry?.outline) {
-        const usePolyDataNormalsFilter = false;
-        if (usePolyDataNormalsFilter) {
-          const normals = vtkPolyDataNormals.newInstance();
-          normals.setInputData(actorEntry.polydata);
-          normals.update();
-          const filter = vtkClipClosedSurface.newInstance({
-            clippingPlanes: actorEntry.vtkPlanes,
-            activePlaneId: 2,
-            passPointData: false,
-          });
-          filter.setInputData(normals.getOutputData());
-          filter.setGenerateOutline(true);
-          filter.setGenerateFaces(false);
-          filter.update();
-          const filterData = filter.getOutputData();
-          mapper.setInputData(filterData);
-        } else {
-          const filter = vtkClipClosedSurface.newInstance({
-            clippingPlanes: actorEntry.vtkPlanes,
-            activePlaneId: 2,
-            passPointData: false,
-          });
-          filter.setInputData(actorEntry.polydata);
-          filter.setGenerateOutline(true);
-          filter.setGenerateFaces(false);
-          filter.update();
-          const filterData = filter.getOutputData();
-          mapper.setInputData(filterData);
-        }
+      if (actorEntry?.clippingFilter) {
+        const clippingFilter = actorEntry.clippingFilter;
+        clippingFilter.setClippingPlanes(vtkPlanes);
+        clippingFilter.update();
+        const filteredData = clippingFilter.getOutputData();
+        mapper.setInputData(filteredData);
       }
     });
+    if (this.newActorAdded) {
+      const renderer = this.getRenderer();
+      renderer.resetCameraClippingRange();
+      this.newActorAdded = false;
+    }
   }
 
   public setOrientationOfClippingPlanes(
