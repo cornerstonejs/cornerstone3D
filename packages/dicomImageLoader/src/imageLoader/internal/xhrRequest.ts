@@ -148,21 +148,6 @@ function xhrRequest(
         if (options.onprogress) {
           options.onprogress(oProgress, params);
         }
-
-        // Event
-        const eventData = {
-          url,
-          imageId,
-          loaded,
-          total,
-          percentComplete,
-        };
-
-        cornerstone.triggerEvent(
-          (cornerstone as any).events,
-          cornerstone.EVENTS.IMAGE_LOAD_PROGRESS,
-          eventData
-        );
       };
       xhr.onerror = function () {
         errorInterceptor(xhr);

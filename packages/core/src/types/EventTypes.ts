@@ -392,11 +392,6 @@ type ImageSpacingCalibratedEvent =
   CustomEventType<ImageSpacingCalibratedEventDetail>;
 
 /**
- * IMAGE_LOAD_PROGRESS
- */
-type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventDetail>;
-
-/**
  * STACK_VIEWPORT_NEW_STACK
  */
 type StackViewportNewStackEvent =
