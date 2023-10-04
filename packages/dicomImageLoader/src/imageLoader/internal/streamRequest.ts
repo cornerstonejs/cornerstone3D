@@ -49,12 +49,11 @@ export default function streamRequest(
     }
   };
 
-  console.time('Full Image');
   const start = Date.now();
 
   // Make the request for the streamable image frame (i.e. HTJ2K)
   const loadIterator = new ProgressiveIterator('streamRequest');
-  loadIterator.process(async (iterator, reject) => {
+  loadIterator.generate(async (iterator, reject) => {
     const headers = Object.assign({}, defaultHeaders /* beforeSendHeaders */);
 
     Object.keys(headers).forEach(function (key) {
@@ -129,7 +128,6 @@ export default function streamRequest(
         cornerstone.EVENTS.IMAGE_LOADED,
         { url, imageId }
       );
-      console.timeEnd('Full Image');
     } catch (err) {
       errorInterceptor(err);
       console.error(err);

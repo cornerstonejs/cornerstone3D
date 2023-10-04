@@ -166,6 +166,18 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
+  const imageIdsCTJLS = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+    wadoRsRoot: 'http://localhost:5000/dicomweb/',
+  });
+
+  const imageIdsCTHtj2k = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+    wadoRsRoot: 'http://localhost:25080/dicomweb/',
+  });
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -237,10 +249,16 @@ async function run() {
     renderingEngine.renderViewports(viewportIds);
   }
 
-  const load1 = document.createElement('button');
-  load1.innerText = 'Load Random';
-  load1.onclick = loadVolume.bind(null, 'Random', imageIds);
-  loaders.appendChild(load1);
+  const createButton = (text, volId, imageIds) => {
+    const button = document.createElement('button');
+    button.innerText = text;
+    button.onclick = loadVolume.bind(null, volId, imageIds);
+    loaders.appendChild(button);
+  };
+
+  createButton('Load Order', 'Random', imageIds);
+  createButton('CT JLS', 'ctjls', imageIdsCTJLS);
+  createButton('CT HTJ2K', 'cthtj2k', imageIdsCTHtj2k);
 }
 
 run();

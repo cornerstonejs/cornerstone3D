@@ -14,7 +14,7 @@ import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
 
 const requestType = Enums.RequestType.Prefetch;
-const { getMinMax } = csUtils;
+const { getMinMax, ProgressiveIterator } = csUtils;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -443,7 +443,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       );
     };
 
-    function errorCallback(error, imageIdIndex, imageId) {
+    function errorCallback(imageIdIndex, imageId, error) {
       this.framesProcessed++;
 
       if (this.framesProcessed === totalNumFrames) {
@@ -617,26 +617,22 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       const callLoadImage = (imageId, imageIdIndex, options) => {
-        function handleNewPixelData(image, isUpdatedImage = false) {
+        const uncompressedIterator = ProgressiveIterator.as(
+          imageLoader.loadImage(imageId, options)
+        );
+        let isUpdatedImage = false;
+        return uncompressedIterator.forEach((image) => {
+          handleArrayBufferLoad(scalarData, image, options);
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-          handleArrayBufferLoad(scalarData, image, options);
           successCallback(
             imageIdIndex,
             imageId,
             scalingParameters,
             isUpdatedImage
           );
-        }
-        // TODO - update this as an iterator instead
-        return imageLoader.loadImage(imageId, options).then(
-          (image) => {
-            handleNewPixelData(image);
-          },
-          (error) => {
-            errorCallback.call(this, error, imageIdIndex, imageId);
-          }
-        );
+          isUpdatedImage = true;
+        }, errorCallback.bind(this, imageIdIndex, imageId));
       };
 
       return {

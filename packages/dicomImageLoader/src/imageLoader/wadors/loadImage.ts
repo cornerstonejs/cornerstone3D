@@ -12,9 +12,13 @@ const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
 
 function imageIdIsStreamable(imageId: string) {
-  const { transferSyntaxUID } = metaDataProvider('transferSyntax', imageId) as
+  const transferSyntax = metaDataProvider('transferSyntax', imageId) as
     | { transferSyntaxUID: string }
     | undefined;
+  if (!transferSyntax) {
+    return false;
+  }
+  const { transferSyntaxUID } = transferSyntax;
   if (!transferSyntaxUID) {
     return false;
   }
@@ -122,7 +126,7 @@ function loadImage(
     'decompress'
   );
   async function sendXHR(imageURI: string, imageId: string, mediaType: string) {
-    uncompressedIterator.process(async (it, reject) => {
+    uncompressedIterator.generate(async (it, reject) => {
       // get the pixel data from the server
       const isStreamable = imageIdIsStreamable(imageId);
       const loaderOptions = getOptions();
@@ -155,11 +159,18 @@ function loadImage(
         options.decodeLevel = decodeLevel;
 
         try {
+          console.log('loadImage:createImage', options);
+          const useOptions = {
+            ...options,
+          };
+          if (!complete) {
+            delete useOptions.targetBuffer;
+          }
           const image = await createImage(
             imageId,
             pixelData,
             transferSyntax,
-            options
+            useOptions
           );
 
           // add the loadTimeInMS property
@@ -182,7 +193,7 @@ function loadImage(
         }
       }
       // Cache in the pool when done
-      return uncompressedIterator.getNextPromise();
+      return uncompressedIterator.getDonePromise();
     });
   }
 

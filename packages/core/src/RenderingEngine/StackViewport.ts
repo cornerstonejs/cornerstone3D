@@ -1717,7 +1717,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const displayedIterator = new ProgressiveIterator<void | IImage>(
           'displayed'
         );
-        displayedIterator.process(async (it, reject) => {
+        displayedIterator.generate(async (it, reject) => {
           for await (const image of uncompressedIterator) {
             // Update cache
             cache.putImageLoadObject(
@@ -1780,7 +1780,7 @@ class StackViewport extends Viewport implements IStackViewport {
     function sendRequest(imageId, imageIdIndex, options) {
       const loadedPromise = loadAndCacheImage(imageId, options);
       const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
-      displayedIterator.process(async (it) => {
+      displayedIterator.generate(async (it) => {
         for await (const image of uncompressedIterator) {
           // Todo: trigger an event to allow applications to hook into END of loading state
           // Currently we use loadHandlerManagers for this

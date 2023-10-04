@@ -19,7 +19,7 @@ function getPixelData(
   };
 
   const url = imageIdToURI(imageId);
-  const searchParams = new URL(url).searchParams;
+  const searchParams = createURL(url).searchParams;
   // const fsiz = searchParams.get('fsiz');
   const streamMethod = getOptions().streamMethod;
 
@@ -54,4 +54,10 @@ function getPixelData(
   return loadIterator.getNextPromise();
 }
 
+function createURL(url) {
+  if (url.substring(0, 4) !== 'http') {
+    return new URL(`http://localhost/${url}`);
+  }
+  return new URL(url);
+}
 export default getPixelData;

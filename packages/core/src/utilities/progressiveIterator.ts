@@ -30,7 +30,7 @@ export default class ProgressiveIterator<T> {
       return promise.iterator;
     }
     const iterator = new ProgressiveIterator('as iterator');
-    iterator.process((iterator) => {
+    iterator.generate((iterator) => {
       return promise.then(
         (v) => iterator.add(v, true),
         (reason) => iterator.reject(reason)
@@ -85,11 +85,64 @@ export default class ProgressiveIterator<T> {
       //console.log('Awaiting on', this.name);
       await this.waiting.promise;
     }
-    console.log('Final yield on', this.name);
+    // console.log('Final yield on', this.name);
     yield this.nextValue;
   }
 
-  public process(processFunction, errorCallback?: ErrorCallback): Promise<any> {
+  /** Filters one ProgressiveIterator to generate a second one. */
+  public async filter(
+    promise: ProgressiveIterator<any> | Promise<any>,
+    callback,
+    errorCallback
+  ) {
+    const iterator = ProgressiveIterator.as(promise);
+    let index = 0;
+    for await (const value of iterator) {
+      const { done } = iterator;
+      try {
+        await callback(value, done, index);
+        index++;
+      } catch (e) {
+        if (!done) {
+          console.warn('Caught exception in intermediate value', e);
+          continue;
+        }
+        if (errorCallback) {
+          errorCallback(e);
+        } else {
+          throw e;
+        }
+      }
+    }
+  }
+
+  /** Runs the forEach method on this filter */
+  public async forEach(callback, errorCallback) {
+    let index = 0;
+    for await (const value of this) {
+      const { done } = this;
+      try {
+        await callback(value, done, index);
+        index++;
+      } catch (e) {
+        if (!done) {
+          console.warn('Caught exception in intermediate value', e);
+          continue;
+        }
+        if (errorCallback) {
+          errorCallback(e);
+        } else {
+          throw e;
+        }
+      }
+    }
+  }
+
+  /** Calls an async function to generate the results on the iterator */
+  public generate(
+    processFunction,
+    errorCallback?: ErrorCallback
+  ): Promise<any> {
     return processFunction(this, this.reject.bind(this)).then(
       () => {
         if (!this.done) {

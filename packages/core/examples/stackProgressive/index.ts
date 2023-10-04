@@ -100,12 +100,24 @@ async function run() {
     wadoRsRoot: 'http://localhost:5000/dicomweb',
   });
 
+  const imageIdsCt = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113608.4',
+    wadoRsRoot: 'http://localhost:5000/dicomweb',
+  });
+
+  const imageIdsCtHtj2k = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+    wadoRsRoot: 'http://localhost:5000/dicomweb',
+  });
+
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportId = 'DX_3K';
+  const viewportId = 'stackViewport';
   const viewportInput = {
     viewportId,
     type: ViewportType.STACK,
@@ -131,6 +143,16 @@ async function run() {
   jlsButton.innerText = 'Load JLS';
   jlsButton.onclick = showStack.bind(null, [imageIds[1]], viewport);
   loaders.appendChild(jlsButton);
+
+  const jlsCtButton = document.createElement('button');
+  jlsCtButton.innerText = 'Load CT JLS';
+  jlsCtButton.onclick = showStack.bind(null, [imageIdsCt[0]], viewport);
+  loaders.appendChild(jlsCtButton);
+
+  const htj2kCtButton = document.createElement('button');
+  htj2kCtButton.innerText = 'Load CT HTJ2K';
+  htj2kCtButton.onclick = showStack.bind(null, imageIdsCtHtj2k, viewport);
+  loaders.appendChild(htj2kCtButton);
 }
 
 run();
