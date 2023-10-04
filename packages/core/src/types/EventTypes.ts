@@ -438,7 +438,6 @@ export type {
   PreStackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
-  ImageLoadProgressEvent,
   ImageLoadProgressEventDetail,
   VolumeNewImageEvent,
   VolumeNewImageEventDetail,

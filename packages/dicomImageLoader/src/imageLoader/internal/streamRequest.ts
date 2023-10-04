@@ -76,11 +76,12 @@ export default function streamRequest(
 
       const contentType = responseHeaders.get('content-type');
 
-      const totalBytes = responseHeaders.get('Content-Length');
-      loadTracking[imageId] = { total: Number(totalBytes), loaded: 0 };
+      const totalBytes = Number(responseHeaders.get('Content-Length'));
+      loadTracking[imageId] = { total: totalBytes, loaded: 0 };
 
       let readDone = false;
       let imageFrame;
+      let extracted;
       while (!readDone) {
         const { done, value } = await responseReader.read();
         readDone = done;
@@ -97,13 +98,17 @@ export default function streamRequest(
           continue;
         }
 
-        const extracted = extractMultipart(contentType, imageFrame, !readDone);
+        extracted = extractMultipart(
+          contentType,
+          imageFrame,
+          extracted,
+          !readDone
+        );
         const detail = {
           url,
           imageId,
           ...extracted,
-          percentComplete:
-            (extracted.imageFrame.pixelData.length * 100) / totalBytes,
+          percentComplete: (extracted.pixelData?.length * 100) / totalBytes,
         };
 
         // When the first chunk of the downloaded image arrives, resolve the

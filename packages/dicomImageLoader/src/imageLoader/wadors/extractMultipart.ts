@@ -31,6 +31,7 @@ export function uint8ArrayToString(data, offset, length) {
 export default function extractMultipart(
   contentType: string,
   imageFrameAsArrayBuffer,
+  progressiveContent?,
   isPartial = false
 ) {
   // request succeeded, Parse the multi-part mime response
@@ -46,19 +47,25 @@ export default function extractMultipart(
     };
   }
 
+  let { tokenIndex, responseHeaders, boundary, multipartContentType } =
+    progressiveContent || {};
+
   // First look for the multipart mime header
-  const tokenIndex = findIndexOfString(response, '\r\n\r\n');
+  tokenIndex ||= findIndexOfString(response, '\r\n\r\n');
 
   if (tokenIndex === -1) {
     throw new Error('invalid response - no multipart mime header');
   }
-  const header = uint8ArrayToString(response, 0, tokenIndex);
-  // Now find the boundary  marker
-  const split = header.split('\r\n');
-  const boundary = findBoundary(split);
 
   if (!boundary) {
-    throw new Error('invalid response - no boundary marker');
+    const header = uint8ArrayToString(response, 0, tokenIndex);
+    // Now find the boundary  marker
+    responseHeaders = header.split('\r\n');
+    boundary = findBoundary(responseHeaders);
+
+    if (!boundary) {
+      throw new Error('invalid response - no boundary marker');
+    }
   }
   const offset = tokenIndex + 4; // skip over the \r\n\r\n
 
@@ -71,14 +78,17 @@ export default function extractMultipart(
 
   const length = endIndex === -1 ? response.length : endIndex - offset - 2;
 
-  const multipartContentType = findContentType(split);
+  multipartContentType ||= findContentType(responseHeaders);
 
   // return the info for this pixel data
   return {
+    ...progressiveContent,
     contentType: multipartContentType,
     complete: !isPartial || endIndex !== -1,
-    imageFrame: {
-      pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
-    },
+    tokenIndex,
+    responseHeaders,
+    boundary,
+    multipartContentType,
+    pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
   };
 }

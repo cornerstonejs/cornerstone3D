@@ -139,23 +139,21 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        const { complete } = result;
+        const { complete, pixelData } = result;
         const completeText = complete ? 'complete' : 'partial';
         if (!streamableTransferSyntaxes.has(transferSyntax) && !complete) {
           continue;
         }
         const { percentComplete } = result;
         const decodeLevel =
-          result.imageFrame?.decodeLevel || complete
-            ? 0
-            : decodeLevelFromComplete(percentComplete);
+          result.decodeLevel ??
+          (complete ? 0 : decodeLevelFromComplete(percentComplete));
         if (!complete && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
           continue;
         }
         options.decodeLevel = decodeLevel;
 
-        const pixelData = result.imageFrame?.pixelData || result.imageFrame;
         try {
           const image = await createImage(
             imageId,
