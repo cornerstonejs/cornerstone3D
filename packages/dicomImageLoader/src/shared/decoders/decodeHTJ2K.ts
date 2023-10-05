@@ -71,7 +71,6 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   // decode it
   // decoder.decode();
   const decodeLevel = imageInfo.decodeLevel || 0;
-  console.log('decodeLevel for HTJ2K is', decodeLevel);
   decoder.decodeSubResolution(decodeLevel);
   // decoder.decodeSubResolution(decodeLevel, decodeLayer);
   // const resolutionAtLevel = decoder.calculateSizeAtDecompositionLevel(decodeLevel);

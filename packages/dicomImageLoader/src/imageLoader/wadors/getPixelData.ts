@@ -38,11 +38,6 @@ function getPixelData(
     function (imageFrameAsArrayBuffer /* , xhr*/) {
       const contentType =
         xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
-      // const decodeLevel = xhr.getResponseHeader('X-Decode-Level')
-      //   ? Number(xhr.getResponseHeader('X-Decode-Level'))
-      //   : undefined;
-
-      console.log('getPixelData:Delivering complete data');
       loadIterator.add(
         extractMultipart(contentType, imageFrameAsArrayBuffer),
         true

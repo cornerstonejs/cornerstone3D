@@ -262,23 +262,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const numFrames = imageIds.length;
 
     // Length of one frame in voxels
-    const length = scalarData.length / numFrames;
     // Length of one frame in bytes
-    const lengthInBytes = arrayBuffer.byteLength / numFrames;
 
-    let type;
-
-    if (scalarData instanceof Uint8Array) {
-      type = 'Uint8Array';
-    } else if (scalarData instanceof Float32Array) {
-      type = 'Float32Array';
-    } else if (scalarData instanceof Uint16Array) {
-      type = 'Uint16Array';
-    } else if (scalarData instanceof Int16Array) {
-      type = 'Int16Array';
-    } else {
-      throw new Error('Unsupported array type');
-    }
+    const { type, length, lengthInBytes } = getScalarDataType(
+      scalarData,
+      numFrames
+    );
 
     const totalNumFrames = this.imageIds.length;
     const autoRenderOnLoad = true;
@@ -484,57 +473,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
-    function handleArrayBufferLoad(scalarData, image, options) {
-      if (!(scalarData.buffer instanceof ArrayBuffer)) {
-        return;
-      }
-
-      const offset = options.targetBuffer.offset; // in bytes
-      const length = options.targetBuffer.length; // in frames
-      const pixelData = image.pixelData
-        ? image.pixelData
-        : image.getPixelData();
-
-      try {
-        if (scalarData instanceof Float32Array) {
-          const bytesInFloat = 4;
-          const floatView = new Float32Array(pixelData);
-          if (floatView.length !== length) {
-            throw 'Error pixelData length does not match frame length';
-          }
-          // since set is based on the underlying type,
-          // we need to divide the offset bytes by the byte type
-          scalarData.set(floatView, offset / bytesInFloat);
-        }
-        if (scalarData instanceof Int16Array) {
-          const bytesInInt16 = 2;
-          const intView = new Int16Array(pixelData);
-          if (intView.length !== length) {
-            throw 'Error pixelData length does not match frame length';
-          }
-          scalarData.set(intView, offset / bytesInInt16);
-        }
-        if (scalarData instanceof Uint16Array) {
-          const bytesInUint16 = 2;
-          const intView = new Uint16Array(pixelData);
-          if (intView.length !== length) {
-            throw 'Error pixelData length does not match frame length';
-          }
-          scalarData.set(intView, offset / bytesInUint16);
-        }
-        if (scalarData instanceof Uint8Array) {
-          const bytesInUint8 = 1;
-          const intView = new Uint8Array(pixelData);
-          if (intView.length !== length) {
-            throw 'Error pixelData length does not match frame length';
-          }
-          scalarData.set(intView, offset / bytesInUint8);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
     // imageIdIndex is its absolute position in the array that contains
@@ -556,6 +494,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {};
+
+      const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
+      const { rows, columns } = imagePlaneModule;
 
       const scalingParameters: Types.ScalingParameters = {
         rescaleSlope: modalityLutModule.rescaleSlope,
@@ -603,6 +544,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           offset: frameIndex * lengthInBytes,
           length,
           type,
+          rows,
+          columns,
         },
         skipCreateImage: true,
         preScale: {
@@ -1080,5 +1023,82 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     } else {
       this._convertToImages();
     }
+  }
+}
+
+function getScalarDataType(scalarData, numFrames) {
+  let type, byteSize;
+  if (scalarData instanceof Uint8Array) {
+    type = 'Uint8Array';
+    byteSize = 1;
+  } else if (scalarData instanceof Float32Array) {
+    type = 'Float32Array';
+    byteSize = 4;
+  } else if (scalarData instanceof Uint16Array) {
+    type = 'Uint16Array';
+    byteSize = 2;
+  } else if (scalarData instanceof Int16Array) {
+    type = 'Int16Array';
+    byteSize = 2;
+  } else {
+    throw new Error('Unsupported array type');
+  }
+  const length = scalarData.length / numFrames;
+  const lengthInBytes = length * byteSize;
+  return { type, byteSize, length, lengthInBytes };
+}
+
+/**
+ * Sets the scalar data at the appropriate offset to the
+ * byte data from the image.
+ */
+function handleArrayBufferLoad(scalarData, image, options) {
+  if (!(scalarData.buffer instanceof ArrayBuffer)) {
+    return;
+  }
+
+  console.log('BaseStreaming:handleArrayBufferLoad', image, options);
+
+  const offset = options.targetBuffer.offset; // in bytes
+  const length = options.targetBuffer.length; // in frames
+  const pixelData = image.pixelData ? image.pixelData : image.getPixelData();
+
+  try {
+    if (scalarData instanceof Float32Array) {
+      const bytesInFloat = 4;
+      const floatView = new Float32Array(pixelData);
+      if (floatView.length !== length) {
+        throw 'Error pixelData length does not match frame length';
+      }
+      // since set is based on the underlying type,
+      // we need to divide the offset bytes by the byte type
+      scalarData.set(floatView, offset / bytesInFloat);
+    }
+    if (scalarData instanceof Int16Array) {
+      const bytesInInt16 = 2;
+      const intView = new Int16Array(pixelData);
+      if (intView.length !== length) {
+        throw 'Error pixelData length does not match frame length';
+      }
+      scalarData.set(intView, offset / bytesInInt16);
+    }
+    if (scalarData instanceof Uint16Array) {
+      const bytesInUint16 = 2;
+      const intView = new Uint16Array(pixelData);
+      if (intView.length !== length) {
+        throw 'Error pixelData length does not match frame length';
+      }
+      scalarData.set(intView, offset / bytesInUint16);
+    }
+    if (scalarData instanceof Uint8Array) {
+      const bytesInUint8 = 1;
+      const intView = new Uint8Array(pixelData);
+      if (intView.length !== length) {
+        throw 'Error pixelData length does not match frame length';
+      }
+      scalarData.set(intView, offset / bytesInUint8);
+    }
+  } catch (e) {
+    console.error(e);
   }
 }

@@ -6,7 +6,7 @@ import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { metaDataProvider } from './metaData';
 import { getOptions } from '../internal';
-const { ProgressiveIterator } = utilities;
+const { bilinear, replicate, ProgressiveIterator } = utilities;
 
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
@@ -156,22 +156,25 @@ function loadImage(
           // No point trying again yet
           continue;
         }
-        options.decodeLevel = decodeLevel;
 
         try {
-          console.log('loadImage:createImage', options);
           const useOptions = {
             ...options,
+            decodeLevel,
           };
-          if (!complete) {
+          if (decodeLevel) {
             delete useOptions.targetBuffer;
           }
-          const image = await createImage(
+          let image = await createImage(
             imageId,
             pixelData,
             transferSyntax,
             useOptions
           );
+
+          if (decodeLevel !== 0 && options.targetBuffer?.offset !== undefined) {
+            image = scaleImage(image, options.targetBuffer);
+          }
 
           // add the loadTimeInMS property
           const end = new Date().getTime();
@@ -183,7 +186,7 @@ function loadImage(
             end - start,
             'ms'
           );
-          it.add(image, complete);
+          it.add(image, complete || true);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           console.warn("Couldn't decode" + completeText, e);
@@ -233,6 +236,55 @@ function decodeLevelFromComplete(percent: number) {
     return 2;
   }
   return 1;
+}
+
+function createSrc(image) {
+  const { rows, columns, pixelData, bitsPerPixel, pixelRepresentation } = image;
+  let arrayConstructor = Float32Array;
+  if (bitsPerPixel === 8) {
+    arrayConstructor = pixelRepresentation ? Uint8Array : Int8Array;
+  } else if (bitsPerPixel === 16) {
+    arrayConstructor = pixelRepresentation ? Uint16Array : Int16Array;
+  }
+  return {
+    data: new arrayConstructor(pixelData),
+    rows,
+    columns,
+  };
+}
+
+function createDest(targetBuffer) {
+  const { rows, columns, arrayBuffer, offset, length } = targetBuffer;
+  return {
+    data: new Float32Array(arrayBuffer, offset, length),
+    rows,
+    columns,
+  };
+}
+
+const scalingType = 'bilinear';
+
+function scaleImage(image, targetBuffer) {
+  const { arrayBuffer, rows, columns } = targetBuffer;
+  if (!rows || !columns) {
+    return;
+  }
+  const src = createSrc(image);
+  const dest = createDest(targetBuffer);
+  if (!src || !dest) {
+    return;
+  }
+  if (scalingType === 'bilinear') {
+    bilinear(src, dest);
+  } else {
+    replicate(src, dest);
+  }
+  return {
+    ...image,
+    rows,
+    columns,
+    arrayBuffer,
+  };
 }
 
 export default loadImage;
