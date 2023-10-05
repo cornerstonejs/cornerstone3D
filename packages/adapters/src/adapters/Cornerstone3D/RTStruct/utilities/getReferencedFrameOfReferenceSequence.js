@@ -1,10 +1,9 @@
 export default function getReferencedFrameOfReferenceSequence(
-    contour,
+    metadata,
     metadataProvider,
     dataset
 ) {
-    const { referencedImageId: imageId, FrameOfReferenceUID } =
-        contour.metadata;
+    const { referencedImageId: imageId, FrameOfReferenceUID } = metadata;
     const instance = metadataProvider.get("instance", imageId);
     const { SeriesInstanceUID } = instance;
 
