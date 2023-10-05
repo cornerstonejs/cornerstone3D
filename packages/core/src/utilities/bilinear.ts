@@ -1,5 +1,6 @@
 /**
  * Performs a bilinear scaling, both scaling up and scaling down.
+ * Only supports 1 channel per pixel (grayscale)
  * @param src - src image frame to get map from
  * @param dest - dest image frame to write to
  * @returns destination data buffer
@@ -53,8 +54,14 @@ export function bilinear(src, dest) {
   return data;
 }
 
+/** Handle replicate scaling.  Use this function for samplesPerPixel>1 */
 export function replicate(src, dest) {
-  const { rows: srcRows, columns: srcColumns, data: srcData } = src;
+  const {
+    rows: srcRows,
+    columns: srcColumns,
+    data: srcData,
+    samplesPerPixel = 1,
+  } = src;
   const { rows, columns, data } = dest;
 
   const xSrc1Off = [];
@@ -62,17 +69,19 @@ export function replicate(src, dest) {
   // Precompute offsets
   for (let x = 0; x < columns; x++) {
     const xSrc = (x * (srcColumns - 1)) / (columns - 1);
-    xSrc1Off[x] = Math.floor(xSrc);
+    xSrc1Off[x] = Math.floor(xSrc) * samplesPerPixel;
     // console.log("x src info", x, xSrc, xFrac[x]);
   }
 
   for (let y = 0; y < rows; y++) {
     const ySrc = (y * (srcRows - 1)) / (rows - 1);
-    const ySrc1Off = Math.floor(ySrc) * srcColumns;
+    const ySrc1Off = Math.floor(ySrc) * srcColumns * samplesPerPixel;
     const yOff = y * columns;
 
     for (let x = 0; x < columns; x++) {
-      data[yOff + x] = srcData[ySrc1Off + xSrc1Off[x]];
+      for (let sample = 0; sample < samplesPerPixel; sample++) {
+        data[yOff + x + sample] = srcData[ySrc1Off + xSrc1Off[x] + sample];
+      }
     }
   }
   return data;

@@ -105,6 +105,10 @@ content.append(instructions);
 
 // ============================= //
 
+function addSize(imageIds: string[], size = 256) {
+  return imageIds.map((id) => `${id}?fsiz=${size}`);
+}
+
 /**
  * Runs the demo
  */
@@ -172,11 +176,14 @@ async function run() {
     wadoRsRoot: 'http://localhost:5000/dicomweb/',
   });
 
+  const imageIdsCTJLS256 = addSize(imageIdsCTJLS, 256);
+
   const imageIdsCTHtj2k = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
     wadoRsRoot: 'http://localhost:25080/dicomweb/',
   });
+  const imageIdsCTHtj2k256 = addSize(imageIdsCTHtj2k, 256);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -257,8 +264,10 @@ async function run() {
   };
 
   createButton('Load Order', 'Random', imageIds);
+  createButton('CT JLS 256', 'ctjls256', imageIdsCTJLS256);
   createButton('CT JLS', 'ctjls', imageIdsCTJLS);
   createButton('CT HTJ2K', 'cthtj2k', imageIdsCTHtj2k);
+  createButton('CT HTJ2K 256', 'cthtj2k256', imageIdsCTHtj2k256);
 }
 
 run();

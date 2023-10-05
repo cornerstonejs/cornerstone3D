@@ -14,7 +14,8 @@ import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
 
 const requestType = Enums.RequestType.Prefetch;
-const { getMinMax, ProgressiveIterator } = csUtils;
+const { interleave, getMinMax, ProgressiveIterator } = csUtils;
+const { FrameStatus } = Enums;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -31,7 +32,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<boolean>;
+    cachedFrames: Array<Enums.FrameStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
 
@@ -261,9 +262,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const arrayBuffer = scalarData.buffer;
     const numFrames = imageIds.length;
 
-    // Length of one frame in voxels
-    // Length of one frame in bytes
-
+    // Length of one frame in voxels: length
+    // Length of one frame in bytes: lengthInBytes
     const { type, length, lengthInBytes } = getScalarDataType(
       scalarData,
       numFrames
@@ -320,8 +320,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
+      cachedFrames[imageIdIndex] = isUpdatedImage
+        ? FrameStatus.PARTIAL
+        : FrameStatus.DONE;
       if (!isUpdatedImage) {
-        cachedFrames[imageIdIndex] = true;
         this.framesLoaded++;
         this.framesProcessed++;
       }
@@ -483,7 +485,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const requests = imageIds.map((imageId, frameIndex) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
-      if (cachedFrames[imageIdIndex]) {
+      if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
         this.framesLoaded++;
         this.framesProcessed++;
         return;
@@ -566,6 +568,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         let isUpdatedImage = false;
         return uncompressedIterator.forEach((image) => {
           handleArrayBufferLoad(scalarData, image, options);
+          const nearby = fillNearby(
+            scalarData,
+            options,
+            cachedFrames,
+            numFrames
+          );
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
           successCallback(
@@ -574,6 +582,18 @@ export default class BaseStreamingImageVolume extends ImageVolume {
             scalingParameters,
             isUpdatedImage
           );
+          nearby?.forEach((frameNo) => {
+            try {
+              successCallback(
+                frameNo,
+                this.imageIds[frameNo],
+                scalingParameters,
+                true
+              );
+            } catch (e) {
+              console.log("Couldn't update nearby", e);
+            }
+          });
           isUpdatedImage = true;
         }, errorCallback.bind(this, imageIdIndex, imageId));
       };
@@ -668,9 +688,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const requests = this.getImageLoadRequests(priority);
+    const requestsOrdered = this.getImageLoadRequests(priority);
+    const requestsInterleaved = interleave(requestsOrdered, 3).reverse();
 
-    requests.reverse().forEach((request) => {
+    requestsInterleaved.forEach((request) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
         return;
@@ -1046,6 +1067,38 @@ function getScalarDataType(scalarData, numFrames) {
   const length = scalarData.length / numFrames;
   const lengthInBytes = length * byteSize;
   return { type, byteSize, length, lengthInBytes };
+}
+
+function fillNearby(scalarData, options, cachedFrames, numFrames) {
+  try {
+    const frameLength = scalarData.byteLength / numFrames;
+    const offset = options.targetBuffer.offset; // in bytes
+    const length = options.targetBuffer.length; // in frames
+
+    const bytesInPixel = frameLength / length;
+    const nearby: number[] = [];
+
+    // since set is based on the underlying type,
+    // we need to divide the offset bytes by the byte type
+    const index = offset / frameLength;
+    const src = scalarData.slice(
+      offset / bytesInPixel,
+      (offset + frameLength) / bytesInPixel
+    );
+    if (index + 1 < numFrames && !cachedFrames[index + 1]) {
+      scalarData.set(src, (offset + frameLength) / bytesInPixel);
+      cachedFrames[index + 1] = FrameStatus.REPLICATE;
+      nearby.push(index + 1);
+    }
+    if (index > 0 && !cachedFrames[index - 1]) {
+      scalarData.set(src, (offset - frameLength) / bytesInPixel);
+      cachedFrames[index - 1] = FrameStatus.REPLICATE;
+      nearby.push(index - 1);
+    }
+    return nearby;
+  } catch (e) {
+    console.warn('fillNearby failed', e);
+  }
 }
 
 /**

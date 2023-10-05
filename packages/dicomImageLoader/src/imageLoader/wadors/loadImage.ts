@@ -6,7 +6,7 @@ import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { metaDataProvider } from './metaData';
 import { getOptions } from '../internal';
-const { bilinear, replicate, ProgressiveIterator } = utilities;
+const { imageUtils, ProgressiveIterator } = utilities;
 
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
@@ -160,19 +160,19 @@ function loadImage(
         try {
           const useOptions = {
             ...options,
-            decodeLevel,
+            decodeLevel: 0,
           };
-          if (decodeLevel) {
-            delete useOptions.targetBuffer;
-          }
-          let image = await createImage(
+          const image = await createImage(
             imageId,
             pixelData,
             transferSyntax,
             useOptions
           );
 
-          if (decodeLevel !== 0 && options.targetBuffer?.offset !== undefined) {
+          if (
+            image.rows !== options.targetBuffer?.rows &&
+            options.targetBuffer?.offset !== undefined
+          ) {
             image = scaleImage(image, options.targetBuffer);
           }
 
@@ -239,7 +239,14 @@ function decodeLevelFromComplete(percent: number) {
 }
 
 function createSrc(image) {
-  const { rows, columns, pixelData, bitsPerPixel, pixelRepresentation } = image;
+  const {
+    rows,
+    columns,
+    pixelData,
+    bitsPerPixel,
+    pixelRepresentation,
+    samplesPerPixel,
+  } = image;
   let arrayConstructor = Float32Array;
   if (bitsPerPixel === 8) {
     arrayConstructor = pixelRepresentation ? Uint8Array : Int8Array;
@@ -250,6 +257,7 @@ function createSrc(image) {
     data: new arrayConstructor(pixelData),
     rows,
     columns,
+    samplesPerPixel,
   };
 }
 
@@ -262,6 +270,7 @@ function createDest(targetBuffer) {
   };
 }
 
+// Replicate is faster, but bilinear is smoother
 const scalingType = 'bilinear';
 
 function scaleImage(image, targetBuffer) {
@@ -274,10 +283,10 @@ function scaleImage(image, targetBuffer) {
   if (!src || !dest) {
     return;
   }
-  if (scalingType === 'bilinear') {
-    bilinear(src, dest);
+  if (image.samplesPerPixel > 1) {
+    imageUtils.replicate(src, dest);
   } else {
-    replicate(src, dest);
+    imageUtils[scalingType](src, dest);
   }
   return {
     ...image,

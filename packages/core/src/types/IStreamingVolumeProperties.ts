@@ -1,3 +1,5 @@
+import { FrameStatus } from '../enums';
+
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */
   imageIds: Array<string>;
@@ -7,7 +9,7 @@ interface IStreamingVolumeProperties {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<boolean>;
+    cachedFrames: Array<FrameStatus>;
     callbacks: Array<() => void>;
   };
 }
