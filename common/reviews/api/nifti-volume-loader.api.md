@@ -478,7 +478,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -882,9 +881,6 @@ options?: Record<string, any>
 };
 
 // @public
-type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
-
-// @public
 type ImageLoadProgressEventDetail = {
     url: string;
     imageId: string;
@@ -1105,7 +1101,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<boolean>;
+        cachedFrames: Array<FrameStatus>;
         callbacks: Array<() => void>;
     };
 }

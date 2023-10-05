@@ -549,7 +549,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -565,6 +564,18 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public
+enum FrameStatus {
+    // (undocumented)
+    DONE,
+    // (undocumented)
+    LINEAR,
+    // (undocumented)
+    PARTIAL,
+    // (undocumented)
+    REPLICATE,
+}
 
 // @public (undocumented)
 enum GeometryType {
@@ -953,9 +964,6 @@ options?: Record<string, any>
 };
 
 // @public
-type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
-
-// @public
 type ImageLoadProgressEventDetail = {
     url: string;
     imageId: string;
@@ -1184,7 +1192,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<boolean>;
+        cachedFrames: Array<FrameStatus>;
         callbacks: Array<() => void>;
     };
 }
@@ -1551,7 +1559,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageLoadRequests: (priority: number) => {
-        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
+        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => any;
         imageId: string;
         imageIdIndex: number;
         options: {
@@ -1560,6 +1568,8 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 offset: number;
                 length: number;
                 type: any;
+                rows: any;
+                columns: any;
             };
             skipCreateImage: boolean;
             preScale: {

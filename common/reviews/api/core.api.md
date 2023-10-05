@@ -140,6 +140,9 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
 }
 
 // @public (undocumented)
+function bilinear(src: any, dest: any): any;
+
+// @public (undocumented)
 enum BlendModes {
     // (undocumented)
     AVERAGE_INTENSITY_BLEND = 3,
@@ -624,7 +627,8 @@ declare namespace Enums {
         ContourType,
         VOILUTFunctionType,
         DynamicOperatorType,
-        ViewportStatus
+        ViewportStatus,
+        FrameStatus
     }
 }
 export { Enums }
@@ -735,7 +739,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -751,6 +754,18 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public (undocumented)
+enum FrameStatus {
+    // (undocumented)
+    DONE = 3,
+    // (undocumented)
+    LINEAR = 2,
+    // (undocumented)
+    PARTIAL = 0,
+    // (undocumented)
+    REPLICATE = 1
+}
 
 declare namespace geometryLoader {
     export {
@@ -1383,9 +1398,6 @@ export { imageLoadPoolManager }
 export { imageLoadPoolManager as requestPoolManager }
 
 // @public (undocumented)
-type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
-
-// @public (undocumented)
 type ImageLoadProgressEventDetail = {
     url: string;
     imageId: string;
@@ -1484,6 +1496,14 @@ type ImageSpacingCalibratedEventDetail = {
 // @public (undocumented)
 function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | undefined;
 
+declare namespace imageUtils {
+    export {
+        bilinear,
+        replicate,
+        bilinear as default
+    }
+}
+
 // @public (undocumented)
 export class ImageVolume implements IImageVolume {
     constructor(props: IVolume);
@@ -1566,6 +1586,9 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 
 // @public (undocumented)
 export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
+
+// @public (undocumented)
+function interleave<T>(list: Array<T>, interleave?: number): Array<T>;
 
 // @public (undocumented)
 enum InterpolationType {
@@ -1723,7 +1746,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<boolean>;
+        cachedFrames: Array<FrameStatus>;
         callbacks: Array<() => void>;
     };
 }
@@ -2080,6 +2103,10 @@ class ProgressiveIterator<T> {
     // (undocumented)
     donePromise(): Promise<T>;
     // (undocumented)
+    forEach(callback: any, errorCallback: any): Promise<void>;
+    // (undocumented)
+    generate(processFunction: any, errorCallback?: ErrorCallback_2): Promise<any>;
+    // (undocumented)
     getDonePromise(): PromiseIterator<T>;
     // (undocumented)
     getNextPromise(): PromiseIterator<T>;
@@ -2089,8 +2116,6 @@ class ProgressiveIterator<T> {
     name?: string;
     // (undocumented)
     nextPromise(): Promise<T>;
-    // (undocumented)
-    process(processFunction: any, errorCallback?: ErrorCallback_2): Promise<any>;
     // (undocumented)
     reject(reason: Error): void;
 }
@@ -2194,6 +2219,9 @@ function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: 
 
 // @public (undocumented)
 function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string): Promise<string>;
+
+// @public (undocumented)
+function replicate(src: any, dest: any): any;
 
 // @public (undocumented)
 enum RequestType {
@@ -2599,7 +2627,9 @@ declare namespace utilities {
         getScalarDataType,
         colormap,
         getImageLegacy,
-        ProgressiveIterator
+        ProgressiveIterator,
+        imageUtils,
+        interleave
     }
 }
 export { utilities }
