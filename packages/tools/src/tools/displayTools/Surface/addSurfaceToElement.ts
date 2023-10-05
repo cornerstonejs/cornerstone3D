@@ -2,7 +2,7 @@ import { getEnabledElement, Enums } from '@cornerstonejs/core';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import { VolumeViewport } from '@cornerstonejs/core';
+import { VolumeViewport3D } from '@cornerstonejs/core';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 
@@ -79,7 +79,7 @@ function addSurfaceToElement(
 
   const mapper = vtkMapper.newInstance({});
   let clippingFilter;
-  if (viewport instanceof VolumeViewport) {
+  if (!(viewport instanceof VolumeViewport3D)) {
     clippingFilter = vtkClipClosedSurface.newInstance({
       clippingPlanes: [],
       activePlaneId: 2,

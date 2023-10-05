@@ -2035,9 +2035,14 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // Create a VTK Image Slice actor to display the vtkImageData object
     const actor = this.createActorMapper(this._imageData);
-    const actors = [];
-    actors.push({ uid: this.id, actor });
-    this.setActors(actors);
+    const oldActors = this.getActors();
+    if (oldActors[0].uid === this.id) {
+      oldActors[0].actor = actor;
+    } else {
+      oldActors.unshift({ uid: this.id, actor });
+    }
+    this.setActors(oldActors);
+
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
