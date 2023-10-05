@@ -1,11 +1,11 @@
 export default function getReferencedSeriesSequence(
-    contour,
+    metadata,
     _index,
     metadataProvider,
     DicomMetadataStore
 ) {
     // grab imageId from toolData
-    const { referencedImageId: imageId } = contour.metadata;
+    const { referencedImageId: imageId } = metadata;
     const instance = metadataProvider.get("instance", imageId);
     const { SeriesInstanceUID, StudyInstanceUID } = instance;
 

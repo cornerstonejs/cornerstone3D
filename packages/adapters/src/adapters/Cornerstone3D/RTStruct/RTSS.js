@@ -1,12 +1,16 @@
 // Code and structure based on OHIF Viewer:
 // extensions\tmtv\src\utils\dicomRTAnnotationExport\RTStructureSet\RTSSReport.js
 
-import { generateContourSetFromSegmentation } from "./generateContourSetFromSegmentation";
+import {
+    generateContourSetFromSegmentation,
+    AnnotationToPointData
+} from "./utilities";
 import dcmjs from "dcmjs";
 import {
     getPatientModule,
     getReferencedFrameOfReferenceSequence,
     getReferencedSeriesSequence,
+    getRTROIObservationsSequence,
     getRTSeriesModule,
     getStructureSetModule
 } from "./utilities";
@@ -27,7 +31,7 @@ export default class RTSS {
      * @param csTools - cornerstone tool instance
      * @returns Report object containing the dataset
      */
-    static async generateRTSS(
+    static async generateRTSSFromSegmentations(
         segmentations,
         metadataProvider,
         DicomMetadataStore,
@@ -147,7 +151,7 @@ export default class RTSS {
 
             // ReferencedSeriesSequence
             dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
-                contour,
+                contour.metadata,
                 index,
                 metadataProvider,
                 DicomMetadataStore
@@ -156,7 +160,91 @@ export default class RTSS {
             // ReferencedFrameOfReferenceSequence
             dataset.ReferencedFrameOfReferenceSequence =
                 getReferencedFrameOfReferenceSequence(
-                    contour,
+                    contour.metadata,
+                    metadataProvider,
+                    dataset
+                );
+        });
+
+        const fileMetaInformationVersionArray = new Uint8Array(2);
+        fileMetaInformationVersionArray[1] = 1;
+
+        const _meta = {
+            FileMetaInformationVersion: {
+                Value: [fileMetaInformationVersionArray.buffer],
+                vr: "OB"
+            },
+            TransferSyntaxUID: {
+                Value: ["1.2.840.10008.1.2.1"],
+                vr: "UI"
+            },
+            ImplementationClassUID: {
+                Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
+                vr: "UI"
+            },
+            ImplementationVersionName: {
+                Value: ["dcmjs"],
+                vr: "SH"
+            }
+        };
+
+        dataset._meta = _meta;
+
+        return dataset;
+    }
+
+    /**
+     * Convert handles to RTSSReport report object containing the dcmjs dicom dataset.
+     *
+     * Note: The tool data needs to be formatted in a specific way, and currently
+     * it is limited to the RectangleROIStartEndTool in the Cornerstone.
+     *
+     * @param annotations Array of Cornerstone tool annotation data
+     * @param metadataProvider Metadata provider
+     * @param options report generation options
+     * @returns Report object containing the dataset
+     */
+    static generateRTSSFromAnnotations(
+        annotations,
+        metadataProvider,
+        DicomMetadataStore,
+        options
+    ) {
+        let dataset = initializeDataset(
+            annotations[0].metadata,
+            metadataProvider
+        );
+
+        annotations.forEach((annotation, index) => {
+            const ContourSequence = AnnotationToPointData.convert(
+                annotation,
+                index,
+                metadataProvider,
+                options
+            );
+
+            dataset.StructureSetROISequence.push(
+                getStructureSetModule(annotation, index, metadataProvider)
+            );
+
+            dataset.ROIContourSequence.push(ContourSequence);
+            dataset.RTROIObservationsSequence.push(
+                getRTROIObservationsSequence(annotation, index)
+            );
+
+            // ReferencedSeriesSequence
+            // Todo: handle more than one series
+            dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
+                annotation.metadata,
+                index,
+                metadataProvider,
+                DicomMetadataStore
+            );
+
+            // ReferencedFrameOfReferenceSequence
+            dataset.ReferencedFrameOfReferenceSequence =
+                getReferencedFrameOfReferenceSequence(
+                    annotation.metadata,
                     metadataProvider,
                     dataset
                 );

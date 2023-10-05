@@ -1,6 +1,6 @@
 import vtkImageMarchingSquares from "@kitware/vtk.js/Filters/General/ImageMarchingSquares";
 
-import * as contourUtils from "./utilities";
+import * as contourUtils from ".";
 
 async function generateContourSetFromSegmentation(
     segmentation,
