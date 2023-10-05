@@ -36,16 +36,18 @@ export default class RTSS {
         metadataProvider,
         DicomMetadataStore,
         cornerstoneCache,
-        cornerstoneToolsEnums
+        cornerstoneToolsEnums,
+        vtkUtils
     ) {
         // Convert segmentations to ROIContours
         const roiContours = [];
         await segmentations.forEach(async (segmentation, segIndex) => {
-            const contourSet = await generateContourSetFromSegmentation(
+            const contourSet = await generateContourSetFromSegmentation({
                 segmentation,
                 cornerstoneCache,
-                cornerstoneToolsEnums
-            );
+                cornerstoneToolsEnums,
+                vtkUtils
+            });
 
             // Check contour set isn't undefined
             if (contourSet) {
