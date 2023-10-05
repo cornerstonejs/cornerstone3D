@@ -1,10 +1,6 @@
 import external from '../../externalModules';
 import { getOptions } from './options';
-import {
-  LoaderXhrRequestError,
-  LoaderXhrRequestParams,
-  LoaderXhrRequestPromise,
-} from '../../types';
+import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};

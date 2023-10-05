@@ -30,7 +30,6 @@ function getPixelData(
   /**
    * Not progressively rendering, use regular xhr request.
    */
-  console.log('getPixelData:Starting single load', imageId);
   const loadIterator = new ProgressiveIterator('xhrRequestImage');
   const loadPromise = xhrRequest(uri, imageId, headers);
   const { xhr } = loadPromise;

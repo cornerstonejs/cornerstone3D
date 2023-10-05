@@ -63,6 +63,10 @@ export default class ProgressiveIterator<T> {
     return this.nextValue;
   }
 
+  /**
+   * Async iteration where the delivered values are the most recently available
+   * ones, so not necessarily all values are ever seen.
+   */
   public async *[Symbol.asyncIterator]() {
     while (!this.done) {
       if (this.rejectReason) {
@@ -87,33 +91,6 @@ export default class ProgressiveIterator<T> {
     }
     // console.log('Final yield on', this.name);
     yield this.nextValue;
-  }
-
-  /** Filters one ProgressiveIterator to generate a second one. */
-  public async filter(
-    promise: ProgressiveIterator<any> | Promise<any>,
-    callback,
-    errorCallback
-  ) {
-    const iterator = ProgressiveIterator.as(promise);
-    let index = 0;
-    for await (const value of iterator) {
-      const { done } = iterator;
-      try {
-        await callback(value, done, index);
-        index++;
-      } catch (e) {
-        if (!done) {
-          console.warn('Caught exception in intermediate value', e);
-          continue;
-        }
-        if (errorCallback) {
-          errorCallback(e);
-        } else {
-          throw e;
-        }
-      }
-    }
   }
 
   /** Runs the forEach method on this filter */
