@@ -14,7 +14,6 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { sortImageIds } from './utils';
 
-import surface from './Surface.json';
 import surface13 from './lung13.json';
 import surface14 from './lung14.json';
 import surface15 from './lung15.json';
@@ -228,7 +227,7 @@ async function run() {
   const viewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId1)
   );
-  viewport.setStack(sortImageIds(imageIds));
+  viewport.setStack(sortImageIds(imageIds), Math.floor(imageIds.length / 2));
 
   // Set volumes on the viewports
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId2]);

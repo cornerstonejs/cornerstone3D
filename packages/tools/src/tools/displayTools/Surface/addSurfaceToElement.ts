@@ -24,6 +24,112 @@ function pointToString(point) {
   );
 }
 
+function getNearestPoint(nextToFind, points, pointsUsed) {
+  function getPoint(idx) {
+    return [points[idx * 3], points[idx * 3 + 1], points[idx * 3 + 2]];
+  }
+  const reference = getPoint(nextToFind);
+  let winner = -1;
+  let minDistance = 10000000;
+  pointsUsed.forEach((pointUsed) => {
+    const point = getPoint(pointUsed);
+    const distance =
+      Math.abs(reference[0] - point[0]) +
+      Math.abs(reference[1] - point[1]) +
+      Math.abs(reference[2] - point[2]);
+    if (minDistance > distance) {
+      minDistance = distance;
+      winner = pointUsed;
+    }
+  });
+  if (minDistance < 1) {
+    return winner;
+  } else {
+    return -1;
+  }
+}
+
+function getAvailablePoints(tupleArray) {
+  const availablePoints = [];
+  for (let i = 0; i < tupleArray.length; i++) {
+    if (tupleArray[i]) {
+      availablePoints.push(i);
+    }
+  }
+  return availablePoints;
+}
+function getFirstAvailable(tupleArray) {
+  for (let i = 0; i < tupleArray.length; i++) {
+    if (tupleArray[i]) {
+      return tupleArray[i][0];
+    }
+  }
+  return -1;
+}
+/**
+ * Converts a contour polydata into a closed polygon
+ * @param polyData
+ * @returns
+ */
+function convertContourToPolygon(polyData) {
+  const newPolyData = vtkPolyData.newInstance();
+  const points = polyData.getPoints().getData();
+  newPolyData.getPoints().setData(points, 3);
+
+  const linesData = polyData.getLines().getData();
+  const numberOfPoints = polyData.getNumberOfPoints();
+  // creating array of tuples
+  let idx = 0;
+  const tupleArray = [];
+  while (idx < linesData.length) {
+    const size = linesData[idx];
+    idx++;
+    const tuple = [];
+    for (let i = 0; i < size; i++) {
+      tuple.push(linesData[idx + i]);
+    }
+    tupleArray[tuple[0]] = tuple;
+    idx = idx + size;
+  }
+
+  const polyArray = [];
+  // uniting all tuples in polygons
+  const pointsInserted = 0;
+  while (pointsInserted < numberOfPoints) {
+    const poly = [];
+    let nextToFind;
+    if (polyArray.length) {
+      nextToFind = getNearestPoint(
+        polyArray[polyArray.length - 1],
+        points,
+        getAvailablePoints(tupleArray)
+      );
+    } else {
+      nextToFind = getFirstAvailable(tupleArray);
+    }
+    if (nextToFind === -1) {
+      break;
+    }
+    poly.push(nextToFind);
+    while (tupleArray[nextToFind]) {
+      const indexToAdd = tupleArray[nextToFind][1];
+      if (tupleArray[indexToAdd]) {
+        poly.push(indexToAdd);
+      }
+      tupleArray[nextToFind] = undefined;
+      nextToFind = indexToAdd;
+    }
+    polyArray.push(...poly);
+  }
+
+  polyArray.unshift(polyArray.length);
+  const polygon = vtkCellArray.newInstance({
+    values: Uint32Array.from(polyArray),
+  });
+  newPolyData.setPolys(polygon);
+  return newPolyData;
+}
+
 /**
  * Updates the clipping planes ofa surface and caches the resulting poly data
  * @param evt
@@ -45,6 +151,7 @@ function updateClippingPlanes(evt) {
       try {
         clippingFilter.update();
         polyData = clippingFilter.getOutputData();
+        //polyData = convertContourToPolygon(polyData);
         actorCache.set(focalIndex, polyData);
       } catch {
         console.error('Error clipping surface');

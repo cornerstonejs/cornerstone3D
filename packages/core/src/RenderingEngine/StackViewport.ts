@@ -2036,7 +2036,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Create a VTK Image Slice actor to display the vtkImageData object
     const actor = this.createActorMapper(this._imageData);
     const oldActors = this.getActors();
-    if (oldActors[0].uid === this.id) {
+    if (oldActors.length && oldActors[0].uid === this.id) {
       oldActors[0].actor = actor;
     } else {
       oldActors.unshift({ uid: this.id, actor });
