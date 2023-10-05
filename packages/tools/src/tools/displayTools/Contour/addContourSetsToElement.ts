@@ -3,6 +3,7 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import { VolumeViewport3D } from '@cornerstonejs/core';
 
 import {
   getPolyData,
@@ -15,6 +16,7 @@ import {
   ToolGroupSpecificContourRepresentation,
 } from '../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 export function addContourSetsToElement(
   viewport: Types.IVolumeViewport,
@@ -87,6 +89,9 @@ export function addContourSetsToElement(
 
   const mapper = vtkMapper.newInstance();
   mapper.setInputData(polyDataOutput);
+  if (!(viewport instanceof VolumeViewport3D)) {
+    mapper.setClippingPlanes([vtkPlane.newInstance(), vtkPlane.newInstance()]);
+  }
 
   const actor = vtkActor.newInstance();
   actor.setMapper(mapper);
