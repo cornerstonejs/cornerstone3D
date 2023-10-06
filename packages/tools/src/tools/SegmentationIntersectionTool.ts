@@ -12,7 +12,10 @@ import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { Annotation } from '../types';
 import { getPolyDataPoints } from './displayTools/utils/polyDataManipulation';
-import { pointToString } from './displayTools/utils/pointFunctions';
+import {
+  pointToString,
+  fastPointDistance,
+} from './displayTools/utils/pointFunctions';
 
 export interface SegmentationIntersectionAnnotation extends Annotation {
   data: {
@@ -183,15 +186,19 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
       }
       if (!actorWorldPointsMap.get(focalPointString)) {
         const polyData = actorEntry.clippingFilter.getOutputData();
-        const worldPoints = getPolyDataPoints(polyData);
-        const colorArray = actorEntry.actor.getProperty().getColor();
-        const color =
-          '#' +
-          Math.floor(colorArray[0] * 255).toString(16) +
-          Math.floor(colorArray[1] * 255).toString(16) +
-          Math.floor(colorArray[2] * 255).toString(16);
+        let worldPoints = getPolyDataPoints(polyData);
+        if (worldPoints) {
+          const canvasPoints = worldPoints.map((point) =>
+            viewport.worldToCanvas(point)
+          );
+          worldPoints = removeExtraPoints(worldPoints, canvasPoints);
+          const colorArray = actorEntry.actor.getProperty().getColor();
+          const color =
+            '#' +
+            Math.floor(colorArray[0] * 255).toString(16) +
+            Math.floor(colorArray[1] * 255).toString(16) +
+            Math.floor(colorArray[2] * 255).toString(16);
 
-        if (worldPoints?.length > 10) {
           actorWorldPointsMap.set(focalPointString, { worldPoints, color });
         }
       }
@@ -199,6 +206,37 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
   });
 }
 
+function removeExtraPoints(worldPoints, canvasPoints) {
+  canvasPoints = canvasPoints.map((point) => [
+    Math.floor(point[0]),
+    Math.floor(point[1]),
+  ]);
+  let lastPoint;
+  const newWorldPoints = [];
+  let newCanvasPoints = [];
+  for (let i = 0; i < worldPoints.length; i++) {
+    if (lastPoint) {
+      if (fastPointDistance(lastPoint, canvasPoints[i]) > 0) {
+        newWorldPoints.push(worldPoints[i]);
+        newCanvasPoints.push(canvasPoints[i]);
+      }
+    }
+    lastPoint = canvasPoints[i];
+  }
+
+  const firstPoint = newCanvasPoints[0];
+  for (
+    let j = Math.min(30, newCanvasPoints.length);
+    j < newCanvasPoints.length;
+    j++
+  ) {
+    if (fastPointDistance(firstPoint, newCanvasPoints[j]) < 0.5) {
+      newCanvasPoints = newCanvasPoints.slice(0, j);
+      return newWorldPoints.slice(0, j);
+    }
+  }
+  return newWorldPoints;
+}
 /**
  * Calculates surface intersections points for all surface actors in a list of viewports
  * @param actorWorldPointsMap

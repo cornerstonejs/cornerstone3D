@@ -2,16 +2,21 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { getPoint } from './pointFunctions';
 
+function fastPointDistance(pointA, pointB) {
+  return (
+    Math.abs(pointA[0] - pointB[0]) +
+    Math.abs(pointA[1] - pointB[1]) +
+    Math.abs(pointA[2] - pointB[2])
+  );
+}
+
 function getNearestPoint(nextToFind, points, pointsUsed) {
   const reference = getPoint(points, nextToFind);
   let winner = -1;
   let minDistance = 10000000;
   pointsUsed.forEach((pointUsed) => {
     const point = getPoint(points, pointUsed);
-    const distance =
-      Math.abs(reference[0] - point[0]) +
-      Math.abs(reference[1] - point[1]) +
-      Math.abs(reference[2] - point[2]);
+    const distance = fastPointDistance(reference, point);
     if (minDistance > distance) {
       minDistance = distance;
       winner = pointUsed;

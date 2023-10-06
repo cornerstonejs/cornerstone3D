@@ -1,4 +1,18 @@
 /**
+ * Fas distance calculation between two points
+ * @param pointA
+ * @param pointB
+ * @returns
+ */
+export function fastPointDistance(pointA, pointB) {
+  let distance = 0;
+  for (let i = 0; i < pointA.length; i++) {
+    distance = distance + Math.abs(pointA[i] - pointB[i]);
+  }
+  return distance;
+}
+
+/**
  * Transforms a point into an string, by converting the numbers with five decimals
  * @param point
  * @returns

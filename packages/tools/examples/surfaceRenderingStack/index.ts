@@ -79,7 +79,7 @@ content.append(instructions);
 // ============================= //
 
 //const surfaces = [surface];
-const surfaces = [surface13, surface14, surface15, surface16, surface17];
+const surfaces = [surface17]; //[surface13, surface14, surface15, surface16, surface17];
 async function addSegmentationsToState() {
   surfaces.forEach((surface) => {
     const geometryId = surface.closedSurface.id;
