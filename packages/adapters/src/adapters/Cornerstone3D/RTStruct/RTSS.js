@@ -2,7 +2,7 @@
 // extensions\tmtv\src\utils\dicomRTAnnotationExport\RTStructureSet\RTSSReport.js
 
 import {
-    generateContourSetFromSegmentation,
+    generateContourSetsFromSegmentation,
     AnnotationToPointData
 } from "./utilities";
 import dcmjs from "dcmjs";
@@ -21,10 +21,10 @@ export default class RTSS {
     /**
      * Convert handles to RTSS report containing the dcmjs dicom dataset.
      *
-     * Note: current WIP and using segmentations to contour conversion,
+     * Note: current WIP and using segmentation to contour conversion,
      * routine that is not fully tested
      *
-     * @param segmentations - Array of Cornerstone tool segmentation data
+     * @param segmentations - Cornerstone tool segmentations data
      * @param metadataProvider - Metadata provider
      * @param DicomMetadataStore - metadata store instance
      * @param cs - cornerstone instance
@@ -41,14 +41,15 @@ export default class RTSS {
     ) {
         // Convert segmentations to ROIContours
         const roiContours = [];
-        await segmentations.forEach(async (segmentation, segIndex) => {
-            const contourSet = await generateContourSetFromSegmentation({
-                segmentation,
-                cornerstoneCache,
-                cornerstoneToolsEnums,
-                vtkUtils
-            });
 
+        const contourSets = await generateContourSetsFromSegmentation({
+            segmentations,
+            cornerstoneCache,
+            cornerstoneToolsEnums,
+            vtkUtils
+        });
+
+        contourSets.forEach((contourSet, segIndex) => {
             // Check contour set isn't undefined
             if (contourSet) {
                 const contourSequence = [];
@@ -118,8 +119,7 @@ export default class RTSS {
                     });
                 });
 
-                const segLabel =
-                    contourSet.label || `Segmentation ${segIndex + 1}`;
+                const segLabel = contourSet.label || `Segment ${segIndex + 1}`;
 
                 const ROIContour = {
                     name: segLabel,
@@ -133,7 +133,13 @@ export default class RTSS {
             }
         });
 
+        const rtMetadata = {
+            name: segmentations.label,
+            label: segmentations.label
+        };
+
         let dataset = initializeDataset(
+            rtMetadata,
             roiContours[0].metadata,
             metadataProvider
         );
@@ -212,7 +218,12 @@ export default class RTSS {
         DicomMetadataStore,
         options
     ) {
+        const rtMetadata = {
+            name: "RTSS from Annotations",
+            label: "RTSS from Annotations"
+        };
         let dataset = initializeDataset(
+            rtMetadata,
             annotations[0].metadata,
             metadataProvider
         );
@@ -293,11 +304,11 @@ export default class RTSS {
     }
 }
 
-function initializeDataset(metadata, metadataProvider) {
+function initializeDataset(rtMetadata, imgMetadata, metadataProvider) {
     const rtSOPInstanceUID = DicomMetaDictionary.uid();
 
     // get the first annotation data
-    const { referencedImageId: imageId, FrameOfReferenceUID } = metadata;
+    const { referencedImageId: imageId, FrameOfReferenceUID } = imgMetadata;
 
     const { studyInstanceUID } = metadataProvider.get(
         "generalSeriesModule",
@@ -322,8 +333,8 @@ function initializeDataset(metadata, metadataProvider) {
         Modality: "RTSTRUCT",
         FrameOfReferenceUID,
         PositionReferenceIndicator: "",
-        StructureSetLabel: "",
-        StructureSetName: "",
+        StructureSetLabel: rtMetadata.label || "",
+        StructureSetName: rtMetadata.name || "",
         ReferringPhysicianName: "",
         OperatorsName: "",
         StructureSetDate: DicomMetaDictionary.date(),

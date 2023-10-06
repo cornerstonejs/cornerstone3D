@@ -1,4 +1,4 @@
-import { generateContourSetFromSegmentation } from "./utilities/generateContourSetFromSegmentation";
+import { generateContourSetsFromSegmentation } from "./utilities/generateContourSetsFromSegmentation";
 import RTSS from "./RTSS";
 
-export { generateContourSetFromSegmentation, RTSS };
+export { generateContourSetsFromSegmentation, RTSS };

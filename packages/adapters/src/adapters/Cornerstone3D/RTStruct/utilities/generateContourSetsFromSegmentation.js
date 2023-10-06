@@ -1,15 +1,15 @@
 import { removeDuplicatePoints } from "./mergePoints";
 import { findContoursFromReducedSet } from "./contourFinder";
 
-async function generateContourSetFromSegmentation({
-    segmentation,
+async function generateContourSetsFromSegmentation({
+    segmentations,
     cornerstoneCache,
     cornerstoneToolsEnums,
     vtkUtils
 }) {
     const LABELMAP = cornerstoneToolsEnums.SegmentationRepresentations.Labelmap;
 
-    const { representationData } = segmentation;
+    const { representationData, segments } = segmentations;
     const { volumeId: segVolumeId } = representationData[LABELMAP];
 
     // Get segmentation volume
@@ -31,7 +31,7 @@ async function generateContourSetFromSegmentation({
     // NOTE: Workaround for marching squares not finding closed contours at
     // boundary of image volume, clear pixels along x-y border of volume
     const segData = vol.imageData.getPointData().getScalars().getData();
-    const uniqueSegmentIndices = new Set();
+    //const uniqueSegmentIndices = new Set();
     const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
 
     for (let z = 0; z < numSlices; z++) {
@@ -40,9 +40,9 @@ async function generateContourSetFromSegmentation({
                 const index = x + y * vol.dimensions[0] + z * pixelsPerSlice;
 
                 // If border pixel of slice, set pixel to 0
-                if (segData[index] !== 0) {
-                    uniqueSegmentIndices.add(segData[index]);
-                }
+                //if (segData[index] !== 0) {
+                //    uniqueSegmentIndices.add(segData[index]);
+                //}
 
                 if (
                     x === 0 ||
@@ -57,33 +57,27 @@ async function generateContourSetFromSegmentation({
     }
 
     // end workaround
-    const contourSequence = [];
+    const ContourSets = [];
 
-    for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
-        try {
-            const mSquares = vtkUtils.vtkImageMarchingSquares.newInstance({
-                slice: sliceIndex
-            });
+    // Iterate through all segments in current segmentation set
+    segments.forEach((segment, segIndex) => {
+        // Skip empty segments
+        if (!segment) {
+            return;
+        }
+        const contourSequence = [];
 
-            const scalarsForThisSlice = segData.slice(
-                sliceIndex * pixelsPerSlice,
-                (sliceIndex + 1) * pixelsPerSlice
-            );
+        for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
+            try {
+                const mSquares = vtkUtils.vtkImageMarchingSquares.newInstance({
+                    slice: sliceIndex
+                });
 
-            const uniqueSegmentIndicesSlice = new Set(scalarsForThisSlice);
-
-            if (uniqueSegmentIndicesSlice.size === 1) {
-                // if there is only one segment index in this slice, then there
-                // is no contour to be found
-                continue;
-            }
-
-            // filter out the scalar data so that only it has background and
-            // the current segment index
-            for (const segIndex of uniqueSegmentIndices) {
+                // filter out the scalar data so that only it has background and
+                // the current segment index
                 const imageDataCopy = vtkUtils.vtkImageData.newInstance();
 
-                vol.imageData.shallowCopy(imageDataCopy);
+                imageDataCopy.shallowCopy(vol.imageData);
 
                 // modify the imagedDataCopy so that it only has the current
                 // segment index and background
@@ -99,12 +93,14 @@ async function generateContourSetFromSegmentation({
                 // Connect pipeline
                 mSquares.setInputData(imageDataCopy);
                 const cValues = [];
-                cValues[0] = segIndex;
+                cValues[0] = 1;
                 mSquares.setContourValues(cValues);
                 mSquares.setMergePoints(false);
 
+                // Perform marching squares
                 const msOutput = mSquares.getOutputData();
 
+                // Clean up output from marching squares
                 const reducedSet = removeDuplicatePoints(msOutput);
                 if (reducedSet.points && reducedSet.points.length > 0) {
                     const contours = findContoursFromReducedSet(
@@ -118,26 +114,29 @@ async function generateContourSetFromSegmentation({
                         polyData: reducedSet
                     });
                 }
+                //}
+            } catch (e) {
+                console.warn(sliceIndex);
+                console.warn(e);
             }
-        } catch (e) {
-            console.warn(sliceIndex);
-            console.warn(e);
         }
-    }
 
-    const metadata = {
-        referencedImageId: imageVol.imageIds[0], // just use 0
-        FrameOfReferenceUID: imageVol.metadata.FrameOfReferenceUID
-    };
+        const metadata = {
+            referencedImageId: imageVol.imageIds[0], // just use 0
+            FrameOfReferenceUID: imageVol.metadata.FrameOfReferenceUID
+        };
 
-    const ContourSet = {
-        label: segmentation.label,
-        color: segmentation.color,
-        metadata,
-        sliceContours: contourSequence
-    };
+        const ContourSet = {
+            label: segment.label,
+            color: segment.color,
+            metadata,
+            sliceContours: contourSequence
+        };
 
-    return ContourSet;
+        ContourSets.push(ContourSet);
+    });
+
+    return ContourSets;
 }
 
-export { generateContourSetFromSegmentation };
+export { generateContourSetsFromSegmentation };
