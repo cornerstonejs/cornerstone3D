@@ -31,7 +31,7 @@ export default class RTSS {
      * @param csTools - cornerstone tool instance
      * @returns Report object containing the dataset
      */
-    static async generateRTSSFromSegmentations(
+    static generateRTSSFromSegmentations(
         segmentations,
         metadataProvider,
         DicomMetadataStore,
@@ -42,7 +42,7 @@ export default class RTSS {
         // Convert segmentations to ROIContours
         const roiContours = [];
 
-        const contourSets = await generateContourSetsFromSegmentation({
+        const contourSets = generateContourSetsFromSegmentation({
             segmentations,
             cornerstoneCache,
             cornerstoneToolsEnums,

@@ -1,7 +1,7 @@
 import { removeDuplicatePoints } from "./mergePoints";
 import { findContoursFromReducedSet } from "./contourFinder";
 
-async function generateContourSetsFromSegmentation({
+function generateContourSetsFromSegmentation({
     segmentations,
     cornerstoneCache,
     cornerstoneToolsEnums,
@@ -31,18 +31,12 @@ async function generateContourSetsFromSegmentation({
     // NOTE: Workaround for marching squares not finding closed contours at
     // boundary of image volume, clear pixels along x-y border of volume
     const segData = vol.imageData.getPointData().getScalars().getData();
-    //const uniqueSegmentIndices = new Set();
     const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
 
     for (let z = 0; z < numSlices; z++) {
         for (let y = 0; y < vol.dimensions[1]; y++) {
             for (let x = 0; x < vol.dimensions[0]; x++) {
                 const index = x + y * vol.dimensions[0] + z * pixelsPerSlice;
-
-                // If border pixel of slice, set pixel to 0
-                //if (segData[index] !== 0) {
-                //    uniqueSegmentIndices.add(segData[index]);
-                //}
 
                 if (
                     x === 0 ||
@@ -60,15 +54,50 @@ async function generateContourSetsFromSegmentation({
     const ContourSets = [];
 
     // Iterate through all segments in current segmentation set
-    segments.forEach((segment, segIndex) => {
+    const numSegments = segments.length;
+    for (let segIndex = 0; segIndex < numSegments; segIndex++) {
+        const segment = segments[segIndex];
+
         // Skip empty segments
         if (!segment) {
-            return;
+            continue;
         }
         const contourSequence = [];
 
         for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
+            // Check if the slice is empty before running marching cube
+            if (isSliceEmpty(sliceIndex, segData, pixelsPerSlice, segIndex)) {
+                continue;
+            }
+
             try {
+                const scalars = vtkUtils.vtkDataArray.newInstance({
+                    name: "Scalars",
+                    values: Array.from(segData),
+                    numberOfComponents: 1
+                });
+
+                // Modify segData for this specific segment directly
+                let segmentIndexFound = false;
+                for (let i = 0; i < segData.length; i++) {
+                    if (segData[i] === 0) {
+                        continue;
+                    }
+
+                    if (segData[i] !== segIndex) {
+                        scalars.setValue(i, 0);
+                    }
+
+                    if (segData[i] === segIndex) {
+                        segmentIndexFound = true;
+                        scalars.setValue(i, 1);
+                    }
+                }
+
+                if (!segmentIndexFound) {
+                    continue;
+                }
+
                 const mSquares = vtkUtils.vtkImageMarchingSquares.newInstance({
                     slice: sliceIndex
                 });
@@ -81,12 +110,6 @@ async function generateContourSetsFromSegmentation({
 
                 // modify the imagedDataCopy so that it only has the current
                 // segment index and background
-
-                const scalars = vtkUtils.vtkDataArray.newInstance({
-                    name: "Scalars",
-                    values: segData.map(val => (val === segIndex ? 1 : 0)),
-                    numberOfComponents: 1
-                });
 
                 imageDataCopy.getPointData().setScalars(scalars);
 
@@ -134,9 +157,22 @@ async function generateContourSetsFromSegmentation({
         };
 
         ContourSets.push(ContourSet);
-    });
+    }
 
     return ContourSets;
+}
+
+function isSliceEmpty(sliceIndex, segData, pixelsPerSlice, segIndex) {
+    const startIdx = sliceIndex * pixelsPerSlice;
+    const endIdx = startIdx + pixelsPerSlice;
+
+    for (let i = startIdx; i < endIdx; i++) {
+        if (segData[i] === segIndex) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 export { generateContourSetsFromSegmentation };
