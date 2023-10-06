@@ -144,7 +144,7 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       );
 
       const options = {
-        color,
+        color: 'none',
         fillColor: color,
         fillOpacity: 0.5,
         connectLastToFirst: true,
@@ -193,12 +193,7 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
           );
           worldPoints = removeExtraPoints(worldPoints, canvasPoints);
           const colorArray = actorEntry.actor.getProperty().getColor();
-          const color =
-            '#' +
-            Math.floor(colorArray[0] * 255).toString(16) +
-            Math.floor(colorArray[1] * 255).toString(16) +
-            Math.floor(colorArray[2] * 255).toString(16);
-
+          const color = colorToString(colorArray);
           actorWorldPointsMap.set(focalPointString, { worldPoints, color });
         }
       }
@@ -206,6 +201,27 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
   });
 }
 
+function colorToString(colorArray): string {
+  function colorComponentToString(component) {
+    let componentString = Math.floor(component * 255).toString(16);
+    if (componentString.length === 1) {
+      componentString = '0' + componentString;
+    }
+    return componentString;
+  }
+  return (
+    '#' +
+    colorComponentToString(colorArray[0]) +
+    colorComponentToString(colorArray[1]) +
+    colorComponentToString(colorArray[2])
+  );
+}
+/**
+ * Remove duplicate and unnecessary points
+ * @param worldPoints
+ * @param canvasPoints
+ * @returns
+ */
 function removeExtraPoints(worldPoints, canvasPoints) {
   canvasPoints = canvasPoints.map((point) => [
     Math.floor(point[0]),
@@ -214,6 +230,7 @@ function removeExtraPoints(worldPoints, canvasPoints) {
   let lastPoint;
   const newWorldPoints = [];
   let newCanvasPoints = [];
+  // removing duplicate points
   for (let i = 0; i < worldPoints.length; i++) {
     if (lastPoint) {
       if (fastPointDistance(lastPoint, canvasPoints[i]) > 0) {
@@ -224,6 +241,7 @@ function removeExtraPoints(worldPoints, canvasPoints) {
     lastPoint = canvasPoints[i];
   }
 
+  // checking if a middle point is near the start
   const firstPoint = newCanvasPoints[0];
   for (
     let j = Math.min(30, newCanvasPoints.length);
