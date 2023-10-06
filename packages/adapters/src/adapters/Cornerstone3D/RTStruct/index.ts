@@ -1,4 +1,11 @@
 import { generateContourSetsFromLabelmap } from "./utilities/generateContourSetsFromLabelmap";
-import RTSS from "./RTSS";
+import {
+    generateRTSSFromAnnotations,
+    generateRTSSFromSegmentations
+} from "./RTSS";
 
-export { generateContourSetsFromLabelmap, RTSS };
+export {
+    generateContourSetsFromLabelmap,
+    generateRTSSFromAnnotations,
+    generateRTSSFromSegmentations
+};

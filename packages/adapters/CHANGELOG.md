@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.20.1](https://github.com/dcmjs-org/dcmjs/compare/v1.20.0...v1.20.1) (2023-10-06)
+
+### Bug Fixes
+
+-   **exports:** clean up rtss exports ([#814](https://github.com/dcmjs-org/dcmjs/issues/814)) ([a0dd324](https://github.com/dcmjs-org/dcmjs/commit/a0dd32499cc58001e4f49e2bda8d034b7f4ef48f))
+
+# [1.20.0](https://github.com/dcmjs-org/dcmjs/compare/v1.19.4...v1.20.0) (2023-10-06)
+
+### Features
+
+-   **adapter:** add RTSS Adapter and Labelmaps to Contours convertor ([#734](https://github.com/dcmjs-org/dcmjs/issues/734)) ([e3e05bd](https://github.com/dcmjs-org/dcmjs/commit/e3e05bd5ec0d851576fc76a2440e688c0a6e70d9))
+
 ## [1.19.4](https://github.com/dcmjs-org/dcmjs/compare/v1.19.3...v1.19.4) (2023-10-04)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
