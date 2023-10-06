@@ -819,6 +819,53 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 function clip_2(val: number, low: number, high: number): number;
 
 // @public (undocumented)
+interface CobbAngleAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                angle: number;
+                arc1Angle: number;
+                arc2Angle: number;
+                points: {
+                    world: {
+                        arc1Start: Types_2.Point3;
+                        arc1End: Types_2.Point3;
+                        arc2Start: Types_2.Point3;
+                        arc2End: Types_2.Point3;
+                        arc1Angle: number;
+                        arc2Angle: number;
+                    };
+                    canvas: {
+                        arc1Start: Types_2.Point2;
+                        arc1End: Types_2.Point2;
+                        arc2Start: Types_2.Point2;
+                        arc2End: Types_2.Point2;
+                        arc1Angle: number;
+                        arc2Angle: number;
+                    };
+                };
+            };
+        };
+    };
+}
+
+// @public (undocumented)
 export class CobbAngleTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -826,7 +873,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => AngleAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => CobbAngleAnnotation;
     // (undocumented)
     angleStartedNotYetCompleted: boolean;
     // (undocumented)
@@ -875,13 +922,13 @@ export class CobbAngleTool extends AnnotationTool {
         arc2Angle: number;
     };
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
+    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLDivElement, annotation: AngleAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: CobbAngleAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     _mouseDownCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
@@ -897,7 +944,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -5347,6 +5394,7 @@ declare namespace ToolSpecificAnnotationTypes {
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
+        CobbAngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
         ScaleOverlayAnnotation

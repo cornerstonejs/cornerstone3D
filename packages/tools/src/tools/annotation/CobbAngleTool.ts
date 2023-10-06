@@ -48,7 +48,7 @@ import {
   InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class CobbAngleTool extends AnnotationTool {
@@ -101,7 +101,7 @@ class CobbAngleTool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): AngleAnnotation => {
+  ): CobbAngleAnnotation => {
     if (this.angleStartedNotYetCompleted) {
       return;
     }
@@ -195,7 +195,7 @@ class CobbAngleTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: AngleAnnotation,
+    annotation: CobbAngleAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -219,7 +219,7 @@ class CobbAngleTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: AngleAnnotation,
+    annotation: CobbAngleAnnotation,
     interactionType: InteractionTypes,
     canvasCoords: Types.Point2,
     proximity = 6
@@ -263,7 +263,7 @@ class CobbAngleTool extends AnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.MouseDownEventType,
-    annotation: AngleAnnotation,
+    annotation: CobbAngleAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void {
@@ -667,7 +667,7 @@ class CobbAngleTool extends AnnotationTool {
 
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as AngleAnnotation;
+      const annotation = annotations[i] as CobbAngleAnnotation;
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
 
