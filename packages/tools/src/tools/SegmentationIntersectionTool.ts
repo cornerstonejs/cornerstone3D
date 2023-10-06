@@ -14,61 +14,6 @@ import { Annotation } from '../types';
 import { getPolyDataPoints } from './displayTools/utils/polyDataManipulation';
 import { pointToString } from './displayTools/utils/pointFunctions';
 
-/**
- * Calculates surface intersections points for all surface actors in a viewport
- * @param actorWorldPointsMap
- * @param viewport
- */
-function calculateSurfaceSegmentationIntersectionsForViewport(
-  actorsWorldPointsMap,
-  viewport
-) {
-  const actorEntries = viewport.getActors();
-  const { focalPoint } = viewport.getCamera();
-  const focalPointString = pointToString(focalPoint);
-  actorEntries.forEach((actorEntry) => {
-    if (actorEntry?.clippingFilter) {
-      let actorWorldPointsMap = actorsWorldPointsMap.get(actorEntry.uid);
-      if (!actorWorldPointsMap) {
-        actorWorldPointsMap = new Map();
-        actorsWorldPointsMap.set(actorEntry.uid, actorWorldPointsMap);
-      }
-      if (!actorWorldPointsMap.get(focalPointString)) {
-        const polyData = actorEntry.clippingFilter.getOutputData();
-        const worldPoints = getPolyDataPoints(polyData);
-        const colorArray = actorEntry.actor.getProperty().getColor();
-        const color =
-          '#' +
-          Math.floor(colorArray[0] * 255).toString(16) +
-          Math.floor(colorArray[1] * 255).toString(16) +
-          Math.floor(colorArray[2] * 255).toString(16);
-
-        if (worldPoints?.length > 10) {
-          actorWorldPointsMap.set(focalPointString, { worldPoints, color });
-        }
-      }
-    }
-  });
-}
-
-/**
- * Calculates surface intersections points for all surface actors in a list of viewports
- * @param actorWorldPointsMap
- * @param viewportsInfo
- */
-function calculateSurfaceSegmentationIntersections(
-  actorsWorldPointsMap,
-  viewportsInfo
-) {
-  viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-    const viewport =
-      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
-    calculateSurfaceSegmentationIntersectionsForViewport(
-      actorsWorldPointsMap,
-      viewport
-    );
-  });
-}
 export interface SegmentationIntersectionAnnotation extends Annotation {
   data: {
     actorsWorldPointsMap: Map<string, Map<string, object>>;
@@ -108,7 +53,6 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     }
     const frameOfReferenceUID = viewport.getFrameOfReferenceUID();
     const annotations = getAnnotations(this.getToolName(), frameOfReferenceUID);
-
     if (!annotations?.length) {
       const actorsWorldPointsMap = new Map();
       calculateSurfaceSegmentationIntersections(
@@ -181,40 +125,97 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     const { focalPoint } = viewport.getCamera();
     const focalPointString = pointToString(focalPoint);
     actorEntries.forEach((actorEntry) => {
-      if (actorEntry?.clippingFilter) {
-        const actorWorldPointMap = actorsWorldPointsMap.get(actorEntry.uid);
-        if (!actorWorldPointMap) {
-          return;
-        }
-        if (!actorWorldPointMap.get(focalPointString)) {
-          return;
-        }
-        const { worldPoints, color } = actorWorldPointMap.get(focalPointString);
-        if (worldPoints) {
-          const canvasPoints = worldPoints.map((point) =>
-            viewport.worldToCanvas(point)
-          );
-
-          const options = {
-            color,
-            fillColor: color,
-            fillOpacity: 1,
-            connectLastToFirst: true,
-          };
-          drawPolyline(
-            svgDrawingHelper,
-            annotationUID,
-            annotationUID + '_poly',
-            canvasPoints,
-            options
-          );
-        }
+      if (!actorEntry?.clippingFilter) {
+        return;
       }
+      const actorWorldPointMap = actorsWorldPointsMap.get(actorEntry.uid);
+      if (!actorWorldPointMap) {
+        return;
+      }
+      if (!actorWorldPointMap.get(focalPointString)) {
+        return;
+      }
+      const { worldPoints, color } = actorWorldPointMap.get(focalPointString);
+      const canvasPoints = worldPoints.map((point) =>
+        viewport.worldToCanvas(point)
+      );
+
+      const options = {
+        color,
+        fillColor: color,
+        fillOpacity: 0.5,
+        connectLastToFirst: true,
+      };
+
+      const polyLineUID = actorEntry.uid;
+      drawPolyline(
+        svgDrawingHelper,
+        annotationUID,
+        polyLineUID,
+        canvasPoints,
+        options
+      );
     });
 
     renderStatus = true;
     return renderStatus;
   };
+}
+
+/**
+ * Calculates surface intersections points for all surface actors in a viewport
+ * @param actorWorldPointsMap
+ * @param viewport
+ */
+function calculateSurfaceSegmentationIntersectionsForViewport(
+  actorsWorldPointsMap,
+  viewport
+) {
+  const actorEntries = viewport.getActors();
+  const { focalPoint } = viewport.getCamera();
+  const focalPointString = pointToString(focalPoint);
+  actorEntries.forEach((actorEntry) => {
+    if (actorEntry?.clippingFilter) {
+      let actorWorldPointsMap = actorsWorldPointsMap.get(actorEntry.uid);
+      if (!actorWorldPointsMap) {
+        actorWorldPointsMap = new Map();
+        actorsWorldPointsMap.set(actorEntry.uid, actorWorldPointsMap);
+      }
+      if (!actorWorldPointsMap.get(focalPointString)) {
+        const polyData = actorEntry.clippingFilter.getOutputData();
+        const worldPoints = getPolyDataPoints(polyData);
+        const colorArray = actorEntry.actor.getProperty().getColor();
+        const color =
+          '#' +
+          Math.floor(colorArray[0] * 255).toString(16) +
+          Math.floor(colorArray[1] * 255).toString(16) +
+          Math.floor(colorArray[2] * 255).toString(16);
+
+        if (worldPoints?.length > 10) {
+          actorWorldPointsMap.set(focalPointString, { worldPoints, color });
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Calculates surface intersections points for all surface actors in a list of viewports
+ * @param actorWorldPointsMap
+ * @param viewportsInfo
+ */
+function calculateSurfaceSegmentationIntersections(
+  actorsWorldPointsMap,
+  viewportsInfo
+) {
+  viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+    const viewport =
+      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
+    calculateSurfaceSegmentationIntersectionsForViewport(
+      actorsWorldPointsMap,
+      viewport
+    );
+  });
 }
 
 SegmentationIntersectionTool.toolName = 'SegmentationIntersection';
