@@ -2,7 +2,7 @@
 // extensions\tmtv\src\utils\dicomRTAnnotationExport\RTStructureSet\RTSSReport.js
 
 import {
-    generateContourSetsFromSegmentation,
+    generateContourSetsFromLabelmap,
     AnnotationToPointData
 } from "./utilities";
 import dcmjs from "dcmjs";
@@ -42,7 +42,7 @@ export default class RTSS {
         // Convert segmentations to ROIContours
         const roiContours = [];
 
-        const contourSets = generateContourSetsFromSegmentation({
+        const contourSets = generateContourSetsFromLabelmap({
             segmentations,
             cornerstoneCache,
             cornerstoneToolsEnums,

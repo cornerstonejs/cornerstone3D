@@ -1,7 +1,7 @@
 import { removeDuplicatePoints } from "./mergePoints";
 import { findContoursFromReducedSet } from "./contourFinder";
 
-function generateContourSetsFromSegmentation({
+function generateContourSetsFromLabelmap({
     segmentations,
     cornerstoneCache,
     cornerstoneToolsEnums,
@@ -51,6 +51,8 @@ function generateContourSetsFromSegmentation({
     }
 
     // end workaround
+    //
+    //
     const ContourSets = [];
 
     // Iterate through all segments in current segmentation set
@@ -62,11 +64,18 @@ function generateContourSetsFromSegmentation({
         if (!segment) {
             continue;
         }
-        const contourSequence = [];
 
+        const contourSequence = [];
         for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
             // Check if the slice is empty before running marching cube
-            if (isSliceEmpty(sliceIndex, segData, pixelsPerSlice, segIndex)) {
+            if (
+                isSliceEmptyForSegment(
+                    sliceIndex,
+                    segData,
+                    pixelsPerSlice,
+                    segIndex
+                )
+            ) {
                 continue;
             }
 
@@ -80,17 +89,12 @@ function generateContourSetsFromSegmentation({
                 // Modify segData for this specific segment directly
                 let segmentIndexFound = false;
                 for (let i = 0; i < segData.length; i++) {
-                    if (segData[i] === 0) {
-                        continue;
-                    }
-
-                    if (segData[i] !== segIndex) {
-                        scalars.setValue(i, 0);
-                    }
-
-                    if (segData[i] === segIndex) {
+                    const value = segData[i];
+                    if (value === segIndex) {
                         segmentIndexFound = true;
                         scalars.setValue(i, 1);
+                    } else {
+                        scalars.setValue(i, 0);
                     }
                 }
 
@@ -107,10 +111,6 @@ function generateContourSetsFromSegmentation({
                 const imageDataCopy = vtkUtils.vtkImageData.newInstance();
 
                 imageDataCopy.shallowCopy(vol.imageData);
-
-                // modify the imagedDataCopy so that it only has the current
-                // segment index and background
-
                 imageDataCopy.getPointData().setScalars(scalars);
 
                 // Connect pipeline
@@ -125,7 +125,7 @@ function generateContourSetsFromSegmentation({
 
                 // Clean up output from marching squares
                 const reducedSet = removeDuplicatePoints(msOutput);
-                if (reducedSet.points && reducedSet.points.length > 0) {
+                if (reducedSet.points?.length) {
                     const contours = findContoursFromReducedSet(
                         reducedSet.lines,
                         reducedSet.points
@@ -137,7 +137,6 @@ function generateContourSetsFromSegmentation({
                         polyData: reducedSet
                     });
                 }
-                //}
             } catch (e) {
                 console.warn(sliceIndex);
                 console.warn(e);
@@ -162,7 +161,7 @@ function generateContourSetsFromSegmentation({
     return ContourSets;
 }
 
-function isSliceEmpty(sliceIndex, segData, pixelsPerSlice, segIndex) {
+function isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex) {
     const startIdx = sliceIndex * pixelsPerSlice;
     const endIdx = startIdx + pixelsPerSlice;
 
@@ -175,4 +174,4 @@ function isSliceEmpty(sliceIndex, segData, pixelsPerSlice, segIndex) {
     return true;
 }
 
-export { generateContourSetsFromSegmentation };
+export { generateContourSetsFromLabelmap };

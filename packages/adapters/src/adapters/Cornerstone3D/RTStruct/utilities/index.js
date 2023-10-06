@@ -1,7 +1,7 @@
 import contourFinder from "./contourFinder";
 import mergePoints from "./mergePoints";
 import detectContourHoles from "./detectContourHoles";
-import { generateContourSetsFromSegmentation } from "./generateContourSetsFromSegmentation";
+import { generateContourSetsFromLabelmap } from "./generateContourSetsFromLabelmap";
 
 import AnnotationToPointData from "./AnnotationToPointData";
 
@@ -16,7 +16,7 @@ export {
     contourFinder,
     mergePoints,
     detectContourHoles,
-    generateContourSetsFromSegmentation,
+    generateContourSetsFromLabelmap,
     AnnotationToPointData,
     getPatientModule,
     getReferencedFrameOfReferenceSequence,
