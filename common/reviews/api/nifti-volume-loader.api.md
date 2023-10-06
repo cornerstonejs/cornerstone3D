@@ -691,6 +691,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
     height: number;
@@ -698,6 +700,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;

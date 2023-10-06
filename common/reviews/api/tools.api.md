@@ -1491,9 +1491,6 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
-function disable(element: any): void;
-
-// @public (undocumented)
 type DisplayArea = {
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
@@ -1750,9 +1747,6 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     touchDragCallback: any;
 }
-
-// @public (undocumented)
-function enable(element: any): void;
 
 declare namespace Enums {
     export {
@@ -2127,12 +2121,6 @@ function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function getColorLUT(index: number): ColorLUT | undefined;
 
 // @public (undocumented)
-function getConfiguration(): {
-    maxImagesToPrefetch: number;
-    preserveExistingPool: boolean;
-};
-
-// @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
     frameNumbers?: any;
     maskVolumeId?: any;
@@ -2488,6 +2476,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
     height: number;
@@ -2495,6 +2485,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -4468,9 +4460,13 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     _init: () => void;
     // (undocumented)
+    intersectInfiniteLines(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
+    // (undocumented)
+    isInBound(point: number[], dimensions: Types_2.Point3): boolean;
     // (undocumented)
     isParallel(vec1: Types_2.Point3, vec2: Types_2.Point3): boolean;
     // (undocumented)
@@ -4845,9 +4841,6 @@ function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function setConfiguration(config: any): void;
-
-// @public (undocumented)
 function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
 
 // @public (undocumented)
@@ -4942,6 +4935,14 @@ export class SphereScissorsTool extends BaseTool {
     static toolName: any;
 }
 
+// @public (undocumented)
+const stackContextPrefetch: {
+    enable: (element: any) => void;
+    disable: typeof disable_2;
+    getConfiguration: typeof getConfiguration_2;
+    setConfiguration: typeof setConfiguration_2;
+};
+
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
@@ -4954,14 +4955,13 @@ type StackNewImageEventDetail = {
     renderingEngineId: string;
 };
 
-declare namespace stackPrefetch {
-    export {
-        enable,
-        disable,
-        setConfiguration,
-        getConfiguration
-    }
-}
+// @public (undocumented)
+const stackPrefetch: {
+    enable: typeof enable;
+    disable: typeof disable;
+    getConfiguration: typeof getConfiguration;
+    setConfiguration: typeof setConfiguration;
+};
 
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
@@ -5589,6 +5589,7 @@ declare namespace utilities {
         rectangleROITool,
         planarFreehandROITool,
         stackPrefetch,
+        stackContextPrefetch,
         scroll_2 as scroll,
         roundNumber
     }

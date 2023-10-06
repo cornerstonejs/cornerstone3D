@@ -15,34 +15,40 @@ import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 
-const MAX_CACHE_SIZE_1GB = 1073741824;
+const ONE_GB = 1073741824;
 
+/**
+ * Stores images, volumes and geometry.
+ * There are two sizes - the max cache size, that controls the overal maximum
+ * size, and the instance size, which controls how big any single object can
+ * be.  Defaults are 3 GB and 2 GB - 8 bytes (just enough to allow allocating it
+ * without crashing).
+ * The 3 gb is tuned to the chromium garbage collection cycle to allow image volumes
+ * to be used/discarded.
+ */
 class Cache implements ICache {
-  private readonly _imageCache: Map<string, ICachedImage>; // volatile space
-  private readonly _volumeCache: Map<string, ICachedVolume>; // non-volatile space
+  // used to store image data (2d)
+  private readonly _imageCache = new Map<string, ICachedImage>(); // volatile space
+  // used to store volume data (3d)
+  private readonly _volumeCache = new Map<string, ICachedVolume>(); // non-volatile space
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache: Map<string, ICachedGeometry>;
-  private _imageCacheSize: number;
-  private _volumeCacheSize: number;
-  private _maxCacheSize: number;
+
+  private _imageCacheSize = 0;
+  private _volumeCacheSize = 0;
+  private _maxCacheSize = 3 * ONE_GB;
+  private _maxInstanceSize = 2 * ONE_GB - 8;
 
   constructor() {
-    // used to store image data (2d)
-    this._imageCache = new Map();
-    // used to store volume data (3d)
-    this._volumeCache = new Map();
     // used to store object data (contour, surface, etc.)
     this._geometryCache = new Map();
-    this._imageCacheSize = 0;
-    this._volumeCacheSize = 0;
-    this._maxCacheSize = MAX_CACHE_SIZE_1GB; // Default 1GB
   }
 
   /**
    * Set the maximum cache Size
    *
-   * Maximum cache size should be set before adding the data; otherwise, it
-   * will throw an error.
+   * Maximum cache size should be set before adding the data.  If set after,
+   * and it is smaller than the current size, will cause issues.
    *
    * @param newMaxCacheSize -  new maximum cache size
    *
@@ -59,7 +65,7 @@ class Cache implements ICache {
   /**
    * Checks if there is enough space in the cache for requested byte size
    *
-   * It throws error, if the sum of volatile (image) cache and unallocated cache
+   * It returns false, if the sum of volatile (image) cache and unallocated cache
    * is less than the requested byteLength
    *
    * @param byteLength - byte length of requested byte size
@@ -67,6 +73,9 @@ class Cache implements ICache {
    * @returns - boolean indicating if there is enough space in the cache
    */
   public isCacheable = (byteLength: number): boolean => {
+    if (byteLength > this._maxInstanceSize) {
+      return false;
+    }
     const unallocatedSpace = this.getBytesAvailable();
     const imageCacheSize = this._imageCacheSize;
     const availableSpace = unallocatedSpace + imageCacheSize;
@@ -80,6 +89,13 @@ class Cache implements ICache {
    * @returns maximum allowed cache size
    */
   public getMaxCacheSize = (): number => this._maxCacheSize;
+
+  /**
+   * Returns maximum size of a single instance (volume or single image)
+   *
+   * @returns maximum instance size
+   */
+  public getMaxInstanceSize = (): number => this._maxInstanceSize;
 
   /**
    * Returns current size of the cache
@@ -384,7 +400,6 @@ class Cache implements ICache {
         cachedImage.image = image;
         cachedImage.sizeInBytes = image.sizeInBytes;
         this._incrementImageCacheSize(cachedImage.sizeInBytes);
-
         const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
           image: cachedImage,
         };
@@ -429,7 +444,7 @@ class Cache implements ICache {
    * @param imageId - image Id to check
    * @returns boolean
    */
-  public isImageIdCached(imageId: string): boolean {
+  public isLoaded(imageId: string): boolean {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {

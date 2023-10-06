@@ -452,7 +452,10 @@ class ProbeTool extends AnnotationTool {
         ),
       };
 
-      if (!data.cachedStats[targetId]) {
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].value == null
+      ) {
         data.cachedStats[targetId] = {
           Modality: null,
           index: null,
