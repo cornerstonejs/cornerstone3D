@@ -86,7 +86,7 @@ class CobbAngleTool extends AnnotationTool {
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,
-      100,
+      25,
       { trailing: true }
     );
   }
@@ -686,6 +686,26 @@ class CobbAngleTool extends AnnotationTool {
       ) {
         data.cachedStats[targetId] = {
           angle: null,
+          arc1Angle: null,
+          arc2Angle: null,
+          points: {
+            world: {
+              arc1Start: null,
+              arc1End: null,
+              arc2Start: null,
+              arc2End: null,
+              arc1Angle: null,
+              arc2Angle: null,
+            },
+            canvas: {
+              arc1Start: null,
+              arc1End: null,
+              arc2Start: null,
+              arc2End: null,
+              arc1Angle: null,
+              arc2Angle: null,
+            },
+          },
         };
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);
@@ -786,13 +806,9 @@ class CobbAngleTool extends AnnotationTool {
 
       // Calculating the arcs
 
-      const { arc1Start, arc1End, arc2End, arc2Start, arc1Angle, arc2Angle } =
-        this.getArcsStartEndPoints({
-          firstLine,
-          secondLine,
-          mid1,
-          mid2,
-        });
+      const { arc1Start, arc1End, arc2End, arc2Start } =
+        data.cachedStats[targetId].points.canvas;
+      const { arc1Angle, arc2Angle } = data.cachedStats[targetId];
 
       lineUID = 'arc1';
 
@@ -955,6 +971,31 @@ class CobbAngleTool extends AnnotationTool {
         }
       }
     }
+    const { viewport } = enabledElement;
+
+    const canvasPoints = data.handles.points.map((p) =>
+      viewport.worldToCanvas(p)
+    );
+
+    const firstLine = [canvasPoints[0], canvasPoints[1]] as [
+      Types.Point2,
+      Types.Point2
+    ];
+    const secondLine = [canvasPoints[2], canvasPoints[3]] as [
+      Types.Point2,
+      Types.Point2
+    ];
+
+    const mid1 = midPoint2(firstLine[0], firstLine[1]);
+    const mid2 = midPoint2(secondLine[0], secondLine[1]);
+
+    const { arc1Start, arc1End, arc2End, arc2Start, arc1Angle, arc2Angle } =
+      this.getArcsStartEndPoints({
+        firstLine,
+        secondLine,
+        mid1,
+        mid2,
+      });
 
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
@@ -964,6 +1005,22 @@ class CobbAngleTool extends AnnotationTool {
 
       cachedStats[targetId] = {
         angle: angleBetweenLines(seg1, seg2),
+        arc1Angle,
+        arc2Angle,
+        points: {
+          canvas: {
+            arc1Start,
+            arc1End,
+            arc2End,
+            arc2Start,
+          },
+          world: {
+            arc1Start: viewport.canvasToWorld(arc1Start),
+            arc1End: viewport.canvasToWorld(arc1End),
+            arc2End: viewport.canvasToWorld(arc2End),
+            arc2Start: viewport.canvasToWorld(arc2Start),
+          },
+        },
       };
     }
 
