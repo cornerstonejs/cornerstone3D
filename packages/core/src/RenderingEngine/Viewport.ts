@@ -1104,8 +1104,8 @@ class Viewport implements IViewport {
           return;
         }
 
-        const isImageSlice = actorIsA(actorEntry, 'vtkImageSlice');
         this.updateClippingPlanesForActors(updatedCamera);
+        const isImageSlice = actorIsA(actorEntry, 'vtkImageSlice');
         if (isImageSlice) {
           const renderer = this.getRenderer();
           renderer.resetCameraClippingRange();
@@ -1167,6 +1167,9 @@ class Viewport implements IViewport {
 
       if (vtkPlanes?.length < 2) {
         vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+        if (actorEntry?.canAddPlanes) {
+          mapper.setClippingPlanes(vtkPlanes);
+        }
       }
 
       let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
@@ -1188,11 +1191,11 @@ class Viewport implements IViewport {
         vtkPlanes,
       });
     });
-    if (this.newActorAdded) {
-      const renderer = this.getRenderer();
-      renderer.resetCameraClippingRange();
-      this.newActorAdded = false;
-    }
+    this.posProcessNewActors();
+  }
+
+  private posProcessNewActors(): void {
+    this.newActorAdded = false;
   }
 
   public setOrientationOfClippingPlanes(

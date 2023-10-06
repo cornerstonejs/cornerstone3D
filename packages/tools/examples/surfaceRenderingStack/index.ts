@@ -33,7 +33,7 @@ const {
   ZoomTool,
   PanTool,
   StackScrollMouseWheelTool,
-  TrackballRotateTool,
+  SegmentationIntersectionTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, GeometryType } = Enums;
@@ -79,7 +79,7 @@ content.append(instructions);
 // ============================= //
 
 //const surfaces = [surface];
-const surfaces = [surface13, surface14, surface15, surface16, surface17];
+const surfaces = [surface13]; //, surface14, surface15, surface16, surface17];
 async function addSegmentationsToState() {
   surfaces.forEach((surface) => {
     const geometryId = surface.closedSurface.id;
@@ -119,18 +119,20 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(SegmentationIntersectionTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroupStack = ToolGroupManager.createToolGroup(toolGroupIdStack);
   const toolGroupVolume = ToolGroupManager.createToolGroup(toolGroupIdVolume);
 
   toolGroupStack.addTool(SegmentationDisplayTool.toolName);
+  toolGroupStack.addTool(SegmentationIntersectionTool.toolName);
   toolGroupStack.addTool(PanTool.toolName);
   toolGroupStack.addTool(ZoomTool.toolName);
   toolGroupStack.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroupStack.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroupStack.setToolEnabled(SegmentationIntersectionTool.toolName);
   toolGroupStack.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -148,11 +150,13 @@ async function run() {
   toolGroupStack.setToolActive(StackScrollMouseWheelTool.toolName);
 
   toolGroupVolume.addTool(SegmentationDisplayTool.toolName);
+  toolGroupVolume.addTool(SegmentationIntersectionTool.toolName);
   toolGroupVolume.addTool(PanTool.toolName);
   toolGroupVolume.addTool(ZoomTool.toolName);
   toolGroupVolume.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroupVolume.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroupVolume.setToolEnabled(SegmentationIntersectionTool.toolName);
   toolGroupVolume.setToolActive(PanTool.toolName, {
     bindings: [
       {

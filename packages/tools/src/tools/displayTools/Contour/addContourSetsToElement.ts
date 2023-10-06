@@ -89,9 +89,6 @@ export function addContourSetsToElement(
 
   const mapper = vtkMapper.newInstance();
   mapper.setInputData(polyDataOutput);
-  if (!(viewport instanceof VolumeViewport3D)) {
-    mapper.setClippingPlanes([vtkPlane.newInstance(), vtkPlane.newInstance()]);
-  }
 
   const actor = vtkActor.newInstance();
   actor.setMapper(mapper);
@@ -112,6 +109,7 @@ export function addContourSetsToElement(
   viewport.addActor({
     uid: contourActorUID,
     actor: actor as unknown as Types.Actor,
+    canAddPlanes: !(viewport instanceof VolumeViewport3D),
   });
   viewport.resetCamera();
   viewport.render();
