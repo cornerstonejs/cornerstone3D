@@ -38,7 +38,7 @@ function getSvgDrawingHelper(element: HTMLDivElement): SVGDrawingHelper {
 function _getSvgLayer(element) {
   const viewportElement = `.${VIEWPORT_ELEMENT}`;
   const internalDivElement = element.querySelector(viewportElement);
-  const svgLayer = internalDivElement.querySelector('.svg-layer');
+  const svgLayer = internalDivElement.querySelector(':scope > .svg-layer');
 
   return svgLayer;
 }

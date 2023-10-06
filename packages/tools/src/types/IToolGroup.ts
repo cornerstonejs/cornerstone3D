@@ -75,4 +75,14 @@ export default interface IToolGroup {
   getDefaultMousePrimary: {
     (): MouseBindings;
   };
+
+  clone: {
+    ({
+      newToolGroupId,
+      fnToolFilter,
+    }: {
+      newToolGroupId: string;
+      fnToolFilter?: (toolName: string) => boolean;
+    }): IToolGroup;
+  };
 }
