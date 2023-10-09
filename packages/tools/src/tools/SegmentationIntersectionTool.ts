@@ -31,14 +31,12 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     defaultToolProps: ToolProps = {}
   ) {
     super(toolProps, defaultToolProps);
-
-    // this._throttledCalculateCachedStats = throttle(
-    //   this._calculateCachedStats,
-    //   100,
-    //   { trailing: true }
-    // );
   }
 
+  /**
+   * Initialize the annotation data and calculates surface intersections
+   * @returns
+   */
   _init = (): void => {
     const viewportsInfo = getToolGroup(this.toolGroupId).viewportsInfo;
 
@@ -89,17 +87,11 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   };
 
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
-    // If the camera is modified, we need to update the reference lines
-    // we really don't care which viewport triggered the
-    // camera modification, since we want to update all of them
-    // with respect to the targetViewport
     this._init();
   };
 
   /**
-   * it is used to draw the length annotation in each
-   * request animation frame. It calculates the updated cached statistics if
-   * data is invalidated and cache it.
+   * Renders the surface intersections
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -172,6 +164,7 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
 
 /**
  * Calculates surface intersections points for all surface actors in a viewport
+ * generating a set of polyline points for each actor
  * @param actorWorldPointsMap
  * @param viewport
  */
@@ -203,6 +196,30 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
   });
 }
 
+/**
+ * Calculates surface intersections points for all surface actors in a list of viewports
+ * @param actorWorldPointsMap
+ * @param viewportsInfo
+ */
+function calculateSurfaceSegmentationIntersections(
+  actorsWorldPointsMap,
+  viewportsInfo
+) {
+  viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+    const viewport =
+      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
+    calculateSurfaceSegmentationIntersectionsForViewport(
+      actorsWorldPointsMap,
+      viewport
+    );
+  });
+}
+
+/**
+ * Transform a color array into a string
+ * @param colorArray
+ * @returns
+ */
 function colorToString(colorArray): string {
   function colorComponentToString(component) {
     let componentString = Math.floor(component * 255).toString(16);
@@ -218,6 +235,7 @@ function colorToString(colorArray): string {
     colorComponentToString(colorArray[2])
   );
 }
+
 /**
  * Remove duplicate and unnecessary points
  * @param worldPoints
@@ -258,24 +276,6 @@ function removeExtraPoints(viewport, worldPointsSet) {
       }
     }
     return newWorldPoints;
-  });
-}
-/**
- * Calculates surface intersections points for all surface actors in a list of viewports
- * @param actorWorldPointsMap
- * @param viewportsInfo
- */
-function calculateSurfaceSegmentationIntersections(
-  actorsWorldPointsMap,
-  viewportsInfo
-) {
-  viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-    const viewport =
-      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
-    calculateSurfaceSegmentationIntersectionsForViewport(
-      actorsWorldPointsMap,
-      viewport
-    );
   });
 }
 

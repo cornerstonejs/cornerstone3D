@@ -10,7 +10,7 @@ import { pointToString } from '../utils/pointFunctions';
 const polyDataCache = new Map();
 
 /**
- * Updates the clipping planes ofa surface and caches the resulting poly data
+ * Updates the clipping planes of a surface and caches the resulting poly data
  * @param evt
  */
 function updateClippingPlanes(evt) {
@@ -83,6 +83,7 @@ function addSurfaceToElement(
   const actor = vtkActor.newInstance();
   actor.setMapper(mapper);
 
+  // sets the color of the surface actor
   actor.getProperty().setColor(color[0] / 255, color[1] / 255, color[2] / 255);
   viewport.addActor({
     actor,

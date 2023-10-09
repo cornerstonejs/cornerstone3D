@@ -1,5 +1,10 @@
 import { getPoint } from './pointFunctions';
 
+/**
+ * Returns the first available point in a tuple array
+ * @param tupleArray
+ * @returns
+ */
 function getFirstAvailable(tupleArray) {
   for (let i = 0; i < tupleArray.length; i++) {
     if (tupleArray[i]) {
@@ -9,11 +14,16 @@ function getFirstAvailable(tupleArray) {
   return -1;
 }
 
+/**
+ * Extract contour point sets from the outline of a poly data actor
+ * @param polyData
+ * @returns
+ */
 export function getPolyDataPointIndexes(polyData) {
   const linesData = polyData.getLines().getData();
 
-  // creating array of tuples. A tuple is a segment of two points. Its not required
-  // that two consecutive tuples are connected
+  // creating array of tuples. A tuple is pair of points that defines a line segment.
+  // Its not required that two consecutive tuples are connected
   let idx = 0;
   const tupleArray = [];
   while (idx < linesData.length) {
@@ -28,6 +38,7 @@ export function getPolyDataPointIndexes(polyData) {
   }
 
   const contoursArray = [];
+  // while there is active points, create contour point sets
   while (getFirstAvailable(tupleArray) > -1) {
     // uniting all tuples in a consecutive point set
     let nextToFind;
@@ -51,7 +62,7 @@ export function getPolyDataPointIndexes(polyData) {
 }
 
 /**
- * Extract contour points from a polydata object
+ * Extract contour points from a poly data object
  * @param polyData
  * @returns
  */

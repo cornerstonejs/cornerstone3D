@@ -1,5 +1,5 @@
 /**
- * Fas distance calculation between two points
+ * Fast distance calculation between two points
  * @param pointA
  * @param pointB
  * @returns
@@ -13,7 +13,8 @@ export function fastPointDistance(pointA, pointB) {
 }
 
 /**
- * Transforms a point into an string, by converting the numbers with five decimals
+ * Transforms a point into an string, by converting the numbers with specified number of decimals decimals
+ * Default number of decimals is 5
  * @param point
  * @returns
  */
