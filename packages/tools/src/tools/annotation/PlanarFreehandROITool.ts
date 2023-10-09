@@ -678,15 +678,6 @@ class PlanarFreehandROITool extends AnnotationTool {
         return;
       }
 
-      const modalityUnitOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
       if (!this.commonData?.movingTextBox) {
         const { data } = annotation;
         if (
@@ -706,16 +697,14 @@ class PlanarFreehandROITool extends AnnotationTool {
             annotation,
             viewport,
             renderingEngine,
-            enabledElement,
-            modalityUnitOptions
+            enabledElement
           );
         } else if (annotation.invalidated) {
           this._throttledCalculateCachedStats(
             annotation,
             viewport,
             renderingEngine,
-            enabledElement,
-            modalityUnitOptions
+            enabledElement
           );
         }
       }
@@ -730,8 +719,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement,
-    modalityUnitOptions: ModalityUnitOptions
+    enabledElement
   ) => {
     const data = annotation.data;
     const { cachedStats, polyline: points } = data;
@@ -867,6 +855,15 @@ class PlanarFreehandROITool extends AnnotationTool {
         this.configuration.statsCalculator.statsCallback,
         boundsIJK
       );
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       const modalityUnit = getModalityUnit(
         metadata.Modality,

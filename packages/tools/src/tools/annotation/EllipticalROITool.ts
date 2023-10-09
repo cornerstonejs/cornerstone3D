@@ -47,7 +47,6 @@ import {
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -55,8 +54,6 @@ import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
-  MouseDragEventType,
-  MouseMoveEventType,
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
@@ -800,16 +797,6 @@ class EllipticalROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
-      const modalityUnitOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -829,16 +816,14 @@ class EllipticalROITool extends AnnotationTool {
           annotation,
           viewport,
           renderingEngine,
-          enabledElement,
-          modalityUnitOptions
+          enabledElement
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
-          enabledElement,
-          modalityUnitOptions
+          enabledElement
         );
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -1013,8 +998,7 @@ class EllipticalROITool extends AnnotationTool {
     annotation,
     viewport,
     renderingEngine,
-    enabledElement,
-    modalityUnitOptions: ModalityUnitOptions
+    enabledElement
   ) => {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
@@ -1106,6 +1090,16 @@ class EllipticalROITool extends AnnotationTool {
           Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
           scale /
           scale;
+
+        const modalityUnitOptions = {
+          isPreScaled: isViewportPreScaled(viewport, targetId),
+
+          isSuvScaled: this.isSuvScaled(
+            viewport,
+            targetId,
+            annotation.metadata.referencedImageId
+          ),
+        };
 
         const modalityUnit = getModalityUnit(
           metadata.Modality,

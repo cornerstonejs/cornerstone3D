@@ -176,19 +176,9 @@ class DragProbeTool extends ProbeTool {
         value: null,
       };
 
-      this._calculateCachedStats(
-        annotation,
-        renderingEngine,
-        enabledElement,
-        modalityUnitOptions
-      );
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
     } else if (annotation.invalidated) {
-      this._calculateCachedStats(
-        annotation,
-        renderingEngine,
-        enabledElement,
-        modalityUnitOptions
-      );
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
     }
 
     // If rendering engine has been destroyed while rendering
