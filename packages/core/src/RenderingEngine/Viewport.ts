@@ -1161,16 +1161,9 @@ class Viewport implements IViewport {
       }
 
       const mapper = actorEntry.actor.getMapper();
-      let vtkPlanes = actorEntry?.clippingFilter
+      const vtkPlanes = actorEntry?.clippingFilter
         ? actorEntry.clippingFilter.getClippingPlanes()
         : mapper.getClippingPlanes();
-
-      if (vtkPlanes?.length < 2) {
-        vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
-        if (actorEntry?.canAddPlanes) {
-          mapper.setClippingPlanes(vtkPlanes);
-        }
-      }
 
       let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
       if (actorEntry.slabThickness) {

@@ -109,7 +109,6 @@ export function addContourSetsToElement(
   viewport.addActor({
     uid: contourActorUID,
     actor: actor as unknown as Types.Actor,
-    canAddPlanes: !(viewport instanceof VolumeViewport3D),
   });
   viewport.resetCamera();
   viewport.render();
