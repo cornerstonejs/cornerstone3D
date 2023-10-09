@@ -138,26 +138,31 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       if (!actorWorldPointMap.get(focalPointString)) {
         return;
       }
-      const { worldPoints, color } = actorWorldPointMap.get(focalPointString);
-      const canvasPoints = worldPoints.map((point) =>
-        viewport.worldToCanvas(point)
-      );
+      let polyLineIdx = 1;
+      const { worldPointsSet, color } =
+        actorWorldPointMap.get(focalPointString);
+      worldPointsSet.forEach((worldPoints) => {
+        const canvasPoints = worldPoints.map((point) =>
+          viewport.worldToCanvas(point)
+        );
 
-      const options = {
-        color: 'none',
-        fillColor: color,
-        fillOpacity: 0.5,
-        connectLastToFirst: true,
-      };
+        const options = {
+          color: 'none',
+          fillColor: color,
+          fillOpacity: 0.5,
+          connectLastToFirst: true,
+        };
 
-      const polyLineUID = actorEntry.uid;
-      drawPolyline(
-        svgDrawingHelper,
-        annotationUID,
-        polyLineUID,
-        canvasPoints,
-        options
-      );
+        const polyLineUID = actorEntry.uid + '#' + polyLineIdx;
+        drawPolyline(
+          svgDrawingHelper,
+          annotationUID,
+          polyLineUID,
+          canvasPoints,
+          options
+        );
+        polyLineIdx++;
+      });
     });
 
     renderStatus = true;
@@ -186,15 +191,12 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
       }
       if (!actorWorldPointsMap.get(focalPointString)) {
         const polyData = actorEntry.clippingFilter.getOutputData();
-        let worldPoints = getPolyDataPoints(polyData);
-        if (worldPoints) {
-          const canvasPoints = worldPoints.map((point) =>
-            viewport.worldToCanvas(point)
-          );
-          worldPoints = removeExtraPoints(worldPoints, canvasPoints);
+        let worldPointsSet = getPolyDataPoints(polyData);
+        if (worldPointsSet) {
+          worldPointsSet = removeExtraPoints(viewport, worldPointsSet);
           const colorArray = actorEntry.actor.getProperty().getColor();
           const color = colorToString(colorArray);
-          actorWorldPointsMap.set(focalPointString, { worldPoints, color });
+          actorWorldPointsMap.set(focalPointString, { worldPointsSet, color });
         }
       }
     }
@@ -222,38 +224,41 @@ function colorToString(colorArray): string {
  * @param canvasPoints
  * @returns
  */
-function removeExtraPoints(worldPoints, canvasPoints) {
-  canvasPoints = canvasPoints.map((point) => [
-    Math.floor(point[0]),
-    Math.floor(point[1]),
-  ]);
-  let lastPoint;
-  const newWorldPoints = [];
-  let newCanvasPoints = [];
-  // removing duplicate points
-  for (let i = 0; i < worldPoints.length; i++) {
-    if (lastPoint) {
-      if (fastPointDistance(lastPoint, canvasPoints[i]) > 0) {
-        newWorldPoints.push(worldPoints[i]);
-        newCanvasPoints.push(canvasPoints[i]);
+function removeExtraPoints(viewport, worldPointsSet) {
+  return worldPointsSet.map((worldPoints) => {
+    const canvasPoints = worldPoints.map((point) => {
+      const canvasPoint = viewport.worldToCanvas(point);
+      return [Math.floor(canvasPoint[0]), Math.floor(canvasPoint[1])];
+    });
+
+    let lastPoint;
+    const newWorldPoints = [];
+    let newCanvasPoints = [];
+    // removing duplicate points
+    for (let i = 0; i < worldPoints.length; i++) {
+      if (lastPoint) {
+        if (fastPointDistance(lastPoint, canvasPoints[i]) > 0) {
+          newWorldPoints.push(worldPoints[i]);
+          newCanvasPoints.push(canvasPoints[i]);
+        }
+      }
+      lastPoint = canvasPoints[i];
+    }
+
+    // checking if a middle point is near the start
+    const firstPoint = newCanvasPoints[0];
+    for (
+      let j = Math.min(30, newCanvasPoints.length);
+      j < newCanvasPoints.length;
+      j++
+    ) {
+      if (fastPointDistance(firstPoint, newCanvasPoints[j]) < 0.5) {
+        newCanvasPoints = newCanvasPoints.slice(0, j);
+        return newWorldPoints.slice(0, j);
       }
     }
-    lastPoint = canvasPoints[i];
-  }
-
-  // checking if a middle point is near the start
-  const firstPoint = newCanvasPoints[0];
-  for (
-    let j = Math.min(30, newCanvasPoints.length);
-    j < newCanvasPoints.length;
-    j++
-  ) {
-    if (fastPointDistance(firstPoint, newCanvasPoints[j]) < 0.5) {
-      newCanvasPoints = newCanvasPoints.slice(0, j);
-      return newWorldPoints.slice(0, j);
-    }
-  }
-  return newWorldPoints;
+    return newWorldPoints;
+  });
 }
 /**
  * Calculates surface intersections points for all surface actors in a list of viewports

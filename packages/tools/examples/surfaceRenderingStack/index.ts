@@ -14,11 +14,11 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { sortImageIds } from './utils';
 
-import surface13 from './lung13.json';
-import surface14 from './lung14.json';
-import surface15 from './lung15.json';
-import surface16 from './lung16.json';
-import surface17 from './lung17.json';
+import surface13 from '../surfaces/lung13.json';
+import surface14 from '../surfaces/lung14.json';
+import surface15 from '../surfaces/lung15.json';
+import surface16 from '../surfaces/lung16.json';
+import surface17 from '../surfaces/lung17.json';
 
 // This is for debugging purposes
 console.warn(
@@ -231,23 +231,26 @@ async function run() {
   const viewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId1)
   );
-  viewport.setStack(sortImageIds(imageIds), Math.floor(imageIds.length / 2));
+  await viewport.setStack(
+    sortImageIds(imageIds),
+    Math.floor(imageIds.length / 2)
+  );
 
   // Set volumes on the viewports
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId2]);
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId2]);
 
-  surfaces.forEach(async (surface) => {
+  await surfaces.forEach((surface) => {
     const segmentationId = surface.closedSurface.id;
 
     // // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupIdStack, [
+    segmentation.addSegmentationRepresentations(toolGroupIdStack, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,
       },
     ]);
 
-    await segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
+    segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,

@@ -1,43 +1,4 @@
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { getPoint } from './pointFunctions';
-
-function fastPointDistance(pointA, pointB) {
-  return (
-    Math.abs(pointA[0] - pointB[0]) +
-    Math.abs(pointA[1] - pointB[1]) +
-    Math.abs(pointA[2] - pointB[2])
-  );
-}
-
-function getNearestPoint(nextToFind, points, pointsUsed) {
-  const reference = getPoint(points, nextToFind);
-  let winner = -1;
-  let minDistance = 10000000;
-  pointsUsed.forEach((pointUsed) => {
-    const point = getPoint(points, pointUsed);
-    const distance = fastPointDistance(reference, point);
-    if (minDistance > distance) {
-      minDistance = distance;
-      winner = pointUsed;
-    }
-  });
-  if (minDistance < 1) {
-    return winner;
-  } else {
-    return -1;
-  }
-}
-
-function getAvailablePoints(tupleArray) {
-  const availablePoints = [];
-  for (let i = 0; i < tupleArray.length; i++) {
-    if (tupleArray[i]) {
-      availablePoints.push(i);
-    }
-  }
-  return availablePoints;
-}
 
 function getFirstAvailable(tupleArray) {
   for (let i = 0; i < tupleArray.length; i++) {
@@ -66,49 +27,40 @@ export function getPolyDataPointIndexes(polyData) {
     idx = idx + size;
   }
 
-  const pointIndexesArray = [];
-  // uniting all tuples in a consecutive point set
-  let nextToFind;
-  nextToFind = getFirstAvailable(tupleArray);
-  if (nextToFind === -1) {
-    return;
-  }
-  pointIndexesArray.push(nextToFind);
-  while (tupleArray[nextToFind]) {
-    const indexToAdd = tupleArray[nextToFind][1];
-    if (tupleArray[indexToAdd]) {
-      pointIndexesArray.push(indexToAdd);
+  const contoursArray = [];
+  while (getFirstAvailable(tupleArray) > -1) {
+    // uniting all tuples in a consecutive point set
+    let nextToFind;
+    nextToFind = getFirstAvailable(tupleArray);
+    if (nextToFind === -1) {
+      return;
     }
-    tupleArray[nextToFind] = undefined;
-    nextToFind = indexToAdd;
+    const contourPoints = [];
+    contourPoints.push(nextToFind);
+    while (tupleArray[nextToFind]) {
+      const indexToAdd = tupleArray[nextToFind][1];
+      if (tupleArray[indexToAdd]) {
+        contourPoints.push(indexToAdd);
+      }
+      tupleArray[nextToFind] = undefined;
+      nextToFind = indexToAdd;
+    }
+    contoursArray.push(contourPoints);
   }
-  pointIndexesArray.push(...pointIndexesArray);
-  return pointIndexesArray;
+  return contoursArray;
 }
 
 /**
- * Converts a contour polydata into a closed polygon
+ * Extract contour points from a polydata object
  * @param polyData
  * @returns
  */
-function convertContourToPolygon(polyData) {
-  const newPolyData = vtkPolyData.newInstance();
-  const points = polyData.getPoints().getData();
-  newPolyData.getPoints().setData(points, 3);
-
-  const polyArray = getPolyDataPointIndexes(polyData);
-  polyArray.unshift(polyArray.length);
-  const polygon = vtkCellArray.newInstance({
-    values: Uint32Array.from(polyArray),
-  });
-  newPolyData.setPolys(polygon);
-  return newPolyData;
-}
-
 export function getPolyDataPoints(polyData) {
-  const pointIndexes = getPolyDataPointIndexes(polyData);
+  const contoursPointIndexes = getPolyDataPointIndexes(polyData);
   const points = polyData.getPoints().getData();
-  if (pointIndexes) {
-    return pointIndexes.map((pointIndex) => getPoint(points, pointIndex));
+  if (contoursPointIndexes) {
+    return contoursPointIndexes.map((contourPointIndexes) =>
+      contourPointIndexes.map((pointIndex) => getPoint(points, pointIndex))
+    );
   }
 }
