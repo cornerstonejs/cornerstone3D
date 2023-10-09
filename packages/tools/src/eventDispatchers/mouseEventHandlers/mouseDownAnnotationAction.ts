@@ -1,3 +1,4 @@
+import { getEnabledElement } from '@cornerstonejs/core';
 import { state } from '../../store';
 import { ToolModes } from '../../enums';
 import { EventTypes } from '../../types';
@@ -26,7 +27,12 @@ export default function mouseDownAnnotationAction(
 
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+  const enabledElement = getEnabledElement(element);
   const { canvas: canvasCoords } = eventDetail.currentPoints;
+
+  if (!enabledElement) {
+    return false;
+  }
 
   // Find all tools that might respond to this mouse down
   const toolsWithActions = getToolsWithActionsForMouseEvent(evt, [

@@ -682,7 +682,18 @@ export default class ToolGroup implements IToolGroup {
     return cloneDeep(_configuration);
   }
 
-  public clone({ newToolGroupId, fnToolFilter = null }) {
+  /**
+   *
+   * @param newToolGroupId - Id of the new (clone) tool group
+   * @param fnToolFilter - Function to filter which tools from this tool group
+   * should be added to the new (clone) one. Example: only annotations tools
+   * can be filtered and added to the new tool group.
+   * @returns A new tool group that is a clone of this one
+   */
+  public clone(
+    newToolGroupId,
+    fnToolFilter: (toolName: string) => void = null
+  ): IToolGroup {
     let toolGroup = ToolGroupManager.getToolGroup(newToolGroupId);
 
     if (toolGroup) {

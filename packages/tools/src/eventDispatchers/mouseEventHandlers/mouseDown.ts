@@ -42,7 +42,8 @@ const { Active, Passive } = ToolModes;
  *   event does not propagate further.
  * - If the `activeTool` has `postMouseDownCallback`, this is called.  If the callback returns `true`,
  *   the event does not propagate further.
- * - Finally, look for annotations actions that could handle the event.
+ * - Finally, look for annotations actions that could handle the event such as showing a dropdown to allow the user
+ *   change the magnifying glass zoom factor.
  *
  * If the event is not consumed the event will bubble to the `mouseDownActivate` handler.
  *
@@ -150,7 +151,11 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     }
   }
 
-  mouseDownAnnotationAction(evt);
+  const actionExecuted = mouseDownAnnotationAction(evt);
+
+  if (actionExecuted) {
+    return;
+  }
 
   // Don't stop propagation so that mouseDownActivate can handle the event
 }

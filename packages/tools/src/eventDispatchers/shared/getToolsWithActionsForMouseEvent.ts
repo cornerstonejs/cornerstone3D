@@ -8,14 +8,17 @@ import getMouseModifier from './getMouseModifier';
 type ModesFilter = Array<ToolModes>;
 
 /**
- * Given the normalized mouse event and a filter of modes, find all the tools
- * on the element that have actions and are in one of the specified modes.
- * @param evt - The normalized mouseDown event.
- * @param modesFilter - An array of entries from the `ToolModes` enum.
+ * Given the mouse event and a list of tool modes, find all tool instances
+ * with actions that were added to the tool group associated with the viewport
+ * that triggered the event.
+ *
+ * @param evt - mouseDown event triggered by a cornerstone viewport
+ * @param toolModes - List of tool modes used to filter the tools registered
+ *                    in the viewport's tool group
  */
 export default function getToolsWithActionsForMouseEvent(
   evt: EventTypes.MouseMoveEventType,
-  modesFilter: ModesFilter
+  toolModes: ToolModes[]
 ): Map<any, ToolAction> {
   const toolsWithActions = new Map();
   const { renderingEngineId, viewportId } = evt.detail;
@@ -40,7 +43,7 @@ export default function getToolsWithActionsForMouseEvent(
     const tool = toolGroup.getToolInstance(toolName);
     const actions = tool.configuration?.actions;
 
-    if (!actions?.length || !modesFilter.includes(tool.mode)) {
+    if (!actions?.length || !toolModes.includes(tool.mode)) {
       continue;
     }
 

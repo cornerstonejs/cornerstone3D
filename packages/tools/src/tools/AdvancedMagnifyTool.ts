@@ -89,105 +89,6 @@ class AdvancedMagnifyTool extends AnnotationTool {
     this.magnifyViewportManager = AdvancedMagnifyViewportManager.getInstance();
   }
 
-  private _getZoomFactorsListDropdown(currentZoomFactor, onChangeCallback) {
-    const { zoomFactorList } = this.configuration.magnifyingGlass;
-    const dropdown = document.createElement('select');
-
-    dropdown.size = 5;
-    Object.assign(dropdown.style, {
-      width: '50px',
-      position: 'absolute',
-    });
-
-    ['mousedown', 'mouseup', 'mousemove', 'click'].forEach((eventName) => {
-      dropdown.addEventListener(eventName, (evt) => evt.stopPropagation());
-    });
-
-    dropdown.addEventListener('change', (evt) => {
-      evt.stopPropagation();
-      onChangeCallback(dropdown.value);
-    });
-
-    dropdown.addEventListener('keydown', (evt) => {
-      const shouldCancel =
-        (evt.keyCode ?? evt.which === 27) ||
-        evt.key?.toLowerCase() === 'escape';
-
-      if (shouldCancel) {
-        evt.stopPropagation();
-        onChangeCallback();
-      }
-    });
-
-    zoomFactorList.forEach((zoomFactor) => {
-      const option = document.createElement('option');
-
-      option.label = zoomFactor;
-      option.title = `Zoom factor ${zoomFactor.toFixed(1)}`;
-      option.value = zoomFactor;
-      option.defaultSelected = zoomFactor === currentZoomFactor;
-
-      dropdown.add(option);
-    });
-
-    return dropdown;
-  }
-
-  // Basic dropdown component that allows the user to select a different zoom factor.
-  // configurations.actions may be changed to use a customized dropdown.
-  public showZoomFactorsList(
-    evt: EventTypes.InteractionEventType,
-    annotation: AdvancedMagnifyAnnotation
-  ) {
-    const { element, currentPoints } = evt.detail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const { canvas: canvasPoint } = currentPoints;
-    const viewportElement = element.querySelector(':scope .viewport-element');
-    const currentZoomFactor = annotation.data.zoomFactor;
-    const remove = () => dropdown.parentElement.removeChild(dropdown);
-
-    const dropdown = this._getZoomFactorsListDropdown(
-      currentZoomFactor,
-      (newZoomFactor) => {
-        if (newZoomFactor !== undefined) {
-          annotation.data.zoomFactor = Number.parseFloat(newZoomFactor);
-          annotation.invalidated = true;
-        }
-
-        remove();
-        viewport.render();
-      }
-    );
-
-    Object.assign(dropdown.style, {
-      left: `${canvasPoint[0]}px`,
-      top: `${canvasPoint[1]}px`,
-    });
-
-    viewportElement.appendChild(dropdown);
-    dropdown.focus();
-  }
-
-  private _getWorldHandlesPoints = (
-    viewport,
-    canvasCenterPos,
-    canvasRadius
-  ): Types.Point3[] => {
-    const canvasHandlesPoints = [
-      [canvasCenterPos[0], canvasCenterPos[1] - canvasRadius], // top
-      [canvasCenterPos[0] + canvasRadius, canvasCenterPos[1]], // right
-      [canvasCenterPos[0], canvasCenterPos[1] + canvasRadius], // bottom
-      [canvasCenterPos[0] - canvasRadius, canvasCenterPos[1]], // left
-    ];
-
-    const worldHandlesPoints = canvasHandlesPoints.map((p) =>
-      viewport.canvasToWorld(p)
-    ) as Types.Point3[];
-
-    return worldHandlesPoints;
-  };
-
   /**
    * Based on the current position of the mouse and the current imageId to create
    * a CircleROI Annotation and stores it in the annotationManager
@@ -530,38 +431,37 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
   cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
-    if (this.isDrawing) {
-      this.isDrawing = false;
-      this._deactivateModify(element);
-      resetElementCursor(element);
-
-      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
-      const { data } = annotation;
-
-      annotation.highlighted = false;
-      data.handles.activeHandleIndex = null;
-
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
-
-      if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
-      }
-
-      this.editData = null;
-      return annotation.annotationUID;
+    if (!this.isDrawing) {
+      return;
     }
+
+    this.isDrawing = false;
+    this._deactivateModify(element);
+    resetElementCursor(element);
+
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+    const { data } = annotation;
+
+    annotation.highlighted = false;
+    data.handles.activeHandleIndex = null;
+
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
+
+    this.editData = null;
+    return annotation.annotationUID;
   };
 
   _activateModify = (element) => {
@@ -712,7 +612,108 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
     return renderStatus;
   };
+
+  // Basic dropdown component that allows the user to select a different zoom factor.
+  // configurations.actions may be changed to use a customized dropdown.
+  public showZoomFactorsList(
+    evt: EventTypes.InteractionEventType,
+    annotation: AdvancedMagnifyAnnotation
+  ) {
+    const { element, currentPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const { canvas: canvasPoint } = currentPoints;
+    const viewportElement = element.querySelector(':scope .viewport-element');
+    const currentZoomFactor = annotation.data.zoomFactor;
+    const remove = () => dropdown.parentElement.removeChild(dropdown);
+
+    const dropdown = this._getZoomFactorsListDropdown(
+      currentZoomFactor,
+      (newZoomFactor) => {
+        if (newZoomFactor !== undefined) {
+          annotation.data.zoomFactor = Number.parseFloat(newZoomFactor);
+          annotation.invalidated = true;
+        }
+
+        remove();
+        viewport.render();
+      }
+    );
+
+    Object.assign(dropdown.style, {
+      left: `${canvasPoint[0]}px`,
+      top: `${canvasPoint[1]}px`,
+    });
+
+    viewportElement.appendChild(dropdown);
+    dropdown.focus();
+  }
+
+  private _getZoomFactorsListDropdown(currentZoomFactor, onChangeCallback) {
+    const { zoomFactorList } = this.configuration.magnifyingGlass;
+    const dropdown = document.createElement('select');
+
+    dropdown.size = 5;
+    Object.assign(dropdown.style, {
+      width: '50px',
+      position: 'absolute',
+    });
+
+    ['mousedown', 'mouseup', 'mousemove', 'click'].forEach((eventName) => {
+      dropdown.addEventListener(eventName, (evt) => evt.stopPropagation());
+    });
+
+    dropdown.addEventListener('change', (evt) => {
+      evt.stopPropagation();
+      onChangeCallback(dropdown.value);
+    });
+
+    dropdown.addEventListener('keydown', (evt) => {
+      const shouldCancel =
+        (evt.keyCode ?? evt.which === 27) ||
+        evt.key?.toLowerCase() === 'escape';
+
+      if (shouldCancel) {
+        evt.stopPropagation();
+        onChangeCallback();
+      }
+    });
+
+    zoomFactorList.forEach((zoomFactor) => {
+      const option = document.createElement('option');
+
+      option.label = zoomFactor;
+      option.title = `Zoom factor ${zoomFactor.toFixed(1)}`;
+      option.value = zoomFactor;
+      option.defaultSelected = zoomFactor === currentZoomFactor;
+
+      dropdown.add(option);
+    });
+
+    return dropdown;
+  }
+
+  private _getWorldHandlesPoints = (
+    viewport,
+    canvasCenterPos,
+    canvasRadius
+  ): Types.Point3[] => {
+    const canvasHandlesPoints = [
+      [canvasCenterPos[0], canvasCenterPos[1] - canvasRadius], // top
+      [canvasCenterPos[0] + canvasRadius, canvasCenterPos[1]], // right
+      [canvasCenterPos[0], canvasCenterPos[1] + canvasRadius], // bottom
+      [canvasCenterPos[0] - canvasRadius, canvasCenterPos[1]], // left
+    ];
+
+    const worldHandlesPoints = canvasHandlesPoints.map((p) =>
+      viewport.canvasToWorld(p)
+    ) as Types.Point3[];
+
+    return worldHandlesPoints;
+  };
 }
 
 AdvancedMagnifyTool.toolName = 'AdvancedMagnify';
-export default AdvancedMagnifyTool;
+
+const toolName = 'foo bar';
+export { AdvancedMagnifyTool as default, toolName };

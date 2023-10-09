@@ -77,12 +77,9 @@ export default interface IToolGroup {
   };
 
   clone: {
-    ({
-      newToolGroupId,
-      fnToolFilter,
-    }: {
-      newToolGroupId: string;
-      fnToolFilter?: (toolName: string) => boolean;
-    }): IToolGroup;
+    (
+      newToolGroupId: string,
+      fnToolFilter: (toolName: string) => boolean
+    ): IToolGroup;
   };
 }

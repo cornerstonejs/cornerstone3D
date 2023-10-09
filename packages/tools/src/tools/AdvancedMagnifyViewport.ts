@@ -10,12 +10,11 @@ import {
   ToolModes,
   Events as cstEvents,
 } from '../enums';
-import { ToolGroupManager } from '../store';
+import { ToolGroupManager, state } from '../store';
 import { debounce } from '../utilities';
 import { ToolModeChangedEventType } from '../types/EventTypes';
 import { segmentation } from '..';
 import { EventTypes, IToolGroup } from '../types';
-import { state } from '../store';
 import {
   AnnotationTool,
   AdvancedMagnifyTool,
@@ -26,6 +25,7 @@ import { distanceToPoint } from '../utilities/math/point';
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
 
+// TODO: find a better to identify segmentation actors
 const isSegmentation = (actor) => actor.uid !== actor.referenceId;
 
 export type AutoPanCallbackData = {
@@ -97,8 +97,8 @@ class AdvancedMagnifyViewport {
     this.zoomFactor = zoomFactor;
     this.visible = true;
 
-    this._nativeMouseDownCallback = this._nativeMouseDownCallback.bind(this);
-    this._nativeMouseUpCallback = this._nativeMouseUpCallback.bind(this);
+    this._browserMouseDownCallback = this._browserMouseDownCallback.bind(this);
+    this._browserMouseUpCallback = this._browserMouseUpCallback.bind(this);
     this._handleToolModeChanged = this._handleToolModeChanged.bind(this);
     this._mouseDragCallback = this._mouseDragCallback.bind(this);
     this._resizeViewportAsync = <() => void>(
@@ -122,6 +122,46 @@ class AdvancedMagnifyViewport {
     if (Math.abs(this._radius - radius) > 0.00001) {
       this._radius = radius;
       this._resized = true;
+    }
+  }
+
+  public update() {
+    const { radius, position, visible } = this;
+    const { viewport } = this._enabledElement;
+    const { element } = viewport;
+    const size = 2 * radius;
+    const [x, y] = position;
+
+    if (this._resized) {
+      this._resizeViewportAsync();
+      this._resized = false;
+    }
+
+    Object.assign(element.style, {
+      display: visible ? 'block' : 'hidden',
+      width: `${size}px`,
+      height: `${size}px`,
+      left: `${-radius}px`,
+      top: `${-radius}px`,
+      transform: `translate(${x}px, ${y}px)`,
+    });
+
+    if (this._isViewportReady) {
+      this._syncViewports();
+      viewport.render();
+    }
+  }
+
+  public dispose() {
+    const { viewport } = this._enabledElement;
+    const { element } = viewport;
+    const renderingEngine = viewport.getRenderingEngine();
+
+    this._removeEventListeners(element);
+    renderingEngine.disableElement(viewport.id);
+
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
     }
   }
 
@@ -225,9 +265,9 @@ class AdvancedMagnifyViewport {
       sourceViewport.renderingEngineId
     );
 
-    const magnifyToolGroup = sourceToolGroup.clone({
-      newToolGroupId: magnifyToolGroupId,
-      fnToolFilter: (toolName) => {
+    const magnifyToolGroup = sourceToolGroup.clone(
+      magnifyToolGroupId,
+      (toolName) => {
         const toolInstance = sourceToolGroup.getToolInstance(toolName);
         const isAnnotationTool =
           toolInstance instanceof AnnotationTool &&
@@ -236,8 +276,8 @@ class AdvancedMagnifyViewport {
         return (
           isAnnotationTool || toolName === SegmentationDisplayTool.toolName
         );
-      },
-    });
+      }
+    );
 
     magnifyToolGroup.addViewport(
       magnifyViewport.id,
@@ -327,17 +367,17 @@ class AdvancedMagnifyViewport {
     evt.preventDefault();
   }
 
-  private _nativeMouseUpCallback(evt) {
+  private _browserMouseUpCallback(evt) {
     const { element } = this._enabledElement.viewport;
 
-    document.removeEventListener('mouseup', this._nativeMouseUpCallback);
+    document.removeEventListener('mouseup', this._browserMouseUpCallback);
 
     // Restrict the scope of magnifying glass events again
     element.addEventListener('mouseup', this._cancelMouseEventCallback);
     element.addEventListener('mousemove', this._cancelMouseEventCallback);
   }
 
-  private _nativeMouseDownCallback(evt) {
+  private _browserMouseDownCallback(evt) {
     const { element } = this._enabledElement.viewport;
 
     // Enable auto pan only when user clicks inside of the magnifying glass
@@ -346,7 +386,7 @@ class AdvancedMagnifyViewport {
     this._canAutoPan = !!evt.target?.closest('.advancedMagnifyTool');
 
     // Wait for the mouseup event to restrict the scope of magnifying glass events again
-    document.addEventListener('mouseup', this._nativeMouseUpCallback);
+    document.addEventListener('mouseup', this._browserMouseUpCallback);
 
     // Allow mouseup and mousemove events to make it possible to manipulate the
     // tool when passing the mouse over the magnifying glass (dragging a handle).
@@ -376,58 +416,64 @@ class AdvancedMagnifyViewport {
     const canvasCenter: Types.Point2 = [magnifyRadius, magnifyRadius];
     const dist = distanceToPoint(canvasCenter, canvasCurrent);
     const maxDist = magnifyRadius - autoPan.padding;
-    const pan = dist > maxDist;
 
-    if (pan) {
-      const panDist = dist - maxDist;
-      const canvasDeltaPos = vec2.sub(
-        vec2.create(),
-        canvasCurrent,
-        canvasCenter
-      ) as Types.Point2;
-
-      vec2.normalize(canvasDeltaPos, canvasDeltaPos);
-      vec2.scale(canvasDeltaPos, canvasDeltaPos, panDist);
-
-      const newCanvasPosition = vec2.add(
-        vec2.create(),
-        this.position,
-        canvasDeltaPos
-      ) as Types.Point2;
-      const currentWorldPos = canvasToWorld(this.position);
-      const newWorldPos = canvasToWorld(newCanvasPosition);
-      const worldDeltaPos = vec3.sub(
-        vec3.create(),
-        newWorldPos,
-        currentWorldPos
-      ) as Types.Point3;
-
-      const autoPanCallbackData: AutoPanCallbackData = {
-        points: {
-          currentPosition: {
-            canvas: this.position,
-            world: currentWorldPos,
-          },
-          newPosition: {
-            canvas: newCanvasPosition,
-            world: newWorldPos,
-          },
-        },
-        delta: {
-          canvas: canvasDeltaPos,
-          world: worldDeltaPos,
-        },
-      };
-
-      autoPan.callback(autoPanCallbackData);
+    // No need to pan if it is not close to the border
+    if (dist <= maxDist) {
+      return;
     }
+
+    const panDist = dist - maxDist;
+    const canvasDeltaPos = vec2.sub(
+      vec2.create(),
+      canvasCurrent,
+      canvasCenter
+    ) as Types.Point2;
+
+    vec2.normalize(canvasDeltaPos, canvasDeltaPos);
+    vec2.scale(canvasDeltaPos, canvasDeltaPos, panDist);
+
+    const newCanvasPosition = vec2.add(
+      vec2.create(),
+      this.position,
+      canvasDeltaPos
+    ) as Types.Point2;
+    const currentWorldPos = canvasToWorld(this.position);
+    const newWorldPos = canvasToWorld(newCanvasPosition);
+    const worldDeltaPos = vec3.sub(
+      vec3.create(),
+      newWorldPos,
+      currentWorldPos
+    ) as Types.Point3;
+
+    const autoPanCallbackData: AutoPanCallbackData = {
+      points: {
+        currentPosition: {
+          canvas: this.position,
+          world: currentWorldPos,
+        },
+        newPosition: {
+          canvas: newCanvasPosition,
+          world: newWorldPos,
+        },
+      },
+      delta: {
+        canvas: canvasDeltaPos,
+        world: worldDeltaPos,
+      },
+    };
+
+    autoPan.callback(autoPanCallbackData);
   }
 
-  private _addNativeEventListeners(element) {
+  private _addBrowserEventListeners(element) {
     // mousedown on document is handled in the capture phase because the other
     // mousedown event listener added to the magnifying glass element does not
     // allow the event to buble up and reach the document.
-    document.addEventListener('mousedown', this._nativeMouseDownCallback, true);
+    document.addEventListener(
+      'mousedown',
+      this._browserMouseDownCallback,
+      true
+    );
 
     // All mouse events should not buble up avoiding the source viewport from
     // handling those events resulting in unexpected behaviors.
@@ -437,13 +483,13 @@ class AdvancedMagnifyViewport {
     element.addEventListener('dblclick', this._cancelMouseEventCallback);
   }
 
-  private _removeNativeEventListeners(element) {
+  private _removeBrowserEventListeners(element) {
     document.removeEventListener(
       'mousedown',
-      this._nativeMouseDownCallback,
+      this._browserMouseDownCallback,
       true
     );
-    document.removeEventListener('mouseup', this._nativeMouseUpCallback);
+    document.removeEventListener('mouseup', this._browserMouseUpCallback);
 
     element.removeEventListener('mousedown', this._cancelMouseEventCallback);
     element.removeEventListener('mouseup', this._cancelMouseEventCallback);
@@ -467,7 +513,7 @@ class AdvancedMagnifyViewport {
       this._mouseDragCallback as EventListener
     );
 
-    this._addNativeEventListeners(element);
+    this._addBrowserEventListeners(element);
   }
 
   private _removeEventListeners(element) {
@@ -486,7 +532,7 @@ class AdvancedMagnifyViewport {
       this._mouseDragCallback as EventListener
     );
 
-    this._removeNativeEventListeners(element);
+    this._removeBrowserEventListeners(element);
   }
 
   private _initialize() {
@@ -568,46 +614,6 @@ class AdvancedMagnifyViewport {
     const renderingEngine = viewport.getRenderingEngine();
 
     renderingEngine.resize();
-  }
-
-  public update() {
-    const { radius, position, visible } = this;
-    const { viewport } = this._enabledElement;
-    const { element } = viewport;
-    const size = 2 * radius;
-    const [x, y] = position;
-
-    if (this._resized) {
-      this._resizeViewportAsync();
-      this._resized = false;
-    }
-
-    Object.assign(element.style, {
-      display: visible ? 'block' : 'hidden',
-      width: `${size}px`,
-      height: `${size}px`,
-      left: `${-radius}px`,
-      top: `${-radius}px`,
-      transform: `translate(${x}px, ${y}px)`,
-    });
-
-    if (this._isViewportReady) {
-      this._syncViewports();
-      viewport.render();
-    }
-  }
-
-  public dispose() {
-    const { viewport } = this._enabledElement;
-    const { element } = viewport;
-    const renderingEngine = viewport.getRenderingEngine();
-
-    this._removeEventListeners(element);
-    renderingEngine.disableElement(viewport.id);
-
-    if (element.parentNode) {
-      element.parentNode.removeChild(element);
-    }
   }
 }
 
