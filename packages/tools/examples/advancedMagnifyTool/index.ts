@@ -2,6 +2,7 @@ import {
   RenderingEngine,
   Types,
   Enums,
+  cache,
   getRenderingEngine,
   volumeLoader,
 } from '@cornerstonejs/core';
@@ -11,7 +12,6 @@ import {
   setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addDropdownToToolbar,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -44,10 +44,48 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 const segmentationId = 'SEGMENTATION_ID_1';
-
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const toolGroupIds = new Set<string>();
+
+const viewportsInfo = [
+  {
+    toolGroupId: 'STACK_TOOLGROUP_ID',
+    viewportInput: {
+      viewportId: 'CT_STACK_AXIAL',
+      type: ViewportType.STACK,
+      element: null,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  },
+  {
+    toolGroupId: 'VOLUME_TOOLGROUP_ID',
+    viewportInput: {
+      viewportId: 'CT_VOLUME_SAGITTAL',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: null,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  },
+  {
+    toolGroupId: 'VOLUME_TOOLGROUP_ID',
+    viewportInput: {
+      viewportId: 'CT_VOLUME_CORONAL',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: null,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  },
+];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -56,6 +94,18 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
+const viewportGrid = document.createElement('div');
+
+viewportGrid.style.display = 'grid';
+// viewportGrid.style.gridTemplateRows = `[row1-start] 33% [row2-start] 33% [row3-start] 33% [end]`;
+viewportGrid.style.gridTemplateColumns = `auto auto auto`;
+viewportGrid.style.width = '100%';
+viewportGrid.style.height = '500px'; // '50vh';
+viewportGrid.style.border = 'solid 1px #f00';
+viewportGrid.style.gridGap = '5px';
+
+content.appendChild(viewportGrid);
+
 const element = document.createElement('div');
 
 // Disable right click context menu so we can have right click tools
@@ -139,62 +189,23 @@ addDropdownToToolbar({
     // Set the old tool passive
     toolGroup.setToolPassive(selectedToolName);
 
+    Array.from(toolGroupIds).forEach((toolGroupId) => {
+      const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+      // Set the new tool active
+      toolGroup.setToolActive(newSelectedToolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Primary, // Left Click
+          },
+        ],
+      });
+
+      // Set the old tool passive
+      toolGroup.setToolPassive(selectedToolName);
+    });
+
     selectedToolName = <string>newSelectedToolName;
-  },
-});
-
-addButtonToToolbar({
-  title: 'Flip H',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Flip V',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { flipVertical } = viewport.getCamera();
-
-    viewport.setCamera({ flipVertical: !flipVertical });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Rotate Delta 90',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 90 });
-
-    viewport.render();
   },
 });
 
@@ -234,10 +245,16 @@ function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
   }
 }
 
-async function addSegmentationsToState() {
+async function addSegmentationsToState(volumeId: string) {
+  let segmentationVolume = cache.getVolume(segmentationId);
+
+  if (segmentationVolume) {
+    return;
+  }
+
   // Create a segmentation of the same resolution as the source data
   // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
+  segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
     volumeId,
     {
       volumeId: segmentationId,
@@ -261,6 +278,160 @@ async function addSegmentationsToState() {
 
   // Add some data to the segmentations
   fillSegmentationWithCircles(segmentationVolume, [50, 50]);
+}
+
+async function initializeVolumeViewport(
+  viewport: Types.IVolumeViewport,
+  volumeId: string,
+  imageIds: string[]
+) {
+  let volume = cache.getVolume(volumeId) as any;
+
+  if (!volume) {
+    volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds,
+    });
+
+    // Set the volume to load
+    volume.load();
+
+    // Add some segmentations based on the source data volume
+    await addSegmentationsToState(volumeId);
+  }
+
+  // Set the volume on the viewport
+  await viewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
+
+  return volume;
+}
+
+async function initializeViewport(
+  renderingEngine,
+  toolGroup,
+  viewportInfo,
+  imageIds
+) {
+  const { viewportInput } = viewportInfo;
+  const element = document.createElement('div');
+
+  // Disable right click context menu so we can have right click tools
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  element.id = viewportInput.viewportId;
+  // element.style.width = '500px';
+  // element.style.height = '500px';
+  element.style.overflow = 'hidden';
+
+  viewportInput.element = element;
+  viewportGrid.appendChild(element);
+
+  const { viewportId } = viewportInput;
+  const { id: renderingEngineId } = renderingEngine;
+
+  renderingEngine.enableElement(viewportInput);
+
+  // Set the tool group on the viewport
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  // Get the stack viewport that was created
+  const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);
+
+  if (viewportInput.type === ViewportType.STACK) {
+    // Set the stack on the viewport
+    (<Types.IStackViewport>viewport).setStack(imageIds);
+  } else if (viewportInput.type === ViewportType.ORTHOGRAPHIC) {
+    await initializeVolumeViewport(
+      viewport as Types.IVolumeViewport,
+      volumeId,
+      imageIds
+    );
+
+    // Add the segmentation representations to toolgroup1
+    await segmentation.addSegmentationRepresentations(toolGroup.id, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  } else {
+    throw new Error('Invalid viewport type');
+  }
+}
+
+function initializeToolGroup(toolGroupId) {
+  let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+  if (toolGroup) {
+    return toolGroup;
+  }
+
+  // Define a tool group, which defines how mouse events map to tool commands for
+  // Any viewport using the group
+  toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add the tools to the tool group
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
+  toolGroup.addTool(WindowLevelTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(ProbeTool.toolName);
+  toolGroup.addTool(RectangleROITool.toolName);
+  toolGroup.addTool(EllipticalROITool.toolName);
+  toolGroup.addTool(CircleROITool.toolName);
+  toolGroup.addTool(BidirectionalTool.toolName);
+  toolGroup.addTool(AngleTool.toolName);
+  toolGroup.addTool(CobbAngleTool.toolName);
+  toolGroup.addTool(ArrowAnnotateTool.toolName);
+  toolGroup.addTool(AdvancedMagnifyTool.toolName);
+
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+
+  // Set the initial state of the tools, here we set one tool active on left click.
+  // This means left click will draw that tool.
+  // toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(AdvancedMagnifyTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Ctrl,
+      },
+    ],
+  });
+
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  // We set all the other tools passive here, this means that any state is rendered, and editable
+  // But aren't actively being drawn (see the toolModes example for information)
+  toolGroup.setToolPassive(ProbeTool.toolName);
+  toolGroup.setToolPassive(RectangleROITool.toolName);
+  toolGroup.setToolPassive(EllipticalROITool.toolName);
+  toolGroup.setToolPassive(CircleROITool.toolName);
+  toolGroup.setToolPassive(BidirectionalTool.toolName);
+  toolGroup.setToolPassive(AngleTool.toolName);
+  toolGroup.setToolPassive(CobbAngleTool.toolName);
+  toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
+
+  return toolGroup;
 }
 
 /**
@@ -369,6 +540,20 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
+  for (let i = 0; i < viewportsInfo.length; i++) {
+    const viewportInfo = viewportsInfo[i];
+    const { toolGroupId } = viewportInfo;
+    const toolGroup = initializeToolGroup(toolGroupId);
+
+    toolGroupIds.add(toolGroupId);
+    await initializeViewport(
+      renderingEngine,
+      toolGroup,
+      viewportInfo,
+      imageIds
+    );
+  }
+
   // --[ Stack Viewport - BEGIN ]-----------------------------------------------
 
   // // Create a stack viewport
@@ -428,7 +613,7 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  await addSegmentationsToState(volumeId);
 
   // Set the volume to load
   volume.load();
