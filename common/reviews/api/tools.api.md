@@ -4,10 +4,12 @@
 
 ```ts
 
+import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -724,7 +726,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CircleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1461,9 +1463,6 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
-function disable(element: any): void;
-
-// @public (undocumented)
 type DisplayArea = {
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
@@ -1665,7 +1664,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1720,9 +1719,6 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     touchDragCallback: any;
 }
-
-// @public (undocumented)
-function enable(element: any): void;
 
 declare namespace Enums {
     export {
@@ -2097,12 +2093,6 @@ function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function getColorLUT(index: number): ColorLUT | undefined;
 
 // @public (undocumented)
-function getConfiguration(): {
-    maxImagesToPrefetch: number;
-    preserveExistingPool: boolean;
-};
-
-// @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
     frameNumbers?: any;
     maskVolumeId?: any;
@@ -2458,6 +2448,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
     height: number;
@@ -2465,6 +2457,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -3629,11 +3623,137 @@ declare namespace orientation_2 {
     }
 }
 
+// @public (undocumented)
+export class OrientationMarkerTool extends BaseTool {
+    constructor(toolProps?: {}, defaultToolProps?: {
+        configuration: {
+            orientationWidget: {
+                enabled: boolean;
+                viewportCorner: Corners;
+                viewportSize: number;
+                minPixelSize: number;
+                maxPixelSize: number;
+            };
+            overlayMarkerType: number;
+            overlayConfiguration: {
+                [x: number]: {
+                    faceProperties: {
+                        xPlus: {
+                            text: string;
+                            faceColor: string;
+                            faceRotation: number;
+                        };
+                        xMinus: {
+                            text: string;
+                            faceColor: string;
+                            faceRotation: number;
+                        };
+                        yPlus: {
+                            text: string;
+                            faceColor: string;
+                            fontColor: string;
+                            faceRotation: number;
+                        };
+                        yMinus: {
+                            text: string;
+                            faceColor: string;
+                            fontColor: string;
+                        };
+                        zPlus: {
+                            text: string;
+                        };
+                        zMinus: {
+                            text: string;
+                        };
+                    };
+                    defaultStyle: {
+                        fontStyle: string;
+                        fontFamily: string;
+                        fontColor: string;
+                        fontSizeScale: (res: any) => number;
+                        faceColor: string;
+                        edgeThickness: number;
+                        edgeColor: string;
+                        resolution: number;
+                    };
+                    polyDataURL?: undefined;
+                } | {
+                    faceProperties?: undefined;
+                    defaultStyle?: undefined;
+                    polyDataURL?: undefined;
+                } | {
+                    polyDataURL: string;
+                    faceProperties?: undefined;
+                    defaultStyle?: undefined;
+                };
+            };
+        };
+    });
+    // (undocumented)
+    addAxisActorInViewport(viewport: any): Promise<void>;
+    // (undocumented)
+    static AXIS: number;
+    // (undocumented)
+    configuration_invalidated: boolean;
+    // (undocumented)
+    createAnnotatedCubeActor(): Promise<vtkAnnotatedCubeActor>;
+    // (undocumented)
+    static CUBE: number;
+    // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    orientationMarkers: any;
+    // (undocumented)
+    static OVERLAY_MARKER_TYPES: {
+        ANNOTATED_CUBE: number;
+        AXES: number;
+        CUSTOM: number;
+    };
+    // (undocumented)
+    polyDataURL: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    static VTPFILE: number;
+}
+
 // @public
 type OrientationVectors = {
     viewPlaneNormal: Point3;
     viewUp: Point3;
 };
+
+// @public (undocumented)
+export class OverlayGridTool extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    calculateImageIdPointSets: (imageId: string) => {
+        pointSet1: Types_2.Point3[];
+        pointSet2: Types_2.Point3[];
+    };
+    // (undocumented)
+    _init: () => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
+}
 
 // @public (undocumented)
 export class PaintFillTool extends BaseTool {
@@ -3728,7 +3848,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
@@ -3879,7 +3999,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4161,7 +4281,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => RectangleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: any) => any;
+    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4330,9 +4450,13 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     _init: () => void;
     // (undocumented)
+    intersectInfiniteLines(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
+    // (undocumented)
+    isInBound(point: number[], dimensions: Types_2.Point3): boolean;
     // (undocumented)
     isParallel(vec1: Types_2.Point3, vec2: Types_2.Point3): boolean;
     // (undocumented)
@@ -4707,9 +4831,6 @@ function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function setConfiguration(config: any): void;
-
-// @public (undocumented)
 function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
 
 // @public (undocumented)
@@ -4804,6 +4925,14 @@ export class SphereScissorsTool extends BaseTool {
     static toolName: any;
 }
 
+// @public (undocumented)
+const stackContextPrefetch: {
+    enable: (element: any) => void;
+    disable: typeof disable_2;
+    getConfiguration: typeof getConfiguration_2;
+    setConfiguration: typeof setConfiguration_2;
+};
+
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
@@ -4816,14 +4945,13 @@ type StackNewImageEventDetail = {
     renderingEngineId: string;
 };
 
-declare namespace stackPrefetch {
-    export {
-        enable,
-        disable,
-        setConfiguration,
-        getConfiguration
-    }
-}
+// @public (undocumented)
+const stackPrefetch: {
+    enable: typeof enable;
+    disable: typeof disable;
+    getConfiguration: typeof getConfiguration;
+    setConfiguration: typeof setConfiguration;
+};
 
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
@@ -5451,6 +5579,7 @@ declare namespace utilities {
         rectangleROITool,
         planarFreehandROITool,
         stackPrefetch,
+        stackContextPrefetch,
         scroll_2 as scroll,
         roundNumber
     }

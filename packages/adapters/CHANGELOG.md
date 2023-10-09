@@ -3,6 +3,54 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.20.2](https://github.com/dcmjs-org/dcmjs/compare/v1.20.1...v1.20.2) (2023-10-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.20.1](https://github.com/dcmjs-org/dcmjs/compare/v1.20.0...v1.20.1) (2023-10-06)
+
+### Bug Fixes
+
+-   **exports:** clean up rtss exports ([#814](https://github.com/dcmjs-org/dcmjs/issues/814)) ([a0dd324](https://github.com/dcmjs-org/dcmjs/commit/a0dd32499cc58001e4f49e2bda8d034b7f4ef48f))
+
+# [1.20.0](https://github.com/dcmjs-org/dcmjs/compare/v1.19.4...v1.20.0) (2023-10-06)
+
+### Features
+
+-   **adapter:** add RTSS Adapter and Labelmaps to Contours convertor ([#734](https://github.com/dcmjs-org/dcmjs/issues/734)) ([e3e05bd](https://github.com/dcmjs-org/dcmjs/commit/e3e05bd5ec0d851576fc76a2440e688c0a6e70d9))
+
+## [1.19.4](https://github.com/dcmjs-org/dcmjs/compare/v1.19.3...v1.19.4) (2023-10-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.19.3](https://github.com/dcmjs-org/dcmjs/compare/v1.19.2...v1.19.3) (2023-10-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.19.2](https://github.com/dcmjs-org/dcmjs/compare/v1.19.1...v1.19.2) (2023-10-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.19.1](https://github.com/dcmjs-org/dcmjs/compare/v1.19.0...v1.19.1) (2023-09-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.19.0](https://github.com/dcmjs-org/dcmjs/compare/v1.18.0...v1.19.0) (2023-09-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.18.0](https://github.com/dcmjs-org/dcmjs/compare/v1.17.1...v1.18.0) (2023-09-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.17.1](https://github.com/dcmjs-org/dcmjs/compare/v1.17.0...v1.17.1) (2023-09-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.17.0](https://github.com/dcmjs-org/dcmjs/compare/v1.16.6...v1.17.0) (2023-09-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.16.6](https://github.com/dcmjs-org/dcmjs/compare/v1.16.5...v1.16.6) (2023-09-21)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

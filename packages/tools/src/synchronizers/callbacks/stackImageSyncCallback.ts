@@ -85,7 +85,7 @@ export default async function stackImageSyncCallback(
     const frameOfReferenceUID2 = tViewport.getFrameOfReferenceUID();
     if (
       frameOfReferenceUID1 === frameOfReferenceUID2 &&
-      options.useInitialPosition !== false
+      options?.useInitialPosition !== false
     ) {
       registrationMatrixMat4 = mat4.identity(mat4.create());
     } else {

@@ -416,7 +416,7 @@ function _needsTransferFunctionUpdate(
       renderFill,
       renderOutline,
       outlineWidth,
-      segmentColor,
+      segmentColor: segmentColor.slice(), // Create a copy
       segmentsHidden: new Set(segmentsHidden), // Create a copy
     });
 
