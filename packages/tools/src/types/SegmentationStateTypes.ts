@@ -4,11 +4,6 @@ import {
   ContourRenderingConfig,
   ContourSegmentationData,
 } from './ContourTypes';
-import {
-  ContourConfig,
-  ContourRenderingConfig,
-  ContourSegmentationData,
-} from './ContourTypes';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,

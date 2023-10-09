@@ -23,6 +23,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -492,10 +493,12 @@ enum Events {
     STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
     STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 
-    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+    UPDATE_CLIPPING_PLANES = 'CORNERSTONE_UPDATE_CLIPPING_PLANES',
 
+    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
 
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
@@ -571,6 +574,8 @@ type FlipDirection = {
 enum GeometryType {
     // (undocumented)
     CONTOUR = 'contour',
+    // (undocumented)
+    SURFACE = 'Surface',
 }
 
 // @public (undocumented)
@@ -732,7 +737,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1580,6 +1585,12 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
 }
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];

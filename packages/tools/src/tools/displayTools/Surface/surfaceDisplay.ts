@@ -36,7 +36,6 @@ async function addSegmentationRepresentation(
   const segmentationRepresentationUID = utilities.uuidv4();
   // Todo: make these configurable during representation input by user
   const segmentsHidden = new Set() as Set<number>;
-  const visibility = true;
   const colorLUTIndex = 0;
   const active = true;
   const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
@@ -44,7 +43,6 @@ async function addSegmentationRepresentation(
     segmentationRepresentationUID,
     type: Representations.Surface,
     segmentsHidden,
-    visibility,
     colorLUTIndex,
     active,
     segmentationRepresentationSpecificConfig: {},
@@ -129,7 +127,6 @@ async function render(
     active,
     segmentationId,
     segmentationRepresentationUID,
-    visibility,
     segmentsHidden,
   } = representation;
 

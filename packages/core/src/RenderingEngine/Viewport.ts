@@ -1150,7 +1150,9 @@ class Viewport implements IViewport {
    * Updates the actors clipping planes orientation from the camera properties
    * @param updatedCamera - ICamera
    */
-  protected async updateClippingPlanesForActors(updatedCamera: ICamera): void {
+  protected async updateClippingPlanesForActors(
+    updatedCamera: ICamera
+  ): Promise<void> {
     const actorEntries = this.getActors();
     await actorEntries.forEach(async (actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
@@ -1187,7 +1189,7 @@ class Viewport implements IViewport {
     this.posProcessNewActors();
   }
 
-  private posProcessNewActors(): void {
+  protected posProcessNewActors(): void {
     this.newActorAdded = false;
   }
 

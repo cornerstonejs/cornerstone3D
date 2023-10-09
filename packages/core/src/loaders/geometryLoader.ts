@@ -5,6 +5,7 @@ import { GeometryType } from '../enums';
 import { IGeometry, PublicContourSetData, PublicSurfaceData } from '../types';
 import { createContourSet } from './utils/contourSet/createContourSet';
 import { createSurface } from './utils/surface/createSurface';
+import { ContourSet } from '../cache/classes/ContourSet';
 
 type GeometryOptions = {
   type: GeometryType;

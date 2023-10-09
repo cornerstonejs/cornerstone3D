@@ -26,6 +26,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public (undocumented)
@@ -677,6 +678,8 @@ export enum EVENTS {
     // (undocumented)
     STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
     // (undocumented)
+    UPDATE_CLIPPING_PLANES = "CORNERSTONE_UPDATE_CLIPPING_PLANES",
+    // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
     // (undocumented)
     VOLUME_CACHE_VOLUME_ADDED = "CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED",
@@ -1069,7 +1072,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -2516,6 +2519,8 @@ declare namespace Types {
         ContourData,
         IContourSet,
         IContour,
+        PublicSurfaceData,
+        SurfaceData,
         RGB,
         ColormapPublic,
         ColormapRegistration,
@@ -2670,7 +2675,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
+    protected newActorAdded: any;
+    // (undocumented)
     options: ViewportInputOptions;
+    // (undocumented)
+    protected posProcessNewActors(): void;
     // (undocumented)
     _removeActor(actorUID: string): void;
     // (undocumented)
@@ -2728,7 +2737,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     readonly type: ViewportType;
     // (undocumented)
-    protected updateClippingPlanesForActors(updatedCamera: ICamera): void;
+    protected updateClippingPlanesForActors(updatedCamera: ICamera): Promise<void>;
     // (undocumented)
     updateRenderingPipeline: () => void;
     // (undocumented)
@@ -2949,6 +2958,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     getCurrentImageIdIndex: () => number | undefined;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    posProcessNewActors(): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
