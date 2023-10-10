@@ -48,7 +48,7 @@ import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
 import ProgressiveIterator from './ProgressiveIterator';
 import * as imageUtils from './bilinear';
-import interleave from './interleave';
+import decimate from './decimate';
 
 // name spaces
 import * as planar from './planar';
@@ -110,5 +110,5 @@ export {
   getImageLegacy,
   ProgressiveIterator,
   imageUtils,
-  interleave,
+  decimate,
 };

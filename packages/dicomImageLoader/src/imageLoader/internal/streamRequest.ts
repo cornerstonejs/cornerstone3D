@@ -4,6 +4,7 @@ import { getOptions } from './options';
 import { LoaderXhrRequestError } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
+import { LossyConfiguration } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
 
@@ -26,7 +27,8 @@ const streamCache: {
 export default function streamRequest(
   url: string,
   imageId: string,
-  defaultHeaders: Record<string, string> = {}
+  defaultHeaders: Record<string, string> = {},
+  retrieveOptions: LossyConfiguration = {}
 ) {
   const { cornerstone } = external;
   const options = getOptions();
@@ -87,7 +89,7 @@ export default function streamRequest(
         imageFrame = appendChunk({
           imageId,
           chunk: value,
-          complete: readDone,
+          done: readDone,
           minChunkSize: minChunkSize as number,
         });
         if (!imageFrame) {
@@ -107,7 +109,11 @@ export default function streamRequest(
           url,
           imageId,
           ...extracted,
+          isLossy: !!retrieveOptions.isLossy,
           percentComplete: (extracted.pixelData?.length * 100) / totalBytes,
+          complete: !retrieveOptions?.isLossy && readDone,
+          isLossy: !!retrieveOptions?.isLossy,
+          done: readDone,
         };
 
         // When the first chunk of the downloaded image arrives, resolve the
@@ -142,9 +148,9 @@ function appendChunk(options: {
   imageId: string;
   minChunkSize: number;
   chunk?: Uint8Array;
-  complete?: boolean;
+  done?: boolean;
 }) {
-  const { imageId, chunk, complete, minChunkSize } = options;
+  const { imageId, chunk, done: complete, minChunkSize } = options;
 
   // If we have a new chunk of data to append, append it to the Uint8Array for
   // that imageId

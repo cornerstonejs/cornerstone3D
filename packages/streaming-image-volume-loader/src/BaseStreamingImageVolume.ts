@@ -14,7 +14,7 @@ import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
 
 const requestType = Enums.RequestType.Prefetch;
-const { interleave, getMinMax, ProgressiveIterator } = csUtils;
+const { decimate, getMinMax, ProgressiveIterator } = csUtils;
 const { FrameStatus } = Enums;
 
 /**
@@ -475,6 +475,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
+    const lossyOptionNames = new Array<string>();
+    const interleavedImageIds = this.interleave(imageIds, lossyOptionNames);
+
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
     // imageIdIndex is its absolute position in the array that contains
@@ -482,7 +485,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // calculated as `imageIdIndex % numFrames` where numFrames is the
     // number of frames per time point. The frameIndex and imageIdIndex
     // will be the same when working with 3D datasets.
-    const requests = imageIds.map((imageId, frameIndex) => {
+    const requests = interleavedImageIds.map((imageId, frameIndex) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
       if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
@@ -496,6 +499,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {};
+
+      const { transferSyntaxUid } =
+        metaData.get('transferSyntax', imageId) || {};
 
       const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
       const { rows, columns } = imagePlaneModule;
@@ -532,7 +538,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * not, which we store it in the this.scaling.PT.suvbw.
        */
       this.isPreScaled = isSlopeAndInterceptNumbers;
-
+      const retrieveOptions = this.getRetrieveOptions(
+        transferSyntaxUid,
+        lossyOptionNames[frameIndex]
+      );
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -543,7 +552,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // set in the main thread.
           arrayBuffer:
             arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-          offset: frameIndex * lengthInBytes,
+          offset: imageIdIndex * lengthInBytes,
           length,
           type,
           rows,
@@ -557,6 +566,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // and therefore doesn't have the scalingParameters
           scalingParameters,
         },
+        retrieveOptions,
       };
 
       // Use loadImage because we are skipping the Cornerstone Image cache
@@ -666,6 +676,44 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       });
   }
 
+  /** Interleaves the values according to the stages definition */
+  public interleave(requests: string[], lossyValues: string[]): string[] {
+    const { stages } = this.retrieveConfiguration;
+
+    if (!stages) {
+      return requests;
+    }
+
+    const addValue = (stage, position) => {
+      const index =
+        position < 0
+          ? requests.length + position
+          : position < 1
+          ? Math.floor((requests.length - 1) * position)
+          : position;
+      const value = requests[index];
+      if (!value) {
+        throw new Error(`No value found to add to requests at ${position}`);
+      }
+      interleaved.push(value);
+      if (stage.remove) {
+        requests.splice(index, 1);
+      }
+      if (stage.lossy) {
+        lossyValues[interleaved.length] = stage.lossy;
+      }
+    };
+
+    const interleaved = [];
+    for (const stage of stages) {
+      const indices =
+        stage.positions ||
+        decimate(requests, stage.decimate || 4, stage.offset || 2);
+      indices.forEach((index) => addValue(stage, index));
+    }
+    return interleaved;
+  }
+
   /**
    * It returns the imageLoad requests for the streaming image volume instance.
    * It involves getting all the imageIds of the volume and creating a success callback
@@ -688,10 +736,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const requestsOrdered = this.getImageLoadRequests(priority);
-    const requestsInterleaved = interleave(requestsOrdered, 3).reverse();
+    const requests = this.getImageLoadRequests(priority);
 
-    requestsInterleaved.forEach((request) => {
+    requests.forEach((request) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
         return;

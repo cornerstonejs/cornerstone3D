@@ -36,7 +36,7 @@ export default class ProgressiveIterator<T> {
         (reason) => iterator.reject(reason)
       );
     });
-    return;
+    return iterator;
   }
 
   /** Add a most recent result, indicating if the result is the final one */

@@ -1,10 +1,11 @@
 import { utilities } from '@cornerstonejs/core';
 
-import { getOptions, xhrRequest } from '../internal/index';
+import { xhrRequest } from '../internal/index';
 // import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
-import imageIdToURI from '../imageIdToURI';
+import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
+import { LossyConfiguration } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
 
@@ -12,46 +13,49 @@ function getPixelData(
   uri: string,
   imageId: string,
   mediaType = 'application/octet-stream',
-  progressivelyRender = false
+  retrieveOptions: LossyConfiguration = {}
 ) {
   const headers = {
     Accept: mediaType,
   };
 
-  const url = imageIdToURI(imageId);
-  const searchParams = createURL(url).searchParams;
-  // const fsiz = searchParams.get('fsiz');
-  const streamMethod = getOptions().streamMethod;
+  // TODO - consider allowing a complete rewrite of the path
+  let url = retrieveOptions?.urlArguments
+    ? `${uri}${uri.indexOf('?') === -1 ? '?' : '&'}${
+        retrieveOptions.urlArguments
+      }`
+    : uri;
+  if (retrieveOptions?.framesPath) {
+    url = url.replace('/frames/', retrieveOptions.framesPath);
+  }
 
-  if (progressivelyRender && streamMethod === 'web-streams') {
-    return streamRequest(uri, imageId, headers);
+  if (retrieveOptions.byteRange) {
+    return rangeRequest(url, imageId, headers, retrieveOptions);
+  }
+
+  if (retrieveOptions.streaming) {
+    return streamRequest(url, imageId, headers, retrieveOptions);
   }
 
   /**
    * Not progressively rendering, use regular xhr request.
    */
   const loadIterator = new ProgressiveIterator('xhrRequestImage');
-  const loadPromise = xhrRequest(uri, imageId, headers);
+  const loadPromise = xhrRequest(url, imageId, headers);
   const { xhr } = loadPromise;
 
   loadPromise.then(
     function (imageFrameAsArrayBuffer /* , xhr*/) {
       const contentType =
         xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
-      loadIterator.add(
-        extractMultipart(contentType, imageFrameAsArrayBuffer),
-        true
-      );
+      const extracted = extractMultipart(contentType, imageFrameAsArrayBuffer);
+      extracted.complete = extracted.done && !retrieveOptions?.isLossy;
+      extracted.isLossy = !!retrieveOptions.isLossy;
+      loadIterator.add(extracted, true);
     },
     (reason) => loadIterator.reject(reason)
   );
   return loadIterator.getNextPromise();
 }
 
-function createURL(url) {
-  if (url.substring(0, 4) !== 'http') {
-    return new URL(`http://localhost/${url}`);
-  }
-  return new URL(url);
-}
 export default getPixelData;

@@ -2,6 +2,7 @@ import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
 import Mat3 from './Mat3';
+import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
@@ -40,6 +41,8 @@ interface IVolume {
       suvbwToSuvbsa?: number;
     };
   };
+  /** Information on how to configure the retrieval */
+  retrieveConfiguration?: IRetrieveConfiguration;
 }
 
 export { IVolume as default, IVolume, VolumeScalarData };

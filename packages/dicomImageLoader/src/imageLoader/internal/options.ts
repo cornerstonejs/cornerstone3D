@@ -24,6 +24,9 @@ let options: LoaderOptions = {
   },
   progressivelyRender: true,
   streamMethod: 'web-streams',
+
+  // Configurations for loading initial bytes ranges
+  rangeTSUIDS: ['3.2.840.10008.1.2.4.96'],
   initialBytes: 65_536,
   totalRanges: 2,
   minChunkSize: 65_536 * 2,

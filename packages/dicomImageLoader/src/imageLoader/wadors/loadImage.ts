@@ -1,29 +1,13 @@
 import { Types, utilities } from '@cornerstonejs/core';
-
+import type { LossyConfiguration } from '@corenerstonejs/core/types';
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
-import { metaDataProvider } from './metaData';
-import { getOptions } from '../internal';
 const { imageUtils, ProgressiveIterator } = utilities;
 
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
-
-function imageIdIsStreamable(imageId: string) {
-  const transferSyntax = metaDataProvider('transferSyntax', imageId) as
-    | { transferSyntaxUID: string }
-    | undefined;
-  if (!transferSyntax) {
-    return false;
-  }
-  const { transferSyntaxUID } = transferSyntax;
-  if (!transferSyntaxUID) {
-    return false;
-  }
-  return streamableTransferSyntaxes.has(transferSyntaxUID);
-}
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
@@ -100,6 +84,7 @@ export interface CornerstoneWadoRsLoaderOptions
   };
   priority?: number;
   addToBeginning?: boolean;
+  retrieveOptions?: LossyConfiguration;
 }
 
 const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
@@ -122,36 +107,32 @@ function loadImage(
 
   const start = new Date().getTime();
 
+  const retrieveOptions = options.retrieveOptions || {};
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
   async function sendXHR(imageURI: string, imageId: string, mediaType: string) {
-    uncompressedIterator.generate(async (it, reject) => {
+    uncompressedIterator.generate(async (it) => {
       // get the pixel data from the server
-      const isStreamable = imageIdIsStreamable(imageId);
-      const loaderOptions = getOptions();
-      const progressivelyRender =
-        isStreamable && loaderOptions.progressivelyRender;
-      if (progressivelyRender) {
-        optionsCache[imageId] = options;
-      }
       const compressedIt = ProgressiveIterator.as(
-        getPixelData(imageURI, imageId, mediaType, progressivelyRender)
+        getPixelData(imageURI, imageId, mediaType, retrieveOptions)
       );
       let lastDecodeLevel = 10;
       for await (const result of compressedIt) {
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        const { complete, pixelData } = result;
-        const completeText = complete ? 'complete' : 'partial';
-        if (!streamableTransferSyntaxes.has(transferSyntax) && !complete) {
+        const { complete, pixelData, done } = result;
+        if (!streamableTransferSyntaxes.has(transferSyntax) && !done) {
           continue;
         }
-        const { percentComplete } = result;
+        const { percentComplete, isLossy = false } = result;
+        const completeText = `${done ? 'complete' : 'partial'} ${
+          isLossy ? 'lossy' : ''
+        }`;
         const decodeLevel =
           result.decodeLevel ??
-          (complete ? 0 : decodeLevelFromComplete(percentComplete));
+          (done ? 0 : decodeLevelFromComplete(percentComplete));
         if (!complete && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
           continue;
@@ -160,9 +141,12 @@ function loadImage(
         try {
           const useOptions = {
             ...options,
-            decodeLevel: 0,
+            decodeLevel: retrieveOptions?.decodeLevel ?? 0,
           };
-          const image = await createImage(
+          if (retrieveOptions.needsScale) {
+            delete useOptions.targetBuffer;
+          }
+          let image = await createImage(
             imageId,
             pixelData,
             transferSyntax,
@@ -170,8 +154,8 @@ function loadImage(
           );
 
           if (
-            image.rows !== options.targetBuffer?.rows &&
-            options.targetBuffer?.offset !== undefined
+            options.targetBuffer.rows &&
+            image.rows !== options.targetBuffer?.rows
           ) {
             image = scaleImage(image, options.targetBuffer);
           }
@@ -181,6 +165,8 @@ function loadImage(
 
           image.loadTimeInMS = end - start;
           image.complete = complete;
+          image.isLossy = isLossy;
+          image.stageId = retrieveOptions?.id;
           console.log(
             `loadImage:Received ${completeText} uncompressed data in`,
             end - start,

@@ -41,9 +41,7 @@ export default function extractMultipart(
     return {
       contentType,
       complete: !isPartial,
-      imageFrame: {
-        pixelData: response,
-      },
+      pixelData: response,
     };
   }
 
@@ -84,7 +82,9 @@ export default function extractMultipart(
   return {
     ...progressiveContent,
     contentType: multipartContentType,
-    complete: !isPartial || endIndex !== -1,
+    // done indicates if the read has finished the entire image, not if
+    // the image is completely available
+    done: !isPartial || endIndex !== -1,
     tokenIndex,
     responseHeaders,
     boundary,

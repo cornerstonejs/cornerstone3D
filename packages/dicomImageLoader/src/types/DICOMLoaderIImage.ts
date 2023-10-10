@@ -10,4 +10,7 @@ export interface DICOMLoaderIImage extends Types.IImage {
   data?: DataSet;
   imageFrame?: ImageFrame;
   voiLUTFunction: string | undefined;
+  complete?: boolean;
+  isLossy?: boolean;
+  stageId?: string;
 }

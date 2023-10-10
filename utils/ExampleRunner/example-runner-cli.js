@@ -200,7 +200,7 @@ if (configuration.examples) {
 
     shell.cd(exBasePath);
     shell.exec(
-      `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+      `webpack serve --no-cache --host 0.0.0.0 --progress --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');

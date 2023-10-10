@@ -9,7 +9,60 @@ import {
   Point3,
   IImageVolume,
   Mat3,
+  IRetrieveConfiguration,
 } from '../../types';
+
+const defaultRetrieveConfiguration: IRetrieveConfiguration = {
+  stages: [
+    {
+      id: 'initialImages',
+      positions: [0, 0.5, -1],
+      remove: true,
+    },
+    {
+      id: 'quarterThumb',
+      decimate: 4,
+      offset: 0,
+      lossy: 'lossy',
+    },
+    {
+      id: 'halfThumb',
+      decimate: 4,
+      offset: 2,
+      lossy: 'lossy',
+    },
+    {
+      id: 'quarterFull',
+      decimate: 4,
+      offset: 1,
+    },
+    {
+      id: 'halfFull',
+      decimate: 4,
+      offset: 3,
+    },
+    {
+      id: 'threeQuarterFull',
+      decimate: 4,
+      offset: 2,
+    },
+    {
+      id: 'finalFull',
+      decimate: 4,
+      offset: 0,
+    },
+  ],
+  lossyConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      framesPath: '/lossy/',
+      isLossy: true,
+      needsScale: true,
+    },
+  },
+};
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -62,6 +115,12 @@ export class ImageVolume implements IImageVolume {
   referencedVolumeId?: string;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
+  /**
+   * Information on how to retrieve images.
+   * No special configuration is required for streaming decoding, as that is
+   * done based on the capabilities of the decoder whenever streaming is possible
+   */
+  retrieveConfiguration: IRetrieveConfiguration;
 
   constructor(props: IVolume) {
     this.volumeId = props.volumeId;
@@ -84,6 +143,11 @@ export class ImageVolume implements IImageVolume {
     if (props.referencedVolumeId) {
       this.referencedVolumeId = props.referencedVolumeId;
     }
+    this.retrieveConfiguration = Object.assign(
+      {},
+      defaultRetrieveConfiguration,
+      props.retrieveConfiguration
+    );
   }
 
   /** return the image ids for the volume if it is made of separated images */
@@ -157,6 +221,25 @@ export class ImageVolume implements IImageVolume {
 
     this.vtkOpenGLTexture.releaseGraphicsResources();
     this.vtkOpenGLTexture.delete();
+  }
+
+  public getRetrieveOptions(transferSyntaxUid = 'unknown', lossyName = '') {
+    if (!this.retrieveConfiguration) {
+      return null;
+    }
+    const { lossyConfiguration } = this.retrieveConfiguration;
+    if (!lossyConfiguration) {
+      return null;
+    }
+    if (!lossyName) {
+      return (
+        lossyConfiguration[transferSyntaxUid] || lossyConfiguration.default
+      );
+    }
+    return (
+      lossyConfiguration[`${transferSyntaxUid}-${lossyName}`] ||
+      lossyConfiguration[`default-${lossyName}`]
+    );
   }
 }
 

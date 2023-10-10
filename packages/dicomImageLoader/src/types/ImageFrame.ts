@@ -20,7 +20,6 @@ interface ImageFrame {
   // populated later after decoding
   pixelData: PixelDataTypedArray;
   imageData?: ImageData;
-  decodeTimeInMS?: number;
   pixelDataLength?: number;
   preScale?: {
     enabled?: boolean;
@@ -34,8 +33,15 @@ interface ImageFrame {
   };
   minAfterScale?: number;
   maxAfterScale?: number;
-  decodeLevel?: number;
   imageId: string;
+
+  // Remaining information is about the general load process
+  decodeTimeInMS?: number;
+  loadTimeInMS?: number;
+  isLossy?: boolean;
+  decodeLevel?: number;
+  stageId?: string;
+  complete?: boolean;
 }
 
 export default ImageFrame;
