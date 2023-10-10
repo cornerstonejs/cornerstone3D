@@ -151,7 +151,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
       },
     };
 
-    this.magnifyViewportManager.createViewport({
+    this.magnifyViewportManager.createViewport(annotation, {
       magnifyViewportId,
       sourceEnabledElement: enabledElement,
       position: canvasPos,
@@ -228,7 +228,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     ] as Types.Point2;
     const radiusPoint = getCanvasCircleRadius([center, canvasCoords]);
 
-    if (Math.abs(radiusPoint - radius) < proximity) {
+    if (Math.abs(radiusPoint - radius) < proximity * 1.5) {
       return true;
     }
 

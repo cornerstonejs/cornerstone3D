@@ -1,15 +1,25 @@
-import { eventTarget } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
+import {
+  eventTarget,
+  Enums,
+  getRenderingEngine,
+  CONSTANTS,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { AnnotationRemovedEventType } from '../types/EventTypes';
-import { Events } from '../enums';
+import { Events as cstEvents } from '../enums';
 import {
   AdvancedMagnifyViewport,
   AutoPanCallback,
 } from './AdvancedMagnifyViewport';
+import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 // Defined the tool name internally instead of importing
 // AdvangedMagnifyTool due to cyclic dependency
 const ADVANCED_MAGNIFY_TOOL_NAME = 'AdvancedMagnify';
+
+const PARALLEL_THRESHOLD = 1 - CONSTANTS.EPSILON;
+const { Events } = Enums;
 
 export type MagnifyViewportInfo = {
   // Viewport id to be used or new v4 compliant GUID is used instead
@@ -34,6 +44,11 @@ export type MagnifyViewportInfo = {
   };
 };
 
+type MagnifyViewportsMapEntry = {
+  annotation: AdvancedMagnifyAnnotation;
+  magnifyViewport: AdvancedMagnifyViewport;
+};
+
 /**
  * Manager responsible for creating, storing and destroying magnifying glass
  * viewports. There are no restrictions to create a new instance of it but it
@@ -41,15 +56,10 @@ export type MagnifyViewportInfo = {
  */
 class AdvancedMagnifyViewportManager {
   private static _singleton: AdvancedMagnifyViewportManager;
-
-  private _viewports: Map<string, AdvancedMagnifyViewport>;
+  private _magnifyViewportsMap: Map<string, MagnifyViewportsMapEntry>;
 
   constructor() {
-    this._viewports = new Map();
-
-    this._annotationRemovedCallback =
-      this._annotationRemovedCallback.bind(this);
-
+    this._magnifyViewportsMap = new Map();
     this._initialize();
   }
 
@@ -73,6 +83,7 @@ class AdvancedMagnifyViewportManager {
    * @returns A magnifying glass viewport instance
    */
   public createViewport = (
+    annotation: AdvancedMagnifyAnnotation,
     viewportInfo: MagnifyViewportInfo
   ): AdvancedMagnifyViewport => {
     const {
@@ -83,6 +94,8 @@ class AdvancedMagnifyViewportManager {
       zoomFactor,
       autoPan,
     } = viewportInfo;
+    const { viewport: sourceViewport } = sourceEnabledElement;
+    const { element: sourceElement } = sourceViewport;
 
     const magnifyViewport = new AdvancedMagnifyViewport({
       magnifyViewportId,
@@ -93,7 +106,11 @@ class AdvancedMagnifyViewportManager {
       autoPan,
     });
 
-    this._viewports.set(magnifyViewport.viewportId, magnifyViewport);
+    this._addSourceElementEventListener(sourceElement);
+    this._magnifyViewportsMap.set(magnifyViewport.viewportId, {
+      annotation,
+      magnifyViewport,
+    });
 
     return magnifyViewport;
   };
@@ -104,7 +121,7 @@ class AdvancedMagnifyViewportManager {
    * @returns A magnifying glass viewport instance
    */
   public getViewport(magnifyViewportId: string): AdvancedMagnifyViewport {
-    return this._viewports.get(magnifyViewportId);
+    return this._magnifyViewportsMap.get(magnifyViewportId)?.magnifyViewport;
   }
 
   /**
@@ -117,23 +134,30 @@ class AdvancedMagnifyViewportManager {
   }
 
   private _destroyViewport(magnifyViewportId: string) {
-    const magnifyViewport = this._viewports.get(magnifyViewportId);
+    const magnifyViewportMapEntry =
+      this._magnifyViewportsMap.get(magnifyViewportId);
 
-    if (magnifyViewport) {
+    if (magnifyViewportMapEntry) {
+      const { magnifyViewport } = magnifyViewportMapEntry;
+      const { viewport: sourceViewport } = magnifyViewport.sourceEnabledElement;
+      const { element: sourceElement } = sourceViewport;
+
+      this._removeSourceElementEventListener(sourceElement);
+
       magnifyViewport.dispose();
-      this._viewports.delete(magnifyViewportId);
+      this._magnifyViewportsMap.delete(magnifyViewportId);
     }
   }
 
   private _destroyViewports() {
-    const magnifyViewportIds = Array.from(this._viewports.keys());
+    const magnifyViewportIds = Array.from(this._magnifyViewportsMap.keys());
 
     magnifyViewportIds.forEach((magnifyViewportId) =>
       this._destroyViewport(magnifyViewportId)
     );
   }
 
-  private _annotationRemovedCallback(evt: AnnotationRemovedEventType) {
+  private _annotationRemovedCallback = (evt: AnnotationRemovedEventType) => {
     const { annotation } = evt.detail;
 
     if (annotation.metadata.toolName !== ADVANCED_MAGNIFY_TOOL_NAME) {
@@ -141,19 +165,118 @@ class AdvancedMagnifyViewportManager {
     }
 
     this._destroyViewport(annotation.data.magnifyViewportId);
+  };
+
+  private _getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId) {
+    const magnifyViewportsMapEntries = Array.from(
+      this._magnifyViewportsMap.values()
+    );
+
+    return magnifyViewportsMapEntries.filter(({ magnifyViewport }) => {
+      const { viewport } = magnifyViewport.sourceEnabledElement;
+      return viewport.id === sourceViewportId;
+    });
   }
+
+  private _newStackImageCallback = (
+    evt: Types.EventTypes.StackNewImageEvent
+  ) => {
+    const { viewportId: sourceViewportId, imageId } = evt.detail;
+    const magnifyViewportsMapEntries =
+      this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
+
+    magnifyViewportsMapEntries.forEach(({ annotation }) => {
+      annotation.metadata.referencedImageId = imageId;
+      annotation.invalidated = true;
+    });
+  };
+
+  private _newVolumeImageCallback = (
+    evt: Types.EventTypes.VolumeNewImageEvent
+  ) => {
+    const { renderingEngineId, viewportId: sourceViewportId } = evt.detail;
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const sourceViewport = renderingEngine.getViewport(sourceViewportId);
+    const { viewPlaneNormal: currentViewPlaneNormal } =
+      sourceViewport.getCamera();
+
+    const magnifyViewportsMapEntries =
+      this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
+
+    magnifyViewportsMapEntries.forEach(({ annotation }) => {
+      const { viewPlaneNormal } = annotation.metadata;
+
+      // Compare the normal to make sure the volume is not rotate in 3D space
+      const isParallel =
+        Math.abs(vec3.dot(viewPlaneNormal, currentViewPlaneNormal)) >
+        PARALLEL_THRESHOLD;
+
+      if (!isParallel) {
+        return;
+      }
+
+      const { handles } = annotation.data;
+      const worldImagePlanePoint = sourceViewport.canvasToWorld([0, 0]);
+      const vecHandleToImagePlane = vec3.sub(
+        vec3.create(),
+        worldImagePlanePoint,
+        handles.points[0]
+      );
+      const worldDist = vec3.dot(vecHandleToImagePlane, currentViewPlaneNormal);
+      const worldDelta = vec3.scale(
+        vec3.create(),
+        currentViewPlaneNormal,
+        worldDist
+      );
+
+      // Move all handle points to the image plane to make the annotation visible
+      for (let i = 0, len = handles.points.length; i < len; i++) {
+        const point = handles.points[i];
+
+        point[0] += worldDelta[0];
+        point[1] += worldDelta[1];
+        point[2] += worldDelta[2];
+      }
+
+      annotation.invalidated = true;
+    });
+  };
 
   private _addEventListeners() {
     eventTarget.addEventListener(
-      Events.ANNOTATION_REMOVED,
+      cstEvents.ANNOTATION_REMOVED,
       this._annotationRemovedCallback
     );
   }
 
   private _removeEventListeners() {
     eventTarget.removeEventListener(
-      Events.ANNOTATION_REMOVED,
+      cstEvents.ANNOTATION_REMOVED,
       this._annotationRemovedCallback
+    );
+  }
+
+  private _addSourceElementEventListener(element) {
+    element.addEventListener(
+      Events.STACK_NEW_IMAGE,
+      this._newStackImageCallback
+    );
+
+    element.addEventListener(
+      Events.VOLUME_NEW_IMAGE,
+      this._newVolumeImageCallback
+    );
+  }
+
+  private _removeSourceElementEventListener(element) {
+    element.removeEventListener(
+      Events.STACK_NEW_IMAGE,
+      this._newStackImageCallback
+    );
+
+    element.removeEventListener(
+      Events.VOLUME_NEW_IMAGE,
+      this._newVolumeImageCallback
     );
   }
 

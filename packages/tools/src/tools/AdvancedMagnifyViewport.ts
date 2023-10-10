@@ -108,6 +108,10 @@ class AdvancedMagnifyViewport {
     this._initialize();
   }
 
+  public get sourceEnabledElement() {
+    return this._sourceEnabledElement;
+  }
+
   public get viewportId() {
     return this._viewportId;
   }
