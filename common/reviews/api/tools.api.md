@@ -75,6 +75,69 @@ export function addTool(ToolClass: any): void;
 function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
 
 // @public (undocumented)
+interface AdvancedMagnifyAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        zoomFactor: number;
+        sourceViewportId: string;
+        magnifyViewportId: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+}
+
+// @public (undocumented)
+export class AdvancedMagnifyTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateModify: (element: any) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => AdvancedMagnifyAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
+    // (undocumented)
+    _dragDrawCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragHandle: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: AdvancedMagnifyAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    magnifyViewportManager: AdvancedMagnifyViewportManager;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    showZoomFactorsList(evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation): void;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 type AffineMatrix = [
 [number, number, number, number],
 [number, number, number, number],
@@ -1683,7 +1746,7 @@ export class EllipticalROITool extends AnnotationTool {
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
-        centerCanvas?: Array<number>;
+        centerWorld?: Array<number>;
         canvasWidth?: number;
         canvasHeight?: number;
         originalHandleCanvas?: Array<number>;
@@ -1786,6 +1849,8 @@ enum Events {
     // (undocumented)
     TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
     // (undocumented)
+    TOOL_MODE_CHANGED = "CORNERSTONE_TOOLS_TOOL_MODE_CHANGED",
+    // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
     TOUCH_END = "CORNERSTONE_TOOLS_TOUCH_END",
@@ -1868,6 +1933,8 @@ declare namespace EventTypes_2 {
         NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
         NormalizedTouchEventType,
+        ToolModeChangedEventDetail,
+        ToolModeChangedEventType,
         ToolActivatedEventDetail,
         ToolActivatedEventType,
         AnnotationAddedEventDetail,
@@ -2960,6 +3027,10 @@ interface IToolGroup {
     // (undocumented)
     addViewport: {
         (viewportId: string, renderingEngineId?: string): void;
+    };
+    // (undocumented)
+    clone: {
+        (newToolGroupId: string, fnToolFilter: (toolName: string) => boolean): IToolGroup;
     };
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
@@ -5204,6 +5275,12 @@ function throttle(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
+type ToolAction = {
+    method: string | ((evt: InteractionEventType, annotation: Annotation) => void);
+    bindings: SetToolBindingsType[];
+};
+
+// @public (undocumented)
 type ToolActivatedEventDetail = {
     toolGroupId: string;
     toolName: string;
@@ -5286,6 +5363,17 @@ type ToolGroupSpecificRepresentationState = {
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
 // @public (undocumented)
+type ToolModeChangedEventDetail = {
+    toolGroupId: string;
+    toolName: string;
+    mode: ToolModes;
+    toolBindingsOptions?: SetToolBindingsType;
+};
+
+// @public (undocumented)
+type ToolModeChangedEventType = Types_2.CustomEventType<ToolModeChangedEventDetail>;
+
+// @public (undocumented)
 enum ToolModes {
     // (undocumented)
     Active = "Active",
@@ -5311,6 +5399,7 @@ declare namespace ToolSpecificAnnotationTypes {
         RectangleROIAnnotation,
         ProbeAnnotation,
         LengthAnnotation,
+        AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
@@ -5495,6 +5584,7 @@ declare namespace Types {
         SetToolBindingsType,
         ToolOptionsType,
         InteractionTypes,
+        ToolAction,
         IToolGroup,
         IToolClassReference,
         ISynchronizerEventHandler,
