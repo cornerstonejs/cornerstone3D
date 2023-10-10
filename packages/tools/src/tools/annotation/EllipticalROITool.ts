@@ -128,7 +128,7 @@ class EllipticalROITool extends AnnotationTool {
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     movingTextBox?: boolean;
-    centerCanvas?: Array<number>;
+    centerWorld?: Array<number>;
     canvasWidth?: number;
     canvasHeight?: number;
     originalHandleCanvas?: Array<number>;
@@ -241,7 +241,7 @@ class EllipticalROITool extends AnnotationTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
-      centerCanvas: canvasPos,
+      centerWorld: worldPos,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -368,6 +368,7 @@ class EllipticalROITool extends AnnotationTool {
     let handleIndex;
 
     let centerCanvas;
+    let centerWorld;
     let canvasWidth;
     let canvasHeight;
     let originalHandleCanvas;
@@ -376,8 +377,8 @@ class EllipticalROITool extends AnnotationTool {
       movingTextBox = true;
     } else {
       const { points } = data.handles;
-      const enabledElement = getEnabledElement(element);
-      const { worldToCanvas } = enabledElement.viewport;
+      const { viewport } = getEnabledElement(element);
+      const { worldToCanvas, canvasToWorld } = viewport;
 
       handleIndex = points.findIndex((p) => p === handle);
 
@@ -392,6 +393,8 @@ class EllipticalROITool extends AnnotationTool {
         (pointsCanvas[2][0] + pointsCanvas[3][0]) / 2,
         (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2,
       ];
+
+      centerWorld = canvasToWorld(centerCanvas);
     }
 
     // Find viewports to render on drag.
@@ -406,7 +409,7 @@ class EllipticalROITool extends AnnotationTool {
       handleIndex,
       canvasWidth,
       canvasHeight,
-      centerCanvas,
+      centerWorld,
       originalHandleCanvas,
       movingTextBox,
     };
@@ -483,7 +486,8 @@ class EllipticalROITool extends AnnotationTool {
     const { canvasToWorld } = viewport;
 
     //////
-    const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
+    const { annotation, viewportIdsToRender, centerWorld } = this.editData;
+    const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3);
     const { data } = annotation;
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
@@ -557,17 +561,18 @@ class EllipticalROITool extends AnnotationTool {
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { canvasToWorld } = enabledElement.viewport;
+    const { viewport } = getEnabledElement(element);
+    const { canvasToWorld, worldToCanvas } = viewport;
 
     const {
       annotation,
       canvasWidth,
       canvasHeight,
       handleIndex,
-      centerCanvas,
+      centerWorld,
       originalHandleCanvas,
     } = this.editData;
+    const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3);
     const { data } = annotation;
     const { points } = data.handles;
 

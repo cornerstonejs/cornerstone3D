@@ -98,9 +98,9 @@ const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'grid';
 viewportGrid.style.gridTemplateColumns = `auto auto auto`;
 viewportGrid.style.width = '100%';
-viewportGrid.style.height = '500px'; // '50vh';
-viewportGrid.style.border = 'solid 1px #f00';
-viewportGrid.style.gridGap = '5px';
+viewportGrid.style.height = '500px';
+viewportGrid.style.paddingTop = '5px';
+viewportGrid.style.gap = '5px';
 
 content.appendChild(viewportGrid);
 

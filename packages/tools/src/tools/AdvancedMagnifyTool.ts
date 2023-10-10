@@ -141,6 +141,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
         referencedImageId,
       },
       data: {
+        sourceViewportId: viewport.id,
         magnifyViewportId,
         zoomFactor,
         handles: {
@@ -513,6 +514,12 @@ class AdvancedMagnifyTool extends AnnotationTool {
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
+    );
+
+    annotations = annotations?.filter(
+      (annotation) =>
+        (<AdvancedMagnifyAnnotation>annotation).data.sourceViewportId ===
+        viewport.id
     );
 
     if (!annotations?.length) {
