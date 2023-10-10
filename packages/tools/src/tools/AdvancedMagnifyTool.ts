@@ -722,5 +722,4 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
 AdvancedMagnifyTool.toolName = 'AdvancedMagnify';
 
-const toolName = 'foo bar';
-export { AdvancedMagnifyTool as default, toolName };
+export { AdvancedMagnifyTool as default };
