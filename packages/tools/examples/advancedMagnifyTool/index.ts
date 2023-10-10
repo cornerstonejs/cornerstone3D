@@ -88,8 +88,8 @@ const viewportsInfo = [
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Annotation Tools Stack',
-  'Annotation tools for a stack viewport'
+  'Advanced Magnifying Glass',
+  'Advanced magnifying glass that works on stack and volume viewports'
 );
 
 const content = document.getElementById('content');
@@ -116,7 +116,7 @@ const addInstruction = (instruction) => {
 addInstruction('Left Click to use selected tool');
 addInstruction('Ctrl + Left Click to activate the magnifying glass');
 addInstruction(
-  'Shift + Right Click on the magnifying glass border to change the zoom factor'
+  'Shift + Right Click close to the magnifying glass border to change the zoom factor'
 );
 addInstruction('Click + Drag on the magnifying glass border to move it');
 
