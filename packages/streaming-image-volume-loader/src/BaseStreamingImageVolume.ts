@@ -319,8 +319,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
-      const currentStatus = cachedFrames[imageIdIndex];
-      if (currentStatus === FrameStatus.DONE || currentStatus > status) {
+      const currentStatus = cachedFrames[frameIndex];
+      if (currentStatus > status) {
         console.warn(
           'Already have better image quality for',
           imageIdIndex,
@@ -330,15 +330,24 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         return;
       }
 
-      if (status === FrameStatus.DONE) {
-        console.log('Assigning status done', imageIdIndex);
+      if (cachedFrames[frameIndex] === FrameStatus.DONE) {
+        console.warn(
+          'Updating cached frames status to done when it is already done',
+          imageIdIndex,
+          frameIndex
+        );
       }
       cachedFrames[imageIdIndex] = status;
       const complete = status === FrameStatus.DONE;
       if (complete) {
-        this.framesLoaded++;
+        console.log(
+          'Assigning status done to',
+          imageIdIndex,
+          this.framesProcessed
+        );
+        this.framesProcessed++;
       }
-      this.framesProcessed++;
+      this.framesLoaded++;
 
       vtkOpenGLTexture.setUpdatedFrame(frameIndex);
       imageData.modified();
@@ -487,7 +496,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // calculated as `imageIdIndex % numFrames` where numFrames is the
     // number of frames per time point. The frameIndex and imageIdIndex
     // will be the same when working with 3D datasets.
-    const requests = interleavedImageIds.map((imageId, frameIndex) => {
+    const requests = interleavedImageIds.map((imageId, loadIndex) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
       if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
@@ -540,7 +549,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * not, which we store it in the this.scaling.PT.suvbw.
        */
       this.isPreScaled = isSlopeAndInterceptNumbers;
-      const retrieveTypeId = retrieveTypeIds[frameIndex];
+      const retrieveTypeId = retrieveTypeIds[loadIndex];
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -572,25 +581,25 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       const callLoadImage = (imageId, imageIdIndex, options) => {
+        console.log('Starting to load', imageIdIndex);
         const uncompressedIterator = ProgressiveIterator.as(
           imageLoader.loadImage(imageId, options)
         );
-        let isUpdatedImage = false;
         return uncompressedIterator.forEach((image) => {
+          cachedFrames[imageIdIndex] ||= FrameStatus.LOADING;
           handleArrayBufferLoad(scalarData, image, options);
-          const nearby = fillNearby(
+          const { complete } = image;
+          const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
+          // scalarData is the volume container we are progressively loading into
+          // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
+          successCallback(imageIdIndex, imageId, scalingParameters, status);
+          fillNearby(
+            imageIdIndex,
             scalarData,
             options,
             cachedFrames,
             numFrames
-          );
-          const { complete } = image;
-          const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
-          console.log('uncompressed iterator instance', imageIdIndex, complete);
-          // scalarData is the volume container we are progressively loading into
-          // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-          successCallback(imageIdIndex, imageId, scalingParameters, status);
-          nearby?.forEach((frameNo) => {
+          )?.forEach((frameNo) => {
             try {
               if (!this.imageIds[frameNo]) {
                 console.log('No image id found for', frameNo);
@@ -708,7 +717,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     for (const stage of stages) {
       const indices =
         stage.positions ||
-        decimate(requests, stage.decimate || 4, stage.offset || 2);
+        decimate(requests, stage.decimate || 1, stage.offset ?? 0);
       indices.forEach((index) => addValue(stage, index));
     }
     return interleaved;
@@ -1121,29 +1130,33 @@ function getScalarDataType(scalarData, numFrames) {
   return { type, byteSize, length, lengthInBytes };
 }
 
-function fillNearby(scalarData, options, cachedFrames, numFrames) {
+function fillNearby(
+  imageIdIndex,
+  scalarData,
+  options,
+  cachedFrames,
+  numFrames
+) {
   try {
-    const frameLength = scalarData.byteLength / numFrames;
-    const offset = options.targetBuffer.offset; // in bytes
-    const length = options.targetBuffer.length; // in frames
-
-    const bytesInPixel = frameLength / length;
+    const frameLength = scalarData.length / numFrames;
+    const bytesPerPixel = scalarData.byteLength / scalarData.length;
+    const offset = options.targetBuffer.offset / bytesPerPixel; // in bytes
     const nearby: number[] = [];
-
     // since set is based on the underlying type,
     // we need to divide the offset bytes by the byte type
-    const index = offset / frameLength;
-    const src = scalarData.slice(
-      offset / bytesInPixel,
-      (offset + frameLength) / bytesInPixel
-    );
-    if (index + 1 < numFrames && !cachedFrames[index + 1]) {
-      scalarData.set(src, (offset + frameLength) / bytesInPixel);
-      nearby.push(index + 1);
-    }
-    if (index > 0 && !cachedFrames[index - 1]) {
-      scalarData.set(src, (offset - frameLength) / bytesInPixel);
-      nearby.push(index - 1);
+    const src = scalarData.slice(offset, offset + frameLength);
+    const max = Math.min(imageIdIndex + 3, numFrames);
+    const min = Math.max(0, imageIdIndex - 3);
+    for (let i = min; i < max; i++) {
+      if (imageIdIndex === i) {
+        continue;
+      }
+      if (cachedFrames[i] !== undefined) {
+        continue;
+      }
+      cachedFrames[i] = FrameStatus.REPLICATE;
+      scalarData.set(src, i * frameLength);
+      nearby.push(i);
     }
     return nearby;
   } catch (e) {
@@ -1159,9 +1172,6 @@ function handleArrayBufferLoad(scalarData, image, options) {
   if (!(scalarData.buffer instanceof ArrayBuffer)) {
     return;
   }
-
-  console.log('BaseStreaming:handleArrayBufferLoad', image, options);
-
   const offset = options.targetBuffer.offset; // in bytes
   const length = options.targetBuffer.length; // in frames
   const pixelData = image.pixelData ? image.pixelData : image.getPixelData();

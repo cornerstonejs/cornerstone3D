@@ -155,7 +155,6 @@ function loadImage(
             delete useOptions.targetBuffer;
             useOptions.skipCreateImage = false;
           }
-          console.log('Creating image', transferSyntax, useOptions);
           let image = await createImage(
             imageId,
             pixelData,
@@ -164,12 +163,8 @@ function loadImage(
           );
 
           if (retrieveOptions?.needsScale && options.targetBuffer.arrayBuffer) {
+            console.warn('Scaling image');
             image = scaleImage(image, options.targetBuffer);
-          } else {
-            console.log(
-              'Wrote to target buffer',
-              options.targetBuffer.offset / options.targetBuffer.length / 4
-            );
           }
 
           // add the loadTimeInMS property

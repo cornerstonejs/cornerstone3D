@@ -16,30 +16,35 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
   stages: [
     {
       id: 'initialImages',
-      positions: [0, 0.5, -1],
-      remove: true,
+      positions: [0.5, 0, -1],
+      retrieveTypeId: 'lossy',
     },
+    // {
+    //   id: 'all',
+    //   decimate: 1,
+    //   offset: 0,
+    // },
     {
       id: 'quarterThumb',
       decimate: 4,
-      offset: 0,
+      offset: 1,
       retrieveTypeId: 'lossy',
     },
     {
       id: 'halfThumb',
       decimate: 4,
-      offset: 2,
+      offset: 3,
       retrieveTypeId: 'lossy',
     },
     {
       id: 'quarterFull',
       decimate: 4,
-      offset: 1,
+      offset: 2,
     },
     {
       id: 'halfFull',
       decimate: 4,
-      offset: 3,
+      offset: 0,
     },
     {
       id: 'threeQuarterFull',
