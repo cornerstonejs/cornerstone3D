@@ -12,7 +12,6 @@ import {
 
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
-
 const requestType = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
 const { FrameStatus } = Enums;
@@ -316,17 +315,30 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       volume: BaseStreamingImageVolume,
       imageIdIndex,
       imageId,
-      isUpdatedImage?: boolean
+      status = FrameStatus.DONE
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
-      cachedFrames[imageIdIndex] = isUpdatedImage
-        ? FrameStatus.PARTIAL
-        : FrameStatus.DONE;
-      if (!isUpdatedImage) {
-        this.framesLoaded++;
-        this.framesProcessed++;
+      const currentStatus = cachedFrames[imageIdIndex];
+      if (currentStatus === FrameStatus.DONE || currentStatus > status) {
+        console.warn(
+          'Already have better image quality for',
+          imageIdIndex,
+          currentStatus,
+          status
+        );
+        return;
       }
+
+      if (status === FrameStatus.DONE) {
+        console.log('Assigning status done', imageIdIndex);
+      }
+      cachedFrames[imageIdIndex] = status;
+      const complete = status === FrameStatus.DONE;
+      if (complete) {
+        this.framesLoaded++;
+      }
+      this.framesProcessed++;
 
       vtkOpenGLTexture.setUpdatedFrame(frameIndex);
       imageData.modified();
@@ -342,33 +354,25 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         eventDetail
       );
 
-      if (!isUpdatedImage && this.framesProcessed === totalNumFrames) {
+      if (complete && this.framesProcessed === totalNumFrames) {
         loadStatus.loaded = true;
         loadStatus.loading = false;
+      }
 
-        // TODO: Should we remove the callbacks in favour of just using events?
-        callLoadStatusCallback({
-          success: true,
-          imageIdIndex,
-          imageId,
-          framesLoaded: this.framesLoaded,
-          framesProcessed: this.framesProcessed,
-          numFrames,
-          totalNumFrames,
-          isUpdatedImage,
-        });
+      // TODO: Should we remove the callbacks in favour of just using events?
+      callLoadStatusCallback({
+        success: true,
+        imageIdIndex,
+        imageId,
+        framesLoaded: this.framesLoaded,
+        framesProcessed: this.framesProcessed,
+        numFrames,
+        totalNumFrames,
+        complete,
+        status,
+      });
+      if (loadStatus.loaded) {
         loadStatus.callbacks = [];
-      } else {
-        callLoadStatusCallback({
-          success: true,
-          imageIdIndex,
-          imageId,
-          framesLoaded: this.framesLoaded,
-          framesProcessed: this.framesProcessed,
-          numFrames,
-          totalNumFrames,
-          isUpdatedImage,
-        });
       }
     };
 
@@ -376,16 +380,14 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       imageIdIndex: number,
       imageId: string,
       scalingParameters,
-      isUpdatedImage?: boolean
+      status = FrameStatus.DONE
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
+      console.log('success callback', imageIdIndex, frameIndex, status);
 
       // Check if there is a cached image for the same imageURI (different
       // data loader scheme)
-      const cachedImage =
-        isUpdatedImage === true
-          ? undefined
-          : cache.getCachedImageBasedOnImageURI(imageId);
+      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
 
       // Check if the image was already loaded by another volume and we are here
       // since we got the imageLoadObject from the cache from the other already loaded
@@ -411,7 +413,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           this,
           imageIdIndex,
           imageId,
-          isUpdatedImage
+          status
         );
       }
 
@@ -475,8 +477,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
-    const lossyOptionNames = new Array<string>();
-    const interleavedImageIds = this.interleave(imageIds, lossyOptionNames);
+    const retrieveTypeIds = new Array<string>();
+    const interleavedImageIds = this.interleave(imageIds, retrieveTypeIds);
 
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
@@ -538,10 +540,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * not, which we store it in the this.scaling.PT.suvbw.
        */
       this.isPreScaled = isSlopeAndInterceptNumbers;
-      const retrieveOptions = this.getRetrieveOptions(
-        transferSyntaxUid,
-        lossyOptionNames[frameIndex]
-      );
+      const retrieveTypeId = retrieveTypeIds[frameIndex];
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -566,7 +565,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // and therefore doesn't have the scalingParameters
           scalingParameters,
         },
-        retrieveOptions,
+        retrieveTypeId,
+        transferSyntaxUid,
       };
 
       // Use loadImage because we are skipping the Cornerstone Image cache
@@ -584,21 +584,23 @@ export default class BaseStreamingImageVolume extends ImageVolume {
             cachedFrames,
             numFrames
           );
+          const { complete } = image;
+          const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
+          console.log('uncompressed iterator instance', imageIdIndex, complete);
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-          successCallback(
-            imageIdIndex,
-            imageId,
-            scalingParameters,
-            isUpdatedImage
-          );
+          successCallback(imageIdIndex, imageId, scalingParameters, status);
           nearby?.forEach((frameNo) => {
             try {
+              if (!this.imageIds[frameNo]) {
+                console.log('No image id found for', frameNo);
+                return;
+              }
               successCallback(
                 frameNo,
                 this.imageIds[frameNo],
                 scalingParameters,
-                true
+                FrameStatus.REPLICATE
               );
             } catch (e) {
               console.log("Couldn't update nearby", e);
@@ -677,7 +679,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   }
 
   /** Interleaves the values according to the stages definition */
-  public interleave(requests: string[], lossyValues: string[]): string[] {
+  public interleave(requests: string[], retrieveTypeIds: string[]): string[] {
     const { stages } = this.retrieveConfiguration;
 
     if (!stages) {
@@ -699,9 +701,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       if (stage.remove) {
         requests.splice(index, 1);
       }
-      if (stage.lossy) {
-        lossyValues[interleaved.length] = stage.lossy;
-      }
+      retrieveTypeIds[interleaved.length - 1] = stage.retrieveTypeId;
     };
 
     const interleaved = [];
@@ -753,6 +753,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         requestType,
         additionalDetails,
       } = request;
+      console.log(
+        'Adding image load request',
+        imageIdIndex,
+        options.retrieveTypeId
+      );
 
       imageLoadPoolManager.addRequest(
         callLoadImage.bind(this, imageId, imageIdIndex, options),
@@ -1134,12 +1139,10 @@ function fillNearby(scalarData, options, cachedFrames, numFrames) {
     );
     if (index + 1 < numFrames && !cachedFrames[index + 1]) {
       scalarData.set(src, (offset + frameLength) / bytesInPixel);
-      cachedFrames[index + 1] = FrameStatus.REPLICATE;
       nearby.push(index + 1);
     }
     if (index > 0 && !cachedFrames[index - 1]) {
       scalarData.set(src, (offset - frameLength) / bytesInPixel);
-      cachedFrames[index - 1] = FrameStatus.REPLICATE;
       nearby.push(index - 1);
     }
     return nearby;

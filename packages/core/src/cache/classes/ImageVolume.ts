@@ -23,13 +23,13 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
       id: 'quarterThumb',
       decimate: 4,
       offset: 0,
-      lossy: 'lossy',
+      retrieveTypeId: 'lossy',
     },
     {
       id: 'halfThumb',
       decimate: 4,
       offset: 2,
-      lossy: 'lossy',
+      retrieveTypeId: 'lossy',
     },
     {
       id: 'quarterFull',
@@ -52,16 +52,6 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
       offset: 0,
     },
   ],
-  lossyConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      framesPath: '/lossy/',
-      isLossy: true,
-      needsScale: true,
-    },
-  },
 };
 
 /** The base class for volume data. It includes the volume metadata
@@ -221,25 +211,6 @@ export class ImageVolume implements IImageVolume {
 
     this.vtkOpenGLTexture.releaseGraphicsResources();
     this.vtkOpenGLTexture.delete();
-  }
-
-  public getRetrieveOptions(transferSyntaxUid = 'unknown', lossyName = '') {
-    if (!this.retrieveConfiguration) {
-      return null;
-    }
-    const { lossyConfiguration } = this.retrieveConfiguration;
-    if (!lossyConfiguration) {
-      return null;
-    }
-    if (!lossyName) {
-      return (
-        lossyConfiguration[transferSyntaxUid] || lossyConfiguration.default
-      );
-    }
-    return (
-      lossyConfiguration[`${transferSyntaxUid}-${lossyName}`] ||
-      lossyConfiguration[`default-${lossyName}`]
-    );
   }
 }
 

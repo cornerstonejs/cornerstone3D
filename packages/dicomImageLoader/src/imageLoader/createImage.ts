@@ -143,6 +143,7 @@ function createImage(
     options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
+  console.log('Trying to decode', transferSyntax, pixelData.length);
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,

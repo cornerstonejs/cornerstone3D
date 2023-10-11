@@ -1,9 +1,9 @@
 import { Types, utilities } from '@cornerstonejs/core';
-import type { LossyConfiguration } from '@corenerstonejs/core/types';
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
+import { getOptions } from '../internal/options';
 const { imageUtils, ProgressiveIterator } = utilities;
 
 const streamableTransferSyntaxes = new Set<string>();
@@ -16,7 +16,6 @@ streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
  */
 export function getTransferSyntaxForContentType(contentType: string): string {
   const defaultTransferSyntax = '1.2.840.10008.1.2'; // Default is Implicit Little Endian.
-
   if (!contentType) {
     return defaultTransferSyntax;
   }
@@ -84,7 +83,8 @@ export interface CornerstoneWadoRsLoaderOptions
   };
   priority?: number;
   addToBeginning?: boolean;
-  retrieveOptions?: LossyConfiguration;
+  retrieveTypeId?: string;
+  transferSyntaxUid?: string;
 }
 
 const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
@@ -107,7 +107,10 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const retrieveOptions = options.retrieveOptions || {};
+  const { retrieveTypeId, transferSyntaxUid } = options;
+  const loaderOptions = getOptions();
+  let retrieveOptions =
+    loaderOptions.getRetrieveOptions(transferSyntaxUid, retrieveTypeId) || {};
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -119,21 +122,26 @@ function loadImage(
       );
       let lastDecodeLevel = 10;
       for await (const result of compressedIt) {
+        const { done } = compressedIt;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        const { complete, pixelData, done } = result;
+        retrieveOptions = loaderOptions.getRetrieveOptions(
+          transferSyntax,
+          retrieveTypeId
+        );
+        const { pixelData, isLossy = false, percentComplete } = result;
+        const complete = done && !isLossy;
         if (!streamableTransferSyntaxes.has(transferSyntax) && !done) {
           continue;
         }
-        const { percentComplete, isLossy = false } = result;
-        const completeText = `${done ? 'complete' : 'partial'} ${
-          isLossy ? 'lossy' : ''
-        }`;
+        const completeText = complete
+          ? 'complete'
+          : `${done ? 'done' : 'streaming'}${isLossy ? ' lossy' : ''}`;
         const decodeLevel =
           result.decodeLevel ??
           (done ? 0 : decodeLevelFromComplete(percentComplete));
-        if (!complete && lastDecodeLevel <= decodeLevel) {
+        if (!done && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
           continue;
         }
@@ -143,9 +151,11 @@ function loadImage(
             ...options,
             decodeLevel: retrieveOptions?.decodeLevel ?? 0,
           };
-          if (retrieveOptions.needsScale) {
+          if (retrieveOptions?.needsScale) {
             delete useOptions.targetBuffer;
+            useOptions.skipCreateImage = false;
           }
+          console.log('Creating image', transferSyntax, useOptions);
           let image = await createImage(
             imageId,
             pixelData,
@@ -153,11 +163,13 @@ function loadImage(
             useOptions
           );
 
-          if (
-            options.targetBuffer.rows &&
-            image.rows !== options.targetBuffer?.rows
-          ) {
+          if (retrieveOptions?.needsScale && options.targetBuffer.arrayBuffer) {
             image = scaleImage(image, options.targetBuffer);
+          } else {
+            console.log(
+              'Wrote to target buffer',
+              options.targetBuffer.offset / options.targetBuffer.length / 4
+            );
           }
 
           // add the loadTimeInMS property
@@ -249,6 +261,7 @@ function createSrc(image) {
 
 function createDest(targetBuffer) {
   const { rows, columns, arrayBuffer, offset, length } = targetBuffer;
+  console.log('Scaling for buffer', offset / length / 2);
   return {
     data: new Float32Array(arrayBuffer, offset, length),
     rows,
@@ -262,11 +275,13 @@ const scalingType = 'bilinear';
 function scaleImage(image, targetBuffer) {
   const { arrayBuffer, rows, columns } = targetBuffer;
   if (!rows || !columns) {
+    console.log('Not scaling, no rows/columns');
     return;
   }
   const src = createSrc(image);
   const dest = createDest(targetBuffer);
   if (!src || !dest) {
+    console.log('Not scaling, no src/dest', src, dest);
     return;
   }
   if (image.samplesPerPixel > 1) {

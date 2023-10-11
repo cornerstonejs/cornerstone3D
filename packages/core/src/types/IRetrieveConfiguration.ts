@@ -7,12 +7,13 @@ export interface RetrieveStage {
   decimate?: number;
   // With the given offset to decimation
   offset?: number;
-  // Use a lossy named configuration to add fetch arguments and configuration
+  // Use a specified retrieve type to add fetch arguments and configuration
   // on the retrieve URL.
-  lossy?: string;
+  retrieveTypeId?: string;
   // If true, remove from the set of items
   remove?: boolean;
 }
+
 export interface LossyConfiguration {
   // Additional arguments to add to the URL, in the format
   // arg1=value1 ('&' arg2=value2)*
@@ -39,8 +40,4 @@ export interface LossyConfiguration {
  */
 export interface IRetrieveConfiguration {
   stages?: RetrieveStage[];
-  // Lossy arguments is a two part map, name plus TSUID to setup
-  // where 'default' is used for the TSUID as a fall back.
-  // For lossless images, the name is empty.
-  lossyConfiguration?: Record<string, LossyConfiguration>;
 }
