@@ -126,7 +126,7 @@ class Viewport implements IViewport {
 
   /**
    * Indicate that the image has been rendered.
-   * This will set hte viewportStatus to RENDERED if there is image data
+   * This will set the viewportStatus to RENDERED if there is image data
    * available to actually be rendered - otherwise, the rendering simply showed
    * the background image.
    */

@@ -442,36 +442,19 @@ class ProbeTool extends AnnotationTool {
 
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const modalityUnitOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
-      if (!data.cachedStats[targetId]) {
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].value == null
+      ) {
         data.cachedStats[targetId] = {
           Modality: null,
           index: null,
           value: null,
         };
 
-        this._calculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement,
-          modalityUnitOptions
-        );
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
       } else if (annotation.invalidated) {
-        this._calculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement,
-          modalityUnitOptions
-        );
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
 
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related stackViewports data if
@@ -554,14 +537,9 @@ class ProbeTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateCachedStats(
-    annotation,
-    renderingEngine,
-    enabledElement,
-    modalityUnitOptions: ModalityUnitOptions
-  ) {
+  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const worldPos = data.handles.points[0];
     const { cachedStats } = data;
@@ -570,6 +548,15 @@ class ProbeTool extends AnnotationTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 

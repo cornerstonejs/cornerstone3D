@@ -166,6 +166,10 @@
         "name": "Magnify Tool",
         "description": "Demonstrates the usage of the magnification tool"
       },
+      "advancedMagnifyTool": {
+        "name": "Advanced Magnify Tool",
+        "description": "Demonstrates the usage of the advanced magnification tool on stack and volume viewports"
+      },
       "CINETool": {
         "name": "CINE Tool",
         "description": "Demonstrates the usage of the CINE tool"

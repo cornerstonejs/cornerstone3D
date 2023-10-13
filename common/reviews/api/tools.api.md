@@ -75,6 +75,69 @@ export function addTool(ToolClass: any): void;
 function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
 
 // @public (undocumented)
+interface AdvancedMagnifyAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        zoomFactor: number;
+        sourceViewportId: string;
+        magnifyViewportId: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+}
+
+// @public (undocumented)
+export class AdvancedMagnifyTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateModify: (element: any) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => AdvancedMagnifyAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
+    // (undocumented)
+    _dragDrawCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragHandle: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: AdvancedMagnifyAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    magnifyViewportManager: AdvancedMagnifyViewportManager;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    showZoomFactorsList(evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation): void;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 type AffineMatrix = [
 [number, number, number, number],
 [number, number, number, number],
@@ -726,7 +789,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CircleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1463,9 +1526,6 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
-function disable(element: any): void;
-
-// @public (undocumented)
 type DisplayArea = {
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
@@ -1667,7 +1727,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1686,7 +1746,7 @@ export class EllipticalROITool extends AnnotationTool {
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
-        centerCanvas?: Array<number>;
+        centerWorld?: Array<number>;
         canvasWidth?: number;
         canvasHeight?: number;
         originalHandleCanvas?: Array<number>;
@@ -1722,9 +1782,6 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     touchDragCallback: any;
 }
-
-// @public (undocumented)
-function enable(element: any): void;
 
 declare namespace Enums {
     export {
@@ -1791,6 +1848,8 @@ enum Events {
     SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED",
     // (undocumented)
     TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
+    // (undocumented)
+    TOOL_MODE_CHANGED = "CORNERSTONE_TOOLS_TOOL_MODE_CHANGED",
     // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
@@ -1874,6 +1933,8 @@ declare namespace EventTypes_2 {
         NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
         NormalizedTouchEventType,
+        ToolModeChangedEventDetail,
+        ToolModeChangedEventType,
         ToolActivatedEventDetail,
         ToolActivatedEventType,
         AnnotationAddedEventDetail,
@@ -2097,12 +2158,6 @@ function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 
 // @public (undocumented)
 function getColorLUT(index: number): ColorLUT | undefined;
-
-// @public (undocumented)
-function getConfiguration(): {
-    maxImagesToPrefetch: number;
-    preserveExistingPool: boolean;
-};
 
 // @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
@@ -2460,6 +2515,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
     height: number;
@@ -2467,6 +2524,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -2980,6 +3039,10 @@ interface IToolGroup {
     // (undocumented)
     addViewport: {
         (viewportId: string, renderingEngineId?: string): void;
+    };
+    // (undocumented)
+    clone: {
+        (newToolGroupId: string, fnToolFilter: (toolName: string) => boolean): IToolGroup;
     };
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
@@ -3856,7 +3919,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
@@ -4007,7 +4070,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4289,7 +4352,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => RectangleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: any) => any;
+    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4839,9 +4902,6 @@ function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function setConfiguration(config: any): void;
-
-// @public (undocumented)
 function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
 
 // @public (undocumented)
@@ -4936,6 +4996,14 @@ export class SphereScissorsTool extends BaseTool {
     static toolName: any;
 }
 
+// @public (undocumented)
+const stackContextPrefetch: {
+    enable: (element: any) => void;
+    disable: typeof disable_2;
+    getConfiguration: typeof getConfiguration_2;
+    setConfiguration: typeof setConfiguration_2;
+};
+
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
@@ -4948,14 +5016,13 @@ type StackNewImageEventDetail = {
     renderingEngineId: string;
 };
 
-declare namespace stackPrefetch {
-    export {
-        enable,
-        disable,
-        setConfiguration,
-        getConfiguration
-    }
-}
+// @public (undocumented)
+const stackPrefetch: {
+    enable: typeof enable;
+    disable: typeof disable;
+    getConfiguration: typeof getConfiguration;
+    setConfiguration: typeof setConfiguration;
+};
 
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
@@ -5226,6 +5293,12 @@ function throttle(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
+type ToolAction = {
+    method: string | ((evt: InteractionEventType, annotation: Annotation) => void);
+    bindings: SetToolBindingsType[];
+};
+
+// @public (undocumented)
 type ToolActivatedEventDetail = {
     toolGroupId: string;
     toolName: string;
@@ -5308,6 +5381,17 @@ type ToolGroupSpecificRepresentationState = {
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
 // @public (undocumented)
+type ToolModeChangedEventDetail = {
+    toolGroupId: string;
+    toolName: string;
+    mode: ToolModes;
+    toolBindingsOptions?: SetToolBindingsType;
+};
+
+// @public (undocumented)
+type ToolModeChangedEventType = Types_2.CustomEventType<ToolModeChangedEventDetail>;
+
+// @public (undocumented)
 enum ToolModes {
     // (undocumented)
     Active = "Active",
@@ -5333,6 +5417,7 @@ declare namespace ToolSpecificAnnotationTypes {
         RectangleROIAnnotation,
         ProbeAnnotation,
         LengthAnnotation,
+        AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
@@ -5517,6 +5602,7 @@ declare namespace Types {
         SetToolBindingsType,
         ToolOptionsType,
         InteractionTypes,
+        ToolAction,
         IToolGroup,
         IToolClassReference,
         ISynchronizerEventHandler,
@@ -5583,6 +5669,7 @@ declare namespace utilities {
         rectangleROITool,
         planarFreehandROITool,
         stackPrefetch,
+        stackContextPrefetch,
         scroll_2 as scroll,
         roundNumber
     }

@@ -166,26 +166,19 @@ class DragProbeTool extends ProbeTool {
       ),
     };
 
-    if (!data.cachedStats[targetId]) {
+    if (
+      !data.cachedStats[targetId] ||
+      data.cachedStats[targetId].value == null
+    ) {
       data.cachedStats[targetId] = {
         Modality: null,
         index: null,
         value: null,
       };
 
-      this._calculateCachedStats(
-        annotation,
-        renderingEngine,
-        enabledElement,
-        modalityUnitOptions
-      );
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
     } else if (annotation.invalidated) {
-      this._calculateCachedStats(
-        annotation,
-        renderingEngine,
-        enabledElement,
-        modalityUnitOptions
-      );
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
     }
 
     // If rendering engine has been destroyed while rendering

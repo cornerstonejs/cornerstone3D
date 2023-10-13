@@ -45,7 +45,6 @@ import {
   TextBoxHandle,
   ToolProps,
   PublicToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -659,21 +658,11 @@ class RectangleROITool extends AnnotationTool {
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
-      const modalityUnitOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit === undefined
+        data.cachedStats[targetId].areaUnit == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -689,8 +678,7 @@ class RectangleROITool extends AnnotationTool {
           viewPlaneNormal,
           viewUp,
           renderingEngine,
-          enabledElement,
-          modalityUnitOptions
+          enabledElement
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
@@ -698,8 +686,7 @@ class RectangleROITool extends AnnotationTool {
           viewPlaneNormal,
           viewUp,
           renderingEngine,
-          enabledElement,
-          modalityUnitOptions
+          enabledElement
         );
 
         // If the invalidated data is as a result of volumeViewport manipulation
@@ -881,11 +868,10 @@ class RectangleROITool extends AnnotationTool {
     viewPlaneNormal,
     viewUp,
     renderingEngine,
-    enabledElement,
-    modalityUnitOptions
+    enabledElement
   ) => {
     const { data } = annotation;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[3];
@@ -953,6 +939,16 @@ class RectangleROITool extends AnnotationTool {
         const scale = getCalibratedScale(image);
 
         const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
+
+        const modalityUnitOptions = {
+          isPreScaled: isViewportPreScaled(viewport, targetId),
+
+          isSuvScaled: this.isSuvScaled(
+            viewport,
+            targetId,
+            annotation.metadata.referencedImageId
+          ),
+        };
 
         const modalityUnit = getModalityUnit(
           metadata.Modality,
