@@ -60,6 +60,10 @@ let options: LoaderOptions = {
       isLossy: true,
       //needsScale: true,
     },
+    // '3.2.840.10008.1.2.4.96': {
+    //   streaming: true,
+    //   //needsScale: true,
+    // },
   },
 };
 

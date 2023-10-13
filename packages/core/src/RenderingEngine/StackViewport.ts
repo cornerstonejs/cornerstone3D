@@ -1717,7 +1717,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const displayedIterator = new ProgressiveIterator<void | IImage>(
           'displayed'
         );
-        displayedIterator.generate(async (it, reject) => {
+        displayedIterator.generate(async (it) => {
           for await (const image of uncompressedIterator) {
             // Update cache
             cache.putImageLoadObject(
@@ -1725,6 +1725,7 @@ class StackViewport extends Viewport implements IStackViewport {
               { promise: Promise.resolve(image) },
               true
             );
+            console.log('Adding new image to render', imageIdIndex, image);
             successCallback.call(this, image, imageIdIndex, imageId);
             it.add(image, uncompressedIterator.done);
           }

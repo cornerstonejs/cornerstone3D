@@ -8,12 +8,6 @@ import { LossyConfiguration } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
 
-const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
-
-const streamCache: {
-  [key: string]: { byteArray: Uint8Array; currentChunkSize: number };
-} = {};
-
 /**
  * This function does a streaming parse from an http request, delivering
  * combined/subsequent parts of the result as iterations on a
@@ -33,16 +27,9 @@ export default function streamRequest(
   const { cornerstone } = external;
   const options = getOptions();
 
-  let minChunkSize = options.minChunkSize;
-  if (typeof minChunkSize === 'function') {
-    const metaData = metaDataManager.get(imageId);
-    minChunkSize = minChunkSize(metaData, imageId);
-  }
-  if (!Number.isInteger(minChunkSize)) {
-    throw new Error(
-      `minChunkSize must be an integer or function that returns an integer.`
-    );
-  }
+  // TODO - allow this to be configurable based on the retrieve type or
+  // initial image data size
+  const minChunkSize = 128 * 1024;
 
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
@@ -78,30 +65,29 @@ export default function streamRequest(
       const contentType = responseHeaders.get('content-type');
 
       const totalBytes = Number(responseHeaders.get('Content-Length'));
-      loadTracking[imageId] = { total: totalBytes, loaded: 0 };
 
       let readDone = false;
-      let imageFrame;
+      let encodedData;
       let extracted;
+      let lastSize = 0;
       while (!readDone) {
         const { done, value } = await responseReader.read();
         readDone = done;
-        imageFrame = appendChunk({
-          imageId,
-          chunk: value,
-          done: readDone,
-          minChunkSize: minChunkSize as number,
-        });
-        if (!imageFrame) {
+        encodedData = appendChunk(encodedData, value);
+        if (!encodedData) {
           if (readDone) {
             throw new Error(`Done but no image frame available ${imageId}`);
           }
           continue;
         }
+        if (!readDone && encodedData.length < lastSize + minChunkSize) {
+          continue;
+        }
+        lastSize = encodedData.length;
 
         extracted = extractMultipart(
           contentType,
-          imageFrame,
+          encodedData,
           extracted,
           !readDone
         );
@@ -109,7 +95,6 @@ export default function streamRequest(
           url,
           imageId,
           ...extracted,
-          isLossy: !!retrieveOptions.isLossy,
           percentComplete: (extracted.pixelData?.length * 100) / totalBytes,
           complete: !retrieveOptions?.isLossy && readDone,
           isLossy: !!retrieveOptions?.isLossy,
@@ -122,13 +107,6 @@ export default function streamRequest(
         // chunks will be passed and decoded via events.
         iterator.add(detail, readDone);
       }
-      loadTracking[imageId].loaded = imageFrame.length;
-      console.log(
-        'IMAGE_LOADED: ',
-        Object.values(loadTracking).filter((v) => v.loaded === v.total).length,
-        '/',
-        Object.keys(loadTracking).length
-      );
       cornerstone.triggerEvent(
         cornerstone.eventTarget,
         cornerstone.EVENTS.IMAGE_LOADED,
@@ -144,50 +122,16 @@ export default function streamRequest(
   return loadIterator.getNextPromise();
 }
 
-function appendChunk(options: {
-  imageId: string;
-  minChunkSize: number;
-  chunk?: Uint8Array;
-  done?: boolean;
-}) {
-  const { imageId, chunk, done: complete, minChunkSize } = options;
-
-  // If we have a new chunk of data to append, append it to the Uint8Array for
+function appendChunk(existing: Uint8Array, chunk?: Uint8Array) {
   // that imageId
-  if (!complete) {
-    const existingDataForImageId = streamCache[imageId];
-    if (!existingDataForImageId) {
-      streamCache[imageId] = {
-        byteArray: chunk,
-        currentChunkSize: 0,
-      };
-    } else {
-      const newDataArray = new Uint8Array(
-        existingDataForImageId.byteArray.length + chunk.length
-      );
-      newDataArray.set(existingDataForImageId.byteArray, 0);
-      newDataArray.set(chunk, existingDataForImageId.byteArray.length);
-      streamCache[imageId].byteArray = newDataArray;
-    }
+  if (!existing) {
+    return chunk;
   }
-
-  const currentFrameByteArray = streamCache[imageId].byteArray;
-
-  // If the file has been completely downloaded, just return the full byte array
-  // from the cache.
-  if (complete) {
-    streamCache[imageId] = undefined;
-    return currentFrameByteArray;
+  if (!chunk) {
+    return existing;
   }
-
-  // Manually limit the minimum size of each "chunk" to be rendered, so that we
-  // aren't calling the render pipeline a ton for tiny incremental changes.
-  streamCache[imageId].currentChunkSize += chunk.length;
-
-  if (streamCache[imageId].currentChunkSize >= minChunkSize) {
-    streamCache[imageId].currentChunkSize = 0;
-    return currentFrameByteArray;
-  } else {
-    return undefined;
-  }
+  const newDataArray = new Uint8Array(existing.length + chunk.length);
+  newDataArray.set(existing, 0);
+  newDataArray.set(chunk, existing.length);
+  return newDataArray;
 }

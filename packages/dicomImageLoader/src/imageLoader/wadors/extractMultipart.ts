@@ -74,8 +74,6 @@ export default function extractMultipart(
     throw new Error('invalid response - terminating boundary not found');
   }
 
-  const length = endIndex === -1 ? response.length : endIndex - offset - 2;
-
   multipartContentType ||= findContentType(responseHeaders);
 
   // return the info for this pixel data
@@ -89,6 +87,6 @@ export default function extractMultipart(
     responseHeaders,
     boundary,
     multipartContentType,
-    pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
+    pixelData: imageFrameAsArrayBuffer.slice(offset, endIndex),
   };
 }

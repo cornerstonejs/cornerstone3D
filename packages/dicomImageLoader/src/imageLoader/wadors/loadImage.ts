@@ -140,7 +140,7 @@ function loadImage(
           : `${done ? 'done' : 'streaming'}${isLossy ? ' lossy' : ''}`;
         const decodeLevel =
           result.decodeLevel ??
-          (done ? 0 : decodeLevelFromComplete(percentComplete));
+          (complete ? 0 : decodeLevelFromComplete(percentComplete));
         if (!done && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
           continue;
@@ -149,9 +149,10 @@ function loadImage(
         try {
           const useOptions = {
             ...options,
-            decodeLevel: retrieveOptions?.decodeLevel ?? 0,
+            decodeLevel: decodeLevel,
           };
-          if (retrieveOptions?.needsScale) {
+          const needsScale = retrieveOptions?.needsScale || decodeLevel;
+          if (needsScale || decodeLevel) {
             delete useOptions.targetBuffer;
             useOptions.skipCreateImage = false;
           }
@@ -162,7 +163,7 @@ function loadImage(
             useOptions
           );
 
-          if (retrieveOptions?.needsScale && options.targetBuffer.arrayBuffer) {
+          if (needsScale && options.targetBuffer.arrayBuffer) {
             console.warn('Scaling image');
             image = scaleImage(image, options.targetBuffer);
           }
@@ -179,7 +180,7 @@ function loadImage(
             end - start,
             'ms'
           );
-          it.add(image, complete || true);
+          it.add(image, complete);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           console.warn("Couldn't decode" + completeText, e);
