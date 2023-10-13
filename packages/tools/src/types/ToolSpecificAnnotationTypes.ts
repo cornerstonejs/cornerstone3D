@@ -78,6 +78,18 @@ export interface LengthAnnotation extends Annotation {
   };
 }
 
+export interface AdvancedMagnifyAnnotation extends Annotation {
+  data: {
+    zoomFactor: number;
+    sourceViewportId: string;
+    magnifyViewportId: string;
+    handles: {
+      points: Types.Point3[]; // [top, right, bottom, left]
+      activeHandleIndex: number | null;
+    };
+  };
+}
+
 export interface CircleROIAnnotation extends Annotation {
   data: {
     handles: {
