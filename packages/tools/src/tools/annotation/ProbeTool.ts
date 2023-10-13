@@ -94,6 +94,7 @@ const { transformWorldToIndex } = csUtils;
  * Read more in the Docs section of the website.
  *
  */
+
 class ProbeTool extends AnnotationTool {
   static toolName;
 
@@ -118,6 +119,7 @@ class ProbeTool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -440,36 +442,19 @@ class ProbeTool extends AnnotationTool {
 
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const modalityUnitOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
-      if (!data.cachedStats[targetId]) {
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].value == null
+      ) {
         data.cachedStats[targetId] = {
           Modality: null,
           index: null,
           value: null,
         };
 
-        this._calculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement,
-          modalityUnitOptions
-        );
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
       } else if (annotation.invalidated) {
-        this._calculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement,
-          modalityUnitOptions
-        );
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
 
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related stackViewports data if
@@ -525,7 +510,12 @@ class ProbeTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        continue;
+      }
+
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
         const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
@@ -539,7 +529,7 @@ class ProbeTool extends AnnotationTool {
           textUID,
           textLines,
           [textCanvasCoordinates[0], textCanvasCoordinates[1]],
-          this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+          options
         );
       }
     }
@@ -547,31 +537,9 @@ class ProbeTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines(data, targetId: string): string[] | undefined {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { index, value, modalityUnit } = cachedVolumeStats;
-
-    if (value === undefined) {
-      return;
-    }
-
-    const textLines = [];
-
-    textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
-
-    textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
-
-    return textLines;
-  }
-
-  _calculateCachedStats(
-    annotation,
-    renderingEngine,
-    enabledElement,
-    modalityUnitOptions: ModalityUnitOptions
-  ) {
+  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const worldPos = data.handles.points[0];
     const { cachedStats } = data;
@@ -580,6 +548,15 @@ class ProbeTool extends AnnotationTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
@@ -660,6 +637,23 @@ class ProbeTool extends AnnotationTool {
 
     return cachedStats;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 ProbeTool.toolName = 'Probe';

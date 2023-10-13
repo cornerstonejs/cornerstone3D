@@ -9,6 +9,8 @@ import drawRect from './drawRect';
 import drawTextBox from './drawTextBox';
 import drawArrow from './drawArrow';
 import drawRedactionRect from './drawRedactionRect';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
 
 export {
   draw,
@@ -22,4 +24,6 @@ export {
   drawTextBox,
   drawArrow,
   drawRedactionRect,
+  setAttributesIfNecessary,
+  setNewAttributesIfValid,
 };

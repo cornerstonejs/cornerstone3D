@@ -44,6 +44,7 @@ class DragProbeTool extends ProbeTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -165,26 +166,19 @@ class DragProbeTool extends ProbeTool {
       ),
     };
 
-    if (!data.cachedStats[targetId]) {
+    if (
+      !data.cachedStats[targetId] ||
+      data.cachedStats[targetId].value == null
+    ) {
       data.cachedStats[targetId] = {
         Modality: null,
         index: null,
         value: null,
       };
 
-      this._calculateCachedStats(
-        annotation,
-        renderingEngine,
-        enabledElement,
-        modalityUnitOptions
-      );
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
     } else if (annotation.invalidated) {
-      this._calculateCachedStats(
-        annotation,
-        renderingEngine,
-        enabledElement,
-        modalityUnitOptions
-      );
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
     }
 
     // If rendering engine has been destroyed while rendering
@@ -205,7 +199,7 @@ class DragProbeTool extends ProbeTool {
 
     renderStatus = true;
 
-    const textLines = this._getTextLines(data, targetId);
+    const textLines = this.configuration.getTextLines(data, targetId);
     if (textLines) {
       const textCanvasCoordinates = [
         canvasCoordinates[0] + 6,
@@ -225,6 +219,23 @@ class DragProbeTool extends ProbeTool {
 
     return renderStatus;
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 DragProbeTool.toolName = 'DragProbe';

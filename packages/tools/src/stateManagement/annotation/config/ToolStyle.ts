@@ -35,6 +35,7 @@ class ToolStyle {
       lineWidth: '1',
       lineDash: '',
       shadow: true,
+      textBoxVisibility: true,
       textBoxFontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
       textBoxFontSize: '14px',
       textBoxColor: 'rgb(255, 255, 0)',

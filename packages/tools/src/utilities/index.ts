@@ -29,7 +29,7 @@ import * as cine from './cine';
 import * as boundingBox from './boundingBox';
 import * as planarFreehandROITool from './planarFreehandROITool';
 import * as rectangleROITool from './rectangleROITool';
-import * as stackPrefetch from './stackPrefetch';
+import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
 import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
@@ -65,6 +65,7 @@ export {
   rectangleROITool,
   planarFreehandROITool,
   stackPrefetch,
+  stackContextPrefetch,
   scroll,
   roundNumber,
 };

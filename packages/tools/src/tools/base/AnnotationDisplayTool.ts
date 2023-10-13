@@ -102,6 +102,10 @@ abstract class AnnotationDisplayTool extends BaseTool {
 
       // for this specific tool
       toolSpecificAnnotations.forEach((annotation) => {
+        if (!annotation.metadata?.referencedImageId) {
+          return;
+        }
+
         // if the annotation is drawn on the same imageId
         const referencedImageURI = utilities.imageIdToURI(
           annotation.metadata.referencedImageId

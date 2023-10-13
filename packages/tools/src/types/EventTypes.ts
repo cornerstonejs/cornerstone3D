@@ -5,6 +5,7 @@ import ITouchPoints from './ITouchPoints';
 import IDistance from './IDistance';
 import { SetToolBindingsType } from './ISetToolModeOptions';
 import { Swipe } from '../enums/Touch';
+import { ToolModes } from '../enums';
 
 /**
  * The normalized interaction event detail
@@ -70,6 +71,20 @@ type InteractionEventDetail = NormalizedInteractionEventDetail &
 type InteractionStartEventDetail = InteractionEventDetail;
 
 type InteractionEndEventDetail = InteractionEventDetail;
+
+/**
+ * The data that is passed to the event handler when tool mode changes
+ */
+type ToolModeChangedEventDetail = {
+  /** unique id of the toolGroup */
+  toolGroupId: string;
+  /** Tool name */
+  toolName: string;
+  /** Tool mode */
+  mode: ToolModes;
+  /** Tool binding options */
+  toolBindingsOptions?: SetToolBindingsType;
+};
 
 /**
  * The data that is passed to the event handler when a tool is activated.
@@ -425,6 +440,12 @@ type NormalizedMouseEventType = Types.CustomEventType<MouseCustomEventDetail>;
 type NormalizedTouchEventType = Types.CustomEventType<TouchCustomEventDetail>;
 
 /**
+ * The ToolModeChanged event type
+ */
+type ToolModeChangedEventType =
+  Types.CustomEventType<ToolModeChangedEventDetail>;
+
+/**
  * The ToolActivated event type
  */
 type ToolActivatedEventType = Types.CustomEventType<ToolActivatedEventDetail>;
@@ -629,6 +650,8 @@ export {
   NormalizedInteractionEventDetail,
   NormalizedMouseEventType,
   NormalizedTouchEventType,
+  ToolModeChangedEventDetail,
+  ToolModeChangedEventType,
   ToolActivatedEventDetail,
   ToolActivatedEventType,
   AnnotationAddedEventDetail,

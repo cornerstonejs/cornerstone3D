@@ -9,6 +9,7 @@ import {
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
+import isWithinThreshold from './utils/isWithinThreshold';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -115,19 +116,6 @@ function fillCircle(
   const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse);
 
   triggerSegmentationDataModified(segmentationId, arrayOfSlices);
-}
-
-function isWithinThreshold(
-  index: number,
-  imageVolume: Types.IImageVolume,
-  strategySpecificConfiguration: any
-) {
-  const { THRESHOLD_INSIDE_CIRCLE } = strategySpecificConfiguration;
-
-  const voxelValue = imageVolume.getScalarData()[index];
-  const { threshold } = THRESHOLD_INSIDE_CIRCLE;
-
-  return threshold[0] <= voxelValue && voxelValue <= threshold[1];
 }
 
 /**

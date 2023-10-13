@@ -82,6 +82,7 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import IVideo from './IVideo';
+import type { AffineMatrix } from './AffineMatrix';
 
 export type {
   IVideo,
@@ -175,4 +176,5 @@ export type {
   PixelDataTypedArray,
   ImagePixelModule,
   ImagePlaneModule,
+  AffineMatrix,
 };
