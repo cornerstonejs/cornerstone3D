@@ -1,6 +1,6 @@
 import _getHash from './_getHash';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import _setAttributesIfNecessary from './setAttributesIfNecessary';
+import _setNewAttributesIfValid from './setNewAttributesIfValid';
 
 // <rect x="120" y="100" width="100" height="100" />
 export default function drawRedactionRect(
