@@ -475,10 +475,12 @@ class VideoViewport {
 
     this.canvasContext.resetTransform();
 
-    triggerEvent(this.canvas, EVENTS.IMAGE_RENDERED, {
-      canvas: this.canvas,
-      viewportUID: this.id,
+    triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
+      element: this.element,
+      viewportId: this.id,
+      viewport: this,
       renderingEngineId: this.renderingEngineId,
+      time: this.videoElement.currentTime,
     });
   };
 

@@ -1,9 +1,8 @@
 import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import {
+  addButtonToToolbar,
   initDemo,
-  createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -15,9 +14,8 @@ console.warn(
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
   ZoomTool,
-  PlanarRotateTool,
+  VideoRedactionTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -26,9 +24,6 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const leftClickTools = [WindowLevelTool.toolName, PlanarRotateTool.toolName];
-const defaultLeftClickTool = leftClickTools[0];
-let currentLeftClickTool = leftClickTools[0];
 
 // ======== Set up page ======== //
 setTitleAndDescription('Basic Video Tools');
@@ -52,30 +47,46 @@ instructions.innerText =
 content.append(instructions);
 // ============================= //
 
-addDropdownToToolbar({
-  options: {
-    values: leftClickTools,
-    defaultValue: defaultLeftClickTool,
-  },
-  onSelectedValueChange: (selectedValue) => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = 'CT_STACK';
+let viewport;
 
-    toolGroup.setToolPassive(currentLeftClickTool);
-
-    toolGroup.setToolActive(<string>selectedValue, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
-    currentLeftClickTool = selectedValue;
+addButtonToToolbar({
+  id: 'play',
+  title: 'Play',
+  onClick() {
+    viewport.play();
   },
 });
 
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
+addButtonToToolbar({
+  id: 'Pause',
+  title: 'pause',
+  onClick() {
+    viewport.pause();
+  },
+});
+addButtonToToolbar({
+  id: 'next',
+  title: 'next',
+  onClick() {
+    viewport.next();
+  },
+});
+addButtonToToolbar({
+  id: 'previous',
+  title: 'previous',
+  onClick() {
+    viewport.previous();
+  },
+});
+addButtonToToolbar({
+  id: 'jump',
+  title: 'jump to 50',
+  onClick() {
+    viewport.setTime(50);
+  },
+});
 
 /**
  * Runs the demo
@@ -86,10 +97,8 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(PlanarRotateTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -98,16 +107,15 @@ async function run() {
   // Add tools to the tool group
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(VideoRedactionTool.toolName);
 
-  // Set the initial state of the tools, here all tools are active and bound to
-  // Different mouse inputs
-  // toolGroup.setToolActive(defaultLeftClickTool, {
-  //   bindings: [
-  //     {
-  //       mouseButton: MouseBindings.Primary, // Left Click
-  //     },
-  //   ],
-  // });
+  toolGroup.setToolActive(VideoRedactionTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -122,9 +130,6 @@ async function run() {
       },
     ],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
@@ -145,11 +150,10 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
+
   // Set the stack on the viewport
   await viewport.setVideo('http://localhost:3000/rendered.mp4');
 
@@ -158,6 +162,10 @@ async function run() {
 
   // Render the image
   viewport.play();
+
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt) => {
+    console.debug(evt.detail.time);
+  });
 }
 
 run();

@@ -59,9 +59,12 @@ import {
   ScaleOverlayTool,
 } from './tools';
 
+import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
+
 import * as Enums from './enums';
 
 export {
+  VideoRedactionTool,
   //
   init,
   destroy,
