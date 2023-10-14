@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.0...v1.21.1) (2023-10-14)
+
+### Bug Fixes
+
+- **rotation:** Only one CAMERA_MODIFIED event per rotation ([#824](https://github.com/cornerstonejs/cornerstone3D/issues/824)) ([fd27c43](https://github.com/cornerstonejs/cornerstone3D/commit/fd27c43b7678e1eed97f75a1b2937c8ca7415a93))
+
 # [1.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.3...v1.21.0) (2023-10-10)
 
 **Note:** Version bump only for package @cornerstonejs/core

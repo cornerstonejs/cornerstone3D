@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.0...v1.21.1) (2023-10-14)
+
+### Bug Fixes
+
+- **advancedMagnifyTool:** fixed advanced magnify tool example (imageIds) ([#822](https://github.com/cornerstonejs/cornerstone3D/issues/822)) ([f5f0eb0](https://github.com/cornerstonejs/cornerstone3D/commit/f5f0eb006ed343fd8b1d7d9524a63f596b8ee317))
+
 # [1.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.3...v1.21.0) (2023-10-10)
 
 ### Features
