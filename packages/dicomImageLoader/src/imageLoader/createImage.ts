@@ -228,8 +228,8 @@ function createImage(
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
-      if (isColorImage) {
-        const { rows, columns } = imageFrame;
+      const { rows, columns } = imageFrame;
+      if (isColorImage && imageFrame.pixelDataLength !== 3 * rows * columns) {
         if (TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax]) {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
