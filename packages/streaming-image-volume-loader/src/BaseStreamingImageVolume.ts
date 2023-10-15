@@ -469,7 +469,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     }
 
     function handleArrayBufferLoad(scalarData, image, options) {
-      if (!(scalarData.buffer instanceof ArrayBuffer)) {
+      if (!scalarData.buffer) {
         return;
       }
 
