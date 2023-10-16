@@ -113,7 +113,7 @@ class MagnifyTool extends BaseTool {
     } = this.editData;
     const { viewport } = enabledElement;
     const { element } = viewport;
-    const { voiRange } = viewport.getProperties();
+    const viewportProperties = viewport.getProperties();
 
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
@@ -158,7 +158,7 @@ class MagnifyTool extends BaseTool {
 
     magnifyViewport.setStack([referencedImageId]).then(() => {
       // match the original viewport voi range
-      magnifyViewport.setProperties({ voiRange });
+      magnifyViewport.setProperties(viewportProperties);
 
       // Use the original viewport for the base for parallelScale
       const { parallelScale } = viewport.getCamera();
