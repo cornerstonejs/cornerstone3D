@@ -1017,7 +1017,7 @@ class StackViewport extends Viewport implements IStackViewport {
       ? vec3.negate(vec3.create(), this.initialViewUp)
       : this.initialViewUp;
 
-    this.setCamera({
+    this.setCameraNoEvent({
       viewUp: initialViewUp as Point3,
     });
 
