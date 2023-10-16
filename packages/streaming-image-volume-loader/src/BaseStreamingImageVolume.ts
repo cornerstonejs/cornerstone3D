@@ -107,9 +107,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       windowCenter,
       windowWidth,
       color,
+      // we use rgb (3 components) for the color volumes (and not rgba), and not rgba (which is used
+      // in some parts of the lib for stack viewing in CPU)
+      rgba: false,
       spacing: this.spacing,
       dimensions: this.dimensions,
-      PhotometricInterpretation,
+      photometricInterpretation: PhotometricInterpretation,
       voiLUTFunction: VOILUTFunction,
       invert: PhotometricInterpretation === 'MONOCHROME1',
     };
@@ -304,65 +307,19 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       if (evt.framesProcessed === evt.totalNumFrames) {
         loadStatus.callbacks.forEach((callback) => callback(evt));
+
+        const eventDetail = {
+          FrameOfReferenceUID,
+          volumeId: volumeId,
+        };
+
+        triggerEvent(
+          eventTarget,
+          Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
+          eventDetail
+        );
       }
     }
-
-    const successCallback = (
-      imageIdIndex: number,
-      imageId: string,
-      scalingParameters
-    ) => {
-      const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-
-      // Check if there is a cached image for the same imageURI (different
-      // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-
-      // check if the load was cancelled while we were waiting for the image
-      // if so we don't want to do anything
-      if (loadStatus.cancelled) {
-        console.warn(
-          'volume load cancelled, returning for imageIdIndex: ',
-          imageIdIndex
-        );
-        return;
-      }
-
-      if (!cachedImage || !cachedImage.image) {
-        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
-      }
-      const imageScalarData = this._scaleIfNecessary(
-        cachedImage.image,
-        scalingParameters
-      );
-      // todo add scaling and slope
-      const { pixelsPerImage, bytesPerImage } = this.cornerstoneImageMetaData;
-      const TypedArray = scalarData.constructor;
-      let byteOffset = bytesPerImage * frameIndex;
-
-      // create a view on the volume arraybuffer
-      const bytePerPixel = bytesPerImage / pixelsPerImage;
-
-      if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-        byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
-      }
-
-      // @ts-ignore
-      const volumeBufferView = new TypedArray(
-        arrayBuffer,
-        byteOffset,
-        pixelsPerImage
-      );
-      cachedImage.imageLoadObject.promise
-        .then((image) => {
-          volumeBufferView.set(imageScalarData);
-          updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
-        })
-        .catch((err) => {
-          errorCallback.call(this, err, imageIdIndex, imageId);
-        });
-      return;
-    };
 
     const updateTextureAndTriggerEvents = (
       volume: BaseStreamingImageVolume,
@@ -415,6 +372,59 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           totalNumFrames,
         });
       }
+    };
+
+    const successCallback = (
+      imageIdIndex: number,
+      imageId: string,
+      scalingParameters
+    ) => {
+      const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
+
+      // Check if there is a cached image for the same imageURI (different
+      // data loader scheme)
+      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
+
+      // Check if the image was already loaded by another volume and we are here
+      // since we got the imageLoadObject from the cache from the other already loaded
+      // volume
+      const cachedVolume = cache.getVolumeContainingImageId(imageId);
+
+      // check if the load was cancelled while we were waiting for the image
+      // if so we don't want to do anything
+      if (loadStatus.cancelled) {
+        console.warn(
+          'volume load cancelled, returning for imageIdIndex: ',
+          imageIdIndex
+        );
+        return;
+      }
+
+      // if it is not a cached image or volume
+      if (
+        !cachedImage?.image &&
+        !(cachedVolume && cachedVolume.volume !== this)
+      ) {
+        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
+      }
+
+      // it is either cachedImage or cachedVolume
+      const isFromImageCache = !!cachedImage;
+
+      const cachedImageOrVolume = cachedImage || cachedVolume.volume;
+
+      this.handleImageComingFromCache(
+        cachedImageOrVolume,
+        isFromImageCache,
+        scalingParameters,
+        scalarData,
+        frameIndex,
+        arrayBuffer,
+        updateTextureAndTriggerEvents,
+        imageIdIndex,
+        imageId,
+        errorCallback
+      );
     };
 
     function errorCallback(error, imageIdIndex, imageId) {
@@ -562,7 +572,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * somehow indicate whether the PT image has been corrected with suvbw or
        * not, which we store it in the this.scaling.PT.suvbw.
        */
-      this.isPrescaled = isSlopeAndInterceptNumbers;
+      this.isPreScaled = isSlopeAndInterceptNumbers;
 
       const options = {
         // WADO Image Loader
@@ -619,6 +629,58 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     return requests;
   };
+
+  private handleImageComingFromCache(
+    cachedImageOrVolume,
+    isFromImageCache: boolean,
+    scalingParameters: any,
+    scalarData: Types.VolumeScalarData,
+    frameIndex: number,
+    arrayBuffer: ArrayBufferLike,
+    updateTextureAndTriggerEvents: (
+      volume: BaseStreamingImageVolume,
+      imageIdIndex: any,
+      imageId: any
+    ) => void,
+    imageIdIndex: number,
+    imageId: string,
+    errorCallback: (error: any, imageIdIndex: any, imageId: any) => void
+  ) {
+    const imageLoadObject = isFromImageCache
+      ? cachedImageOrVolume.imageLoadObject
+      : cachedImageOrVolume.convertToCornerstoneImage(imageId, imageIdIndex);
+
+    imageLoadObject.promise
+      .then((cachedImage) => {
+        const imageScalarData = this._scaleIfNecessary(
+          cachedImage,
+          scalingParameters
+        );
+        // todo add scaling and slope
+        const { pixelsPerImage, bytesPerImage } = this.cornerstoneImageMetaData;
+        const TypedArray = scalarData.constructor;
+        let byteOffset = bytesPerImage * frameIndex;
+
+        // create a view on the volume arraybuffer
+        const bytePerPixel = bytesPerImage / pixelsPerImage;
+
+        if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
+          byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
+        }
+
+        // @ts-ignore
+        const volumeBufferView = new TypedArray(
+          arrayBuffer,
+          byteOffset,
+          pixelsPerImage
+        );
+        volumeBufferView.set(imageScalarData);
+        updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
+      })
+      .catch((err) => {
+        errorCallback.call(this, err, imageIdIndex, imageId);
+      });
+  }
 
   /**
    * It returns the imageLoad requests for the streaming image volume instance.
@@ -767,7 +829,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       petScaling.suvbw = suvbw;
     }
 
-    this.scaling = { PET: petScaling };
+    this.scaling = { PT: petScaling };
   }
 
   private _removeFromCache() {
@@ -783,13 +845,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    *
    * @param imageId - the imageId of the image to be converted
    * @param imageIdIndex - the index of the imageId in the imageIds array
-   * @returns imageLoadObject containing the promise that resolves
-   * to the cornerstone image
+   * @returns image object containing the pixel data, metadata, and other information
    */
-  public convertToCornerstoneImage(
+  public getCornerstoneImage(
     imageId: string,
     imageIdIndex: number
-  ): Types.IImageLoadObject {
+  ): Types.IImage {
     const { imageIds } = this;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
@@ -804,6 +865,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       spacing,
       invert,
       voiLUTFunction,
+      photometricInterpretation,
     } = this.cornerstoneImageMetaData;
 
     // 1. Grab the buffer and it's type
@@ -851,16 +913,18 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       ? modalityLutModule.rescaleIntercept
       : 0;
 
-    const image: Types.IImage = {
+    return {
       imageId,
       intercept,
       windowCenter,
       windowWidth,
       voiLUTFunction,
       color,
+      rgba: false,
       numComps: numComponents,
-      rows: dimensions[0],
-      columns: dimensions[1],
+      // Note the dimensions were defined as [Columns, Rows, Frames]
+      rows: dimensions[1],
+      columns: dimensions[0],
       sizeInBytes: imageScalarData.byteLength,
       getPixelData: () => imageScalarData,
       minPixelValue: minMax.min,
@@ -871,18 +935,66 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       getCanvas: undefined, // todo: which canvas?
       height: dimensions[0],
       width: dimensions[1],
-      rgba: undefined, // todo: how
       columnPixelSpacing: spacing[0],
       rowPixelSpacing: spacing[1],
       invert,
+      photometricInterpretation,
     };
+  }
 
-    // 5. Create the imageLoadObject
+  /**
+   * Converts the requested imageId inside the volume to a cornerstoneImage
+   * object. It uses the typedArray set method to copy the pixelData from the
+   * correct offset in the scalarData to a new array for the image
+   * Duplicate of getCornerstoneImageLoadObject for legacy reasons
+   *
+   * @param imageId - the imageId of the image to be converted
+   * @param imageIdIndex - the index of the imageId in the imageIds array
+   * @returns imageLoadObject containing the promise that resolves
+   * to the cornerstone image
+   */
+  public convertToCornerstoneImage(
+    imageId: string,
+    imageIdIndex: number
+  ): Types.IImageLoadObject {
+    return this.getCornerstoneImageLoadObject(imageId, imageIdIndex);
+  }
+
+  /**
+   * Converts the requested imageId inside the volume to a cornerstoneImage
+   * object. It uses the typedArray set method to copy the pixelData from the
+   * correct offset in the scalarData to a new array for the image
+   *
+   * @param imageId - the imageId of the image to be converted
+   * @param imageIdIndex - the index of the imageId in the imageIds array
+   * @returns imageLoadObject containing the promise that resolves
+   * to the cornerstone image
+   */
+  public getCornerstoneImageLoadObject(
+    imageId: string,
+    imageIdIndex: number
+  ): Types.IImageLoadObject {
+    const image = this.getCornerstoneImage(imageId, imageIdIndex);
+
     const imageLoadObject = {
       promise: Promise.resolve(image),
     };
 
     return imageLoadObject;
+  }
+
+  /**
+   * Returns an array of all the volume's images as Cornerstone images.
+   * It iterates over all the imageIds and converts them to Cornerstone images.
+   *
+   * @returns An array of Cornerstone images.
+   */
+  public getCornerstoneImages(): Types.IImage[] {
+    const { imageIds } = this;
+
+    return imageIds.map((imageId, imageIdIndex) => {
+      return this.getCornerstoneImage(imageId, imageIdIndex);
+    });
   }
 
   /**

@@ -1,4 +1,4 @@
-import { VOILUTFunctionType } from '../enums';
+import { InterpolationType, VOILUTFunctionType } from '../enums';
 import { VOIRange } from './voi';
 
 /**
@@ -11,6 +11,8 @@ type ViewportProperties = {
   VOILUTFunction?: VOILUTFunctionType;
   /** invert flag - whether the image is inverted */
   invert?: boolean;
+  /** interpolation type */
+  interpolationType?: InterpolationType;
 };
 
 export type { ViewportProperties };

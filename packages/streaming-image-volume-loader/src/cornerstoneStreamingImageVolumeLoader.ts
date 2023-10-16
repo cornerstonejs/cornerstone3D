@@ -110,6 +110,12 @@ function cornerstoneStreamingImageVolumeLoader(
       scalingParameters.rescaleIntercept < 0 ||
       scalingParameters.rescaleSlope < 0;
 
+    // The prescale is ALWAYS used with modality LUT, so we can assume that
+    // if the rescale slope is not an integer, we need to use Float32
+    const hasFloatRescale =
+      scalingParameters.rescaleIntercept % 1 !== 0 ||
+      scalingParameters.rescaleSlope % 1 !== 0;
+
     const {
       BitsAllocated,
       PixelRepresentation,
@@ -169,18 +175,18 @@ function cornerstoneStreamingImageVolumeLoader(
             '8 Bit signed images are not yet supported by this plugin.'
           );
         }
-        sizeInBytes = length;
+        sizeInBytes = length * numComponents;
         handleCache(sizeInBytes);
         scalarData = useSharedArrayBuffer
-          ? createUint8SharedArray(length)
-          : new Uint8Array(length);
+          ? createUint8SharedArray(length * numComponents)
+          : new Uint8Array(length * numComponents);
         break;
 
       case 16:
         // Temporary fix for 16 bit images to use Float32
         // until the new dicom image loader handler the conversion
         // correctly
-        if (!use16BitDataType) {
+        if (!use16BitDataType || hasFloatRescale) {
           sizeInBytes = length * 4;
           scalarData = useSharedArrayBuffer
             ? createFloat32SharedArray(length)

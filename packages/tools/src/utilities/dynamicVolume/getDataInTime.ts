@@ -40,13 +40,16 @@ function getDataInTime(
 
   if (options.maskVolumeId) {
     const segmentationVolume = cache.getVolume(options.maskVolumeId);
+    const segScalarData = segmentationVolume.getScalarData();
+    const indexArray = [];
 
-    // Get the index of every non-zero voxel in mask by mapping indexes to
-    // new array, then using the array to filter
-    const indexArray = segmentationVolume
-      .getScalarData()
-      .map((_, i) => i)
-      .filter((i) => segmentationVolume.getScalarData()[i] !== 0);
+    // Get the index of every non-zero voxel in mask
+    for (let i = 0, len = segScalarData.length; i < len; i++) {
+      if (segScalarData[i] !== 0) {
+        indexArray.push(i);
+      }
+    }
+
     const dataInTime = _getTimePointDataMask(frames, indexArray, dynamicVolume);
 
     return dataInTime;

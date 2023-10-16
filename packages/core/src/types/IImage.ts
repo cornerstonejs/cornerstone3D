@@ -72,6 +72,8 @@ interface IImage {
   sliceThickness?: number;
   /** whether image pixels are inverted in color */
   invert: boolean;
+  /** image photometric interpretation */
+  photometricInterpretation?: string;
   /** image size in number of bytes */
   sizeInBytes: number;
   /** CPU: custom modality LUT for image  */
@@ -82,7 +84,7 @@ interface IImage {
   colormap?: CPUFallbackColormap;
   /** image scaling metadata - including PT suv values */
   scaling?: {
-    PET?: {
+    PT?: {
       // @TODO: Do these values exist?
       SUVlbmFactor?: number;
       SUVbsaFactor?: number;
@@ -91,6 +93,8 @@ interface IImage {
       suvbwToSuvbsa?: number;
     };
   };
+  loadTimeInMS?: number;
+  decodeTimeInMS?: number;
   /** CPU: image statistics for rendering */
   stats?: {
     lastStoredPixelDataToCanvasImageDataTime?: number;

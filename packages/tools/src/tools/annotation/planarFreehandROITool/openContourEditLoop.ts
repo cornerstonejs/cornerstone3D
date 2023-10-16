@@ -563,6 +563,8 @@ function completeOpenContourEdit(element: HTMLDivElement) {
         findOpenUShapedContourVectorToPeak(fusedCanvasPoints, viewport);
     }
 
+    annotation.invalidated = true;
+
     this.triggerAnnotationModified(annotation, enabledElement);
   }
 

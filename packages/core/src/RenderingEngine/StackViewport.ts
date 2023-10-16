@@ -9,7 +9,6 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
-import Events from '../enums/Events';
 import {
   triggerEvent,
   isEqual,
@@ -40,6 +39,7 @@ import {
   VolumeActor,
   Mat3,
   ColormapRegistration,
+  IImageCalibration,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -47,8 +47,13 @@ import { getColormap } from './helpers/cpuFallback/colors/index';
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import InterpolationType from '../enums/InterpolationType';
-import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import {
+  InterpolationType,
+  RequestType,
+  Events,
+  CalibrationTypes,
+  VOILUTFunctionType,
+} from '../enums';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
@@ -58,7 +63,6 @@ import resize from './helpers/cpuFallback/rendering/resize';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
-import RequestType from '../enums/RequestType';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
@@ -73,6 +77,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
+import ViewportStatus from '../enums/ViewportStatus';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -89,8 +94,10 @@ interface ImageDataMetaData {
 }
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
-  rowScale: number;
-  columnScale: number;
+  rowScale?: number;
+  columnScale?: number;
+  scale: number;
+  calibration: IImageCalibration;
 };
 
 type SetVOIOptions = {
@@ -122,6 +129,8 @@ class StackViewport extends Viewport implements IStackViewport {
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
+  // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
+  private initialInvert = false;
   private interpolationType: InterpolationType;
 
   // Helpers
@@ -409,6 +418,7 @@ class StackViewport extends Viewport implements IStackViewport {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
+      calibration: this.calibration,
       preScale: {
         ...this.csImage.preScale,
       },
@@ -450,6 +460,7 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
+      calibration: this.calibration,
       preScale: {
         ...this.csImage.preScale,
       },
@@ -556,6 +567,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
+    this.calibration = null;
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     if (!this.useCPURendering) {
@@ -589,89 +601,21 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns modified imagePlaneModule with the calibrated spacings
    */
   private calibrateIfNecessary(imageId, imagePlaneModule) {
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
+    const calibration = metaData.get('calibratedPixelSpacing', imageId);
+    const isUpdated = this.calibration !== calibration;
+    const { scale } = calibration || {};
+    this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
+    imagePlaneModule.calibration = calibration;
 
-    if (!calibratedPixelSpacing) {
+    if (!isUpdated) {
       return imagePlaneModule;
     }
 
-    const {
-      rowPixelSpacing: calibratedRowSpacing,
-      columnPixelSpacing: calibratedColumnSpacing,
-    } = calibratedPixelSpacing;
-
-    // Todo: This is necessary in general, but breaks an edge case when an image
-    // is calibrated to some other spacing, and it gets calibrated BACK to the
-    // original spacing.
-    if (
-      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
-      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
-    ) {
-      return imagePlaneModule;
-    }
-
-    // Check if there is already an actor
-    const imageDataMetadata = this.getImageData();
-
-    // If no actor (first load) and calibration matches the dicom header
-    if (
-      !imageDataMetadata &&
-      imagePlaneModule.rowPixelSpacing === calibratedRowSpacing &&
-      imagePlaneModule.columnPixelSpacing === calibratedColumnSpacing
-    ) {
-      return imagePlaneModule;
-    }
-
-    // If no actor (first load) and calibration doesn't match headers
-    // -> needs calibration
-    if (
-      !imageDataMetadata &&
-      (imagePlaneModule.rowPixelSpacing !== calibratedRowSpacing ||
-        imagePlaneModule.columnPixelSpacing !== calibratedColumnSpacing)
-    ) {
-      this._publishCalibratedEvent = true;
-
-      this._calibrationEvent = <CalibrationEvent>{
-        rowScale: calibratedRowSpacing / imagePlaneModule.rowPixelSpacing,
-        columnScale:
-          calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
-      };
-
-      // modify the calibration object to store the actual updated values applied
-      calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
-      // This updates the render copy
-      imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
-      imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
-      return imagePlaneModule;
-    }
-
-    // If there is already an actor, check if calibration is needed for the current actor
-    const { imageData } = imageDataMetadata;
-    const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
-
-    // modify the calibration object to store the actual updated values applied
-    calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
-    imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
-    imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
-
-    // If current actor spacing matches the calibrated spacing
-    if (
-      rowPixelSpacing === calibratedRowSpacing &&
-      columnPixelSpacing === calibratedPixelSpacing
-    ) {
-      // No calibration is required
-      return imagePlaneModule;
-    }
-
-    // Calibration is required
+    this.calibration = calibration;
     this._publishCalibratedEvent = true;
-
     this._calibrationEvent = <CalibrationEvent>{
-      rowScale: calibratedRowSpacing / rowPixelSpacing,
-      columnScale: calibratedColumnSpacing / columnPixelSpacing,
+      scale,
+      calibration,
     };
 
     return imagePlaneModule;
@@ -695,6 +639,9 @@ class StackViewport extends Viewport implements IStackViewport {
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
+    this.viewportStatus = this.csImage
+      ? ViewportStatus.PRE_RENDER
+      : ViewportStatus.LOADING;
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
@@ -752,6 +699,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
     this.voiUpdatedWithSetProperties = false;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
 
@@ -783,7 +731,7 @@ class StackViewport extends Viewport implements IStackViewport {
       this.setRotation(0);
     }
     this.setInterpolationType(InterpolationType.LINEAR);
-    this.setInvertColor(false);
+    this.setInvertColor(this.initialInvert);
   }
 
   private _setPropertiesFromCache(): void {
@@ -1068,7 +1016,7 @@ class StackViewport extends Viewport implements IStackViewport {
       ? vec3.negate(vec3.create(), this.initialViewUp)
       : this.initialViewUp;
 
-    this.setCamera({
+    this.setCameraNoEvent({
       viewUp: initialViewUp as Point3,
     });
 
@@ -1288,7 +1236,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageIdScalingFactor - suvbw, suvlbm, suvbsa
    */
   private _addScalingToViewport(imageIdScalingFactor) {
-    if (this.scaling.PET) {
+    if (this.scaling.PT) {
       return;
     }
 
@@ -1296,17 +1244,17 @@ class StackViewport extends Viewport implements IStackViewport {
     // These ratios are constant across all frames, so only need one.
     const { suvbw, suvlbm, suvbsa } = imageIdScalingFactor;
 
-    const petScaling = <PTScaling>{};
+    const ptScaling = <PTScaling>{};
 
     if (suvlbm) {
-      petScaling.suvbwToSuvlbm = suvlbm / suvbw;
+      ptScaling.suvbwToSuvlbm = suvlbm / suvbw;
     }
 
     if (suvbsa) {
-      petScaling.suvbwToSuvbsa = suvbsa / suvbw;
+      ptScaling.suvbwToSuvbsa = suvbsa / suvbw;
     }
 
-    this.scaling.PET = petScaling;
+    this.scaling.PT = ptScaling;
   }
 
   /**
@@ -1493,6 +1441,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
+    this.viewportStatus = ViewportStatus.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1714,6 +1663,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         this._setCSImage(image);
+        this.viewportStatus = ViewportStatus.PRE_RENDER;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1806,6 +1756,21 @@ class StackViewport extends Viewport implements IStackViewport {
         // In that case, do not render this image.
         if (this.currentImageIdIndex !== imageIdIndex) {
           return;
+        }
+
+        // If Photometric Interpretation is not the same for the next image we are trying to load
+        // invalidate the stack to recreate the VTK imageData
+        const csImgFrame = this.csImage?.imageFrame;
+        const imgFrame = image?.imageFrame;
+
+        // if a volume is decached into images then the imageFrame will be undefined
+        if (
+          csImgFrame?.photometricInterpretation !==
+            imgFrame?.photometricInterpretation ||
+          this.csImage?.photometricInterpretation !==
+            image?.photometricInterpretation
+        ) {
+          this.stackInvalidated = true;
         }
 
         this._setCSImage(image);
@@ -2092,10 +2057,20 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    this.setVOI(this._getInitialVOIRange(image));
-    this.setInvertColor(
-      imagePixelModule.photometricInterpretation === 'MONOCHROME1'
-    );
+    const monochrome1 =
+      imagePixelModule.photometricInterpretation === 'MONOCHROME1';
+
+    // invalidate the stack so that we can set the voi range
+    this.stackInvalidated = true;
+
+    this.setVOI(this._getInitialVOIRange(image), {
+      forceRecreateLUTFunction: !!monochrome1,
+    });
+
+    this.initialInvert = !!monochrome1;
+
+    // should carry over the invert color from the previous image if has been applied
+    this.setInvertColor(this.invert || this.initialInvert);
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
@@ -2149,9 +2124,20 @@ class StackViewport extends Viewport implements IStackViewport {
     windowWidth: number | number[],
     windowCenter: number | number[]
   ): { lower: number; upper: number } | undefined {
-    return typeof windowCenter === 'number' && typeof windowWidth === 'number'
-      ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
-      : undefined;
+    let center, width;
+
+    if (typeof windowCenter === 'number' && typeof windowWidth === 'number') {
+      center = windowCenter;
+      width = windowWidth;
+    } else if (Array.isArray(windowCenter) && Array.isArray(windowWidth)) {
+      center = windowCenter[0];
+      width = windowWidth[0];
+    }
+
+    // If center and width are defined, convert them to low-high range
+    if (center !== undefined && width !== undefined) {
+      return windowLevelUtil.toLowHighRange(width, center);
+    }
   }
 
   /**
@@ -2168,6 +2154,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
     this.hasPixelSpacing = true;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
@@ -2251,7 +2238,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const targetImageId = imageIds[newTargetImageIdIndex];
 
-    const imageAlreadyLoaded = cache.isImageIdCached(targetImageId);
+    const imageAlreadyLoaded = cache.isLoaded(targetImageId);
 
     // If image is already cached we want to scroll right away; however, if it is
     // not cached, we can debounce the scroll event to avoid firing multiple scroll
@@ -2590,7 +2577,9 @@ class StackViewport extends Viewport implements IStackViewport {
   public hasImageURI = (imageURI: string): boolean => {
     const imageIds = this.imageIds;
     for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+      if (imageIdToURI(imageIds[i]) === imageURI) {
+        return true;
+      }
     }
 
     return false;
@@ -2636,6 +2625,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
+      viewportStatus: this.viewportStatus,
     };
   };
 
@@ -2697,28 +2687,20 @@ class StackViewport extends Viewport implements IStackViewport {
       imageId
     );
 
+    this.calibration ||= imagePlaneModule.calibration;
+
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };
 
-    if (calibratedPixelSpacing?.appliedSpacing) {
-      // Over-ride the image plane module spacing, as the measurement data
-      // has already been created with the calibrated spacing provided from
-      // down below inside calibrateIfNecessary
-      const { rowPixelSpacing, columnPixelSpacing } =
-        calibratedPixelSpacing.appliedSpacing;
-      newImagePlaneModule.rowPixelSpacing = rowPixelSpacing;
-      newImagePlaneModule.columnPixelSpacing = columnPixelSpacing;
-    }
-
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
-      this.hasPixelSpacing = false;
+      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.rowPixelSpacing) {
       newImagePlaneModule.rowPixelSpacing = 1;
-      this.hasPixelSpacing = false;
+      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.columnCosines) {

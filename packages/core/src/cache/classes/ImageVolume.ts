@@ -23,6 +23,9 @@ export class ImageVolume implements IImageVolume {
 
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
+
+  isPreScaled = false;
+
   /** Dimensions of the volume */
   dimensions: Point3;
   /** volume direction in world space */
@@ -32,10 +35,9 @@ export class ImageVolume implements IImageVolume {
   /** volume origin, Note this is an opinionated origin for the volume */
   origin: Point3;
   /** Whether preScaling has been performed on the volume */
-  isPrescaled = false;
   /** volume scaling parameters if it contains scaled data */
   scaling?: {
-    PET?: {
+    PT?: {
       // @TODO: Do these values exist?
       SUVlbmFactor?: number;
       SUVbsaFactor?: number;
@@ -149,12 +151,12 @@ export class ImageVolume implements IImageVolume {
    */
   destroy(): void {
     // TODO: GPU memory associated with volume is not cleared.
-    this.vtkOpenGLTexture.releaseGraphicsResources();
-    this.vtkOpenGLTexture.destroyTexture();
-    this.vtkOpenGLTexture.delete();
     this.imageData.delete();
     this.imageData = null;
     this.scalarData = null;
+
+    this.vtkOpenGLTexture.releaseGraphicsResources();
+    this.vtkOpenGLTexture.delete();
   }
 }
 

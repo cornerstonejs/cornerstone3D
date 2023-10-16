@@ -1,9 +1,11 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
 import { vec3 } from 'gl-matrix';
 
 import cache from '../cache';
-import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis } from '../enums';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import { BlendModes, OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
   IImageVolume,
@@ -12,9 +14,9 @@ import type {
   Point3,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import { actorIsA, getClosestImageId } from '../utilities';
-import transformWorldToIndex from '../utilities/transformWorldToIndex';
+import { actorIsA, getClosestImageId, triggerEvent } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
+import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -182,34 +184,6 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetCamera();
   }
 
-  /**
-   * Given a point in world coordinates, return the intensity at that point
-   * @param point - The point in world coordinates to get the intensity
-   * from.
-   * @returns The intensity value of the voxel at the given point.
-   */
-  public getIntensityFromWorld(point: Point3): number {
-    const actorEntry = this.getDefaultActor();
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
-      return;
-    }
-
-    const { actor, uid } = actorEntry;
-    const imageData = actor.getMapper().getInputData();
-
-    const volume = cache.getVolume(uid);
-    const { dimensions } = volume;
-
-    const index = transformWorldToIndex(imageData, point);
-
-    const voxelIndex =
-      index[2] * dimensions[0] * dimensions[1] +
-      index[1] * dimensions[0] +
-      index[0];
-
-    return volume.getScalarData()[voxelIndex];
-  }
-
   public setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs = [],
@@ -294,7 +268,6 @@ class VolumeViewport extends BaseVolumeViewport {
    * filterActorUIDs are provided, all actors will be affected.
    *
    * @param slabThickness - The slab thickness to set.
-   * @param blendMode - The blend mode to use when rendering the actors.
    * @param filterActorUIDs - Optional argument to filter the actors to apply
    * the slab thickness to (if not provided, all actors will be affected).
    */
@@ -316,23 +289,6 @@ class VolumeViewport extends BaseVolumeViewport {
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
-  }
-
-  /**
-   * Gets the largest slab thickness from all actors in the viewport.
-   *
-   * @returns slabThickness - The slab thickness.
-   */
-  public getSlabThickness(): number {
-    const actors = this.getActors();
-    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-    actors.forEach((actor) => {
-      if (actor.slabThickness > slabThickness) {
-        slabThickness = actor.slabThickness;
-      }
-    });
-
-    return slabThickness;
   }
 
   /**
@@ -397,6 +353,54 @@ class VolumeViewport extends BaseVolumeViewport {
   };
 
   getRotation = (): number => 0;
+
+  /**
+   * Reset the viewport properties to the default values
+   *
+
+   * @param volumeId - Optional volume ID to specify which volume properties to reset.
+   * If not provided, it will reset the properties of the default actor.
+   *
+   * @returns void
+   */
+  public resetProperties(volumeId?: string): void {
+    this._resetProperties(volumeId);
+  }
+
+  private _resetProperties(volumeId?: string) {
+    // Get the actor based on the volumeId if provided, otherwise use the default actor.
+    const volumeActor = volumeId
+      ? this.getActor(volumeId)
+      : this.getDefaultActor();
+
+    if (!volumeActor) {
+      throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+    }
+
+    const imageVolume = cache.getVolume(volumeActor.uid);
+    if (!imageVolume) {
+      throw new Error(
+        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+      );
+    }
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+
+    const range = (volumeActor.actor as vtkVolume)
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .getMappingRange();
+
+    const eventDetails = {
+      viewportId: volumeActor.uid,
+      range: {
+        lower: range[0],
+        upper: range[1],
+      },
+      volumeId: volumeActor.uid,
+    };
+
+    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
+  }
 }
 
 export default VolumeViewport;

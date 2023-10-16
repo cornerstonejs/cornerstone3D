@@ -44,7 +44,10 @@ import {
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import {
+  ModalityUnitOptions,
+  getModalityUnit,
+} from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -91,6 +94,7 @@ const { transformWorldToIndex } = csUtils;
  * Read more in the Docs section of the website.
  *
  */
+
 class ProbeTool extends AnnotationTool {
   static toolName;
 
@@ -115,6 +119,7 @@ class ProbeTool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -437,7 +442,10 @@ class ProbeTool extends AnnotationTool {
 
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      if (!data.cachedStats[targetId]) {
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].value == null
+      ) {
         data.cachedStats[targetId] = {
           Modality: null,
           index: null,
@@ -502,20 +510,12 @@ class ProbeTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        continue;
+      }
 
-      const isSuvScaled = this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      );
-
-      const textLines = this._getTextLines(
-        data,
-        targetId,
-        isPreScaled,
-        isSuvScaled
-      );
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
         const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
@@ -529,7 +529,7 @@ class ProbeTool extends AnnotationTool {
           textUID,
           textLines,
           [textCanvasCoordinates[0], textCanvasCoordinates[1]],
-          this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+          options
         );
       }
     }
@@ -537,73 +537,9 @@ class ProbeTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines(
-    data,
-    targetId: string,
-    isPreScaled: boolean,
-    isSuvScaled: boolean
-  ): string[] | undefined {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats;
-
-    if (value === undefined && SUVBw === undefined) {
-      return;
-    }
-
-    const textLines = [];
-    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
-
-    textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
-
-    // Check if we have scaling for the other 2 SUV types for the PET.
-    if (Modality === 'PT' && isPreScaled === true && SUVBw !== undefined) {
-      textLines.push(`${SUVBw.toFixed(2)} SUV bw`);
-      if (SUVLbm) {
-        textLines.push(`${SUVLbm.toFixed(2)} SUV lbm`);
-      }
-      if (SUVBsa) {
-        textLines.push(`${SUVBsa.toFixed(2)} SUV bsa`);
-      }
-    } else {
-      textLines.push(`${value.toFixed(2)} ${unit}`);
-    }
-
-    return textLines;
-  }
-
-  _getValueForModality(value, imageVolume, modality) {
-    const values = {};
-
-    values['value'] = value;
-
-    // Check if we have scaling for the other 2 SUV types for the PET.
-    if (
-      modality === 'PT' &&
-      imageVolume.scaling?.PET &&
-      (imageVolume.scaling.PET.suvbwToSuvbsa ||
-        imageVolume.scaling.PET.suvbwToSuvlbm)
-    ) {
-      const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET;
-
-      values['SUVBw'] = value;
-
-      if (suvbwToSuvlbm) {
-        const SUVLbm = value * suvbwToSuvlbm;
-        values['SUVLbm'] = SUVLbm;
-      }
-
-      if (suvbwToSuvbsa) {
-        const SUVBsa = value * suvbwToSuvbsa;
-        values['SUVBsa'] = SUVBsa;
-      }
-    }
-
-    return values;
-  }
-
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const worldPos = data.handles.points[0];
     const { cachedStats } = data;
@@ -612,6 +548,15 @@ class ProbeTool extends AnnotationTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
+
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
@@ -656,12 +601,17 @@ class ProbeTool extends AnnotationTool {
           index[2] = viewport.getCurrentImageIdIndex();
         }
 
-        const values = this._getValueForModality(value, image, modality);
+        const modalityUnit = getModalityUnit(
+          modality,
+          annotation.metadata.referencedImageId,
+          modalityUnitOptions
+        );
 
         cachedStats[targetId] = {
           index,
-          ...values,
+          value,
           Modality: modality,
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -687,6 +637,23 @@ class ProbeTool extends AnnotationTool {
 
     return cachedStats;
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 ProbeTool.toolName = 'Probe';

@@ -72,7 +72,9 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     // get viewports with tool enabled
     const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
 
-    if (!viewportIds) return;
+    if (!viewportIds) {
+      return;
+    }
 
     // get enabled elements
     const enabledElements = viewportIds.map((e) =>

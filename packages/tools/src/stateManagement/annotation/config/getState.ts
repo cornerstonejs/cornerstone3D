@@ -11,13 +11,17 @@ import { AnnotationStyleStates } from '../../../enums';
  */
 function getState(annotation?: Annotation): AnnotationStyleStates {
   if (annotation) {
-    if (annotation.data && annotation.highlighted)
+    if (annotation.data && annotation.highlighted) {
       return AnnotationStyleStates.Highlighted;
-    if (isAnnotationSelected(annotation.annotationUID))
+    }
+    if (isAnnotationSelected(annotation.annotationUID)) {
       return AnnotationStyleStates.Selected;
+    }
 
     // Todo: make annotation lock api not to rely on the annotation itself
-    if (isAnnotationLocked(annotation)) return AnnotationStyleStates.Locked;
+    if (isAnnotationLocked(annotation)) {
+      return AnnotationStyleStates.Locked;
+    }
   }
 
   return AnnotationStyleStates.Default;

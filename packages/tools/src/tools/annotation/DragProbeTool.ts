@@ -44,6 +44,7 @@ class DragProbeTool extends ProbeTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -155,7 +156,20 @@ class DragProbeTool extends ProbeTool {
 
     const color = this.getStyle('color', styleSpecifier, annotation);
 
-    if (!data.cachedStats[targetId]) {
+    const modalityUnitOptions = {
+      isPreScaled: isViewportPreScaled(viewport, targetId),
+
+      isSuvScaled: this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      ),
+    };
+
+    if (
+      !data.cachedStats[targetId] ||
+      data.cachedStats[targetId].value == null
+    ) {
       data.cachedStats[targetId] = {
         Modality: null,
         index: null,
@@ -185,20 +199,7 @@ class DragProbeTool extends ProbeTool {
 
     renderStatus = true;
 
-    const isPreScaled = isViewportPreScaled(viewport, targetId);
-
-    const isSuvScaled = this.isSuvScaled(
-      viewport,
-      targetId,
-      annotation.metadata.referencedImageId
-    );
-
-    const textLines = this._getTextLines(
-      data,
-      targetId,
-      isPreScaled,
-      isSuvScaled
-    );
+    const textLines = this.configuration.getTextLines(data, targetId);
     if (textLines) {
       const textCanvasCoordinates = [
         canvasCoordinates[0] + 6,
@@ -218,6 +219,23 @@ class DragProbeTool extends ProbeTool {
 
     return renderStatus;
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { index, value, modalityUnit } = cachedVolumeStats;
+
+  if (value === undefined) {
+    return;
+  }
+
+  const textLines = [];
+
+  textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
+
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 DragProbeTool.toolName = 'DragProbe';

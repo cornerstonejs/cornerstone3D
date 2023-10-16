@@ -477,7 +477,9 @@ describe('Length Tool (CPU):', () => {
         element,
         evt,
         mouseUpEvt,
-        addEventListenerForAnnotationRendered
+        addEventListenerForAnnotationRendered,
+        null,
+        false
       );
     });
 

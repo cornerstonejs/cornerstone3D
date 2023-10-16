@@ -21,7 +21,12 @@ import type * as AnnotationStyle from './AnnotationStyle';
 import type ToolHandle from './ToolHandle';
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
 import type InteractionTypes from './InteractionTypes';
-import type { ToolProps, PublicToolProps } from './ToolProps';
+import type ToolAction from './ToolAction';
+import type {
+  ToolProps,
+  PublicToolProps,
+  ToolConfiguration,
+} from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type JumpToSliceOptions from './JumpToSliceOptions';
 import type ScrollOptions from './ScrollOptions';
@@ -52,6 +57,7 @@ import IToolClassReference from './IToolClassReference';
 import { ContourSegmentationData } from './ContourTypes';
 import IAnnotationManager from './IAnnotationManager';
 import AnnotationGroupSelector from './AnnotationGroupSelector';
+import { Statistics } from './CalculatorTypes';
 
 export type {
   // AnnotationState
@@ -68,6 +74,7 @@ export type {
   PlanarBoundingBox,
   ToolProps,
   PublicToolProps,
+  ToolConfiguration,
   // Event data
   EventTypes,
   IPoints,
@@ -78,6 +85,7 @@ export type {
   SetToolBindingsType,
   ToolOptionsType,
   InteractionTypes,
+  ToolAction,
   //
   IToolGroup,
   IToolClassReference,
@@ -114,4 +122,6 @@ export type {
   FloodFillOptions,
   // Contour
   ContourSegmentationData,
+  //Statistics
+  Statistics,
 };

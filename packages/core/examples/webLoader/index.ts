@@ -5,6 +5,8 @@ import {
   metaData,
   getRenderingEngine,
   Types,
+  setVolumesForViewports,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -28,12 +30,42 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const element = document.createElement('div');
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
 
-content.appendChild(element);
+const element1 = document.createElement('div');
+element1.id = 'cornerstone-element1';
+element1.style.width = '500px';
+element1.style.height = '500px';
+
+const paraElement = document.createElement('p');
+const paraText = document.createTextNode('volume viewport');
+paraElement.appendChild(paraText);
+
+const rowElement = document.createElement('div');
+rowElement.style.display = 'flex';
+rowElement.style.justifyContent = 'space-between';
+
+const element2 = document.createElement('div');
+element2.id = 'cornerstone-element2';
+element2.style.width = '500px';
+element2.style.height = '500px';
+
+const element3 = document.createElement('div');
+element3.id = 'cornerstone-element3';
+element3.style.width = '500px';
+element3.style.height = '500px';
+
+const element4 = document.createElement('div');
+element4.id = 'cornerstone-element4';
+element4.style.width = '500px';
+element4.style.height = '500px';
+
+rowElement.appendChild(element2);
+rowElement.appendChild(element3);
+rowElement.appendChild(element4);
+
+content.appendChild(element1);
+content.appendChild(paraElement);
+content.appendChild(rowElement);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'COLOR_STACK';
@@ -58,15 +90,10 @@ const imageIds = [
 
 registerWebImageLoader(imageLoader);
 
-metaData.addProvider(
-  // @ts-ignore
-  (type, imageId) => hardcodedMetaDataProvider(type, imageId, imageIds),
-  10000
-);
 // ============================= //
 
 addSliderToToolbar({
-  title: 'SLice Index',
+  title: 'Slice Index',
   range: [0, 9],
   defaultValue: 0,
   onSelectedValueChange: (value) => {
@@ -91,6 +118,12 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  metaData.addProvider(
+    // @ts-ignore
+    (type, imageId) => hardcodedMetaDataProvider(type, imageId, imageIds),
+    10000
+  );
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -98,14 +131,52 @@ async function run() {
     {
       viewportId: 'COLOR_STACK',
       type: ViewportType.STACK,
-      element,
+      element: element1,
+    },
+    {
+      viewportId: 'COLOR_VOLUME_1',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+    },
+    {
+      viewportId: 'COLOR_VOLUME_2',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
+    {
+      viewportId: 'COLOR_VOLUME_3',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element4,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
     },
   ];
+
+  const volumeId = 'COLOR_VOLUME';
+
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
 
   renderingEngine.setViewports(viewportInputArray);
 
   // render stack viewport
   renderingEngine.getStackViewports()[0].setStack(imageIds);
+
+  setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    ['COLOR_VOLUME_1', 'COLOR_VOLUME_2', 'COLOR_VOLUME_3']
+  );
+
+  volume.load();
+
+  // render volume viewports
+  renderingEngine.render();
 }
 
 run();

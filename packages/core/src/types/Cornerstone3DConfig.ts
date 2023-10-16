@@ -1,5 +1,20 @@
+import type { TierResult, GetGPUTier } from 'detect-gpu';
+
 type Cornerstone3DConfig = {
-  detectGPU: any;
+  /**
+   * It is used to store the device information,
+   * we use it if provided if not a network call is performed.
+   * Its type is the `TierResult` in the `detect-gpu` library.
+   * https://github.com/pmndrs/detect-gpu/blob/master/src/index.ts#L82
+   */
+  gpuTier?: TierResult;
+  /**
+   * When the `gpuTier` is not provided, the `detectGPUConfig` is passed as
+   * an argument to the `getGPUTier` method.
+   * Its type is the `GetGPUTier` in the `detect-gpu` library.
+   * https://github.com/pmndrs/detect-gpu/blob/master/src/index.ts#L20
+   */
+  detectGPUConfig: GetGPUTier;
   rendering: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting

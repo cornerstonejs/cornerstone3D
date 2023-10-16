@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
 
 /**
  * Draws a textBox.
@@ -100,8 +100,8 @@ function _drawTextGroup(
     };
 
     // Todo: for some reason this does not work to not re-render the textBox
-    _setAttributesIfNecessary(textAttributes, textElement);
-    _setAttributesIfNecessary(textGroupAttributes, existingTextGroup);
+    setAttributesIfNecessary(textAttributes, textElement);
+    setAttributesIfNecessary(textGroupAttributes, existingTextGroup);
 
     textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
 
@@ -205,7 +205,7 @@ function _drawTextBackground(group: SVGGElement, color: string) {
     fill: color,
   };
 
-  _setAttributesIfNecessary(attributes, element);
+  setAttributesIfNecessary(attributes, element);
 
   return bBox;
 }

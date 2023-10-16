@@ -23,6 +23,7 @@ import * as segmentation from './stateManagement/segmentation';
 import {
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   PanTool,
   TrackballRotateTool,
   DragProbeTool,
@@ -53,10 +54,13 @@ import {
   AngleTool,
   CobbAngleTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceCursors,
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  OrientationMarkerTool,
+  OverlayGridTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -71,6 +75,7 @@ export {
   // Base Tools
   BaseTool,
   AnnotationTool,
+  AnnotationDisplayTool,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
@@ -86,6 +91,7 @@ export {
   LengthTool,
   CrosshairsTool,
   ReferenceLinesTool,
+  OverlayGridTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -96,6 +102,7 @@ export {
   AngleTool,
   CobbAngleTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
@@ -108,6 +115,7 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  OrientationMarkerTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

@@ -201,11 +201,15 @@ function postProcessDecodedPixels(
     Float32Array,
   };
 
-  if (
-    options.targetBuffer &&
-    options.targetBuffer.type &&
-    !isColorImage(imageFrame.photometricInterpretation)
-  ) {
+  const type = options.targetBuffer?.type;
+  // Sometimes the type is specified before the DICOM header data has been
+  // read.  This is fine except for color data, where the wrong type gets
+  // specified.  Don't use the target buffer in that case.
+  const invalidColorType =
+    isColorImage(imageFrame.photometricInterpretation) &&
+    options.targetBuffer?.offset === undefined;
+
+  if (type && !invalidColorType) {
     pixelDataArray = _handleTargetBuffer(
       options,
       imageFrame,
@@ -261,11 +265,8 @@ function postProcessDecodedPixels(
   // since we can't transfer ownership of a SharedArrayBuffer to another thread
   // in the workers
   const hasTargetBuffer = options.targetBuffer !== undefined;
-  const isNotSharedArrayBuffer =
-    hasTargetBuffer &&
-    !(options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer);
 
-  if (!hasTargetBuffer || isNotSharedArrayBuffer) {
+  if (!hasTargetBuffer || !options.isSharedArrayBuffer) {
     imageFrame.pixelData = pixelDataArray;
   }
 

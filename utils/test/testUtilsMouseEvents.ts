@@ -60,6 +60,7 @@ function createNormalizedMouseEvent(
  * @param mouseUpEvent the mouse up event to dispatch
  * @param betweenDownAndUpCallback optional callback between the down and up
  * @param afterDownAndUpCallback optional callback after the up
+ * @param isActivate is it a down and up to activate (e.g. a tool) or simple down and up (e.g. to select)
  * @returns a Promise for the eventual completion of the mouse down and up
  */
 function performMouseDownAndUp(
@@ -67,11 +68,20 @@ function performMouseDownAndUp(
   mouseDownEvent: MouseEvent,
   mouseUpEvent: MouseEvent,
   betweenDownAndUpCallback: () => unknown = null,
-  afterDownAndUpCallback: () => unknown = null
+  afterDownAndUpCallback: () => unknown = null,
+  isActivate = true
 ): Promise<void> {
   return new Promise<void>((resolve) => {
     const mouseDownListener = function () {
+      element.removeEventListener(
+        Events.MOUSE_DOWN_ACTIVATE,
+        mouseDownListener
+      );
       element.removeEventListener(Events.MOUSE_DOWN, mouseDownListener);
+
+      // It could be a click or an up.
+      element.addEventListener(Events.MOUSE_UP, mouseUpListener);
+      element.addEventListener(Events.MOUSE_CLICK, mouseUpListener);
 
       if (betweenDownAndUpCallback) {
         betweenDownAndUpCallback();
@@ -80,7 +90,11 @@ function performMouseDownAndUp(
       document.dispatchEvent(mouseUpEvent);
     };
 
-    element.addEventListener(Events.MOUSE_DOWN, mouseDownListener);
+    if (isActivate) {
+      element.addEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownListener);
+    } else {
+      element.addEventListener(Events.MOUSE_DOWN, mouseDownListener);
+    }
 
     const mouseUpListener = function () {
       element.removeEventListener(Events.MOUSE_UP, mouseUpListener);
@@ -91,10 +105,6 @@ function performMouseDownAndUp(
       }
       resolve();
     };
-
-    // It could be a click or an up.
-    element.addEventListener(Events.MOUSE_UP, mouseUpListener);
-    element.addEventListener(Events.MOUSE_CLICK, mouseUpListener);
 
     element.dispatchEvent(mouseDownEvent);
   });

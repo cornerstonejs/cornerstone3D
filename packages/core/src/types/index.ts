@@ -30,6 +30,7 @@ import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
 import type ViewportInputOptions from './ViewportInputOptions';
 import type IImageData from './IImageData';
+import type IImageCalibration from './IImageCalibration';
 import type CPUIImageData from './CPUIImageData';
 import type { CPUImageData } from './CPUIImageData';
 import type IImage from './IImage';
@@ -80,6 +81,7 @@ import type { ViewportProperties } from './ViewportProperties';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { AffineMatrix } from './AffineMatrix';
 
 export type {
   // config
@@ -102,6 +104,7 @@ export type {
   IStreamingImageVolume,
   IImage,
   IImageData,
+  IImageCalibration,
   CPUIImageData,
   CPUImageData,
   EventTypes,
@@ -171,4 +174,5 @@ export type {
   PixelDataTypedArray,
   ImagePixelModule,
   ImagePlaneModule,
+  AffineMatrix,
 };
