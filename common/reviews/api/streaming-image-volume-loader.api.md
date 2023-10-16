@@ -8,6 +8,7 @@ import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
+import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -575,6 +576,7 @@ enum GeometryType {
 // @public (undocumented)
 export const helpers: {
     getDynamicVolumeInfo: typeof getDynamicVolumeInfo;
+    sortImageIdsAndGetSpacing: typeof sortImageIdsAndGetSpacing;
 };
 
 // @public (undocumented)
@@ -761,6 +763,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
     height: number;
@@ -768,6 +772,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;

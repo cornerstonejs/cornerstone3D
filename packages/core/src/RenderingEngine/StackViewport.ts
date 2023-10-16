@@ -1017,7 +1017,7 @@ class StackViewport extends Viewport implements IStackViewport {
       ? vec3.negate(vec3.create(), this.initialViewUp)
       : this.initialViewUp;
 
-    this.setCamera({
+    this.setCameraNoEvent({
       viewUp: initialViewUp as Point3,
     });
 
@@ -2239,7 +2239,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const targetImageId = imageIds[newTargetImageIdIndex];
 
-    const imageAlreadyLoaded = cache.isImageIdCached(targetImageId);
+    const imageAlreadyLoaded = cache.isLoaded(targetImageId);
 
     // If image is already cached we want to scroll right away; however, if it is
     // not cached, we can debounce the scroll event to avoid firing multiple scroll

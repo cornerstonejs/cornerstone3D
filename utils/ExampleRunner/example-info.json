@@ -166,6 +166,10 @@
         "name": "Magnify Tool",
         "description": "Demonstrates the usage of the magnification tool"
       },
+      "advancedMagnifyTool": {
+        "name": "Advanced Magnify Tool",
+        "description": "Demonstrates the usage of the advanced magnification tool on stack and volume viewports"
+      },
       "CINETool": {
         "name": "CINE Tool",
         "description": "Demonstrates the usage of the CINE tool"
@@ -250,9 +254,17 @@
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
       },
+      "overlayGrid": {
+        "name": "Overlay Grid",
+        "description": "Demonstrate overlay grid tool usage with three viewports one for each orientation"
+      },
       "referenceLines": {
         "name": "Reference Lines",
         "description": "Demonstrate reference line tool for rendering viewports location with respect to each other"
+      },
+      "orientationMarker": {
+        "name": "Orientation Marker",
+        "description": "Demonstrate orientation marker tool for viewports orientation it has cube, axis and custom actors"
       },
       "petCT": {
         "name": "PET-CT Fusion + MIPLayout",

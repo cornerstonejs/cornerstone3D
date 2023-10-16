@@ -1106,6 +1106,8 @@ interface IImage {
     // (undocumented)
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     // (undocumented)
     getPixelData: () => PixelDataTypedArray;
@@ -1119,6 +1121,8 @@ interface IImage {
     invert: boolean;
     // (undocumented)
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     // (undocumented)
