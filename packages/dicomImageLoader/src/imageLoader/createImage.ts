@@ -10,13 +10,14 @@ import {
   ImageFrame,
   PixelDataTypedArray,
 } from '../types';
-import convertColorSpace from './convertColorSpace';
+import convertColorSpace, {
+  isColorConversionRequirementsFulfilled,
+} from './convertColorSpace';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
-import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 /**
  * When using typical decompressors to decompress compressed color images,
@@ -229,8 +230,11 @@ function createImage(
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
       const { rows, columns } = imageFrame;
-      if (isColorImage && imageFrame.pixelDataLength !== 3 * rows * columns) {
-        if (TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax]) {
+      if (isColorImage) {
+        if (
+          TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax] &&
+          isColorConversionRequirementsFulfilled(imageFrame, useRGBA)
+        ) {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');
