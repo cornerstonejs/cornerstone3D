@@ -1,4 +1,3 @@
-import _cloneDeep from 'lodash.clonedeep';
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,

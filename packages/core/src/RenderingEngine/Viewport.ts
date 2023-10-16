@@ -4,7 +4,6 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec2, vec3 } from 'gl-matrix';
-import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
@@ -103,11 +102,11 @@ class Viewport implements IViewport {
       this.renderingEngineId
     );
 
-    this.defaultOptions = _cloneDeep(props.defaultOptions);
+    this.defaultOptions = structuredClone(props.defaultOptions);
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    this.options = _cloneDeep(props.defaultOptions);
+    this.options = structuredClone(props.defaultOptions);
     this.isDisabled = false;
   }
 
@@ -180,7 +179,7 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = <ViewportInputOptions>_cloneDeep(options);
+    this.options = <ViewportInputOptions>structuredClone(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -198,7 +197,7 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = _cloneDeep(this.defaultOptions);
+    this.options = structuredClone(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -660,7 +659,7 @@ class Viewport implements IViewport {
       flipVertical: false,
     });
 
-    const previousCamera = _cloneDeep(this.getCamera());
+    const previousCamera = structuredClone(this.getCamera());
     const bounds = renderer.computeVisiblePropBounds();
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
@@ -775,9 +774,9 @@ class Viewport implements IViewport {
       clippingRange: clippingRangeToUse,
     });
 
-    const modifiedCamera = _cloneDeep(this.getCamera());
+    const modifiedCamera = structuredClone(this.getCamera());
 
-    this.setFitToCanvasCamera(_cloneDeep(this.getCamera()));
+    this.setFitToCanvasCamera(structuredClone(this.getCamera()));
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);
@@ -1007,7 +1006,7 @@ class Viewport implements IViewport {
     storeAsInitialCamera = false
   ): void {
     const vtkCamera = this.getVtkActiveCamera();
-    const previousCamera = _cloneDeep(this.getCamera());
+    const previousCamera = structuredClone(this.getCamera());
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,

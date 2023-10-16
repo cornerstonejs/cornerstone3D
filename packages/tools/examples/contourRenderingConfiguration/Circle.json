@@ -43,7 +43,6 @@
       "id": "circleSmall2",
       "color": [0, 255, 0],
       "segmentIndex": 2
-
     },
     {
       "data": [
@@ -88,7 +87,6 @@
       "id": "circleSmall4",
       "color": [255, 255, 0],
       "segmentIndex": 4
-
     }
   ]
 }
