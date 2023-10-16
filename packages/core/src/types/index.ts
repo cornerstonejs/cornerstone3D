@@ -82,7 +82,11 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
-export type * from './IRetrieveConfiguration';
+export type {
+  RetrieveStage,
+  LossyConfiguration,
+  IRetrieveConfiguration,
+} from './IRetrieveConfiguration';
 
 export type {
   // config

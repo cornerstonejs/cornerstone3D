@@ -11,7 +11,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -28,14 +27,10 @@ const {
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
   synchronizers,
-  SynchronizerManager,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-
-const { createCameraPositionSynchronizer, createVOISynchronizer } =
-  synchronizers;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix

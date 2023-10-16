@@ -140,9 +140,6 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
 }
 
 // @public (undocumented)
-function bilinear(src: any, dest: any): any;
-
-// @public (undocumented)
 enum BlendModes {
     // (undocumented)
     AVERAGE_INTENSITY_BLEND = 3,
@@ -560,6 +557,9 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
+function decimate(list: Array<unknown>, interleave?: number, offset?: number): number[];
+
+// @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
@@ -758,11 +758,13 @@ type FlipDirection = {
 // @public (undocumented)
 enum FrameStatus {
     // (undocumented)
-    DONE = 3,
+    DONE = 5,
     // (undocumented)
-    LINEAR = 2,
+    LOADING = 3,
     // (undocumented)
-    PARTIAL = 0,
+    LOSSY = 4,
+    // (undocumented)
+    NEARBY_REPLICATE = 2,
     // (undocumented)
     REPLICATE = 1
 }
@@ -948,6 +950,8 @@ interface ICachedImage {
     sharedCacheKey?: string;
     // (undocumented)
     sizeInBytes: number;
+    // (undocumented)
+    status?: FrameStatus;
     // (undocumented)
     timeStamp: number;
 }
@@ -1496,14 +1500,6 @@ type ImageSpacingCalibratedEventDetail = {
 // @public (undocumented)
 function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | undefined;
 
-declare namespace imageUtils {
-    export {
-        bilinear,
-        replicate,
-        bilinear as default
-    }
-}
-
 // @public (undocumented)
 export class ImageVolume implements IImageVolume {
     constructor(props: IVolume);
@@ -1542,6 +1538,8 @@ export class ImageVolume implements IImageVolume {
     origin: Point3;
     // (undocumented)
     referencedVolumeId?: string;
+    // (undocumented)
+    retrieveConfiguration: IRetrieveConfiguration;
     // (undocumented)
     protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
@@ -1586,9 +1584,6 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 
 // @public (undocumented)
 export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
-
-// @public (undocumented)
-function interleave<T>(list: Array<T>, interleave?: number): Array<T>;
 
 // @public (undocumented)
 enum InterpolationType {
@@ -1649,6 +1644,12 @@ interface IRenderingEngine {
     resize(immediate?: boolean, keepCamera?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
+}
+
+// @public (undocumented)
+interface IRetrieveConfiguration {
+    // (undocumented)
+    stages?: RetrieveStage[];
 }
 
 // @public (undocumented)
@@ -1872,6 +1873,8 @@ interface IVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
+    retrieveConfiguration?: IRetrieveConfiguration;
+    // (undocumented)
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
@@ -1985,6 +1988,22 @@ function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 
 // @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
+
+// @public (undocumented)
+interface LossyConfiguration {
+    // (undocumented)
+    byteRange?: string;
+    // (undocumented)
+    decodeLevel?: number;
+    // (undocumented)
+    framesPath?: string;
+    // (undocumented)
+    isLossy?: boolean;
+    // (undocumented)
+    streaming?: boolean;
+    // (undocumented)
+    urlArguments?: string;
+}
 
 // @public (undocumented)
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
@@ -2221,9 +2240,6 @@ function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: 
 function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string): Promise<string>;
 
 // @public (undocumented)
-function replicate(src: any, dest: any): any;
-
-// @public (undocumented)
 enum RequestType {
     // (undocumented)
     Interaction = "interaction",
@@ -2238,6 +2254,24 @@ export function resetUseCPURendering(): void;
 
 // @public (undocumented)
 export function resetUseSharedArrayBuffer(): void;
+
+// @public (undocumented)
+interface RetrieveStage {
+    // (undocumented)
+    decimate?: number;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    offset?: number;
+    // (undocumented)
+    positions?: number[];
+    // (undocumented)
+    priority?: number;
+    // (undocumented)
+    requestType?: RequestType;
+    // (undocumented)
+    retrieveTypeId?: string;
+}
 
 // @public (undocumented)
 type RGB = [number, number, number];
@@ -2484,6 +2518,9 @@ export function triggerEvent(el: EventTarget, type: string, detail?: unknown): b
 
 declare namespace Types {
     export {
+        RetrieveStage,
+        LossyConfiguration,
+        IRetrieveConfiguration,
         Cornerstone3DConfig,
         ICamera,
         IStackViewport,
@@ -2628,8 +2665,7 @@ declare namespace utilities {
         colormap,
         getImageLegacy,
         ProgressiveIterator,
-        imageUtils,
-        interleave
+        decimate
     }
 }
 export { utilities }

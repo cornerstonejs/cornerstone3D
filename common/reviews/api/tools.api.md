@@ -2317,6 +2317,8 @@ interface ICachedImage {
     // (undocumented)
     sizeInBytes: number;
     // (undocumented)
+    status?: FrameStatus;
+    // (undocumented)
     timeStamp: number;
 }
 
@@ -2857,6 +2859,12 @@ interface IRenderingEngine {
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
 
+// @public
+interface IRetrieveConfiguration {
+    // (undocumented)
+    stages?: RetrieveStage[];
+}
+
 // @public (undocumented)
 function isAnnotationLocked(annotation: Annotation): boolean;
 
@@ -3116,6 +3124,7 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
+    retrieveConfiguration?: IRetrieveConfiguration;
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PT?: {
@@ -3403,6 +3412,30 @@ declare namespace locking {
         isAnnotationLocked,
         checkAndDefineIsLockedProperty
     }
+}
+
+// @public (undocumented)
+interface LossyConfiguration {
+    // Additional arguments to add to the URL, in the format
+    // arg1=value1 ('&' arg2=value2)*
+    // For example: '&lossy=jhc' to use JHC lossy values
+    // (undocumented)
+    byteRange?: string;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    decodeLevel?: number;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    framesPath?: string;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    isLossy?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    streaming?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    urlArguments?: string;
 }
 
 // @public (undocumented)
@@ -4514,6 +4547,36 @@ function resetAnnotationManager(): void;
 
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
+
+// @public (undocumented)
+interface RetrieveStage {
+    // (undocumented)
+    decimate?: number;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    id: string;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    offset?: number;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    positions?: number[];
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    priority?: number;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    requestType?: RequestType;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    retrieveTypeId?: string;
+}
 
 // @public
 type RGB = [number, number, number];

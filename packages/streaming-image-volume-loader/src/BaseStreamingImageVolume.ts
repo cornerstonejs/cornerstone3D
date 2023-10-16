@@ -12,7 +12,8 @@ import {
 
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
-import { RetrieveStage } from 'core/src/types';
+
+type RetrieveStage = Types.RetrieveStage;
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
 const { FrameStatus } = Enums;
