@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.1...v1.21.2) (2023-10-16)
+
+### Features
+
+- **enhanced cobb angle:** more angles and being able to select each line ([#802](https://github.com/cornerstonejs/cornerstone3D/issues/802)) ([abc3bb8](https://github.com/cornerstonejs/cornerstone3D/commit/abc3bb8a19fab46f8f36c0ae42eae35f639b5973))
+
 ## [1.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.0...v1.21.1) (2023-10-14)
 
 ### Bug Fixes
