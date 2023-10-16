@@ -331,8 +331,7 @@ class Cache implements ICache {
    */
   public putImageLoadObject(
     imageId: string,
-    imageLoadObject: IImageLoadObject,
-    updateCache?: boolean
+    imageLoadObject: IImageLoadObject
   ): Promise<any> {
     if (imageId === undefined) {
       throw new Error('putImageLoadObject: imageId must not be undefined');
@@ -344,7 +343,7 @@ class Cache implements ICache {
       );
     }
 
-    if (!updateCache && this._imageCache.has(imageId)) {
+    if (this._imageCache.has(imageId)) {
       throw new Error('putImageLoadObject: imageId already in cache');
     }
 

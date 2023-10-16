@@ -1719,11 +1719,10 @@ class StackViewport extends Viewport implements IStackViewport {
         displayedIterator.generate(async (it) => {
           for await (const image of uncompressedIterator) {
             // Update cache
-            cache.putImageLoadObject(
-              imageId,
-              { promise: Promise.resolve(image) },
-              true
-            );
+            cache.removeImageLoadObject(imageId);
+            cache.putImageLoadObject(imageId, {
+              promise: Promise.resolve(image),
+            });
             console.log('Adding new image to render', imageIdIndex, image);
             successCallback.call(this, image, imageIdIndex, imageId);
             it.add(image, uncompressedIterator.done);

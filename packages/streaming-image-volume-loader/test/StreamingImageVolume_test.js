@@ -114,6 +114,7 @@ function setupLoaders() {
           cachedFrames: [],
           callbacks: [],
         },
+        retrieveConfiguration: StreamingImageVolume.linearRetrieveConfiguration,
       }
     );
 
@@ -504,6 +505,8 @@ describe('StreamingImageVolume', () => {
             cachedFrames: [],
             callbacks: [],
           },
+          retrieveConfiguration:
+            StreamingImageVolume.linearRetrieveConfiguration,
         }
       );
       let notificationWasCalled = false;
