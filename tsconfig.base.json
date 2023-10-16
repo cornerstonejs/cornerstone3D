@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "jsx": "react-jsx",
-    "lib": ["ES6", "dom"], // "ES6", "DOM" | "es2015", "dom"
+    "lib": ["ES2021", "dom"],
     "module": "esnext", // esnext | commonjs
     "moduleResolution": "node",
     "noImplicitAny": false,
@@ -27,7 +27,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": false,
-    "target": "es5", // esnext | es5
+    "target": "ES2021",
     "downlevelIteration": true,
     "resolveJsonModule": true
   },
@@ -37,6 +37,7 @@
     "packages/**/dist",
     "packages/**/lib",
     "packages/**/lib-esm",
+    "packages/adapters/**/*.js",
     "packages/docs",
     "packages/docs/**/*",
     "snippets",

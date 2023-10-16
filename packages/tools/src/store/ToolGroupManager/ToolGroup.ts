@@ -763,7 +763,7 @@ export default class ToolGroup implements IToolGroup {
       get(this._toolInstances[toolName].configuration, configurationPath) ||
       this._toolInstances[toolName].configuration;
 
-    return cloneDeep(_configuration);
+    return structuredClone(_configuration);
   }
 
   /**

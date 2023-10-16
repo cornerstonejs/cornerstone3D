@@ -2283,7 +2283,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = cloneDeep(this.getCamera());
+    const previousCameraProps = structuredClone(this.getCamera());
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);

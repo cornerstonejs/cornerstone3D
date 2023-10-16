@@ -33,8 +33,7 @@
     "@kitware/vtk.js": "30.4.1",
     "comlink": "^4.4.1",
     "detect-gpu": "^5.0.22",
-    "gl-matrix": "^3.4.3",
-    "lodash.clonedeep": "4.5.0"
+    "gl-matrix": "^3.4.3"
   },
   "contributors": [
     {

@@ -46,7 +46,7 @@ let state: ICornerstoneTools3dState = {
 function resetCornerstoneToolsState(): void {
   resetSvgNodeCache();
   state = {
-    ...cloneDeep({
+    ...structuredClone({
       ...defaultState,
       svgNodeCache: {},
     }),
