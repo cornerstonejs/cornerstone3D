@@ -13,7 +13,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
 import { RetrieveStage } from 'core/src/types';
-const requestType = Enums.RequestType.Prefetch;
+const requestTypeDefault = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
 const { FrameStatus } = Enums;
 
@@ -251,7 +251,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   protected getImageIdsRequests = (
     imageIds: string[],
     scalarData: Types.VolumeScalarData,
-    priority: number
+    priorityDefault: number
   ) => {
     const { loadStatus } = this;
     const { cachedFrames } = loadStatus;
@@ -423,7 +423,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         !cachedImage?.image &&
         !(cachedVolume && cachedVolume.volume !== this)
       ) {
-        console.log('Success callback not cached', imageIdIndex, status);
         return updateTextureAndTriggerEvents(
           this,
           imageIdIndex,
@@ -438,11 +437,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       const cachedImageOrVolume = cachedImage || cachedVolume.volume;
 
-      console.log(
-        'Success callback from cache',
-        imageIdIndex,
-        isFromImageCache
-      );
       this.handleImageComingFromCache(
         cachedImageOrVolume,
         isFromImageCache,
@@ -568,6 +562,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.isPreScaled = isSlopeAndInterceptNumbers;
       const stage = retrieveStages[loadIndex];
       const retrieveTypeId = stage?.retrieveTypeId;
+      const requestType = stage?.requestType || requestTypeDefault;
+      const priority = stage?.priority ?? priorityDefault;
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -594,19 +590,30 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         },
         retrieveTypeId,
         transferSyntaxUid,
+        loadIndex,
       };
 
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       const callLoadImage = (imageId, imageIdIndex, options) => {
         if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
+          console.log(
+            'Skipping secondary load of complete image',
+            cachedFrames[imageIdIndex]
+          );
           return;
         }
+
         const uncompressedIterator = ProgressiveIterator.as(
           imageLoader.loadImage(imageId, options)
         );
         return uncompressedIterator.forEach((image) => {
-          cachedFrames[imageIdIndex] ||= FrameStatus.LOADING;
+          if (
+            cachedFrames[imageIdIndex] === undefined ||
+            cachedFrames[imageIdIndex] < FrameStatus.LOADING
+          ) {
+            cachedFrames[imageIdIndex] = FrameStatus.LOADING;
+          }
           handleArrayBufferLoad(scalarData, image, options);
           const { complete } = image;
           const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
@@ -774,7 +781,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     const requests = this.getImageLoadRequests(priority);
 
-    requests.forEach((request) => {
+    requests.forEach((request, idx) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
         return;
@@ -1173,7 +1180,11 @@ function fillNearby(
       if (imageIdIndex === i) {
         continue;
       }
-      if (cachedFrames[i] !== undefined) {
+      const isClose = Math.abs(i - imageIdIndex) === 1;
+      if (
+        cachedFrames[i] !== undefined &&
+        (!isClose || cachedFrames[i] !== FrameStatus.REPLICATE)
+      ) {
         continue;
       }
       cachedFrames[i] = FrameStatus.REPLICATE;

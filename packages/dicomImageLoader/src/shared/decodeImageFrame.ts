@@ -413,7 +413,6 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
     );
     return;
   }
-  console.log('Scaling image frame', imageFrame, targetBuffer);
   const { scalingType = 'replicate' } = targetBuffer;
   imageUtils[scalingType](imageFrame, dest);
   Object.assign(imageFrame, dest);

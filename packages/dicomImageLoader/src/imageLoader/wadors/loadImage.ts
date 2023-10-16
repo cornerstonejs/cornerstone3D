@@ -111,12 +111,6 @@ function loadImage(
   const loaderOptions = getOptions();
   let retrieveOptions =
     loaderOptions.getRetrieveOptions(transferSyntaxUid, retrieveTypeId) || {};
-  console.log(
-    'Original retrieve',
-    transferSyntaxUid,
-    retrieveTypeId,
-    retrieveOptions
-  );
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -132,7 +126,6 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        console.log('Getting retrieve options', transferSyntax, retrieveTypeId);
         retrieveOptions = loaderOptions.getRetrieveOptions(
           transferSyntax,
           retrieveTypeId

@@ -11,6 +11,7 @@ import {
   Mat3,
   IRetrieveConfiguration,
 } from '../../types';
+import RequestType from '../../enums/RequestType';
 
 const defaultRetrieveConfiguration: IRetrieveConfiguration = {
   stages: [
@@ -18,6 +19,8 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
       id: 'initialImages',
       positions: [0.5, 0, -1],
       retrieveTypeId: 'final',
+      requestType: RequestType.Interaction,
+      priority: 2,
     },
     // {
     //   id: 'all',
@@ -29,12 +32,15 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
       decimate: 4,
       offset: 1,
       retrieveTypeId: 'lossy',
+      requestType: RequestType.Thumbnail,
+      priority: 3,
     },
     {
       id: 'halfThumb',
       decimate: 4,
       offset: 3,
       retrieveTypeId: 'lossy',
+      requestType: RequestType.Thumbnail,
     },
     {
       id: 'quarterFull',
@@ -51,13 +57,13 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
     {
       id: 'threeQuarterFull',
       decimate: 4,
-      offset: 2,
+      offset: 1,
       retrieveTypeId: 'final',
     },
     {
       id: 'finalFull',
       decimate: 4,
-      offset: 0,
+      offset: 3,
       retrieveTypeId: 'final',
     },
   ],

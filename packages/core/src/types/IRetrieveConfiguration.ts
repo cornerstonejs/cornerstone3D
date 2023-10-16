@@ -1,3 +1,5 @@
+import { RequestType } from '../enums';
+
 export interface RetrieveStage {
   id: string;
   // Set of positions - negative values are relative to the end, positive to
@@ -10,8 +12,10 @@ export interface RetrieveStage {
   // Use a specified retrieve type to add fetch arguments and configuration
   // on the retrieve URL.
   retrieveTypeId?: string;
-  // If true, remove from the set of items
-  remove?: boolean;
+  // The type of request to use
+  requestType?: RequestType;
+  // THe priority to use
+  priority?: number;
 }
 
 export interface LossyConfiguration {

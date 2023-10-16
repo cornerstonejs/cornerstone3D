@@ -462,14 +462,14 @@ async function run() {
     loaders.appendChild(button);
   };
 
-  createButton('JLS', 'ct', imageIdsCT, configJLS);
-  createButton('JLS Thumb', 'ct', imageIdsCT, configJLSThumbnail);
-  createButton('JLS Mixed', 'ct', imageIdsCT, configJLSMixed);
-  createButton('J2K', 'ct', imageIdsCT, configHtj2k);
-  createButton('J2K Thumb', 'ct', imageIdsCT, configThumbnail);
-  createButton('J2K Stream', 'ct', imageIdsCT, configStreamingVolume);
-  createButton('J2K Range', 'ct', imageIdsCT, configByteRange);
-  createButton('J2K Mixed', 'ct', imageIdsCT, configHtj2kMixed);
+  createButton('JLS', volumeId, imageIdsCT, configJLS);
+  createButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
+  createButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
+  createButton('J2K', volumeId, imageIdsCT, configHtj2k);
+  createButton('J2K Thumb', volumeId, imageIdsCT, configThumbnail);
+  createButton('J2K Stream', volumeId, imageIdsCT, configStreamingVolume);
+  createButton('J2K Range', volumeId, imageIdsCT, configByteRange);
+  createButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
 }
 
 run();
