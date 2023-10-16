@@ -1989,7 +1989,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -2407,7 +2406,8 @@ interface ICache {
     purgeCache: () => void;
     putImageLoadObject: (
     imageId: string,
-    imageLoadObject: IImageLoadObject
+    imageLoadObject: IImageLoadObject,
+    updateCache?: boolean
     ) => Promise<any>;
     putVolumeLoadObject: (
     volumeId: string,
@@ -2446,6 +2446,8 @@ interface ICachedImage {
     sharedCacheKey?: string;
     // (undocumented)
     sizeInBytes: number;
+    // (undocumented)
+    status?: FrameStatus;
     // (undocumented)
     timeStamp: number;
 }
@@ -2590,6 +2592,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    complete?: boolean;
+    // (undocumented)
     decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
@@ -2599,6 +2603,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    level?: number;
     // (undocumented)
     loadTimeInMS?: number;
     // (undocumented)
@@ -2778,9 +2784,6 @@ options?: Record<string, any>
     cancelFn?: () => void | undefined;
     decache?: () => void | undefined;
 };
-
-// @public
-type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
 
 // @public
 type ImageLoadProgressEventDetail = {
@@ -2990,6 +2993,12 @@ interface IRenderingEngine {
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
 
+// @public
+interface IRetrieveConfiguration {
+    // (undocumented)
+    stages?: RetrieveStage[];
+}
+
 // @public (undocumented)
 function isAnnotationLocked(annotation: Annotation): boolean;
 
@@ -3062,9 +3071,11 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<boolean>;
+        cachedFrames: Array<FrameStatus>;
         callbacks: Array<() => void>;
     };
+
+    retrieveConfiguration?: IRetrieveConfiguration;
 }
 
 // @public (undocumented)
@@ -3540,6 +3551,30 @@ declare namespace locking {
         isAnnotationLocked,
         checkAndDefineIsLockedProperty
     }
+}
+
+// @public (undocumented)
+interface LossyConfiguration {
+    // Additional arguments to add to the URL, in the format
+    // arg1=value1 ('&' arg2=value2)*
+    // For example: '&lossy=jhc' to use JHC lossy values
+    // (undocumented)
+    byteRange?: string;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    decodeLevel?: number;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    framesPath?: string;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    isLossy?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    streaming?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    urlArguments?: string;
 }
 
 // @public (undocumented)
@@ -4651,6 +4686,36 @@ function resetAnnotationManager(): void;
 
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
+
+// @public (undocumented)
+interface RetrieveStage {
+    // (undocumented)
+    decimate?: number;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    id: string;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    offset?: number;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    positions?: number[];
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    priority?: number;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    requestType?: RequestType;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    retrieveTypeId?: string;
+}
 
 // @public
 type RGB = [number, number, number];

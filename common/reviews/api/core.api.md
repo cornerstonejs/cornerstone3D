@@ -557,6 +557,9 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
+function decimate(list: Array<unknown>, interleave?: number, offset?: number): number[];
+
+// @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
@@ -624,7 +627,8 @@ declare namespace Enums {
         ContourType,
         VOILUTFunctionType,
         DynamicOperatorType,
-        ViewportStatus
+        ViewportStatus,
+        FrameStatus
     }
 }
 export { Enums }
@@ -656,8 +660,6 @@ export enum EVENTS {
     IMAGE_LOAD_ERROR = "IMAGE_LOAD_ERROR",
     // (undocumented)
     IMAGE_LOAD_FAILED = "CORNERSTONE_IMAGE_LOAD_FAILED",
-    // (undocumented)
-    IMAGE_LOAD_PROGRESS = "CORNERSTONE_IMAGE_LOAD_PROGRESS",
     // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
@@ -737,7 +739,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -753,6 +754,20 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public (undocumented)
+enum FrameStatus {
+    // (undocumented)
+    DONE = 5,
+    // (undocumented)
+    LOADING = 3,
+    // (undocumented)
+    LOSSY = 4,
+    // (undocumented)
+    NEARBY_REPLICATE = 2,
+    // (undocumented)
+    REPLICATE = 1
+}
 
 declare namespace geometryLoader {
     export {
@@ -898,7 +913,7 @@ interface ICache {
     // (undocumented)
     purgeCache: () => void;
     // (undocumented)
-    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject) => Promise<any>;
+    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject, updateCache?: boolean) => Promise<any>;
     // (undocumented)
     putVolumeLoadObject: (volumeId: string, volumeLoadObject: IVolumeLoadObject) => Promise<any>;
     // (undocumented)
@@ -935,6 +950,8 @@ interface ICachedImage {
     sharedCacheKey?: string;
     // (undocumented)
     sizeInBytes: number;
+    // (undocumented)
+    status?: FrameStatus;
     // (undocumented)
     timeStamp: number;
 }
@@ -1106,6 +1123,8 @@ interface IImage {
     // (undocumented)
     columns: number;
     // (undocumented)
+    complete?: boolean;
+    // (undocumented)
     decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
@@ -1121,6 +1140,8 @@ interface IImage {
     invert: boolean;
     // (undocumented)
     isPreScaled?: boolean;
+    // (undocumented)
+    level?: number;
     // (undocumented)
     loadTimeInMS?: number;
     // (undocumented)
@@ -1385,9 +1406,6 @@ export { imageLoadPoolManager }
 export { imageLoadPoolManager as requestPoolManager }
 
 // @public (undocumented)
-type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
-
-// @public (undocumented)
 type ImageLoadProgressEventDetail = {
     url: string;
     imageId: string;
@@ -1631,6 +1649,12 @@ interface IRenderingEngine {
 }
 
 // @public (undocumented)
+interface IRetrieveConfiguration {
+    // (undocumented)
+    stages?: RetrieveStage[];
+}
+
+// @public (undocumented)
 export function isCornerstoneInitialized(): boolean;
 
 // @public (undocumented)
@@ -1725,9 +1749,11 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<boolean>;
+        cachedFrames: Array<FrameStatus>;
         callbacks: Array<() => void>;
     };
+    // (undocumented)
+    retrieveConfiguration?: IRetrieveConfiguration;
 }
 
 // @public (undocumented)
@@ -1966,6 +1992,22 @@ function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
+interface LossyConfiguration {
+    // (undocumented)
+    byteRange?: string;
+    // (undocumented)
+    decodeLevel?: number;
+    // (undocumented)
+    framesPath?: string;
+    // (undocumented)
+    isLossy?: boolean;
+    // (undocumented)
+    streaming?: boolean;
+    // (undocumented)
+    urlArguments?: string;
+}
+
+// @public (undocumented)
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
@@ -2067,6 +2109,37 @@ type PreStackNewImageEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public (undocumented)
+class ProgressiveIterator<T> {
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncGenerator<any, void, unknown>;
+    constructor(name?: any);
+    // (undocumented)
+    add(x: T, done?: boolean): void;
+    // (undocumented)
+    static as(promise: any): any;
+    // (undocumented)
+    done: any;
+    // (undocumented)
+    donePromise(): Promise<T>;
+    // (undocumented)
+    forEach(callback: any, errorCallback: any): Promise<void>;
+    // (undocumented)
+    generate(processFunction: any, errorCallback?: ErrorCallback_2): Promise<any>;
+    // (undocumented)
+    getDonePromise(): PromiseIterator<T>;
+    // (undocumented)
+    getNextPromise(): PromiseIterator<T>;
+    // (undocumented)
+    getRecent(): T;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    nextPromise(): Promise<T>;
+    // (undocumented)
+    reject(reason: Error): void;
+}
 
 // @public (undocumented)
 type PTScaling = {
@@ -2183,6 +2256,24 @@ export function resetUseCPURendering(): void;
 
 // @public (undocumented)
 export function resetUseSharedArrayBuffer(): void;
+
+// @public (undocumented)
+interface RetrieveStage {
+    // (undocumented)
+    decimate?: number;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    offset?: number;
+    // (undocumented)
+    positions?: number[];
+    // (undocumented)
+    priority?: number;
+    // (undocumented)
+    requestType?: RequestType;
+    // (undocumented)
+    retrieveTypeId?: string;
+}
 
 // @public (undocumented)
 type RGB = [number, number, number];
@@ -2429,6 +2520,9 @@ export function triggerEvent(el: EventTarget, type: string, detail?: unknown): b
 
 declare namespace Types {
     export {
+        RetrieveStage,
+        LossyConfiguration,
+        IRetrieveConfiguration,
         Cornerstone3DConfig,
         ICamera,
         IStackViewport,
@@ -2571,7 +2665,9 @@ declare namespace utilities {
         getScalingParameters,
         getScalarDataType,
         colormap,
-        getImageLegacy
+        getImageLegacy,
+        ProgressiveIterator,
+        decimate
     }
 }
 export { utilities }

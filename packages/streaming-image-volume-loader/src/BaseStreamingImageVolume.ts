@@ -9,14 +9,16 @@ import {
   imageLoader,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-
 import type { Types } from '@cornerstonejs/core';
+
 import { scaleArray, autoLoad } from './helpers';
 
 type RetrieveStage = Types.RetrieveStage;
+type IRetrieveConfiguration = Types.IRetrieveConfiguration;
+
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
-const { FrameStatus } = Enums;
+const { FrameStatus, RequestType } = Enums;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -26,8 +28,81 @@ const { FrameStatus } = Enums;
 export default class BaseStreamingImageVolume extends ImageVolume {
   private framesLoaded = 0;
   private framesProcessed = 0;
+  private completeFrames = 0;
   protected numFrames: number;
   protected cornerstoneImageMetaData = null;
+  /**
+   * Information on how to retrieve images.
+   * No special configuration is required for streaming decoding, as that is
+   * done based on the capabilities of the decoder whenever streaming is possible
+   */
+  protected retrieveConfiguration: IRetrieveConfiguration;
+
+  public static linearRetrieveConfiguration: IRetrieveConfiguration = {
+    stages: [
+      {
+        id: 'all',
+        decimate: 1,
+        offset: 0,
+      },
+    ],
+  };
+
+  public static thumbnailRetrieveConfiguration: IRetrieveConfiguration = {
+    stages: [
+      {
+        id: 'initialImages',
+        positions: [0.5, 0, -1],
+        retrieveTypeId: 'final',
+        requestType: RequestType.Interaction,
+        priority: 2,
+      },
+      // {
+      //   id: 'all',
+      //   decimate: 1,
+      //   offset: 0,
+      // },
+      {
+        id: 'quarterThumb',
+        decimate: 4,
+        offset: 1,
+        retrieveTypeId: 'lossy',
+        requestType: RequestType.Thumbnail,
+        priority: 3,
+      },
+      {
+        id: 'halfThumb',
+        decimate: 4,
+        offset: 3,
+        retrieveTypeId: 'lossy',
+        requestType: RequestType.Thumbnail,
+      },
+      {
+        id: 'quarterFull',
+        decimate: 4,
+        offset: 2,
+        retrieveTypeId: 'final',
+      },
+      {
+        id: 'halfFull',
+        decimate: 4,
+        offset: 0,
+        retrieveTypeId: 'final',
+      },
+      {
+        id: 'threeQuarterFull',
+        decimate: 4,
+        offset: 1,
+        retrieveTypeId: 'final',
+      },
+      {
+        id: 'finalFull',
+        decimate: 4,
+        offset: 3,
+        retrieveTypeId: 'final',
+      },
+    ],
+  };
 
   loadStatus: {
     loaded: boolean;
@@ -35,7 +110,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     cancelled: boolean;
     cachedFrames: Array<Enums.FrameStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
-    completeFrames?: number;
   };
 
   constructor(
@@ -46,6 +120,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.imageIds = streamingProperties.imageIds;
     this.loadStatus = streamingProperties.loadStatus;
     this.numFrames = this._getNumFrames();
+    this.retrieveConfiguration = Object.assign(
+      {},
+      BaseStreamingImageVolume.thumbnailRetrieveConfiguration,
+      streamingProperties.retrieveConfiguration
+    );
 
     this._createCornerstoneImageMetaData();
   }
@@ -349,8 +428,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.framesProcessed++;
       this.framesLoaded++;
       if (complete) {
-        this.loadStatus.completeFrames =
-          (this.loadStatus.completeFrames || 0) + 1;
+        this.completeFrames++;
       }
 
       vtkOpenGLTexture.setUpdatedFrame(frameIndex);
@@ -367,7 +445,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         eventDetail
       );
 
-      if (complete && this.loadStatus.completeFrames === totalNumFrames) {
+      if (complete && this.completeFrames === totalNumFrames) {
         loadStatus.loaded = true;
         loadStatus.loading = false;
       }
@@ -378,7 +456,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         imageId,
         framesLoaded: this.framesLoaded,
         framesProcessed: this.framesProcessed,
-        completeFrames: this.loadStatus.completeFrames,
+        completeFrames: this.completeFrames,
         numFrames,
         totalNumFrames,
         complete,

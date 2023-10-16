@@ -1,4 +1,5 @@
 import { FrameStatus } from '../enums';
+import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */
@@ -12,6 +13,9 @@ interface IStreamingVolumeProperties {
     cachedFrames: Array<FrameStatus>;
     callbacks: Array<() => void>;
   };
+
+  /** Information on how to configure the retrieval */
+  retrieveConfiguration?: IRetrieveConfiguration;
 }
 
 export default IStreamingVolumeProperties;

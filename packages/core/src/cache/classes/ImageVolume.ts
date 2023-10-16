@@ -11,63 +11,6 @@ import {
   Mat3,
   IRetrieveConfiguration,
 } from '../../types';
-import RequestType from '../../enums/RequestType';
-
-const defaultRetrieveConfiguration: IRetrieveConfiguration = {
-  stages: [
-    {
-      id: 'initialImages',
-      positions: [0.5, 0, -1],
-      retrieveTypeId: 'final',
-      requestType: RequestType.Interaction,
-      priority: 2,
-    },
-    // {
-    //   id: 'all',
-    //   decimate: 1,
-    //   offset: 0,
-    // },
-    {
-      id: 'quarterThumb',
-      decimate: 4,
-      offset: 1,
-      retrieveTypeId: 'lossy',
-      requestType: RequestType.Thumbnail,
-      priority: 3,
-    },
-    {
-      id: 'halfThumb',
-      decimate: 4,
-      offset: 3,
-      retrieveTypeId: 'lossy',
-      requestType: RequestType.Thumbnail,
-    },
-    {
-      id: 'quarterFull',
-      decimate: 4,
-      offset: 2,
-      retrieveTypeId: 'final',
-    },
-    {
-      id: 'halfFull',
-      decimate: 4,
-      offset: 0,
-      retrieveTypeId: 'final',
-    },
-    {
-      id: 'threeQuarterFull',
-      decimate: 4,
-      offset: 1,
-      retrieveTypeId: 'final',
-    },
-    {
-      id: 'finalFull',
-      decimate: 4,
-      offset: 3,
-      retrieveTypeId: 'final',
-    },
-  ],
-};
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -120,12 +63,6 @@ export class ImageVolume implements IImageVolume {
   referencedVolumeId?: string;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
-  /**
-   * Information on how to retrieve images.
-   * No special configuration is required for streaming decoding, as that is
-   * done based on the capabilities of the decoder whenever streaming is possible
-   */
-  retrieveConfiguration: IRetrieveConfiguration;
 
   constructor(props: IVolume) {
     this.volumeId = props.volumeId;
@@ -148,11 +85,6 @@ export class ImageVolume implements IImageVolume {
     if (props.referencedVolumeId) {
       this.referencedVolumeId = props.referencedVolumeId;
     }
-    this.retrieveConfiguration = Object.assign(
-      {},
-      defaultRetrieveConfiguration,
-      props.retrieveConfiguration
-    );
   }
 
   /** return the image ids for the volume if it is made of separated images */
