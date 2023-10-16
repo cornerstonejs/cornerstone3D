@@ -54,6 +54,7 @@ const VIEWPORT_MIN_SIZE = 2;
  * trigger a render on a specific viewport(s). Each viewport also has a `.render` method which can be used to trigger a render on that
  * viewport.
  *
+ *
  * Rendering engine uses `detect-gpu` external library to detect if GPU is available and
  * it has minimum requirement to be able to render a volume with vtk.js. If GPU is not available
  * RenderingEngine will throw an error if you try to render a volume; however, for StackViewports
@@ -68,7 +69,7 @@ const VIEWPORT_MIN_SIZE = 2;
 class RenderingEngine implements IRenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
-  /** A flag which tells if the renderingEngine has been destroyed */
+  /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
   public offscreenMultiRenderWindow: any;
   readonly offScreenCanvasContainer: any; // WebGL

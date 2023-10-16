@@ -100,7 +100,7 @@ function hasSharedArrayBuffer() {
  * @returns A promise that resolves to true cornerstone has been initialized successfully.
  * @category Initialization
  */
-async function init(configuration = {}): Promise<boolean> {
+async function init(configuration = config): Promise<boolean> {
   if (csRenderInitialized) {
     return csRenderInitialized;
   }

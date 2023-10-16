@@ -3,6 +3,88 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2023-10-16)
+
+**Note:** Version bump only for package docs
+
+# [2.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.2...v2.0.0-beta.3) (2023-10-16)
+
+# [2.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.6...v2.0.0-beta.2) (2023-09-22)
+
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package docs
+
+# [2.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.6...v2.0.0-beta.2) (2023-09-22)
+
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package docs
+
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package docs
+
+## [1.16.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+**Note:** Version bump only for package docs
+
+## [1.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.4...v1.16.5) (2023-09-19)
+
+**Note:** Version bump only for package docs
+
+## [1.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.3...v1.16.4) (2023-09-18)
+
+**Note:** Version bump only for package docs
+
+## [1.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.2...v1.16.3) (2023-09-18)
+
+**Note:** Version bump only for package docs
+
+## [1.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.1...v1.16.2) (2023-09-18)
+
+**Note:** Version bump only for package docs
+
+## [1.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.0...v1.16.1) (2023-09-14)
+
+**Note:** Version bump only for package docs
+
+# [1.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.1...v1.16.0) (2023-09-12)
+
+**Note:** Version bump only for package docs
+
+## [1.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.0...v1.15.1) (2023-09-12)
+
+**Note:** Version bump only for package docs
+
+# [1.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.4...v1.15.0) (2023-09-12)
+
+### Features
+
+- **Annotation textbox:** Add textBoxVisibility ([#776](https://github.com/cornerstonejs/cornerstone3D/issues/776)) ([c1981a1](https://github.com/cornerstonejs/cornerstone3D/commit/c1981a15d8ab3b5cbd227e6912b0e0f4a87871d5))
+
+## [1.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.3...v1.14.4) (2023-09-07)
+
+**Note:** Version bump only for package docs
+
+## [1.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.2...v1.14.3) (2023-09-07)
+
+**Note:** Version bump only for package docs
+
+## [1.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.1...v1.14.2) (2023-09-07)
+
+### Bug Fixes
+
+- **examples:** publish nifti examples ([#773](https://github.com/cornerstonejs/cornerstone3D/issues/773)) ([e457ca8](https://github.com/cornerstonejs/cornerstone3D/commit/e457ca834939679c87b9ac46322b3b3c1c2b430f))
+
+## [1.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.0...v1.14.1) (2023-09-07)
+
+**Note:** Version bump only for package docs
+
+# [1.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.3...v1.14.0) (2023-09-07)
+
+**Note:** Version bump only for package docs
+
 ## [1.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.2...v1.13.3) (2023-09-06)
 
 **Note:** Version bump only for package docs

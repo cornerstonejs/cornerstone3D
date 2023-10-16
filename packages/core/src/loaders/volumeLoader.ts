@@ -3,7 +3,6 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import cloneDeep from 'lodash.clonedeep';
 
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import type * as Types from '../types';
@@ -132,7 +131,7 @@ let unknownVolumeLoader;
  */
 function loadVolumeFromVolumeLoader(
   volumeId: string,
-  options: VolumeLoaderOptions
+  options?: VolumeLoaderOptions
 ): Types.IVolumeLoadObject {
   const colonIndex = volumeId.indexOf(':');
   const scheme = volumeId.substring(0, colonIndex);
@@ -210,7 +209,7 @@ export function loadVolume(
  */
 export async function createAndCacheVolume(
   volumeId: string,
-  options: VolumeLoaderOptions
+  options?: VolumeLoaderOptions
 ): Promise<Record<string, any>> {
   if (volumeId === undefined) {
     throw new Error(
@@ -330,7 +329,7 @@ export async function createAndCacheDerivedVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: cloneDeep(metadata),
+    metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -419,7 +418,7 @@ export function createLocalVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: cloneDeep(metadata),
+    metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,

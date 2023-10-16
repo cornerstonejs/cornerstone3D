@@ -4,7 +4,7 @@ const _ = require('lodash');
 // Instead of merging array objects index by index (n-th source
 // item with n-th object item) it concatenates both arrays
 module.exports = function (object, source) {
-  const clone = _.cloneDeep(object);
+  const clone = structuredClone(object);
   const merged = _.mergeWith(
     clone,
     source,

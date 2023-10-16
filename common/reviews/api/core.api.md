@@ -48,6 +48,34 @@ function addProvider(provider: (type: string, query: any) => any, priority?: num
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
+type AffineMatrix = [
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+],
+[
+number,
+number,
+number,
+number
+]
+];
+
+// @public (undocumented)
 function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
 
 // @public (undocumented)
@@ -491,7 +519,7 @@ function createAndCacheDerivedVolume(referencedVolumeId: string, options: Derive
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
-function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
+function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
 
 // @public (undocumented)
 function createFloat32SharedArray(length: number): Float32Array;
@@ -1078,6 +1106,8 @@ interface IImage {
     // (undocumented)
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     // (undocumented)
     getPixelData: () => PixelDataTypedArray;
@@ -1091,6 +1121,8 @@ interface IImage {
     invert: boolean;
     // (undocumented)
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     // (undocumented)
@@ -1535,7 +1567,7 @@ type ImageVolumeModifiedEventDetail = {
 function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 
 // @public (undocumented)
-export function init(configuration?: {}): Promise<boolean>;
+export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
 
 // @public (undocumented)
 enum InterpolationType {
@@ -1934,17 +1966,7 @@ function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
-type Mat3 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
+type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
 type Metadata = {
@@ -2487,7 +2509,8 @@ declare namespace Types {
         ColormapRegistration,
         PixelDataTypedArray,
         ImagePixelModule,
-        ImagePlaneModule
+        ImagePlaneModule,
+        AffineMatrix
     }
 }
 export { Types }

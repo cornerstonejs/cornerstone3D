@@ -3,6 +3,98 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2023-10-16)
+
+### Features
+
+- **structuredClone:** drop lodash.clonedeep in favor of structuredClone ([#517](https://github.com/cornerstonejs/cornerstone3D/issues/517)) ([e562d72](https://github.com/cornerstonejs/cornerstone3D/commit/e562d72317e8ba1a5868765607e2c48fc0574919))
+
+# [2.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.2...v2.0.0-beta.3) (2023-10-16)
+
+# [2.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.6...v2.0.0-beta.2) (2023-09-22)
+
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [2.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.6...v2.0.0-beta.2) (2023-09-22)
+
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [2.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.4...v1.16.5) (2023-09-19)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.3...v1.16.4) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.2...v1.16.3) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.1...v1.16.2) (2023-09-18)
+
+### Bug Fixes
+
+- **invert:** Resetting the stack viewport properties should revert to the image's original invert setting ([#786](https://github.com/cornerstonejs/cornerstone3D/issues/786)) ([027a737](https://github.com/cornerstonejs/cornerstone3D/commit/027a73778c57e67efea2f99aa12b654f39994d97))
+
+## [1.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.0...v1.16.1) (2023-09-14)
+
+### Bug Fixes
+
+- **config:** confusing initial config on init ([#783](https://github.com/cornerstonejs/cornerstone3D/issues/783)) ([ffa7288](https://github.com/cornerstonejs/cornerstone3D/commit/ffa7288968673b4f776cecffafbedd3551802ce7))
+
+# [1.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.1...v1.16.0) (2023-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.0...v1.15.1) (2023-09-12)
+
+### Bug Fixes
+
+- **cine:** fix cine black images for slow computers ([#761](https://github.com/cornerstonejs/cornerstone3D/issues/761)) ([b110bda](https://github.com/cornerstonejs/cornerstone3D/commit/b110bdad1d5c561721d379bbd20cfe07639756ef))
+
+# [1.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.4...v1.15.0) (2023-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.3...v1.14.4) (2023-09-07)
+
+### Bug Fixes
+
+- **measurements:** The image stack sync tool fails to work on non-FOR instances and hangs the browser ([#642](https://github.com/cornerstonejs/cornerstone3D/issues/642)) ([cd5efa0](https://github.com/cornerstonejs/cornerstone3D/commit/cd5efa06cb740e960a80817f9bdbb1fbe1d799d8))
+
+## [1.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.2...v1.14.3) (2023-09-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.1...v1.14.2) (2023-09-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.14.0...v1.14.1) (2023-09-07)
+
+### Bug Fixes
+
+- **release:** try to release nifti loader ([#772](https://github.com/cornerstonejs/cornerstone3D/issues/772)) ([74bbde0](https://github.com/cornerstonejs/cornerstone3D/commit/74bbde0542934f359be9f17f2f2b2a25eea0ae9d))
+
+# [1.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.3...v1.14.0) (2023-09-07)
+
+### Features
+
+- **nifti:** Add nifti volume loader to cornerstone 3D repo ([#696](https://github.com/cornerstonejs/cornerstone3D/issues/696)) ([c9c2e83](https://github.com/cornerstonejs/cornerstone3D/commit/c9c2e83b2e0614c90c88bd89634f1bcb325d0a00))
+
 ## [1.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.13.2...v1.13.3) (2023-09-06)
 
 ### Bug Fixes
