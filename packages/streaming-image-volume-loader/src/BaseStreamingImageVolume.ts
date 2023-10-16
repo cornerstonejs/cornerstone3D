@@ -34,6 +34,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     cancelled: boolean;
     cachedFrames: Array<Enums.FrameStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
+    completeFrames?: number;
   };
 
   constructor(
@@ -344,10 +345,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       }
       cachedFrames[imageIdIndex] = status;
       const complete = status === FrameStatus.DONE;
-      if (complete) {
-        this.framesProcessed++;
-      }
+      this.framesProcessed++;
       this.framesLoaded++;
+      if (complete) {
+        this.loadStatus.completeFrames =
+          (this.loadStatus.completeFrames || 0) + 1;
+      }
 
       vtkOpenGLTexture.setUpdatedFrame(frameIndex);
       imageData.modified();
@@ -363,7 +366,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         eventDetail
       );
 
-      if (complete && this.framesProcessed === totalNumFrames) {
+      if (complete && this.loadStatus.completeFrames === totalNumFrames) {
         loadStatus.loaded = true;
         loadStatus.loading = false;
       }
@@ -374,6 +377,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         imageId,
         framesLoaded: this.framesLoaded,
         framesProcessed: this.framesProcessed,
+        completeFrames: this.loadStatus.completeFrames,
         numFrames,
         totalNumFrames,
         complete,

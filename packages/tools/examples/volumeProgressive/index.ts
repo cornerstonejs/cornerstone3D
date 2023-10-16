@@ -115,8 +115,25 @@ Use the mouse wheel to scroll through the stack.
 
 content.append(instructions);
 
-// ============================= //
-
+/**
+ * Generate the various configurations by using the options on static DICOMweb:
+ * Base lossy/full thumbnail configuration for HTJ2K:
+ * ```
+ * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name lossy d:\src\viewer-testdata\dcm\Juno
+ * ```
+ *
+ * JLS and JLS thumbnails:
+ * ```bash
+ * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls d:\src\viewer-testdata\dcm\Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail d:\src\viewer-testdata\dcm\Juno
+ * ```
+ *
+ * HTJ2K and HTJ2K thumbnail - lossless:
+ * ```bash
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k d:\src\viewer-testdata\dcm\Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail d:\src\viewer-testdata\dcm\Juno
+ * ```
+ */
 const configDefault = {
   minChunkSize: 65_536 * 2,
 
@@ -135,11 +152,26 @@ const configJLS = {
       streaming: true,
     },
     'default-lossy': {
-      // isLossy: true,
       framesPath: '/jls/',
     },
     'default-final': {
-      // isLossy: true,
+      framesPath: '/jls/',
+    },
+  },
+};
+
+const configJLSMixed = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      framesPath: '/jlsThumbnail/',
+    },
+    'default-final': {
       framesPath: '/jls/',
     },
   },
@@ -153,7 +185,7 @@ const configJLSThumbnail = {
       streaming: true,
     },
     'default-lossy': {
-      isLossy: true,
+      // isLossy: true,
       framesPath: '/jlsThumbnail/',
     },
     'default-final': {
@@ -163,6 +195,51 @@ const configJLSThumbnail = {
   },
 };
 
+const configHtj2k = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      // isLossy: true,
+      framesPath: '/htj2k/',
+    },
+    'default-final': {
+      // isLossy: true,
+      framesPath: '/htj2k/',
+    },
+  },
+};
+
+const configHtj2kMixed = {
+  minChunkSize: 65_536,
+  initialBytes: 65_536,
+  totalRanges: 2,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      streaming: false,
+      framesPath: '/htj2k/',
+      byteRange: '0-65536',
+    },
+    '3.2.840.10008.1.2.4.96-lossy': {
+      isLossy: true,
+      framesPath: '/htj2k/',
+      byteRange: '0-65536',
+      streaming: false,
+    },
+    '3.2.840.10008.1.2.4.96-final': {
+      framesPath: '/htj2k/',
+      streaming: false,
+    },
+  },
+};
 const configThumbnail = {
   minChunkSize: 65_536,
 
@@ -172,24 +249,15 @@ const configThumbnail = {
     },
     'default-lossy': {
       // isLossy: true,
-      framesPath: '/lossy/',
+      framesPath: '/htj2kThumbnail/',
     },
     '3.2.840.10008.1.2.4.96-lossy': {
       // isLossy: true,
-      framesPath: '/lossy/',
+      framesPath: '/htj2kThumbnail/',
+      streaming: false,
     },
     '3.2.840.10008.1.2.4.96-final': {
-      framesPath: '/lossy/',
-      streaming: false,
-    },
-    '1.2.840.10008.1.2.4.81-lossy': {
-      // isLossy: true,
-      framesPath: '/lossy/',
-      streaming: false,
-    },
-    '1.2.840.10008.1.2.4.81-final': {
-      // isLossy: true,
-      framesPath: '/lossy/',
+      framesPath: '/htj2kThumbnail/',
       streaming: false,
     },
   },
@@ -202,12 +270,17 @@ const configStreamingVolume = {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
-    'default-lossy': {},
-    '3.2.840.10008.1.2.4.96-lossy': {
+    'default-lossy': {
       streaming: true,
     },
-    '3.2.840.10008.1.2.4.96-final': {
+    'default-final': {
       streaming: true,
+    },
+    '3.2.840.10008.1.2.4.96-lossy': {
+      streaming: false,
+    },
+    '3.2.840.10008.1.2.4.96-final': {
+      streaming: false,
     },
   },
 };
@@ -221,7 +294,14 @@ const configByteRange = {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
-    'default-lossy': {},
+    'default-lossy': {
+      framesPath: '/htj2k',
+      byteRange: '0-65535',
+    },
+    'default-final': {
+      framesPath: '/htj2k',
+      byteRange: '0-65535',
+    },
     '3.2.840.10008.1.2.4.96-lossy': {
       // isLossy: true,
       streaming: false,
@@ -350,18 +430,22 @@ async function run() {
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
 
     // Set the volume to load
-    volume.load((progress) => {
-      const { stageId } = progress;
+    volume.load((progressEvt) => {
+      const { stageId } = progressEvt;
       const now = Date.now();
       if (stageId) {
         getOrCreateTiming(stageId).innerText = `Done ${stageId} in ${
           now - start
         } ms`;
       }
-      if (progress.numFrames === progress.totalNumFrames) {
+      if (progressEvt.completeFrames === progressEvt.totalNumFrames) {
         getOrCreateTiming('loadingStatus').innerText = `Took ${
           now - start
         } ms for ${name}@${stageId} with ${imageIds.length} items`;
+      } else {
+        getOrCreateTiming(
+          'loadingStatus'
+        ).innerText = `Loading: ${progressEvt.totalNumFrames} Total, ${progressEvt.completeFrames} Complete, ${progressEvt.numFrames} Processed`;
       }
     });
 
@@ -380,10 +464,12 @@ async function run() {
 
   createButton('JLS', 'ct', imageIdsCT, configJLS);
   createButton('JLS Thumb', 'ct', imageIdsCT, configJLSThumbnail);
-  createButton('J2K', 'ct', imageIdsCT, configDefault);
+  createButton('JLS Mixed', 'ct', imageIdsCT, configJLSMixed);
+  createButton('J2K', 'ct', imageIdsCT, configHtj2k);
   createButton('J2K Thumb', 'ct', imageIdsCT, configThumbnail);
   createButton('J2K Stream', 'ct', imageIdsCT, configStreamingVolume);
   createButton('J2K Range', 'ct', imageIdsCT, configByteRange);
+  createButton('J2K Mixed', 'ct', imageIdsCT, configHtj2kMixed);
 }
 
 run();
