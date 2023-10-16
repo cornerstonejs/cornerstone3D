@@ -42,27 +42,26 @@ let options: LoaderOptions = {
     use16BitDataType: false,
   },
 
-  // Configurations for loading initial bytes ranges
-  initialBytes: 65_536,
-  totalRanges: 2,
-  minChunkSize: 65_536 * 2,
+  minChunkSize: 65_536,
 
   retrieveConfiguration: {
-    // '3.2.840.10008.1.2.4.96': {
-    //   streaming: true,
-    // },
-    'default-lossy': {
-      framesPath: '/lossy/',
-      isLossy: true,
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
     },
+    'default-lossy': {},
     '3.2.840.10008.1.2.4.96-lossy': {
-      framesPath: '/lossy/',
       isLossy: true,
+      streaming: false,
       //needsScale: true,
     },
-    // '3.2.840.10008.1.2.4.96': {
+    '3.2.840.10008.1.2.4.96-final': {
+      isLossy: false,
+      streaming: false,
+      //needsScale: true,
+    },
+    // '3.2.840.10008.1.2.4.96-lossy': {
     //   streaming: true,
-    //   //needsScale: true,
+    //   // needsScale: true,
     // },
   },
 };

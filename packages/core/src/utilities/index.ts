@@ -47,7 +47,6 @@ import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
 import ProgressiveIterator from './ProgressiveIterator';
-import * as imageUtils from './bilinear';
 import decimate from './decimate';
 
 // name spaces
@@ -109,6 +108,5 @@ export {
   colormap,
   getImageLegacy,
   ProgressiveIterator,
-  imageUtils,
   decimate,
 };

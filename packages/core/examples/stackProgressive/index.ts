@@ -5,6 +5,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
+import cornerstoneDicomImageLoader from '@cornerstonejs/dicom-image-loader';
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -42,8 +44,6 @@ content.appendChild(element);
 
 // ============================= //
 
-let lastImageSize;
-
 async function newImageFunction(evt) {
   const { image } = evt.detail;
   const { complete, decodeTimeInMS, loadTimeInMS } = image;
@@ -58,10 +58,10 @@ async function newImageFunction(evt) {
   timingInfo.innerHTML += `<p>Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode</p>`;
 }
 
-async function showStack(stack: string[], viewport) {
+async function showStack(stack: string[], viewport, config) {
+  cornerstoneDicomImageLoader.configure(config);
   cache.purgeCache();
   console.time('imageLoad');
-  lastImageSize = null;
   timingInfo.innerHTML = `<p>Loading ${stack[0]}</p>`;
   element.addEventListener(
     cornerstone.EVENTS.STACK_NEW_IMAGE,
@@ -83,6 +83,41 @@ async function showStack(stack: string[], viewport) {
     end - start
   } using ${transferSyntaxUID}</p>`;
 }
+
+const configThumbnail = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      framesPath: '/lossy/',
+      streaming: false,
+    },
+    unknown: {
+      streaming: true,
+      framesPath: '/lossy/',
+    },
+    '1.2.840.10008.1.2.4.80': {
+      // isLossy: true,
+      framesPath: '/lossy/',
+      streaming: false,
+    },
+    '1.2.840.10008.1.2.4.81': {
+      // isLossy: true,
+      framesPath: '/lossy/',
+      streaming: false,
+    },
+  },
+};
+
+const configDefault = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+  },
+};
 
 /**
  * Runs the demo
@@ -134,20 +169,27 @@ async function run() {
     renderingEngine.getViewport(viewportId)
   );
 
+  const createButton = (text, imageIds, config) => {
+    const button = document.createElement('button');
+    button.innerText = text;
+    button.id = text;
+    button.onclick = showStack.bind(null, imageIds, viewport, config);
+    loaders.appendChild(button);
+    return button;
+  };
+
   const htj2kButton = document.createElement('button');
   htj2kButton.innerText = 'Load HTJ2K';
-  htj2kButton.onclick = showStack.bind(null, [imageIds[0]], viewport);
+  htj2kButton.onclick = showStack.bind(
+    null,
+    [imageIds[0]],
+    viewport,
+    configDefault
+  );
   loaders.appendChild(htj2kButton);
 
-  const jlsButton = document.createElement('button');
-  jlsButton.innerText = 'Load JLS';
-  jlsButton.onclick = showStack.bind(null, [imageIds[1]], viewport);
-  loaders.appendChild(jlsButton);
-
-  const jlsCtButton = document.createElement('button');
-  jlsCtButton.innerText = 'Load CT JLS';
-  jlsCtButton.onclick = showStack.bind(null, [imageIdsCt[0]], viewport);
-  loaders.appendChild(jlsCtButton);
+  createButton('JLS', [imageIds[1]], configDefault);
+  createButton('JLS Thumbnail', [imageIds[1]], configThumbnail);
 
   const htj2kCtButton = document.createElement('button');
   htj2kCtButton.innerText = 'Load CT HTJ2K';

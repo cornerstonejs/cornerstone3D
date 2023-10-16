@@ -70,8 +70,6 @@ export default function rangeRequest(
     );
   }
 
-  console.log('rangeRequest:Request', initialBytes, totalRanges, imageId);
-
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;

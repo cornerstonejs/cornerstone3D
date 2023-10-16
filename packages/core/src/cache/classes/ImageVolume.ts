@@ -14,11 +14,11 @@ import {
 
 const defaultRetrieveConfiguration: IRetrieveConfiguration = {
   stages: [
-    {
-      id: 'initialImages',
-      positions: [0.5, 0, -1],
-      retrieveTypeId: 'lossy',
-    },
+    // {
+    //   id: 'initialImages',
+    //   positions: [0.5, 0, -1],
+    //   retrieveTypeId: 'final',
+    // },
     // {
     //   id: 'all',
     //   decimate: 1,
@@ -30,32 +30,36 @@ const defaultRetrieveConfiguration: IRetrieveConfiguration = {
       offset: 1,
       retrieveTypeId: 'lossy',
     },
-    {
-      id: 'halfThumb',
-      decimate: 4,
-      offset: 3,
-      retrieveTypeId: 'lossy',
-    },
-    {
-      id: 'quarterFull',
-      decimate: 4,
-      offset: 2,
-    },
-    {
-      id: 'halfFull',
-      decimate: 4,
-      offset: 0,
-    },
-    {
-      id: 'threeQuarterFull',
-      decimate: 4,
-      offset: 2,
-    },
-    {
-      id: 'finalFull',
-      decimate: 4,
-      offset: 0,
-    },
+    // {
+    //   id: 'halfThumb',
+    //   decimate: 4,
+    //   offset: 3,
+    //   retrieveTypeId: 'lossy',
+    // },
+    // {
+    //   id: 'quarterFull',
+    //   decimate: 4,
+    //   offset: 2,
+    //   retrieveTypeId: 'final',
+    // },
+    // {
+    //   id: 'halfFull',
+    //   decimate: 4,
+    //   offset: 0,
+    //   retrieveTypeId: 'final',
+    // },
+    // {
+    //   id: 'threeQuarterFull',
+    //   decimate: 4,
+    //   offset: 2,
+    //   retrieveTypeId: 'final',
+    // },
+    // {
+    //   id: 'finalFull',
+    //   decimate: 4,
+    //   offset: 0,
+    //   retrieveTypeId: 'final',
+    // },
   ],
 };
 

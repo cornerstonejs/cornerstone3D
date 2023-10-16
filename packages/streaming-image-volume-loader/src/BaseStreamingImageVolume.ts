@@ -12,6 +12,7 @@ import {
 
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
+import { RetrieveStage } from 'core/src/types';
 const requestType = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
 const { FrameStatus } = Enums;
@@ -281,21 +282,22 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     }
 
     function callLoadStatusCallback(evt) {
-      // TODO: probably don't want this here
+      const { framesProcessed, totalNumFrames, isUpdatedImage, stageDone } =
+        evt;
 
+      // TODO: probably don't want this here
       if (autoRenderOnLoad) {
-        if (evt.isUpdatedImage) {
+        if (isUpdatedImage) {
           autoLoad(volumeId);
         } else if (
-          evt.framesProcessed > reRenderTarget ||
-          evt.framesProcessed === evt.totalNumFrames
+          framesProcessed > reRenderTarget ||
+          framesProcessed === totalNumFrames
         ) {
           reRenderTarget += reRenderFraction;
           autoLoad(volumeId);
         }
       }
-
-      if (evt.framesProcessed === evt.totalNumFrames) {
+      if (framesProcessed === totalNumFrames || stageDone) {
         loadStatus.callbacks.forEach((callback) => callback(evt));
 
         const eventDetail = {
@@ -315,10 +317,17 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       volume: BaseStreamingImageVolume,
       imageIdIndex,
       imageId,
-      status = FrameStatus.DONE
+      status = FrameStatus.DONE,
+      stageId?: string
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
+      let stageDone = false;
+      if (stageId) {
+        const current = retrieveIdCounts[stageId];
+        retrieveIdCounts[stageId] = current - 1;
+        stageDone ||= current === 1;
+      }
       const currentStatus = cachedFrames[frameIndex];
       if (currentStatus > status) {
         console.warn(
@@ -331,20 +340,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       }
 
       if (cachedFrames[frameIndex] === FrameStatus.DONE) {
-        console.warn(
-          'Updating cached frames status to done when it is already done',
-          imageIdIndex,
-          frameIndex
-        );
+        return;
       }
       cachedFrames[imageIdIndex] = status;
       const complete = status === FrameStatus.DONE;
       if (complete) {
-        console.log(
-          'Assigning status done to',
-          imageIdIndex,
-          this.framesProcessed
-        );
         this.framesProcessed++;
       }
       this.framesLoaded++;
@@ -368,7 +368,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         loadStatus.loading = false;
       }
 
-      // TODO: Should we remove the callbacks in favour of just using events?
       callLoadStatusCallback({
         success: true,
         imageIdIndex,
@@ -379,6 +378,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         totalNumFrames,
         complete,
         status,
+        stageDone,
+        stageId,
       });
       if (loadStatus.loaded) {
         loadStatus.callbacks = [];
@@ -389,10 +390,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       imageIdIndex: number,
       imageId: string,
       scalingParameters,
-      status = FrameStatus.DONE
+      status = FrameStatus.DONE,
+      stageId?: string
     ) => {
       const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-      console.log('success callback', imageIdIndex, frameIndex, status);
 
       // Check if there is a cached image for the same imageURI (different
       // data loader scheme)
@@ -418,11 +419,13 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         !cachedImage?.image &&
         !(cachedVolume && cachedVolume.volume !== this)
       ) {
+        console.log('Success callback not cached', imageIdIndex, status);
         return updateTextureAndTriggerEvents(
           this,
           imageIdIndex,
           imageId,
-          status
+          status,
+          stageId
         );
       }
 
@@ -431,6 +434,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       const cachedImageOrVolume = cachedImage || cachedVolume.volume;
 
+      console.log(
+        'Success callback from cache',
+        imageIdIndex,
+        isFromImageCache
+      );
       this.handleImageComingFromCache(
         cachedImageOrVolume,
         isFromImageCache,
@@ -486,8 +494,13 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
-    const retrieveTypeIds = new Array<string>();
-    const interleavedImageIds = this.interleave(imageIds, retrieveTypeIds);
+    const retrieveStages = new Array<RetrieveStage>();
+    const retrieveIdCounts: Record<string, number> = {};
+    const interleavedImageIds = this.interleave(
+      imageIds,
+      retrieveStages,
+      retrieveIdCounts
+    );
 
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
@@ -511,7 +524,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {};
 
-      const { transferSyntaxUid } =
+      const { transferSyntaxUID: transferSyntaxUid } =
         metaData.get('transferSyntax', imageId) || {};
 
       const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
@@ -549,7 +562,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * not, which we store it in the this.scaling.PT.suvbw.
        */
       this.isPreScaled = isSlopeAndInterceptNumbers;
-      const retrieveTypeId = retrieveTypeIds[loadIndex];
+      const stage = retrieveStages[loadIndex];
+      const retrieveTypeId = stage?.retrieveTypeId;
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -581,7 +595,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       const callLoadImage = (imageId, imageIdIndex, options) => {
-        console.log('Starting to load', imageIdIndex);
+        if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
+          return;
+        }
         const uncompressedIterator = ProgressiveIterator.as(
           imageLoader.loadImage(imageId, options)
         );
@@ -592,7 +608,13 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-          successCallback(imageIdIndex, imageId, scalingParameters, status);
+          successCallback(
+            imageIdIndex,
+            imageId,
+            scalingParameters,
+            status,
+            stage.id
+          );
           fillNearby(
             imageIdIndex,
             scalarData,
@@ -615,7 +637,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
               console.log("Couldn't update nearby", e);
             }
           });
-          isUpdatedImage = true;
         }, errorCallback.bind(this, imageIdIndex, imageId));
       };
 
@@ -688,10 +709,14 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   }
 
   /** Interleaves the values according to the stages definition */
-  public interleave(requests: string[], retrieveTypeIds: string[]): string[] {
+  public interleave(
+    requests: string[],
+    retrieveStages: RetrieveStage[],
+    retrieveIdCounts: Record<string, number>
+  ): string[] {
     const { stages } = this.retrieveConfiguration;
 
-    if (!stages) {
+    if (!stages?.length) {
       return requests;
     }
 
@@ -706,11 +731,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       if (!value) {
         throw new Error(`No value found to add to requests at ${position}`);
       }
+      retrieveIdCounts[stage.id] = 1 + (retrieveIdCounts[stage.id] || 0);
       interleaved.push(value);
-      if (stage.remove) {
-        requests.splice(index, 1);
-      }
-      retrieveTypeIds[interleaved.length - 1] = stage.retrieveTypeId;
+      retrieveStages[interleaved.length - 1] = stage;
     };
 
     const interleaved = [];
@@ -762,11 +785,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         requestType,
         additionalDetails,
       } = request;
-      console.log(
-        'Adding image load request',
-        imageIdIndex,
-        options.retrieveTypeId
-      );
 
       imageLoadPoolManager.addRequest(
         callLoadImage.bind(this, imageId, imageIdIndex, options),

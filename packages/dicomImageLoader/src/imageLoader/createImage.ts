@@ -111,8 +111,8 @@ function createImage(
         : false,
   };
 
-  if (!pixelData || !pixelData.length) {
-    return Promise.reject(new Error('The file does not contain image data.'));
+  if (!pixelData?.length) {
+    return Promise.reject(new Error('The pixel data is missing'));
   }
 
   const { cornerstone } = external;
@@ -143,12 +143,6 @@ function createImage(
     options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
-  console.log(
-    'Decoding image frame',
-    pixelData.length,
-    pixelData[0],
-    transferSyntax
-  );
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,

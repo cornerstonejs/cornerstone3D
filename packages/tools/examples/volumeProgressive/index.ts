@@ -6,6 +6,7 @@ import {
   setVolumesForViewports,
   cache,
 } from '@cornerstonejs/core';
+import cornerstoneDicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -41,9 +42,6 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
-const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID';
-const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID';
-
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = [
   'CT_SAGITTAL_STACK_1',
@@ -57,17 +55,31 @@ setTitleAndDescription(
   'Here we demonstrate progressive loading of volumes.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 
 const loaders = document.createElement('div');
 content.appendChild(loaders);
 
 const timingInfo = document.createElement('div');
-timingInfo.innerText = 'Timing Info';
 content.appendChild(timingInfo);
-const viewportGrid = document.createElement('div');
+const timingIds = [];
+const getOrCreateTiming = (id) => {
+  const element = document.getElementById(id);
+  if (element) {
+    return element;
+  }
+  timingIds.push(id);
+  timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
+  return document.getElementById(id);
+};
+function resetTimingInfo() {
+  for (const id of timingIds) {
+    getOrCreateTiming(id).innerText = `Waiting ${id}`;
+  }
+}
 
+const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
@@ -105,9 +117,125 @@ content.append(instructions);
 
 // ============================= //
 
-function addSize(imageIds: string[], size = 256) {
-  return imageIds.map((id) => `${id}?fsiz=${size}`);
-}
+const configDefault = {
+  minChunkSize: 65_536 * 2,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+  },
+};
+
+const configJLS = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      // isLossy: true,
+      framesPath: '/jls/',
+    },
+    'default-final': {
+      // isLossy: true,
+      framesPath: '/jls/',
+    },
+  },
+};
+
+const configJLSThumbnail = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      framesPath: '/jlsThumbnail/',
+    },
+    'default-final': {
+      // isLossy: true,
+      framesPath: '/jlsThumbnail/',
+    },
+  },
+};
+
+const configThumbnail = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      // isLossy: true,
+      framesPath: '/lossy/',
+    },
+    '3.2.840.10008.1.2.4.96-lossy': {
+      // isLossy: true,
+      framesPath: '/lossy/',
+    },
+    '3.2.840.10008.1.2.4.96-final': {
+      framesPath: '/lossy/',
+      streaming: false,
+    },
+    '1.2.840.10008.1.2.4.81-lossy': {
+      // isLossy: true,
+      framesPath: '/lossy/',
+      streaming: false,
+    },
+    '1.2.840.10008.1.2.4.81-final': {
+      // isLossy: true,
+      framesPath: '/lossy/',
+      streaming: false,
+    },
+  },
+};
+
+const configStreamingVolume = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {},
+    '3.2.840.10008.1.2.4.96-lossy': {
+      streaming: true,
+    },
+    '3.2.840.10008.1.2.4.96-final': {
+      streaming: true,
+    },
+  },
+};
+
+const configByteRange = {
+  minChunkSize: 65_536,
+  initialBytes: 65_536,
+  totalRanges: 2,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {},
+    '3.2.840.10008.1.2.4.96-lossy': {
+      // isLossy: true,
+      streaming: false,
+      byteRange: '0-65535',
+      //needsScale: true,
+    },
+    '3.2.840.10008.1.2.4.96-final': {
+      streaming: false,
+      byteRange: '0-65535',
+      // isLossy: false,
+      //needsScale: true,
+    },
+  },
+};
 
 /**
  * Runs the demo
@@ -161,29 +289,11 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-  });
-
-  const imageIdsCTJLS = await createImageIdsAndCacheMetaData({
+  const imageIdsCT = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
     wadoRsRoot: 'http://localhost:5000/dicomweb/',
   });
-
-  const imageIdsCTJLS256 = addSize(imageIdsCTJLS, 256);
-
-  const imageIdsCTHtj2k = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: 'http://localhost:25080/dicomweb/',
-  });
-  const imageIdsCTHtj2k256 = addSize(imageIdsCTHtj2k, 256);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -227,26 +337,31 @@ async function run() {
   );
   renderingEngine.renderViewports(viewportIds);
 
-  async function loadVolume(name, imageIds) {
+  async function loadVolume(name, imageIds, config) {
+    cornerstoneDicomImageLoader.configure(config);
     cache.purgeCache();
+    resetTimingInfo();
     // Define a volume in memory
     const key = `Volume Load ${name}`;
     const start = Date.now();
-    console.time(key);
     const volume = await volumeLoader.createAndCacheVolume(name, {
       imageIds,
     });
-    timingInfo.innerText = 'Loading...';
+    getOrCreateTiming('loadingStatus').innerText = 'Loading...';
 
     // Set the volume to load
     volume.load((progress) => {
-      console.log('Load progress', progress);
+      const { stageId } = progress;
+      const now = Date.now();
+      if (stageId) {
+        getOrCreateTiming(stageId).innerText = `Done ${stageId} in ${
+          now - start
+        } ms`;
+      }
       if (progress.numFrames === progress.totalNumFrames) {
-        console.timeEnd(key);
-        const end = Date.now();
-        timingInfo.innerText = `Took ${end - start} ms for ${name} with ${
-          imageIds.length
-        } items`;
+        getOrCreateTiming('loadingStatus').innerText = `Took ${
+          now - start
+        } ms for ${name}@${stageId} with ${imageIds.length} items`;
       }
     });
 
@@ -256,18 +371,19 @@ async function run() {
     renderingEngine.renderViewports(viewportIds);
   }
 
-  const createButton = (text, volId, imageIds) => {
+  const createButton = (text, volId, imageIds, config) => {
     const button = document.createElement('button');
     button.innerText = text;
-    button.onclick = loadVolume.bind(null, volId, imageIds);
+    button.onclick = loadVolume.bind(null, volId, imageIds, config);
     loaders.appendChild(button);
   };
 
-  createButton('Load Order', 'Random', imageIds);
-  createButton('CT JLS 256', 'ctjls256', imageIdsCTJLS256);
-  createButton('CT JLS', 'ctjls', imageIdsCTJLS);
-  createButton('CT HTJ2K', 'cthtj2k', imageIdsCTHtj2k);
-  createButton('CT HTJ2K 256', 'cthtj2k256', imageIdsCTHtj2k256);
+  createButton('JLS', 'ct', imageIdsCT, configJLS);
+  createButton('JLS Thumb', 'ct', imageIdsCT, configJLSThumbnail);
+  createButton('J2K', 'ct', imageIdsCT, configDefault);
+  createButton('J2K Thumb', 'ct', imageIdsCT, configThumbnail);
+  createButton('J2K Stream', 'ct', imageIdsCT, configStreamingVolume);
+  createButton('J2K Range', 'ct', imageIdsCT, configByteRange);
 }
 
 run();

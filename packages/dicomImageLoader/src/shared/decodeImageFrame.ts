@@ -1,6 +1,6 @@
 /* eslint-disable complexity */
 import { ByteArray } from 'dicom-parser';
-
+import * as imageUtils from './scaling/bilinear';
 import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
 import decodeRLE from './decoders/decodeRLE';
@@ -295,8 +295,18 @@ function _handleTargetBuffer(
     type,
     offset: rawOffset = 0,
     length: rawLength,
+    rows,
   } = options.targetBuffer;
 
+  const TypedArrayConstructor = typedArrayConstructors[type];
+
+  if (!TypedArrayConstructor) {
+    throw new Error(`target array ${type} is not supported`);
+  }
+
+  if (rows && rows != imageFrame.rows) {
+    scaleImageFrame(imageFrame, options.targetBuffer, TypedArrayConstructor);
+  }
   const imageFrameLength = imageFrame.pixelDataLength;
 
   const offset = rawOffset;
@@ -304,12 +314,6 @@ function _handleTargetBuffer(
     rawLength !== null && rawLength !== undefined
       ? rawLength
       : imageFrameLength - offset;
-
-  const TypedArrayConstructor = typedArrayConstructors[type];
-
-  if (!TypedArrayConstructor) {
-    throw new Error(`target array ${type} is not supported`);
-  }
 
   const imageFramePixelData = imageFrame.pixelData;
 
@@ -370,6 +374,50 @@ function _validateScalingParameters(scalingParameters) {
       'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
     );
   }
+}
+
+function createDest(imageFrame, targetBuffer, TypedArrayConstructor) {
+  const { samplesPerPixel } = imageFrame;
+  const { rows, columns } = targetBuffer;
+  const typedLength = rows * columns * samplesPerPixel;
+  const pixelData = new TypedArrayConstructor(typedLength);
+  const bytesPerPixel = pixelData.byteLength / typedLength;
+  return {
+    pixelData,
+    rows,
+    columns,
+    frameInfo: {
+      ...imageFrame.frameInfo,
+      rows,
+      columns,
+    },
+    imageInfo: {
+      ...imageFrame.imageInfo,
+      rows,
+      columns,
+      bytesPerPixel,
+    },
+  };
+}
+
+/** Scales the image frame, updating the frame in place with a new scaled
+ * version of it (in place modification)
+ */
+function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
+  const dest = createDest(imageFrame, targetBuffer, TypedArrayConstructor);
+  if (!dest) {
+    console.warn(
+      'Not scaling, no destination created',
+      imageFrame,
+      targetBuffer
+    );
+    return;
+  }
+  console.log('Scaling image frame', imageFrame, targetBuffer);
+  const { scalingType = 'replicate' } = targetBuffer;
+  imageUtils[scalingType](imageFrame, dest);
+  Object.assign(imageFrame, dest);
+  return imageFrame;
 }
 
 export default decodeImageFrame;

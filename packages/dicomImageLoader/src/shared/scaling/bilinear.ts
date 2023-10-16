@@ -59,10 +59,10 @@ export function replicate(src, dest) {
   const {
     rows: srcRows,
     columns: srcColumns,
-    data: srcData,
+    pixelData: srcData,
     samplesPerPixel = 1,
   } = src;
-  const { rows, columns, data } = dest;
+  const { rows, columns, pixelData } = dest;
 
   const xSrc1Off = [];
 
@@ -80,11 +80,11 @@ export function replicate(src, dest) {
 
     for (let x = 0; x < columns; x++) {
       for (let sample = 0; sample < samplesPerPixel; sample++) {
-        data[yOff + x + sample] = srcData[ySrc1Off + xSrc1Off[x] + sample];
+        pixelData[yOff + x + sample] = srcData[ySrc1Off + xSrc1Off[x] + sample];
       }
     }
   }
-  return data;
+  return pixelData;
 }
 
 export default bilinear;

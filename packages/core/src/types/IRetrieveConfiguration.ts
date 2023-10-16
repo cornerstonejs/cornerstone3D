@@ -29,8 +29,6 @@ export interface LossyConfiguration {
   decodeLevel?: number;
   // Load status when this item has complete - true to indicate lossy response
   isLossy?: boolean;
-  // Indicates if the response may need scaling
-  needsScale?: boolean;
 }
 
 /**

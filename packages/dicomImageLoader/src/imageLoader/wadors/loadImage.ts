@@ -111,6 +111,12 @@ function loadImage(
   const loaderOptions = getOptions();
   let retrieveOptions =
     loaderOptions.getRetrieveOptions(transferSyntaxUid, retrieveTypeId) || {};
+  console.log(
+    'Original retrieve',
+    transferSyntaxUid,
+    retrieveTypeId,
+    retrieveOptions
+  );
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -126,13 +132,14 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
+        console.log('Getting retrieve options', transferSyntax, retrieveTypeId);
         retrieveOptions = loaderOptions.getRetrieveOptions(
           transferSyntax,
           retrieveTypeId
         );
         const { pixelData, isLossy = false, percentComplete } = result;
         const complete = done && !isLossy;
-        if (!streamableTransferSyntaxes.has(transferSyntax) && !done) {
+        if (!done && !retrieveOptions?.streaming) {
           continue;
         }
         const completeText = complete
@@ -151,22 +158,12 @@ function loadImage(
             ...options,
             decodeLevel: decodeLevel,
           };
-          const needsScale = retrieveOptions?.needsScale || decodeLevel;
-          if (needsScale || decodeLevel) {
-            delete useOptions.targetBuffer;
-            useOptions.skipCreateImage = false;
-          }
-          let image = await createImage(
+          const image = await createImage(
             imageId,
             pixelData,
             transferSyntax,
             useOptions
           );
-
-          if (needsScale && options.targetBuffer.arrayBuffer) {
-            console.warn('Scaling image');
-            image = scaleImage(image, options.targetBuffer);
-          }
 
           // add the loadTimeInMS property
           const end = new Date().getTime();
@@ -175,11 +172,6 @@ function loadImage(
           image.complete = complete;
           image.isLossy = isLossy;
           image.stageId = retrieveOptions?.id;
-          console.log(
-            `loadImage:Received ${completeText} uncompressed data in`,
-            end - start,
-            'ms'
-          );
           it.add(image, complete);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
@@ -230,67 +222,6 @@ function decodeLevelFromComplete(percent: number) {
     return 2;
   }
   return 1;
-}
-
-function createSrc(image) {
-  const {
-    rows,
-    columns,
-    pixelData,
-    bitsPerPixel,
-    pixelRepresentation,
-    samplesPerPixel,
-  } = image;
-  let arrayConstructor = Float32Array;
-  if (bitsPerPixel === 8) {
-    arrayConstructor = pixelRepresentation ? Uint8Array : Int8Array;
-  } else if (bitsPerPixel === 16) {
-    arrayConstructor = pixelRepresentation ? Uint16Array : Int16Array;
-  }
-  return {
-    data: new arrayConstructor(pixelData),
-    rows,
-    columns,
-    samplesPerPixel,
-  };
-}
-
-function createDest(targetBuffer) {
-  const { rows, columns, arrayBuffer, offset, length } = targetBuffer;
-  console.log('Scaling for buffer', offset / length / 2);
-  return {
-    data: new Float32Array(arrayBuffer, offset, length),
-    rows,
-    columns,
-  };
-}
-
-// Replicate is faster, but bilinear is smoother
-const scalingType = 'bilinear';
-
-function scaleImage(image, targetBuffer) {
-  const { arrayBuffer, rows, columns } = targetBuffer;
-  if (!rows || !columns) {
-    console.log('Not scaling, no rows/columns');
-    return;
-  }
-  const src = createSrc(image);
-  const dest = createDest(targetBuffer);
-  if (!src || !dest) {
-    console.log('Not scaling, no src/dest', src, dest);
-    return;
-  }
-  if (image.samplesPerPixel > 1) {
-    imageUtils.replicate(src, dest);
-  } else {
-    imageUtils[scalingType](src, dest);
-  }
-  return {
-    ...image,
-    rows,
-    columns,
-    arrayBuffer,
-  };
 }
 
 export default loadImage;

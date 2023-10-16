@@ -50,7 +50,16 @@ function getPixelData(
     function (imageFrameAsArrayBuffer /* , xhr*/) {
       const contentType =
         xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
-      const extracted = extractMultipart(contentType, imageFrameAsArrayBuffer);
+      const extracted = extractMultipart(
+        contentType,
+        new Uint8Array(imageFrameAsArrayBuffer)
+      );
+      console.log(
+        'extracted',
+        extracted.pixelData.length,
+        extracted.pixelData.byteLength,
+        extracted.contentType
+      );
       extracted.complete = extracted.done && !retrieveOptions?.isLossy;
       extracted.isLossy = !!retrieveOptions.isLossy;
       loadIterator.add(extracted, true);
