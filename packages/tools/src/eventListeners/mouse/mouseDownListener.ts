@@ -262,7 +262,13 @@ function _onMouseDrag(evt: MouseEvent) {
     deltaPoints,
   };
 
-  triggerEvent(state.element, MOUSE_DRAG, eventDetail);
+  const consumed = !triggerEvent(state.element, MOUSE_DRAG, eventDetail);
+
+  // Events.MOUSE_DRAG was consumed, thus no other listener should handle this event.
+  if (consumed) {
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
+  }
 
   // Update the last points
   state.lastPoints = _copyPoints(currentPoints);

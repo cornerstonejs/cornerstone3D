@@ -480,20 +480,21 @@ enum Events {
     IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
     IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
     IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+    IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
     IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
     IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
-    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
 
+    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
     STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
+
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
 
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
-
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
 
@@ -549,6 +550,7 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
+        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -564,22 +566,6 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
-
-// @public
-enum FrameStatus {
-    // Replicate is a duplicated image, from some larger distance
-    // (undocumented)
-    DONE = 5,
-    // Nearby replicate is a duplicated image of a nearby image
-    // (undocumented)
-    LOADING = 3,
-    // (undocumented)
-    LOSSY = 4,
-    // (undocumented)
-    NEARBY_REPLICATE = 2,
-    // (undocumented)
-    REPLICATE = 1,
-}
 
 // @public (undocumented)
 enum GeometryType {
@@ -602,8 +588,7 @@ interface ICache {
     purgeCache: () => void;
     putImageLoadObject: (
     imageId: string,
-    imageLoadObject: IImageLoadObject,
-    updateCache?: boolean
+    imageLoadObject: IImageLoadObject
     ) => Promise<any>;
     putVolumeLoadObject: (
     volumeId: string,
@@ -642,8 +627,6 @@ interface ICachedImage {
     sharedCacheKey?: string;
     // (undocumented)
     sizeInBytes: number;
-    // (undocumented)
-    status?: FrameStatus;
     // (undocumented)
     timeStamp: number;
 }
@@ -780,7 +763,7 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
-    complete?: boolean;
+    decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
@@ -790,7 +773,7 @@ interface IImage {
     invert: boolean;
     isPreScaled?: boolean;
     // (undocumented)
-    level?: number;
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -970,6 +953,9 @@ options?: Record<string, any>
 };
 
 // @public
+type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
+
+// @public
 type ImageLoadProgressEventDetail = {
     url: string;
     imageId: string;
@@ -1142,12 +1128,6 @@ interface IRenderingEngine {
 }
 
 // @public
-interface IRetrieveConfiguration {
-    // (undocumented)
-    stages?: RetrieveStage[];
-}
-
-// @public
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -1204,7 +1184,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<FrameStatus>;
+        cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
 }
@@ -1282,7 +1262,6 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    retrieveConfiguration?: IRetrieveConfiguration;
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PT?: {
@@ -1379,30 +1358,6 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
-}
-
-// @public (undocumented)
-interface LossyConfiguration {
-    // Additional arguments to add to the URL, in the format
-    // arg1=value1 ('&' arg2=value2)*
-    // For example: '&lossy=jhc' to use JHC lossy values
-    // (undocumented)
-    byteRange?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    decodeLevel?: number;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    framesPath?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    isLossy?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    streaming?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    urlArguments?: string;
 }
 
 // @public
@@ -1506,36 +1461,6 @@ enum RequestType {
     Thumbnail = 'thumbnail',
 }
 
-// @public (undocumented)
-interface RetrieveStage {
-    // (undocumented)
-    decimate?: number;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    id: string;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    offset?: number;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    positions?: number[];
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    priority?: number;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    requestType?: RequestType;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    retrieveTypeId?: string;
-}
-
 // @public
 type RGB = [number, number, number];
 
@@ -1626,7 +1551,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageLoadRequests: (priority: number) => {
-        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => any;
+        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
         imageId: string;
         imageIdIndex: number;
         options: {
@@ -1635,17 +1560,12 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 offset: number;
                 length: number;
                 type: any;
-                rows: any;
-                columns: any;
             };
             skipCreateImage: boolean;
             preScale: {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
-            retrieveTypeId: string;
-            transferSyntaxUid: any;
-            loadIndex: number;
         };
         priority: number;
         requestType: default_2;

@@ -1,9 +1,11 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
 import { vec3 } from 'gl-matrix';
 
 import cache from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis } from '../enums';
+import { BlendModes, OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
   IImageVolume,
@@ -12,10 +14,9 @@ import type {
   Point3,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import { actorIsA, getClosestImageId } from '../utilities';
+import { actorIsA, getClosestImageId, triggerEvent } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -383,6 +384,22 @@ class VolumeViewport extends BaseVolumeViewport {
       );
     }
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+
+    const range = (volumeActor.actor as vtkVolume)
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .getMappingRange();
+
+    const eventDetails = {
+      viewportId: volumeActor.uid,
+      range: {
+        lower: range[0],
+        upper: range[1],
+      },
+      volumeId: volumeActor.uid,
+    };
+
+    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
 }
 

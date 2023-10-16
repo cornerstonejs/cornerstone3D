@@ -478,6 +478,7 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
+        ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
@@ -515,8 +516,7 @@ interface ICache {
     purgeCache: () => void;
     putImageLoadObject: (
     imageId: string,
-    imageLoadObject: IImageLoadObject,
-    updateCache?: boolean
+    imageLoadObject: IImageLoadObject
     ) => Promise<any>;
     putVolumeLoadObject: (
     volumeId: string,
@@ -555,8 +555,6 @@ interface ICachedImage {
     sharedCacheKey?: string;
     // (undocumented)
     sizeInBytes: number;
-    // (undocumented)
-    status?: FrameStatus;
     // (undocumented)
     timeStamp: number;
 }
@@ -693,7 +691,7 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
-    complete?: boolean;
+    decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
@@ -703,7 +701,7 @@ interface IImage {
     invert: boolean;
     isPreScaled?: boolean;
     // (undocumented)
-    level?: number;
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -883,6 +881,9 @@ options?: Record<string, any>
 };
 
 // @public
+type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
+
+// @public
 type ImageLoadProgressEventDetail = {
     url: string;
     imageId: string;
@@ -1047,12 +1048,6 @@ interface IRenderingEngine {
 }
 
 // @public
-interface IRetrieveConfiguration {
-    // (undocumented)
-    stages?: RetrieveStage[];
-}
-
-// @public
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -1109,7 +1104,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<FrameStatus>;
+        cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
 }
@@ -1187,7 +1182,6 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    retrieveConfiguration?: IRetrieveConfiguration;
     scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PT?: {
@@ -1284,30 +1278,6 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
-}
-
-// @public (undocumented)
-interface LossyConfiguration {
-    // Additional arguments to add to the URL, in the format
-    // arg1=value1 ('&' arg2=value2)*
-    // For example: '&lossy=jhc' to use JHC lossy values
-    // (undocumented)
-    byteRange?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    decodeLevel?: number;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    framesPath?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    isLossy?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    streaming?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    urlArguments?: string;
 }
 
 // @public (undocumented)
@@ -1414,36 +1384,6 @@ type PublicViewportInput = {
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
 };
-
-// @public (undocumented)
-interface RetrieveStage {
-    // (undocumented)
-    decimate?: number;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    id: string;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    offset?: number;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    positions?: number[];
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    priority?: number;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    requestType?: RequestType;
-    // Set of positions - negative values are relative to the end, positive to
-    // the beginning, and fractional values between 0 and 1 are relative to frame count
-    // (undocumented)
-    retrieveTypeId?: string;
-}
 
 // @public
 type RGB = [number, number, number];

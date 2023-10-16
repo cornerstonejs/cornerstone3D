@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 const pkg = JSON.parse(readFileSync("package.json", { encoding: "utf8" }));
 
 export default {
-    external: ["dcmjs", "gl-matrix", "lodash.clonedeep", "ndarray"],
+    external: ["dcmjs", "gl-matrix", "ndarray"],
     input: pkg.src || "src/index.ts",
     output: [
         // {

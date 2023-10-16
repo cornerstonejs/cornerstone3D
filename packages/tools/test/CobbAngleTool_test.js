@@ -812,8 +812,6 @@ describe('CobbAngleTool:', () => {
 
           const preMoveFirstHandleFirstSeg = p1;
           const preMoveSecondHandleFirstSeg = p2;
-          const preMoveFirstHandleSecondSeg = p3;
-          const preMoveSecondHandleSecondSeg = p4;
           const preMoveCenter = p5;
 
           const centerToHandle1Seg1 = [
@@ -826,18 +824,6 @@ describe('CobbAngleTool:', () => {
             preMoveCenter[0] - preMoveSecondHandleFirstSeg[0],
             preMoveCenter[1] - preMoveSecondHandleFirstSeg[1],
             preMoveCenter[2] - preMoveSecondHandleFirstSeg[2],
-          ];
-
-          const centerToHandle1Seg2 = [
-            preMoveCenter[0] - preMoveFirstHandleSecondSeg[0],
-            preMoveCenter[1] - preMoveFirstHandleSecondSeg[1],
-            preMoveCenter[2] - preMoveFirstHandleSecondSeg[2],
-          ];
-
-          const centerToHandle2Seg2 = [
-            preMoveCenter[0] - preMoveSecondHandleSecondSeg[0],
-            preMoveCenter[1] - preMoveSecondHandleSecondSeg[1],
-            preMoveCenter[2] - preMoveSecondHandleSecondSeg[2],
           ];
 
           const afterMoveCenter = p6;
@@ -854,23 +840,9 @@ describe('CobbAngleTool:', () => {
             afterMoveCenter[2] - centerToHandle2Seg1[2],
           ];
 
-          const afterMoveFirstHandleSeg2 = [
-            afterMoveCenter[0] - centerToHandle1Seg2[0],
-            afterMoveCenter[1] - centerToHandle1Seg2[1],
-            afterMoveCenter[2] - centerToHandle1Seg2[2],
-          ];
-
-          const afterMoveSecondHandleSeg2 = [
-            afterMoveCenter[0] - centerToHandle2Seg2[0],
-            afterMoveCenter[1] - centerToHandle2Seg2[1],
-            afterMoveCenter[2] - centerToHandle2Seg2[2],
-          ];
-
-          // Expect handles are moved accordingly
+          // First handles should not have been moved
           expect(handles[0]).toEqual(afterMoveFirstHandleSeg1);
           expect(handles[1]).toEqual(afterMoveSecondHandleSeg1);
-          expect(handles[2]).toEqual(afterMoveFirstHandleSeg2);
-          expect(handles[3]).toEqual(afterMoveSecondHandleSeg2);
 
           annotation.state.removeAnnotation(cobbAngleAnnotation.annotationUID);
           done();

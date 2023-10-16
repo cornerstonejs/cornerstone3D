@@ -94,7 +94,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   abstract toolSelectedCallback(
     evt: EventTypes.InteractionEventType,
     annotation: Annotation,
-    interactionType: InteractionTypes
+    interactionType: InteractionTypes,
+    canvasCoords?: Types.Point2
   ): void;
 
   /**

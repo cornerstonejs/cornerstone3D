@@ -1,4 +1,3 @@
-import _cloneDeep from 'lodash.clonedeep';
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes';
@@ -97,7 +96,7 @@ function _onKeyUp(evt: KeyboardEvent): void {
   state.element.addEventListener('keydown', keyListener);
 
   // Restore `state` to `defaultState`
-  state = _cloneDeep(defaultState);
+  state = structuredClone(defaultState);
   triggerEvent(eventDetail.element, Events.KEY_UP, eventDetail);
 }
 
