@@ -21,6 +21,7 @@ import type * as AnnotationStyle from './AnnotationStyle';
 import type ToolHandle from './ToolHandle';
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
 import type InteractionTypes from './InteractionTypes';
+import type ToolAction from './ToolAction';
 import type {
   ToolProps,
   PublicToolProps,
@@ -84,6 +85,7 @@ export type {
   SetToolBindingsType,
   ToolOptionsType,
   InteractionTypes,
+  ToolAction,
   //
   IToolGroup,
   IToolClassReference,
