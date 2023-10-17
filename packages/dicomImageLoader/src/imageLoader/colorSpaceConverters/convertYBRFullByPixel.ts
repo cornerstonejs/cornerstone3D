@@ -6,11 +6,11 @@ export default function (
   useRGBA: boolean
 ): void {
   if (imageFrame === undefined) {
-    throw new Error('convertYBRFullByPixel: ybrBuffer must not be undefined');
+    throw new Error('convertYBRFullByPixel: ybrBuffer must be defined');
   }
   if (imageFrame.length % 3 !== 0) {
     throw new Error(
-      'convertYBRFullByPixel: ybrBuffer length must be divisible by 3'
+      `convertYBRFullByPixel: ybrBuffer length ${imageFrame.length} must be divisible by 3`
     );
   }
 
