@@ -27,6 +27,7 @@ class StackScrollMouseWheelTool extends BaseTool {
   }
 
   mouseWheelCallback(evt: MouseWheelEventType): void {
+    console.log('Mouse wheel callback', evt);
     const { wheel, element } = evt.detail;
     const { direction } = wheel;
     const { invert } = this.configuration;

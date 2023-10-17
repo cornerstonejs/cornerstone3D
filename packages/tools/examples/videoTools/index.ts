@@ -107,6 +107,17 @@ addDropdownToToolbar({
   },
 });
 
+const scrollSpeeds = ['1 f', '2 f', '4 f', '0.5 s', '1 s', '2 s', '4 s'];
+
+addDropdownToToolbar({
+  options: { values: scrollSpeeds, defaultValue: '1 f' },
+  onSelectedValueChange: (value) => {
+    const unit = value[value.length - 1];
+    const newScrollSpeed = Number(value.substring(0, value.length - 2));
+    viewport.setScrollSpeed(newScrollSpeed, unit);
+  },
+});
+
 /**
  * Runs the demo
  */
@@ -128,6 +139,7 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
@@ -150,6 +162,7 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 

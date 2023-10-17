@@ -4762,7 +4762,7 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-function scroll_2(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
+function scroll_2(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport | Types_2.IVideoViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
 type ScrollOptions_2 = {

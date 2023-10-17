@@ -2649,6 +2649,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setProperties(videoInterface: VideoViewportProperties): void;
     // (undocumented)
+    setScrollSpeed(scrollSpeed?: number, unit?: string): void;
+    // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
     setVideo(videoURL: string): Promise<unknown>;

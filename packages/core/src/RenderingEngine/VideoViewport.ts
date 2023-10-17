@@ -50,7 +50,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private loop = false;
   private mute = true;
   private isPlaying = false;
-  private playbackRate = 1.0;
+  private scrollSpeed = 1;
   private fps = 30; // TODO We need to find a good solution for this.
   private videoCamera: VideoCamera = {
     pan: [0, 0],
@@ -154,7 +154,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const renderFrame = this.renderFrame;
 
     const currentTime = videoElement.currentTime;
-    const newTime = currentTime + delta / this.fps;
+    const newTime = currentTime + (delta * this.scrollSpeed) / this.fps;
 
     videoElement.currentTime = newTime;
 
@@ -254,6 +254,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     console.log('playback rate', this.videoElement?.playbackRate, rate);
     this.videoElement.playbackRate = rate;
     this.play();
+  }
+
+  public setScrollSpeed(scrollSpeed = 1, unit = 'f') {
+    this.scrollSpeed = unit === 's' ? scrollSpeed * this.fps : scrollSpeed;
   }
 
   public getProperties = (): VideoViewportProperties => {
