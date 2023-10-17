@@ -189,11 +189,10 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   private _getStandaloneViewportsAsArray(): Array<VideoViewport> {
-    const viewports: Array<StackViewport | VolumeViewport | VideoViewport> =
-      this._getViewportsAsArray();
+    const viewports = this._getViewportsAsArray();
 
-    const standaloneViewports: Array<VideoViewport> = <Array<VideoViewport>>(
-      viewports.filter((vp) => vp.type === ViewportType.VIDEO)
+    const standaloneViewports = <Array<VideoViewport>>(
+      (<unknown>viewports.filter((vp) => vp.type === ViewportType.VIDEO))
     );
 
     return standaloneViewports;

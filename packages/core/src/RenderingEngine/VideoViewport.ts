@@ -1,42 +1,42 @@
-import { Events as EVENTS } from '../enums';
+import { Events as EVENTS, ViewportType } from '../enums';
 import { IVideo, Point3, Point2 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent } from '../utilities';
+import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 
-type VideoCamera = {
+export type VideoCamera = {
   pan: Point2;
   parallelScale: number;
 };
 
-type IVideoCamera = {
+export type IVideoCamera = {
   pan?: Point2;
   parallelScale?: number;
 };
 
-type ViewportInput = {
+export type ViewportInput = {
   id: string;
-  renderingEngineId?: string;
-  type: string;
+  renderingEngineId: string;
+  type: ViewportType;
   element: HTMLDivElement;
-  sx?: number;
-  sy?: number;
-  sWidth?: number;
-  sHeight?: number;
-  defaultOptions?: any;
+  sx: number;
+  sy: number;
+  sWidth: number;
+  sHeight: number;
+  defaultOptions: any;
+  canvas: HTMLCanvasElement;
 };
 
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
-class VideoViewport {
+class VideoViewport extends Viewport {
   // Viewport Data
   readonly uid;
   readonly renderingEngineId: string;
-  readonly type: string;
-  readonly canvas: HTMLCanvasElement;
   readonly canvasContext: CanvasRenderingContext2D;
   private videoElement?: HTMLVideoElement;
   private videoWidth = 0;
@@ -52,10 +52,10 @@ class VideoViewport {
   };
 
   constructor(props: ViewportInput) {
-    this.id = props.id;
-    this.type = props.type;
-    this.element = props.element;
-    this.canvas = getOrCreateCanvas(this.element);
+    super({
+      ...props,
+      canvas: props.canvas || getOrCreateCanvas(props.element),
+    });
     this.canvasContext = this.canvas.getContext('2d');
     this.renderingEngineId = props.renderingEngineId;
 
@@ -257,12 +257,12 @@ class VideoViewport {
     }
   }
 
-  public getProperties(): IVideo {
+  public getProperties = (): IVideo => {
     return {
       loop: this.videoElement.loop,
       muted: this.videoElement.muted,
     };
-  }
+  };
 
   public resetProperties() {
     this.setProperties({
@@ -297,7 +297,11 @@ class VideoViewport {
     };
   }
 
-  public resetCamera() {
+  public resetCamera = (
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean
+  ): boolean => {
     this.refreshRenderValues();
 
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -306,14 +310,15 @@ class VideoViewport {
       // If its not replaying, just re-render the frame on move.
       this.renderFrame();
     }
-  }
+    return true;
+  };
 
-  public getFrameOfReferenceUID(): string {
+  public getFrameOfReferenceUID = (): string => {
     // The video itself is the frame of reference.
     return this.videoElement.src;
-  }
+  };
 
-  public resize() {
+  public resize = (): void => {
     const canvas = this.canvas;
     const { clientWidth, clientHeight } = canvas;
 
@@ -329,7 +334,7 @@ class VideoViewport {
       // If its not playing, just re-render on resize.
       this.renderFrame();
     }
-  }
+  };
 
   /**
    * @method getRenderingEngine Returns the rendering engine driving the `Scene`.
@@ -452,7 +457,7 @@ class VideoViewport {
       -halfCanvasWorldCoordinates[0],
       -halfCanvasWorldCoordinates[1]
     );
-    const transformationMatrix: number[] = transform.m;
+    const transformationMatrix: number[] = transform.getMatrix();
 
     this.canvasContext.transform(
       transformationMatrix[0],
