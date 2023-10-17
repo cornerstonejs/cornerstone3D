@@ -10,9 +10,8 @@ import {
   ImageFrame,
   PixelDataTypedArray,
 } from '../types';
-import convertColorSpace, {
-  isColorConversionRequirementsFulfilled,
-} from './convertColorSpace';
+import convertColorSpace from './convertColorSpace';
+import isColorConversionRequirementsFulfilled from './isColorConversionRequirementsFulfilled';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';

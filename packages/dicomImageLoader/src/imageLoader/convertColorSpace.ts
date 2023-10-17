@@ -23,25 +23,6 @@ function convertYBRFull(imageFrame, colorBuffer, useRGBA) {
   }
 }
 
-/**
- * This function checks color space conversion data requirements before
- * apply them
- * @param imageFrame
- * @param RGBA
- * @returns
- */
-export function isColorConversionRequirementsFulfilled(imageFrame, RGBA) {
-  const { rows, columns } = imageFrame;
-  if (
-    imageFrame.photometricInterpretation === 'YBR_FULL_422' &&
-    imageFrame.pixelDataLength === 2 * rows * columns
-  ) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 export default function convertColorSpace(imageFrame, colorBuffer, useRGBA) {
   // convert based on the photometric interpretation
   if (imageFrame.photometricInterpretation === 'RGB') {
