@@ -6,11 +6,8 @@ import {
 } from '@cornerstonejs/core';
 import {
   initDemo,
-  createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-  camera as cameraHelpers,
-  ctVoiRange,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -22,12 +19,12 @@ const { ViewportType, Events } = Enums;
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
+const viewportId = 'videoViewport';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Stack Viewport API',
-  'Demonstrates how to interact with a Stack viewport.'
+  'Video Viewport API',
+  'Demonstrates how to interact with a Video viewport.'
 );
 
 const content = document.getElementById('content');

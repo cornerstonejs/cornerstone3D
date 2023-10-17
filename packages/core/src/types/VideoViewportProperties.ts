@@ -1,6 +1,10 @@
+import { ViewportProperties } from './ViewportProperties';
 import Point2 from './Point2';
 
-type IVideo = {
+/**
+ * Stack Viewport Properties
+ */
+type VideoViewportProperties = ViewportProperties & {
   loop?: boolean;
   muted?: boolean;
   pan?: Point2;
@@ -9,4 +13,4 @@ type IVideo = {
   parallelScale?: number;
 };
 
-export default IVideo;
+export default VideoViewportProperties;

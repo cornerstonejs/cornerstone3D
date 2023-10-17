@@ -26,7 +26,10 @@ const { MouseBindings } = csToolsEnums;
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
-setTitleAndDescription('Basic Video Tools');
+setTitleAndDescription(
+  'Basic Video Tools',
+  'Show a video viewport with controls to allow it to be navigated and zoom/panned'
+);
 
 const content = document.getElementById('content');
 const element = document.createElement('div');

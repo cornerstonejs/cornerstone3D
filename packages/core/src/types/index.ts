@@ -81,16 +81,19 @@ import type { ViewportProperties } from './ViewportProperties';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
-import IVideo from './IVideo';
 import type { AffineMatrix } from './AffineMatrix';
+import type VideoViewportProperties from './VideoViewportProperties';
+import type IVideoViewport from './IVideoViewport';
 
 export type {
-  IVideo,
+  VideoViewportProperties,
+
   // config
   Cornerstone3DConfig,
   //
   ICamera,
   IStackViewport,
+  IVideoViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,

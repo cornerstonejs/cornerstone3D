@@ -1,5 +1,10 @@
 import { Events as EVENTS, ViewportType } from '../enums';
-import { IVideo, Point3, Point2 } from '../types';
+import {
+  IVideoViewport,
+  VideoViewportProperties,
+  Point3,
+  Point2,
+} from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent } from '../utilities';
@@ -33,7 +38,7 @@ export type ViewportInput = {
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
-class VideoViewport extends Viewport {
+class VideoViewport extends Viewport implements IVideoViewport {
   // Viewport Data
   readonly uid;
   readonly renderingEngineId: string;
@@ -154,7 +159,7 @@ class VideoViewport extends Viewport {
 
     // Need to wait for seek update
     const seekEventListener = (evt) => {
-      console.log('seeked');
+      console.log('seeked', evt);
 
       renderFrame();
 
@@ -247,7 +252,7 @@ class VideoViewport extends Viewport {
     }
   }
 
-  public setProperties(videoInterface: IVideo) {
+  public setProperties(videoInterface: VideoViewportProperties) {
     if (videoInterface.loop !== undefined) {
       this.videoElement.loop = videoInterface.loop;
     }
@@ -257,7 +262,7 @@ class VideoViewport extends Viewport {
     }
   }
 
-  public getProperties = (): IVideo => {
+  public getProperties = (): VideoViewportProperties => {
     return {
       loop: this.videoElement.loop,
       muted: this.videoElement.muted,
@@ -272,7 +277,7 @@ class VideoViewport extends Viewport {
   }
 
   public setCamera(
-    videoInterface: IVideo // TODO_JAMES use a different interface here.
+    videoInterface: VideoViewportProperties // TODO use a different interface here.
   ): void {
     if (videoInterface.pan !== undefined) {
       this.videoCamera.pan = videoInterface.pan;
@@ -290,7 +295,7 @@ class VideoViewport extends Viewport {
     }
   }
 
-  public getCamera(): IVideo {
+  public getCamera(): VideoViewportProperties {
     return {
       pan: this.videoCamera.pan,
       parallelScale: this.videoCamera.parallelScale,
@@ -337,9 +342,9 @@ class VideoViewport extends Viewport {
   };
 
   /**
-   * @method getRenderingEngine Returns the rendering engine driving the `Scene`.
+   * Returns the rendering engine driving the `Scene`.
    *
-   * @returns {RenderingEngine} The RenderingEngine instance.
+   * @returns The RenderingEngine instance.
    */
   getRenderingEngine() {
     return renderingEngineCache.get(this.renderingEngineId);
@@ -348,9 +353,8 @@ class VideoViewport extends Viewport {
   /**
    * Converts a VideoViewport canvas coordinate to a video coordinate.
    *
-   * @param {Point2} canvasPos
-   * @returns {Point3}
-   * @memberof VideoViewport
+   * @param canvasPos - to convert to world
+   * @returns World position
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
     const pan: Point2 = this.videoCamera.pan; // In world coordinates

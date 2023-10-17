@@ -5,7 +5,7 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-  VideoViewport,
+  cache,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -32,6 +32,7 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { SVGDrawingHelper } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { vec3, vec2 } from 'gl-matrix';
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 
 // interface VideoRedactionSpecificToolData extends ToolSpecificToolData {
 //   data: {
@@ -747,7 +748,7 @@ class VideoRedactionTool extends AnnotationTool {
       const viewport = renderingEngine.getViewport(viewportUID);
       imageVolume = viewport.getImageData();
     } else {
-      imageVolume = getVolume(targetUID);
+      imageVolume = cache.getVolume(targetUID);
     }
 
     return { imageVolume, viewport };

@@ -16,6 +16,9 @@ class ZoomTool extends BaseTool {
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
 
+  cachedWorldPos: Types.Point2;
+  cachedCanvasPos: Types.Point2;
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -148,7 +151,8 @@ class ZoomTool extends BaseTool {
     const { element: canvas, deltaPoints, currentPoints } = evt.detail;
     const enabledElement = getEnabledElement(canvas);
     const { viewport } = enabledElement;
-    const videoViewport: VideoViewport = <VideoViewport>viewport;
+    // TODO - double check conversion types
+    const videoViewport: VideoViewport = <VideoViewport>(<unknown>viewport);
 
     const { parallelScale } = videoViewport.getCamera();
 
