@@ -46,6 +46,7 @@ import {
   invertRgbTransferFunction,
   triggerEvent,
   colormap as colormapUtils,
+  isImageActor,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
@@ -55,6 +56,7 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
+import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -70,6 +72,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   use16BitTexture = false;
   private _FrameOfReferenceUID: string;
 
+  protected initialTransferFunctionNodes: any;
   // Viewport Properties
   private globalDefaultProperties: VolumeViewportProperties;
   private perVolumeIdDefaultProperties = new Map<
@@ -446,6 +449,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         .getProperty()
         .getRGBTransferFunction(0)
         .setRange(lower, upper);
+
+      if (!this.initialTransferFunctionNodes && isImageActor(volumeActor)) {
+        const transferFunction = volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0);
+        this.initialTransferFunctionNodes =
+          getTransferFunctionNodes(transferFunction);
+      }
     }
 
     if (!suppressEvents) {
@@ -465,7 +476,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Update the default properties for the volume viewport on the volume
    * @param ViewportProperties - The properties to set
-   * @param volumeId The volume id to set the default properties for (if undefined, we set the global default viewport properties)
+   * @param volumeId - The volume id to set the default properties for (if undefined, we set the global default viewport properties)
    */
   public setDefaultProperties(
     ViewportProperties: VolumeViewportProperties,
@@ -473,8 +484,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   ): void {
     if (volumeId == null) {
       this.globalDefaultProperties = ViewportProperties;
+    } else {
+      this.perVolumeIdDefaultProperties.set(volumeId, ViewportProperties);
     }
-    this.perVolumeIdDefaultProperties.set(volumeId, ViewportProperties);
   }
 
   /**
@@ -563,7 +575,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
-      //We need to set the current slabthickness here since setSlabThickness is define in VolumeViewport
+      //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = slabThickness;
     }
   }

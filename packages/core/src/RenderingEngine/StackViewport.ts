@@ -54,7 +54,6 @@ import {
   InterpolationType,
   RequestType,
   Events,
-  CalibrationTypes,
   VOILUTFunctionType,
 } from '../enums';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -81,6 +80,10 @@ import {
   ImagePlaneModule,
 } from '../types';
 import ViewportStatus from '../enums/ViewportStatus';
+import {
+  getTransferFunctionNodes,
+  setTransferFunctionNodes,
+} from '../utilities/transferFunctionUtils';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -141,6 +144,7 @@ class StackViewport extends Viewport implements IStackViewport {
   private invert = false;
   // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
   private initialInvert = false;
+  private initialTransferFunctionNodes = null;
   private interpolationType: InterpolationType;
 
   // Helpers
@@ -826,6 +830,12 @@ class StackViewport extends Viewport implements IStackViewport {
     }
     this.setInterpolationType(InterpolationType.LINEAR);
     this.setInvertColor(this.initialInvert);
+
+    const transferFunction = this.getTransferFunction();
+    setTransferFunctionNodes(
+      transferFunction,
+      this.initialTransferFunctionNodes
+    );
   }
 
   public resetToDefaultProperties(): void {
@@ -838,17 +848,11 @@ class StackViewport extends Viewport implements IStackViewport {
       this._cpuFallbackEnabledElement.renderingTools = {};
     }
 
-    let properties;
-    if (
-      this.perImageIdDefaultProperties.get(this.getCurrentImageId()) !==
-      undefined
-    ) {
-      properties = this.perImageIdDefaultProperties.get(
-        this.getCurrentImageId()
-      );
-    } else {
-      properties = this.globalDefaultProperties;
-    }
+    const currentImageId = this.getCurrentImageId();
+    const properties =
+      this.perImageIdDefaultProperties.get(currentImageId) ||
+      this.globalDefaultProperties;
+
     if (properties.colormap?.name) {
       this.setColormap(properties.colormap);
     }
@@ -1286,6 +1290,21 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
+  private getTransferFunction() {
+    const defaultActor = this.getDefaultActor();
+
+    if (!defaultActor) {
+      return;
+    }
+
+    if (!isImageActor(defaultActor)) {
+      return;
+    }
+    const imageActor = defaultActor.actor as ImageActor;
+
+    return imageActor.getProperty().getRGBTransferFunction(0);
+  }
+
   private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
     const {
       suppressEvents = false,
@@ -1345,6 +1364,8 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       imageActor.getProperty().setRGBTransferFunction(0, transferFunction);
+      this.initialTransferFunctionNodes =
+        getTransferFunctionNodes(transferFunction);
     }
 
     if (!isSigmoidTFun) {

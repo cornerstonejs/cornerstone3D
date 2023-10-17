@@ -14,9 +14,16 @@ import type {
   Point3,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import { actorIsA, getClosestImageId, triggerEvent } from '../utilities';
+import {
+  actorIsA,
+  getClosestImageId,
+  isImageActor,
+  triggerEvent,
+} from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
+import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import { ImageActor } from '../types/IActor';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -389,6 +396,15 @@ class VolumeViewport extends BaseVolumeViewport {
       );
     }
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+
+    if (isImageActor(volumeActor)) {
+      setTransferFunctionNodes(
+        (volumeActor.actor as ImageActor)
+          .getProperty()
+          .getRGBTransferFunction(0),
+        this.initialTransferFunctionNodes
+      );
+    }
 
     const range = (volumeActor.actor as vtkVolume)
       .getProperty()

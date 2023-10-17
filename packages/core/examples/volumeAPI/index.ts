@@ -185,6 +185,7 @@ addButtonToToolbar({
     viewport.resetCamera();
     // TODO reset the viewport properties, we don't have API for this.
     viewport.resetProperties(volumeId);
+    viewport.render();
   },
 });
 
@@ -261,6 +262,7 @@ addSliderToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
+    viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
     viewport.setProperties({ slabThickness: valueAsNumber });
     viewport.render();
   },

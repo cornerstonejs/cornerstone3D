@@ -150,7 +150,7 @@ addButtonToToolbar({
 
     // Resets the viewport's camera
     viewport.resetCamera();
-    // Resets the viewport's to his default properties
+    // Resets the viewport's to its default properties
     viewport.resetToDefaultProperties();
     viewport.render();
   },
