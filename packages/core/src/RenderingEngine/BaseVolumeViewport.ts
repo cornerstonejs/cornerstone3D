@@ -450,7 +450,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         .getRGBTransferFunction(0)
         .setRange(lower, upper);
 
-      if (!this.initialTransferFunctionNodes && isImageActor(volumeActor)) {
+      if (!this.initialTransferFunctionNodes) {
         const transferFunction = volumeActor
           .getProperty()
           .getRGBTransferFunction(0);
