@@ -44,6 +44,15 @@ element.style.height = '500px';
 
 content.appendChild(element);
 
+const rangeDiv = document.createElement('div');
+rangeDiv.innerHTML =
+  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
+content.appendChild(rangeDiv);
+const rangeElement = document.getElementById('range');
+rangeElement.onchange = (v) => {
+  viewport.setTime(Number(rangeElement.value));
+};
+
 const instructions = document.createElement('p');
 instructions.innerText =
   'Left Click: Video Redaction\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
@@ -52,7 +61,7 @@ content.append(instructions);
 // ============================= //
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
+const viewportId = 'videoViewportId';
 let viewport;
 
 addButtonToToolbar({
@@ -196,8 +205,16 @@ async function run() {
   // Render the image
   viewport.play();
 
+  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
+
   element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt) => {
-    console.debug(evt.detail.time);
+    const { time, duration } = evt.detail;
+    rangeElement.value = time;
+    rangeElement.max = duration;
+    const timeElement = document.getElementById('time');
+    timeElement.innerText = seconds(time);
+    const remainingElement = document.getElementById('remaining');
+    remainingElement.innerText = seconds(duration - time);
   });
 }
 

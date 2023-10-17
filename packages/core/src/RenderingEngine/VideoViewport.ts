@@ -251,7 +251,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (!this.videoElement) {
       return;
     }
-    console.log('playback rate', this.videoElement?.playbackRate, rate);
     this.videoElement.playbackRate = rate;
     this.play();
   }
@@ -488,6 +487,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       viewport: this,
       renderingEngineId: this.renderingEngineId,
       time: this.videoElement.currentTime,
+      duration: this.videoElement.duration,
     });
   };
 
