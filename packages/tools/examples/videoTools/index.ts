@@ -1,6 +1,7 @@
 import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
+  addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
@@ -13,9 +14,9 @@ console.warn(
 
 const {
   PanTool,
-  WindowLevelTool,
   ZoomTool,
   VideoRedactionTool,
+  StackScrollMouseWheelTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -23,7 +24,7 @@ const {
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -45,7 +46,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Middle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+  'Left Click: Video Redaction\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
 
 content.append(instructions);
 // ============================= //
@@ -58,29 +59,22 @@ addButtonToToolbar({
   id: 'play',
   title: 'Play',
   onClick() {
-    viewport.play();
+    viewport.togglePlayPause();
   },
 });
 
 addButtonToToolbar({
-  id: 'Pause',
-  title: 'pause',
-  onClick() {
-    viewport.pause();
-  },
-});
-addButtonToToolbar({
   id: 'next',
   title: 'next',
   onClick() {
-    viewport.next();
+    viewport.scroll(1);
   },
 });
 addButtonToToolbar({
   id: 'previous',
   title: 'previous',
   onClick() {
-    viewport.previous();
+    viewport.scroll(-1);
   },
 });
 addButtonToToolbar({
@@ -88,6 +82,28 @@ addButtonToToolbar({
   title: 'jump to 50',
   onClick() {
     viewport.setTime(50);
+  },
+});
+
+const playbackSpeeds = [
+  '0',
+  '0.075',
+  '0.15',
+  '0.25',
+  '0.5',
+  '0.75',
+  '1',
+  '2',
+  '3',
+  '4',
+  '10',
+];
+
+addDropdownToToolbar({
+  options: { values: playbackSpeeds, defaultValue: '1' },
+  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
+    const newPlaybackSpeed = Number(newSelectedToolNameAsStringOrNumber);
+    viewport.setPlaybackRate(newPlaybackSpeed);
   },
 });
 
@@ -102,6 +118,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group

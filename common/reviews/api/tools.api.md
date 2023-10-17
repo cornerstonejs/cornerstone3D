@@ -299,7 +299,7 @@ export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport | Types_2.IVideoViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
     getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
     // (undocumented)
@@ -1692,6 +1692,7 @@ declare namespace drawing {
         drawRect,
         drawTextBox,
         drawArrow,
+        drawRedactionRect,
         setAttributesIfNecessary,
         setNewAttributesIfValid
     }
@@ -1721,6 +1722,9 @@ function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string,
 
 // @public (undocumented)
 function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}, dataId?: string): void;
+
+// @public (undocumented)
+function drawRedactionRect(svgDrawingHelper: any, annotationUID: string, rectangleUID: string, start: any, end: any, options?: {}): void;
 
 // @public (undocumented)
 function drawTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
@@ -3181,6 +3185,21 @@ type ITouchPoints = IPoints & {
 };
 
 // @public
+interface IVideoViewport extends IViewport {
+    canvasToWorld: (canvasPos: Point2) => Point3;
+    getCamera(): ICamera;
+    getFrameOfReferenceUID: () => string;
+    getProperties: () => VideoViewportProperties;
+    getRenderer(): any;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetProperties(): void;
+    resize: () => void;
+    setCamera(cameraInterface: ICamera): void;
+    setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public
 interface IViewport {
     _actors: Map<string, any>;
     addActor(actorEntry: ActorEntry): void;
@@ -3350,6 +3369,9 @@ interface IVolumeViewport extends IViewport {
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
+
+// @public (undocumented)
+type IVtkViewport = IStackViewport | IVolumeViewport;
 
 // @public (undocumented)
 function jumpToSlice(element: HTMLDivElement, options?: JumpToSliceOptions): Promise<void>;
@@ -5741,6 +5763,116 @@ declare namespace vec2 {
     }
 }
 
+// @public (undocumented)
+export class VideoRedactionTool extends AnnotationTool {
+    constructor(toolConfiguration?: {});
+    // (undocumented)
+    _activateDraw: (element: any) => void;
+    // (undocumented)
+    _activateModify: (element: any) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: CustomEvent) => {
+        metadata: {
+            viewPlaneNormal: Types_2.Point3;
+            viewUp: Types_2.Point3;
+            FrameOfReferenceUID: string;
+            referencedImageId: string;
+            toolName: string;
+        };
+        data: {
+            invalidated: boolean;
+            handles: {
+                points: Types_2.Point3[];
+                textBox: {
+                    hasMoved: boolean;
+                    worldPosition: Types_2.Point3;
+                    worldBoundingBox: {
+                        topLeft: Types_2.Point3;
+                        topRight: Types_2.Point3;
+                        bottomLeft: Types_2.Point3;
+                        bottomRight: Types_2.Point3;
+                    };
+                };
+                activeHandleIndex: any;
+            };
+            cachedStats: {};
+            active: boolean;
+        };
+    };
+    // (undocumented)
+    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
+    // (undocumented)
+    cancel(element: any): any;
+    // (undocumented)
+    _configuration: any;
+    // (undocumented)
+    _deactivateDraw: (element: any) => void;
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportUIDsToRender: string[];
+        handleIndex?: number;
+        movingTextBox: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _findTextBoxAnchorPoints: (points: Array<Types_2.Point2>) => Array<Types_2.Point2>;
+    // (undocumented)
+    getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
+    // (undocumented)
+    _getImageVolumeFromTargetUID(targetUID: any, renderingEngine: any): {
+        imageVolume: any;
+        viewport: any;
+    };
+    // (undocumented)
+    _getRectangleImageCoordinates: (points: Array<Types_2.Point2>) => {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+    };
+    // (undocumented)
+    _getTargetStackUID(viewport: any): string;
+    // (undocumented)
+    _getTargetVolumeUID: (scene: any) => any;
+    // (undocumented)
+    _getTextLines: (data: any, targetUID: string) => any[];
+    // (undocumented)
+    handleSelectedCallback: (evt: any, annotation: any, handle: any, interactionType?: string) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
+    // (undocumented)
+    isPointNearTool: (element: any, annotation: any, canvasCoords: any, proximity: any) => boolean;
+    // (undocumented)
+    _mouseDragCallback: (evt: any) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: any) => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: any, annotation: any, interactionType?: string) => void;
+}
+
+// @public
+type VideoViewportProperties = ViewportProperties & {
+    loop?: boolean;
+    muted?: boolean;
+    pan?: Point2;
+    playbackRate?: number;
+    // The zoom factor, naming consistent with vtk cameras for now,
+    // but this isn't necessarily necessary.
+    parallelScale?: number;
+};
+
 declare namespace viewport {
     export {
         isViewportPreScaled,
@@ -5988,9 +6120,15 @@ export class WindowLevelTool extends BaseTool {
 export class ZoomTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    cachedCanvasPos: Types_2.Point2;
+    // (undocumented)
+    cachedWorldPos: Types_2.Point2;
+    // (undocumented)
     dirVec: Types_2.Point3;
     // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    _dragCallbackVideoViewport(evt: any): void;
     // (undocumented)
     _dragParallelProjection: (evt: EventTypes_2.InteractionEventType, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, camera: Types_2.ICamera, pinch?: boolean) => void;
     // (undocumented)

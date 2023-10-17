@@ -50,6 +50,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private loop = false;
   private mute = true;
   private isPlaying = false;
+  private playbackRate = 1.0;
   private fps = 30; // TODO We need to find a good solution for this.
   private videoCamera: VideoCamera = {
     pan: [0, 0],
@@ -146,44 +147,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
-  public async next() {
+  public async scroll(delta = 1) {
     await this.pause();
 
     const videoElement = this.videoElement;
     const renderFrame = this.renderFrame;
 
     const currentTime = videoElement.currentTime;
-    const newTime = currentTime + 1.0 / this.fps;
+    const newTime = currentTime + delta / this.fps;
 
     videoElement.currentTime = newTime;
 
     // Need to wait for seek update
     const seekEventListener = (evt) => {
-      console.log('seeked', evt);
-
-      renderFrame();
-
-      videoElement.removeEventListener('seeked', seekEventListener);
-    };
-
-    videoElement.addEventListener('seeked', seekEventListener);
-  }
-
-  public async previous() {
-    await this.pause();
-
-    const videoElement = this.videoElement;
-    const renderFrame = this.renderFrame;
-
-    const currentTime = videoElement.currentTime;
-    const newTime = currentTime - 1.0 / this.fps;
-
-    videoElement.currentTime = newTime;
-
-    // Need to wait for seek update
-    const seekEventListener = (evt) => {
-      console.log('seeked');
-
       renderFrame();
 
       videoElement.removeEventListener('seeked', seekEventListener);
@@ -260,6 +236,24 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (videoInterface.muted !== undefined) {
       this.videoElement.muted = videoInterface.muted;
     }
+
+    if (videoInterface.playbackRate !== undefined) {
+      this.setPlaybackRate(videoInterface.playbackRate);
+    }
+  }
+
+  public setPlaybackRate(rate = 1) {
+    // Minimum playback speed in chrome is 0.0625 compared to normal
+    if (rate < 0.0625) {
+      this.pause();
+      return;
+    }
+    if (!this.videoElement) {
+      return;
+    }
+    console.log('playback rate', this.videoElement?.playbackRate, rate);
+    this.videoElement.playbackRate = rate;
+    this.play();
   }
 
   public getProperties = (): VideoViewportProperties => {

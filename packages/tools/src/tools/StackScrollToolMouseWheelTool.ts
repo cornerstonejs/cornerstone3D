@@ -36,6 +36,7 @@ class StackScrollMouseWheelTool extends BaseTool {
     const targetId = this.getTargetId(viewport);
     const volumeId = targetId.split('volumeId:')[1];
 
+    console.log('mouseWheelCallback', evt);
     scroll(viewport, {
       delta,
       debounceLoading: this.configuration.debounceIfNotLoaded,

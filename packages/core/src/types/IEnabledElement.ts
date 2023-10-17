@@ -1,15 +1,16 @@
 import type { IRenderingEngine } from '../types';
 import type IStackViewport from './IStackViewport';
 import type IVolumeViewport from './IVolumeViewport';
-import type IVideoViewport from './IVideoViewport';
 
 /**
  * Cornerstone Enabled Element interface
  */
 interface IEnabledElement {
-  // TODO: Add IVideoViewport
-  /** Cornerstone Viewport instance - can be Stack or Volume, or Video Viewport as of now */
-  viewport: IStackViewport | IVolumeViewport; // | IVideoViewport;
+  /** Cornerstone Viewport instance - can be Stack or Volume, or Video Viewport as of now.
+   * For the moment, need to cast to unknown first before casting to IVideoViewport
+   * (TODO)
+   */
+  viewport: IStackViewport | IVolumeViewport;
   /** Cornerstone Rendering Engine instance */
   renderingEngine: IRenderingEngine;
   /** Unique ID of the viewport in the renderingEngine */

@@ -8,6 +8,7 @@ type VideoViewportProperties = ViewportProperties & {
   loop?: boolean;
   muted?: boolean;
   pan?: Point2;
+  playbackRate?: number;
   // The zoom factor, naming consistent with vtk cameras for now,
   // but this isn't necessarily necessary.
   parallelScale?: number;

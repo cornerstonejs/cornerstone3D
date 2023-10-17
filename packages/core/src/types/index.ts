@@ -85,9 +85,9 @@ import type { AffineMatrix } from './AffineMatrix';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type IVideoViewport from './IVideoViewport';
 
-export type {
-  VideoViewportProperties,
+type IVtkViewport = IStackViewport | IVolumeViewport;
 
+export type {
   // config
   Cornerstone3DConfig,
   //
@@ -118,6 +118,7 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  IVtkViewport,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -139,6 +140,7 @@ export type {
   Mat3,
   Plane,
   ViewportInputOptions,
+  VideoViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,

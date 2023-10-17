@@ -1190,6 +1190,21 @@ interface IStreamingVolumeProperties {
 }
 
 // @public
+interface IVideoViewport extends IViewport {
+    canvasToWorld: (canvasPos: Point2) => Point3;
+    getCamera(): ICamera;
+    getFrameOfReferenceUID: () => string;
+    getProperties: () => VideoViewportProperties;
+    getRenderer(): any;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetProperties(): void;
+    resize: () => void;
+    setCamera(cameraInterface: ICamera): void;
+    setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public
 interface IViewport {
     _actors: Map<string, any>;
     addActor(actorEntry: ActorEntry): void;
@@ -1359,6 +1374,9 @@ interface IVolumeViewport extends IViewport {
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
+
+// @public (undocumented)
+type IVtkViewport = IStackViewport | IVolumeViewport;
 
 // @public
 type Mat3 =
@@ -1581,6 +1599,17 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public
+type VideoViewportProperties = ViewportProperties & {
+    loop?: boolean;
+    muted?: boolean;
+    pan?: Point2;
+    playbackRate?: number;
+    // The zoom factor, naming consistent with vtk cameras for now,
+    // but this isn't necessarily necessary.
+    parallelScale?: number;
+};
+
+// @public
 type ViewportInputOptions = {
     background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
@@ -1635,6 +1664,8 @@ enum ViewportType {
     ORTHOGRAPHIC = 'orthographic',
     PERSPECTIVE = 'perspective',
     STACK = 'stack',
+    // (undocumented)
+    VIDEO = 'video',
     // (undocumented)
     VOLUME_3D = 'volume3d',
 }
