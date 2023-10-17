@@ -96,6 +96,17 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
+const cancelToolDrawing = (evt) => {
+  const { element, key } = evt.detail;
+  if (key === 'Escape') {
+    cornerstoneTools.cancelActiveManipulations(element);
+  }
+};
+
+element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+  cancelToolDrawing(evt);
+});
+
 const toolsNames = [
   LengthTool.toolName,
   ProbeTool.toolName,
@@ -239,7 +250,6 @@ async function run() {
   toolGroup.setToolPassive(CircleROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);
-  toolGroup.setToolPassive(CobbAngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
   toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
 

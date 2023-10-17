@@ -273,6 +273,7 @@ export interface ArrowAnnotation extends Annotation {
     };
   };
 }
+
 export interface AngleAnnotation extends Annotation {
   data: {
     handles: {
@@ -293,6 +294,51 @@ export interface AngleAnnotation extends Annotation {
     cachedStats: {
       [targetId: string]: {
         angle: number;
+      };
+    };
+  };
+}
+
+export interface CobbAngleAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    label: string;
+    cachedStats: {
+      [targetId: string]: {
+        angle: number;
+        arc1Angle: number;
+        arc2Angle: number;
+        points: {
+          world: {
+            arc1Start: Types.Point3;
+            arc1End: Types.Point3;
+            arc2Start: Types.Point3;
+            arc2End: Types.Point3;
+            arc1Angle: number;
+            arc2Angle: number;
+          };
+          canvas: {
+            arc1Start: Types.Point2;
+            arc1End: Types.Point2;
+            arc2Start: Types.Point2;
+            arc2End: Types.Point2;
+            arc1Angle: number;
+            arc2Angle: number;
+          };
+        };
       };
     };
   };

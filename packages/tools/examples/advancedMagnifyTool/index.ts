@@ -113,6 +113,9 @@ const addInstruction = (instruction) => {
   info.appendChild(node);
 };
 
+addInstruction(
+  'Viewports: Stack/Axial (left) | Volume/Sagittal + Segmentation (middle) | Volume/Coronal + Segmentation (right)'
+);
 addInstruction('Left Click to use selected tool');
 addInstruction('Ctrl + Left Click to activate the magnifying glass');
 addInstruction(
@@ -166,31 +169,33 @@ addDropdownToToolbar({
 function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
   const scalarData = segmentationVolume.scalarData;
 
-  let voxelIndex = 0;
-
   const { dimensions } = segmentationVolume;
+  const pixelsPerSlice = dimensions[0] * dimensions[1];
 
-  const innerRadius = dimensions[0] / 16;
-  const outerRadius = dimensions[0] / 8;
+  const innerRadius = dimensions[0] / 32;
+  const outerRadius = dimensions[0] / 16;
 
   const center = [
     dimensions[0] / 2 + centerOffset[0],
     dimensions[1] / 2 + centerOffset[1],
+    dimensions[2] / 2 + centerOffset[2],
   ];
+
+  const [cX, cY, cZ] = center;
 
   for (let z = 0; z < dimensions[2]; z++) {
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
+        const voxelIndex = z * pixelsPerSlice + y * dimensions[0] + x;
         const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
+          (x - cX) * (x - cX) + (y - cY) * (y - cY) + (z - cZ) * (z - cZ)
         );
+
         if (distanceFromCenter < innerRadius) {
           scalarData[voxelIndex] = 1;
         } else if (distanceFromCenter < outerRadius) {
           scalarData[voxelIndex] = 2;
         }
-
-        voxelIndex++;
       }
     }
   }
@@ -228,7 +233,7 @@ async function addSegmentationsToState(volumeId: string) {
   ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(segmentationVolume, [30, 0]);
+  fillSegmentationWithCircles(segmentationVolume, [0, 0, 0]);
 }
 
 async function initializeVolumeViewport(
@@ -409,19 +414,12 @@ async function run() {
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(AdvancedMagnifyTool);
 
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.9328.50.17.106165719864837115866539427306648068553',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.9328.50.17.249836005616032823097408901947312961772',
-  //   wadoRsRoot: 'http://localhost/dicom-web',
-  // });
-
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.840.113619.2.358.3.2644888476.772.1464857645.584',
-    SeriesInstanceUID: '1.2.840.113619.2.358.3.2644888476.772.1464857645.591',
-    wadoRsRoot: 'http://localhost/dicom-web',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
