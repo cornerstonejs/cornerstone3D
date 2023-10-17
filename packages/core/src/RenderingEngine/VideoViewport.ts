@@ -39,6 +39,8 @@ export type ViewportInput = {
  * looking into an internal scene, and an associated target output `canvas`.
  */
 class VideoViewport extends Viewport implements IVideoViewport {
+  public static readonly useCustomRenderingPipeline = true;
+
   // Viewport Data
   readonly uid;
   readonly renderingEngineId: string;

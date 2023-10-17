@@ -159,14 +159,8 @@ class RenderingEngine implements IRenderingEngine {
     // 2.a) See if viewport uses a custom rendering pipeline.
     const { type } = viewportInput;
 
-    let viewportUsesCustomRenderingPipeline;
-
-    if (type === 'video') {
-      viewportUsesCustomRenderingPipeline = true;
-    } else {
-      viewportUsesCustomRenderingPipeline =
-        viewportTypeUsesCustomRenderingPipeline(type);
-    }
+    const viewportUsesCustomRenderingPipeline =
+      viewportTypeUsesCustomRenderingPipeline(type);
 
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
