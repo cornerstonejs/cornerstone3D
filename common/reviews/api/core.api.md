@@ -118,6 +118,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     hasVolumeId(volumeId: string): boolean;
     // (undocumented)
+    protected initialTransferFunctionNodes: any;
+    // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     abstract resetProperties(volumeId?: string): void;
@@ -850,6 +852,9 @@ function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera:
     spacingInNormalDirection: number;
     actorUID: string;
 };
+
+// @public (undocumented)
+function getTransferFunctionNodes(transferFunction: any): any[];
 
 // @public (undocumented)
 function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
@@ -2261,6 +2266,9 @@ export class Settings {
 }
 
 // @public (undocumented)
+function setTransferFunctionNodes(transferFunction: any, nodes: any): void;
+
+// @public (undocumented)
 export function setUseCPURendering(status: boolean): void;
 
 // @public (undocumented)
@@ -2444,6 +2452,13 @@ function toWindowLevel(low: number, high: number): {
     windowCenter: number;
 };
 
+declare namespace transferFunctionUtils {
+    export {
+        getTransferFunctionNodes,
+        setTransferFunctionNodes
+    }
+}
+
 // @public (undocumented)
 type TransformMatrix2D = [number, number, number, number, number, number];
 
@@ -2597,7 +2612,8 @@ declare namespace utilities {
         getScalingParameters,
         getScalarDataType,
         colormap,
-        getImageLegacy
+        getImageLegacy,
+        transferFunctionUtils
     }
 }
 export { utilities }
