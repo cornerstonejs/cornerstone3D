@@ -51,6 +51,7 @@ import getImageLegacy from './getImageLegacy';
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
+import * as transferFunctionUtils from './transferFunctionUtils';
 
 export {
   csUtils as invertRgbTransferFunction,
@@ -105,4 +106,5 @@ export {
   getScalarDataType,
   colormap,
   getImageLegacy,
+  transferFunctionUtils,
 };
