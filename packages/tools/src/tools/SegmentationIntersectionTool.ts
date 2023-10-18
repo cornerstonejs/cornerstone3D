@@ -11,11 +11,9 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { Annotation } from '../types';
-import { getPolyDataPoints } from './displayTools/utils/polyDataManipulation';
-import {
-  pointToString,
-  fastPointDistance,
-} from './displayTools/utils/pointFunctions';
+import { distanceToPoint } from '../utilities/math/point';
+import { pointToString } from '../utilities/pointToString';
+import { polyDataUtils } from '../utilities';
 
 export interface SegmentationIntersectionAnnotation extends Annotation {
   data: {
@@ -184,7 +182,7 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
       }
       if (!actorWorldPointsMap.get(focalPointString)) {
         const polyData = actorEntry.clippingFilter.getOutputData();
-        let worldPointsSet = getPolyDataPoints(polyData);
+        let worldPointsSet = polyDataUtils.getPolyDataPoints(polyData);
         if (worldPointsSet) {
           worldPointsSet = removeExtraPoints(viewport, worldPointsSet);
           const colorArray = actorEntry.actor.getProperty().getColor();
@@ -255,7 +253,7 @@ function removeExtraPoints(viewport, worldPointsSet) {
     // removing duplicate points
     for (let i = 0; i < worldPoints.length; i++) {
       if (lastPoint) {
-        if (fastPointDistance(lastPoint, canvasPoints[i]) > 0) {
+        if (distanceToPoint(lastPoint, canvasPoints[i]) > 0) {
           newWorldPoints.push(worldPoints[i]);
           newCanvasPoints.push(canvasPoints[i]);
         }
@@ -270,7 +268,7 @@ function removeExtraPoints(viewport, worldPointsSet) {
       j < newCanvasPoints.length;
       j++
     ) {
-      if (fastPointDistance(firstPoint, newCanvasPoints[j]) < 0.5) {
+      if (distanceToPoint(firstPoint, newCanvasPoints[j]) < 0.5) {
         newCanvasPoints = newCanvasPoints.slice(0, j);
         return newWorldPoints.slice(0, j);
       }

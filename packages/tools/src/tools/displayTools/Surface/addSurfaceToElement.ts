@@ -1,11 +1,14 @@
-import { getEnabledElement, Enums } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  Enums,
+  VolumeViewport3D,
+} from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import { VolumeViewport3D } from '@cornerstonejs/core';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { pointToString } from '../utils/pointFunctions';
+import { pointToString } from '../../../utilities/pointToString';
 
 const polyDataCache = new Map();
 
