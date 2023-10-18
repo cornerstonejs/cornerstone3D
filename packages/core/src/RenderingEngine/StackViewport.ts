@@ -52,7 +52,6 @@ import {
   InterpolationType,
   RequestType,
   Events,
-  CalibrationTypes,
   VOILUTFunctionType,
 } from '../enums';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -79,7 +78,7 @@ import {
   ImagePlaneModule,
 } from '../types';
 import ViewportStatus from '../enums/ViewportStatus';
-import { Enums } from '..';
+import * as progressiveLoader from '../loaders/progressiveLoader';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1760,82 +1759,74 @@ class StackViewport extends Viewport implements IStackViewport {
     });
   }
 
-  private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
-    function errorCallback(imageIdIndex, imageId, error) {
-      const eventDetail = {
-        error,
-        imageIdIndex,
-        imageId,
-      };
-
-      triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
-      displayedIterator.reject(error);
+  public successCallback(imageId, image, status) {
+    const imageIdIndex = this.imageIds.indexOf(imageId);
+    // Todo: trigger an event to allow applications to hook into END of loading state
+    // Currently we use loadHandlerManagers for this
+    // Perform this check after the image has finished loading
+    // in case the user has already scrolled away to another image.
+    // In that case, do not render this image.
+    if (this.currentImageIdIndex !== imageIdIndex) {
+      return;
     }
 
-    const displayedIterator = new ProgressiveIterator<void | IImage>(
-      'displayed'
+    console.log(
+      'StackViewport:successCallback delivering new image',
+      imageId,
+      image.complete,
+      image
     );
+    // If Photometric Interpretation is not the same for the next image we are trying to load
+    // invalidate the stack to recreate the VTK imageData
+    const csImgFrame = this.csImage?.imageFrame;
+    const imgFrame = image?.imageFrame;
 
-    function sendRequest(imageId, imageIdIndex, options) {
-      const loadedPromise = loadAndCacheImage(imageId, options);
-      const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
-      displayedIterator.generate(async (it) => {
-        for await (const image of uncompressedIterator) {
-          // Todo: trigger an event to allow applications to hook into END of loading state
-          // Currently we use loadHandlerManagers for this
-          // Perform this check after the image has finished loading
-          // in case the user has already scrolled away to another image.
-          // In that case, do not render this image.
-          if (this.currentImageIdIndex !== imageIdIndex) {
-            return;
-          }
-
-          console.log(
-            'StackViewport:successCallback delivering new image',
-            imageId,
-            image.complete,
-            image
-          );
-          // If Photometric Interpretation is not the same for the next image we are trying to load
-          // invalidate the stack to recreate the VTK imageData
-          const csImgFrame = this.csImage?.imageFrame;
-          const imgFrame = image?.imageFrame;
-
-          // if a volume is decached into images then the imageFrame will be undefined
-          if (
-            csImgFrame?.photometricInterpretation !==
-              imgFrame?.photometricInterpretation ||
-            this.csImage?.photometricInterpretation !==
-              image?.photometricInterpretation
-          ) {
-            this.stackInvalidated = true;
-          }
-
-          this._setCSImage(image);
-
-          const eventDetail: EventTypes.StackNewImageEventDetail = {
-            image,
-            imageId,
-            imageIdIndex,
-            viewportId: this.id,
-            renderingEngineId: this.renderingEngineId,
-          };
-
-          triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
-          this._updateActorToDisplayImageId(image);
-
-          // Trigger the image to be drawn on the next animation frame
-          this.render();
-
-          // Update the viewport's currentImageIdIndex to reflect the newly
-          // rendered image
-          this.currentImageIdIndex = imageIdIndex;
-          it.add(image, uncompressedIterator.done);
-        }
-      }, errorCallback.bind(null, imageIdIndex, imageId));
-      return displayedIterator.getDonePromise();
+    // if a volume is decached into images then the imageFrame will be undefined
+    if (
+      csImgFrame?.photometricInterpretation !==
+        imgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation !==
+        image?.photometricInterpretation
+    ) {
+      this.stackInvalidated = true;
     }
 
+    this._setCSImage(image);
+
+    const eventDetail: EventTypes.StackNewImageEventDetail = {
+      image,
+      imageId,
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
+    this._updateActorToDisplayImageId(image);
+
+    // Trigger the image to be drawn on the next animation frame
+    this.render();
+
+    // Update the viewport's currentImageIdIndex to reflect the newly
+    // rendered image
+    this.currentImageIdIndex = imageIdIndex;
+  }
+
+  public errorCallback(imageId, permanent, error) {
+    if (!permanent) {
+      return;
+    }
+    const imageIdIndex = this.imageIds.indexOf(imageId);
+    const eventDetail = {
+      error,
+      imageIdIndex,
+      imageId,
+    };
+
+    triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
+  }
+
+  public getTargetOptions(imageId: string) {
     /**
      * If use16bittexture is specified, the CSWIL will automatically choose the
      * array type when no targetBuffer is provided. When CSWIL is initialized,
@@ -1844,9 +1835,6 @@ class StackViewport extends Viewport implements IStackViewport {
      *
      * If use16bittexture is not specified, we force the Float32Array for now
      */
-    const priority = -5;
-    const requestType = RequestType.Interaction;
-    const additionalDetails = { imageId };
     const options = {
       targetBuffer: {
         type: this.useNativeDataType ? undefined : 'Float32Array',
@@ -1856,7 +1844,10 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       useRGBA: false,
     };
+    return options;
+  }
 
+  private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
     const eventDetail: EventTypes.PreStackNewImageEventDetail = {
       imageId,
       imageIdIndex,
@@ -1865,14 +1856,7 @@ class StackViewport extends Viewport implements IStackViewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    imageLoadPoolManager.addRequest(
-      sendRequest.bind(this, imageId, imageIdIndex, options),
-      requestType,
-      additionalDetails,
-      priority
-    );
-
-    return displayedIterator.getNextPromise();
+    return progressiveLoader.loadSingle(imageId, this);
   }
 
   /**

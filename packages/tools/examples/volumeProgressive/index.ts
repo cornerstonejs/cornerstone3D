@@ -119,14 +119,14 @@ content.append(instructions);
  *
  * JLS and JLS thumbnails:
  * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls d:\src\viewer-testdata\dcm\Juno
- * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail d:\src\viewer-testdata\dcm\Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls /src/viewer-testdata/dcm/Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
  * ```
  *
  * HTJ2K and HTJ2K thumbnail - lossless:
  * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k d:\src\viewer-testdata\dcm\Juno
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail d:\src\viewer-testdata\dcm\Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
  * ```
  */
 const configDefault = {

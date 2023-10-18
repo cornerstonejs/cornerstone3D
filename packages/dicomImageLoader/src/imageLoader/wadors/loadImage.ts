@@ -174,8 +174,6 @@ function loadImage(
           }
         }
       }
-      // Cache in the pool when done
-      return uncompressedIterator.getDonePromise();
     });
   }
 

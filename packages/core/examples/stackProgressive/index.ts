@@ -84,37 +84,158 @@ async function showStack(stack: string[], viewport, config) {
   } using ${transferSyntaxUID}</p>`;
 }
 
-const configThumbnail = {
+/**
+ * Generate the various configurations by using the options on static DICOMweb:
+ * Base lossy/full thumbnail configuration for HTJ2K:
+ * ```
+ * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name lossy "/dicom/DE Images for Rad"
+ * ```
+ *
+ * JLS and JLS thumbnails:
+ * ```bash
+ * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls "/dicom/DE Images for Rad"
+ * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
+ * ```
+ *
+ * HTJ2K and HTJ2K thumbnail - lossless:
+ * ```bash
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
+ * ```
+ */
+const configJLS = {
   minChunkSize: 65_536,
 
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
-      framesPath: '/lossy/',
-      streaming: false,
-    },
-    unknown: {
       streaming: true,
-      framesPath: '/lossy/',
     },
-    '1.2.840.10008.1.2.4.80': {
+    'default-lossy': {
+      framesPath: '/jls/',
+    },
+    'default-final': {
+      framesPath: '/jls/',
+    },
+  },
+};
+
+const configJLSMixed = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      framesPath: '/jlsThumbnail/',
+    },
+    default: {
+      framesPath: '/jls/',
+    },
+  },
+};
+
+const configJLSThumbnail = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
       // isLossy: true,
-      framesPath: '/lossy/',
+      framesPath: '/jlsThumbnail/',
+    },
+    'default-final': {
+      // isLossy: true,
+      framesPath: '/jlsThumbnail/',
+    },
+  },
+};
+
+const configHtj2k = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      framesPath: '/htj2k/',
+      streaming: true,
+    },
+    '3.2.840.10008.1.2.4.96-lossy': {
+      streaming: true,
+      framesPath: '/htj2k',
+    },
+    'default-lossy': {
+      framesPath: '/htj2k/',
+    },
+    'default-final': {
+      framesPath: '/htj2k/',
+    },
+  },
+};
+
+const configHtj2kMixed = {
+  minChunkSize: 65_536,
+  initialBytes: 65_536,
+  totalRanges: 2,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      framesPath: '/htj2k/',
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      streaming: false,
+      framesPath: '/htj2k/',
+      byteRange: '0-65536',
+    },
+    default: {
+      framesPath: '/htj2k/',
+    },
+  },
+};
+
+const configStreamingVolume = {
+  minChunkSize: 65_536,
+
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      streaming: true,
+    },
+    'default-final': {
+      streaming: true,
+    },
+    '3.2.840.10008.1.2.4.96-lossy': {
       streaming: false,
     },
-    '1.2.840.10008.1.2.4.81': {
-      // isLossy: true,
-      framesPath: '/lossy/',
+    '3.2.840.10008.1.2.4.96-final': {
       streaming: false,
     },
   },
 };
 
-const configDefault = {
+const configByteRange = {
   minChunkSize: 65_536,
+  initialBytes: 65_536,
+  totalRanges: 2,
 
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
+    },
+    'default-lossy': {
+      // isLossy: true,
+      framesPath: '/htj2k/',
+      byteRange: '0-512000',
+    },
+    'default-final': {
+      framesPath: '/htj2k/',
+      byteRange: '0-128000',
     },
   },
 };
@@ -136,12 +257,6 @@ async function run() {
   });
 
   const imageIdsCt = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113608.4',
-    wadoRsRoot: 'http://localhost:5000/dicomweb',
-  });
-
-  const imageIdsCtHtj2k = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
     wadoRsRoot: 'http://localhost:5000/dicomweb',
@@ -178,23 +293,16 @@ async function run() {
     return button;
   };
 
-  const htj2kButton = document.createElement('button');
-  htj2kButton.innerText = 'Load HTJ2K';
-  htj2kButton.onclick = showStack.bind(
-    null,
-    [imageIds[0]],
-    viewport,
-    configDefault
-  );
-  loaders.appendChild(htj2kButton);
+  createButton('JLS', imageIds, configJLS);
+  createButton('JLS Thumbnail', imageIds, configJLSThumbnail);
+  createButton('JLS Mixed', imageIds, configJLSMixed);
 
-  createButton('JLS', [imageIds[1]], configDefault);
-  createButton('JLS Thumbnail', [imageIds[1]], configThumbnail);
+  createButton('HTJ2K', imageIds, configHtj2k);
+  createButton('HTJ2K Thumbnail', imageIds, configByteRange);
+  createButton('HTJ2K Mixed', imageIds, configHtj2kMixed);
 
-  const htj2kCtButton = document.createElement('button');
-  htj2kCtButton.innerText = 'Load CT HTJ2K';
-  htj2kCtButton.onclick = showStack.bind(null, imageIdsCtHtj2k, viewport);
-  loaders.appendChild(htj2kCtButton);
+  createButton('CT JLS', imageIdsCt, configJLS);
+  createButton('CT HTJ2K', imageIdsCt, configHtj2k);
 }
 
 run();

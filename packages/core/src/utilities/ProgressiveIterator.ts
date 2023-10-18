@@ -128,6 +128,7 @@ export default class ProgressiveIterator<T> {
         }
       },
       (reason) => {
+        this.rejectReason = reason;
         if (errorCallback) {
           errorCallback(reason);
         } else {
@@ -147,11 +148,18 @@ export default class ProgressiveIterator<T> {
   }
 
   async donePromise(): Promise<T> {
+    console.log('Starting done promise', this.name);
     for await (const i of this) {
-      if (i) {
+      if (this.done) {
+        console.log('Done promise', this.name, i);
         return i;
       }
     }
+    if (this.done) {
+      console.log('Done after iteration', this.name);
+      return this.nextValue;
+    }
+    console.log('Nothing found', this.name);
     throw new Error('Nothing found');
   }
 

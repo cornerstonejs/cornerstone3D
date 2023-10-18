@@ -7,6 +7,7 @@ import {
   ImageVolume,
   cache,
   imageLoader,
+  progressiveLoader,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -18,7 +19,7 @@ type IRetrieveConfiguration = Types.IRetrieveConfiguration;
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
-const { FrameStatus, RequestType } = Enums;
+const { FrameStatus } = Enums;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -38,72 +39,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    */
   protected retrieveConfiguration: IRetrieveConfiguration;
 
-  public static linearRetrieveConfiguration: IRetrieveConfiguration = {
-    stages: [
-      {
-        id: 'all',
-        decimate: 1,
-        offset: 0,
-      },
-    ],
-  };
-
-  public static thumbnailRetrieveConfiguration: IRetrieveConfiguration = {
-    stages: [
-      {
-        id: 'initialImages',
-        positions: [0.5, 0, -1],
-        retrieveTypeId: 'final',
-        requestType: RequestType.Interaction,
-        priority: 2,
-      },
-      // {
-      //   id: 'all',
-      //   decimate: 1,
-      //   offset: 0,
-      // },
-      {
-        id: 'quarterThumb',
-        decimate: 4,
-        offset: 1,
-        retrieveTypeId: 'lossy',
-        requestType: RequestType.Thumbnail,
-        priority: 3,
-      },
-      {
-        id: 'halfThumb',
-        decimate: 4,
-        offset: 3,
-        retrieveTypeId: 'lossy',
-        requestType: RequestType.Thumbnail,
-      },
-      {
-        id: 'quarterFull',
-        decimate: 4,
-        offset: 2,
-        retrieveTypeId: 'final',
-      },
-      {
-        id: 'halfFull',
-        decimate: 4,
-        offset: 0,
-        retrieveTypeId: 'final',
-      },
-      {
-        id: 'threeQuarterFull',
-        decimate: 4,
-        offset: 1,
-        retrieveTypeId: 'final',
-      },
-      {
-        id: 'finalFull',
-        decimate: 4,
-        offset: 3,
-        retrieveTypeId: 'final',
-      },
-    ],
-  };
-
   loadStatus: {
     loaded: boolean;
     loading: boolean;
@@ -120,12 +55,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.imageIds = streamingProperties.imageIds;
     this.loadStatus = streamingProperties.loadStatus;
     this.numFrames = this._getNumFrames();
-    this.retrieveConfiguration = Object.assign(
-      {},
-      BaseStreamingImageVolume.thumbnailRetrieveConfiguration,
-      streamingProperties.retrieveConfiguration
-    );
-
+    this.retrieveConfiguration =
+      streamingProperties.retrieveConfiguration ||
+      progressiveLoader.interleavedRetrieveConfiguration;
     this._createCornerstoneImageMetaData();
   }
 
@@ -286,6 +218,113 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = [];
   }
 
+  public successCallback(
+    imageId: string,
+    image,
+    status = FrameStatus.DONE,
+    stageId?: string
+  ) {
+    const imageIdIndex = this.imageIds.indexOf(imageId);
+    const { scalingParameters } = image;
+    const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
+
+    // Check if there is a cached image for the same imageURI (different
+    // data loader scheme)
+    const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
+
+    // Check if the image was already loaded by another volume and we are here
+    // since we got the imageLoadObject from the cache from the other already loaded
+    // volume
+    const cachedVolume = cache.getVolumeContainingImageId(imageId);
+
+    // check if the load was cancelled while we were waiting for the image
+    // if so we don't want to do anything
+    if (this.loadStatus.cancelled) {
+      console.warn(
+        'volume load cancelled, returning for imageIdIndex: ',
+        imageIdIndex
+      );
+      return;
+    }
+
+    // if it is not a cached image or volume
+    if (
+      !cachedImage?.image &&
+      !(cachedVolume && cachedVolume.volume !== this)
+    ) {
+      return this.updateTextureAndTriggerEvents(
+        this,
+        imageIdIndex,
+        imageId,
+        status,
+        stageId
+      );
+    }
+
+    // it is either cachedImage or cachedVolume
+    const isFromImageCache = !!cachedImage;
+
+    const cachedImageOrVolume = cachedImage || cachedVolume.volume;
+
+    this.handleImageComingFromCache(
+      cachedImageOrVolume,
+      isFromImageCache,
+      scalingParameters,
+      scalarData,
+      frameIndex,
+      arrayBuffer,
+      updateTextureAndTriggerEvents,
+      imageIdIndex,
+      imageId,
+      this.errorCallback
+    );
+  }
+
+  public errorCallback(imageId, permanent, error) {
+    if (!permanent) {
+      return;
+    }
+    const imageIdIndex = this.imageIds.indexOf(imageId);
+    this.framesProcessed++;
+
+    if (this.framesProcessed === totalNumFrames) {
+      this.loadStatus.loaded = true;
+      this.loadStatus.loading = false;
+
+      callLoadStatusCallback({
+        success: false,
+        imageId,
+        imageIdIndex,
+        error,
+        framesLoaded: this.framesLoaded,
+        framesProcessed: this.framesProcessed,
+        numFrames,
+        totalNumFrames,
+      });
+
+      this.loadStatus.callbacks = [];
+    } else {
+      callLoadStatusCallback({
+        success: false,
+        imageId,
+        imageIdIndex,
+        error,
+        framesLoaded: this.framesLoaded,
+        framesProcessed: this.framesProcessed,
+        numFrames,
+        totalNumFrames,
+      });
+    }
+
+    const eventDetail = {
+      error,
+      imageIdIndex,
+      imageId,
+    };
+
+    triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
+  }
+
   /**
    * It triggers a prefetch for images in the volume.
    * @param callback - A callback function to be called when the volume is fully loaded
@@ -328,6 +367,101 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this._prefetchImageIds(priority);
   };
 
+  protected updateTextureAndTriggerEvents(
+    volume: BaseStreamingImageVolume,
+    imageIdIndex,
+    imageId,
+    status = FrameStatus.DONE
+  ) {
+    const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
+
+    const currentStatus = cachedFrames[frameIndex];
+    if (currentStatus > status) {
+      console.warn(
+        'Already have better image quality for',
+        imageIdIndex,
+        currentStatus,
+        status
+      );
+      return;
+    }
+
+    if (cachedFrames[frameIndex] === FrameStatus.DONE) {
+      return;
+    }
+    cachedFrames[imageIdIndex] = status;
+    const complete = status === FrameStatus.DONE;
+    this.framesProcessed++;
+    this.framesLoaded++;
+    if (complete) {
+      this.completeFrames++;
+    }
+
+    vtkOpenGLTexture.setUpdatedFrame(frameIndex);
+    imageData.modified();
+
+    const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
+      FrameOfReferenceUID,
+      imageVolume: volume,
+    };
+
+    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
+
+    if (complete && this.completeFrames === totalNumFrames) {
+      loadStatus.loaded = true;
+      loadStatus.loading = false;
+    }
+
+    callLoadStatusCallback({
+      success: true,
+      imageIdIndex,
+      imageId,
+      framesLoaded: this.framesLoaded,
+      framesProcessed: this.framesProcessed,
+      completeFrames: this.completeFrames,
+      numFrames,
+      totalNumFrames,
+      complete,
+      status,
+      stageDone,
+      stageId,
+    });
+    if (loadStatus.loaded) {
+      loadStatus.callbacks = [];
+    }
+  }
+
+  protected callLoadStatusCallback(evt) {
+    const { framesProcessed, totalNumFrames, isUpdatedImage, stageDone } = evt;
+
+    // TODO: probably don't want this here
+    if (autoRenderOnLoad) {
+      if (isUpdatedImage) {
+        autoLoad(volumeId);
+      } else if (
+        framesProcessed > reRenderTarget ||
+        framesProcessed === totalNumFrames
+      ) {
+        reRenderTarget += reRenderFraction;
+        autoLoad(volumeId);
+      }
+    }
+    if (framesProcessed === totalNumFrames || stageDone) {
+      loadStatus.callbacks.forEach((callback) => callback(evt));
+
+      const eventDetail = {
+        FrameOfReferenceUID,
+        volumeId: volumeId,
+      };
+
+      triggerEvent(
+        eventTarget,
+        Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        eventDetail
+      );
+    }
+  }
+
   protected getImageIdsRequests = (
     imageIds: string[],
     scalarData: Types.VolumeScalarData,
@@ -360,215 +494,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     if (autoRenderOnLoad) {
       reRenderFraction = totalNumFrames * (autoRenderPercentage / 100);
       reRenderTarget = reRenderFraction;
-    }
-
-    function callLoadStatusCallback(evt) {
-      const { framesProcessed, totalNumFrames, isUpdatedImage, stageDone } =
-        evt;
-
-      // TODO: probably don't want this here
-      if (autoRenderOnLoad) {
-        if (isUpdatedImage) {
-          autoLoad(volumeId);
-        } else if (
-          framesProcessed > reRenderTarget ||
-          framesProcessed === totalNumFrames
-        ) {
-          reRenderTarget += reRenderFraction;
-          autoLoad(volumeId);
-        }
-      }
-      if (framesProcessed === totalNumFrames || stageDone) {
-        loadStatus.callbacks.forEach((callback) => callback(evt));
-
-        const eventDetail = {
-          FrameOfReferenceUID,
-          volumeId: volumeId,
-        };
-
-        triggerEvent(
-          eventTarget,
-          Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
-          eventDetail
-        );
-      }
-    }
-
-    const updateTextureAndTriggerEvents = (
-      volume: BaseStreamingImageVolume,
-      imageIdIndex,
-      imageId,
-      status = FrameStatus.DONE,
-      stageId?: string
-    ) => {
-      const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-
-      let stageDone = false;
-      if (stageId) {
-        const current = retrieveIdCounts[stageId];
-        retrieveIdCounts[stageId] = current - 1;
-        stageDone ||= current === 1;
-      }
-      const currentStatus = cachedFrames[frameIndex];
-      if (currentStatus > status) {
-        console.warn(
-          'Already have better image quality for',
-          imageIdIndex,
-          currentStatus,
-          status
-        );
-        return;
-      }
-
-      if (cachedFrames[frameIndex] === FrameStatus.DONE) {
-        return;
-      }
-      cachedFrames[imageIdIndex] = status;
-      const complete = status === FrameStatus.DONE;
-      this.framesProcessed++;
-      this.framesLoaded++;
-      if (complete) {
-        this.completeFrames++;
-      }
-
-      vtkOpenGLTexture.setUpdatedFrame(frameIndex);
-      imageData.modified();
-
-      const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
-        FrameOfReferenceUID,
-        imageVolume: volume,
-      };
-
-      triggerEvent(
-        eventTarget,
-        Enums.Events.IMAGE_VOLUME_MODIFIED,
-        eventDetail
-      );
-
-      if (complete && this.completeFrames === totalNumFrames) {
-        loadStatus.loaded = true;
-        loadStatus.loading = false;
-      }
-
-      callLoadStatusCallback({
-        success: true,
-        imageIdIndex,
-        imageId,
-        framesLoaded: this.framesLoaded,
-        framesProcessed: this.framesProcessed,
-        completeFrames: this.completeFrames,
-        numFrames,
-        totalNumFrames,
-        complete,
-        status,
-        stageDone,
-        stageId,
-      });
-      if (loadStatus.loaded) {
-        loadStatus.callbacks = [];
-      }
-    };
-
-    const successCallback = (
-      imageIdIndex: number,
-      imageId: string,
-      scalingParameters,
-      status = FrameStatus.DONE,
-      stageId?: string
-    ) => {
-      const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-
-      // Check if there is a cached image for the same imageURI (different
-      // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-
-      // Check if the image was already loaded by another volume and we are here
-      // since we got the imageLoadObject from the cache from the other already loaded
-      // volume
-      const cachedVolume = cache.getVolumeContainingImageId(imageId);
-
-      // check if the load was cancelled while we were waiting for the image
-      // if so we don't want to do anything
-      if (loadStatus.cancelled) {
-        console.warn(
-          'volume load cancelled, returning for imageIdIndex: ',
-          imageIdIndex
-        );
-        return;
-      }
-
-      // if it is not a cached image or volume
-      if (
-        !cachedImage?.image &&
-        !(cachedVolume && cachedVolume.volume !== this)
-      ) {
-        return updateTextureAndTriggerEvents(
-          this,
-          imageIdIndex,
-          imageId,
-          status,
-          stageId
-        );
-      }
-
-      // it is either cachedImage or cachedVolume
-      const isFromImageCache = !!cachedImage;
-
-      const cachedImageOrVolume = cachedImage || cachedVolume.volume;
-
-      this.handleImageComingFromCache(
-        cachedImageOrVolume,
-        isFromImageCache,
-        scalingParameters,
-        scalarData,
-        frameIndex,
-        arrayBuffer,
-        updateTextureAndTriggerEvents,
-        imageIdIndex,
-        imageId,
-        errorCallback
-      );
-    };
-
-    function errorCallback(imageIdIndex, imageId, error) {
-      this.framesProcessed++;
-
-      if (this.framesProcessed === totalNumFrames) {
-        loadStatus.loaded = true;
-        loadStatus.loading = false;
-
-        callLoadStatusCallback({
-          success: false,
-          imageId,
-          imageIdIndex,
-          error,
-          framesLoaded: this.framesLoaded,
-          framesProcessed: this.framesProcessed,
-          numFrames,
-          totalNumFrames,
-        });
-
-        loadStatus.callbacks = [];
-      } else {
-        callLoadStatusCallback({
-          success: false,
-          imageId,
-          imageIdIndex,
-          error,
-          framesLoaded: this.framesLoaded,
-          framesProcessed: this.framesProcessed,
-          numFrames,
-          totalNumFrames,
-        });
-      }
-
-      const eventDetail = {
-        error,
-        imageIdIndex,
-        imageId,
-      };
-
-      triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
     const retrieveStages = new Array<RetrieveStage>();
@@ -698,35 +623,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-          successCallback(
-            imageIdIndex,
-            imageId,
-            scalingParameters,
-            status,
-            stage.id
-          );
-          fillNearby(
-            imageIdIndex,
-            scalarData,
-            options,
-            cachedFrames,
-            numFrames
-          )?.forEach((frameNo) => {
-            try {
-              if (!this.imageIds[frameNo]) {
-                console.log('No image id found for', frameNo);
-                return;
-              }
-              successCallback(
-                frameNo,
-                this.imageIds[frameNo],
-                scalingParameters,
-                FrameStatus.REPLICATE
-              );
-            } catch (e) {
-              console.log("Couldn't update nearby", e);
-            }
-          });
+          this.successCallback(imageId, image, status);
         }, errorCallback.bind(this, imageIdIndex, imageId));
       };
 
