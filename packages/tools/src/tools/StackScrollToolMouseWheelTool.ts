@@ -27,7 +27,6 @@ class StackScrollMouseWheelTool extends BaseTool {
   }
 
   mouseWheelCallback(evt: MouseWheelEventType): void {
-    console.log('Mouse wheel callback', evt);
     const { wheel, element } = evt.detail;
     const { direction } = wheel;
     const { invert } = this.configuration;
@@ -37,7 +36,6 @@ class StackScrollMouseWheelTool extends BaseTool {
     const targetId = this.getTargetId(viewport);
     const volumeId = targetId.split('volumeId:')[1];
 
-    console.log('mouseWheelCallback', evt);
     scroll(viewport, {
       delta,
       debounceLoading: this.configuration.debounceIfNotLoaded,

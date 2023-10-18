@@ -30,8 +30,7 @@ async function jumpToSlice(
     throw new Error('Element has been disabled');
   }
 
-  const viewport = enabledElement.viewport;
-  console.log('Jumping to slice on', viewport, options);
+  const { viewport } = enabledElement;
 
   const { imageIndex: currentImageIndex, numberOfSlices } = _getImageSliceData(
     viewport,
@@ -45,7 +44,7 @@ async function jumpToSlice(
 }
 
 function _getImageSliceData(
-  viewport: Types.IVtkViewport,
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
   debounceLoading?: boolean
 ): Types.ImageSliceData {
   if (viewport instanceof StackViewport) {
