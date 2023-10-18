@@ -12,8 +12,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { ToolActivatedEventDetail } from '../../types/EventTypes';
-import { state } from '../index';
+import {
+  ToolActivatedEventDetail,
+  ToolModeChangedEventDetail,
+} from '../../types/EventTypes';
+import { ToolGroupManager, state } from '../index';
 import {
   IToolBinding,
   IToolClassReference,
@@ -385,6 +388,7 @@ export default class ToolGroup implements IToolGroup {
     };
 
     triggerEvent(eventTarget, Events.TOOL_ACTIVATED, eventDetail);
+    this._triggerToolModeChangedEvent(toolName, Active, toolBindingsOptions);
   }
 
   /**
@@ -440,6 +444,13 @@ export default class ToolGroup implements IToolGroup {
       toolInstance.onSetToolPassive();
     }
     this._renderViewports();
+
+    // It would make sense to use `toolInstance.mode` as mode when setting a tool
+    // as passive because it can still be actived in the end but `Passive` must
+    // be used when synchronizing ToolGroups so that other ToolGroups can take the
+    // same action (update tool bindings). Should the event have two different modes
+    // to handle this special case?
+    this._triggerToolModeChangedEvent(toolName, Passive);
   }
 
   /**
@@ -473,6 +484,7 @@ export default class ToolGroup implements IToolGroup {
     }
 
     this._renderViewports();
+    this._triggerToolModeChangedEvent(toolName, Enabled);
   }
 
   /**
@@ -505,6 +517,7 @@ export default class ToolGroup implements IToolGroup {
       toolInstance.onSetToolDisabled();
     }
     this._renderViewports();
+    this._triggerToolModeChangedEvent(toolName, Disabled);
   }
 
   /**
@@ -670,6 +683,49 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
+   *
+   * @param newToolGroupId - Id of the new (clone) tool group
+   * @param fnToolFilter - Function to filter which tools from this tool group
+   * should be added to the new (clone) one. Example: only annotations tools
+   * can be filtered and added to the new tool group.
+   * @returns A new tool group that is a clone of this one
+   */
+  public clone(
+    newToolGroupId,
+    fnToolFilter: (toolName: string) => void = null
+  ): IToolGroup {
+    let toolGroup = ToolGroupManager.getToolGroup(newToolGroupId);
+
+    if (toolGroup) {
+      console.warn(`ToolGroup ${newToolGroupId} already exists`);
+      return toolGroup;
+    }
+
+    toolGroup = ToolGroupManager.createToolGroup(newToolGroupId);
+    fnToolFilter = fnToolFilter ?? (() => true);
+
+    Object.keys(this._toolInstances)
+      .filter(fnToolFilter)
+      .forEach((toolName) => {
+        const sourceToolInstance = this._toolInstances[toolName];
+        const sourceToolOptions = this.toolOptions[toolName];
+        const sourceToolMode = sourceToolInstance.mode;
+
+        toolGroup.addTool(toolName);
+
+        (toolGroup as unknown as ToolGroup).setToolMode(
+          toolName,
+          sourceToolMode,
+          {
+            bindings: sourceToolOptions.bindings ?? [],
+          }
+        );
+      });
+
+    return toolGroup;
+  }
+
+  /**
    * Check if the tool binding is set to be primary mouse button.
    * @param toolOptions - The options for the tool mode.
    * @returns A boolean value.
@@ -691,6 +747,27 @@ export default class ToolGroup implements IToolGroup {
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       getRenderingEngine(renderingEngineId).renderViewport(viewportId);
     });
+  }
+
+  /**
+   * Trigger ToolModeChangedEvent when changing the tool mode
+   * @param toolName - Tool name
+   * @param mode - Tool mode
+   * @param toolBindingsOptions - Binding options used when a tool is activated
+   */
+  private _triggerToolModeChangedEvent(
+    toolName: string,
+    mode: ToolModes,
+    toolBindingsOptions?: SetToolBindingsType
+  ): void {
+    const eventDetail: ToolModeChangedEventDetail = {
+      toolGroupId: this.id,
+      toolName,
+      mode,
+      toolBindingsOptions,
+    };
+
+    triggerEvent(eventTarget, Events.TOOL_MODE_CHANGED, eventDetail);
   }
 }
 
