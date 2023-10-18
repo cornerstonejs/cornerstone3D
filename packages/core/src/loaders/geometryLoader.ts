@@ -5,7 +5,6 @@ import { GeometryType } from '../enums';
 import { IGeometry, PublicContourSetData, PublicSurfaceData } from '../types';
 import { createContourSet } from './utils/contourSet/createContourSet';
 import { createSurface } from './utils/surface/createSurface';
-import { ContourSet } from '../cache/classes/ContourSet';
 
 type GeometryOptions = {
   type: GeometryType;
@@ -53,65 +52,6 @@ async function createAndCacheGeometry(
   };
 
   await cache.putGeometryLoadObject(geometryId, geometryLoadObject);
-
-  return geometry;
-}
-
-// Todo: this should be moved
-function _createContourSet(
-  geometryId: string,
-  contourSetData: PublicContourSetData
-) {
-  // validate the data to make sure it is a valid contour set
-  if (!contourSetData || contourSetData.data.length === 0) {
-    throw new Error(
-      'Invalid contour set data, see publicContourSetData type for more info'
-    );
-  }
-
-  // make sure it each has id, and each has data of type Point3[]
-  if (!contourSetData.id) {
-    throw new Error(
-      'Invalid contour set data, each contour set must have an id'
-    );
-  }
-
-  if (!contourSetData.data || !Array.isArray(contourSetData.data)) {
-    throw new Error(
-      'Invalid contour set data, each contour set must have an array of contours'
-    );
-  }
-
-  contourSetData.data.forEach((contourData) => {
-    if (!contourData.points || !Array.isArray(contourData.points)) {
-      throw new Error(
-        'Invalid contour set data, each contour must have an array of points'
-      );
-    }
-
-    contourData.points.forEach((point) => {
-      if (!point || !Array.isArray(point) || point.length !== 3) {
-        throw new Error(
-          'Invalid contour set data, each point must be an array of length 3'
-        );
-      }
-    });
-  });
-
-  const contourSet = new ContourSet({
-    id: contourSetData.id,
-    data: contourSetData.data,
-    color: contourSetData.color,
-    frameOfReferenceUID: contourSetData.frameOfReferenceUID,
-    segmentIndex: contourSetData.segmentIndex,
-  });
-
-  const geometry: IGeometry = {
-    id: geometryId,
-    type: GeometryType.CONTOUR,
-    data: contourSet,
-    sizeInBytes: contourSet.getSizeInBytes(),
-  };
 
   return geometry;
 }

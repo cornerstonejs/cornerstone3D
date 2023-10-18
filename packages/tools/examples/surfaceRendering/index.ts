@@ -15,11 +15,11 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-import surface13 from '../surfaces/lung13.json';
-import surface14 from '../surfaces/lung14.json';
-import surface15 from '../surfaces/lung15.json';
-import surface16 from '../surfaces/lung16.json';
-import surface17 from '../surfaces/lung17.json';
+import surface13 from '../../../../utils/assets/surfaces/lung13.json';
+import surface14 from '../../../../utils/assets/surfaces/lung14.json';
+import surface15 from '../../../../utils/assets/surfaces/lung15.json';
+import surface16 from '../../../../utils/assets/surfaces/lung16.json';
+import surface17 from '../../../../utils/assets/surfaces/lung17.json';
 
 // This is for debugging purposes
 console.warn(
@@ -49,7 +49,7 @@ const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Surface Segmentation Representation for Volume Viewports',
-  'Here we demonstrate how to render surfaces'
+  'In this demonstration, we will show you how to render surfaces. On the left side, you will find a volume viewport, and on the right side, there is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
 );
 
 const size = '500px';
@@ -79,13 +79,13 @@ const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
 
-//const surfaces = [surface];
 const surfaces = [surface13, surface14, surface15, surface16, surface17];
+
 async function addSegmentationsToState() {
   surfaces.forEach((surface) => {
     const geometryId = surface.closedSurface.id;
     const segmentationId = geometryId;
-    geometryLoader.createAndCacheGeometry(surface.closedSurface.id, {
+    geometryLoader.createAndCacheGeometry(geometryId, {
       type: GeometryType.SURFACE,
       geometryData: surface.closedSurface as Types.PublicSurfaceData,
     });

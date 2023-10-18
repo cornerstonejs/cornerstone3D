@@ -14,11 +14,11 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { sortImageIds } from './utils';
 
-import surface13 from '../surfaces/lung13.json';
-import surface14 from '../surfaces/lung14.json';
-import surface15 from '../surfaces/lung15.json';
-import surface16 from '../surfaces/lung16.json';
-import surface17 from '../surfaces/lung17.json';
+import surface13 from '../../../../utils/assets/surfaces/lung13.json';
+import surface14 from '../../../../utils/assets/surfaces/lung14.json';
+import surface15 from '../../../../utils/assets/surfaces/lung15.json';
+import surface16 from '../../../../utils/assets/surfaces/lung16.json';
+import surface17 from '../../../../utils/assets/surfaces/lung17.json';
 
 // This is for debugging purposes
 console.warn(

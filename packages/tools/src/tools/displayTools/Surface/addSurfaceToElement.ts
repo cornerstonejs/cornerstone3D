@@ -92,7 +92,7 @@ function addSurfaceToElement(
   });
 
   element.addEventListener(
-    Enums.Events.UPDATE_CLIPPING_PLANES,
+    Enums.Events.CLIPPING_PLANES_UPDATED,
     updateClippingPlanes
   );
 }
