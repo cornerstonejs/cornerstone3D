@@ -13,64 +13,55 @@ export function getPoint(points, idx) {
 }
 
 /**
- * Returns the first available point in a tuple array
- * @param tupleArray
- * @returns
- */
-function getFirstAvailable(tupleArray) {
-  for (let i = 0; i < tupleArray.length; i++) {
-    if (tupleArray[i]) {
-      return tupleArray[i][0];
-    }
-  }
-  return -1;
-}
-
-/**
  * Extract contour point sets from the outline of a poly data actor
  * @param polyData - vtk polyData
  * @returns
  */
 export function getPolyDataPointIndexes(polyData: vtkPolyData) {
   const linesData = polyData.getLines().getData();
-
-  // creating array of tuples. A tuple is pair of points that defines a line segment.
-  // Its not required that two consecutive tuples are connected
   let idx = 0;
-  const tupleArray = [];
+  const lineSegments = new Map<number, number[]>();
+
+  // Populate lineSegments map
   while (idx < linesData.length) {
-    const size = linesData[idx];
-    idx++;
-    const tuple = [];
-    for (let i = 0; i < size; i++) {
-      tuple.push(linesData[idx + i]);
+    const segmentSize = linesData[idx++];
+    const segment = [];
+    for (let i = 0; i < segmentSize; i++) {
+      segment.push(linesData[idx + i]);
     }
-    tupleArray[tuple[0]] = tuple;
-    idx = idx + size;
+    lineSegments.set(segment[0], segment);
+    idx += segmentSize;
   }
 
-  const contoursArray = [];
-  // while there is active points, create contour point sets
-  while (getFirstAvailable(tupleArray) > -1) {
-    // uniting all tuples in a consecutive point set
-    let nextToFind;
-    nextToFind = getFirstAvailable(tupleArray);
-    if (nextToFind === -1) {
-      return;
-    }
-    const contourPoints = [];
-    contourPoints.push(nextToFind);
-    while (tupleArray[nextToFind]) {
-      const indexToAdd = tupleArray[nextToFind][1];
-      if (tupleArray[indexToAdd]) {
-        contourPoints.push(indexToAdd);
+  const contours = [];
+
+  // Function to find an available starting point
+  const findStartingPoint = (map) => {
+    for (const [key, value] of map.entries()) {
+      if (value !== undefined) {
+        return key;
       }
-      tupleArray[nextToFind] = undefined;
-      nextToFind = indexToAdd;
     }
-    contoursArray.push(contourPoints);
+    return -1;
+  };
+
+  // Build contours
+  let startPoint = findStartingPoint(lineSegments);
+  while (startPoint !== -1) {
+    const contour = [startPoint];
+    while (lineSegments.has(startPoint)) {
+      const nextPoint = lineSegments.get(startPoint)[1];
+      if (lineSegments.has(nextPoint)) {
+        contour.push(nextPoint);
+      }
+      lineSegments.delete(startPoint);
+      startPoint = nextPoint;
+    }
+    contours.push(contour);
+    startPoint = findStartingPoint(lineSegments);
   }
-  return contoursArray;
+
+  return contours.length ? contours : undefined;
 }
 
 /**
