@@ -26,7 +26,11 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
 
   constructor(
     toolProps: PublicToolProps = {},
-    defaultToolProps: ToolProps = {}
+    defaultToolProps: ToolProps = {
+      configuration: {
+        opacity: 0.5,
+      },
+    }
   ) {
     super(toolProps, defaultToolProps);
   }
@@ -43,15 +47,16 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       return;
     }
 
-    const viewport = getRenderingEngine(
+    const firstViewport = getRenderingEngine(
       viewportsInfo[0].renderingEngineId
     )?.getViewport(viewportsInfo[0].viewportId);
 
-    if (!viewport) {
+    if (!firstViewport) {
       return;
     }
-    const frameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const frameOfReferenceUID = firstViewport.getFrameOfReferenceUID();
     const annotations = getAnnotations(this.getToolName(), frameOfReferenceUID);
+
     if (!annotations?.length) {
       const actorsWorldPointsMap = new Map();
       calculateSurfaceSegmentationIntersections(
@@ -114,6 +119,7 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       actorsWorldPointsMap,
       viewport
     );
+
     const actorEntries = viewport.getActors();
     const { focalPoint } = viewport.getCamera();
     const focalPointString = pointToString(focalPoint);
@@ -137,9 +143,9 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
         );
 
         const options = {
-          color: 'none',
+          color: color,
           fillColor: color,
-          fillOpacity: 0.5,
+          fillOpacity: this.configuration.opacity,
           connectLastToFirst: true,
         };
 
@@ -174,22 +180,26 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
   const { focalPoint } = viewport.getCamera();
   const focalPointString = pointToString(focalPoint);
   actorEntries.forEach((actorEntry) => {
-    if (actorEntry?.clippingFilter) {
-      let actorWorldPointsMap = actorsWorldPointsMap.get(actorEntry.uid);
-      if (!actorWorldPointsMap) {
-        actorWorldPointsMap = new Map();
-        actorsWorldPointsMap.set(actorEntry.uid, actorWorldPointsMap);
+    if (!actorEntry?.clippingFilter) {
+      return;
+    }
+
+    let actorWorldPointsMap = actorsWorldPointsMap.get(actorEntry.uid);
+    if (!actorWorldPointsMap) {
+      actorWorldPointsMap = new Map();
+      actorsWorldPointsMap.set(actorEntry.uid, actorWorldPointsMap);
+    }
+    if (!actorWorldPointsMap.get(focalPointString)) {
+      const polyData = actorEntry.clippingFilter.getOutputData();
+      let worldPointsSet = polyDataUtils.getPolyDataPoints(polyData);
+      if (!worldPointsSet) {
+        return;
       }
-      if (!actorWorldPointsMap.get(focalPointString)) {
-        const polyData = actorEntry.clippingFilter.getOutputData();
-        let worldPointsSet = polyDataUtils.getPolyDataPoints(polyData);
-        if (worldPointsSet) {
-          worldPointsSet = removeExtraPoints(viewport, worldPointsSet);
-          const colorArray = actorEntry.actor.getProperty().getColor();
-          const color = colorToString(colorArray);
-          actorWorldPointsMap.set(focalPointString, { worldPointsSet, color });
-        }
-      }
+
+      worldPointsSet = removeExtraPoints(viewport, worldPointsSet);
+      const colorArray = actorEntry.actor.getProperty().getColor();
+      const color = colorToString(colorArray);
+      actorWorldPointsMap.set(focalPointString, { worldPointsSet, color });
     }
   });
 }

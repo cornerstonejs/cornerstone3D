@@ -17,6 +17,7 @@ import type { ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   getClosestImageId,
+  getSpacingInNormalDirection,
   isImageActor,
   triggerEvent,
 } from '../utilities';
@@ -305,21 +306,18 @@ class VolumeViewport extends BaseVolumeViewport {
 
   /**
    * Uses the origin and focalPoint to calculate the slice index.
-   * Todo: This only works if the imageIds are properly sorted
    *
-   * @returns The slice index
+   * @returns The slice index in the direction of the view
    */
-  public getCurrentImageIdIndex = (): number | undefined => {
+  public getCurrentImageIdIndex = (volumeId?: string): number => {
     const { viewPlaneNormal, focalPoint } = this.getCamera();
 
-    // Todo: handle scenario of fusion of multiple volumes
-    // we cannot only check number of actors, because we might have
-    // segmentations ...
-    const { origin, spacing } = this.getImageData();
+    const { origin, direction, spacing } = this.getImageData(volumeId);
 
-    // how many steps are from the origin to the focal point in the
-    // normal direction
-    const spacingInNormal = spacing[2];
+    const spacingInNormal = getSpacingInNormalDirection(
+      { direction, spacing },
+      viewPlaneNormal
+    );
     const sub = vec3.create();
     vec3.sub(sub, focalPoint, origin);
     const distance = vec3.dot(sub, viewPlaneNormal);

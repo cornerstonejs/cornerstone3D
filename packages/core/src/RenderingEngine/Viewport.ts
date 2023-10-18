@@ -1186,6 +1186,7 @@ class Viewport implements IViewport {
         actorEntry,
         focalPoint,
         vtkPlanes,
+        viewport: this,
       });
     });
 

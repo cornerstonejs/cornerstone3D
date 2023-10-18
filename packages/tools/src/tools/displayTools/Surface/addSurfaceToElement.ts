@@ -12,36 +12,6 @@ import { pointToString } from '../../../utilities/pointToString';
 
 const polyDataCache = new Map();
 
-/**
- * Updates the clipping planes of a surface and caches the resulting poly data
- * @param evt
- */
-function updateClippingPlanes(evt) {
-  const { actorEntry, focalPoint, vtkPlanes } = evt.detail;
-  if (actorEntry?.clippingFilter) {
-    const mapper = actorEntry.actor.getMapper();
-    const focalIndex = pointToString(focalPoint);
-    let actorCache = polyDataCache.get(actorEntry.uid);
-    if (!actorCache) {
-      actorCache = new Map();
-      polyDataCache.set(actorEntry.uid, actorCache);
-    }
-    let polyData = actorCache.get(focalIndex);
-    if (!polyData) {
-      const clippingFilter = actorEntry.clippingFilter;
-      clippingFilter.setClippingPlanes(vtkPlanes);
-      try {
-        clippingFilter.update();
-        polyData = clippingFilter.getOutputData();
-        actorCache.set(focalIndex, polyData);
-      } catch {
-        console.error('Error clipping surface');
-      }
-    }
-    mapper.setInputData(polyData);
-  }
-}
-
 function addSurfaceToElement(
   element: HTMLDivElement,
   surface: any,
@@ -57,13 +27,13 @@ function addSurfaceToElement(
   const polys = surface.getPolys();
   const color = surface.getColor();
 
-  const polydata = vtkPolyData.newInstance();
-  polydata.getPoints().setData(points, 3);
+  const polyData = vtkPolyData.newInstance();
+  polyData.getPoints().setData(points, 3);
 
   const triangles = vtkCellArray.newInstance({
     values: Float32Array.from(polys),
   });
-  polydata.setPolys(triangles);
+  polyData.setPolys(triangles);
 
   const mapper = vtkMapper.newInstance({});
   let clippingFilter;
@@ -73,14 +43,14 @@ function addSurfaceToElement(
       activePlaneId: 2,
       passPointData: false,
     });
-    clippingFilter.setInputData(polydata);
+    clippingFilter.setInputData(polyData);
     clippingFilter.setGenerateOutline(true);
     clippingFilter.setGenerateFaces(false);
     clippingFilter.update();
     const filteredData = clippingFilter.getOutputData();
     mapper.setInputData(filteredData);
   } else {
-    mapper.setInputData(polydata);
+    mapper.setInputData(polyData);
   }
 
   const actor = vtkActor.newInstance();
@@ -96,8 +66,50 @@ function addSurfaceToElement(
 
   element.addEventListener(
     Enums.Events.CLIPPING_PLANES_UPDATED,
-    updateClippingPlanes
+    updateSurfacePlanes
   );
+}
+
+/**
+ * Updates the clipping planes of a surface and caches the resulting poly data
+ * @param evt
+ */
+function updateSurfacePlanes(evt) {
+  const { actorEntry, vtkPlanes, viewport } = evt.detail;
+  if (!actorEntry?.clippingFilter) {
+    return;
+  }
+
+  const mapper = actorEntry.actor.getMapper();
+
+  const { viewPlaneNormal } = viewport.getCamera();
+  const imageIndex = viewport.getCurrentImageIdIndex();
+
+  // we should not use the focalPoint here, since the pan and zoom updates it,
+  // imageIndex is reliable enough
+  const cacheId = `${viewport.id}-${pointToString(
+    viewPlaneNormal
+  )}-${imageIndex}`;
+
+  let actorCache = polyDataCache.get(actorEntry.uid);
+  if (!actorCache) {
+    actorCache = new Map();
+    polyDataCache.set(actorEntry.uid, actorCache);
+  }
+
+  let polyData = actorCache.get(cacheId);
+  if (!polyData) {
+    const clippingFilter = actorEntry.clippingFilter;
+    clippingFilter.setClippingPlanes(vtkPlanes);
+    try {
+      clippingFilter.update();
+      polyData = clippingFilter.getOutputData();
+      actorCache.set(cacheId, polyData);
+    } catch (e) {
+      console.error('Error clipping surface', e);
+    }
+  }
+  mapper.setInputData(polyData);
 }
 
 export default addSurfaceToElement;
