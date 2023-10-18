@@ -29,7 +29,7 @@ class VolumeRotateMouseWheelTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         direction: DIRECTIONS.Z,
-        rotateIncrementDegrees: 2,
+        rotateIncrementDegrees: 30,
       },
     }
   ) {
