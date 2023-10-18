@@ -1616,9 +1616,11 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(id: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(id: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -2189,9 +2191,11 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(viewportId: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(viewportId: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -2702,6 +2706,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     togglePlayPause(): boolean;
     // (undocumented)
     readonly uid: any;
+    // (undocumented)
+    static readonly useCustomRenderingPipeline = true;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }

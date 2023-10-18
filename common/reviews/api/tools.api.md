@@ -2093,13 +2093,13 @@ function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: A
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
 
 // @public (undocumented)
-function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
+function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
 function filterViewportsWithParallelNormals(viewports: any, camera: any, EPS?: number): any;
 
 // @public (undocumented)
-function filterViewportsWithToolEnabled(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
+function filterViewportsWithToolEnabled(viewports: Array<Types_2.IViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
 function findClosestPoint(sourcePoints: Array<Types_2.Point2>, targetPoint: Types_2.Point2): Types_2.Point2;
@@ -2967,9 +2967,11 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(id: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(id: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)

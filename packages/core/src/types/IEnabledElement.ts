@@ -8,7 +8,7 @@ import type IVolumeViewport from './IVolumeViewport';
 interface IEnabledElement {
   /** Cornerstone Viewport instance - can be Stack or Volume, or Video Viewport as of now.
    * For the moment, need to cast to unknown first before casting to IVideoViewport
-   * (TODO)
+   * (TODO) - this will be done as part of adding annotation tools for video
    */
   viewport: IStackViewport | IVolumeViewport;
   /** Cornerstone Rendering Engine instance */
