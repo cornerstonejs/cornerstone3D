@@ -158,6 +158,8 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
       segPointLPS
     );
 
+    // count represents the number of voxels of the dynamic volume that represents
+    // one voxel of the segmentation mask
     let count = 0;
     const perFrameSum = new Map();
 
@@ -165,7 +167,7 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
     frames.forEach((frame) => perFrameSum.set(frame, 0));
 
     const averageCallback = ({ index }) => {
-      for (let i = 0, len = frames.length; i < len; i++) {
+      for (let i = 0; i < frames.length; i++) {
         const value = dynamicVolumeScalarDataArray[i][index];
         const frame = frames[i];
         perFrameSum.set(frame, perFrameSum.get(frame) + value);
@@ -189,6 +191,10 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
     values.push(averageValues);
   };
 
+  // Since we have the non-zero voxel indices of the segmentation mask,
+  // we theoretically can use them, however, we kind of need to compute the
+  // pointLPS for each of the non-zero voxel indices, which is a bit of a pain.
+  // Todo: consider using the nonZeroVoxelIndices to compute the pointLPS
   pointInShapeCallback(maskImageData, () => true, callback);
 
   return values;
