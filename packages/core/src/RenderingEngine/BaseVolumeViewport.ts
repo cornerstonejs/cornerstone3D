@@ -46,7 +46,6 @@ import {
   invertRgbTransferFunction,
   triggerEvent,
   colormap as colormapUtils,
-  isImageActor,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
@@ -565,7 +564,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
     }
 
-    if (invert !== undefined) {
+    if (invert !== undefined && this.viewportProperties.invert !== invert) {
       this.setInvert(invert, volumeId, suppressEvents);
     }
 
@@ -1033,8 +1032,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     // New volume actors implies resetting the inverted flag (i.e. like starting from scratch).
 
     for (let i = 0; i < volumeActorEntries.length; i++) {
-      const volumeId = volumeActorEntries[i].uid;
-
       this.viewportProperties.invert = false;
     }
     this.setActors(volumeActorEntries);
