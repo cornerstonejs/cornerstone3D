@@ -47,28 +47,8 @@ export default function rangeRequest(
 }> {
   const { cornerstone } = external;
   const options = getOptions();
-
-  let initialBytes = options.initialBytes;
-  if (typeof initialBytes === 'function') {
-    const metaData = metaDataManager.get(imageId);
-    initialBytes = initialBytes(metaData, imageId);
-  }
-  if (!Number.isInteger(initialBytes)) {
-    throw new Error(
-      `initialBytes must be an integer or function that returns an integer.`
-    );
-  }
-
-  let totalRanges = options.totalRanges;
-  if (typeof totalRanges === 'function') {
-    const metaData = metaDataManager.get(imageId);
-    totalRanges = totalRanges(metaData, imageId);
-  }
-  if (!Number.isInteger(totalRanges)) {
-    throw new Error(
-      `totalRanges must be an integer or function that returns an integer.`
-    );
-  }
+  const initialBytes = getValue(imageId, retrieveOptions, 'initialBytes');
+  const totalRanges = getValue(imageId, retrieveOptions, 'totalRanges') || 2;
 
   const errorInterceptor = (err: any) => {
     if (typeof options.errorInterceptor === 'function') {
@@ -129,12 +109,14 @@ export default function rangeRequest(
       // ranges will be passed and decoded via events.
       const done = loadIsComplete(imageId);
       const contentType = responseHeaders.get('content-type');
+      const totalBytes = Number(responseHeaders.get('content-length'));
       const extract = extractMultipart(contentType, bytes, {}, true);
 
       resolve({
         ...extract,
         complete: done && !retrieveOptions.isLossy,
         done,
+        percentComplete: (initialBytes * 100) / totalBytes,
         isLossy: !!retrieveOptions.isLossy,
         loadNextRange: done
           ? undefined
@@ -238,4 +220,13 @@ async function fetchRangeAndAppend(
     bytes: newByteArray,
     responseHeaders,
   };
+}
+
+function getValue(imageId: string, src, attr: string) {
+  const value = src[attr];
+  if (typeof value !== 'function') {
+    return value;
+  }
+  const metaData = metaDataManager.get(imageId);
+  return value(metaData, imageId);
 }

@@ -140,7 +140,12 @@ function loadImage(
           : `${done ? 'done' : 'streaming'}${isLossy ? ' lossy' : ''}`;
         const decodeLevel =
           result.decodeLevel ??
-          (complete ? 0 : decodeLevelFromComplete(percentComplete));
+          (complete
+            ? 0
+            : decodeLevelFromComplete(
+                percentComplete,
+                retrieveOptions.decodeLevel
+              ));
         if (!done && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
           continue;
@@ -149,7 +154,7 @@ function loadImage(
         try {
           const useOptions = {
             ...options,
-            decodeLevel: decodeLevel,
+            decodeLevel,
           };
           const image = await createImage(
             imageId,
@@ -202,7 +207,13 @@ function loadImage(
  * level 4 only needs 1/25 of the data (eg (4+1)^2).  Add 2% to ensure
  * there is enough space
  */
-function decodeLevelFromComplete(percent: number) {
+function decodeLevelFromComplete(
+  percent: number,
+  retrieveDecodeLevel?: number
+) {
+  if (retrieveDecodeLevel !== undefined) {
+    return retrieveDecodeLevel;
+  }
   if (percent < 8) {
     return 4;
   }

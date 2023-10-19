@@ -28,7 +28,8 @@ export interface LossyConfiguration {
   // True to use streaming decode
   streaming?: boolean;
   // byte range value to retrieve for initial decode
-  byteRange?: string;
+  initialBytes?: number | ((metadata) => number);
+  totalRanges?: number | ((metadata) => number);
   // Decode level to attempt
   decodeLevel?: number;
   // Load status when this item has complete - true to indicate lossy response

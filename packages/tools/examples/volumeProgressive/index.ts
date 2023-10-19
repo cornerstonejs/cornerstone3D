@@ -125,8 +125,8 @@ content.append(instructions);
  *
  * HTJ2K and HTJ2K thumbnail - lossless:
  * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k  /src/viewer-testdata/dcm/Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
  * ```
  */
 const configDefault = {
@@ -209,10 +209,6 @@ const configHtj2k = {
 };
 
 const configHtj2kMixed = {
-  minChunkSize: 65_536,
-  initialBytes: 65_536,
-  totalRanges: 2,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
@@ -221,12 +217,12 @@ const configHtj2kMixed = {
       isLossy: true,
       streaming: false,
       framesPath: '/htj2k/',
-      byteRange: '0-65536',
+      initialBytes: 65536,
     },
     '3.2.840.10008.1.2.4.96-lossy': {
       isLossy: true,
       framesPath: '/htj2k/',
-      byteRange: '0-65536',
+      initialBytes: 65536,
       streaming: false,
     },
     '3.2.840.10008.1.2.4.96-final': {
@@ -235,9 +231,22 @@ const configHtj2kMixed = {
     },
   },
 };
-const configThumbnail = {
-  minChunkSize: 65_536,
 
+const configHtj2kThumbnail = {
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      streaming: false,
+      framesPath: '/htj2kThumbnail/',
+      decodeLevel: 4,
+    },
+  },
+};
+
+const configThumbnail = {
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
@@ -259,8 +268,6 @@ const configThumbnail = {
 };
 
 const configStreamingVolume = {
-  minChunkSize: 65_536,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
@@ -281,31 +288,27 @@ const configStreamingVolume = {
 };
 
 const configByteRange = {
-  minChunkSize: 65_536,
-  initialBytes: 65_536,
-  totalRanges: 2,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
     'default-lossy': {
       framesPath: '/htj2k',
-      byteRange: '0-65535',
+      initialBytes: 65536,
     },
     'default-final': {
       framesPath: '/htj2k',
-      byteRange: '0-65535',
+      initialBytes: 65536,
     },
     '3.2.840.10008.1.2.4.96-lossy': {
       // isLossy: true,
       streaming: false,
-      byteRange: '0-65535',
+      initialBytes: 65536,
       //needsScale: true,
     },
     '3.2.840.10008.1.2.4.96-final': {
       streaming: false,
-      byteRange: '0-65535',
+      initialBytes: 65536,
       // isLossy: false,
       //needsScale: true,
     },

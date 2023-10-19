@@ -29,7 +29,7 @@ function getPixelData(
     url = url.replace('/frames/', retrieveOptions.framesPath);
   }
 
-  if (retrieveOptions.byteRange) {
+  if (retrieveOptions.initialBytes) {
     return rangeRequest(url, imageId, headers, retrieveOptions);
   }
 

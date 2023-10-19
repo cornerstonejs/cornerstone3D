@@ -99,8 +99,8 @@ async function showStack(stack: string[], viewport, config) {
  *
  * HTJ2K and HTJ2K thumbnail - lossless:
  * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k "/dicom/DE Images for Rad"
+ * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
  * ```
  */
 const configJLS = {
@@ -175,11 +175,7 @@ const configHtj2k = {
   },
 };
 
-const configHtj2kMixed = {
-  minChunkSize: 65_536,
-  initialBytes: 65_536,
-  totalRanges: 2,
-
+const configHtj2kByteRange = {
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       framesPath: '/htj2k/',
@@ -189,7 +185,8 @@ const configHtj2kMixed = {
       isLossy: true,
       streaming: false,
       framesPath: '/htj2k/',
-      byteRange: '0-65536',
+      initialBytes: 32768,
+      decodeLevel: 4,
     },
     default: {
       framesPath: '/htj2k/',
@@ -197,45 +194,52 @@ const configHtj2kMixed = {
   },
 };
 
-const configStreamingVolume = {
-  minChunkSize: 65_536,
-
+const configHtj2kLossy = {
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
     'default-lossy': {
-      streaming: true,
+      isLossy: true,
+      framesPath: '/lossy/',
+      initialBytes: 65536,
     },
-    'default-final': {
-      streaming: true,
-    },
-    '3.2.840.10008.1.2.4.96-lossy': {
-      streaming: false,
-    },
-    '3.2.840.10008.1.2.4.96-final': {
-      streaming: false,
+    default: {
+      framesPath: '/lossy/',
     },
   },
 };
 
-const configByteRange = {
-  minChunkSize: 65_536,
-  initialBytes: 65_536,
-  totalRanges: 2,
-
+const configHtj2kMixed = {
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
     'default-lossy': {
-      // isLossy: true,
-      framesPath: '/htj2k/',
-      byteRange: '0-512000',
+      isLossy: true,
+      framesPath: '/lossy/',
+      initialBytes: 16384,
+      decodeLevel: 4,
     },
-    'default-final': {
+    default: {
       framesPath: '/htj2k/',
-      byteRange: '0-128000',
+    },
+  },
+};
+
+const configHtj2kThumbnail = {
+  retrieveConfiguration: {
+    '3.2.840.10008.1.2.4.96': {
+      streaming: true,
+    },
+    'default-lossy': {
+      isLossy: true,
+      framesPath: '/htj2kThumbnail/',
+      streaming: false,
+      decodeLevel: 4,
+    },
+    default: {
+      framesPath: '/htj2k/',
     },
   },
 };
@@ -298,11 +302,14 @@ async function run() {
   createButton('JLS Mixed', imageIds, configJLSMixed);
 
   createButton('HTJ2K', imageIds, configHtj2k);
-  createButton('HTJ2K Thumbnail', imageIds, configByteRange);
-  createButton('HTJ2K Mixed', imageIds, configHtj2kMixed);
+  createButton('HTJ2K Lossy', imageIds, configHtj2kLossy);
+  createButton('HTJ2K Thumbnail', imageIds, configHtj2kThumbnail);
+  createButton('HTJ2K Range/Final', imageIds, configHtj2kByteRange);
+  createButton('HTJ2K Lossy/Final', imageIds, configHtj2kMixed);
 
-  createButton('CT JLS', imageIdsCt, configJLS);
-  createButton('CT HTJ2K', imageIdsCt, configHtj2k);
+  createButton('CT JLS', imageIdsCt, configJLSMixed);
+  createButton('CT HTJ2K Lossy/Final', imageIdsCt, configHtj2kMixed);
+  createButton('CT HTJ2K Thumbnail', imageIdsCt, configHtj2kThumbnail);
 }
 
 run();
