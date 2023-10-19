@@ -1215,11 +1215,17 @@ interface IVideoViewport extends IViewport {
     getFrameOfReferenceUID: () => string;
     getProperties: () => VideoViewportProperties;
     getRenderer(): any;
+    // (undocumented)
+    pause: () => void;
+    // (undocumented)
+    play: () => void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     setCamera(cameraInterface: ICamera): void;
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideo: (url: string) => void;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 

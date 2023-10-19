@@ -1773,6 +1773,10 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
+    pause: () => void;
+    // (undocumented)
+    play: () => void;
+    // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     resetProperties(): void;
@@ -1782,6 +1786,8 @@ interface IVideoViewport extends IViewport {
     setCamera(cameraInterface: ICamera): void;
     // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideo: (url: string) => void;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
@@ -2715,6 +2721,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     scroll(delta?: number): Promise<void>;
     // (undocumented)
     setCamera(videoInterface: VideoViewportProperties): void;
+    // (undocumented)
+    setFrame(frame: number): Promise<void>;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
