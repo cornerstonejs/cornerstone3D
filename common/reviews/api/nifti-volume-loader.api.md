@@ -21,6 +21,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -660,7 +661,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1395,6 +1396,14 @@ type PTScaling = {
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
 
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
 // @public
 type PublicViewportInput = {
     element: HTMLDivElement;
@@ -1461,6 +1470,12 @@ type StackViewportScrollEventDetail = {
     newImageIdIndex: number;
     imageId: string;
     direction: number;
+};
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
 };
 
 // @public

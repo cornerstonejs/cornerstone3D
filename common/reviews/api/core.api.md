@@ -5,6 +5,7 @@
 ```ts
 
 import type { GetGPUTier } from 'detect-gpu';
+import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
@@ -652,6 +653,8 @@ export enum EVENTS {
     // (undocumented)
     CAMERA_RESET = "CORNERSTONE_CAMERA_RESET",
     // (undocumented)
+    CLIPPING_PLANES_UPDATED = "CORNERSTONE_CLIPPING_PLANES_UPDATED",
+    // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
@@ -687,8 +690,6 @@ export enum EVENTS {
     STACK_VIEWPORT_NEW_STACK = "CORNERSTONE_STACK_VIEWPORT_NEW_STACK",
     // (undocumented)
     STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
-    // (undocumented)
-    CLIPPING_PLANES_UPDATED = "CORNERSTONE_CLIPPING_PLANES_UPDATED",
     // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
     // (undocumented)
@@ -849,7 +850,10 @@ export function getShouldUseSharedArrayBuffer(): boolean;
 function getSliceRange(volumeActor: VolumeActor, viewPlaneNormal: Point3, focalPoint: Point3): ActorSliceRange;
 
 // @public (undocumented)
-function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal: Point3): number;
+function getSpacingInNormalDirection(imageVolume: IImageVolume | {
+    direction: mat3;
+    spacing: Point3;
+}, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
 function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string): {
@@ -2721,7 +2725,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
-    protected newActorAdded: any;
+    protected newActorAdded: boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -2979,7 +2983,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
-    getCurrentImageIdIndex: () => number | undefined;
+    getCurrentImageIdIndex: (volumeId?: string) => number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)

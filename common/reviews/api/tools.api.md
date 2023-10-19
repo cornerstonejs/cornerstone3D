@@ -14,6 +14,7 @@ import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/Co
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
@@ -1629,7 +1630,7 @@ function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, poi
 function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 
 // @public (undocumented)
-function distanceToPoint_3(p1: Types_2.Point2, p2: Types_2.Point2): number;
+function distanceToPoint_3(p1: Point, p2: Point): number;
 
 // @public (undocumented)
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
@@ -2293,7 +2294,16 @@ function getNumberOfAnnotations(toolName: string, annotationGroupSelector: Annot
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
+function getPoint(points: any, idx: any): any[];
+
+// @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+
+// @public (undocumented)
+function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
+
+// @public (undocumented)
+function getPolyDataPoints(polyData: vtkPolyData): any[];
 
 // @public (undocumented)
 function getSegmentation(segmentationId: string): Segmentation | undefined;
@@ -4099,6 +4109,17 @@ function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints:
 // @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
 
+// @public (undocumented)
+function pointToString(point: any, decimals?: number): string;
+
+declare namespace polyDataUtils {
+    export {
+        getPoint,
+        getPolyDataPointIndexes,
+        getPolyDataPoints
+    }
+}
+
 declare namespace polyline {
     export {
         getFirstIntersectionWithPolyline,
@@ -5783,7 +5804,9 @@ declare namespace utilities {
         stackPrefetch,
         stackContextPrefetch,
         scroll_2 as scroll,
-        roundNumber
+        roundNumber,
+        pointToString,
+        polyDataUtils
     }
 }
 export { utilities }
