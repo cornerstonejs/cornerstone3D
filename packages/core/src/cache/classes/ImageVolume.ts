@@ -125,7 +125,7 @@ export class ImageVolume implements IImageVolume {
       return <VolumeScalarData>this.scalarData;
     }
 
-    throw new Error('Unknow scalar data type');
+    throw new Error('Unknown scalar data type');
   }
 
   /**
