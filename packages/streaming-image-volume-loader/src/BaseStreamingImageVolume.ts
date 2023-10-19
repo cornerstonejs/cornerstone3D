@@ -31,7 +31,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   private framesProcessed = 0;
   private completeFrames = 0;
   protected numFrames: number;
+  protected totalNumFrames: number;
   protected cornerstoneImageMetaData = null;
+  protected autoRenderOnLoad = true;
+  protected cachedFrames = [];
+
   /**
    * Information on how to retrieve images.
    * No special configuration is required for streaming decoding, as that is
@@ -46,6 +50,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     cachedFrames: Array<Enums.FrameStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
+  reRenderTarget: number;
+  reRenderFraction: number;
 
   constructor(
     imageVolumeProperties: Types.IVolume,
@@ -224,7 +230,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     status = FrameStatus.DONE,
     stageId?: string
   ) {
-    const imageIdIndex = this.imageIds.indexOf(imageId);
+    const imageIdIndex = this.getImageIdIndex(imageId);
     const { scalingParameters } = image;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
@@ -256,8 +262,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         this,
         imageIdIndex,
         imageId,
-        status,
-        stageId
+        status
       );
     }
 
@@ -265,6 +270,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const isFromImageCache = !!cachedImage;
 
     const cachedImageOrVolume = cachedImage || cachedVolume.volume;
+    const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
 
     this.handleImageComingFromCache(
       cachedImageOrVolume,
@@ -272,8 +278,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       scalingParameters,
       scalarData,
       frameIndex,
-      arrayBuffer,
-      updateTextureAndTriggerEvents,
+      scalarData.buffer,
+      this.updateTextureAndTriggerEvents,
       imageIdIndex,
       imageId,
       this.errorCallback
@@ -284,14 +290,15 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     if (!permanent) {
       return;
     }
-    const imageIdIndex = this.imageIds.indexOf(imageId);
+    const { totalNumFrames, numFrames } = this;
+    const imageIdIndex = this.getImageIdIndex(imageId);
     this.framesProcessed++;
 
     if (this.framesProcessed === totalNumFrames) {
       this.loadStatus.loaded = true;
       this.loadStatus.loading = false;
 
-      callLoadStatusCallback({
+      this.callLoadStatusCallback({
         success: false,
         imageId,
         imageIdIndex,
@@ -304,7 +311,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       this.loadStatus.callbacks = [];
     } else {
-      callLoadStatusCallback({
+      this.callLoadStatusCallback({
         success: false,
         imageId,
         imageIdIndex,
@@ -374,7 +381,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     status = FrameStatus.DONE
   ) {
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-
+    const { cachedFrames, numFrames, totalNumFrames } = this;
+    const { FrameOfReferenceUID } = this.metadata;
     const currentStatus = cachedFrames[frameIndex];
     if (currentStatus > status) {
       console.warn(
@@ -397,8 +405,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.completeFrames++;
     }
 
-    vtkOpenGLTexture.setUpdatedFrame(frameIndex);
-    imageData.modified();
+    this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
+    this.imageData.modified();
 
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
@@ -407,12 +415,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
 
-    if (complete && this.completeFrames === totalNumFrames) {
-      loadStatus.loaded = true;
-      loadStatus.loading = false;
+    if (complete && this.completeFrames === this.totalNumFrames) {
+      this.loadStatus.loaded = true;
+      this.loadStatus.loading = false;
     }
 
-    callLoadStatusCallback({
+    this.callLoadStatusCallback({
       success: true,
       imageIdIndex,
       imageId,
@@ -423,26 +431,26 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       totalNumFrames,
       complete,
       status,
-      stageDone,
-      stageId,
     });
-    if (loadStatus.loaded) {
-      loadStatus.callbacks = [];
+    if (this.loadStatus.loaded) {
+      this.loadStatus.callbacks = [];
     }
   }
 
   protected callLoadStatusCallback(evt) {
     const { framesProcessed, totalNumFrames, isUpdatedImage, stageDone } = evt;
+    const { volumeId, reRenderFraction, loadStatus, metadata } = this;
+    const { FrameOfReferenceUID } = metadata;
 
     // TODO: probably don't want this here
-    if (autoRenderOnLoad) {
+    if (this.autoRenderOnLoad) {
       if (isUpdatedImage) {
         autoLoad(volumeId);
       } else if (
-        framesProcessed > reRenderTarget ||
+        framesProcessed > this.reRenderTarget ||
         framesProcessed === totalNumFrames
       ) {
-        reRenderTarget += reRenderFraction;
+        this.reRenderTarget += reRenderFraction;
         autoLoad(volumeId);
       }
     }
@@ -470,8 +478,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { loadStatus } = this;
     const { cachedFrames } = loadStatus;
 
-    const { vtkOpenGLTexture, imageData, metadata, volumeId } = this;
-    const { FrameOfReferenceUID } = metadata;
+    this.scalarData = scalarData;
 
     // SharedArrayBuffer
     const arrayBuffer = scalarData.buffer;
@@ -485,24 +492,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     );
 
     const totalNumFrames = this.imageIds.length;
-    const autoRenderOnLoad = true;
     const autoRenderPercentage = 2;
 
-    let reRenderFraction;
-    let reRenderTarget;
-
-    if (autoRenderOnLoad) {
-      reRenderFraction = totalNumFrames * (autoRenderPercentage / 100);
-      reRenderTarget = reRenderFraction;
+    if (this.autoRenderOnLoad) {
+      this.reRenderFraction = totalNumFrames * (autoRenderPercentage / 100);
+      this.reRenderTarget = this.reRenderFraction;
     }
-
-    const retrieveStages = new Array<RetrieveStage>();
-    const retrieveIdCounts: Record<string, number> = {};
-    const interleavedImageIds = this.interleave(
-      imageIds,
-      retrieveStages,
-      retrieveIdCounts
-    );
 
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
@@ -511,7 +506,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // calculated as `imageIdIndex % numFrames` where numFrames is the
     // number of frames per time point. The frameIndex and imageIdIndex
     // will be the same when working with 3D datasets.
-    const requests = interleavedImageIds.map((imageId, loadIndex) => {
+    const requests = imageIds.map((imageId, loadIndex) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
       if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
@@ -564,10 +559,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
        * not, which we store it in the this.scaling.PT.suvbw.
        */
       this.isPreScaled = isSlopeAndInterceptNumbers;
-      const stage = retrieveStages[loadIndex];
-      const retrieveTypeId = stage?.retrieveTypeId;
-      const requestType = stage?.requestType || requestTypeDefault;
-      const priority = stage?.priority ?? priorityDefault;
+      const requestType = requestTypeDefault;
+      const priority = priorityDefault;
       const options = {
         // WADO Image Loader
         targetBuffer: {
@@ -592,7 +585,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // and therefore doesn't have the scalingParameters
           scalingParameters,
         },
-        retrieveTypeId,
         transferSyntaxUid,
         loadIndex,
       };
@@ -624,7 +616,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           // scalarData is the volume container we are progressively loading into
           // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
           this.successCallback(imageId, image, status);
-        }, errorCallback.bind(this, imageIdIndex, imageId));
+        }, this.errorCallback.bind(this, imageIdIndex, imageId));
       };
 
       return {
