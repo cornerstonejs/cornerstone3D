@@ -126,7 +126,7 @@ content.append(instructions);
  * HTJ2K and HTJ2K thumbnail - lossless:
  * ```bash
  * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k  /src/viewer-testdata/dcm/Juno
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
  * ```
  */
 const configDefault = {

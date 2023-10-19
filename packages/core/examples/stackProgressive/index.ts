@@ -55,7 +55,9 @@ async function newImageFunction(evt) {
   }
   const completeText = complete ? 'final' : 'partial';
   console.log('new image', image);
-  timingInfo.innerHTML += `<p>Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode</p>`;
+  timingInfo.innerHTML += `<p>Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${
+    loadTimeInMS + decodeTimeInMS
+  } total</p>`;
 }
 
 async function showStack(stack: string[], viewport, config) {
@@ -100,7 +102,7 @@ async function showStack(stack: string[], viewport, config) {
  * HTJ2K and HTJ2K thumbnail - lossless:
  * ```bash
  * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k "/dicom/DE Images for Rad"
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2kThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
+ * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
  * ```
  */
 const configJLS = {
@@ -235,8 +237,8 @@ const configHtj2kThumbnail = {
     'default-lossy': {
       isLossy: true,
       framesPath: '/htj2kThumbnail/',
-      streaming: false,
       decodeLevel: 4,
+      initialBytes: 16384,
     },
     default: {
       framesPath: '/htj2k/',
