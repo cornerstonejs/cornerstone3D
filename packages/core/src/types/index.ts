@@ -72,6 +72,7 @@ import type {
   ContourSetData,
   ContourData,
 } from './ContourData';
+import type { PublicSurfaceData, SurfaceData } from './SurfaceData';
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
@@ -173,6 +174,9 @@ export type {
   ContourData,
   IContourSet,
   IContour,
+  // Surface
+  PublicSurfaceData,
+  SurfaceData,
   // Color
   RGB,
   ColormapPublic,

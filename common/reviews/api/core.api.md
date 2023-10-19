@@ -5,6 +5,7 @@
 ```ts
 
 import type { GetGPUTier } from 'detect-gpu';
+import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
@@ -26,6 +27,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public (undocumented)
@@ -651,6 +653,8 @@ export enum EVENTS {
     // (undocumented)
     CAMERA_RESET = "CORNERSTONE_CAMERA_RESET",
     // (undocumented)
+    CLIPPING_PLANES_UPDATED = "CORNERSTONE_CLIPPING_PLANES_UPDATED",
+    // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
@@ -774,7 +778,9 @@ export { geometryLoader }
 // @public (undocumented)
 enum GeometryType {
     // (undocumented)
-    CONTOUR = "contour"
+    CONTOUR = "contour",
+    // (undocumented)
+    SURFACE = "Surface"
 }
 
 // @public (undocumented)
@@ -844,7 +850,10 @@ export function getShouldUseSharedArrayBuffer(): boolean;
 function getSliceRange(volumeActor: VolumeActor, viewPlaneNormal: Point3, focalPoint: Point3): ActorSliceRange;
 
 // @public (undocumented)
-function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal: Point3): number;
+function getSpacingInNormalDirection(imageVolume: IImageVolume | {
+    direction: mat3;
+    spacing: Point3;
+}, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
 function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string): {
@@ -1080,7 +1089,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -2137,6 +2146,14 @@ type PTScaling = {
 type PublicContourSetData = ContourSetData;
 
 // @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
+// @public (undocumented)
 type PublicViewportInput = {
     element: HTMLDivElement;
     viewportId: string;
@@ -2471,6 +2488,12 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -2581,6 +2604,8 @@ declare namespace Types {
         ContourData,
         IContourSet,
         IContour,
+        PublicSurfaceData,
+        SurfaceData,
         RGB,
         ColormapPublic,
         ColormapRegistration,
@@ -2800,7 +2825,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
+    protected newActorAdded: boolean;
+    // (undocumented)
     options: ViewportInputOptions;
+    // (undocumented)
+    protected posProcessNewActors(): void;
     // (undocumented)
     _removeActor(actorUID: string): void;
     // (undocumented)
@@ -2858,7 +2887,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     readonly type: ViewportType;
     // (undocumented)
-    protected updateClippingPlanesForActors(updatedCamera: ICamera): void;
+    protected updateClippingPlanesForActors(updatedCamera: ICamera): Promise<void>;
     // (undocumented)
     updateRenderingPipeline: () => void;
     // (undocumented)
@@ -3056,7 +3085,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
-    getCurrentImageIdIndex: () => number | undefined;
+    getCurrentImageIdIndex: (volumeId?: string) => number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -3082,6 +3111,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     getCurrentImageIdIndex: () => number | undefined;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    posProcessNewActors(): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)

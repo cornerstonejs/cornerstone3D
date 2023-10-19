@@ -14,6 +14,7 @@ import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/Co
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
@@ -32,6 +33,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -1628,7 +1630,7 @@ function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, poi
 function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 
 // @public (undocumented)
-function distanceToPoint_3(p1: Types_2.Point2, p2: Types_2.Point2): number;
+function distanceToPoint_3(p1: Point, p2: Point): number;
 
 // @public (undocumented)
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
@@ -1714,6 +1716,8 @@ function drawLinkedTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: st
 // @public (undocumented)
 function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, polylineUID: string, points: Types_2.Point2[], options: {
     color?: string;
+    fillColor?: string;
+    fillOpacity?: number;
     width?: number;
     lineWidth?: number;
     lineDash?: string;
@@ -2294,7 +2298,16 @@ function getNumberOfAnnotations(toolName: string, annotationGroupSelector: Annot
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
+function getPoint(points: any, idx: any): any[];
+
+// @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+
+// @public (undocumented)
+function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
+
+// @public (undocumented)
+function getPolyDataPoints(polyData: vtkPolyData): any[];
 
 // @public (undocumented)
 function getSegmentation(segmentationId: string): Segmentation | undefined;
@@ -2563,7 +2576,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -4120,6 +4133,17 @@ function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints:
 // @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
 
+// @public (undocumented)
+function pointToString(point: any, decimals?: number): string;
+
+declare namespace polyDataUtils {
+    export {
+        getPoint,
+        getPolyDataPointIndexes,
+        getPolyDataPoints
+    }
+}
+
 declare namespace polyline {
     export {
         getFirstIntersectionWithPolyline,
@@ -4222,6 +4246,14 @@ type PTScaling = {
 
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
+
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
 
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
@@ -4680,6 +4712,7 @@ export function removeTool(ToolClass: any): void;
 type RepresentationConfig = {
     LABELMAP?: LabelmapConfig;
     CONTOUR?: ContourConfig;
+    SURFACE?: any;
 };
 
 // @public (undocumented)
@@ -4866,6 +4899,21 @@ export class SegmentationDisplayTool extends BaseTool {
 }
 
 // @public (undocumented)
+export class SegmentationIntersectionTool extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _init: () => void;
+    // (undocumented)
+    onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 type SegmentationModifiedEventDetail = {
     segmentationId: string;
 };
@@ -4900,6 +4948,7 @@ type SegmentationRepresentationConfig = {
 type SegmentationRepresentationData = {
     LABELMAP?: LabelmapSegmentationData;
     CONTOUR?: ContourSegmentationData;
+    SURFACE?: SurfaceSegmentationData;
 };
 
 // @public (undocumented)
@@ -4925,7 +4974,9 @@ enum SegmentationRepresentations {
     // (undocumented)
     Contour = "CONTOUR",
     // (undocumented)
-    Labelmap = "LABELMAP"
+    Labelmap = "LABELMAP",
+    // (undocumented)
+    Surface = "SURFACE"
 }
 
 // @public (undocumented)
@@ -5264,6 +5315,12 @@ type StyleSpecifier = {
     toolGroupId?: string;
     toolName?: string;
     annotationUID?: string;
+};
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
 };
 
 // @public (undocumented)
@@ -5771,7 +5828,9 @@ declare namespace utilities {
         stackPrefetch,
         stackContextPrefetch,
         scroll_2 as scroll,
-        roundNumber
+        roundNumber,
+        pointToString,
+        polyDataUtils
     }
 }
 export { utilities }

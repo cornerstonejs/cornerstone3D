@@ -17,6 +17,8 @@ export default function drawPolyline(
   points: Types.Point2[],
   options: {
     color?: string;
+    fillColor?: string;
+    fillOpacity?: number;
     width?: number;
     lineWidth?: number;
     lineDash?: string;
@@ -27,16 +29,19 @@ export default function drawPolyline(
     return;
   }
 
-  const { color, width, lineWidth, lineDash } = Object.assign(
-    {
-      color: 'dodgerblue',
-      width: '2',
-      lineWidth: undefined,
-      lineDash: undefined,
-      connectLastToFirst: false,
-    },
-    options
-  );
+  const { fillColor, fillOpacity, color, width, lineWidth, lineDash } =
+    Object.assign(
+      {
+        color: 'dodgerblue',
+        width: '2',
+        fillColor: 'none',
+        fillOpacity: 0,
+        lineWidth: undefined,
+        lineDash: undefined,
+        connectLastToFirst: false,
+      },
+      options
+    );
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
@@ -60,7 +65,8 @@ export default function drawPolyline(
   const attributes = {
     points: pointsAttribute,
     stroke: color,
-    fill: 'none',
+    fill: fillColor,
+    'fill-opacity': fillOpacity,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };

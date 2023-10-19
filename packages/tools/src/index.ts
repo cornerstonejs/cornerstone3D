@@ -61,6 +61,7 @@ import {
   ScaleOverlayTool,
   OrientationMarkerTool,
   OverlayGridTool,
+  SegmentationIntersectionTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -95,6 +96,7 @@ export {
   CrosshairsTool,
   ReferenceLinesTool,
   OverlayGridTool,
+  SegmentationIntersectionTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,

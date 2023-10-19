@@ -17,6 +17,7 @@ import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import scroll from './scroll';
 import roundNumber from './roundNumber';
+import { pointToString } from './pointToString';
 
 // name spaces
 import * as segmentation from './segmentation';
@@ -33,6 +34,7 @@ import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
 import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
+import * as polyDataUtils from './polyData/utils';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -68,4 +70,6 @@ export {
   stackContextPrefetch,
   scroll,
   roundNumber,
+  pointToString,
+  polyDataUtils,
 };
