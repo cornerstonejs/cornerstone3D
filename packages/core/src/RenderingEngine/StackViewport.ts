@@ -1134,10 +1134,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
-    if (
-      this.VOILUTFunction !== VOILUTFunctionType.LINEAR &&
-      newVOILUTFunction === VOILUTFunctionType.LINEAR
-    ) {
+    if (this.VOILUTFunction !== newVOILUTFunction) {
       forceRecreateLUTFunction = true;
     }
 
