@@ -50,8 +50,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     cachedFrames: Array<Enums.FrameStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
-  reRenderTarget: number;
-  reRenderFraction: number;
+  reRenderTarget = 0;
+  reRenderFraction = 2;
 
   constructor(
     imageVolumeProperties: Types.IVolume,
@@ -224,13 +224,14 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = [];
   }
 
-  public successCallback(
-    imageId: string,
-    image,
-    status = FrameStatus.DONE,
-    stageId?: string
-  ) {
+  public successCallback(imageId: string, image, status = FrameStatus.DONE) {
     const imageIdIndex = this.getImageIdIndex(imageId);
+    const options = this.getTargetOptions(imageId);
+    const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
+    handleArrayBufferLoad(scalarData, image, options);
+
+    this.framesProcessed++;
+    this.framesLoaded++;
     const { scalingParameters } = image;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
@@ -270,7 +271,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const isFromImageCache = !!cachedImage;
 
     const cachedImageOrVolume = cachedImage || cachedVolume.volume;
-    const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
 
     this.handleImageComingFromCache(
       cachedImageOrVolume,
@@ -470,32 +470,132 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     }
   }
 
-  protected getImageIdsRequests = (
-    imageIds: string[],
-    scalarData: Types.VolumeScalarData,
-    priorityDefault: number
-  ) => {
-    const { loadStatus } = this;
-    const { cachedFrames } = loadStatus;
+  public getTargetOptions(imageId: string) {
+    const { transferSyntaxUID: transferSyntaxUid } =
+      metaData.get('transferSyntax', imageId) || {};
 
-    this.scalarData = scalarData;
-
-    // SharedArrayBuffer
+    const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
+    const { rows, columns } = imagePlaneModule;
+    const imageIdIndex = this.getImageIdIndex(imageId);
+    const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
     const arrayBuffer = scalarData.buffer;
-    const numFrames = imageIds.length;
-
     // Length of one frame in voxels: length
     // Length of one frame in bytes: lengthInBytes
     const { type, length, lengthInBytes } = getScalarDataType(
       scalarData,
-      numFrames
+      this.numFrames
     );
 
-    const totalNumFrames = this.imageIds.length;
+    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+
+    const generalSeriesModule =
+      metaData.get('generalSeriesModule', imageId) || {};
+
+    const scalingParameters: Types.ScalingParameters = {
+      rescaleSlope: modalityLutModule.rescaleSlope,
+      rescaleIntercept: modalityLutModule.rescaleIntercept,
+      modality: generalSeriesModule.modality,
+    };
+
+    if (scalingParameters.modality === 'PT') {
+      const suvFactor = metaData.get('scalingModule', imageId);
+
+      if (suvFactor) {
+        this._addScalingToVolume(suvFactor);
+        scalingParameters.suvbw = suvFactor.suvbw;
+      }
+    }
+
+    const isSlopeAndInterceptNumbers =
+      typeof scalingParameters.rescaleSlope === 'number' &&
+      typeof scalingParameters.rescaleIntercept === 'number';
+
+    /**
+     * So this is has limitation right now, but we need to somehow indicate
+     * whether the volume has been scaled with the scaling parameters or not.
+     * However, each slice can have different scaling parameters but it is rare
+     * that rescale slope and intercept be unknown for one slice and known for
+     * another. So we can just check the first slice and assume that the rest
+     * of the slices have the same scaling parameters. Basically it is important
+     * that these two are numbers and that means the volume has been scaled (
+     * we do that automatically in the loader). For the suvbw, we need to
+     * somehow indicate whether the PT image has been corrected with suvbw or
+     * not, which we store it in the this.scaling.PT.suvbw.
+     */
+    this.isPreScaled = isSlopeAndInterceptNumbers;
+
+    return {
+      // WADO Image Loader
+      targetBuffer: {
+        // keeping this in the options means a large empty volume array buffer
+        // will be transferred to the worker. This is undesirable for streaming
+        // volume without shared array buffer because the target is now an empty
+        // 300-500MB volume array buffer. Instead the volume should be progressively
+        // set in the main thread.
+        arrayBuffer:
+          arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
+        offset: imageIdIndex * lengthInBytes,
+        length,
+        type,
+        rows,
+        columns,
+      },
+      skipCreateImage: true,
+      preScale: {
+        enabled: true,
+        // we need to pass in the scalingParameters here, since the streaming
+        // volume loader doesn't go through the createImage phase in the loader,
+        // and therefore doesn't have the scalingParameters
+        scalingParameters,
+      },
+      transferSyntaxUid,
+    };
+  }
+
+  // Use loadImage because we are skipping the Cornerstone Image cache
+  // when we load directly into the Volume cache
+  callLoadImage(imageId, imageIdIndex, options) {
+    const { cachedFrames } = this;
+
+    if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
+      console.log(
+        'Skipping secondary load of complete image',
+        cachedFrames[imageIdIndex]
+      );
+      return;
+    }
+
+    const uncompressedIterator = ProgressiveIterator.as(
+      imageLoader.loadImage(imageId, options)
+    );
+    return uncompressedIterator.forEach((image) => {
+      if (
+        cachedFrames[imageIdIndex] === undefined ||
+        cachedFrames[imageIdIndex] < FrameStatus.LOADING
+      ) {
+        cachedFrames[imageIdIndex] = FrameStatus.LOADING;
+      }
+      const { complete } = image;
+      const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
+      // scalarData is the volume container we are progressively loading into
+      // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
+      this.successCallback(imageId, image, status);
+    }, this.errorCallback.bind(this, imageIdIndex, imageId));
+  }
+
+  protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
+    const { loadStatus } = this;
+    const { cachedFrames } = loadStatus;
+
+    // SharedArrayBuffer
+    this.numFrames = imageIds.length;
+
+    this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
 
     if (this.autoRenderOnLoad) {
-      this.reRenderFraction = totalNumFrames * (autoRenderPercentage / 100);
+      this.reRenderFraction =
+        this.totalNumFrames * (autoRenderPercentage / 100);
       this.reRenderTarget = this.reRenderFraction;
     }
 
@@ -506,7 +606,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // calculated as `imageIdIndex % numFrames` where numFrames is the
     // number of frames per time point. The frameIndex and imageIdIndex
     // will be the same when working with 3D datasets.
-    const requests = imageIds.map((imageId, loadIndex) => {
+    const requests = imageIds.map((imageId) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
       if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
@@ -514,113 +614,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         this.framesProcessed++;
         return;
       }
-
-      const modalityLutModule =
-        metaData.get('modalityLutModule', imageId) || {};
-
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {};
-
-      const { transferSyntaxUID: transferSyntaxUid } =
-        metaData.get('transferSyntax', imageId) || {};
-
-      const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
-      const { rows, columns } = imagePlaneModule;
-
-      const scalingParameters: Types.ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-      };
-
-      if (scalingParameters.modality === 'PT') {
-        const suvFactor = metaData.get('scalingModule', imageId);
-
-        if (suvFactor) {
-          this._addScalingToVolume(suvFactor);
-          scalingParameters.suvbw = suvFactor.suvbw;
-        }
-      }
-
-      const isSlopeAndInterceptNumbers =
-        typeof scalingParameters.rescaleSlope === 'number' &&
-        typeof scalingParameters.rescaleIntercept === 'number';
-
-      /**
-       * So this is has limitation right now, but we need to somehow indicate
-       * whether the volume has been scaled with the scaling parameters or not.
-       * However, each slice can have different scaling parameters but it is rare
-       * that rescale slope and intercept be unknown for one slice and known for
-       * another. So we can just check the first slice and assume that the rest
-       * of the slices have the same scaling parameters. Basically it is important
-       * that these two are numbers and that means the volume has been scaled (
-       * we do that automatically in the loader). For the suvbw, we need to
-       * somehow indicate whether the PT image has been corrected with suvbw or
-       * not, which we store it in the this.scaling.PT.suvbw.
-       */
-      this.isPreScaled = isSlopeAndInterceptNumbers;
       const requestType = requestTypeDefault;
       const priority = priorityDefault;
-      const options = {
-        // WADO Image Loader
-        targetBuffer: {
-          // keeping this in the options means a large empty volume array buffer
-          // will be transferred to the worker. This is undesirable for streaming
-          // volume without shared array buffer because the target is now an empty
-          // 300-500MB volume array buffer. Instead the volume should be progressively
-          // set in the main thread.
-          arrayBuffer:
-            arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-          offset: imageIdIndex * lengthInBytes,
-          length,
-          type,
-          rows,
-          columns,
-        },
-        skipCreateImage: true,
-        preScale: {
-          enabled: true,
-          // we need to pass in the scalingParameters here, since the streaming
-          // volume loader doesn't go through the createImage phase in the loader,
-          // and therefore doesn't have the scalingParameters
-          scalingParameters,
-        },
-        transferSyntaxUid,
-        loadIndex,
-      };
-
-      // Use loadImage because we are skipping the Cornerstone Image cache
-      // when we load directly into the Volume cache
-      const callLoadImage = (imageId, imageIdIndex, options) => {
-        if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
-          console.log(
-            'Skipping secondary load of complete image',
-            cachedFrames[imageIdIndex]
-          );
-          return;
-        }
-
-        const uncompressedIterator = ProgressiveIterator.as(
-          imageLoader.loadImage(imageId, options)
-        );
-        return uncompressedIterator.forEach((image) => {
-          if (
-            cachedFrames[imageIdIndex] === undefined ||
-            cachedFrames[imageIdIndex] < FrameStatus.LOADING
-          ) {
-            cachedFrames[imageIdIndex] = FrameStatus.LOADING;
-          }
-          handleArrayBufferLoad(scalarData, image, options);
-          const { complete } = image;
-          const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
-          // scalarData is the volume container we are progressively loading into
-          // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-          this.successCallback(imageId, image, status);
-        }, this.errorCallback.bind(this, imageIdIndex, imageId));
-      };
+      const options = this.getTargetOptions(imageId);
 
       return {
-        callLoadImage,
+        callLoadImage: this.callLoadImage.bind(this),
         imageId,
         imageIdIndex,
         options,
@@ -633,19 +632,19 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     });
 
     return requests;
-  };
+  }
 
   private handleImageComingFromCache(
     cachedImageOrVolume,
     isFromImageCache: boolean,
-    scalingParameters: any,
+    scalingParameters,
     scalarData: Types.VolumeScalarData,
     frameIndex: number,
     arrayBuffer: ArrayBufferLike,
     updateTextureAndTriggerEvents: (
       volume: BaseStreamingImageVolume,
-      imageIdIndex: any,
-      imageId: any
+      imageIdIndex: number,
+      imageId: string
     ) => void,
     imageIdIndex: number,
     imageId: string,
@@ -741,37 +740,29 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     throw new Error('Abstract method');
   }
 
-  private _prefetchImageIds(priority: number): void {
+  public getImageIdsLoad(): string[] {
+    throw new Error('Abstract method');
+  }
+
+  private _prefetchImageIds(priority: number): Promise<unknown> {
     // Note: here is the correct location to set the loading flag
     // since getImageIdsRequest is just grabbing and building requests
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const requests = this.getImageLoadRequests(priority);
+    const imageIds = this.getImageIdsLoad(priority);
+    this.numFrames = imageIds.length;
 
-    requests.forEach((request, idx) => {
-      if (!request) {
-        // there is a cached image for the imageId and no requests will fire
-        return;
-      }
+    this.totalNumFrames = this.imageIds.length;
+    const autoRenderPercentage = 2;
 
-      const {
-        callLoadImage,
-        imageId,
-        imageIdIndex,
-        options,
-        priority,
-        requestType,
-        additionalDetails,
-      } = request;
+    if (this.autoRenderOnLoad) {
+      this.reRenderFraction =
+        this.totalNumFrames * (autoRenderPercentage / 100);
+      this.reRenderTarget = this.reRenderFraction;
+    }
 
-      imageLoadPoolManager.addRequest(
-        callLoadImage.bind(this, imageId, imageIdIndex, options),
-        requestType,
-        additionalDetails,
-        priority
-      );
-    });
+    return progressiveLoader.load(imageIds, this);
   }
 
   /**

@@ -1,7 +1,7 @@
 import type { IRetrieveConfiguration, IImage, RetrieveStage } from '../types';
 import sequentialRetrieveConfiguration from './sequentialRetrieveConfiguration';
 import interleavedRetrieveConfiguration from './interleavedRetrieveConfiguration';
-import { loadAndCacheImage } from './imageLoader';
+import { loadAndCacheImage, loadImage } from './imageLoader';
 import { ProgressiveIterator, decimate } from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { FrameStatus, RequestType } from '../enums';
@@ -61,8 +61,8 @@ export type ProgressiveListener = {
 export async function load(
   imageIds: string[],
   listener: ProgressiveListener,
-  retrieveOptions: IRetrieveConfiguration
-): Promise<any> {
+  retrieveOptions: IRetrieveConfiguration = interleavedRetrieveConfiguration
+): Promise<unknown> {
   console.log('imageIds:', imageIds, listener, retrieveOptions);
   const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
   const frameStatus = new Map<string, FrameStatus>();
@@ -70,7 +70,12 @@ export async function load(
   function sendRequest(request, options) {
     const { imageId, next } = request;
     console.log('Sending request', options.retrieveTypeId);
-    const loadedPromise = loadAndCacheImage(imageId, options);
+    let loadedPromise;
+    if (options.target?.arrayBuffer) {
+      loadedPromise = loadAndCacheImage(imageId, options);
+    } else {
+      loadedPromise = loadImage(imageId, options);
+    }
     const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
     let complete = false;
     const errorCallback = (reason) => {

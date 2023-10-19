@@ -97,9 +97,9 @@ export default class StreamingDynamicImageVolume
   }
 
   private _getTimePointRequests = (timePoint, priority: number) => {
-    const { imageIds, scalarData } = timePoint;
+    const { imageIds } = timePoint;
 
-    return this.getImageIdsRequests(imageIds, scalarData, priority);
+    return this.getImageIdsRequests(imageIds, priority);
   };
 
   private _getTimePointsRequests = (priority: number) => {

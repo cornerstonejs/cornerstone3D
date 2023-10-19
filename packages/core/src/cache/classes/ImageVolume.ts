@@ -9,7 +9,6 @@ import {
   Point3,
   IImageVolume,
   Mat3,
-  IRetrieveConfiguration,
 } from '../../types';
 
 /** The base class for volume data. It includes the volume metadata

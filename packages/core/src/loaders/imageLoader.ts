@@ -96,7 +96,6 @@ function loadImageFromCacheOrVolume(
   // to an image
   const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
   if (cachedImage) {
-    console.log('Found cached image already', cachedImage);
     imageLoadObject = cachedImage.imageLoadObject;
     return imageLoadObject;
   }

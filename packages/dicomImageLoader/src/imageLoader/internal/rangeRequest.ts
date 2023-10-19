@@ -1,14 +1,15 @@
+import { Types } from '@cornerstonejs/core';
 import external from '../../externalModules';
 import { getOptions } from './options';
 import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
-import { LossyConfiguration } from 'core/src/types';
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 
+// TODO - delete this in favour of using progressive storage in the options
 const streamCache: {
-  [key: string]: {
+  [imageId: string]: {
     byteArray?: Uint8Array;
     initialBytes: number;
     totalRanges: number;
@@ -38,7 +39,7 @@ export default function rangeRequest(
   url: string,
   imageId: string,
   defaultHeaders: Record<string, string> = {},
-  retrieveOptions: LossyConfiguration = {}
+  retrieveOptions: Types.LossyConfiguration = {}
 ): LoaderXhrRequestPromise<{
   contentType: string;
   imageFrame: Uint8Array;

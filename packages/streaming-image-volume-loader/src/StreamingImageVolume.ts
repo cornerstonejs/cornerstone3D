@@ -35,8 +35,12 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    */
   public getImageLoadRequests = (priority: number) => {
     const { imageIds } = this;
-    const scalarData = <Types.VolumeScalarData>this.scalarData;
 
-    return this.getImageIdsRequests(imageIds, scalarData, priority);
+    return this.getImageIdsRequests(imageIds, priority);
+  };
+
+  public getImageIdsLoad = () => {
+    const { imageIds } = this;
+    return imageIds;
   };
 }
