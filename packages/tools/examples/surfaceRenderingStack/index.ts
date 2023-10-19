@@ -50,7 +50,7 @@ const toolGroupIdVolume = 'MY_TOOLGROUP_ID_VOLUME';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Surface Segmentation Representation for Stack and Volume Viewports',
-  'Here we demonstrate how to render surfaces on both stack (left) and volume (right) viewports'
+  'In this demonstration, we will show you how to render surfaces. On the left side, you will find a stack viewport (background purple), and on the right side you see two volume viewports (background red). When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
 );
 
 const size = '500px';
