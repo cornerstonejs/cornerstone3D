@@ -49,7 +49,10 @@ rangeDiv.innerHTML =
   '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
 content.appendChild(rangeDiv);
 const rangeElement = document.getElementById('range');
-rangeElement.onchange = (v) => {
+rangeElement.onchange = () => {
+  viewport.setTime(Number(rangeElement.value));
+};
+rangeElement.oninput = () => {
   viewport.setTime(Number(rangeElement.value));
 };
 
@@ -197,9 +200,8 @@ async function run() {
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
   // Set the stack on the viewport
-  await viewport.setVideo(
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
-  );
+  //     'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+  await viewport.setVideo('/video/rendered.mp4');
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });

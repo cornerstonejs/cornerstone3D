@@ -103,6 +103,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public async setVideo(videoURL: string) {
     return new Promise((resolve) => {
       this.videoElement.src = videoURL;
+      this.videoElement.preload = 'auto';
 
       const loadedMetadataEventHandler = () => {
         this.videoWidth = this.videoElement.videoWidth;
@@ -199,8 +200,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (videoElement.paused) {
       // Need to wait for seek update
       const seekEventListener = (evt) => {
-        console.log('seeked');
-
         renderFrame();
 
         videoElement.removeEventListener('seeked', seekEventListener);
@@ -219,8 +218,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (videoElement.paused) {
       // Need to wait for seek update
       const seekEventListener = (evt) => {
-        console.log('seeked');
-
         renderFrame();
 
         videoElement.removeEventListener('seeked', seekEventListener);
@@ -228,6 +225,11 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
       videoElement.addEventListener('seeked', seekEventListener);
     }
+  }
+
+  // Sets the frame number - note according to DICOM, this is 1 based
+  public async setFrame(frame: number) {
+    this.setTime((frame - 1) / this.fps);
   }
 
   public setProperties(videoInterface: VideoViewportProperties) {
