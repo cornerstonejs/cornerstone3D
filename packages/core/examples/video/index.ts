@@ -75,7 +75,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
+    const viewport = <Types.IVideoViewport>(
       renderingEngine.getViewport(viewportId)
     );
 
@@ -91,7 +91,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
+    const viewport = <Types.IVideoViewport>(
       renderingEngine.getViewport(viewportId)
     );
 
@@ -124,12 +124,14 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
+  const viewport = <Types.IVideoViewport>(
     renderingEngine.getViewport(viewportId)
   );
 
   // Set the stack on the viewport
-  await viewport.setVideo('http://localhost:3000/rendered.mp4');
+  await viewport.setVideo(
+    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+  );
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });

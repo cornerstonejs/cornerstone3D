@@ -192,12 +192,14 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
   // Set the stack on the viewport
-  await viewport.setVideo('http://localhost:3000/rendered.mp4');
+  await viewport.setVideo(
+    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+  );
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });

@@ -43,6 +43,11 @@ export default interface IVideoViewport extends IViewport {
    */
   worldToCanvas: (worldPos: Point3) => Point2;
 
+  setVideo: (url: string) => void;
+
+  play: () => void;
+
+  pause: () => void;
   /**
    * Reset the viewport properties to the default values
    */

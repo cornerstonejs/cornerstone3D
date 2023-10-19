@@ -203,6 +203,16 @@
         "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
       }
     },
+    "video" : {
+      "video": {
+        "name": "Video Display",
+        "description": "Basic video display"
+      },
+      "videoTools": {
+        "name": "Video Tools",
+        "description": "Basic video tools/control"
+      }
+    },
     "tools-segmentation" : {
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
