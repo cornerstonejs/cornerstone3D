@@ -1104,9 +1104,11 @@ class Viewport implements IViewport {
           return;
         }
 
-        this.updateClippingPlanesForActors(updatedCamera);
-        const isImageSlice = actorIsA(actorEntry, 'vtkImageSlice');
-        if (isImageSlice) {
+        if (!actorIsA(actorEntry, 'vtkActor')) {
+          this.updateClippingPlanesForActors(updatedCamera);
+        }
+
+        if (actorIsA(actorEntry, 'vtkImageSlice')) {
           const renderer = this.getRenderer();
           renderer.resetCameraClippingRange();
         }
