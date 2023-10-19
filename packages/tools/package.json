@@ -2,7 +2,7 @@
   "name": "@cornerstonejs/tools",
   "version": "1.22.1",
   "description": "Cornerstone3D Tools",
-  "main": "dist/umd/index.js",
+  "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",

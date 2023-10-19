@@ -20,4 +20,6 @@ export type ActorEntry = {
   referenceId?: string;
   /** slab thickness for the actor */
   slabThickness?: number;
+  /** clipping filter applied to actor surfaces*/
+  clippingFilter?: any;
 };

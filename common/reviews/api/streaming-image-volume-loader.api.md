@@ -23,6 +23,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -472,6 +473,7 @@ enum Events {
     CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
 
     CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+    CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
     DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
     ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
     ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
@@ -482,20 +484,21 @@ enum Events {
     IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
     IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
     IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
-    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
 
+    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+
     STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
-
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
 
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
@@ -571,6 +574,8 @@ type FlipDirection = {
 enum GeometryType {
     // (undocumented)
     CONTOUR = 'contour',
+    // (undocumented)
+    SURFACE = 'Surface',
 }
 
 // @public (undocumented)
@@ -732,7 +737,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1464,6 +1469,14 @@ type PTScaling = {
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
 
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
 // @public
 type PublicViewportInput = {
     element: HTMLDivElement;
@@ -1594,6 +1607,12 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
 }
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];

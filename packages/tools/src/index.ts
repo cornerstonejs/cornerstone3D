@@ -61,6 +61,7 @@ import {
   ScaleOverlayTool,
   OrientationMarkerTool,
   OverlayGridTool,
+  SegmentationIntersectionTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -92,6 +93,7 @@ export {
   CrosshairsTool,
   ReferenceLinesTool,
   OverlayGridTool,
+  SegmentationIntersectionTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
