@@ -4,6 +4,7 @@ import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { getOptions } from '../internal/options';
+import { RetrieveOptions } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
 const { FrameStatus } = Enums;
@@ -76,6 +77,10 @@ function getImageRetrievalPool() {
   return external.cornerstone.imageRetrievalPoolManager;
 }
 
+export interface StreamingData {
+  url: string;
+}
+
 export interface CornerstoneWadoRsLoaderOptions
   extends DICOMLoaderImageOptions {
   requestType?: string;
@@ -86,9 +91,11 @@ export interface CornerstoneWadoRsLoaderOptions
   addToBeginning?: boolean;
   retrieveTypeId?: string;
   transferSyntaxUid?: string;
+  // Retrieve options are stored to provide sub-options for nested calls
+  retrieveOptions?: RetrieveOptions;
+  // Streaming data adds information about already streamed results.
+  streamingData?: StreamingData;
 }
-
-const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
 
 // TODO: load bulk data items that we might need
 
@@ -97,8 +104,6 @@ const optionsCache: { [key: string]: CornerstoneWadoRsLoaderOptions } = {};
 // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
 const mediaType =
   'multipart/related; type=application/octet-stream; transfer-syntax=*';
-// const mediaType =
-//   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
 
 function loadImage(
   imageId: string,
@@ -110,7 +115,7 @@ function loadImage(
 
   const { retrieveTypeId, transferSyntaxUid } = options;
   const loaderOptions = getOptions();
-  let retrieveOptions =
+  options.retrieveOptions =
     loaderOptions.getRetrieveOptions(transferSyntaxUid, retrieveTypeId) || {};
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
@@ -119,7 +124,7 @@ function loadImage(
     uncompressedIterator.generate(async (it) => {
       // get the pixel data from the server
       const compressedIt = ProgressiveIterator.as(
-        getPixelData(imageURI, imageId, mediaType, retrieveOptions)
+        getPixelData(imageURI, imageId, mediaType, options)
       );
       let lastDecodeLevel = 10;
       for await (const result of compressedIt) {
@@ -132,11 +137,11 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        retrieveOptions = loaderOptions.getRetrieveOptions(
+        options.retrieveOptions = loaderOptions.getRetrieveOptions(
           transferSyntax,
           retrieveTypeId
         );
-        if (!done && !retrieveOptions?.streaming) {
+        if (!done && !options.retrieveOptions?.streaming) {
           continue;
         }
         const decodeLevel =
@@ -145,7 +150,7 @@ function loadImage(
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,
-                retrieveOptions.decodeLevel
+                options.retrieveOptions.decodeLevel
               ));
         if (!done && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
@@ -172,8 +177,8 @@ function loadImage(
           it.add(image, done);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
-          console.warn("Couldn't decode" + completeText, e);
-          if (complete) {
+          console.warn("Couldn't decode", e);
+          if (done) {
             throw e;
           }
         }

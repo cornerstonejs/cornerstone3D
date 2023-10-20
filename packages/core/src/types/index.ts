@@ -84,7 +84,7 @@ import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
 export type {
   RetrieveStage,
-  LossyConfiguration,
+  RetrieveOptions as LossyConfiguration,
   IRetrieveConfiguration,
 } from './IRetrieveConfiguration';
 import type { ProgressiveListener } from './ProgressiveListener';

@@ -1,13 +1,11 @@
-import { utilities } from '@cornerstonejs/core';
-import external from '../../externalModules';
+import { Types, utilities } from '@cornerstonejs/core';
 import { getOptions } from './options';
 import { LoaderXhrRequestError } from '../../types';
-import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
-import { LossyConfiguration } from 'core/src/types';
 import { getFrameStatus } from '../wadors/getFrameStatus';
 
 const { ProgressiveIterator } = utilities;
+type RetrieveOptions = Types.RetrieveOptions;
 
 /**
  * This function does a streaming parse from an http request, delivering
@@ -23,18 +21,16 @@ export default function streamRequest(
   url: string,
   imageId: string,
   defaultHeaders: Record<string, string> = {},
-  retrieveOptions: LossyConfiguration = {}
+  options: CornerstoneWadoRsLoaderOptions = {}
 ) {
-  const options = getOptions();
-
-  // TODO - allow this to be configurable based on the retrieve type or
-  // initial image data size
-  const minChunkSize = 128 * 1024;
+  const globalOptions = getOptions();
+  const { retrieveOptions = {}, streamingData = {} } = options;
+  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
 
   const errorInterceptor = (err: any) => {
-    if (typeof options.errorInterceptor === 'function') {
+    if (typeof globalOptions.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
-      options.errorInterceptor(error);
+      globalOptions.errorInterceptor(error);
     }
   };
 
@@ -65,9 +61,10 @@ export default function streamRequest(
       const totalBytes = Number(responseHeaders.get('Content-Length'));
 
       let readDone = false;
-      let encodedData;
-      let extracted;
-      let lastSize = 0;
+      let encodedData = streamingData.encodedData;
+      let lastSize = streamingData.lastSize || 0;
+      streamingData.isPartial = true;
+
       while (!readDone) {
         const { done, value } = await responseReader.read();
         readDone = done;
@@ -82,12 +79,11 @@ export default function streamRequest(
           continue;
         }
         lastSize = encodedData.length;
-
-        extracted = extractMultipart(
+        streamingData.isPartial = !done;
+        const extracted = extractMultipart(
           contentType,
           encodedData,
-          extracted,
-          !readDone
+          streamingData
         );
         const status = getFrameStatus(retrieveOptions, readDone);
         const detail = {

@@ -18,7 +18,7 @@ export interface RetrieveStage {
   priority?: number;
 }
 
-export interface LossyConfiguration {
+export interface RetrieveOptions {
   // Additional arguments to add to the URL, in the format
   // arg1=value1 ('&' arg2=value2)*
   // For example: '&lossy=jhc' to use JHC lossy values
@@ -29,6 +29,7 @@ export interface LossyConfiguration {
   streaming?: boolean;
   // byte range value to retrieve for initial decode
   initialBytes?: number | ((metadata) => number);
+  range?: number;
   totalRanges?: number | ((metadata) => number);
   // Decode level to attempt
   decodeLevel?: number;

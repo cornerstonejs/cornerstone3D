@@ -1,12 +1,14 @@
+import { Enums } from '@cornerstonejs/core';
 import findIndexOfString from './findIndexOfString';
 
+const { FrameStatus } = Enums;
 /**
  * Extracts multipart/related data or single part data from a response byte
  * array.
  *
  * @param contentType - guess of the root content type
  * @param imageFrameAsArrayBuffer - array buffer containing the image frame
- * @param progressiveContent - contains already computed values from
+ * @param options - contains already computed values from
  *        earlier calls, allowing additional calls to be made to fetch
  *        additional data.
  * @param isPartial - indicates the file may end partially
@@ -15,22 +17,21 @@ import findIndexOfString from './findIndexOfString';
 export default function extractMultipart(
   contentType: string,
   imageFrameAsArrayBuffer,
-  progressiveContent?,
-  isPartial = false
+  options?
 ) {
+  options ||= {};
   // request succeeded, Parse the multi-part mime response
   const response = new Uint8Array(imageFrameAsArrayBuffer);
-
+  const isPartial = !!options?.isPartial;
   if (contentType.indexOf('multipart') === -1) {
     return {
       contentType,
-      complete: !isPartial,
+      status: isPartial ? FrameStatus.PARTIAL : FrameStatus.DONE,
       pixelData: response,
     };
   }
 
-  let { tokenIndex, responseHeaders, boundary, multipartContentType } =
-    progressiveContent || {};
+  let { tokenIndex, responseHeaders, boundary, multipartContentType } = options;
 
   // First look for the multipart mime header
   tokenIndex ||= findIndexOfString(response, '\r\n\r\n');
@@ -60,9 +61,14 @@ export default function extractMultipart(
 
   multipartContentType ||= findContentType(responseHeaders);
 
+  options.tokenIndex = tokenIndex;
+  options.boundary = boundary;
+  options.responseHeaders = responseHeaders;
+  options.multipartContentType = multipartContentType;
+  options.isPartial = endIndex === -1;
+
   // return the info for this pixel data
   return {
-    ...progressiveContent,
     contentType: multipartContentType,
     // done indicates if the read has finished the entire image, not if
     // the image is completely available

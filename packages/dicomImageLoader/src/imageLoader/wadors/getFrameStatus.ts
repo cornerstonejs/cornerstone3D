@@ -4,7 +4,7 @@ const { FrameStatus } = Enums;
 
 /** Gets the status of returned images */
 export function getFrameStatus(
-  retrieveOptions: Types.LossyConfiguration,
+  retrieveOptions: Types.RetrieveConfiguration,
   done = true
 ) {
   if (!done) {

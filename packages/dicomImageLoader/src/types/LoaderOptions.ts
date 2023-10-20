@@ -29,7 +29,7 @@ export interface LoaderOptions {
   getRetrieveOptions?: (
     transferSyntaxUid: string,
     retrieveTypeId?: string
-  ) => Types.LossyConfiguration;
+  ) => Types.RetrieveConfiguration;
 
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
@@ -44,5 +44,5 @@ export interface LoaderOptions {
    * retrieveTypeId is specified externally.  If no record is found, then
    * "default" will be accessed.
    */
-  retrieveOptions?: Record<string, Types.LossyConfiguration>;
+  retrieveOptions?: Record<string, Types.RetrieveConfiguration>;
 }

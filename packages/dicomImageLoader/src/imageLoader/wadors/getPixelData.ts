@@ -1,33 +1,36 @@
-import { utilities, Enums } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
 
 import { xhrRequest } from '../internal/index';
 // import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
-import { LossyConfiguration } from 'core/src/types';
 import { getFrameStatus } from './getFrameStatus';
 
 const { ProgressiveIterator } = utilities;
-const { FrameStatus } = Enums;
 
 function getPixelData(
   uri: string,
   imageId: string,
   mediaType = 'application/octet-stream',
-  retrieveOptions: LossyConfiguration = {}
+  options?: CornerstoneWadoRsLoaderOptions
 ) {
+  const { streamingData, retrieveOptions = {} } = options.retrieveOptions || {};
   const headers = {
     Accept: mediaType,
   };
 
-  // TODO - consider allowing a complete rewrite of the path
-  let url = retrieveOptions?.urlArguments
+  // Add urlArguments to the url for retrieving - allows accept and other
+  // parameters to be added.
+  let url = retrieveOptions.urlArguments
     ? `${uri}${uri.indexOf('?') === -1 ? '?' : '&'}${
         retrieveOptions.urlArguments
       }`
     : uri;
-  if (retrieveOptions?.framesPath) {
+
+  // Replace the /frames/ part of the path with another path to choose
+  // a different resource type.
+  if (retrieveOptions.framesPath) {
     url = url.replace('/frames/', retrieveOptions.framesPath);
   }
 
@@ -35,10 +38,15 @@ function getPixelData(
     return rangeRequest(url, imageId, headers, retrieveOptions);
   }
 
+  // Swap the streaming data out if a new instance starts.
+  if (streamingData?.url !== url) {
+    options.streamingData = { url };
+  }
+
   // Default to streaming the response data so that it can be decoding in
   // a streaming parser.
   if (retrieveOptions.streaming !== false) {
-    return streamRequest(url, imageId, headers, retrieveOptions);
+    return streamRequest(url, imageId, headers, options);
   }
 
   /**

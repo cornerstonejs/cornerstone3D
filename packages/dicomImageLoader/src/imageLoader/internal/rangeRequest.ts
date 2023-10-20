@@ -1,23 +1,10 @@
-import { Types } from '@cornerstonejs/core';
+import { Types, Enums } from '@cornerstonejs/core';
 import external from '../../externalModules';
 import { getOptions } from './options';
 import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
 import { getFrameStatus } from '../wadors/getFrameStatus';
-
-const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
-
-// TODO - delete this in favour of using progressive storage in the options
-const streamCache: {
-  [imageId: string]: {
-    byteArray?: Uint8Array;
-    initialBytes: number;
-    totalRanges: number;
-    totalBytes?: number;
-    rangesFetched: number;
-  };
-} = {};
 
 /**
  * Performs a range or thumbnail request.
@@ -40,22 +27,22 @@ export default function rangeRequest(
   url: string,
   imageId: string,
   defaultHeaders: Record<string, string> = {},
-  retrieveOptions: Types.LossyConfiguration = {}
+  options: CornerstoneWadoRsLoaderOptions = {}
 ): LoaderXhrRequestPromise<{
   contentType: string;
   imageFrame: Uint8Array;
-  complete: boolean;
-  loadNextRange: () => any;
+  status: Enums.FrameStatus;
 }> {
-  const { cornerstone } = external;
-  const options = getOptions();
-  const initialBytes = getValue(imageId, retrieveOptions, 'initialBytes');
+  const globalOptions = getOptions();
+  const { retrieveOptions = {}, streamingData = {} } = options;
+  const initialBytes =
+    getValue(imageId, retrieveOptions, 'initialBytes') || 65536;
   const totalRanges = getValue(imageId, retrieveOptions, 'totalRanges') || 2;
 
   const errorInterceptor = (err: any) => {
-    if (typeof options.errorInterceptor === 'function') {
+    if (typeof globalOptions.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
-      options.errorInterceptor(error);
+      globalOptions.errorInterceptor(error);
     } else {
       console.warn('rangeRequest:Caught', err);
     }
@@ -65,8 +52,7 @@ export default function rangeRequest(
   const promise = new Promise<{
     contentType: string;
     imageFrame: Uint8Array;
-    complete: boolean;
-    loadNextRange: () => any;
+    status: Enums.FrameStatus;
   }>(async (resolve, reject) => {
     const headers = Object.assign(
       {},
@@ -84,73 +70,48 @@ export default function rangeRequest(
     });
 
     try {
-      cornerstone.triggerEvent(
-        cornerstone.eventTarget,
-        'cornerstoneimageloadstart',
-        {
-          url,
-          imageId,
-        }
-      );
-
-      streamCache[imageId] = {
-        initialBytes: initialBytes as number,
-        totalRanges: totalRanges as number,
-        rangesFetched: 0,
-      };
+      if (!streamingData.encodedData) {
+        streamingData.initialBytes = initialBytes;
+        streamingData.totalRanges = totalRanges;
+        streamingData.rangesFetched = 0;
+      }
+      const { rangesFetched } = streamingData;
+      const byteRange: [number, number] = rangesFetched
+        ? [initialBytes, streamingData.totalBytes]
+        : [0, initialBytes];
 
       const { bytes, responseHeaders } = await fetchRangeAndAppend(
         url,
         imageId,
         headers,
-        [0, initialBytes as number]
+        byteRange
       );
 
       // Resolve promise with the first range, so it can be passed through to
       // cornerstone via the usual image loading pathway. All subsequent
       // ranges will be passed and decoded via events.
-      const done = loadIsComplete(imageId);
       const contentType = responseHeaders.get('content-type');
       const totalBytes = Number(responseHeaders.get('content-length'));
-      const extract = extractMultipart(contentType, bytes, {}, true);
+      if (!streamingData.encodedData) {
+        streamingData.encodedData = bytes;
+        streamingData.totalBytes = totalBytes;
+      } else {
+        const newByteArray = new Uint8Array(
+          streamingData.encodedData.length + bytes.length
+        );
+        newByteArray.set(streamingData.encodedData, 0);
+        newByteArray.set(bytes, streamingData.encodedData.length);
+        streamingData.encodedData = newByteArray;
+      }
+      const done = totalBytes === streamingData.encodedData.byteLength;
+      streamingData.rangesFetched++;
+      const extract = extractMultipart(contentType, bytes, { isPartial: true });
 
       resolve({
         ...extract,
         status: getFrameStatus(retrieveOptions, done),
         done,
         percentComplete: (initialBytes * 100) / totalBytes,
-        loadNextRange: done
-          ? undefined
-          : async () => {
-              const loadedBytes = streamCache[imageId].byteArray.length;
-              const totalBytes = streamCache[imageId].totalBytes;
-              if (loadIsComplete(imageId)) {
-                return {
-                  complete: true,
-                  imageFrame: streamCache[imageId].byteArray,
-                };
-              }
-
-              const rangesFetched = streamCache[imageId].rangesFetched;
-              const rangeEnd =
-                Math.ceil(
-                  (totalBytes - loadedBytes) /
-                    ((totalRanges as number) - rangesFetched)
-                ) + loadedBytes;
-
-              const { bytes } = await fetchRangeAndAppend(
-                url,
-                imageId,
-                headers,
-                [loadedBytes, rangeEnd]
-              );
-
-              return {
-                complete: loadIsComplete(imageId),
-                imageFrame: bytes,
-                contentType,
-              };
-            },
       });
     } catch (err: any) {
       errorInterceptor(err);
@@ -160,12 +121,6 @@ export default function rangeRequest(
   });
 
   return promise;
-}
-
-function loadIsComplete(imageId) {
-  return (
-    streamCache[imageId].byteArray.length === streamCache[imageId].totalBytes
-  );
 }
 
 async function fetchRangeAndAppend(
