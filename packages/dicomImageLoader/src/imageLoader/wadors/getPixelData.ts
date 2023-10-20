@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities, Enums } from '@cornerstonejs/core';
 
 import { xhrRequest } from '../internal/index';
 // import rangeRequest from '../internal/rangeRequest';
@@ -6,8 +6,10 @@ import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
 import { LossyConfiguration } from 'core/src/types';
+import { getFrameStatus } from './getFrameStatus';
 
 const { ProgressiveIterator } = utilities;
+const { FrameStatus } = Enums;
 
 function getPixelData(
   uri: string,
@@ -54,8 +56,7 @@ function getPixelData(
         contentType,
         new Uint8Array(imageFrameAsArrayBuffer)
       );
-      extracted.complete = extracted.done && !retrieveOptions?.isLossy;
-      extracted.isLossy = !!retrieveOptions.isLossy;
+      extracted.status = getFrameStatus(retrieveOptions, true);
       loadIterator.add(extracted, true);
     },
     (reason) => loadIterator.reject(reason)

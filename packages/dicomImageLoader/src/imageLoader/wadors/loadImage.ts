@@ -1,11 +1,12 @@
-import { Types, utilities } from '@cornerstonejs/core';
+import { Types, Enums, utilities } from '@cornerstonejs/core';
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { getOptions } from '../internal/options';
-const { imageUtils, ProgressiveIterator } = utilities;
 
+const { ProgressiveIterator } = utilities;
+const { FrameStatus } = Enums;
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
 
@@ -122,7 +123,12 @@ function loadImage(
       );
       let lastDecodeLevel = 10;
       for await (const result of compressedIt) {
-        const { done } = compressedIt;
+        const {
+          pixelData,
+          status = FrameStatus.DONE,
+          percentComplete,
+          done,
+        } = result;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
@@ -130,17 +136,12 @@ function loadImage(
           transferSyntax,
           retrieveTypeId
         );
-        const { pixelData, isLossy = false, percentComplete } = result;
-        const complete = done && !isLossy;
         if (!done && !retrieveOptions?.streaming) {
           continue;
         }
-        const completeText = complete
-          ? 'complete'
-          : `${done ? 'done' : 'streaming'}${isLossy ? ' lossy' : ''}`;
         const decodeLevel =
           result.decodeLevel ??
-          (complete
+          (status === FrameStatus.DONE
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,
@@ -167,10 +168,8 @@ function loadImage(
           const end = new Date().getTime();
 
           image.loadTimeInMS = end - start;
-          image.complete = complete;
-          image.isLossy = isLossy;
-          image.stageId = retrieveOptions?.id;
-          it.add(image, complete);
+          image.status = status;
+          it.add(image, done);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           console.warn("Couldn't decode" + completeText, e);

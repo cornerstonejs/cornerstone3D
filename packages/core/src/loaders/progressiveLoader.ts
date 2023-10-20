@@ -64,7 +64,6 @@ export async function load(
   const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
   const frameStatus = new Map<string, FrameStatus>();
   const stageStatus = new Map<string, StageStatus>();
-  const startTime = Date.now();
 
   function sendRequest(request, options) {
     const { imageId, next } = request;
@@ -87,21 +86,15 @@ export async function load(
     uncompressedIterator
       .forEach(async (image, done) => {
         const oldStatus = frameStatus[imageId];
-        const { complete: itemComplete } = image;
-        const status = itemComplete ? FrameStatus.DONE : FrameStatus.LOSSY;
-        complete ||= itemComplete;
+        const { status } = image;
+        complete ||= status === FrameStatus.DONE;
         if (oldStatus !== undefined && oldStatus > status) {
           updateStageStatus(stageStatus, request.stage, null, true);
           return;
         }
         frameStatus[imageId] = FrameStatus.LOADING;
 
-        listener.successCallback(
-          imageId,
-          image,
-          status,
-          request.stage?.stageId
-        );
+        listener.successCallback(imageId, image, status);
         frameStatus[imageId] = status;
         displayedIterator.add(image);
         if (done) {

@@ -5,8 +5,11 @@ enum FrameStatus {
   // Nearby replicate is a duplicated image of a nearby image
   NEARBY_REPLICATE = 2,
   LOADING = 3,
-  LOSSY = 4,
-  DONE = 5,
+  // Partial images
+  PARTIAL = 4,
+  // Lossy images, either complete or partial
+  LOSSY = 5,
+  DONE = 6,
 }
 
 export default FrameStatus;

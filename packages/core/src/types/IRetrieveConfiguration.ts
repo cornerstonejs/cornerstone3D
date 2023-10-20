@@ -1,4 +1,4 @@
-import { RequestType } from '../enums';
+import { FrameStatus, RequestType } from '../enums';
 
 export interface RetrieveStage {
   id: string;
@@ -34,6 +34,10 @@ export interface LossyConfiguration {
   decodeLevel?: number;
   // Load status when this item has complete - true to indicate lossy response
   isLossy?: boolean;
+  // Status to use on done.  Defaults to Done for lossless, and LOSSY otherwise
+  status?: FrameStatus;
+  // Status to use on partial read. Defaults to Partial
+  partialStatus?: FrameStatus;
 }
 
 /**

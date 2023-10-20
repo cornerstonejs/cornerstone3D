@@ -5,6 +5,7 @@ import { LoaderXhrRequestError } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
 import { LossyConfiguration } from 'core/src/types';
+import { getFrameStatus } from '../wadors/getFrameStatus';
 
 const { ProgressiveIterator } = utilities;
 
@@ -24,7 +25,6 @@ export default function streamRequest(
   defaultHeaders: Record<string, string> = {},
   retrieveOptions: LossyConfiguration = {}
 ) {
-  const { cornerstone } = external;
   const options = getOptions();
 
   // TODO - allow this to be configurable based on the retrieve type or
@@ -37,8 +37,6 @@ export default function streamRequest(
       options.errorInterceptor(error);
     }
   };
-
-  const start = Date.now();
 
   // Make the request for the streamable image frame (i.e. HTJ2K)
   const loadIterator = new ProgressiveIterator('streamRequest');
@@ -91,13 +89,13 @@ export default function streamRequest(
           extracted,
           !readDone
         );
+        const status = getFrameStatus(retrieveOptions, readDone);
         const detail = {
           url,
           imageId,
           ...extracted,
           percentComplete: (extracted.pixelData?.length * 100) / totalBytes,
-          complete: !retrieveOptions?.isLossy && readDone,
-          isLossy: !!retrieveOptions?.isLossy,
+          status,
           done: readDone,
         };
 

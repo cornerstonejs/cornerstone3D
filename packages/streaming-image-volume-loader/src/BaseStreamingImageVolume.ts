@@ -394,8 +394,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     if (cachedFrames[frameIndex] === FrameStatus.DONE) {
       return;
     }
-    cachedFrames[imageIdIndex] = status;
     const complete = status === FrameStatus.DONE;
+    cachedFrames[imageIdIndex] = status;
     this.framesUpdated++;
     if (complete) {
       this.framesLoaded++;
@@ -570,8 +570,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       ) {
         cachedFrames[imageIdIndex] = FrameStatus.LOADING;
       }
-      const { complete } = image;
-      const status = complete ? FrameStatus.DONE : FrameStatus.LOSSY;
+      const { status = FrameStatus.DONE } = image;
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
       this.successCallback(imageId, image, status);

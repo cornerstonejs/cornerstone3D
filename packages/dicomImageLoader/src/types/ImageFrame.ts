@@ -1,3 +1,4 @@
+import { Enums } from '@cornerstonejs/core';
 import PixelDataTypedArray from './PixelDataTypedArray';
 
 interface ImageFrame {
@@ -38,10 +39,8 @@ interface ImageFrame {
   // Remaining information is about the general load process
   decodeTimeInMS?: number;
   loadTimeInMS?: number;
-  isLossy?: boolean;
   decodeLevel?: number;
-  stageId?: string;
-  complete?: boolean;
+  status?: Enums.FrameStatus;
 }
 
 export default ImageFrame;

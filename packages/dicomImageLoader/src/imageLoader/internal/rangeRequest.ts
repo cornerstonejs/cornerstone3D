@@ -4,6 +4,7 @@ import { getOptions } from './options';
 import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
+import { getFrameStatus } from '../wadors/getFrameStatus';
 
 const loadTracking: { [key: string]: { loaded: number; total: number } } = {};
 
@@ -115,10 +116,9 @@ export default function rangeRequest(
 
       resolve({
         ...extract,
-        complete: done && !retrieveOptions.isLossy,
+        status: getFrameStatus(retrieveOptions, done),
         done,
         percentComplete: (initialBytes * 100) / totalBytes,
-        isLossy: !!retrieveOptions.isLossy,
         loadNextRange: done
           ? undefined
           : async () => {
