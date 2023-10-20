@@ -15,6 +15,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  downloadSurfacesData,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -25,68 +26,45 @@ console.warn(
 
 let instance = undefined;
 
+function downloadObjectAsJson(exportObj, exportName) {
+  const dataStr =
+    'data:text/json;charset=utf-8,' +
+    encodeURIComponent(JSON.stringify(exportObj));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute('href', dataStr);
+  downloadAnchorNode.setAttribute('download', exportName + '.json');
+  document.body.appendChild(downloadAnchorNode); // required for firefox
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
 addButtonToToolbar({
-  title: 'Convert labelmap to surface',
+  title: 'Convert surface to labelmap',
   onClick: async () => {
-    if (instance) {
-      const url = 'labelMap.json';
-      const downloadData = await fetch(url);
-      const labelMap = await downloadData.json();
-
-      const int32Array = new Int32Array(labelMap.data);
-      const result = instance.convertLabelmapToSurface(
-        int32Array,
-        labelMap.dimensions,
-        labelMap.spacing,
-        labelMap.direction,
-        labelMap.origin,
-        [1]
-      );
-
-      const closedSurface = {
-        id: 'closedSurface',
-        color: [200, 232, 20],
-        frameOfReferenceUID: 'test-frameOfReferenceUID',
-        data: {
-          points: result.points,
-          polys: result.polys,
-        },
-      };
-      const geometryId = closedSurface.id;
-      const segmentationId = geometryId;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: GeometryType.SURFACE,
-        geometryData: closedSurface as Types.PublicSurfaceData,
-      });
-
-      // Add the segmentations to state
-      await segmentation.addSegmentations([
-        {
-          segmentationId,
-          representation: {
-            // The type of segmentation
-            type: csToolsEnums.SegmentationRepresentations.Surface,
-            // The actual segmentation data, in the case of contour geometry
-            // this is a reference to the geometry data
-            data: {
-              geometryId,
-            },
-          },
-        },
-      ]);
-      await segmentation.addSegmentationRepresentations(toolGroupId, [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-        },
-      ]);
-      await segmentation.addSegmentationRepresentations(toolGroupId3d, [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-        },
-      ]);
+    if (!instance) {
+      return;
     }
+
+    const geometry = cache.getGeometry('lung13');
+    const surface = geometry.data;
+    const points = surface.getPoints();
+    const polys = surface.getPolys();
+
+    const pointsWasm = new Float32Array(points);
+    const polysArrayWasm = new Float32Array(polys);
+    const direction = [0, 0, 0];
+    const spacing = [1, 1, 1];
+    const origin = [0, 0, 0];
+    const dimensions = [1, 1, 1];
+    const result = instance.convertSurfaceToLabelmap(
+      pointsWasm,
+      polysArrayWasm,
+      dimensions,
+      spacing,
+      direction,
+      origin
+    );
+    downloadObjectAsJson(result, 'labelMap');
   },
 });
 
@@ -142,6 +120,37 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
+
+let surfaces;
+
+async function addSegmentationsToState() {
+  surfaces = await downloadSurfacesData();
+
+  surfaces.forEach((surface) => {
+    const geometryId = surface.closedSurface.id;
+    const segmentationId = geometryId;
+    geometryLoader.createAndCacheGeometry(geometryId, {
+      type: GeometryType.SURFACE,
+      geometryData: surface.closedSurface as Types.PublicSurfaceData,
+    });
+
+    // Add the segmentations to state
+    segmentation.addSegmentations([
+      {
+        segmentationId,
+        representation: {
+          // The type of segmentation
+          type: csToolsEnums.SegmentationRepresentations.Surface,
+          // The actual segmentation data, in the case of contour geometry
+          // this is a reference to the geometry data
+          data: {
+            geometryId,
+          },
+        },
+      },
+    ]);
+  });
+}
 
 /**
  * Runs the demo
@@ -225,6 +234,7 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -282,6 +292,17 @@ async function run() {
     viewport3d.setCamera({ parallelScale: 600 });
 
     viewport3d.render();
+  });
+
+  surfaces.forEach(async (surface) => {
+    const segmentationId = surface.closedSurface.id;
+
+    await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+      },
+    ]);
   });
 
   // Render the image
