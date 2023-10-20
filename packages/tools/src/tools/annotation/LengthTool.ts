@@ -7,6 +7,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedLengthUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -43,7 +48,6 @@ import {
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -109,6 +113,7 @@ class LengthTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -657,7 +662,7 @@ class LengthTool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].unit === undefined
+        data.cachedStats[targetId].unit == null
       ) {
         data.cachedStats[targetId] = {
           length: null,
@@ -727,7 +732,22 @@ class LengthTool extends AnnotationTool {
         return renderStatus;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
+
+      const textLines = this.configuration.getTextLines(data, targetId);
 
       // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
@@ -750,7 +770,7 @@ class LengthTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -765,21 +785,6 @@ class LengthTool extends AnnotationTool {
 
     return renderStatus;
   };
-
-  // text line for the current active length annotation
-  _getTextLines(data, targetId) {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { length, unit } = cachedVolumeStats;
-
-    // Can be null on load
-    if (length === undefined || length === null || isNaN(length)) {
-      return;
-    }
-
-    const textLines = [`${length.toFixed(2)} ${unit}`];
-
-    return textLines;
-  }
 
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0];
@@ -812,9 +817,10 @@ class LengthTool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, dimensions, hasPixelSpacing } = image;
+      const { imageData, dimensions } = image;
+      const scale = getCalibratedScale(image);
 
-      const length = this._calculateLength(worldPos1, worldPos2);
+      const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
@@ -830,7 +836,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
-        unit: hasPixelSpacing ? 'mm' : 'px',
+        unit: getCalibratedLengthUnits(null, image),
       };
     }
 
@@ -855,6 +861,20 @@ class LengthTool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   }
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { length, unit } = cachedVolumeStats;
+
+  // Can be null on load
+  if (length === undefined || length === null || isNaN(length)) {
+    return;
+  }
+
+  const textLines = [`${roundNumber(length)} ${unit}`];
+
+  return textLines;
 }
 
 LengthTool.toolName = 'Length';

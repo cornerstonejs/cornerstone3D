@@ -1,31 +1,34 @@
 {
   "name": "@cornerstonejs/streaming-image-volume-loader",
-  "version": "1.2.7",
+  "version": "1.23.0",
   "description": "",
-  "main": "dist/umd/index.js",
+  "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
-    "dist/"
+    "dist/",
+    "src/"
   ],
   "directories": {
     "test": "test"
   },
   "sideEffects": false,
   "scripts": {
+    "api-check": "api-extractor --debug run",
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
     "build": "yarn run build:all",
-    "api-check": "api-extractor --debug run",
     "build:update-api": "yarn run build && api-extractor run --local",
+    "dev": "tsc --project ./tsconfig.esm.json --watch",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.2.7"
+    "@cornerstonejs/core": "^1.23.0"
   },
   "contributors": [
     {

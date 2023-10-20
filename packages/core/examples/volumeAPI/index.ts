@@ -116,16 +116,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // Get the volume actor from the viewport
-    const actorEntry = viewport.getActor(volumeId);
-
-    const volumeActor = actorEntry.actor as Types.VolumeActor;
-    const rgbTransferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0);
-
-    // Todo: implement invert in setProperties
-    utilities.invertRgbTransferFunction(rgbTransferFunction);
+    viewport.setProperties({ invert: true }, volumeId);
 
     viewport.render();
   },
@@ -162,6 +153,24 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Apply colormap',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Apply the colormap to the viewport
+    viewport.setProperties({ colormap: { name: 'hsv' } });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
     // Get the rendering engine
@@ -175,7 +184,7 @@ addButtonToToolbar({
     // Resets the viewport's camera
     viewport.resetCamera();
     // TODO reset the viewport properties, we don't have API for this.
-
+    viewport.resetProperties(volumeId);
     viewport.render();
   },
 });
@@ -243,7 +252,7 @@ addSliderToToolbar({
   range: [0, 50],
   defaultValue: 0,
   onSelectedValueChange: (value) => {
-    let valueAsNumber = Number(value);
+    const valueAsNumber = Number(value);
 
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -253,18 +262,8 @@ addSliderToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    let blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-
-    if (valueAsNumber < 0.1) {
-      // Cannot render zero thickness
-      valueAsNumber = 0.1;
-
-      // Not a mip, just show slice
-      blendMode = Enums.BlendModes.COMPOSITE;
-    }
-
-    viewport.setBlendMode(blendMode);
-    viewport.setSlabThickness(valueAsNumber);
+    viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
+    viewport.setProperties({ slabThickness: valueAsNumber });
     viewport.render();
   },
 });
@@ -279,10 +278,10 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -314,10 +313,17 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  // Set the volume on the viewport and it's default properties
+  viewport
+    .setVolumes([{ volumeId, callback: setCtTransferFunctionForVolumeActor }])
+    .then(() => {
+      viewport.setProperties({
+        voiRange: { lower: -160, upper: 240 },
+        VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+        colormap: { name: 'Grayscale' },
+        slabThickness: 0.1,
+      });
+    });
 
   // Render the image
   viewport.render();

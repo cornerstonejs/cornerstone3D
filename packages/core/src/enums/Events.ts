@@ -76,6 +76,15 @@ enum Events {
    */
   IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
   /**
+   * Triggers on the eventTarget when the image volume loading is completed and all
+   * frames are loaded and inserted into a volume.
+   *
+   * Make use of {@link EventTypes.ImageVolumeLoadingCompletedEvent | ImageVolumeLoadingCompleted Event Type } for typing your
+   * event listeners for IMAGE_VOLUME_LOADING_COMPLETED event, and see what event detail is included
+   * in {@link EventTypes.ImageVolumeLoadingCompletedEventDetail | ImageVolumeLoadingCompleted Event Detail }
+   */
+  IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+  /**
    * Triggers on the eventTarget when the image has successfully loaded by imageLoaders
    *
    * Make use of {@link EventTypes.ImageLoadedEvent | ImageLoaded Event Type } for typing your event listeners for IMAGE_LOADED event,
@@ -200,6 +209,11 @@ enum Events {
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
    */
   VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
+
+  /**
+   * Triggers when the clipping planes has been updated
+   */
+  CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',

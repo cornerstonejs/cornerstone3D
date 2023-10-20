@@ -93,7 +93,7 @@ function createInternalVTKRepresentation(
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
 
-  // Add scalar datas to 3D or 4D volume
+  // Add scalar data to 3D or 4D volume
   if (volume.isDynamicVolume()) {
     const scalarDataArrays = (<Types.IDynamicImageVolume>(
       volume
@@ -132,7 +132,7 @@ let unknownVolumeLoader;
  */
 function loadVolumeFromVolumeLoader(
   volumeId: string,
-  options: VolumeLoaderOptions
+  options?: VolumeLoaderOptions
 ): Types.IVolumeLoadObject {
   const colonIndex = volumeId.indexOf(':');
   const scheme = volumeId.substring(0, colonIndex);
@@ -210,7 +210,7 @@ export function loadVolume(
  */
 export async function createAndCacheVolume(
   volumeId: string,
-  options: VolumeLoaderOptions
+  options?: VolumeLoaderOptions
 ): Promise<Record<string, any>> {
   if (volumeId === undefined) {
     throw new Error(

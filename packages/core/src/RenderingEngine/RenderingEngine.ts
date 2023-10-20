@@ -20,7 +20,7 @@ import type {
   InternalViewportInput,
   NormalizedViewportInput,
 } from '../types/IViewport';
-import { OrientationAxis } from '../enums';
+import { OrientationAxis, ViewportStatus } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {
@@ -53,6 +53,7 @@ const VIEWPORT_MIN_SIZE = 2;
  * way to do this is to call `renderViewports([viewportId])` on the rendering engine to
  * trigger a render on a specific viewport(s). Each viewport also has a `.render` method which can be used to trigger a render on that
  * viewport.
+ *
  *
  * Rendering engine uses `detect-gpu` external library to detect if GPU is available and
  * it has minimum requirement to be able to render a volume with vtk.js. If GPU is not available
@@ -547,7 +548,9 @@ class RenderingEngine implements IRenderingEngine {
   ) {
     // 1. If viewport has a custom resize method, call it here.
     customRenderingViewports.forEach((vp) => {
-      if (typeof vp.resize === 'function') vp.resize();
+      if (typeof vp.resize === 'function') {
+        vp.resize();
+      }
     });
 
     // 3. Reset viewport cameras
@@ -1107,6 +1110,7 @@ class RenderingEngine implements IRenderingEngine {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
         eventDetailArray.push(eventDetail);
+        viewport.setRendered();
 
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(viewport.id);
@@ -1124,7 +1128,9 @@ class RenderingEngine implements IRenderingEngine {
 
     eventDetailArray.forEach((eventDetail) => {
       // Very small viewports won't have an element
-      if (!eventDetail?.element) return;
+      if (!eventDetail?.element) {
+        return;
+      }
       triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
     });
   };
@@ -1251,6 +1257,7 @@ class RenderingEngine implements IRenderingEngine {
       suppressEvents,
       viewportId,
       renderingEngineId,
+      viewportStatus: viewport.viewportStatus,
     };
   }
 

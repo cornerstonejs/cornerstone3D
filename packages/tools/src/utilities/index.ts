@@ -16,6 +16,8 @@ import jumpToSlice from './viewport/jumpToSlice';
 import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import scroll from './scroll';
+import roundNumber from './roundNumber';
+import { pointToString } from './pointToString';
 
 // name spaces
 import * as segmentation from './segmentation';
@@ -28,10 +30,11 @@ import * as cine from './cine';
 import * as boundingBox from './boundingBox';
 import * as planarFreehandROITool from './planarFreehandROITool';
 import * as rectangleROITool from './rectangleROITool';
-import * as stackPrefetch from './stackPrefetch';
+import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
 import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
+import * as polyDataUtils from './polyData/utils';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -64,5 +67,9 @@ export {
   rectangleROITool,
   planarFreehandROITool,
   stackPrefetch,
+  stackContextPrefetch,
   scroll,
+  roundNumber,
+  pointToString,
+  polyDataUtils,
 };

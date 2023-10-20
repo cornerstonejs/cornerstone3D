@@ -9,6 +9,7 @@ import {
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
+import isWithinThreshold from './utils/isWithinThreshold';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -68,10 +69,6 @@ function fillCircle(
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions);
 
-  if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet');
-  }
-
   // using circle as a form of ellipse
   const ellipseObj = {
     center: center as Types.Point3,
@@ -119,19 +116,6 @@ function fillCircle(
   const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse);
 
   triggerSegmentationDataModified(segmentationId, arrayOfSlices);
-}
-
-function isWithinThreshold(
-  index: number,
-  imageVolume: Types.IImageVolume,
-  strategySpecificConfiguration: any
-) {
-  const { THRESHOLD_INSIDE_CIRCLE } = strategySpecificConfiguration;
-
-  const voxelValue = imageVolume.getScalarData()[index];
-  const { threshold } = THRESHOLD_INSIDE_CIRCLE;
-
-  return threshold[0] <= voxelValue && voxelValue <= threshold[1];
 }
 
 /**

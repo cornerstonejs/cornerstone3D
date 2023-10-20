@@ -8,7 +8,9 @@ import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
 import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
+import IImageCalibration from './IImageCalibration';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -42,6 +44,8 @@ type VoiModifiedEventDetail = {
   VOILUTFunction?: VOILUTFunctionType;
   /** inverted */
   invert?: boolean;
+  /** Indicates if the 'invert' state has changed from the previous state */
+  invertStateChanged?: boolean;
 };
 
 /**
@@ -94,6 +98,8 @@ type ImageRenderedEventDetail = {
   renderingEngineId: string;
   /** Whether to suppress the event */
   suppressEvents?: boolean;
+  /** Include information on whether this is a real rendering or just background */
+  viewportStatus: ViewportStatus;
 };
 /**
  * IMAGE_VOLUME_MODIFIED Event's data
@@ -101,6 +107,16 @@ type ImageRenderedEventDetail = {
 type ImageVolumeModifiedEventDetail = {
   /** the modified volume */
   imageVolume: IImageVolume;
+  /** FrameOfReferenceUID where the volume belongs to */
+  FrameOfReferenceUID: string;
+};
+
+/**
+ * IMAGE_VOLUME_LOADING_COMPLETED Event's data
+ */
+type ImageVolumeLoadingCompletedEventDetail = {
+  /** the loaded volume */
+  volumeId: string;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
 };
@@ -223,8 +239,8 @@ type ImageSpacingCalibratedEventDetail = {
   viewportId: string;
   renderingEngineId: string;
   imageId: string;
-  rowScale: number;
-  columnScale: number;
+  /** calibration contains the scaling information as well as other calibration info */
+  calibration: IImageCalibration;
   imageData: vtkImageData;
   worldToIndex: mat4;
 };
@@ -301,6 +317,14 @@ type ImageRenderedEvent = CustomEventType<ElementEnabledEventDetail>;
  * IMAGE_VOLUME_MODIFIED Event type
  */
 type ImageVolumeModifiedEvent = CustomEventType<ImageVolumeModifiedEventDetail>;
+
+/**
+ * IMAGE_VOLUME_LOADING_COMPLETED Event type
+ * This event is fired when a volume is fully loaded, means all the frames
+ * are loaded and cached.
+ */
+type ImageVolumeLoadingCompletedEvent =
+  CustomEventType<ImageVolumeLoadingCompletedEventDetail>;
 
 /**
  * IMAGE_LOADED Event type
@@ -395,6 +419,8 @@ export type {
   ImageRenderedEvent,
   ImageVolumeModifiedEvent,
   ImageVolumeModifiedEventDetail,
+  ImageVolumeLoadingCompletedEvent,
+  ImageVolumeLoadingCompletedEventDetail,
   ImageLoadedEvent,
   ImageLoadedEventDetail,
   ImageLoadedFailedEventDetail,

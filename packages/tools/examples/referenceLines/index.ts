@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
+  addCheckboxToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -138,15 +139,22 @@ addDropdownToToolbar({
     const element = elements[index];
     element.style.border = '5px solid yellow';
 
-    toolGroup.setToolConfiguration(
-      ReferenceLinesTool.toolName,
-      {
-        sourceViewportId: selectedViewportId,
-      },
-      true // overwrite
-    );
+    toolGroup.setToolConfiguration(ReferenceLinesTool.toolName, {
+      sourceViewportId: selectedViewportId,
+    });
 
     toolGroup.setToolEnabled(ReferenceLinesTool.toolName);
+  },
+});
+
+addCheckboxToToolbar({
+  id: 'show-full-dimension-checkbox',
+  title: 'Show Full Dimension',
+  checked: false,
+  onChange: (showFullDimension) => {
+    toolGroup.setToolConfiguration(ReferenceLinesTool.toolName, {
+      showFullDimension,
+    });
   },
 });
 /**

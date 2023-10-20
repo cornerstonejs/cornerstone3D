@@ -43,6 +43,7 @@ level to check.
   colorLocked: 'rgb(255, 255, 0)',
   lineWidth: '1',
   lineDash: '',
+  textBoxVisibility: true,
   textBoxFontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
   textBoxFontSize: '14px',
   textBoxColor: 'rgb(255, 255, 0)',

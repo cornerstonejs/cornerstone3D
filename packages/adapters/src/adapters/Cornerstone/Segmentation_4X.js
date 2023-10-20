@@ -1,6 +1,14 @@
-import { log, utilities, normalizers, derivations } from "dcmjs";
+import {
+    log,
+    data as dcmjsData,
+    utilities,
+    normalizers,
+    derivations
+} from "dcmjs";
 import ndarray from "ndarray";
 import cloneDeep from "lodash.clonedeep";
+
+import { Events } from "../enums";
 
 const {
     rotateDirectionCosinesInPlane,
@@ -10,21 +18,12 @@ const {
     nearlyEqual
 } = utilities.orientation;
 
-const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
-    utilities;
+const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 
 const { encode, decode } = utilities.compression;
-
-const Segmentation = {
-    generateSegmentation,
-    generateToolState,
-    fillSegmentation
-};
-
-export default Segmentation;
 
 /**
  *
@@ -33,10 +32,9 @@ export default Segmentation;
  * @property {Object[]} segments - The cornerstoneTools segment metadata that corresponds to the
  *                                 seriesInstanceUid.
  */
-
 const generateSegmentationDefaultOptions = {
     includeSliceSpacing: true,
-    rleEncode: true
+    rleEncode: false
 };
 
 /**
@@ -61,12 +59,13 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
 }
 
 /**
- * fillSegmentation - Fills a derived segmentation dataset with cornerstoneTools `LabelMap3D` data.
+ * Fills a given segmentation object with data from the input labelmaps3D
  *
- * @param  {object[]} segmentation An empty segmentation derived dataset.
- * @param  {Object|Object[]} inputLabelmaps3D The cornerstone `Labelmap3D` object, or an array of objects.
- * @param  {Object} userOptions Options object to override default options.
- * @returns {Blob}           description
+ * @param segmentation - The segmentation object to be filled.
+ * @param inputLabelmaps3D - An array of 3D labelmaps, or a single 3D labelmap.
+ * @param userOptions - Optional configuration settings. Will override the default options.
+ *
+ * @returns {object} The filled segmentation object.
  */
 function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
     const options = Object.assign(
@@ -146,7 +145,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
                     }
                 );
                 const segmentMetadata = metadata[segmentIndex];
-                const labelmaps = _getLabelmapsFromRefernecedFrameIndicies(
+                const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
                     labelmap3D,
                     referencedFrameIndicies
                 );
@@ -160,7 +159,6 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
             }
         }
     }
-
     if (options.rleEncode) {
         const rleEncodedFrames = encode(
             segmentation.dataset.PixelData,
@@ -192,12 +190,10 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
         segmentation.bitPackPixelData();
     }
 
-    const segBlob = datasetToBlob(segmentation.dataset);
-
-    return segBlob;
+    return segmentation;
 }
 
-function _getLabelmapsFromRefernecedFrameIndicies(
+function _getLabelmapsFromReferencedFrameIndicies(
     labelmap3D,
     referencedFrameIndicies
 ) {
@@ -260,8 +256,7 @@ function _createSegFromImages(images, isMultiframe, options) {
  * @param  {string[]} imageIds - An array of the imageIds.
  * @param  {ArrayBuffer} arrayBuffer - The SEG arrayBuffer.
  * @param  {*} metadataProvider.
- * @param  {bool} skipOverlapping - skip checks for overlapping segs, default value false.
- * @param  {number} tolerance - default value 1.e-3.
+ * @param  {obj} options - Options object.
  *
  * @return {[]ArrayBuffer}a list of array buffer for each labelMap
  * @return {Object} an object from which the segment metadata can be derived
@@ -269,13 +264,20 @@ function _createSegFromImages(images, isMultiframe, options) {
  * @return {[][][]} 3D list containing the track of segments per frame for each labelMap
  *                  (available only for the overlapping case).
  */
-function generateToolState(
+async function generateToolState(
     imageIds,
     arrayBuffer,
     metadataProvider,
-    skipOverlapping = false,
-    tolerance = 1e-3
+    options
 ) {
+    const {
+        skipOverlapping = false,
+        tolerance = 1e-3,
+        TypedArrayConstructor = Uint8Array,
+        maxBytesPerChunk = 199000000,
+        eventTarget,
+        triggerEvent
+    } = options;
     const dicomData = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
     dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
@@ -317,6 +319,7 @@ function generateToolState(
     const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
 
     let pixelData;
+    let pixelDataChunks;
 
     if (TransferSyntaxUID === "1.2.840.10008.1.2.5") {
         const rleEncodedFrames = Array.isArray(multiframe.PixelData)
@@ -334,10 +337,13 @@ function generateToolState(
 
             return;
         }
-    } else {
-        pixelData = unpackPixelData(multiframe);
 
-        if (!pixelData) {
+        // Todo: need to test this with rle data
+        pixelDataChunks = [pixelData];
+    } else {
+        pixelDataChunks = unpackPixelData(multiframe, { maxBytesPerChunk });
+
+        if (!pixelDataChunks) {
             throw new Error("Fractional segmentations are not yet supported");
         }
     }
@@ -349,15 +355,29 @@ function generateToolState(
         tolerance
     );
 
+    // Pre-compute the sop UID to imageId index map so that in the for loop
+    // we don't have to call metadataProvider.get() for each imageId over
+    // and over again.
+    const sopUIDImageIdIndexMap = imageIds.reduce((acc, imageId) => {
+        const { sopInstanceUid } = metadataProvider.get(
+            "generalImageModule",
+            imageId
+        );
+        acc[sopInstanceUid] = imageId;
+        return acc;
+    }, {});
+
     let overlapping = false;
     if (!skipOverlapping) {
         overlapping = checkSEGsOverlapping(
-            pixelData,
+            pixelDataChunks,
             multiframe,
             imageIds,
             validOrientations,
             metadataProvider,
-            tolerance
+            tolerance,
+            TypedArrayConstructor,
+            sopUIDImageIdIndexMap
         );
     }
 
@@ -392,27 +412,68 @@ function generateToolState(
     segmentsOnFrameArray[0] = [];
     const segmentsOnFrame = [];
 
-    const arrayBufferLength = sliceLength * imageIds.length * 2; // 2 bytes per label voxel in cst4.
+    const arrayBufferLength =
+        sliceLength * imageIds.length * TypedArrayConstructor.BYTES_PER_ELEMENT;
     const labelmapBufferArray = [];
     labelmapBufferArray[0] = new ArrayBuffer(arrayBufferLength);
 
-    insertFunction(
+    // Precompute the indices and metadata so that we don't have to call
+    // a function for each imageId in the for loop.
+    const imageIdMaps = imageIds.reduce(
+        (acc, curr, index) => {
+            acc.indices[curr] = index;
+            acc.metadata[curr] = metadataProvider.get("instance", curr);
+            return acc;
+        },
+        { indices: {}, metadata: {} }
+    );
+
+    // This is the centroid calculation for each segment Index, the data structure
+    // is a Map with key = segmentIndex and value = {imageIdIndex: centroid, ...}
+    // later on we will use this data structure to calculate the centroid of the
+    // segment in the labelmapBuffer
+    const segmentsPixelIndices = new Map();
+
+    await insertFunction(
         segmentsOnFrame,
         segmentsOnFrameArray,
         labelmapBufferArray,
-        pixelData,
+        pixelDataChunks,
         multiframe,
         imageIds,
         validOrientations,
         metadataProvider,
-        tolerance
+        tolerance,
+        TypedArrayConstructor,
+        segmentsPixelIndices,
+        sopUIDImageIdIndexMap,
+        imageIdMaps,
+        eventTarget,
+        triggerEvent
     );
+
+    // calculate the centroid of each segment
+    const centroidXYZ = new Map();
+
+    segmentsPixelIndices.forEach((imageIdIndexBufferIndex, segmentIndex) => {
+        const { xAcc, yAcc, zAcc, count } = calculateCentroid(
+            imageIdIndexBufferIndex,
+            multiframe
+        );
+
+        centroidXYZ.set(segmentIndex, {
+            x: Math.floor(xAcc / count),
+            y: Math.floor(yAcc / count),
+            z: Math.floor(zAcc / count)
+        });
+    });
 
     return {
         labelmapBufferArray,
         segMetadata,
         segmentsOnFrame,
-        segmentsOnFrameArray
+        segmentsOnFrameArray,
+        centroids: centroidXYZ
     };
 }
 
@@ -593,8 +654,7 @@ function generateToolState(
  * @param  {Object}      multiframe        dicom metadata
  * @param  {Int}         frameSegment      frame dicom index
  * @param  {String[]}    imageIds          A list of imageIds.
- * @param  {Object}      metadataProvider  A Cornerstone metadataProvider to query
- *                                         metadata from imageIds.
+ * @param  {Object}      sopUIDImageIdIndexMap  A map of SOPInstanceUID to imageId
  * @param  {Float}       tolerance         The tolerance parameter
  *
  * @returns {String}     Returns the imageId
@@ -604,7 +664,8 @@ function findReferenceSourceImageId(
     frameSegment,
     imageIds,
     metadataProvider,
-    tolerance
+    tolerance,
+    sopUIDImageIdIndexMap
 ) {
     let imageId = undefined;
 
@@ -661,10 +722,9 @@ function findReferenceSourceImageId(
     }
 
     if (frameSourceImageSequence) {
-        imageId = getImageIdOfSourceImagebySourceImageSequence(
+        imageId = getImageIdOfSourceImageBySourceImageSequence(
             frameSourceImageSequence,
-            imageIds,
-            metadataProvider
+            sopUIDImageIdIndexMap
         );
     }
 
@@ -699,7 +759,9 @@ function checkSEGsOverlapping(
     imageIds,
     validOrientations,
     metadataProvider,
-    tolerance
+    tolerance,
+    TypedArrayConstructor,
+    sopUIDImageIdIndexMap
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -745,7 +807,8 @@ function checkSEGsOverlapping(
             frameSegment,
             imageIds,
             metadataProvider,
-            tolerance
+            tolerance,
+            sopUIDImageIdIndexMap
         );
 
         if (!imageId) {
@@ -771,7 +834,7 @@ function checkSEGsOverlapping(
     }
 
     for (let [, role] of frameSegmentsMapping.entries()) {
-        let temp2DArray = new Uint16Array(sliceLength).fill(0);
+        let temp2DArray = new TypedArrayConstructor(sliceLength).fill(0);
 
         for (let i = 0; i < role.length; ++i) {
             const frameSegment = role[i];
@@ -784,14 +847,13 @@ function checkSEGsOverlapping(
                 PerFrameFunctionalGroups.PlaneOrientationSequence
                     .ImageOrientationPatient;
 
-            const pixelDataI2D = ndarray(
-                new Uint8Array(
-                    pixelData.buffer,
-                    frameSegment * sliceLength,
-                    sliceLength
-                ),
-                [Rows, Columns]
+            const view = readFromUnpackedChunks(
+                pixelData,
+                frameSegment * sliceLength,
+                sliceLength
             );
+
+            const pixelDataI2D = ndarray(view, [Rows, Columns]);
 
             const alignedPixelDataI = alignPixelDataWithSourceData(
                 pixelDataI2D,
@@ -831,7 +893,10 @@ function insertOverlappingPixelDataPlanar(
     imageIds,
     validOrientations,
     metadataProvider,
-    tolerance
+    tolerance,
+    TypedArrayConstructor,
+    segmentsPixelIndices,
+    sopUIDImageIdIndexMap
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -846,8 +911,8 @@ function insertOverlappingPixelDataPlanar(
                   .ImageOrientationPatient
             : undefined;
     const sliceLength = Columns * Rows;
-    const arrayBufferLength = sliceLength * imageIds.length * 2; // 2 bytes per label voxel in cst4.
-
+    const arrayBufferLength =
+        sliceLength * imageIds.length * TypedArrayConstructor.BYTES_PER_ELEMENT;
     // indicate the number of labelMaps
     let M = 1;
 
@@ -897,10 +962,16 @@ function insertOverlappingPixelDataPlanar(
                 PerFrameFunctionalGroups.PlaneOrientationSequence
                     .ImageOrientationPatient;
 
-            const pixelDataI2D = ndarray(
-                new Uint8Array(pixelData.buffer, i * sliceLength, sliceLength),
-                [Rows, Columns]
+            // Since we moved to the chunks approach, we need to read the data
+            // and handle scenarios where the portion of data is in one chunk
+            // and the other portion is in another chunk
+            const view = readFromUnpackedChunks(
+                pixelData,
+                i * sliceLength,
+                sliceLength
             );
+
+            const pixelDataI2D = ndarray(view, [Rows, Columns]);
 
             const alignedPixelDataI = alignPixelDataWithSourceData(
                 pixelDataI2D,
@@ -921,7 +992,8 @@ function insertOverlappingPixelDataPlanar(
                 i,
                 imageIds,
                 metadataProvider,
-                tolerance
+                tolerance,
+                sopUIDImageIdIndexMap
             );
 
             if (!imageId) {
@@ -951,9 +1023,12 @@ function insertOverlappingPixelDataPlanar(
             const imageIdIndex = imageIds.findIndex(
                 element => element === imageId
             );
-            const byteOffset = sliceLength * 2 * imageIdIndex; // 2 bytes/pixel
+            const byteOffset =
+                sliceLength *
+                imageIdIndex *
+                TypedArrayConstructor.BYTES_PER_ELEMENT;
 
-            const labelmap2DView = new Uint16Array(
+            const labelmap2DView = new TypedArrayConstructor(
                 tempBuffer,
                 byteOffset,
                 sliceLength
@@ -1035,7 +1110,13 @@ function insertPixelDataPlanar(
     imageIds,
     validOrientations,
     metadataProvider,
-    tolerance
+    tolerance,
+    TypedArrayConstructor,
+    segmentsPixelIndices,
+    sopUIDImageIdIndexMap,
+    imageIdMaps,
+    eventTarget,
+    triggerEvent
 ) {
     const {
         SharedFunctionalGroupsSequence,
@@ -1051,99 +1132,155 @@ function insertPixelDataPlanar(
             : undefined;
     const sliceLength = Columns * Rows;
 
-    for (
-        let i = 0, groupsLen = PerFrameFunctionalGroupsSequence.length;
-        i < groupsLen;
-        ++i
-    ) {
-        const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
+    let i = 0;
+    const groupsLen = PerFrameFunctionalGroupsSequence.length;
+    const chunkSize = Math.ceil(groupsLen / 10); // 10% of total length
 
-        const ImageOrientationPatientI =
-            sharedImageOrientationPatient ||
-            PerFrameFunctionalGroups.PlaneOrientationSequence
-                .ImageOrientationPatient;
+    const shouldTriggerEvent = triggerEvent && eventTarget;
 
-        const pixelDataI2D = ndarray(
-            new Uint8Array(pixelData.buffer, i * sliceLength, sliceLength),
-            [Rows, Columns]
-        );
+    // Below, we chunk the processing of the frames to avoid blocking the main thread
+    // if the segmentation is large. We also use a promise to allow the caller to
+    // wait for the processing to finish.
+    return new Promise(resolve => {
+        function processInChunks() {
+            // process one chunk
+            for (let end = Math.min(i + chunkSize, groupsLen); i < end; ++i) {
+                const PerFrameFunctionalGroups =
+                    PerFrameFunctionalGroupsSequence[i];
 
-        const alignedPixelDataI = alignPixelDataWithSourceData(
-            pixelDataI2D,
-            ImageOrientationPatientI,
-            validOrientations,
-            tolerance
-        );
+                const ImageOrientationPatientI =
+                    sharedImageOrientationPatient ||
+                    PerFrameFunctionalGroups.PlaneOrientationSequence
+                        .ImageOrientationPatient;
 
-        if (!alignedPixelDataI) {
-            throw new Error(
-                "Individual SEG frames are out of plane with respect to the first SEG frame. " +
-                    "This is not yet supported. Aborting segmentation loading."
-            );
-        }
+                const view = readFromUnpackedChunks(
+                    pixelData,
+                    i * sliceLength,
+                    sliceLength
+                );
 
-        const segmentIndex = getSegmentIndex(multiframe, i);
-        if (segmentIndex === undefined) {
-            throw new Error(
-                "Could not retrieve the segment index. Aborting segmentation loading."
-            );
-        }
+                const pixelDataI2D = ndarray(view, [Rows, Columns]);
 
-        const imageId = findReferenceSourceImageId(
-            multiframe,
-            i,
-            imageIds,
-            metadataProvider,
-            tolerance
-        );
+                const alignedPixelDataI = alignPixelDataWithSourceData(
+                    pixelDataI2D,
+                    ImageOrientationPatientI,
+                    validOrientations,
+                    tolerance
+                );
 
-        if (!imageId) {
-            console.warn(
-                "Image not present in stack, can't import frame : " + i + "."
-            );
-            continue;
-        }
+                if (!alignedPixelDataI) {
+                    throw new Error(
+                        "Individual SEG frames are out of plane with respect to the first SEG frame. " +
+                            "This is not yet supported. Aborting segmentation loading."
+                    );
+                }
 
-        const sourceImageMetadata = metadataProvider.get("instance", imageId);
-        if (
-            Rows !== sourceImageMetadata.Rows ||
-            Columns !== sourceImageMetadata.Columns
-        ) {
-            throw new Error(
-                "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
-                    "respect to the source image reference frame. This is not yet supported. " +
-                    "Aborting segmentation loading. "
-            );
-        }
+                const segmentIndex = getSegmentIndex(multiframe, i);
 
-        const imageIdIndex = imageIds.findIndex(element => element === imageId);
-        const byteOffset = sliceLength * 2 * imageIdIndex; // 2 bytes/pixel
+                if (segmentIndex === undefined) {
+                    throw new Error(
+                        "Could not retrieve the segment index. Aborting segmentation loading."
+                    );
+                }
 
-        const labelmap2DView = new Uint16Array(
-            labelmapBufferArray[0],
-            byteOffset,
-            sliceLength
-        );
+                if (!segmentsPixelIndices.has(segmentIndex)) {
+                    segmentsPixelIndices.set(segmentIndex, {});
+                }
 
-        const data = alignedPixelDataI.data;
-        for (let j = 0, len = alignedPixelDataI.data.length; j < len; ++j) {
-            if (data[j]) {
-                for (let x = j; x < len; ++x) {
-                    if (data[x]) {
-                        labelmap2DView[x] = segmentIndex;
+                const imageId = findReferenceSourceImageId(
+                    multiframe,
+                    i,
+                    imageIds,
+                    metadataProvider,
+                    tolerance,
+                    sopUIDImageIdIndexMap
+                );
+
+                if (!imageId) {
+                    console.warn(
+                        "Image not present in stack, can't import frame : " +
+                            i +
+                            "."
+                    );
+                    continue;
+                }
+
+                const sourceImageMetadata = imageIdMaps.metadata[imageId];
+                if (
+                    Rows !== sourceImageMetadata.Rows ||
+                    Columns !== sourceImageMetadata.Columns
+                ) {
+                    throw new Error(
+                        "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
+                            "respect to the source image reference frame. This is not yet supported. " +
+                            "Aborting segmentation loading. "
+                    );
+                }
+
+                const imageIdIndex = imageIdMaps.indices[imageId];
+
+                const byteOffset =
+                    sliceLength *
+                    imageIdIndex *
+                    TypedArrayConstructor.BYTES_PER_ELEMENT;
+
+                const labelmap2DView = new TypedArrayConstructor(
+                    labelmapBufferArray[0],
+                    byteOffset,
+                    sliceLength
+                );
+
+                const data = alignedPixelDataI.data;
+
+                const indexCache = [];
+                for (
+                    let j = 0, len = alignedPixelDataI.data.length;
+                    j < len;
+                    ++j
+                ) {
+                    if (data[j]) {
+                        for (let x = j; x < len; ++x) {
+                            if (data[x]) {
+                                labelmap2DView[x] = segmentIndex;
+                                indexCache.push(x);
+                            }
+                        }
+
+                        if (!segmentsOnFrame[imageIdIndex]) {
+                            segmentsOnFrame[imageIdIndex] = [];
+                        }
+
+                        segmentsOnFrame[imageIdIndex].push(segmentIndex);
+
+                        break;
                     }
                 }
 
-                if (!segmentsOnFrame[imageIdIndex]) {
-                    segmentsOnFrame[imageIdIndex] = [];
-                }
+                const segmentIndexObject =
+                    segmentsPixelIndices.get(segmentIndex);
+                segmentIndexObject[imageIdIndex] = indexCache;
+                segmentsPixelIndices.set(segmentIndex, segmentIndexObject);
+            }
 
-                segmentsOnFrame[imageIdIndex].push(segmentIndex);
+            // trigger an event after each chunk
+            if (shouldTriggerEvent) {
+                const percentComplete = Math.round((i / groupsLen) * 100);
+                triggerEvent(eventTarget, Events.SEGMENTATION_LOAD_PROGRESS, {
+                    percentComplete
+                });
+            }
 
-                break;
+            // schedule next chunk
+            if (i < groupsLen) {
+                setTimeout(processInChunks, 0);
+            } else {
+                // resolve the Promise when all chunks have been processed
+                resolve();
             }
         }
-    }
+
+        processInChunks();
+    });
 }
 
 function checkOrientation(
@@ -1215,12 +1352,13 @@ function checkIfPerpendicular(iop1, iop2, tolerance) {
 }
 
 /**
- * unpackPixelData - Unpacks bitpacked pixelData if the Segmentation is BINARY.
+ * unpackPixelData - Unpacks bit packed pixelData if the Segmentation is BINARY.
  *
  * @param  {Object} multiframe The multiframe dataset.
+ * @param  {Object} options    Options for the unpacking.
  * @return {Uint8Array}      The unpacked pixelData.
  */
-function unpackPixelData(multiframe) {
+function unpackPixelData(multiframe, options) {
     const segType = multiframe.SegmentationType;
 
     let data;
@@ -1235,7 +1373,10 @@ function unpackPixelData(multiframe) {
     }
 
     if (segType === "BINARY") {
-        return BitArray.unpack(data);
+        // For extreme big data, we can't unpack the data at once and we need to
+        // chunk it and unpack each chunk separately.
+        // MAX 2GB is the limit right now to allocate a buffer
+        return getUnpackedChunks(data, options.maxBytesPerChunk);
     }
 
     const pixelData = new Uint8Array(data);
@@ -1257,19 +1398,40 @@ function unpackPixelData(multiframe) {
     return pixelData;
 }
 
+function getUnpackedChunks(data, maxBytesPerChunk) {
+    var bitArray = new Uint8Array(data);
+    var chunks = [];
+
+    var maxBitsPerChunk = maxBytesPerChunk * 8;
+    var numberOfChunks = Math.ceil((bitArray.length * 8) / maxBitsPerChunk);
+
+    for (var i = 0; i < numberOfChunks; i++) {
+        var startBit = i * maxBitsPerChunk;
+        var endBit = Math.min(startBit + maxBitsPerChunk, bitArray.length * 8);
+
+        var startByte = Math.floor(startBit / 8);
+        var endByte = Math.ceil(endBit / 8);
+
+        var chunk = bitArray.slice(startByte, endByte);
+        var unpackedChunk = BitArray.unpack(chunk);
+
+        chunks.push(unpackedChunk);
+    }
+
+    return chunks;
+}
+
 /**
- * getImageIdOfSourceImagebySourceImageSequence - Returns the Cornerstone imageId of the source image.
+ * getImageIdOfSourceImageBySourceImageSequence - Returns the Cornerstone imageId of the source image.
  *
  * @param  {Object}   SourceImageSequence  Sequence describing the source image.
  * @param  {String[]} imageIds             A list of imageIds.
- * @param  {Object}   metadataProvider     A Cornerstone metadataProvider to query
- *                                         metadata from imageIds.
+ * @param  {Object}   sopUIDImageIdIndexMap A map of SOPInstanceUIDs to imageIds.
  * @return {String}                        The corresponding imageId.
  */
-function getImageIdOfSourceImagebySourceImageSequence(
+function getImageIdOfSourceImageBySourceImageSequence(
     SourceImageSequence,
-    imageIds,
-    metadataProvider
+    sopUIDImageIdIndexMap
 ) {
     const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
         SourceImageSequence;
@@ -1278,14 +1440,9 @@ function getImageIdOfSourceImagebySourceImageSequence(
         ? getImageIdOfReferencedFrame(
               ReferencedSOPInstanceUID,
               ReferencedFrameNumber,
-              imageIds,
-              metadataProvider
+              sopUIDImageIdIndexMap
           )
-        : getImageIdOfReferencedSingleFramedSOPInstance(
-              ReferencedSOPInstanceUID,
-              imageIds,
-              metadataProvider
-          );
+        : sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
 }
 
 /**
@@ -1295,7 +1452,7 @@ function getImageIdOfSourceImagebySourceImageSequence(
  * @param  {String}    FrameOfReferenceUID            Frame of reference.
  * @param  {Object}    PerFrameFunctionalGroup        Sequence describing segmentation reference attributes per frame.
  * @param  {String[]}  imageIds                       A list of imageIds.
- * @param  {Object}    metadataProvider               A Cornerstone metadataProvider to query
+ * @param  {Object}    sopUIDImageIdIndexMap          A map of SOPInstanceUIDs to imageIds.
  * @param  {Float}     tolerance                      The tolerance parameter
  *
  * @return {String}                                   The corresponding imageId.
@@ -1352,69 +1509,29 @@ function getImageIdOfSourceImagebyGeometry(
 }
 
 /**
- * getImageIdOfReferencedSingleFramedSOPInstance - Returns the imageId
- * corresponding to the specified sopInstanceUid for single-frame images.
- *
- * @param  {String} sopInstanceUid   The sopInstanceUid of the desired image.
- * @param  {String[]} imageIds         The list of imageIds.
- * @param  {Object} metadataProvider The metadataProvider to obtain sopInstanceUids
- *                                 from the cornerstone imageIds.
- * @return {String}                  The imageId that corresponds to the sopInstanceUid.
- */
-function getImageIdOfReferencedSingleFramedSOPInstance(
-    sopInstanceUid,
-    imageIds,
-    metadataProvider
-) {
-    return imageIds.find(imageId => {
-        const sopCommonModule = metadataProvider.get(
-            "sopCommonModule",
-            imageId
-        );
-        if (!sopCommonModule) {
-            return;
-        }
-
-        return sopCommonModule.sopInstanceUID === sopInstanceUid;
-    });
-}
-
-/**
  * getImageIdOfReferencedFrame - Returns the imageId corresponding to the
  * specified sopInstanceUid and frameNumber for multi-frame images.
  *
  * @param  {String} sopInstanceUid   The sopInstanceUid of the desired image.
  * @param  {Number} frameNumber      The frame number.
  * @param  {String} imageIds         The list of imageIds.
- * @param  {Object} metadataProvider The metadataProvider to obtain sopInstanceUids
- *                                   from the cornerstone imageIds.
+ * @param  {Object} sopUIDImageIdIndexMap A map of SOPInstanceUIDs to imageIds.
  * @return {String}                  The imageId that corresponds to the sopInstanceUid.
  */
 function getImageIdOfReferencedFrame(
     sopInstanceUid,
     frameNumber,
-    imageIds,
-    metadataProvider
+    sopUIDImageIdIndexMap
 ) {
-    const imageId = imageIds.find(imageId => {
-        const sopCommonModule = metadataProvider.get(
-            "sopCommonModule",
-            imageId
-        );
-        if (!sopCommonModule) {
-            return;
-        }
+    const imageId = sopUIDImageIdIndexMap[sopInstanceUid];
 
-        const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
+    if (!imageId) {
+        return;
+    }
 
-        return (
-            //frameNumber is zero indexed for cornerstoneDICOMImageLoader image Ids.
-            sopCommonModule.sopInstanceUID === sopInstanceUid &&
-            imageIdFrameNumber === frameNumber - 1
-        );
-    });
+    const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
 
-    return imageId;
+    return imageIdFrameNumber === frameNumber - 1 ? imageId : undefined;
 }
 
 /**
@@ -1541,3 +1658,118 @@ function getSegmentMetadata(multiframe, seriesInstanceUid) {
         data
     };
 }
+
+/**
+ * Reads a range of bytes from an array of ArrayBuffer chunks and
+ * aggregate them into a new Uint8Array.
+ *
+ * @param {ArrayBuffer[]} chunks - An array of ArrayBuffer chunks.
+ * @param {number} offset - The offset of the first byte to read.
+ * @param {number} length - The number of bytes to read.
+ * @returns {Uint8Array} A new Uint8Array containing the requested bytes.
+ */
+function readFromUnpackedChunks(chunks, offset, length) {
+    const mapping = getUnpackedOffsetAndLength(chunks, offset, length);
+
+    // If all the data is in one chunk, we can just slice that chunk
+    if (mapping.start.chunkIndex === mapping.end.chunkIndex) {
+        return new Uint8Array(
+            chunks[mapping.start.chunkIndex].buffer,
+            mapping.start.offset,
+            length
+        );
+    } else {
+        // If the data spans multiple chunks, we need to create a new Uint8Array and copy the data from each chunk
+        let result = new Uint8Array(length);
+        let resultOffset = 0;
+
+        for (
+            let i = mapping.start.chunkIndex;
+            i <= mapping.end.chunkIndex;
+            i++
+        ) {
+            let start =
+                i === mapping.start.chunkIndex ? mapping.start.offset : 0;
+            let end =
+                i === mapping.end.chunkIndex
+                    ? mapping.end.offset
+                    : chunks[i].length;
+
+            result.set(
+                new Uint8Array(chunks[i].buffer, start, end - start),
+                resultOffset
+            );
+            resultOffset += end - start;
+        }
+
+        return result;
+    }
+}
+
+function getUnpackedOffsetAndLength(chunks, offset, length) {
+    var totalBytes = chunks.reduce((total, chunk) => total + chunk.length, 0);
+
+    if (offset < 0 || offset + length > totalBytes) {
+        throw new Error("Offset and length out of bounds");
+    }
+
+    var startChunkIndex = 0;
+    var startOffsetInChunk = offset;
+
+    while (startOffsetInChunk >= chunks[startChunkIndex].length) {
+        startOffsetInChunk -= chunks[startChunkIndex].length;
+        startChunkIndex++;
+    }
+
+    var endChunkIndex = startChunkIndex;
+    var endOffsetInChunk = startOffsetInChunk + length;
+
+    while (endOffsetInChunk > chunks[endChunkIndex].length) {
+        endOffsetInChunk -= chunks[endChunkIndex].length;
+        endChunkIndex++;
+    }
+
+    return {
+        start: { chunkIndex: startChunkIndex, offset: startOffsetInChunk },
+        end: { chunkIndex: endChunkIndex, offset: endOffsetInChunk }
+    };
+}
+
+function calculateCentroid(imageIdIndexBufferIndex, multiframe) {
+    let xAcc = 0;
+    let yAcc = 0;
+    let zAcc = 0;
+    let count = 0;
+
+    for (const [imageIdIndex, bufferIndices] of Object.entries(
+        imageIdIndexBufferIndex
+    )) {
+        const z = Number(imageIdIndex);
+
+        if (!bufferIndices || bufferIndices.length === 0) {
+            continue;
+        }
+
+        for (const bufferIndex of bufferIndices) {
+            const y = Math.floor(bufferIndex / multiframe.Rows);
+            const x = bufferIndex % multiframe.Rows;
+
+            xAcc += x;
+            yAcc += y;
+            zAcc += z;
+
+            count++;
+        }
+    }
+
+    return { xAcc, yAcc, zAcc, count };
+}
+
+const Segmentation = {
+    generateSegmentation,
+    generateToolState,
+    fillSegmentation
+};
+
+export default Segmentation;
+export { fillSegmentation, generateSegmentation, generateToolState };

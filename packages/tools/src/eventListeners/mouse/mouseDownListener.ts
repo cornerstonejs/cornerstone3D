@@ -129,7 +129,9 @@ const doubleClickState: IDoubleClickState = {
 function mouseDownListener(evt: MouseEvent) {
   if (doubleClickState.doubleClickTimeout) {
     // A second identical click will be a double click event, so ignore it
-    if (evt.buttons === doubleClickState.mouseDownEvent.buttons) return;
+    if (evt.buttons === doubleClickState.mouseDownEvent.buttons) {
+      return;
+    }
 
     // Record the second button or the changed button event as the initial
     // button down state so that the multi-button event can be detected
@@ -260,7 +262,13 @@ function _onMouseDrag(evt: MouseEvent) {
     deltaPoints,
   };
 
-  triggerEvent(state.element, MOUSE_DRAG, eventDetail);
+  const consumed = !triggerEvent(state.element, MOUSE_DRAG, eventDetail);
+
+  // Events.MOUSE_DRAG was consumed, thus no other listener should handle this event.
+  if (consumed) {
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
+  }
 
   // Update the last points
   state.lastPoints = _copyPoints(currentPoints);

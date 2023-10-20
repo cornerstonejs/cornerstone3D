@@ -1,4 +1,4 @@
-import { vec2, vec3, mat2, mat3, mat2d } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   triggerEvent,
@@ -7,6 +7,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import {
+  getCalibratedLengthUnits,
+  getCalibratedScale,
+} from '../../utilities/getCalibratedUnits';
+import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -86,6 +91,7 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
+
 class BidirectionalTool extends AnnotationTool {
   static toolName;
 
@@ -110,6 +116,7 @@ class BidirectionalTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        getTextLines: defaultGetTextLines,
       },
     }
   ) {
@@ -1066,7 +1073,7 @@ class BidirectionalTool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].unit === undefined
+        data.cachedStats[targetId].unit == null
       ) {
         data.cachedStats[targetId] = {
           length: null,
@@ -1155,11 +1162,26 @@ class BidirectionalTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
 
+      const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
+
       let canvasTextBoxCoords;
 
       if (!data.handles.textBox.hasMoved) {
@@ -1182,7 +1204,7 @@ class BidirectionalTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -1238,27 +1260,6 @@ class BidirectionalTool extends AnnotationTool {
     return wouldPutThroughShortAxis;
   };
 
-  /**
-   * get text box content
-   */
-  _getTextLines = (data, targetId) => {
-    const { cachedStats } = data;
-    const { length, width, unit } = cachedStats[targetId];
-
-    if (length === undefined) {
-      return;
-    }
-
-    // spaceBetweenSlices & pixelSpacing &
-    // magnitude in each direction? Otherwise, this is "px"?
-    const textLines = [
-      `L: ${length.toFixed(2)} ${unit}`,
-      `W: ${width.toFixed(2)} ${unit}`,
-    ];
-
-    return textLines;
-  };
-
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0];
     const dy = pos1[1] - pos2[1];
@@ -1291,10 +1292,10 @@ class BidirectionalTool extends AnnotationTool {
         continue;
       }
 
-      const { imageData, dimensions, hasPixelSpacing } = image;
-
-      const dist1 = this._calculateLength(worldPos1, worldPos2);
-      const dist2 = this._calculateLength(worldPos3, worldPos4);
+      const { imageData, dimensions } = image;
+      const scale = getCalibratedScale(image);
+      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale;
+      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 
@@ -1310,7 +1311,7 @@ class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
-        unit: hasPixelSpacing ? 'mm' : 'px',
+        unit: getCalibratedLengthUnits(null, image),
       };
     }
 
@@ -1344,6 +1345,24 @@ class BidirectionalTool extends AnnotationTool {
       vector1[0] * vector2[0] + vector1[1] * vector2[1]
     );
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const { cachedStats } = data;
+  const { length, width, unit } = cachedStats[targetId];
+
+  if (length === undefined) {
+    return;
+  }
+
+  // spaceBetweenSlices & pixelSpacing &
+  // magnitude in each direction? Otherwise, this is "px"?
+  const textLines = [
+    `L: ${roundNumber(length)} ${unit}`,
+    `W: ${roundNumber(width)} ${unit}`,
+  ];
+
+  return textLines;
 }
 
 BidirectionalTool.toolName = 'Bidirectional';

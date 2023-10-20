@@ -1,4 +1,4 @@
-import { OrientationAxis } from '../enums';
+import { BlendModes, OrientationAxis } from '../enums';
 import type { ViewportInput } from '../types/IViewport';
 import BaseVolumeViewport from './BaseVolumeViewport';
 
@@ -38,13 +38,40 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
   getRotation = (): number => 0;
 
-  public getCurrentImageIdIndex = (): number | undefined => {
+  getCurrentImageIdIndex = (): number | undefined => {
     return undefined;
   };
 
-  public getCurrentImageId = (): string => {
+  getCurrentImageId = (): string => {
     return null;
   };
+
+  posProcessNewActors(): void {
+    if (this.newActorAdded) {
+      const renderer = this.getRenderer();
+      renderer.resetCameraClippingRange();
+    }
+    super.posProcessNewActors();
+  }
+
+  setSlabThickness(
+    slabThickness: number,
+    filterActorUIDs?: Array<string>
+  ): void {
+    return null;
+  }
+
+  setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: string[],
+    immediate?: boolean
+  ): void {
+    return null;
+  }
+
+  resetProperties(volumeId?: string): void {
+    return null;
+  }
 }
 
 export default VolumeViewport3D;

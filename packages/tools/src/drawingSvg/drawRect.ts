@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 
 import _getHash from './_getHash';
-import _setAttributesIfNecessary from './_setAttributesIfNecessary';
-import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
 import { SVGDrawingHelper } from '../types';
 
 // <rect x="120" y="100" width="100" height="100" />
@@ -53,7 +53,7 @@ export default function drawRect(
   };
 
   if (existingRect) {
-    _setAttributesIfNecessary(attributes, existingRect);
+    setAttributesIfNecessary(attributes, existingRect);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -63,7 +63,7 @@ export default function drawRect(
       svgRectElement.setAttribute('data-id', dataId);
     }
 
-    _setNewAttributesIfValid(attributes, svgRectElement);
+    setNewAttributesIfValid(attributes, svgRectElement);
 
     svgDrawingHelper.appendNode(svgRectElement, svgNodeHash);
   }

@@ -38,6 +38,7 @@ export default function convertColorSpace(imageFrame, colorBuffer, useRGBA) {
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL') {
     convertYBRFull(imageFrame, colorBuffer, useRGBA);
   } else {
+    // TODO - handle YBR_PARTIAL and 420 colour spaces
     throw new Error(
       `No color space conversion for photometric interpretation ${imageFrame.photometricInterpretation}`
     );

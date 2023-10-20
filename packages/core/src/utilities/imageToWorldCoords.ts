@@ -23,11 +23,14 @@ export default function imageToWorldCoords(
 
   const {
     columnCosines,
-    columnPixelSpacing,
     rowCosines,
-    rowPixelSpacing,
     imagePositionPatient: origin,
   } = imagePlaneModule;
+
+  let { columnPixelSpacing, rowPixelSpacing } = imagePlaneModule;
+  // Use ||= to convert null and 0 as well as undefined to 1
+  columnPixelSpacing ||= 1;
+  rowPixelSpacing ||= 1;
 
   // calculate the image coordinates in the world space
   const imageCoordsInWorld = vec3.create();
