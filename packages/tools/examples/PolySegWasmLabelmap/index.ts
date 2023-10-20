@@ -15,14 +15,9 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  downloadSurfacesData,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
-import surface13 from '../../../../utils/assets/surfaces/lung13.json';
-import surface14 from '../../../../utils/assets/surfaces/lung14.json';
-import surface15 from '../../../../utils/assets/surfaces/lung15.json';
-import surface16 from '../../../../utils/assets/surfaces/lung16.json';
-import surface17 from '../../../../utils/assets/surfaces/lung17.json';
 
 // This is for debugging purposes
 console.warn(
@@ -124,9 +119,11 @@ const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
 
-const surfaces = [surface13, surface14, surface15, surface16, surface17];
+let surfaces;
 
 async function addSegmentationsToState() {
+  surfaces = await downloadSurfacesData();
+
   surfaces.forEach((surface) => {
     const geometryId = surface.closedSurface.id;
     const segmentationId = geometryId;

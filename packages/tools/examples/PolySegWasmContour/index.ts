@@ -16,8 +16,8 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import assetsURL from '../../../../utils/assets/assetsURL.json';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import contour from './Contour.json';
 
 // This is for debugging purposes
 console.warn(
