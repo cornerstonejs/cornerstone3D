@@ -1,3 +1,4 @@
+console.debug("core: link: init: 7DF8FBDE-F3DB-4B91-83DC-A47AE03BDD73");
 import { getGPUTier } from 'detect-gpu';
 import { SharedArrayBufferModes } from './enums';
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';

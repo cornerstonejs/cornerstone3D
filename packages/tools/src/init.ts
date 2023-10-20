@@ -1,3 +1,4 @@
+console.debug("tools: link: init: 7DF8FBDE-F3DB-4B91-83DC-A47AE03BDD73");
 import { eventTarget, Enums } from '@cornerstonejs/core';
 import { getAnnotationManager } from './stateManagement/annotation/annotationState';
 import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState';
