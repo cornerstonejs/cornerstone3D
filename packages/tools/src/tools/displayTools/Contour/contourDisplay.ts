@@ -129,7 +129,6 @@ async function render(
   const contourData = segmentation.representationData[Representations.Contour];
   const { geometryIds } = contourData;
 
-
   // We don't have a good way to handle stack viewports for contours at the moment.
   // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
   if (viewport instanceof StackViewport) {

@@ -22,6 +22,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -431,6 +432,65 @@ type ElementEnabledEventDetail = {
     renderingEngineId: string;
 };
 
+declare namespace Enums {
+    export {
+        Events_2 as Events
+    }
+}
+export { Enums }
+
+// @public
+enum Events {
+    CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
+    CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
+
+    CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+    CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
+    DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
+    ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
+    ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
+    GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
+    IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
+    IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
+    IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
+    IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+    IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
+    IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+
+    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
+    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
+    IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+    IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
+    STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+    STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+
+    STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
+
+    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+    VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
+    VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+
+    VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+
+    VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+
+    VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
+
+    VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
+
+    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+    // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
+    // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
+    // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+}
+
+// @public (undocumented)
+enum Events_2 {
+    // (undocumented)
+    DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED"
+}
+
 declare namespace EventTypes {
     export {
         CameraModifiedEventDetail,
@@ -487,6 +547,14 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public (undocumented)
+enum GeometryType {
+    // (undocumented)
+    CONTOUR = 'contour',
+    // (undocumented)
+    SURFACE = 'Surface',
+}
 
 // @public (undocumented)
 export const helpers: {
@@ -647,7 +715,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1038,6 +1106,7 @@ interface IRenderingEngine {
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(imageId?: string): void;
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLDivElement;
@@ -1048,6 +1117,7 @@ interface IStackViewport extends IViewport {
     getCornerstoneImage: () => IImage;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (imageId?: string) => StackViewportProperties;
     getFrameOfReferenceUID: () => string;
     getImageData(): IImageData | CPUIImageData;
     getImageIds: () => string[];
@@ -1059,13 +1129,23 @@ interface IStackViewport extends IViewport {
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
+    resetToDefaultProperties(): void;
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
+    setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageId?: string
+    ): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
-        { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+        {
+        voiRange,
+        invert,
+        interpolationType,
+        rotation,
+        colormap,
+    }: StackViewportProperties,
     suppressEvents?: boolean
     ): void;
     setStack(
@@ -1221,16 +1301,18 @@ interface IVolumeViewport extends IViewport {
     suppressEvents?: boolean
     ): Promise<void>;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(volumeId?: string): void;
     flip(flipDirection: FlipDirection): void;
     getBounds(): any;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
     getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
-    getProperties: () => VolumeViewportProperties;
+    getProperties: (volumeId?: string) => VolumeViewportProperties;
     getSlabThickness(): number;
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
@@ -1240,11 +1322,15 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
-    resetProperties(volumeId?: string): void;
+    resetProperties(volumeId: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
     immediate?: boolean
+    ): void;
+    setDefaultProperties(
+    ViewportProperties: VolumeViewportProperties,
+    volumeId?: string
     ): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis): void;
@@ -1340,6 +1426,14 @@ type PTScaling = {
 
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
+
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
 
 // @public
 type PublicViewportInput = {
@@ -1445,6 +1539,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
+            transferPixelData: boolean;
         };
         priority: number;
         requestType: string;
@@ -1455,6 +1550,12 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
 }
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
@@ -1497,6 +1598,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
 };
 
@@ -1595,8 +1697,9 @@ type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
 type VolumeViewportProperties = ViewportProperties & {
-    colormap?: ColormapPublic;
     preset?: string;
+
+    slabThickness?: number;
 };
 
 // (No @packageDocumentation comment for this package)

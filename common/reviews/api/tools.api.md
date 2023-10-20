@@ -14,6 +14,7 @@ import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/Co
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
@@ -32,6 +33,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -73,6 +75,69 @@ export function addTool(ToolClass: any): void;
 
 // @public (undocumented)
 function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
+
+// @public (undocumented)
+interface AdvancedMagnifyAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        zoomFactor: number;
+        sourceViewportId: string;
+        magnifyViewportId: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+}
+
+// @public (undocumented)
+export class AdvancedMagnifyTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateModify: (element: any) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => AdvancedMagnifyAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
+    // (undocumented)
+    _dragDrawCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragHandle: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: AdvancedMagnifyAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    magnifyViewportManager: AdvancedMagnifyViewportManager;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    showZoomFactorsList(evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation): void;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
 
 // @public (undocumented)
 type AffineMatrix = [
@@ -358,7 +423,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    abstract toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes): void;
+    abstract toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes, canvasCoords?: Types_2.Point2): void;
 }
 
 // @public (undocumented)
@@ -726,7 +791,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CircleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -819,6 +884,53 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 function clip_2(val: number, low: number, high: number): number;
 
 // @public (undocumented)
+interface CobbAngleAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                angle: number;
+                arc1Angle: number;
+                arc2Angle: number;
+                points: {
+                    world: {
+                        arc1Start: Types_2.Point3;
+                        arc1End: Types_2.Point3;
+                        arc2Start: Types_2.Point3;
+                        arc2End: Types_2.Point3;
+                        arc1Angle: number;
+                        arc2Angle: number;
+                    };
+                    canvas: {
+                        arc1Start: Types_2.Point2;
+                        arc1End: Types_2.Point2;
+                        arc2Start: Types_2.Point2;
+                        arc2End: Types_2.Point2;
+                        arc1Angle: number;
+                        arc2Angle: number;
+                    };
+                };
+            };
+        };
+    };
+}
+
+// @public (undocumented)
 export class CobbAngleTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -826,7 +938,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => AngleAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => CobbAngleAnnotation;
     // (undocumented)
     angleStartedNotYetCompleted: boolean;
     // (undocumented)
@@ -838,6 +950,18 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
+    distanceToLines: ({ viewport, points, canvasCoords, proximity }: {
+        viewport: any;
+        points: any;
+        canvasCoords: any;
+        proximity: any;
+    }) => {
+        distanceToPoint: number;
+        distanceToPoint2: number;
+        isNearFirstLine: boolean;
+        isNearSecondLine: boolean;
+    };
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -845,15 +969,31 @@ export class CobbAngleTool extends AnnotationTool {
         movingTextBox?: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
+        isNearFirstLine?: boolean;
+        isNearSecondLine?: boolean;
     } | null;
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
+    getArcsStartEndPoints: ({ firstLine, secondLine, mid1, mid2, }: {
+        firstLine: any;
+        secondLine: any;
+        mid1: any;
+        mid2: any;
+    }) => {
+        arc1Start: Types_2.Point2;
+        arc1End: Types_2.Point2;
+        arc2Start: Types_2.Point2;
+        arc2End: Types_2.Point2;
+        arc1Angle: number;
+        arc2Angle: number;
+    };
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLDivElement, annotation: AngleAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: CobbAngleAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     _mouseDownCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
@@ -869,7 +1009,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -1490,7 +1630,7 @@ function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, poi
 function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 
 // @public (undocumented)
-function distanceToPoint_3(p1: Types_2.Point2, p2: Types_2.Point2): number;
+function distanceToPoint_3(p1: Point, p2: Point): number;
 
 // @public (undocumented)
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
@@ -1575,6 +1715,8 @@ function drawLinkedTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: st
 // @public (undocumented)
 function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, polylineUID: string, points: Types_2.Point2[], options: {
     color?: string;
+    fillColor?: string;
+    fillOpacity?: number;
     width?: number;
     lineWidth?: number;
     lineDash?: string;
@@ -1664,7 +1806,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1683,7 +1825,7 @@ export class EllipticalROITool extends AnnotationTool {
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
-        centerCanvas?: Array<number>;
+        centerWorld?: Array<number>;
         canvasWidth?: number;
         canvasHeight?: number;
         originalHandleCanvas?: Array<number>;
@@ -1786,6 +1928,8 @@ enum Events {
     // (undocumented)
     TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
     // (undocumented)
+    TOOL_MODE_CHANGED = "CORNERSTONE_TOOLS_TOOL_MODE_CHANGED",
+    // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
     TOUCH_END = "CORNERSTONE_TOOLS_TOUCH_END",
@@ -1868,6 +2012,8 @@ declare namespace EventTypes_2 {
         NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
         NormalizedTouchEventType,
+        ToolModeChangedEventDetail,
+        ToolModeChangedEventType,
         ToolActivatedEventDetail,
         ToolActivatedEventType,
         AnnotationAddedEventDetail,
@@ -2148,7 +2294,16 @@ function getNumberOfAnnotations(toolName: string, annotationGroupSelector: Annot
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
+function getPoint(points: any, idx: any): any[];
+
+// @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+
+// @public (undocumented)
+function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
+
+// @public (undocumented)
+function getPolyDataPoints(polyData: vtkPolyData): any[];
 
 // @public (undocumented)
 function getSegmentation(segmentationId: string): Segmentation | undefined;
@@ -2417,7 +2572,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -2867,6 +3022,7 @@ function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boo
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(imageId?: string): void;
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLDivElement;
@@ -2877,6 +3033,7 @@ interface IStackViewport extends IViewport {
     getCornerstoneImage: () => IImage;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (imageId?: string) => StackViewportProperties;
     getFrameOfReferenceUID: () => string;
     getImageData(): IImageData | CPUIImageData;
     getImageIds: () => string[];
@@ -2888,13 +3045,23 @@ interface IStackViewport extends IViewport {
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
+    resetToDefaultProperties(): void;
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
+    setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageId?: string
+    ): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
-        { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+        {
+        voiRange,
+        invert,
+        interpolationType,
+        rotation,
+        colormap,
+    }: StackViewportProperties,
     suppressEvents?: boolean
     ): void;
     setStack(
@@ -2960,6 +3127,10 @@ interface IToolGroup {
     // (undocumented)
     addViewport: {
         (viewportId: string, renderingEngineId?: string): void;
+    };
+    // (undocumented)
+    clone: {
+        (newToolGroupId: string, fnToolFilter: (toolName: string) => boolean): IToolGroup;
     };
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
@@ -3159,16 +3330,18 @@ interface IVolumeViewport extends IViewport {
     suppressEvents?: boolean
     ): Promise<void>;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(volumeId?: string): void;
     flip(flipDirection: FlipDirection): void;
     getBounds(): any;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
     getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
-    getProperties: () => VolumeViewportProperties;
+    getProperties: (volumeId?: string) => VolumeViewportProperties;
     getSlabThickness(): number;
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
@@ -3178,11 +3351,15 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
-    resetProperties(volumeId?: string): void;
+    resetProperties(volumeId: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
     immediate?: boolean
+    ): void;
+    setDefaultProperties(
+    ViewportProperties: VolumeViewportProperties,
+    volumeId?: string
     ): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis): void;
@@ -3830,7 +4007,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
@@ -3932,6 +4109,17 @@ function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints:
 // @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
 
+// @public (undocumented)
+function pointToString(point: any, decimals?: number): string;
+
+declare namespace polyDataUtils {
+    export {
+        getPoint,
+        getPolyDataPointIndexes,
+        getPolyDataPoints
+    }
+}
+
 declare namespace polyline {
     export {
         getFirstIntersectionWithPolyline,
@@ -3981,7 +4169,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: ModalityUnitOptions): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4034,6 +4222,14 @@ type PTScaling = {
 
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
+
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
 
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
@@ -4263,7 +4459,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => RectangleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any, modalityUnitOptions: any) => any;
+    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4492,6 +4688,7 @@ export function removeTool(ToolClass: any): void;
 type RepresentationConfig = {
     LABELMAP?: LabelmapConfig;
     CONTOUR?: ContourConfig;
+    SURFACE?: any;
 };
 
 // @public (undocumented)
@@ -4678,6 +4875,21 @@ export class SegmentationDisplayTool extends BaseTool {
 }
 
 // @public (undocumented)
+export class SegmentationIntersectionTool extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _init: () => void;
+    // (undocumented)
+    onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 type SegmentationModifiedEventDetail = {
     segmentationId: string;
 };
@@ -4712,6 +4924,7 @@ type SegmentationRepresentationConfig = {
 type SegmentationRepresentationData = {
     LABELMAP?: LabelmapSegmentationData;
     CONTOUR?: ContourSegmentationData;
+    SURFACE?: SurfaceSegmentationData;
 };
 
 // @public (undocumented)
@@ -4737,7 +4950,9 @@ enum SegmentationRepresentations {
     // (undocumented)
     Contour = "CONTOUR",
     // (undocumented)
-    Labelmap = "LABELMAP"
+    Labelmap = "LABELMAP",
+    // (undocumented)
+    Surface = "SURFACE"
 }
 
 // @public (undocumented)
@@ -5079,6 +5294,12 @@ type StyleSpecifier = {
 };
 
 // @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
+
+// @public (undocumented)
 type SVGCursorDescriptor = {
     iconContent: string;
     iconSize: number;
@@ -5204,6 +5425,12 @@ function throttle(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
+type ToolAction = {
+    method: string | ((evt: InteractionEventType, annotation: Annotation) => void);
+    bindings: SetToolBindingsType[];
+};
+
+// @public (undocumented)
 type ToolActivatedEventDetail = {
     toolGroupId: string;
     toolName: string;
@@ -5286,6 +5513,17 @@ type ToolGroupSpecificRepresentationState = {
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
 // @public (undocumented)
+type ToolModeChangedEventDetail = {
+    toolGroupId: string;
+    toolName: string;
+    mode: ToolModes;
+    toolBindingsOptions?: SetToolBindingsType;
+};
+
+// @public (undocumented)
+type ToolModeChangedEventType = Types_2.CustomEventType<ToolModeChangedEventDetail>;
+
+// @public (undocumented)
 enum ToolModes {
     // (undocumented)
     Active = "Active",
@@ -5311,6 +5549,7 @@ declare namespace ToolSpecificAnnotationTypes {
         RectangleROIAnnotation,
         ProbeAnnotation,
         LengthAnnotation,
+        AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
@@ -5319,6 +5558,7 @@ declare namespace ToolSpecificAnnotationTypes {
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
+        CobbAngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
         ScaleOverlayAnnotation
@@ -5495,6 +5735,7 @@ declare namespace Types {
         SetToolBindingsType,
         ToolOptionsType,
         InteractionTypes,
+        ToolAction,
         IToolGroup,
         IToolClassReference,
         ISynchronizerEventHandler,
@@ -5563,7 +5804,9 @@ declare namespace utilities {
         stackPrefetch,
         stackContextPrefetch,
         scroll_2 as scroll,
-        roundNumber
+        roundNumber,
+        pointToString,
+        polyDataUtils
     }
 }
 export { utilities }
@@ -5630,6 +5873,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
 };
 
@@ -5771,8 +6015,9 @@ type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutO
 
 // @public
 type VolumeViewportProperties = ViewportProperties & {
-    colormap?: ColormapPublic;
     preset?: string;
+
+    slabThickness?: number;
 };
 
 // @public (undocumented)

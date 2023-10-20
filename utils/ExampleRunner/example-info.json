@@ -115,6 +115,10 @@
       "localCPU": {
         "name": "DICOM P10 from the local file system using CPU",
         "description": "Cornerstone3D uses WebGL for rendering by default (if available) and a fallback to CPU. This example force rendering on CPU for debugging purposes."
+      },
+      "stackProperties": {
+        "name": "Stack viewport default properties",
+        "description": "Demonstrates how you can set per image properties for a stack viewport that acts as default values for that specific image"
       }
     },
     "tools-basic": {
@@ -166,6 +170,10 @@
         "name": "Magnify Tool",
         "description": "Demonstrates the usage of the magnification tool"
       },
+      "advancedMagnifyTool": {
+        "name": "Advanced Magnify Tool",
+        "description": "Demonstrates the usage of the advanced magnification tool on stack and volume viewports"
+      },
       "CINETool": {
         "name": "CINE Tool",
         "description": "Demonstrates the usage of the CINE tool"
@@ -203,6 +211,14 @@
       "contourRendering": {
         "name": "Contour Segmentation Representation",
         "description": "Demonstrates how to use the Contour Segmentation Representation"
+      },
+      "surfaceRendering": {
+        "name": "Surface Segmentation Representation",
+        "description": "Demonstrates how to use the Surface Segmentation Representation"
+      },
+      "surfaceRenderingStack": {
+        "name": "Surface Segmentation on Stack Viewport and Volume Viewports",
+        "description": "Demonstrates how to render surface intersections with stack and volume viewports"
       },
       "labelmapSwapping": {
         "name": "Labelmap Segmentation Swapping",

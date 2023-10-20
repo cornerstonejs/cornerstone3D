@@ -132,7 +132,7 @@ function generateRTSSFromSegmentations(
         label: segmentations.label
     };
 
-    let dataset = _initializeDataset(
+    const dataset = _initializeDataset(
         rtMetadata,
         roiContours[0].metadata,
         metadataProvider
@@ -216,7 +216,7 @@ function generateRTSSFromAnnotations(
         name: "RTSS from Annotations",
         label: "RTSS from Annotations"
     };
-    let dataset = _initializeDataset(
+    const dataset = _initializeDataset(
         rtMetadata,
         annotations[0].metadata,
         metadataProvider

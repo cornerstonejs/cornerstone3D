@@ -54,12 +54,14 @@ import {
   AngleTool,
   CobbAngleTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceCursors,
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
   OverlayGridTool,
+  SegmentationIntersectionTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -91,6 +93,7 @@ export {
   CrosshairsTool,
   ReferenceLinesTool,
   OverlayGridTool,
+  SegmentationIntersectionTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -101,6 +104,7 @@ export {
   AngleTool,
   CobbAngleTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,

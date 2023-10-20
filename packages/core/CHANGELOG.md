@@ -3,6 +3,66 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.23.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.2...v1.23.3) (2023-10-20)
+
+### Bug Fixes
+
+- **multiframe encapsulated:** take slice of array buffer to worker for decoding ([#667](https://github.com/cornerstonejs/cornerstone3D/issues/667)) ([a7f5b96](https://github.com/cornerstonejs/cornerstone3D/commit/a7f5b969dcc4dcf7998a0515e9ce4d03dd2c3951))
+
+## [1.23.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.1...v1.23.2) (2023-10-20)
+
+### Bug Fixes
+
+- **voi:** sigmoid VOI ([#840](https://github.com/cornerstonejs/cornerstone3D/issues/840)) ([6a3cbc5](https://github.com/cornerstonejs/cornerstone3D/commit/6a3cbc58e554575d80a1b7085b13e46f90b4d826))
+
+## [1.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.0...v1.23.1) (2023-10-20)
+
+### Bug Fixes
+
+- **colormap invert:** and dynamic volume new timePoint index event ([#841](https://github.com/cornerstonejs/cornerstone3D/issues/841)) ([c4d9bff](https://github.com/cornerstonejs/cornerstone3D/commit/c4d9bff1ed59b7797df07054c5e596145640a667))
+
+# [1.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.1...v1.23.0) (2023-10-19)
+
+### Features
+
+- **surface rendering:** Add surface rendering as segmentation representation ([#808](https://github.com/cornerstonejs/cornerstone3D/issues/808)) ([f48d729](https://github.com/cornerstonejs/cornerstone3D/commit/f48d72905a61fe0dc0582b96e3c22cc9a4e76ea5))
+
+## [1.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.0...v1.22.1) (2023-10-19)
+
+### Bug Fixes
+
+- **getDataInTime:** to consider different image spacing for reference ([#835](https://github.com/cornerstonejs/cornerstone3D/issues/835)) ([b71966d](https://github.com/cornerstonejs/cornerstone3D/commit/b71966d3f69056a224284be24390f4baab5176b9))
+
+# [1.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.2...v1.22.0) (2023-10-17)
+
+### Features
+
+- **colormap:** add colormap props and default properties ([#834](https://github.com/cornerstonejs/cornerstone3D/issues/834)) ([475914d](https://github.com/cornerstonejs/cornerstone3D/commit/475914d0eaa35f1ae65b989c74efda042dc6d97a))
+
+## [1.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.1...v1.21.2) (2023-10-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.0...v1.21.1) (2023-10-14)
+
+### Bug Fixes
+
+- **rotation:** Only one CAMERA_MODIFIED event per rotation ([#824](https://github.com/cornerstonejs/cornerstone3D/issues/824)) ([fd27c43](https://github.com/cornerstonejs/cornerstone3D/commit/fd27c43b7678e1eed97f75a1b2937c8ca7415a93))
+
+# [1.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.3...v1.21.0) (2023-10-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.20.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.2...v1.20.3) (2023-10-09)
+
+### Bug Fixes
+
+- **voi:** should publish voi change event on reset ([#821](https://github.com/cornerstonejs/cornerstone3D/issues/821)) ([84f9ab9](https://github.com/cornerstonejs/cornerstone3D/commit/84f9ab91b37fa1b898e211b5ec68ea090aba2691))
+
+## [1.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.1...v1.20.2) (2023-10-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [1.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.0...v1.20.1) (2023-10-06)
 
 **Note:** Version bump only for package @cornerstonejs/core
