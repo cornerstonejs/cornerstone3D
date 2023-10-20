@@ -1,7 +1,8 @@
-import CPUFallbackLUT from './CPUFallbackLUT';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import { PixelDataTypedArray } from './PixelDataTypedArray';
+import type CPUFallbackLUT from './CPUFallbackLUT';
+import type CPUFallbackColormap from './CPUFallbackColormap';
+import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import { FrameStatus } from '../enums';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -95,6 +96,7 @@ interface IImage {
   };
   loadTimeInMS?: number;
   decodeTimeInMS?: number;
+
   /** CPU: image statistics for rendering */
   stats?: {
     lastStoredPixelDataToCanvasImageDataTime?: number;
@@ -115,10 +117,11 @@ interface IImage {
   };
 
   // Indicator if the image is complete, that is fully loaded.
+  // @deprecated - to be removed when status is done
   complete?: boolean;
-  // The level to which this image has been loaded.  Allows for not replacing
-  // newer/more complete versions with older/less complete versions.
-  level?: number;
+
+  // Information on how complete this image instance is.
+  status?: FrameStatus;
 }
 
 export default IImage;

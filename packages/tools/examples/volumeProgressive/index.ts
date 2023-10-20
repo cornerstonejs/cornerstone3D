@@ -5,6 +5,7 @@ import {
   volumeLoader,
   setVolumesForViewports,
   cache,
+  eventTarget,
 } from '@cornerstonejs/core';
 import cornerstoneDicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
@@ -26,10 +27,9 @@ const {
   ToolGroupManager,
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
-  synchronizers,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
+const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
@@ -66,7 +66,11 @@ const getOrCreateTiming = (id) => {
   }
   timingIds.push(id);
   timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
-  return document.getElementById(id);
+  const p = document.getElementById(id);
+  p.style.lineHeight = 1;
+  p.style.marginTop = 0;
+  p.style.marginBottom = 0;
+  return p;
 };
 function resetTimingInfo() {
   for (const id of timingIds) {
@@ -420,7 +424,6 @@ async function run() {
     cache.purgeCache();
     resetTimingInfo();
     // Define a volume in memory
-    const key = `Volume Load ${name}`;
     const start = Date.now();
     const volume = await volumeLoader.createAndCacheVolume(name, {
       imageIds,
@@ -429,22 +432,10 @@ async function run() {
 
     // Set the volume to load
     volume.load((progressEvt) => {
-      const { stageId } = progressEvt;
       const now = Date.now();
-      if (stageId) {
-        getOrCreateTiming(stageId).innerText = `Done ${stageId} in ${
-          now - start
-        } ms`;
-      }
-      if (progressEvt.completeFrames === progressEvt.totalNumFrames) {
-        getOrCreateTiming('loadingStatus').innerText = `Took ${
-          now - start
-        } ms for ${name}@${stageId} with ${imageIds.length} items`;
-      } else {
-        getOrCreateTiming(
-          'loadingStatus'
-        ).innerText = `Loading: ${progressEvt.totalNumFrames} Total, ${progressEvt.completeFrames} Complete, ${progressEvt.numFrames} Processed`;
-      }
+      getOrCreateTiming('loadingStatus').innerText = `Took ${
+        now - start
+      } ms for ${name} with ${imageIds.length} items`;
     });
 
     setVolumesForViewports(renderingEngine, [{ volumeId: name }], viewportIds);
@@ -452,6 +443,17 @@ async function run() {
     // Render the image
     renderingEngine.renderViewports(viewportIds);
   }
+
+  const imageLoadStage = (evt) => {
+    const { detail } = evt;
+    const { stageId, numberOfImages, stageDurationInMS, startDurationInMS } =
+      detail;
+    getOrCreateTiming(stageId).innerText = stageDurationInMS
+      ? `Stage ${stageId} took ${stageDurationInMS} ms, from start ${startDurationInMS} ms for ${numberOfImages}`
+      : `Stage ${stageId} not run`;
+  };
+
+  eventTarget.addEventListener(Events.IMAGE_LOAD_STAGE, imageLoadStage);
 
   const createButton = (text, volId, imageIds, config) => {
     const button = document.createElement('button');

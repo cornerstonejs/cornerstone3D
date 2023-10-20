@@ -85,12 +85,19 @@ enum Events {
    */
   IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
   /**
-   * Triggers on the eventTarget when the image has successfully loaded by imageLoaders
+   * Triggers on the eventTarget when the image has successfully loaded by imageLoaders.
+   * This event may be fired multiple times for different statuses as the image data gets loaded.
    *
    * Make use of {@link EventTypes.ImageLoadedEvent | ImageLoaded Event Type } for typing your event listeners for IMAGE_LOADED event,
    * and see what event detail is included in {@link EventTypes.ImageLoadedEventDetail | ImageLoaded Event Detail }
    */
   IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+  /**
+   * Triggers on the eventTarget when progressive loading stages are completed.
+   * Allows tracking of the progress of overall volume loads, as well as progress
+   * of stack viewport loading.
+   */
+  IMAGE_LOAD_STAGE = 'CORNESRTONE_IMAGE_LOAD_STAGE',
   /**
    * Triggers on the eventTarget when the image has failed loading by imageLoaders
    *

@@ -29,12 +29,14 @@ const { FrameStatus } = Enums;
 export default class BaseStreamingImageVolume extends ImageVolume {
   private framesLoaded = 0;
   private framesProcessed = 0;
-  private completeFrames = 0;
+  private framesUpdated = 0;
   protected numFrames: number;
   protected totalNumFrames: number;
   protected cornerstoneImageMetaData = null;
   protected autoRenderOnLoad = true;
   protected cachedFrames = [];
+  protected reRenderTarget = 0;
+  protected reRenderFraction = 2;
 
   /**
    * Information on how to retrieve images.
@@ -50,8 +52,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     cachedFrames: Array<Enums.FrameStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
-  reRenderTarget = 0;
-  reRenderFraction = 2;
 
   constructor(
     imageVolumeProperties: Types.IVolume,
@@ -230,8 +230,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
     handleArrayBufferLoad(scalarData, image, options);
 
-    this.framesProcessed++;
-    this.framesLoaded++;
     const { scalingParameters } = image;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
@@ -305,6 +303,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         error,
         framesLoaded: this.framesLoaded,
         framesProcessed: this.framesProcessed,
+        framesUpdated: this.framesUpdated,
         numFrames,
         totalNumFrames,
       });
@@ -318,6 +317,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         error,
         framesLoaded: this.framesLoaded,
         framesProcessed: this.framesProcessed,
+        framesUpdated: this.framesUpdated,
         numFrames,
         totalNumFrames,
       });
@@ -338,10 +338,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    * @param priority - The priority for loading the volume images, lower number is higher priority
    * @returns
    */
-  public load = (
-    callback: (...args: unknown[]) => void,
-    priority = 5
-  ): void => {
+  public load = (callback: (...args: unknown[]) => void): void => {
     const { imageIds, loadStatus, numFrames } = this;
 
     if (loadStatus.loading === true) {
@@ -371,7 +368,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.loadStatus.callbacks.push(callback);
     }
 
-    this._prefetchImageIds(priority);
+    this._prefetchImageIds();
   };
 
   protected updateTextureAndTriggerEvents(
@@ -399,10 +396,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     }
     cachedFrames[imageIdIndex] = status;
     const complete = status === FrameStatus.DONE;
-    this.framesProcessed++;
-    this.framesLoaded++;
+    this.framesUpdated++;
     if (complete) {
-      this.completeFrames++;
+      this.framesLoaded++;
+      this.framesProcessed++;
     }
 
     this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
@@ -415,7 +412,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
 
-    if (complete && this.completeFrames === this.totalNumFrames) {
+    if (complete && this.framesProcessed === this.totalNumFrames) {
       this.loadStatus.loaded = true;
       this.loadStatus.loading = false;
     }
@@ -426,7 +423,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       imageId,
       framesLoaded: this.framesLoaded,
       framesProcessed: this.framesProcessed,
-      completeFrames: this.completeFrames,
+      framesUpdated: this.framesUpdated,
       numFrames,
       totalNumFrames,
       complete,
@@ -438,23 +435,21 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   }
 
   protected callLoadStatusCallback(evt) {
-    const { framesProcessed, totalNumFrames, isUpdatedImage, stageDone } = evt;
+    const { framesUpdated, framesProcessed, totalNumFrames } = evt;
     const { volumeId, reRenderFraction, loadStatus, metadata } = this;
     const { FrameOfReferenceUID } = metadata;
 
     // TODO: probably don't want this here
     if (this.autoRenderOnLoad) {
-      if (isUpdatedImage) {
-        autoLoad(volumeId);
-      } else if (
-        framesProcessed > this.reRenderTarget ||
+      if (
+        framesUpdated > this.reRenderTarget ||
         framesProcessed === totalNumFrames
       ) {
         this.reRenderTarget += reRenderFraction;
         autoLoad(volumeId);
       }
     }
-    if (framesProcessed === totalNumFrames || stageDone) {
+    if (framesProcessed === totalNumFrames) {
       loadStatus.callbacks.forEach((callback) => callback(evt));
 
       const eventDetail = {
@@ -611,7 +606,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
         this.framesLoaded++;
-        this.framesProcessed++;
         return;
       }
       const requestType = requestTypeDefault;
@@ -744,13 +738,13 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     throw new Error('Abstract method');
   }
 
-  private _prefetchImageIds(priority: number): Promise<unknown> {
+  private _prefetchImageIds(): Promise<unknown> {
     // Note: here is the correct location to set the loading flag
     // since getImageIdsRequest is just grabbing and building requests
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const imageIds = this.getImageIdsLoad(priority);
+    const imageIds = this.getImageIdsLoad();
     this.numFrames = imageIds.length;
 
     this.totalNumFrames = this.imageIds.length;

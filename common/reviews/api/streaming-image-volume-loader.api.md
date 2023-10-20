@@ -480,6 +480,7 @@ enum Events {
     IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
     IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
     IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+    IMAGE_LOAD_STAGE = 'CORNESRTONE_IMAGE_LOAD_STAGE',
     IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
     IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
@@ -511,6 +512,7 @@ enum Events {
 
 declare namespace EventTypes {
     export {
+        ImageLoadStageEventDetail,
         CameraModifiedEventDetail,
         CameraModifiedEvent,
         VoiModifiedEvent,
@@ -549,7 +551,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
         StackViewportNewStackEvent,
@@ -792,8 +793,6 @@ interface IImage {
     invert: boolean;
     isPreScaled?: boolean;
     // (undocumented)
-    level?: number;
-    // (undocumented)
     loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
@@ -840,6 +839,8 @@ interface IImage {
         lastRenderedViewport?: unknown;
         lastRenderTime?: number;
     };
+    // (undocumented)
+    status?: FrameStatus;
     voiLUT?: CPUFallbackLUT;
     voiLUTFunction: string;
     width: number;
@@ -973,13 +974,15 @@ options?: Record<string, any>
     decache?: () => void | undefined;
 };
 
-// @public
-type ImageLoadProgressEventDetail = {
-    url: string;
-    imageId: string;
-    loaded: number;
-    total: number;
-    percent: number;
+// @public (undocumented)
+type ImageLoadStageEventDetail = {
+    stageId: string;
+    numberOfImages: number;
+    numberOfFailures: number;
+    // The duration of just this stage
+    stageDurationInMS: number;
+    // The overall duration
+    startDurationInMS: number;
 };
 
 // @public (undocumented)
@@ -1392,19 +1395,22 @@ interface LossyConfiguration {
     // arg1=value1 ('&' arg2=value2)*
     // For example: '&lossy=jhc' to use JHC lossy values
     // (undocumented)
-    byteRange?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
     decodeLevel?: number;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     framesPath?: string;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
+    initialBytes?: number | ((metadata) => number);
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
     isLossy?: boolean;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     streaming?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    totalRanges?: number | ((metadata) => number);
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     urlArguments?: string;
@@ -1482,6 +1488,14 @@ type PreStackNewImageEventDetail = {
     imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
+};
+
+// @public (undocumented)
+type ProgressiveListener = {
+    successCallback: (imageId, imageIndex, image, status) => void;
+    errorCallback: (imageId, permanent, reason) => void;
+
+    getTargetOptions?: (imageId) => Record<string, unknown>;
 };
 
 // @public (undocumented)
@@ -1630,6 +1644,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
 export class StreamingImageVolume extends BaseStreamingImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
+    getImageIdsLoad: () => string[];
+    // (undocumented)
     getImageLoadRequests: (priority: number) => {
         callLoadImage: (imageId: any, imageIdIndex: any, options: any) => any;
         imageId: string;
@@ -1648,9 +1664,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
-            retrieveTypeId: string;
             transferSyntaxUid: any;
-            loadIndex: number;
         };
         priority: number;
         requestType: default_2;

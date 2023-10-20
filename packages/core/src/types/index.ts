@@ -87,6 +87,7 @@ export type {
   LossyConfiguration,
   IRetrieveConfiguration,
 } from './IRetrieveConfiguration';
+import type { ProgressiveListener } from './ProgressiveListener';
 
 export type {
   // config
@@ -180,4 +181,5 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  ProgressiveListener,
 };

@@ -101,17 +101,10 @@ export default function streamRequest(
           done: readDone,
         };
 
-        // When the first chunk of the downloaded image arrives, resolve the
-        // request promise with that chunk, so it can be passed through to
-        // cornerstone via the usual image loading pathway. All subsequent
-        // chunks will be passed and decoded via events.
+        // All of the image load events will be handled by the imageLoader
+        // this simply delivers the raw data as it becomes available.
         iterator.add(detail, readDone);
       }
-      cornerstone.triggerEvent(
-        cornerstone.eventTarget,
-        cornerstone.EVENTS.IMAGE_LOADED,
-        { url, imageId }
-      );
     } catch (err) {
       errorInterceptor(err);
       console.error(err);

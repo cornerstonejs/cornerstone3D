@@ -144,23 +144,16 @@ export default class ProgressiveIterator<T> {
         return i;
       }
     }
-    throw new Error('Nothing found');
+    return this.nextValue;
   }
 
   async donePromise(): Promise<T> {
-    console.log('Starting done promise', this.name);
     for await (const i of this) {
       if (this.done) {
-        console.log('Done promise', this.name, i);
         return i;
       }
     }
-    if (this.done) {
-      console.log('Done after iteration', this.name);
-      return this.nextValue;
-    }
-    console.log('Nothing found', this.name);
-    throw new Error('Nothing found');
+    return this.nextValue;
   }
 
   public getNextPromise() {

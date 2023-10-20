@@ -661,6 +661,8 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_LOAD_FAILED = "CORNERSTONE_IMAGE_LOAD_FAILED",
     // (undocumented)
+    IMAGE_LOAD_STAGE = "CORNESRTONE_IMAGE_LOAD_STAGE",
+    // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
     IMAGE_RENDERED = "CORNERSTONE_IMAGE_RENDERED",
@@ -701,6 +703,7 @@ export const eventTarget: CornerstoneEventTarget;
 
 declare namespace EventTypes {
     export {
+        ImageLoadStageEventDetail,
         CameraModifiedEventDetail,
         CameraModifiedEvent,
         VoiModifiedEvent,
@@ -739,7 +742,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
         StackViewportNewStackEvent,
@@ -1141,8 +1143,6 @@ interface IImage {
     // (undocumented)
     isPreScaled?: boolean;
     // (undocumented)
-    level?: number;
-    // (undocumented)
     loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
@@ -1198,6 +1198,8 @@ interface IImage {
         lastRenderedViewport?: unknown;
         lastRenderTime?: number;
     };
+    // (undocumented)
+    status?: FrameStatus;
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
@@ -1406,12 +1408,12 @@ export { imageLoadPoolManager }
 export { imageLoadPoolManager as requestPoolManager }
 
 // @public (undocumented)
-type ImageLoadProgressEventDetail = {
-    url: string;
-    imageId: string;
-    loaded: number;
-    total: number;
-    percent: number;
+type ImageLoadStageEventDetail = {
+    stageId: string;
+    numberOfImages: number;
+    numberOfFailures: number;
+    stageDurationInMS: number;
+    startDurationInMS: number;
 };
 
 // @public (undocumented)
@@ -1586,6 +1588,9 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 
 // @public (undocumented)
 export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
+
+// @public (undocumented)
+const interleavedRetrieveConfiguration: IRetrieveConfiguration;
 
 // @public (undocumented)
 enum InterpolationType {
@@ -1977,6 +1982,9 @@ interface IVolumeViewport extends IViewport {
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3;
 
 // @public (undocumented)
+function load(imageIds: string[], listener: ProgressiveListener, retrieveOptions?: IRetrieveConfiguration): Promise<unknown>;
+
+// @public (undocumented)
 function loadAndCacheImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
@@ -1989,20 +1997,25 @@ function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImag
 function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 
 // @public (undocumented)
+function loadSingle(imageId: string, listener: ProgressiveListener, retrieveConfiguration?: IRetrieveConfiguration): Promise<unknown>;
+
+// @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
 interface LossyConfiguration {
     // (undocumented)
-    byteRange?: string;
-    // (undocumented)
     decodeLevel?: number;
     // (undocumented)
     framesPath?: string;
     // (undocumented)
+    initialBytes?: number | ((metadata: any) => number);
+    // (undocumented)
     isLossy?: boolean;
     // (undocumented)
     streaming?: boolean;
+    // (undocumented)
+    totalRanges?: number | ((metadata: any) => number);
     // (undocumented)
     urlArguments?: string;
 }
@@ -2140,6 +2153,31 @@ class ProgressiveIterator<T> {
     // (undocumented)
     reject(reason: Error): void;
 }
+
+// @public (undocumented)
+type ProgressiveListener = {
+    successCallback: (imageId: any, imageIndex: any, image: any, status: any) => void;
+    errorCallback: (imageId: any, permanent: any, reason: any) => void;
+    getTargetOptions?: (imageId: any) => Record<string, unknown>;
+};
+
+declare namespace progressiveLoader {
+    export {
+        load,
+        loadSingle,
+        sequentialRetrieveConfiguration,
+        interleavedRetrieveConfiguration,
+        ProgressiveRequest
+    }
+}
+export { progressiveLoader }
+
+// @public (undocumented)
+type ProgressiveRequest = {
+    imageId: string;
+    stage: RetrieveStage;
+    next?: ProgressiveRequest;
+};
 
 // @public (undocumented)
 type PTScaling = {
@@ -2297,6 +2335,9 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
+const sequentialRetrieveConfiguration: IRetrieveConfiguration;
+
+// @public (undocumented)
 export function setConfiguration(c: Cornerstone3DConfig): void;
 
 // @public (undocumented)
@@ -2394,6 +2435,8 @@ export class StackViewport extends Viewport implements IStackViewport {
         viewportStatus: ViewportStatus;
     };
     // (undocumented)
+    errorCallback(imageId: any, permanent: any, error: any): void;
+    // (undocumented)
     getActor: (actorUID: string) => ActorEntry;
     // (undocumented)
     getActors: () => Array<ActorEntry>;
@@ -2421,6 +2464,16 @@ export class StackViewport extends Viewport implements IStackViewport {
     getRotation: () => number;
     // (undocumented)
     getTargetImageIdIndex: () => number;
+    // (undocumented)
+    getTargetOptions(imageId: string): {
+        targetBuffer: {
+            type: string;
+        };
+        preScale: {
+            enabled: boolean;
+        };
+        useRGBA: boolean;
+    };
     // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
@@ -2455,6 +2508,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
     setUseCPURendering(value: boolean): void;
+    // (undocumented)
+    successCallback(imageId: any, image: any, status: any): void;
     // (undocumented)
     unsetColormap: () => void;
     // (undocumented)
@@ -2604,7 +2659,8 @@ declare namespace Types {
         PixelDataTypedArray,
         ImagePixelModule,
         ImagePlaneModule,
-        AffineMatrix
+        AffineMatrix,
+        ProgressiveListener
     }
 }
 export { Types }

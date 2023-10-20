@@ -1951,6 +1951,7 @@ enum Events_2 {
 
 declare namespace EventTypes {
     export {
+        ImageLoadStageEventDetail,
         CameraModifiedEventDetail,
         CameraModifiedEvent,
         VoiModifiedEvent,
@@ -1989,7 +1990,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
         StackViewportNewStackEvent,
@@ -2604,8 +2604,6 @@ interface IImage {
     invert: boolean;
     isPreScaled?: boolean;
     // (undocumented)
-    level?: number;
-    // (undocumented)
     loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
@@ -2652,6 +2650,8 @@ interface IImage {
         lastRenderedViewport?: unknown;
         lastRenderTime?: number;
     };
+    // (undocumented)
+    status?: FrameStatus;
     voiLUT?: CPUFallbackLUT;
     voiLUTFunction: string;
     width: number;
@@ -2785,13 +2785,15 @@ options?: Record<string, any>
     decache?: () => void | undefined;
 };
 
-// @public
-type ImageLoadProgressEventDetail = {
-    url: string;
-    imageId: string;
-    loaded: number;
-    total: number;
-    percent: number;
+// @public (undocumented)
+type ImageLoadStageEventDetail = {
+    stageId: string;
+    numberOfImages: number;
+    numberOfFailures: number;
+    // The duration of just this stage
+    stageDurationInMS: number;
+    // The overall duration
+    startDurationInMS: number;
 };
 
 // @public (undocumented)
@@ -3559,19 +3561,22 @@ interface LossyConfiguration {
     // arg1=value1 ('&' arg2=value2)*
     // For example: '&lossy=jhc' to use JHC lossy values
     // (undocumented)
-    byteRange?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
     decodeLevel?: number;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     framesPath?: string;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
+    initialBytes?: number | ((metadata) => number);
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
     isLossy?: boolean;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     streaming?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    totalRanges?: number | ((metadata) => number);
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     urlArguments?: string;
@@ -4203,6 +4208,14 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     touchDragCallback: any;
 }
+
+// @public (undocumented)
+type ProgressiveListener = {
+    successCallback: (imageId, imageIndex, image, status) => void;
+    errorCallback: (imageId, permanent, reason) => void;
+
+    getTargetOptions?: (imageId) => Record<string, unknown>;
+};
 
 // @public (undocumented)
 type PTScaling = {
