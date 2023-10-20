@@ -467,6 +467,13 @@ type ElementEnabledEventDetail = {
     renderingEngineId: string;
 };
 
+declare namespace Enums {
+    export {
+        Events_2 as Events
+    }
+}
+export { Enums }
+
 // @public
 enum Events {
     CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
@@ -511,6 +518,12 @@ enum Events {
     // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
     // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
     // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+}
+
+// @public (undocumented)
+enum Events_2 {
+    // (undocumented)
+    DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED"
 }
 
 declare namespace EventTypes {
