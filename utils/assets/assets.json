@@ -1,0 +1,4 @@
+{
+  "CircleContour": "https://ohif-assets.s3.us-east-2.amazonaws.com/cornerstone3D/segmentation/contour/Circle.json",
+  "SampleContour": "https://ohif-assets.s3.us-east-2.amazonaws.com/cornerstone3D/segmentation/contour/Contour.json"
+}
