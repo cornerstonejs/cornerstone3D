@@ -1,5 +1,6 @@
-import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, type Types } from '@cornerstonejs/core';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
+import { Events as StreamingEvents } from './enums';
 
 type TimePoint = {
   /** imageIds of each timepoint  */
@@ -146,6 +147,15 @@ export default class StreamingDynamicImageVolume
     this._timePointIndex = newTimePointIndex;
     imageData.getPointData().setActiveScalars(`timePoint-${newTimePointIndex}`);
     this.invalidateVolume(true);
+
+    triggerEvent(
+      eventTarget,
+      StreamingEvents.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED,
+      {
+        volumeId: this.volumeId,
+        timePointIndex: newTimePointIndex,
+      }
+    );
   }
 
   /**
