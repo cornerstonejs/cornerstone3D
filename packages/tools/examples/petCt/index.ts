@@ -233,7 +233,7 @@ instructions.innerText = `
   PET MIP:
   - Mouse Wheel: Rotate PET
   - Left click: Jump all views to the point of highest SUV in the region clicked.
-  
+
   Volume_3D Controls:
   - Middle click : Rotate the image
   - Mouse Wheel: Rotate PET
@@ -427,7 +427,6 @@ function setUpToolGroups() {
   mipToolGroup.setToolActive('VolumeRotateMouseWheel');
 
   mipToolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
-  console.debug(mipToolGroup);
 }
 
 function setUpSynchronizers() {

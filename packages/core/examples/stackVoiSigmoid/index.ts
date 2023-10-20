@@ -113,10 +113,10 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.9590.100.1.2.85935434310203356712688695661986996009',
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.9590.100.1.2.374115997511889073021386151921807063992',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.210542687020950294776803479438',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
