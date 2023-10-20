@@ -16,7 +16,7 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import assets from '../../../../utils/assets/assets.json';
+import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes
 console.warn(
@@ -159,7 +159,7 @@ addSliderToToolbar({
 });
 
 async function addSegmentationsToState() {
-  const circle = await fetch(assets.CircleContour).then((res) => res.json());
+  const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
 
   // load the contour data
   const geometryIds = [];

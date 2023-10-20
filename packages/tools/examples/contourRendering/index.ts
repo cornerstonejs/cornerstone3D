@@ -13,8 +13,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import assetsURL from '../../../../utils/assets/assetsURL.json';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import contour from './Contour.json';
 
 // This is for debugging purposes
 console.warn(
@@ -45,7 +45,7 @@ const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Contour Segmentation Representation for Volume Viewports',
-  'Here we demonstrate how you can add a contour as a segmentation to a volume viewport. Please note that the contour in this example (for segmentation), is different our annotation tools (including freehandROI). Here, the contour is represented in the 3d space, while our annotation tools are represented via SVG in the 2d space. So you can render the contour segmentation in the 3d viewport (as seen below) but you cannot render e.g,., freehandROI tool contour in the 3d viewport.'
+  'Here we demonstrate how you can add a contour as a segmentation to a volume viewport. Please note that the contour in this example (for segmentation), is different our annotation tools (including freehandROI). Here, the contour is represented in the 3d space, while our annotation tools are represented via SVG in the 2d space. So you can render the contour segmentation in the 3d viewport (as seen below) but you cannot render e.g,., freehandROI tool contour in the 3d viewport. This example requires internet to download contour data'
 );
 
 const size = '500px';
@@ -76,6 +76,10 @@ content.append(instructions);
 // ============================= //
 
 async function addSegmentationsToState() {
+  const contour = await fetch(assetsURL.SampleContour).then((res) =>
+    res.json()
+  );
+
   // load the contour data
   const geometryIds = [];
   const promises = contour.contourSets.map((contourSet) => {
