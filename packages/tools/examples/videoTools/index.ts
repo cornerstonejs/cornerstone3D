@@ -199,9 +199,12 @@ async function run() {
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
-  // Set the stack on the viewport
-  //     'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
-  await viewport.setVideo('/video/rendered.mp4');
+  // Set the video on the viewport
+  // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
+  // on a compliant DICOMweb endpoint
+  await viewport.setVideo(
+    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+  );
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });

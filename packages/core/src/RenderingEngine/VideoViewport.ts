@@ -76,6 +76,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement = document.createElement('video');
     this.videoElement.muted = this.mute;
     this.videoElement.loop = this.loop;
+    this.videoElement.crossOrigin = 'anonymous';
 
     this.addEventListeners();
     this.resize();
