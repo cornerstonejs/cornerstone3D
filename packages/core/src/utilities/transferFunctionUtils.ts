@@ -13,6 +13,10 @@ function getTransferFunctionNodes(transferFunction) {
 }
 
 function setTransferFunctionNodes(transferFunction, nodes) {
+  if (!nodes?.length) {
+    return;
+  }
+
   transferFunction.removeAllPoints();
 
   nodes.forEach((node) => {

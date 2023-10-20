@@ -180,7 +180,9 @@ function loadImage(
     delete options.loader;
   }
 
-  // if the dataset for this url is already loaded, use it
+  // if the dataset for this url is already loaded, use it, in case of multiframe
+  // images, we need to extract the frame pixelData from the dataset although the
+  // image is loaded
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
     /**
      * @todo The arguments to the dataSetCacheManager below are incorrect.

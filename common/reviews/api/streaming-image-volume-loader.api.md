@@ -1610,6 +1610,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
+            transferPixelData: boolean;
         };
         priority: number;
         requestType: default_2;
