@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.0...v1.23.1) (2023-10-20)
+
+### Bug Fixes
+
+- **colormap invert:** and dynamic volume new timePoint index event ([#841](https://github.com/cornerstonejs/cornerstone3D/issues/841)) ([c4d9bff](https://github.com/cornerstonejs/cornerstone3D/commit/c4d9bff1ed59b7797df07054c5e596145640a667))
+
 # [1.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.1...v1.23.0) (2023-10-19)
 
 ### Features
