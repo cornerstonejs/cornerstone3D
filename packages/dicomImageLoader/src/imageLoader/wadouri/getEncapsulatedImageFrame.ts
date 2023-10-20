@@ -74,7 +74,13 @@ export default function getEncapsulatedImageFrame(
 
   const fragmentZeroPosition = byteStream.position;
 
-  // tag + length
+  // we should check that the number of frames + 1 is equal to the number of fragments
+  // since there might be a situation where any frame before the one we are looking for
+  // here is split into multiple fragments
+  if (frameIndex + 1 > fragments.length) {
+    throw 'dicomParser.readEncapsulatedPixelData: frame exceeds number of fragments';
+  }
+
   const fragmentHeaderSize = 8;
   const byteOffset =
     fragmentZeroPosition + fragments[frameIndex].offset + fragmentHeaderSize;
