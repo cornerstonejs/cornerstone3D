@@ -1,6 +1,6 @@
 import { utilities } from '@cornerstonejs/core';
 import { ColorBarRange, ColorBarVOIRange, Colormap } from './types';
-import { ColorBarCanvasProps } from './types/ColormapCanvasProps';
+import { ColorBarCanvasProps } from './types/ColorBarCanvasProps';
 import { ColorBarSize } from './types/ColorBarSize';
 import isRangeValid from './common/isRangeValid';
 import rangesEqual from './common/rangesEqual';

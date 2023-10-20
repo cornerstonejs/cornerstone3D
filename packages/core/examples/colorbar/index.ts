@@ -36,9 +36,6 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 
-const pause = (interval) =>
-  new Promise((resolve) => setTimeout(resolve, interval));
-
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const stackViewportId = 'CT_STACK';
@@ -60,8 +57,6 @@ const colormaps = vtkColormaps.rgbPresetNames.map(
 let currentPTColormapName = 'Black-Body Radiation';
 let ctColorBar = null;
 let ptColorBar = null;
-const voiRangeMin = 0;
-const voiRangeMax = 1;
 
 // ==[ Set up page ]============================================================
 
@@ -109,32 +104,6 @@ addInstruction('- Click and drag on viewport to change VOI');
 addInstruction('- Click and drag at the color bar to change VOI');
 
 const colorBarSize = { shortSide: 20, longSide: 250 };
-
-// const ctColorBar = new ViewportColorBar({
-//   id: 'ctColorBar',
-//   viewportId: volumeViewportId,
-//   renderingEngineId,
-//   colormaps,
-//   activeColormapName: 'Grayscale',
-//   // voiRange: { min: 0.25, max: 0.75 },
-// });
-
-// const ptColorBar = new ViewportColorBar({
-//   id: 'ptColorBar',
-//   viewportId: volumeViewportId,
-//   renderingEngineId,
-//   colormaps,
-//   activeColormapName: currentPTColormapName,
-//   // voiRange: { min: 0.25, max: 0.75 },
-// });
-
-// const colorBars = [ctColorBar, ptColorBar */];
-
-// ctColorBar.rootElement.draggable = true;
-// ctColorBar.rootElement.style.cursor = 'move';
-
-// ptColorBar.rootElement.draggable = true;
-// ptColorBar.rootElement.style.cursor = 'move';
 
 Object.assign(bottomLeftContainer.style, {
   position: 'absolute',
@@ -190,157 +159,10 @@ containers.forEach((container) => {
     cursor: 'initial',
   });
 
-  // container.addEventListener('dragover', (evt) => evt.preventDefault());
-  // container.addEventListener('drop', (evt: DragEvent) => {
-  //   const target = evt.target as HTMLElement;
-  //   const rawTransferedData = evt.dataTransfer.getData('application/json');
-  //   const transferedData = JSON.parse(rawTransferedData);
-  //   const colorBar = colorBars.find(
-  //     (colorBar) => colorBar.id === transferedData.colorBarId
-  //   );
-  //   const sourceContainer = colorBar.rootElement.parentElement;
-  //   const containersSet = new Set<HTMLElement>(containers);
-  //   let targetContainer = null;
-
-  //   // If the element is dropped into the same container the `target` will be the
-  //   // canvas element and we need to search for some parent element that is a container
-
-  //   for (let node = target; node !== null; node = node.parentElement) {
-  //     if (containersSet.has(node)) {
-  //       targetContainer = node;
-  //       break;
-  //     }
-  //   }
-
-  //   if (!targetContainer) {
-  //     return;
-  //   }
-
-  //   const swapColorBars = targetContainer.hasChildNodes();
-
-  //   colorBar.appendTo(targetContainer);
-
-  //   if (swapColorBars) {
-  //     const otherColorBar = colorBars.find(
-  //       (colorBar) => colorBar.id !== transferedData.colorBarId
-  //     );
-  //     otherColorBar.appendTo(sourceContainer);
-  //   }
-
-  //   evt.preventDefault();
-  // });
-
   containersMutationObserver.observe(container, { childList: true });
 });
 
-// colorBars.forEach((colorBar) => {
-//   colorBar.rootElement.addEventListener('dragstart', (evt) => {
-//     evt.dataTransfer.effectAllowed = 'move';
-//     evt.dataTransfer.setData(
-//       'application/json',
-//       JSON.stringify({
-//         colorBarId: colorBar.id,
-//       })
-//     );
-
-//     containers.forEach((container) =>
-//       Object.assign(container.style, {
-//         display: 'block',
-//         backgroundColor: 'rgba(0, 255, 0, 0.2)',
-//       })
-//     );
-//   });
-
-//   colorBar.rootElement.addEventListener('dragend', () => {
-//     containers.forEach(
-//       (container) => (container.style.backgroundColor = 'none')
-//     );
-
-//     containers.forEach((container) =>
-//       Object.assign(container.style, {
-//         display: container.hasChildNodes() ? 'block' : 'none',
-//         backgroundColor: 'none',
-//       })
-//     );
-//   });
-// });
-
-const runTestsButton = document.createElement('button');
-
-// runTestsButton.style.marginTop = '20px';
-// runTestsButton.textContent = 'Run dev tests';
-// runTestsButton.addEventListener('click', () => runTests());
-// content.appendChild(runTestsButton);
-
 // ==[ Toolbar ]================================================================
-
-// addButtonToToolbar({
-//   title: 'Set CT VOI Range',
-//   onClick: () => {
-//     // Get the rendering engine
-//     const renderingEngine = getRenderingEngine(renderingEngineId);
-
-//     // Get the stack viewport
-//     const viewport = <Types.IVolumeViewport>(
-//       renderingEngine.getViewport(volumeViewportId)
-//     );
-
-//     viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
-//     viewport.render();
-//   },
-// });
-
-// addButtonToToolbar({
-//   title: 'Reset Viewport',
-//   onClick: () => {
-//     // Get the rendering engine
-//     const renderingEngine = getRenderingEngine(renderingEngineId);
-
-//     // Get the volume viewport
-//     const viewport = <Types.IVolumeViewport>(
-//       renderingEngine.getViewport(volumeViewportId)
-//     );
-
-//     // Resets the viewport's camera
-//     viewport.resetCamera();
-//     // TODO reset the viewport properties, we don't have API for this.
-
-//     viewport.render();
-//   },
-// });
-
-// const fused = false;
-
-// addButtonToToolbar({
-//   title: 'toggle PET',
-//   onClick: async () => {
-//     // Get the rendering engine
-//     const renderingEngine = getRenderingEngine(renderingEngineId);
-//     // Get the volume viewport
-//     const viewport = <Types.IVolumeViewport>(
-//       renderingEngine.getViewport(volumeViewportId)
-//     );
-//     if (fused) {
-//       // Removes the PT actor from the scene
-//       viewport.removeVolumeActors([ptVolumeId], true);
-//       fused = false;
-//     } else {
-//       // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
-//       // If it was in a different frame of reference, you would need to register it first.
-//       await viewport.addVolumes(
-//         [
-//           {
-//             volumeId: ptVolumeId,
-//             callback: setPetColorMapTransferFunctionForVolumeActor,
-//           },
-//         ],
-//         true
-//       );
-//       setPTColormap(currentPTColormapName);
-//       fused = true;
-//     }
-//   },
-// });
 
 const orientationOptions = {
   axial: 'axial',
@@ -407,137 +229,6 @@ addDropdownToToolbar({
     setPTColormap(<string>selectedValue);
   },
 });
-
-// addSliderToToolbar({
-//   title: 'VOI min',
-//   range: [0, 1],
-//   step: 0.05,
-//   defaultValue: voiRangeMin,
-//   onSelectedValueChange: (value) => {
-//     voiRangeMin = parseFloat(value);
-//     // ptColorBar.voiRange = { min: voiRangeMin, max: voiRangeMax };
-//   },
-// });
-
-// addSliderToToolbar({
-//   title: 'VOI max',
-//   range: [0, 1],
-//   step: 0.05,
-//   defaultValue: voiRangeMax,
-//   onSelectedValueChange: (value) => {
-//     voiRangeMax = parseFloat(value);
-//     // ptColorBar.voiRange = { min: voiRangeMin, max: voiRangeMax };
-//   },
-// });
-
-// ==[ Dev Tests ]==============================================================
-
-// async function testVoiRange() {
-//   console.log('Testing VOI range');
-
-//   const numLoops = 4;
-//   const numMoves = 60;
-//   const pauseTime = 1000 / 60; // (1000 / fps)
-//   const windowWidth = 0.5;
-
-//   for (let numLoop = 0; numLoop < numLoops; numLoop++) {
-//     const leftToRight = !(numLoop % 2);
-//     const iStart = numLoop ? 1 : Math.floor(numMoves / 2);
-//     const iEnd = numLoop === numLoops - 1 ? Math.floor(numMoves / 2) : numMoves;
-
-//     for (let i = iStart; i < iEnd; i++) {
-//       const position = leftToRight ? i : numMoves - i - 1;
-//       const windowCenter = position * (1 / (numMoves - 1));
-//       const min = windowCenter - windowWidth / 2;
-//       const max = min + windowWidth;
-
-//       ptColorBar.voiRange = { min, max };
-
-//       await pause(pauseTime);
-//     }
-//   }
-
-//   // Restore voiRange to max
-//   ptColorBar.voiRange = { min: 0, max: 1 };
-// }
-
-// // Tests to make sure it works when resizing the container or attaching to a new container
-// async function testContainers() {
-//   await pause(500);
-
-//   console.log('append to right containers');
-//   ctColorBar.appendTo(rightTopContainer);
-//   ptColorBar.appendTo(rightBottomContainer);
-
-//   await pause(500);
-
-//   console.log('update right containers size');
-//   Object.assign(rightTopContainer.style, {
-//     height: `${colorBarSize.longSide - 100}px`,
-//   });
-//   Object.assign(rightBottomContainer.style, {
-//     height: `${colorBarSize.longSide - 100}px`,
-//   });
-
-//   await pause(500);
-
-//   console.log('append to bottom containers');
-//   ctColorBar.appendTo(bottomLeftContainer);
-//   ptColorBar.appendTo(bottomRightContainer);
-
-//   // Restore right containers size
-//   Object.assign(rightTopContainer.style, {
-//     height: `${colorBarSize.longSide}px`,
-//   });
-//   Object.assign(rightBottomContainer.style, {
-//     height: `${colorBarSize.longSide}px`,
-//   });
-
-//   await pause(500);
-
-//   console.log('update bottom containers size');
-//   Object.assign(bottomLeftContainer.style, {
-//     width: `${colorBarSize.longSide - 100}px`,
-//   });
-//   Object.assign(bottomRightContainer.style, {
-//     width: `${colorBarSize.longSide - 100}px`,
-//   });
-
-//   await pause(500);
-
-//   // Restore bottom containers size
-//   Object.assign(bottomLeftContainer.style, {
-//     width: `${colorBarSize.longSide}px`,
-//   });
-//   Object.assign(bottomRightContainer.style, {
-//     width: `${colorBarSize.longSide}px`,
-//   });
-// }
-
-// async function testPTColormaps() {
-//   for (let i = 1, len = colormaps.length; i < len; i++) {
-//     console.log(`Colormap: ${colormaps[i].Name}`);
-//     ptColorBar.activeColormapName = colormaps[i].Name;
-//     await pause(100);
-//   }
-
-//   // Back to the first colormap
-//   console.log(`Colormap: ${colormaps[0].Name}`);
-//   ptColorBar.activeColormapName = colormaps[0].Name;
-// }
-
-async function runTests() {
-  // const currentCTParent = ctColorBar.rootElement.parentElement;
-  // const currentPTParent = ptColorBar.rootElement.parentElement;
-  // console.log('Dev tests started');
-  // await testContainers();
-  // // Add them back to theirs parents
-  // ctColorBar.appendTo(currentCTParent);
-  // ptColorBar.appendTo(currentPTParent);
-  // await testPTColormaps();
-  // await testVoiRange();
-  // console.log('Dev tests complete');
-}
 
 // =============================================================================
 
