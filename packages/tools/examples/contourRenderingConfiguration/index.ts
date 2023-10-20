@@ -47,7 +47,7 @@ const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Contour Segmentation Configuration',
-  'Here we demonstrate how to configure the contour rendering. This example requires internet to download the contour data.'
+  'Here we demonstrate how to configure the contour rendering. This example download the contour data.'
 );
 
 const size = '500px';

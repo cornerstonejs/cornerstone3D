@@ -45,7 +45,7 @@ const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Surface Segmentation Representation for Volume Viewports',
-  'This example require internet to download the surface data first. In this demonstration, we will show you how to render surfaces. On the left side, you will find a volume viewport, and on the right side, there is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
+  'This example first downloads the surface data. In this demonstration, we will show you how to render surfaces. On the left side, you will find a volume viewport, and on the right side, there is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
 );
 
 const size = '500px';

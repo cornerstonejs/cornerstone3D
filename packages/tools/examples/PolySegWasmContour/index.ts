@@ -112,8 +112,8 @@ addButtonToToolbar({
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Contour Segmentation Representation for Volume Viewports',
-  'Here we demonstrate how you can add a contour as a segmentation to a volume viewport. Please note that the contour in this example (for segmentation), is different our annotation tools (including freehandROI). Here, the contour is represented in the 3d space, while our annotation tools are represented via SVG in the 2d space. So you can render the contour segmentation in the 3d viewport (as seen below) but you cannot render e.g,., freehandROI tool contour in the 3d viewport.'
+  'PolySEG: converting Contour to surface for segmentation',
+  'Here we demonstrate how to convert a contour to a closed surface for segmentation. Note that this example downloads the contour data from the server, but the surface conversion is done in the browser using WebAssembly.'
 );
 
 const size = '500px';
