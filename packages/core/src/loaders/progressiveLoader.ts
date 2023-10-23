@@ -86,6 +86,10 @@ export async function load(
     uncompressedIterator
       .forEach(async (image, done) => {
         const oldStatus = frameStatus[imageId];
+        if (!image) {
+          console.warn('No image retrieved', imageId);
+          return;
+        }
         const { status } = image;
         complete ||= status === FrameStatus.DONE;
         if (oldStatus !== undefined && oldStatus > status) {
@@ -108,7 +112,7 @@ export async function load(
             if (cache.getImageLoadObject(imageId)) {
               cache.removeImageLoadObject(imageId);
             }
-            addRequest(next, options.progressiveContent);
+            addRequest(next, options.streamingData);
           } else {
             for (let skip = next; skip; skip = skip.next) {
               updateStageStatus(stageStatus, skip.stage, null, true);
@@ -121,14 +125,13 @@ export async function load(
   }
 
   /** Adds a rquest to the image load pool manager */
-  function addRequest(request, progressiveContent = {}) {
+  function addRequest(request, streamingData = {}) {
     const { imageId, stage } = request;
-    console.log('Adding request', imageId, request);
     const baseOptions = listener.getTargetOptions(imageId);
     const options = {
       ...baseOptions,
       retrieveTypeId: stage.retrieveTypeId,
-      progressiveContent,
+      streamingData,
     };
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
@@ -269,7 +272,6 @@ function fillNearbyFrames(
   options
 ) {
   if (!request?.nearbyRequests?.length) {
-    console.log('Nothing nearby to fill');
     return;
   }
 

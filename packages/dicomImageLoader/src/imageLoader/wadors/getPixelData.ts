@@ -33,15 +33,14 @@ function getPixelData(
   if (retrieveOptions.framesPath) {
     url = url.replace('/frames/', retrieveOptions.framesPath);
   }
-  console.log('getPixelData retrieveOptions', uri, url, retrieveOptions);
-
-  if (retrieveOptions.initialBytes) {
-    return rangeRequest(url, imageId, headers, retrieveOptions);
-  }
 
   // Swap the streaming data out if a new instance starts.
   if (streamingData?.url !== url) {
     options.streamingData = { url };
+  }
+
+  if (retrieveOptions.initialBytes || retrieveOptions.range !== undefined) {
+    return rangeRequest(url, imageId, headers, options);
   }
 
   // Default to streaming the response data so that it can be decoding in

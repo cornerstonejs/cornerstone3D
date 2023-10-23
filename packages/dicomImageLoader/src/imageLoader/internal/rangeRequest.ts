@@ -1,10 +1,11 @@
 import { Types, Enums } from '@cornerstonejs/core';
-import external from '../../externalModules';
 import { getOptions } from './options';
 import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
 import { getFrameStatus } from '../wadors/getFrameStatus';
+
+type RetrieveOptions = Types.RetrieveOptions;
 
 /**
  * Performs a range or thumbnail request.
@@ -30,13 +31,16 @@ export default function rangeRequest(
   options: CornerstoneWadoRsLoaderOptions = {}
 ): LoaderXhrRequestPromise<{
   contentType: string;
-  imageFrame: Uint8Array;
+  pixelData: Uint8Array;
   status: Enums.FrameStatus;
+  percentComplete: number;
 }> {
   const globalOptions = getOptions();
   const { retrieveOptions = {}, streamingData = {} } = options;
   const initialBytes =
-    getValue(imageId, retrieveOptions, 'initialBytes') || 65536;
+    streamingData.initialBytes ||
+    getValue(imageId, retrieveOptions, 'initialBytes') ||
+    65536;
   const totalRanges = getValue(imageId, retrieveOptions, 'totalRanges') || 2;
 
   const errorInterceptor = (err: any) => {
@@ -51,7 +55,8 @@ export default function rangeRequest(
   // Make the request for the streamable image frame (i.e. HTJ2K)
   const promise = new Promise<{
     contentType: string;
-    imageFrame: Uint8Array;
+    pixelData: Uint8Array;
+    percentComplete: number;
     status: Enums.FrameStatus;
   }>(async (resolve, reject) => {
     const headers = Object.assign(
@@ -64,9 +69,6 @@ export default function rangeRequest(
       if (headers[key] === null) {
         headers[key] = undefined;
       }
-      if (key === 'Accept' && url.indexOf('accept=') !== -1) {
-        headers[key] = undefined;
-      }
     });
 
     try {
@@ -76,41 +78,30 @@ export default function rangeRequest(
         streamingData.rangesFetched = 0;
       }
       const { rangesFetched } = streamingData;
-      const byteRange: [number, number] = rangesFetched
-        ? [initialBytes, streamingData.totalBytes]
-        : [0, initialBytes];
+      const byteRange = getByteRange(
+        streamingData,
+        retrieveOptions,
+        initialBytes
+      );
 
       const { bytes, responseHeaders } = await fetchRangeAndAppend(
         url,
-        imageId,
         headers,
-        byteRange
+        byteRange,
+        streamingData
       );
 
       // Resolve promise with the first range, so it can be passed through to
       // cornerstone via the usual image loading pathway. All subsequent
       // ranges will be passed and decoded via events.
       const contentType = responseHeaders.get('content-type');
-      const totalBytes = Number(responseHeaders.get('content-length'));
-      if (!streamingData.encodedData) {
-        streamingData.encodedData = bytes;
-        streamingData.totalBytes = totalBytes;
-      } else {
-        const newByteArray = new Uint8Array(
-          streamingData.encodedData.length + bytes.length
-        );
-        newByteArray.set(streamingData.encodedData, 0);
-        newByteArray.set(bytes, streamingData.encodedData.length);
-        streamingData.encodedData = newByteArray;
-      }
-      const done = totalBytes === streamingData.encodedData.byteLength;
-      streamingData.rangesFetched++;
+      const { totalBytes, encodedData } = streamingData;
+      const doneAllBytes = totalBytes === encodedData.byteLength;
       const extract = extractMultipart(contentType, bytes, { isPartial: true });
 
       resolve({
         ...extract,
-        status: getFrameStatus(retrieveOptions, done),
-        done,
+        status: getFrameStatus(retrieveOptions, doneAllBytes),
         percentComplete: (initialBytes * 100) / totalBytes,
       });
     } catch (err: any) {
@@ -125,13 +116,15 @@ export default function rangeRequest(
 
 async function fetchRangeAndAppend(
   url: string,
-  imageId: string,
   headers: any,
-  range: [number, number]
+  range: [number, number],
+  streamingData
 ) {
-  headers = Object.assign(headers, {
-    Range: `bytes=${range[0]}-${range[1]}`,
-  });
+  if (range) {
+    headers = Object.assign(headers, {
+      Range: `bytes=${range[0]}-${range[1]}`,
+    });
+  }
   const response = await fetch(url, {
     headers,
     signal: undefined,
@@ -139,42 +132,39 @@ async function fetchRangeAndAppend(
 
   const responseArrayBuffer = await response.arrayBuffer();
   const responseTypedArray = new Uint8Array(responseArrayBuffer);
-  const responseHeaders = response.headers;
+  const { status } = response;
 
   // Append new data
-  const existingBytesForImageId = streamCache[imageId].byteArray;
+  let { encodedData } = streamingData;
   let newByteArray: Uint8Array;
-  if (existingBytesForImageId) {
+  if (encodedData) {
     newByteArray = new Uint8Array(
-      existingBytesForImageId.length + responseTypedArray.length
+      encodedData.length + responseTypedArray.length
     );
-    newByteArray.set(existingBytesForImageId, 0);
-    newByteArray.set(responseTypedArray, existingBytesForImageId.length);
+    newByteArray.set(encodedData, 0);
+    newByteArray.set(responseTypedArray, encodedData.length);
+    streamingData.rangesFetched = 1;
   } else {
     newByteArray = new Uint8Array(responseTypedArray.length);
     newByteArray.set(responseTypedArray, 0);
+    streamingData.rangesFetched++;
   }
-  streamCache[imageId].byteArray = newByteArray;
+  streamingData.encodedData = encodedData = newByteArray;
 
   const contentRange = response.headers.get('Content-Range');
   if (contentRange) {
-    streamCache[imageId].totalBytes = Number(
-      responseHeaders.get('Content-Range').split('/')[1]
-    );
+    streamingData.totalBytes = Number(contentRange.split('/')[1]);
+  } else if (status !== 206 || !range) {
+    streamingData.totalBytes = encodedData?.byteLength;
+  } else if (encodedData?.length < range[1]) {
+    streamingData.totalBytes = encodedData.byteLength;
   } else {
-    streamCache[imageId].totalBytes = newByteArray.length;
+    streamingData.totalBytes = Number.MAX_SAFE_INTEGER;
   }
-
-  loadTracking[imageId] = {
-    total: Number(streamCache[imageId].totalBytes),
-    loaded: newByteArray.length,
-  };
-
-  streamCache[imageId].rangesFetched += 1;
 
   return {
     bytes: newByteArray,
-    responseHeaders,
+    responseHeaders: response.headers,
   };
 }
 
@@ -185,4 +175,30 @@ function getValue(imageId: string, src, attr: string) {
   }
   const metaData = metaDataManager.get(imageId);
   return value(metaData, imageId);
+}
+
+function getByteRange(
+  streamingData,
+  retrieveOptions: RetrieveOptions,
+  initialBytes = 65536,
+  totalRanges = 2
+): [number, number] {
+  const { totalBytes, encodedData } = streamingData;
+  const { range = 0 } = retrieveOptions;
+  if (range > 0 && (!totalBytes || !encodedData)) {
+    return null;
+  }
+  if (range === 0) {
+    return [0, initialBytes];
+  }
+  const endPoints = [initialBytes];
+  for (let endRange = 1; endRange < totalRanges; endRange++) {
+    if (endRange === totalRanges - 1) {
+      endPoints.push(totalBytes);
+    } else {
+      const previous = endPoints[endPoints.length - 1];
+      endPoints.push(Math.min(totalBytes, previous + initialBytes));
+    }
+  }
+  return [encodedData.byteLength, endPoints[range]];
 }

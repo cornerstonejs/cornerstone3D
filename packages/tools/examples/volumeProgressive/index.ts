@@ -106,9 +106,24 @@ viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-Left Click to change window/level
+const instructions = document.createElement('div');
+instructions.innerHTML = `
+<ul>
+<li>Partial is reduced resolution for all images</li>
+<li>Lossy means some sort of lossy encoding for all images</li>
+<li>Byte range is 64kb of all images</li>
+<li>JLS/HTJ2K is full resolution JLS/HTJ2K</li>
+<li>Mixed is byte range (htj2k) or partial (jls) initially followed by remaining data</li>
+</ul>
+Stages are:
+<ul>
+<li>initialImages - final version of image 0, 50%, 100%</li>
+<li>quarterThumb - lossy configuration for every 4th image, offset 1</li>
+<li>halfThumb - lossy configuration for every 4th image, offset 3</li>
+<li>Remaing *Full - final configuration for every 4th image, offset 0, 2, 1, 3</li>
+<li>If lossy is configured as final, then some stages won't retrieve anything</li>
+</ul>
+<p>Left Click to change window/level</p>
 Use the mouse wheel to scroll through the stack.
 `;
 
@@ -219,33 +234,15 @@ const configHtj2kMixed = {
     },
     'default-lossy': {
       isLossy: true,
-      streaming: false,
-      framesPath: '/htj2k/',
-      initialBytes: 65536,
-    },
-    '3.2.840.10008.1.2.4.96-lossy': {
-      isLossy: true,
-      framesPath: '/htj2k/',
-      initialBytes: 65536,
-      streaming: false,
-    },
-    '3.2.840.10008.1.2.4.96-final': {
-      framesPath: '/htj2k/',
-      streaming: false,
-    },
-  },
-};
-
-const configHtj2kThumbnail = {
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
       streaming: true,
+      framesPath: '/htj2k/',
+      range: 0,
+      decodeLevel: 0,
     },
-    'default-lossy': {
-      isLossy: true,
+    'default-final': {
+      framesPath: '/htj2k/',
+      range: 1,
       streaming: false,
-      framesPath: '/htj2kThumbnail/',
-      decodeLevel: 4,
     },
   },
 };
@@ -449,7 +446,7 @@ async function run() {
     const { stageId, numberOfImages, stageDurationInMS, startDurationInMS } =
       detail;
     getOrCreateTiming(stageId).innerText = stageDurationInMS
-      ? `Stage ${stageId} took ${stageDurationInMS} ms, from start ${startDurationInMS} ms for ${numberOfImages}`
+      ? `Stage ${stageId} took ${stageDurationInMS} ms, from start ${startDurationInMS} ms for ${numberOfImages} frames`
       : `Stage ${stageId} not run`;
   };
 

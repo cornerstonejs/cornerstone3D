@@ -23,6 +23,15 @@ const nearbyFrames: NearbyFrames[] = [
  */
 const interleavedRetrieveConfiguration: IRetrieveConfiguration = {
   stages: [
+    // Can choose to do initial lossy images for testing
+    // {
+    //   id: 'initialImagesLossy',
+    //   positions: [0.5, 0, -1],
+    //   retrieveTypeId: 'lossy',
+    //   requestType: RequestType.Interaction,
+    //   priority: 9,
+    //   nearbyFrames,
+    // },
     {
       id: 'initialImages',
       positions: [0.5, 0, -1],
@@ -31,11 +40,6 @@ const interleavedRetrieveConfiguration: IRetrieveConfiguration = {
       priority: 8,
       nearbyFrames,
     },
-    // {
-    //   id: 'all',
-    //   decimate: 1,
-    //   offset: 0,
-    // },
     {
       id: 'quarterThumb',
       decimate: 4,

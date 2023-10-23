@@ -132,7 +132,7 @@ function loadImage(
           pixelData,
           status = FrameStatus.DONE,
           percentComplete,
-          done,
+          done = true,
         } = result;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
