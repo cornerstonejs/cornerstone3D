@@ -384,6 +384,9 @@ interface CustomEvent_2<T = any> extends Event {
 
 // @public (undocumented)
 type DisplayArea = {
+    type?: 'SCALE' | 'FIT';
+    scale?: number;
+    interpolationType?: InterpolationType;
     imageArea: [number, number]; // areaX, areaY
     imageCanvasPoint: {
         imagePoint: [number, number]; // imageX, imageY
