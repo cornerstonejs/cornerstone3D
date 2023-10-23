@@ -1451,6 +1451,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);
+    console.log('setStack got imageId', imageId);
 
     const eventDetail: StackViewportNewStackEventDetail = {
       imageIds,
@@ -1722,7 +1723,6 @@ class StackViewport extends Viewport implements IStackViewport {
             cache.putImageLoadObject(imageId, {
               promise: Promise.resolve(image),
             });
-            console.log('Adding new image to render', imageIdIndex, image);
             successCallback.call(this, image, imageIdIndex, imageId);
             it.add(image, uncompressedIterator.done);
           }
@@ -1759,7 +1759,7 @@ class StackViewport extends Viewport implements IStackViewport {
     });
   }
 
-  public successCallback(imageId, image, status) {
+  public successCallback(imageId, image) {
     const imageIdIndex = this.imageIds.indexOf(imageId);
     // Todo: trigger an event to allow applications to hook into END of loading state
     // Currently we use loadHandlerManagers for this
@@ -1770,12 +1770,6 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    console.log(
-      'StackViewport:successCallback delivering new image',
-      imageId,
-      image.complete,
-      image
-    );
     // If Photometric Interpretation is not the same for the next image we are trying to load
     // invalidate the stack to recreate the VTK imageData
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2149,7 +2143,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * Loads the image based on the provided imageIdIndex
    * @param imageIdIndex - number represents imageId index
    */
-  private async _setImageIdIndex(imageIdIndex: number): Promise<string> {
+  private _setImageIdIndex(imageIdIndex: number): Promise<string> {
     if (imageIdIndex >= this.imageIds.length) {
       throw new Error(
         `ImageIdIndex provided ${imageIdIndex} is invalid, the stack only has ${this.imageIds.length} elements`
@@ -2163,12 +2157,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
-    const imageId = await this._loadAndDisplayImage(
-      this.imageIds[imageIdIndex],
-      imageIdIndex
-    );
-
-    return imageId;
+    return this._loadAndDisplayImage(this.imageIds[imageIdIndex], imageIdIndex);
   }
 
   private resetCameraCPU(resetPan, resetZoom) {
@@ -2276,7 +2265,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageIdIndex - number represents imageId index in the list of
    * provided imageIds in setStack
    */
-  public async setImageIdIndex(imageIdIndex: number): Promise<string> {
+  public setImageIdIndex(imageIdIndex: number): Promise<string> {
     this._throwIfDestroyed();
 
     // If we are already on this imageId index, stop here
@@ -2285,9 +2274,9 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     // Otherwise, get the imageId and attempt to display it
-    const imageId = this._setImageIdIndex(imageIdIndex);
+    const imageIdPromise = this._setImageIdIndex(imageIdIndex);
 
-    return imageId;
+    return imageIdPromise;
   }
 
   /**

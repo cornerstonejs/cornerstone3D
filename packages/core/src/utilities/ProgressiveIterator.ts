@@ -49,6 +49,14 @@ export default class ProgressiveIterator<T> {
     }
   }
 
+  public resolve() {
+    this.done = true;
+    if (this.waiting) {
+      this.waiting.resolve(this.nextValue);
+      this.waiting = undefined;
+    }
+  }
+
   /** Reject the fetch.  This will prevent further iteration. */
   public reject(reason: Error): void {
     this.rejectReason = reason;
@@ -124,7 +132,7 @@ export default class ProgressiveIterator<T> {
       () => {
         if (!this.done) {
           // Set it to done
-          this.add(this.nextValue, true);
+          this.resolve();
         }
       },
       (reason) => {

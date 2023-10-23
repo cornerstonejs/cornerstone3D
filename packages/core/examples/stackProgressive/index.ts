@@ -12,7 +12,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType } = Enums;
+const { ViewportType, FrameStatus } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -44,27 +44,32 @@ content.appendChild(element);
 
 // ============================= //
 
+const statusNames = {
+  [FrameStatus.DONE]: 'done',
+  [FrameStatus.LOSSY]: 'lossy',
+  [FrameStatus.PARTIAL]: 'partial',
+};
 async function newImageFunction(evt) {
   const { image } = evt.detail;
-  const { complete, decodeTimeInMS, loadTimeInMS } = image;
+  const { status, decodeTimeInMS, loadTimeInMS } = image;
+  const complete = status === FrameStatus.DONE;
   if (complete) {
     element.removeEventListener(
       cornerstone.EVENTS.STACK_NEW_IMAGE,
       newImageFunction
     );
   }
-  const completeText = complete ? 'final' : 'partial';
-  console.log('new image', image);
+  const completeText = statusNames[status] || `other ${status}`;
   timingInfo.innerHTML += `<p>Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${
     loadTimeInMS + decodeTimeInMS
   } total</p>`;
 }
 
-async function showStack(stack: string[], viewport, config) {
+async function showStack(stack: string[], viewport, config, name: string) {
   cornerstoneDicomImageLoader.configure(config);
   cache.purgeCache();
   console.time('imageLoad');
-  timingInfo.innerHTML = `<p>Loading ${stack[0]}</p>`;
+  timingInfo.innerHTML = `<p>Loading ${name}</p>`;
   element.addEventListener(
     cornerstone.EVENTS.STACK_NEW_IMAGE,
     newImageFunction
@@ -115,7 +120,7 @@ const configJLS = {
     'default-lossy': {
       framesPath: '/jls/',
     },
-    'default-final': {
+    default: {
       framesPath: '/jls/',
     },
   },
@@ -125,9 +130,6 @@ const configJLSMixed = {
   minChunkSize: 65_536,
 
   retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
     'default-lossy': {
       isLossy: true,
       framesPath: '/jlsThumbnail/',
@@ -294,7 +296,7 @@ async function run() {
     const button = document.createElement('button');
     button.innerText = text;
     button.id = text;
-    button.onclick = showStack.bind(null, imageIds, viewport, config);
+    button.onclick = showStack.bind(null, imageIds, viewport, config, text);
     loaders.appendChild(button);
     return button;
   };

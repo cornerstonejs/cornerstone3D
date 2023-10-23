@@ -93,6 +93,7 @@ export async function load(
         const { status } = image;
         complete ||= status === FrameStatus.DONE;
         if (oldStatus !== undefined && oldStatus > status) {
+          console.log('Already have better status', oldStatus, status);
           updateStageStatus(stageStatus, request.stage, null, true);
           return;
         }
@@ -118,6 +119,9 @@ export async function load(
               updateStageStatus(stageStatus, skip.stage, null, true);
             }
           }
+        }
+        if (stageStatus.size === 0) {
+          displayedIterator.resolve();
         }
       });
     const doneLoad = uncompressedIterator.getDonePromise();
@@ -161,7 +165,16 @@ export function loadSingle(
   listener: ProgressiveListener,
   retrieveConfiguration = sequentialRetrieveConfiguration
 ) {
-  return load([imageId], listener, retrieveConfiguration);
+  const loadPromise = load([imageId], listener, retrieveConfiguration);
+  loadPromise.then(
+    () => {
+      console.log('Load of image completed');
+    },
+    () => {
+      console.log('Load of image failed');
+    }
+  );
+  return loadPromise;
 }
 
 export type NearbyRequest = {
@@ -364,5 +377,6 @@ function updateStageStatus(
       startDurationInMS: Date.now() - startTime,
     };
     triggerEvent(eventTarget, Events.IMAGE_LOAD_STAGE, detail);
+    stageStatus.delete(id);
   }
 }
