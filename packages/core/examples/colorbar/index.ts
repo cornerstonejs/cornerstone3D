@@ -3,19 +3,20 @@ import {
   RenderingEngine,
   Types,
   Enums,
+  cache,
   volumeLoader,
   getRenderingEngine,
   ui,
 } from '@cornerstonejs/core';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  setTitleAndDescription,
-  addDropdownToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
+  setTitleAndDescription,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { ViewportColorBar } = ui.widgets.colorbar;
 const { ColorBarScalePosition } = ui.widgets.colorbar.Enums;
@@ -34,15 +35,17 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
-
 const { ViewportType } = Enums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
-const stackViewportId = 'CT_STACK';
-const volumeViewportId = 'CT_VOLUME_SAGITTAL';
-const volumeToolGroupId = 'VOLUME_TOOL_GROUP_ID';
+const toolGroupIds = new Set<string>();
+const colorBarWidth = 20; // px
+const imageIdsCache = new Map<string, string[]>();
 
-// Define unique ids for the volumes
+const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+const StudyInstanceUID =
+  '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
+
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
@@ -55,40 +58,84 @@ const colormaps = vtkColormaps.rgbPresetNames.map(
   (presetName) => vtkColormaps.getPresetByName(presetName) as Colormap
 );
 let currentPTColormapName = 'Black-Body Radiation';
-let ctColorBar = null;
-let ptColorBar = null;
 
-// ==[ Set up page ]============================================================
+const viewportsInfo = [
+  {
+    toolGroupId: 'STACK_TOOLGROUP_ID',
+    fusion: false,
+    colorBar: {
+      position: 'right',
+      instances: [],
+    },
+    viewportInput: {
+      viewportId: 'CT_STACK_AXIAL',
+      type: ViewportType.STACK,
+      element: null,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  },
+  {
+    volumeIds: [ctVolumeId, ptVolumeId],
+    toolGroupId: 'VOLUME_TOOLGROUP_ID',
+    fusion: true,
+    colorBar: {
+      position: 'right',
+      instances: [],
+    },
+    viewportInput: {
+      viewportId: 'CT_VOLUME_SAGITTAL',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: null,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  },
+  {
+    volumeIds: [ctVolumeId, ptVolumeId],
+    toolGroupId: 'VOLUME_TOOLGROUP_ID',
+    fusion: true,
+    colorBar: {
+      position: 'right',
+      instances: [],
+    },
+    viewportInput: {
+      viewportId: 'CT_VOLUME_CORONAL',
+      type: ViewportType.ORTHOGRAPHIC,
+      element: null,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  },
+];
 
+// ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume Viewport API With Multiple Volumes',
-  'Demonstrates how to interact with a Volume viewport when using fusion.'
+  'Color Bar',
+  'Interactive color bar that can be used to manipulate the VOI'
 );
 
 const content = document.getElementById('content');
-const element = document.createElement('div');
-element.id = 'cornerstone-element';
+const viewportGrid = document.createElement('div');
 
-Object.assign(element.style, {
-  position: 'relative',
-  width: '500px',
-  height: '500px',
-  marginBottom: '30px',
-});
+viewportGrid.style.display = 'grid';
+viewportGrid.style.width = '100%';
+viewportGrid.style.height = '500px';
+viewportGrid.style.marginTop = '5px';
+viewportGrid.style.gap = '5px';
 
-content.appendChild(element);
+// Generate the template columns based on the number of viewports to render.
+// The template is set to "auto auto auto" for 3 viewports.
+viewportGrid.style.gridTemplateColumns = new Array(viewportsInfo.length)
+  .fill('auto')
+  .join(' ');
 
-const rightTopContainer = document.createElement('div');
-const rightBottomContainer = document.createElement('div');
-const bottomLeftContainer = document.createElement('div');
-const bottomRightContainer = document.createElement('div');
-
-const containers = [
-  rightTopContainer,
-  rightBottomContainer,
-  bottomLeftContainer,
-  bottomRightContainer,
-];
+content.appendChild(viewportGrid);
 
 const info = document.createElement('div');
 content.appendChild(info);
@@ -99,123 +146,14 @@ const addInstruction = (instruction) => {
   info.appendChild(node);
 };
 
+addInstruction(
+  'Viewports: Stack/Axial (left) | Volume/Sagittal (middle) | Volume/Coronal (right)'
+);
 addInstruction('- Select different colormaps');
-addInstruction('- Click and drag on viewport to change VOI');
-addInstruction('- Click and drag at the color bar to change VOI');
-
-const colorBarSize = { shortSide: 20, longSide: 250 };
-
-Object.assign(bottomLeftContainer.style, {
-  position: 'absolute',
-  top: '100%',
-  left: '0px',
-  width: `${colorBarSize.longSide}px`,
-  height: `${colorBarSize.shortSide}px`,
-});
-
-Object.assign(bottomRightContainer.style, {
-  position: 'absolute',
-  top: '100%',
-  left: '50%',
-  width: `${colorBarSize.longSide}px`,
-  height: `${colorBarSize.shortSide}px`,
-});
-
-Object.assign(rightTopContainer.style, {
-  position: 'absolute',
-  top: '0px',
-  left: '100%',
-  width: `${colorBarSize.shortSide}px`,
-  height: `${colorBarSize.longSide}px`,
-});
-
-Object.assign(rightBottomContainer.style, {
-  position: 'absolute',
-  top: '50%',
-  left: '100%',
-  width: `${colorBarSize.shortSide}px`,
-  height: `${colorBarSize.longSide}px`,
-});
-
-// Change the container style when it has/hasn't a colorbar attached to it
-const containersMutationObserver = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
-    const container = mutation.target as HTMLElement;
-    const hasChildNodes = container.hasChildNodes();
-
-    Object.assign(container.style, {
-      display: hasChildNodes ? 'block' : 'none',
-      border: hasChildNodes ? 'solid 1px #555' : 'none',
-    });
-  });
-});
-
-containers.forEach((container) => {
-  const hasChildNodes = container.hasChildNodes();
-
-  Object.assign(container.style, {
-    boxSizing: 'border-box',
-    display: hasChildNodes ? 'block' : 'none',
-    cursor: 'initial',
-  });
-
-  containersMutationObserver.observe(container, { childList: true });
-});
+addInstruction('- Click and drag on the viewport to change VOI');
+addInstruction('- Click and drag on the color bar to change VOI');
 
 // ==[ Toolbar ]================================================================
-
-const orientationOptions = {
-  axial: 'axial',
-  sagittal: 'sagittal',
-  coronal: 'coronal',
-  oblique: 'oblique',
-};
-
-addDropdownToToolbar({
-  options: {
-    values: ['axial', 'sagittal', 'coronal', 'oblique'],
-    defaultValue: 'sagittal',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(volumeViewportId)
-    );
-
-    let viewUp;
-    let viewPlaneNormal;
-
-    switch (selectedValue) {
-      case orientationOptions.axial:
-        viewport.setOrientation(Enums.OrientationAxis.AXIAL);
-
-        break;
-      case orientationOptions.sagittal:
-        viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
-
-        break;
-      case orientationOptions.coronal:
-        viewport.setOrientation(Enums.OrientationAxis.CORONAL);
-
-        break;
-      case orientationOptions.oblique:
-        // Some random oblique value for this dataset
-        viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
-        viewPlaneNormal = [
-          -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-        ];
-
-        viewport.setCamera({ viewUp, viewPlaneNormal });
-        viewport.resetCamera();
-        break;
-    }
-
-    viewport.render();
-  },
-});
 
 addDropdownToToolbar({
   options: {
@@ -232,8 +170,15 @@ addDropdownToToolbar({
 
 // =============================================================================
 
-function setPTColormap(colormapName: string) {
-  currentPTColormapName = colormapName;
+function setPTViewportColormap(viewportInfo, colormapName: string) {
+  const { fusion, colorBar, viewportInput } = viewportInfo;
+  const { viewportId } = viewportInput;
+
+  if (!fusion) {
+    return;
+  }
+
+  const ptColorBar = colorBar?.instances?.[1];
 
   if (ptColorBar) {
     ptColorBar.activeColormapName = colormapName;
@@ -244,11 +189,325 @@ function setPTColormap(colormapName: string) {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(volumeViewportId)
+    renderingEngine.getViewport(viewportId)
   );
 
   viewport.setProperties({ colormap: { name: colormapName } }, ptVolumeId);
   viewport.render();
+}
+
+function setPTColormap(colormapName: string) {
+  currentPTColormapName = colormapName;
+
+  viewportsInfo.forEach((viewportInfo) =>
+    setPTViewportColormap(viewportInfo, colormapName)
+  );
+}
+
+async function createAndCacheVolume(volumeId, imageIds) {
+  let volume = cache.getVolume(volumeId) as any;
+
+  if (!volume) {
+    volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds,
+    });
+
+    // Set the volume to load
+    volume.load();
+  }
+}
+
+async function initializeVolumeViewport(
+  viewportInfo,
+  viewport: Types.IVolumeViewport
+) {
+  const { fusion } = viewportInfo;
+  const volumes = [];
+  const ctImageIds = await getCTImageIds();
+
+  await createAndCacheVolume(ctVolumeId, ctImageIds);
+
+  volumes.push({
+    volumeId: ctVolumeId,
+    callback: setCtTransferFunctionForVolumeActor,
+  });
+
+  if (fusion) {
+    const ptImageIds = await getPTImageIds();
+
+    await createAndCacheVolume(ptVolumeId, ptImageIds);
+
+    volumes.push({
+      volumeId: ptVolumeId,
+      callback: setPetColorMapTransferFunctionForVolumeActor,
+    });
+  }
+
+  // Set the volume on the viewport
+  await viewport.setVolumes(volumes);
+
+  if (fusion) {
+    setPTViewportColormap(viewportInfo, currentPTColormapName);
+  }
+}
+
+function createRightColorBarContainers(numContainers) {
+  const containers = [];
+  const height = 100 / numContainers;
+  let top = 0;
+
+  for (let i = 0; i < numContainers; i++, top += height) {
+    const container = document.createElement('div');
+
+    Object.assign(container.style, {
+      position: 'absolute',
+      top: `${top}%`,
+      left: `calc(100% - ${colorBarWidth}px)`,
+      width: `${colorBarWidth}px`,
+      height: `${100 / numContainers}%`,
+    });
+
+    containers.push(container);
+  }
+
+  return containers;
+}
+
+function createBottomColorBarContainers(numContainers) {
+  const containers = [];
+  const width = 100 / numContainers;
+  let left = 0;
+
+  for (let i = 0; i < numContainers; i++, left += width) {
+    const container = document.createElement('div');
+
+    Object.assign(container.style, {
+      position: 'absolute',
+      top: `calc(100% - ${colorBarWidth}px)`,
+      left: `${left}%`,
+      width: `${width}%`,
+      height: `${colorBarWidth}px`,
+    });
+
+    containers.push(container);
+  }
+
+  return containers;
+}
+
+function initializeColorBarContainers(viewportInfo, viewportContainer) {
+  const numContainers = viewportInfo.fusion ? 2 : 1;
+  const containers =
+    viewportInfo.colorBar?.position === 'right'
+      ? createRightColorBarContainers(numContainers)
+      : createBottomColorBarContainers(numContainers);
+
+  containers.forEach((container) => {
+    Object.assign(container.style, {
+      boxSizing: 'border-box',
+      display: 'block',
+      border: 'solid 1px #555',
+      cursor: 'initial',
+    });
+
+    viewportContainer.appendChild(container);
+  });
+
+  return containers;
+}
+
+function initializeColorBars(viewportInfo, colorBarContainers) {
+  const { fusion, volumeIds = [], colorBar, viewportInput } = viewportInfo;
+  const { element } = viewportInput;
+
+  const scaleStyle = {
+    font: '16px Arial',
+    color: '#fff',
+    maxNumTicks: 8,
+    tickSize: 5,
+    tickWidth: 1,
+    labelMargin: 3,
+  };
+
+  const ctColorBar = new ViewportColorBar({
+    id: 'ctColorBar',
+    element,
+    container: colorBarContainers[0],
+    volumeId: volumeIds[0],
+    colormaps,
+    activeColormapName: 'Grayscale',
+    scalePosition: ColorBarScalePosition.TopOrLeft,
+    scaleStyle,
+  });
+
+  colorBar.instances.push(ctColorBar);
+
+  if (fusion && volumeIds.length === 2) {
+    const ptColorBar = new ViewportColorBar({
+      id: 'ptColorBar',
+      element,
+      container: colorBarContainers[1],
+      volumeId: volumeIds[1],
+      colormaps,
+      activeColormapName: currentPTColormapName,
+      scalePosition: ColorBarScalePosition.TopOrLeft,
+      scaleStyle,
+    });
+
+    colorBar.instances.push(ptColorBar);
+  }
+}
+
+async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
+  const { viewportInput } = viewportInfo;
+
+  const viewportContainer = document.createElement('div');
+
+  Object.assign(viewportContainer.style, {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    border: 'solid 1px #0f0',
+  });
+
+  viewportGrid.appendChild(viewportContainer);
+
+  const element = document.createElement('div');
+  let width = '100%';
+  let height = '100%';
+
+  if (viewportInfo.colorBar?.position === 'right') {
+    width = `calc(100% - ${colorBarWidth}px)`;
+  } else {
+    height = `calc(100% - ${colorBarWidth}px)`;
+  }
+
+  // Disable right click context menu so we can have right click tools
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  element.id = viewportInput.viewportId;
+  element.style.overflow = 'hidden';
+
+  Object.assign(element.style, {
+    width,
+    height,
+  });
+
+  viewportInput.element = element;
+  viewportContainer.appendChild(element);
+
+  const { viewportId } = viewportInput;
+  const { id: renderingEngineId } = renderingEngine;
+
+  renderingEngine.enableElement(viewportInput);
+
+  // Set the tool group on the viewport
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  const colorBarContainers = initializeColorBarContainers(
+    viewportInfo,
+    viewportContainer
+  );
+
+  initializeColorBars(viewportInfo, colorBarContainers);
+
+  const ctImageIds = await getCTImageIds();
+  const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);
+
+  if (viewportInput.type === ViewportType.STACK) {
+    (<Types.IStackViewport>viewport).setStack(ctImageIds);
+  } else if (viewportInput.type === ViewportType.ORTHOGRAPHIC) {
+    await initializeVolumeViewport(
+      viewportInfo,
+      viewport as Types.IVolumeViewport
+    );
+  } else {
+    throw new Error('Invalid viewport type');
+  }
+}
+
+function initializeToolGroup(toolGroupId) {
+  let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+  if (toolGroup) {
+    return toolGroup;
+  }
+
+  // Define a tool group, which defines how mouse events map to tool commands for
+  // Any viewport using the group
+  toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add the tools to the tool group
+  toolGroup.addTool(WindowLevelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+
+  // Set the initial state of the tools, here all tools are active and bound to
+  // Different mouse inputs
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  return toolGroup;
+}
+
+async function getCTImageIds() {
+  let imageIds = imageIdsCache.get('ct');
+
+  if (!imageIds) {
+    imageIds = await createImageIdsAndCacheMetaData({
+      StudyInstanceUID,
+      SeriesInstanceUID:
+        '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+      wadoRsRoot,
+    });
+
+    imageIdsCache.set('ct', imageIds);
+  }
+
+  return imageIds;
+}
+
+async function getPTImageIds() {
+  let imageIds = imageIdsCache.get('pt');
+
+  if (!imageIds) {
+    imageIds = await createImageIdsAndCacheMetaData({
+      StudyInstanceUID,
+      SeriesInstanceUID:
+        '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+      wadoRsRoot,
+    });
+
+    imageIdsCache.set('pt', imageIds);
+  }
+
+  return imageIds;
 }
 
 /**
@@ -264,156 +523,18 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const volumeToolGroup = ToolGroupManager.createToolGroup(volumeToolGroupId);
-
-  // Add tools to the tool group
-  volumeToolGroup.addTool(WindowLevelTool.toolName);
-  volumeToolGroup.addTool(PanTool.toolName);
-  volumeToolGroup.addTool(ZoomTool.toolName);
-  volumeToolGroup.addTool(StackScrollMouseWheelTool.toolName);
-
-  // Set the initial state of the tools, here all tools are active and bound to
-  // Different mouse inputs
-  volumeToolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-
-  volumeToolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-
-  volumeToolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  volumeToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
-  const StudyInstanceUID =
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const ctImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot,
-  });
-
-  const ptImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot,
-  });
-
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportInput = {
-    viewportId: volumeViewportId,
-    type: ViewportType.ORTHOGRAPHIC,
-    element,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
-    },
-  };
+  for (let i = 0; i < viewportsInfo.length; i++) {
+    const viewportInfo = viewportsInfo[i];
+    const { toolGroupId } = viewportInfo;
+    const toolGroup = initializeToolGroup(toolGroupId);
 
-  renderingEngine.enableElement(viewportInput);
+    toolGroupIds.add(toolGroupId);
 
-  // Set the tool group on the viewport
-  volumeToolGroup.addViewport(volumeViewportId, renderingEngineId);
-
-  // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(volumeViewportId)
-  );
-
-  // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
-    imageIds: ctImageIds,
-  });
-
-  // Set the volume to load
-  ctVolume.load();
-
-  // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
-    imageIds: ptImageIds,
-  });
-
-  // Set the volume to load
-  ptVolume.load();
-
-  // Set the volume on the viewport
-  await viewport.setVolumes([
-    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
-    {
-      volumeId: ptVolumeId,
-      callback: setPetColorMapTransferFunctionForVolumeActor,
-    },
-  ]);
-
-  setPTColormap(currentPTColormapName);
-
-  // Render the image
-  renderingEngine.render();
-
-  // Append the containers after initializing the viewport to keep them over
-  // all other viewport elements
-  element.appendChild(rightTopContainer);
-  element.appendChild(rightBottomContainer);
-  element.appendChild(bottomLeftContainer);
-  element.appendChild(bottomRightContainer);
-
-  const scaleStyle = {
-    font: '12px Arial',
-    color: '#fff',
-    maxNumTicks: 8,
-    tickSize: 5,
-    tickWidth: 1,
-    labelMargin: 3,
-  };
-
-  ctColorBar = new ViewportColorBar({
-    id: 'ctColorBar',
-    element,
-    container: rightTopContainer,
-    volumeId: ctVolumeId,
-    colormaps,
-    activeColormapName: 'Grayscale',
-    scalePosition: ColorBarScalePosition.TopOrLeft,
-    scaleStyle,
-  });
-
-  ptColorBar = new ViewportColorBar({
-    id: 'ptColorBar',
-    element,
-    container: rightBottomContainer,
-    volumeId: ptVolumeId,
-    colormaps,
-    activeColormapName: currentPTColormapName,
-    scalePosition: ColorBarScalePosition.TopOrLeft,
-    scaleStyle,
-  });
+    await initializeViewport(renderingEngine, toolGroup, viewportInfo);
+  }
 }
 
 run();

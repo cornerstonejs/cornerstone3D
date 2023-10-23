@@ -272,6 +272,7 @@ class ColorBar extends Widget {
 
     this.voiRange = newVoiRange;
     evt.stopPropagation();
+    evt.preventDefault();
   };
 
   private _mouseUpCallback = (evt) => {

@@ -44,13 +44,41 @@ class ViewportColorBar extends ColorBar {
     return getEnabledElement(this._element);
   }
 
-  protected getVOIMultipliers(): [number, number] {
+  private get modality() {
     const { viewport } = this.enabledElement;
-    // const {actor: volumeActor } = viewport.getActor(this._volumeId)
-    const volume = cache.getVolume(this._volumeId);
-    const { scaling } = volume;
-    const isPreScaled = !!scaling && Object.keys(scaling).length > 0;
-    const { Modality: modality } = volume.metadata;
+
+    if (viewport instanceof VolumeViewport) {
+      const volume = cache.getVolume(this._volumeId);
+      return volume.metadata.Modality;
+    }
+
+    if (viewport instanceof StackViewport) {
+      return viewport.modality;
+    }
+
+    throw new Error('Invalid viewport type');
+  }
+
+  private get isPreScaled() {
+    const { viewport } = this.enabledElement;
+
+    if (viewport instanceof VolumeViewport) {
+      const volume = cache.getVolume(this._volumeId);
+      const { scaling } = volume;
+
+      return !!scaling && Object.keys(scaling).length > 0;
+    }
+
+    if (viewport instanceof StackViewport) {
+      const { preScale } = viewport.getImageData();
+      return preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
+    }
+
+    throw new Error('Invalid viewport type');
+  }
+
+  protected getVOIMultipliers(): [number, number] {
+    const { isPreScaled, modality } = this;
 
     if (modality === 'PT') {
       const ptMultiplier =
@@ -138,7 +166,6 @@ class ViewportColorBar extends ColorBar {
     }
 
     const { _element: element } = this;
-
     this.range = ViewportColorBar._getRange(element, volumeId);
   };
 
@@ -148,7 +175,7 @@ class ViewportColorBar extends ColorBar {
     const { viewportId, volumeId, range } = evt.detail;
     const { viewport } = this.enabledElement;
 
-    if (viewportId != viewport.id || volumeId !== this._volumeId) {
+    if (viewportId !== viewport.id || volumeId !== this._volumeId) {
       return;
     }
 
