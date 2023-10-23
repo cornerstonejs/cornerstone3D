@@ -1,4 +1,3 @@
-import * as workerManagerComlink from 'comlink';
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
@@ -40,7 +39,7 @@ import {
   resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
-  getWorkerManager,
+  getWebWorkerManager,
 } from './init';
 
 // Classes
@@ -70,7 +69,7 @@ export {
   // configs
   getConfiguration,
   setConfiguration,
-  getWorkerManager,
+  getWebWorkerManager,
   // enums
   Enums,
   CONSTANTS,
@@ -125,5 +124,4 @@ export {
   resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
-  workerManagerComlink,
 };

@@ -6,16 +6,24 @@ class CentralizedWorkerManager {
     this.workerTypes = {};
     this.currentWorkerIndices = {};
   }
+  s;
 
-  registerWorker(workerName, workerFn, maxWorkersForThisType = 1) {
+  registerWorker(workerName, workerFn, options = {}) {
+    const { maxWebWorkersForThisType = 1, overwrite = false } = options;
+
+    if (this.workerTypes[workerName] && !overwrite) {
+      console.warn(`Worker type '${workerName}' is already registered...`);
+      return;
+    }
+
     this.workerTypes[workerName] = {
-      maxWorkers: maxWorkersForThisType,
+      maxWorkers: maxWebWorkersForThisType,
       instances: [],
     };
 
     this.currentWorkerIndices[workerName] = 0;
 
-    for (let i = 0; i < maxWorkersForThisType; i++) {
+    for (let i = 0; i < maxWebWorkersForThisType; i++) {
       const worker = workerFn();
       const workerWrapper = Comlink.wrap(worker);
       this.workerTypes[workerName].instances.push(workerWrapper);

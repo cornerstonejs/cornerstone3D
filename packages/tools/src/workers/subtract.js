@@ -1,5 +1,4 @@
-import { workerManagerComlink } from '@cornerstonejs/core';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import { expose } from 'comlink';
 
 const obj = {
   counter: 10,
@@ -22,4 +21,4 @@ const obj = {
   },
 };
 
-workerManagerComlink.expose(obj);
+expose(obj);

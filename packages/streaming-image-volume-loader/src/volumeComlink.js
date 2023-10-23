@@ -1,4 +1,4 @@
-import { workerManagerComlink } from '@cornerstonejs/core';
+import { expose } from 'comlink';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
 const obj = {
@@ -22,4 +22,4 @@ const obj = {
   },
 };
 
-workerManagerComlink.expose(obj);
+expose(obj);

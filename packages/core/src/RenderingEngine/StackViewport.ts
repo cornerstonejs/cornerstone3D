@@ -1,4 +1,3 @@
-import * as Comlink from 'comlink';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -11,7 +10,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
-import { getWorkerManager } from '../init';
+import { getWebWorkerManager } from '../init';
 
 import {
   triggerEvent,
@@ -55,7 +54,6 @@ import {
   InterpolationType,
   RequestType,
   Events,
-  CalibrationTypes,
   VOILUTFunctionType,
 } from '../enums';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -110,14 +108,16 @@ type SetVOIOptions = {
   voiUpdatedWithSetProperties?: boolean;
 };
 
-// const worker: Worker = new Worker(
-//   new URL('../workers/add.js', import.meta.url),
-//   {
-//     name: 'worker',
-//   }
-// );
+const workerFn = () => {
+  const worker = new Worker(new URL('../workers/add.js', import.meta.url), {
+    name: 'worker',
+  });
 
-// this.workerAPI = Comlink.wrap(worker);
+  return worker;
+};
+
+const webWorkerManager = getWebWorkerManager();
+webWorkerManager.registerWorker('add', workerFn);
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -169,7 +169,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Camera properties
   private initialViewUp: Point3;
-  private workerAPI: any;
 
   /**
    * Constructor for the StackViewport class
@@ -194,18 +193,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
-    const workerManager = getWorkerManager();
-    this.workerManager = workerManager;
-
-    const workerFn = () => {
-      const worker = new Worker(new URL('../workers/add.js', import.meta.url), {
-        name: 'worker',
-      });
-
-      return worker;
-    };
-
-    this.workerManager.registerWorker('add', workerFn, 2);
   }
 
   public setUseCPURendering(value: boolean) {
@@ -2294,7 +2281,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
-    const res = await this.workerManager.executeTask('add', 'fib', 40);
+    const res = await webWorkerManager.executeTask('add', 'fib', 41);
     console.debug('result', res);
 
     this._throwIfDestroyed();

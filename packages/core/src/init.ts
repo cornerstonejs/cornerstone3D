@@ -6,7 +6,7 @@ let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
-import CentralizedWorkerManager from './webWorkerManager/webWorkerManager';
+import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
@@ -20,7 +20,6 @@ const defaultConfig: Cornerstone3DConfig = {
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
   },
-  workerManager: null,
   // cache
   // ...
 };
@@ -35,10 +34,11 @@ let config: Cornerstone3DConfig = {
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
   },
-  workerManager: null,
   // cache
   // ...
 };
+
+let webWorkerManager = null;
 
 function _getGLContext(): RenderingContext {
   // Create canvas element. The canvas is not added to the
@@ -137,7 +137,10 @@ async function init(configuration = {}): Promise<boolean> {
   setUseSharedArrayBuffer(sharedArrayBufferMode);
 
   csRenderInitialized = true;
-  config.workerManager = new CentralizedWorkerManager(5);
+
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager(5);
+  }
 
   return csRenderInitialized;
 }
@@ -262,12 +265,16 @@ function _updateRenderingPipelinesForAllViewports(): void {
   );
 }
 
-function getWorkerManager() {
-  return config.workerManager;
+function getWebWorkerManager() {
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager(5);
+  }
+
+  return webWorkerManager;
 }
 
 export {
-  getWorkerManager,
+  getWebWorkerManager,
   init,
   getShouldUseCPURendering,
   getShouldUseSharedArrayBuffer,

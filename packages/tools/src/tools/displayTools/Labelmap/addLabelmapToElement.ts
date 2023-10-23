@@ -3,7 +3,6 @@ import {
   addVolumesToViewports,
   Types,
   Enums,
-  workerManagerComlink,
 } from '@cornerstonejs/core';
 
 /**
@@ -21,14 +20,6 @@ async function addLabelmapToElement(
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {
-  const workerAPI = workerManagerComlink.wrap(
-    new Worker(new URL('../../../workers/subtract.js', import.meta.url))
-  );
-
-  console.log('Calculating cached stats');
-  const res = await workerAPI.vtk();
-  console.debug('res', res);
-
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, viewport } = enabledElement;
   const { id: viewportId } = viewport;

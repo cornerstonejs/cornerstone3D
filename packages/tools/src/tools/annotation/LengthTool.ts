@@ -4,6 +4,7 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
+  getWebWorkerManager,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -89,6 +90,15 @@ const { transformWorldToIndex } = csUtils;
  * Read more in the Docs section of the website.
 
  */
+
+const workerFn = () => {
+  const instance = new Worker(
+    new URL('../../workers/subtract.js', import.meta.url)
+  );
+  return instance;
+};
+const workerManager = getWebWorkerManager();
+workerManager.registerWorker('tools', workerFn);
 
 class LengthTool extends AnnotationTool {
   static toolName;
@@ -194,6 +204,10 @@ class LengthTool extends AnnotationTool {
       element,
       this.getToolName()
     );
+
+    workerManager.executeTask('tools', 'fib', 40).then((result) => {
+      console.debug('fib result', result);
+    });
 
     this.editData = {
       annotation,
