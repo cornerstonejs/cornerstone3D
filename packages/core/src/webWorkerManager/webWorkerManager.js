@@ -74,9 +74,12 @@ class CentralizedWorkerManager {
     successCallback,
     { type = RequestType.Prefetch, priority = 0, args = {}, options = {} }
   ) {
-    const { api, index } = this.getNextWorkerAPI(workerName);
-
     const requestFn = async () => {
+      // when the time comes to execute the request, find the worker with the minimum load.
+      // Note: this should be done inside the requestFn, because the load of the workers
+      // can change between the time the request is added to the queue and the time it is executed.
+      const { api, index } = this.getNextWorkerAPI(workerName);
+
       if (!api) {
         console.error(`No available worker instance for '${workerName}'`);
         return null;
