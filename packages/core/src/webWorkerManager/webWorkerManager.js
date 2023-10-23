@@ -1,15 +1,15 @@
 import * as Comlink from 'comlink';
-import { RequestPoolManager } from '../requestPool/requestPoolManager';
 import { RequestType } from '../enums/';
+import { RequestPoolManager } from '../requestPool/requestPoolManager';
 
 class CentralizedWorkerManager {
   constructor(maxGlobalWorkers = 5) {
     this.maxGlobalWorkers = maxGlobalWorkers;
     this.workerTypes = {};
     this.currentWorkerIndices = {};
-    this.workerQueueManager = new RequestPoolManager('webworker');
+    this.workerPoolManager = new RequestPoolManager('webworker');
+    this.workerLoadCounters = {};
   }
-  s;
 
   registerWorker(workerName, workerFn, options = {}) {
     const { maxWebWorkersForThisType = 1, overwrite = false } = options;
@@ -18,6 +18,10 @@ class CentralizedWorkerManager {
       console.warn(`Worker type '${workerName}' is already registered...`);
       return;
     }
+
+    this.workerLoadCounters[workerName] = Array(maxWebWorkersForThisType).fill(
+      0
+    );
 
     this.workerTypes[workerName] = {
       maxWorkers: maxWebWorkersForThisType,
@@ -39,12 +43,29 @@ class CentralizedWorkerManager {
       return null;
     }
 
-    const nextWorkerIndex = this.currentWorkerIndices[workerName];
-    const nextWorkerAPI =
-      this.workerTypes[workerName].instances[nextWorkerIndex];
-    this.currentWorkerIndices[workerName] =
-      (nextWorkerIndex + 1) % this.workerTypes[workerName].maxWorkers;
-    return nextWorkerAPI;
+    if (!this.workerLoadCounters[workerName]) {
+      this.workerLoadCounters[workerName] = [];
+    }
+
+    // Find the worker with the minimum load.
+    const workerInstances = this.workerTypes[workerName].instances;
+
+    let minLoadIndex = 0;
+    let minLoadValue = this.workerLoadCounters[workerName][0] || 0;
+
+    for (let i = 1; i < workerInstances.length; i++) {
+      const currentLoadValue = this.workerLoadCounters[workerName][i] || 0;
+      if (currentLoadValue < minLoadValue) {
+        minLoadIndex = i;
+        minLoadValue = currentLoadValue;
+      }
+    }
+
+    // Update the load counter.
+    this.workerLoadCounters[workerName][minLoadIndex]++;
+
+    // return the worker that has the minimum load.
+    return { api: workerInstances[minLoadIndex], index: minLoadIndex };
   }
 
   executeTask(
@@ -53,8 +74,9 @@ class CentralizedWorkerManager {
     successCallback,
     { type = RequestType.Prefetch, priority = 0, args = {}, options = {} }
   ) {
+    const { api, index } = this.getNextWorkerAPI(workerName);
+
     const requestFn = async () => {
-      const api = this.getNextWorkerAPI(workerName);
       if (!api) {
         console.error(`No available worker instance for '${workerName}'`);
         return null;
@@ -69,10 +91,12 @@ class CentralizedWorkerManager {
           err
         );
         return null;
+      } finally {
+        this.workerLoadCounters[workerName][index]--;
       }
     };
 
-    this.workerQueueManager.addRequest(requestFn, type, options, priority);
+    this.workerPoolManager.addRequest(requestFn, type, options, priority);
   }
 
   terminate(workerName) {
