@@ -1,5 +1,13 @@
 import type { IRetrieveConfiguration } from '../types';
-import { RequestType } from '../enums';
+import { RequestType, FrameStatus } from '../enums';
+import { NearbyFrames } from '../types/IRetrieveConfiguration';
+
+// Defines some nearby frames to replicate to
+const nearbyFrames: NearbyFrames[] = [
+  { offset: -1, status: FrameStatus.ADJACENT_REPLICATE, linearOffset: -2 },
+  { offset: +1, status: FrameStatus.ADJACENT_REPLICATE, linearOffset: 2 },
+  { offset: +2, status: FrameStatus.REPLICATE, linearOffset: +4 },
+];
 
 /**
  * This configuration is designed to interleave the data requests, using
@@ -21,6 +29,7 @@ const interleavedRetrieveConfiguration: IRetrieveConfiguration = {
       retrieveTypeId: 'final',
       requestType: RequestType.Interaction,
       priority: 8,
+      nearbyFrames,
     },
     // {
     //   id: 'all',
@@ -34,6 +43,7 @@ const interleavedRetrieveConfiguration: IRetrieveConfiguration = {
       retrieveTypeId: 'lossy',
       requestType: RequestType.Thumbnail,
       priority: 7,
+      nearbyFrames,
     },
     {
       id: 'halfThumb',

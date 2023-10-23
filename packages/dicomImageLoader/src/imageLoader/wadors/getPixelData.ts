@@ -15,7 +15,7 @@ function getPixelData(
   mediaType = 'application/octet-stream',
   options?: CornerstoneWadoRsLoaderOptions
 ) {
-  const { streamingData, retrieveOptions = {} } = options.retrieveOptions || {};
+  const { streamingData, retrieveOptions = {} } = options || {};
   const headers = {
     Accept: mediaType,
   };
@@ -33,6 +33,7 @@ function getPixelData(
   if (retrieveOptions.framesPath) {
     url = url.replace('/frames/', retrieveOptions.framesPath);
   }
+  console.log('getPixelData retrieveOptions', uri, url, retrieveOptions);
 
   if (retrieveOptions.initialBytes) {
     return rangeRequest(url, imageId, headers, retrieveOptions);

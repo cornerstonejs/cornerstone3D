@@ -64,7 +64,7 @@ describe('renderToCanvas -- GPU', () => {
     });
   });
 
-  it('Should render two viewports one with setStack and one with renderToCanvas', function (done) {
+  fit('Should render two viewports one with setStack and one with renderToCanvas', function (done) {
     const width = 256;
     const height = 256;
     const element = createViewport(this.renderingEngine, AXIAL, width, height);

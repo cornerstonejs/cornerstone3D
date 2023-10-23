@@ -100,6 +100,7 @@ export async function load(
         if (done) {
           updateStageStatus(stageStatus, request.stage);
         }
+        fillNearbyFrames(listener, frameStatus, request, image, options);
       }, errorCallback)
       .finally(() => {
         if (next) {
@@ -119,8 +120,10 @@ export async function load(
     return doneLoad;
   }
 
+  /** Adds a rquest to the image load pool manager */
   function addRequest(request, progressiveContent = {}) {
     const { imageId, stage } = request;
+    console.log('Adding request', imageId, request);
     const baseOptions = listener.getTargetOptions(imageId);
     const options = {
       ...baseOptions,
@@ -139,6 +142,8 @@ export async function load(
     );
   }
 
+  // The actual function is to just setup the interleave and add the
+  // requests, with all the actual work being handled by the nested functions
   const interleaved = interleave(imageIds, retrieveOptions, stageStatus);
   for (const request of interleaved) {
     addRequest(request);
@@ -156,10 +161,18 @@ export function loadSingle(
   return load([imageId], listener, retrieveConfiguration);
 }
 
+export type NearbyRequest = {
+  itemId: string;
+  linearId?: string;
+  status: FrameStatus;
+  nearbyItem;
+};
+
 export type ProgressiveRequest = {
   imageId: string;
   stage: RetrieveStage;
   next?: ProgressiveRequest;
+  nearbyRequests?: NearbyRequest[];
 };
 
 /** Interleaves the values according to the stages definition */
@@ -187,6 +200,7 @@ function interleave(
     const request: ProgressiveRequest = {
       imageId,
       stage,
+      nearbyRequests: findNearbyRequests(index, requests, stage),
     };
     addStageStatus(stageStatus, stage);
     const existingRequest = imageRequests.get(imageId);
@@ -205,6 +219,96 @@ function interleave(
     indices.forEach((index) => addStageInstance(stage, index));
   }
   return interleaved;
+}
+
+/**
+ * Finds nearby requests to fulfill to show the merge information earlier.
+ * @param index - to use as the base value
+ * @param requests - set of image ids to request
+ * @param stage - to find information from
+ * @returns Array of nearby frames to fill when the main stage is done
+ */
+function findNearbyRequests(
+  index: number,
+  requests: string[],
+  stage
+): NearbyRequest[] {
+  const nearby = new Array<NearbyRequest>();
+  if (!stage.nearbyFrames) {
+    return nearby;
+  }
+  for (const nearbyItem of stage.nearbyFrames) {
+    const nearbyIndex = index + nearbyItem.offset;
+    if (nearbyIndex < 0 || nearbyIndex >= requests.length) {
+      continue;
+    }
+    nearby.push({
+      itemId: requests[nearbyIndex],
+      nearbyItem,
+      status: nearbyItem.status,
+    });
+    if (nearbyItem.linearOffset !== undefined) {
+      const linearIndex =
+        nearbyItem.linearOffset !== undefined &&
+        nearbyItem.linearOffset + nearbyItem.offset;
+      if (linearIndex >= 0 && linearIndex < requests.length) {
+        nearby[nearby.length - 1].linearId = requests[linearIndex];
+      }
+    }
+  }
+
+  return nearby;
+}
+
+/** Actually fills the nearby frames from the given frame */
+function fillNearbyFrames(
+  listener: ProgressiveListener,
+  frameStatus: Map<string, FrameStatus>,
+  request,
+  image,
+  options
+) {
+  if (!request?.nearbyRequests?.length) {
+    console.log('Nothing nearby to fill');
+    return;
+  }
+
+  const {
+    arrayBuffer,
+    offset: srcOffset,
+    type,
+    length: frameLength,
+  } = options.targetBuffer;
+  if (!arrayBuffer || srcOffset === undefined || !type) {
+    return;
+  }
+  const scalarData = new Float32Array(arrayBuffer);
+  const bytesPerPixel = scalarData.byteLength / scalarData.length;
+  const offset = options.targetBuffer.offset / bytesPerPixel; // in bytes
+  // since set is based on the underlying type,
+  // we need to divide the offset bytes by the byte type
+  const src = scalarData.slice(offset, offset + frameLength);
+
+  for (const nearbyItem of request.nearbyRequests) {
+    try {
+      const { itemId: targetId, status } = nearbyItem;
+      const targetStatus = frameStatus.get(targetId);
+      if (targetStatus !== undefined && targetStatus < status) {
+        continue;
+      }
+      const targetOptions = listener.getTargetOptions(targetId);
+      const { offset: targetOffset } = targetOptions.targetBuffer as any;
+      scalarData.set(src, targetOffset / bytesPerPixel);
+      const nearbyImage = {
+        ...image,
+        status,
+      };
+      listener.successCallback(targetId, nearbyImage, status);
+      frameStatus[targetId] = status;
+    } catch (e) {
+      console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);
+    }
+  }
 }
 
 function addStageStatus(stageStatus: Map<string, StageStatus>, stage) {

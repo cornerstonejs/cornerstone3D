@@ -1111,44 +1111,6 @@ function getScalarDataType(scalarData, numFrames) {
   return { type, byteSize, length, lengthInBytes };
 }
 
-function fillNearby(
-  imageIdIndex,
-  scalarData,
-  options,
-  cachedFrames,
-  numFrames
-) {
-  try {
-    const frameLength = scalarData.length / numFrames;
-    const bytesPerPixel = scalarData.byteLength / scalarData.length;
-    const offset = options.targetBuffer.offset / bytesPerPixel; // in bytes
-    const nearby: number[] = [];
-    // since set is based on the underlying type,
-    // we need to divide the offset bytes by the byte type
-    const src = scalarData.slice(offset, offset + frameLength);
-    const max = Math.min(imageIdIndex + 3, numFrames);
-    const min = Math.max(0, imageIdIndex - 3);
-    for (let i = min; i < max; i++) {
-      if (imageIdIndex === i) {
-        continue;
-      }
-      const isClose = Math.abs(i - imageIdIndex) === 1;
-      if (
-        cachedFrames[i] !== undefined &&
-        (!isClose || cachedFrames[i] !== FrameStatus.REPLICATE)
-      ) {
-        continue;
-      }
-      cachedFrames[i] = FrameStatus.REPLICATE;
-      scalarData.set(src, i * frameLength);
-      nearby.push(i);
-    }
-    return nearby;
-  } catch (e) {
-    console.warn('fillNearby failed', e);
-  }
-}
-
 /**
  * Sets the scalar data at the appropriate offset to the
  * byte data from the image.

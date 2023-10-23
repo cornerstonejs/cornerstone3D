@@ -16,7 +16,17 @@ export interface RetrieveStage {
   requestType?: RequestType;
   // THe priority to use
   priority?: number;
+  // A set of frames which are nearby to replicate this frame to
+  nearbyFrames?: NearbyFrames[];
 }
+
+export type NearbyFrames = {
+  offset: number;
+  // If linear offset is provided, then a linear interpolation between two
+  // frames will be used instead.
+  linearOffset?: number;
+  status?: FrameStatus;
+};
 
 export interface RetrieveOptions {
   // Additional arguments to add to the URL, in the format
