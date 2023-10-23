@@ -14,11 +14,11 @@ const obj = {
 
     console.debug(points);
   },
-  fib(n) {
-    if (n <= 1) {
+  fib({ number }) {
+    if (number <= 1) {
       return 1;
     }
-    return obj.fib(n - 1) + obj.fib(n - 2);
+    return obj.fib({ number: number - 1 }) + obj.fib({ number: number - 2 });
   },
 };
 

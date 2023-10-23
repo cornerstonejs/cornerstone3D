@@ -117,7 +117,9 @@ const workerFn = () => {
 };
 
 const webWorkerManager = getWebWorkerManager();
-webWorkerManager.registerWorker('add', workerFn);
+webWorkerManager.registerWorker('add', workerFn, {
+  maxWebWorkersForThisType: 3,
+});
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -169,6 +171,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Camera properties
   private initialViewUp: Point3;
+  workerI = 20;
 
   /**
    * Constructor for the StackViewport class
@@ -2281,8 +2284,19 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
-    const res = await webWorkerManager.executeTask('add', 'fib', 41);
-    console.debug('result', res);
+    webWorkerManager.executeTask(
+      'add',
+      'fib',
+      (res) => {
+        console.debug('result', res);
+      },
+      {
+        type: RequestType.Prefetch,
+        priority: 0,
+        args: [{ number: this.workerI++ }],
+        options: {},
+      }
+    );
 
     this._throwIfDestroyed();
 

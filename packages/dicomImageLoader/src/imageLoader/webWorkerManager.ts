@@ -12,7 +12,7 @@ import {
   WebWorkerDeferredObject,
 } from '../types';
 
-// This is for the Webpack 5 approch but it's currently broken
+// This is for the Webpack 5 approach but it's currently broken
 // so we will continue relying on worker-loader for now
 // https://github.com/webpack/webpack/issues/13899
 /* const cornerstoneDICOMImageLoaderWebWorkerPath = new URL(

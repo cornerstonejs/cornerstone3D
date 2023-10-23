@@ -323,7 +323,4 @@ class RequestPoolManager {
   }
 }
 
-const requestPoolManager = new RequestPoolManager();
-
 export { RequestPoolManager };
-export default requestPoolManager;

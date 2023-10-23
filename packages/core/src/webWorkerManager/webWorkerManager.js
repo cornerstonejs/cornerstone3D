@@ -1,10 +1,13 @@
 import * as Comlink from 'comlink';
+import { RequestPoolManager } from '../requestPool/requestPoolManager';
+import { RequestType } from '../enums/';
 
 class CentralizedWorkerManager {
   constructor(maxGlobalWorkers = 5) {
     this.maxGlobalWorkers = maxGlobalWorkers;
     this.workerTypes = {};
     this.currentWorkerIndices = {};
+    this.workerQueueManager = new RequestPoolManager('webworker');
   }
   s;
 
@@ -44,22 +47,32 @@ class CentralizedWorkerManager {
     return nextWorkerAPI;
   }
 
-  async executeTask(workerName, methodName, ...args) {
-    const api = this.getNextWorkerAPI(workerName);
-    if (!api) {
-      console.error(`No available worker instance for '${workerName}'`);
-      return null;
-    }
+  executeTask(
+    workerName,
+    methodName,
+    successCallback,
+    { type = RequestType.Prefetch, priority = 0, args = {}, options = {} }
+  ) {
+    const requestFn = async () => {
+      const api = this.getNextWorkerAPI(workerName);
+      if (!api) {
+        console.error(`No available worker instance for '${workerName}'`);
+        return null;
+      }
 
-    try {
-      return await api[methodName](...args);
-    } catch (err) {
-      console.error(
-        `Error executing method '${methodName}' on worker '${workerName}':`,
-        err
-      );
-      return null;
-    }
+      try {
+        const results = await api[methodName](...args);
+        successCallback(results);
+      } catch (err) {
+        console.error(
+          `Error executing method '${methodName}' on worker '${workerName}':`,
+          err
+        );
+        return null;
+      }
+    };
+
+    this.workerQueueManager.addRequest(requestFn, type, options, priority);
   }
 
   terminate(workerName) {
