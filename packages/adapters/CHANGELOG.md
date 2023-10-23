@@ -3,6 +3,68 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.4](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2023-10-16)
+
+### Features
+
+-   **structuredClone:** drop lodash.clonedeep in favor of structuredClone ([#517](https://github.com/dcmjs-org/dcmjs/issues/517)) ([e562d72](https://github.com/dcmjs-org/dcmjs/commit/e562d72317e8ba1a5868765607e2c48fc0574919))
+
+# [2.0.0-beta.3](https://github.com/dcmjs-org/dcmjs/compare/v1.21.2...v2.0.0-beta.3) (2023-10-16)
+
+# [2.0.0-beta.2](https://github.com/dcmjs-org/dcmjs/compare/v1.16.6...v2.0.0-beta.2) (2023-09-22)
+
+# [2.0.0-beta.1](https://github.com/dcmjs-org/dcmjs/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.2](https://github.com/dcmjs-org/dcmjs/compare/v1.16.6...v2.0.0-beta.2) (2023-09-22)
+
+# [2.0.0-beta.1](https://github.com/dcmjs-org/dcmjs/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.1](https://github.com/dcmjs-org/dcmjs/compare/v1.9.2...v2.0.0-beta.1) (2023-08-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.16.6](https://github.com/dcmjs-org/dcmjs/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.16.5](https://github.com/dcmjs-org/dcmjs/compare/v1.16.4...v1.16.5) (2023-09-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.16.4](https://github.com/dcmjs-org/dcmjs/compare/v1.16.3...v1.16.4) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.16.3](https://github.com/dcmjs-org/dcmjs/compare/v1.16.2...v1.16.3) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.16.2](https://github.com/dcmjs-org/dcmjs/compare/v1.16.1...v1.16.2) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.16.1](https://github.com/dcmjs-org/dcmjs/compare/v1.16.0...v1.16.1) (2023-09-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.16.0](https://github.com/dcmjs-org/dcmjs/compare/v1.15.1...v1.16.0) (2023-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.15.1](https://github.com/dcmjs-org/dcmjs/compare/v1.15.0...v1.15.1) (2023-09-12)
+
+### Bug Fixes
+
+-   **cine:** fix cine black images for slow computers ([#761](https://github.com/dcmjs-org/dcmjs/issues/761)) ([b110bda](https://github.com/dcmjs-org/dcmjs/commit/b110bdad1d5c561721d379bbd20cfe07639756ef))
+
+# [1.15.0](https://github.com/dcmjs-org/dcmjs/compare/v1.14.4...v1.15.0) (2023-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.14.4](https://github.com/dcmjs-org/dcmjs/compare/v1.14.3...v1.14.4) (2023-09-07)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

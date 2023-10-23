@@ -1109,6 +1109,8 @@ interface IImage {
     // (undocumented)
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     // (undocumented)
     getPixelData: () => PixelDataTypedArray;
@@ -1122,6 +1124,8 @@ interface IImage {
     invert: boolean;
     // (undocumented)
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     // (undocumented)
@@ -1566,7 +1570,7 @@ type ImageVolumeModifiedEventDetail = {
 function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 
 // @public (undocumented)
-export function init(configuration?: {}): Promise<boolean>;
+export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
 
 // @public (undocumented)
 enum InterpolationType {

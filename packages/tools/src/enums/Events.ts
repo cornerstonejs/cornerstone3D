@@ -18,6 +18,15 @@ enum Events {
    */
   TOOL_ACTIVATED = 'CORNERSTONE_TOOLS_TOOL_ACTIVATED',
 
+  /**
+   * Triggers on the eventTarget when a mode of a tool is changed (active, passive, enabled and disabled).
+   *
+   * Make use of {@link EventTypes.ToolModeChangedEventType | Tool Mode Changed Event Type  }
+   * for typing your event listeners for this tool activated event, and see what event
+   * detail is included in {@link EventTypes.ToolModeChangedEventDetail | Tool Mode Changed Event Detail}.
+   */
+  TOOL_MODE_CHANGED = 'CORNERSTONE_TOOLS_TOOL_MODE_CHANGED',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////

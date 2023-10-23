@@ -658,7 +658,10 @@ class AngleTool extends AnnotationTool {
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetId]) {
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].angle == null
+      ) {
         data.cachedStats[targetId] = {
           angle: null,
         };
@@ -745,6 +748,21 @@ class AngleTool extends AnnotationTool {
         continue;
       }
 
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
+
       const textLines = this.configuration.getTextLines(data, targetId);
 
       if (!data.handles.textBox.hasMoved) {
@@ -768,7 +786,7 @@ class AngleTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+        options
       );
 
       const { x: left, y: top, width, height } = boundingBox;
