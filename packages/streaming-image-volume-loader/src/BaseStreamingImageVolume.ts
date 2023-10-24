@@ -382,12 +382,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { FrameOfReferenceUID } = this.metadata;
     const currentStatus = cachedFrames[frameIndex];
     if (currentStatus > status) {
-      console.warn(
-        'Already have better image quality for',
-        imageIdIndex,
-        currentStatus,
-        status
-      );
+      // This is common for initial versus decimated images.
       return;
     }
 

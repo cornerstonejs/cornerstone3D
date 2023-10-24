@@ -132,8 +132,8 @@ function loadImage(
           pixelData,
           status = FrameStatus.DONE,
           percentComplete,
-          done = true,
         } = result;
+        const { done } = compressedIt;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );

@@ -11,7 +11,8 @@ import decodeJPEGLossless from './decoders/decodeJPEGLossless';
 import decodeJPEGLS from './decoders/decodeJPEGLS';
 import decodeJPEG2000 from './decoders/decodeJPEG2000';
 import decodeHTJ2K from './decoders/decodeHTJ2K';
-import scaleArray from './scaling/scaleArray';
+// Note that the scaling is pixel value scaling, which is applying a modality LUT
+import applyModalityLUT from './scaling/scaleArray';
 import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
 import getMinMax from './getMinMax';
 import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
@@ -243,7 +244,7 @@ function postProcessDecodedPixels(
       typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
 
     if (isSlopeAndInterceptNumbers) {
-      scaleArray(pixelDataArray, scalingParameters);
+      applyModalityLUT(pixelDataArray, scalingParameters);
       imageFrame.preScale = {
         ...options.preScale,
         scaled: true,

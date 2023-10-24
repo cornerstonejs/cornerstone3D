@@ -57,6 +57,9 @@ const loaders = document.createElement('div');
 content.appendChild(loaders);
 
 const timingInfo = document.createElement('div');
+timingInfo.style.width = '35em';
+timingInfo.style.height = '10em';
+timingInfo.style.float = 'left';
 content.appendChild(timingInfo);
 const timingIds = [];
 const getOrCreateTiming = (id) => {
@@ -77,12 +80,41 @@ function resetTimingInfo() {
     getOrCreateTiming(id).innerText = `Waiting ${id}`;
   }
 }
+getOrCreateTiming('loadingStatus').innerText = 'Timing Information';
+
+const buttonInfo = document.createElement('div');
+buttonInfo.style.width = '20em';
+buttonInfo.style.height = '10em';
+buttonInfo.style.float = 'left';
+buttonInfo.innerHTML = `
+<ul style="margin:0">
+<li>JLS Thumb - reduced resolution only</li>
+<li>JLS Mixed - reduced resolution first, then full</li>
+<li>J2K - streaming HTJ2K</li>
+<li>J2K bytes - byte range request only</li>
+<li>J2K Mixed - J2K byte range first, then full</li>
+</ul>`;
+content.appendChild(buttonInfo);
+
+const stageInfo = document.createElement('div');
+stageInfo.style.width = '30em';
+stageInfo.style.height = '10em';
+stageInfo.style.float = 'left';
+stageInfo.innerHTML = `
+<ul style="margin:0">
+<li>Stages are arbitrary names for retrieve configurations</li>
+<li>Stages are skipped if data already complete</li>
+<li>Decimations are every 1 out of 4 sequential images</li>
+<li>quarter/half thumb are lossy decimations retrieves</li>
+<li>quarter/half/threeQuarter/final are non-lossy decimation retrieves</li>
+<li>lossy is based on configuration, and when not available, defaults to lossless</li>
+</ul>`;
+content.appendChild(stageInfo);
 
 const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
-viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
-
+viewportGrid.style.clear = 'both';
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
@@ -268,50 +300,24 @@ const configThumbnail = {
   },
 };
 
-const configStreamingVolume = {
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      streaming: true,
-    },
-    'default-final': {
-      streaming: true,
-    },
-    '3.2.840.10008.1.2.4.96-lossy': {
-      streaming: false,
-    },
-    '3.2.840.10008.1.2.4.96-final': {
-      streaming: false,
-    },
-  },
-};
-
 const configByteRange = {
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
     'default-lossy': {
-      framesPath: '/htj2k',
-      initialBytes: 65536,
+      isLossy: false,
+      streaming: false,
+      framesPath: '/htj2k/',
+      range: 0,
+      decodeLevel: 0,
     },
     'default-final': {
-      framesPath: '/htj2k',
-      initialBytes: 65536,
-    },
-    '3.2.840.10008.1.2.4.96-lossy': {
-      // isLossy: true,
-      streaming: false,
-      initialBytes: 65536,
-      //needsScale: true,
-    },
-    '3.2.840.10008.1.2.4.96-final': {
-      streaming: false,
-      initialBytes: 65536,
-      // isLossy: false,
-      //needsScale: true,
+      isLossy: false,
+      streaming: true,
+      framesPath: '/htj2k/',
+      range: 0,
+      decodeLevel: 0,
     },
   },
 };
@@ -416,13 +422,13 @@ async function run() {
   );
   renderingEngine.renderViewports(viewportIds);
 
-  async function loadVolume(name, imageIds, config) {
+  async function loadVolume(volumeId, imageIds, config, text) {
     cornerstoneDicomImageLoader.configure(config);
     cache.purgeCache();
     resetTimingInfo();
     // Define a volume in memory
     const start = Date.now();
-    const volume = await volumeLoader.createAndCacheVolume(name, {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
     });
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
@@ -432,10 +438,10 @@ async function run() {
       const now = Date.now();
       getOrCreateTiming('loadingStatus').innerText = `Took ${
         now - start
-      } ms for ${name} with ${imageIds.length} items`;
+      } ms for ${text} with ${imageIds.length} items`;
     });
 
-    setVolumesForViewports(renderingEngine, [{ volumeId: name }], viewportIds);
+    setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
@@ -455,7 +461,7 @@ async function run() {
   const createButton = (text, volId, imageIds, config) => {
     const button = document.createElement('button');
     button.innerText = text;
-    button.onclick = loadVolume.bind(null, volId, imageIds, config);
+    button.onclick = loadVolume.bind(null, volId, imageIds, config, text);
     loaders.appendChild(button);
   };
 
@@ -463,9 +469,7 @@ async function run() {
   createButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
   createButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
   createButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  createButton('J2K Thumb', volumeId, imageIdsCT, configThumbnail);
-  createButton('J2K Stream', volumeId, imageIdsCT, configStreamingVolume);
-  createButton('J2K Range', volumeId, imageIdsCT, configByteRange);
+  createButton('J2K Bytes', volumeId, imageIdsCT, configByteRange);
   createButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
 }
 

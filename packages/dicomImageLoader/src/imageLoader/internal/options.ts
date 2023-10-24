@@ -18,22 +18,33 @@ let options: LoaderOptions = {
     // image created code
   },
 
-  getRetrieveOptions(transferSyntaxUid, retrieveTypeId = '') {
+  /**
+   * Gets the retrieve options registered for the given
+   * combination of transfer syntax and retrieve type.
+   * unknown is used as the transfer syntnax if not found, and
+   * default is used if the base options are not found.
+   *
+   * For example with transfer syntax 1.2.3, type lossy
+   *   `1.2.3-lossy` is looked at first
+   *   `default-lossy` is the default key for lossy retrieve type
+   *
+   * For unspecified tsuid and no type the keys are:
+   *   `unknown`
+   *   `default`
+   */
+  getRetrieveOptions(transferSyntaxUID, retrieveType = '') {
     const { retrieveConfiguration } = this;
     if (!retrieveConfiguration) {
       return null;
     }
-    transferSyntaxUid ||= 'unknown';
-    if (!retrieveTypeId) {
-      return (
-        retrieveConfiguration[transferSyntaxUid] ||
-        retrieveConfiguration.default
-      );
-    }
-    return (
-      retrieveConfiguration[`${transferSyntaxUid}-${retrieveTypeId}`] ||
-      retrieveConfiguration[`default-${retrieveTypeId}`]
-    );
+    transferSyntaxUID ||= 'unknown';
+
+    const baseKey = retrieveType
+      ? `${transferSyntaxUID}-${retrieveType}`
+      : transferSyntaxUID;
+    const defaultKey = retrieveType ? `default-${retrieveType}` : 'default';
+
+    return retrieveConfiguration[baseKey] || retrieveConfiguration[defaultKey];
   },
 
   strict: false,

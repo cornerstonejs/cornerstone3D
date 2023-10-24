@@ -99,9 +99,13 @@ export default function rangeRequest(
       const doneAllBytes = totalBytes === encodedData.byteLength;
       const extract = extractMultipart(contentType, bytes, { isPartial: true });
 
+      // Allow over-writing the done status to indicate complete on partial
       resolve({
         ...extract,
-        status: getFrameStatus(retrieveOptions, doneAllBytes),
+        status: getFrameStatus(
+          retrieveOptions,
+          doneAllBytes || retrieveOptions.isLossy === false
+        ),
         percentComplete: (initialBytes * 100) / totalBytes,
       });
     } catch (err: any) {

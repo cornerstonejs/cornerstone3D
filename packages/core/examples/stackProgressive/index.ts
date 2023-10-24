@@ -31,15 +31,33 @@ const loaders = document.createElement('div');
 content.appendChild(loaders);
 
 const timingInfo = document.createElement('div');
+timingInfo.style.width = '35em';
+timingInfo.style.height = '10em';
+timingInfo.style.float = 'left';
 timingInfo.innerText = 'Timing Info Here';
 content.appendChild(timingInfo);
+
+const itemInfo = document.createElement('div');
+itemInfo.style.width = '25em';
+itemInfo.style.height = '10em';
+itemInfo.style.float = 'left';
+content.appendChild(itemInfo);
+itemInfo.innerHTML = `
+<ul>
+<li>JLS Thumbnail - small JLS thumbnails only</li>
+<li>JLS Mixed - thumbnail first, then full</li>
+<li>HTJ2K - streaming load</li>
+<li>HTJ2K - lossy byte range then lossy full</li>
+<li>Bytes - full resolution 64k bytes, then full final</li>
+</ul>
+`;
 
 const devicePixelRatio = window.devicePixelRatio || 1;
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
 element.style.width = `${3036 / devicePixelRatio}px`;
 element.style.height = `${3036 / devicePixelRatio}px`;
-
+element.style.clear = 'both';
 content.appendChild(element);
 
 // ============================= //
@@ -60,7 +78,7 @@ async function newImageFunction(evt) {
     );
   }
   const completeText = statusNames[status] || `other ${status}`;
-  timingInfo.innerHTML += `<p>Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${
+  timingInfo.innerHTML += `<p style="margin:0">Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${
     loadTimeInMS + decodeTimeInMS
   } total</p>`;
 }
@@ -69,7 +87,7 @@ async function showStack(stack: string[], viewport, config, name: string) {
   cornerstoneDicomImageLoader.configure(config);
   cache.purgeCache();
   console.time('imageLoad');
-  timingInfo.innerHTML = `<p>Loading ${name}</p>`;
+  timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   element.addEventListener(
     cornerstone.EVENTS.STACK_NEW_IMAGE,
     newImageFunction
@@ -86,9 +104,9 @@ async function showStack(stack: string[], viewport, config, name: string) {
     'transferSyntax',
     stack[0]
   );
-  timingInfo.innerHTML += `<p>Stack render took ${
+  document.getElementById('loading').innerText = `Stack render took ${
     end - start
-  } using ${transferSyntaxUID}</p>`;
+  } using ${transferSyntaxUID}`;
 }
 
 /**
@@ -179,25 +197,6 @@ const configHtj2k = {
   },
 };
 
-const configHtj2kByteRange = {
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      framesPath: '/htj2k/',
-      streaming: true,
-    },
-    'default-lossy': {
-      isLossy: true,
-      streaming: false,
-      framesPath: '/htj2k/',
-      initialBytes: 32768,
-      decodeLevel: 4,
-    },
-    default: {
-      framesPath: '/htj2k/',
-    },
-  },
-};
-
 const configHtj2kLossy = {
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
@@ -206,10 +205,15 @@ const configHtj2kLossy = {
     'default-lossy': {
       isLossy: true,
       framesPath: '/lossy/',
-      initialBytes: 65536,
+      range: 0,
+      streaming: true,
+      decodeLevel: 3,
     },
     default: {
       framesPath: '/lossy/',
+      decodeLevel: 0,
+      range: 1,
+      streaming: false,
     },
   },
 };
@@ -221,29 +225,21 @@ const configHtj2kMixed = {
     },
     'default-lossy': {
       isLossy: true,
-      framesPath: '/lossy/',
-      initialBytes: 16384,
-      decodeLevel: 4,
-    },
-    default: {
-      framesPath: '/htj2k/',
-    },
-  },
-};
-
-const configHtj2kThumbnail = {
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
       streaming: true,
+      range: 0,
+      initialBytes: 128000,
+      framesPath: '/htj2k/',
+      decodeLevel: 3,
     },
-    'default-lossy': {
-      isLossy: true,
-      framesPath: '/htj2kThumbnail/',
-      decodeLevel: 4,
-      initialBytes: 16384,
+    'default-final': {
+      range: 1,
+      framesPath: '/htj2k/',
+      streaming: false,
     },
     default: {
+      range: 1,
       framesPath: '/htj2k/',
+      streaming: false,
     },
   },
 };
@@ -307,13 +303,10 @@ async function run() {
 
   createButton('HTJ2K', imageIds, configHtj2k);
   createButton('HTJ2K Lossy', imageIds, configHtj2kLossy);
-  createButton('HTJ2K Thumbnail', imageIds, configHtj2kThumbnail);
-  createButton('HTJ2K Range/Final', imageIds, configHtj2kByteRange);
-  createButton('HTJ2K Lossy/Final', imageIds, configHtj2kMixed);
+  createButton('HTJ2K Bytes', imageIds, configHtj2kMixed);
 
-  createButton('CT JLS', imageIdsCt, configJLSMixed);
-  createButton('CT HTJ2K Lossy/Final', imageIdsCt, configHtj2kMixed);
-  createButton('CT HTJ2K Thumbnail', imageIdsCt, configHtj2kThumbnail);
+  createButton('CT JLS Mixed', imageIdsCt, configJLSMixed);
+  createButton('CT HTJ2K Bytes', imageIdsCt, configHtj2kMixed);
 }
 
 run();
