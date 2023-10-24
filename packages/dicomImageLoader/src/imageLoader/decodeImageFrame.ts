@@ -1,5 +1,4 @@
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
-import webWorkerManager from './webWorkerManager';
 
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle

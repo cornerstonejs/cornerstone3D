@@ -274,7 +274,6 @@ function getWebWorkerManager() {
 }
 
 export {
-  getWebWorkerManager,
   init,
   getShouldUseCPURendering,
   getShouldUseSharedArrayBuffer,
@@ -286,4 +285,5 @@ export {
   resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
 };

@@ -165,14 +165,6 @@ module.exports = function (config) {
             type: 'asset/resource',
           },
           {
-            test: /\.worker\.(mjs|js|ts)$/,
-            use: [
-              {
-                loader: 'worker-loader',
-              },
-            ],
-          },
-          {
             test: path.join(
               path.resolve(__dirname, 'packages/dicomImageLoader'),
               'codecs',

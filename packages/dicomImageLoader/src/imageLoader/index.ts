@@ -16,7 +16,6 @@ import { default as getImageFrame } from './getImageFrame';
 import { default as getMinMax } from '../shared/getMinMax';
 import { default as isColorImage } from '../shared/isColorImage';
 import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor';
-import { default as webWorkerManager } from './webWorkerManager';
 import { default as getPixelData } from './wadors/getPixelData';
 import { internal } from './internal/index';
 import { default as external } from '../externalModules';
@@ -38,7 +37,6 @@ const cornerstoneDICOMImageLoader = {
   getMinMax,
   isColorImage,
   isJPEGBaseline8BitColor,
-  webWorkerManager,
   internal,
   external,
 };
@@ -60,7 +58,6 @@ export {
   getMinMax,
   isColorImage,
   isJPEGBaseline8BitColor,
-  webWorkerManager,
   internal,
   external,
 };
