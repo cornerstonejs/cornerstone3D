@@ -982,39 +982,6 @@ type ImageLoadProgressEventDetail = {
 };
 
 // @public (undocumented)
-export interface ImageLoadRequests {
-    // (undocumented)
-    additionalDetails: {
-        volumeId: string;
-    };
-    // (undocumented)
-    callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
-    // (undocumented)
-    imageId: string;
-    // (undocumented)
-    imageIdIndex: number;
-    // (undocumented)
-    options: {
-        targetBuffer: {
-            arrayBuffer: SharedArrayBuffer;
-            offset: number;
-            length: number;
-            type: any;
-        };
-        skipCreateImage: boolean;
-        preScale: {
-            enabled: boolean;
-            scalingParameters: Types.ScalingParameters;
-        };
-        transferPixelData: boolean;
-    };
-    // (undocumented)
-    priority: number;
-    // (undocumented)
-    requestType: Enums_2.RequestType;
-}
-
-// @public (undocumented)
 interface ImagePixelModule {
     // (undocumented)
     bitsAllocated: number;
