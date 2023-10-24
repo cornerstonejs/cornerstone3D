@@ -282,23 +282,26 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public getImageData() {
     return null;
   }
+
   public setCamera(camera: ICamera): void {
     const { parallelScale, focalPoint } = camera;
 
-    const prevCamera = this.getCamera();
-    console.debug('🚀 ~ focalPoint:', focalPoint);
+    if (focalPoint !== undefined) {
+      const prevCamera = this.getCamera();
 
-    const focalPointCanvas = this.worldToCanvas(focalPoint);
-    // Reverse pan direction
-    const pan = [-focalPointCanvas[0], -focalPointCanvas[1]] as Point2;
+      const deltaWorld = [
+        focalPoint[0] - prevCamera.focalPoint[0],
+        focalPoint[1] - prevCamera.focalPoint[1],
+      ];
 
-    if (pan !== undefined) {
-      this.videoCamera.pan = pan;
+      this.videoCamera.pan = [
+        this.videoCamera.pan[0] - deltaWorld[0],
+        this.videoCamera.pan[1] - deltaWorld[1],
+      ];
     }
 
     if (camera.parallelScale !== undefined) {
-      // Reverse zoom direction
-      this.videoCamera.parallelScale = 1 / camera.parallelScale;
+      this.videoCamera.parallelScale = 1 / parallelScale;
     }
 
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -311,15 +314,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public getCamera(): ICamera {
     const { parallelScale, pan } = this.videoCamera;
 
-    // Focal point is the center of the canvas in world coordinate by construction
-    const canvasCenterWorld = this.canvasToWorld([-pan[0], -pan[1]]); // Reverse pan direction back
-
     return {
       parallelProjection: true,
-      focalPoint: canvasCenterWorld,
-      position: [0, 0, 0],
+      focalPoint: [pan[0], pan[1], 0],
+      position: [pan[0], pan[1], 0],
       parallelScale: 1 / parallelScale, // Reverse zoom direction back
-      viewPlaneNormal: [0, 1, 0],
+      viewPlaneNormal: [0, 0, 1],
     };
   }
 
@@ -401,11 +401,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   /**
-   * Convers and [x,y] video coordinate to a Cornerstone3D VideoViewport.
+   * Converts and [x,y] video coordinate to a Cornerstone3D VideoViewport.
    *
-   * @param {Point3} worldPos
-   * @returns {Point2}
-   * @memberof VideoViewport
+   * @param  worldPos - world coord to convert to canvas
+   * @returns Canvas position
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
     const pan: Point2 = this.videoCamera.pan;
@@ -504,8 +503,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.videoWidth,
       this.videoHeight
     );
-
-    // let drawWidth = Math.floor(this.videoWidth * worldToCanvasRatio);
 
     this.canvasContext.resetTransform();
 

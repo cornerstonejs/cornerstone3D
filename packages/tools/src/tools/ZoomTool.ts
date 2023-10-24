@@ -16,9 +16,6 @@ class ZoomTool extends BaseTool {
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
 
-  cachedWorldPos: Types.Point2;
-  cachedCanvasPos: Types.Point2;
-
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -50,14 +47,6 @@ class ZoomTool extends BaseTool {
     const { element, currentPoints } = eventData;
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
-
-    if (enabledElement.viewport instanceof VideoViewport) {
-      const currentCanvasPoints = currentPoints.canvas;
-      const currentWorldPoints = currentPoints.world;
-      this.cachedCanvasPos = [currentCanvasPoints[0], currentCanvasPoints[1]];
-      this.cachedWorldPos = [currentWorldPoints[0], currentWorldPoints[1]];
-      return;
-    }
 
     const camera = enabledElement.viewport.getCamera();
     const { focalPoint } = camera;
@@ -159,7 +148,7 @@ class ZoomTool extends BaseTool {
     const zoomScale = 1.5 / size[1];
     const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
 
-    let parallelScaleToSet = (1.0 - k) * parallelScale;
+    const parallelScaleToSet = (1.0 - k) * parallelScale;
 
     let focalPointToSet = focalPoint;
     let positionToSet = position;
@@ -174,14 +163,13 @@ class ZoomTool extends BaseTool {
         focalPoint,
         this.initialMousePosWorld
       );
-      // const initialYDistanceBetweenInitialAndFocalPoint;
 
       // we need to move in the direction of the vector between the focal point
       // and the initial mouse position by some amount until ultimately we
       // reach the mouse position at the focal point
-      const zoomScale = 5 / size[1];
-      const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
-      parallelScaleToSet = (1.0 - k) * parallelScale;
+      // const zoomScale = 10 / size[1];
+      // const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
+      // parallelScaleToSet = (1.0 - k) * parallelScale;
 
       positionToSet = vec3.scaleAndAdd(
         vec3.create(),
