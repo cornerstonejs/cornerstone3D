@@ -1,5 +1,5 @@
 import { BaseTool } from './base';
-import { getEnabledElement, VideoViewport } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -45,6 +45,7 @@ class PanTool extends BaseTool {
       focalPoint[1] - deltaPointsWorld[1],
       focalPoint[2] - deltaPointsWorld[2],
     ];
+
     enabledElement.viewport.setCamera({
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
