@@ -2,18 +2,18 @@ import { Types, Enums } from '@cornerstonejs/core';
 
 export default interface ImageLoadRequests {
   callLoadImage: (
-    imageId: any,
-    imageIdIndex: any,
+    imageId: string,
+    imageIdIndex: number,
     options: any
   ) => Promise<void>;
   imageId: string;
   imageIdIndex: number;
   options: {
     targetBuffer: {
-      arrayBuffer: SharedArrayBuffer;
+      arrayBuffer: SharedArrayBuffer | undefined;
       offset: number;
       length: number;
-      type: any;
+      type: string;
     };
     skipCreateImage: boolean;
     preScale: {

@@ -1,6 +1,6 @@
 import { Types } from '@cornerstonejs/core';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
-import ImageLoadRequests from './ImageLoadRequests';
+import ImageLoadRequests from './types/ImageLoadRequests';
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
