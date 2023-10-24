@@ -1,5 +1,6 @@
 /* eslint-disable complexity */
 import { ByteArray } from 'dicom-parser';
+import { expose } from 'comlink';
 
 import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
@@ -372,4 +373,24 @@ function _validateScalingParameters(scalingParameters) {
   }
 }
 
-export default decodeImageFrame;
+const obj = {
+  decodeTask({
+    imageFrame,
+    transferSyntax,
+    decodeConfig,
+    options,
+    pixelData,
+    callbackFn,
+  }) {
+    return decodeImageFrame(
+      imageFrame,
+      transferSyntax,
+      pixelData,
+      decodeConfig,
+      options,
+      callbackFn
+    );
+  },
+};
+
+expose(obj);

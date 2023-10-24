@@ -99,7 +99,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: true });
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
   toolGroup.addTool(PlanarRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
@@ -167,7 +167,9 @@ async function run() {
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  viewport.setStack(imageIds.slice(0, 30));
+
+  cornerstoneTools.utilities.stackPrefetch.enable(element);
 
   // Render the image
   viewport.render();

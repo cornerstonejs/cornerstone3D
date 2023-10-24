@@ -19,14 +19,14 @@ export default function initCornerstoneDICOMImageLoader() {
     },
   });
 
-  let maxWebWorkers = 1;
+  let maxWebWorkers = 20;
 
   if (navigator.hardwareConcurrency) {
     maxWebWorkers = Math.min(navigator.hardwareConcurrency, 7);
   }
 
   var config = {
-    maxWebWorkers,
+    maxWebWorkers: 20,
     startWebWorkersOnDemand: false,
     taskConfiguration: {
       decodeTask: {
@@ -36,5 +36,5 @@ export default function initCornerstoneDICOMImageLoader() {
     },
   };
 
-  cornerstoneDICOMImageLoader.webWorkerManager.initialize(config);
+  // cornerstoneDICOMImageLoader.webWorkerManager.initialize(config);
 }

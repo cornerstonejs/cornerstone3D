@@ -71,35 +71,37 @@ class CentralizedWorkerManager {
   executeTask(
     workerName,
     methodName,
-    successCallback,
     { type = RequestType.Prefetch, priority = 0, args = {}, options = {} }
   ) {
-    const requestFn = async () => {
-      // when the time comes to execute the request, find the worker with the minimum load.
-      // Note: this should be done inside the requestFn, because the load of the workers
-      // can change between the time the request is added to the queue and the time it is executed.
-      const { api, index } = this.getNextWorkerAPI(workerName);
+    return new Promise((resolve, reject) => {
+      const requestFn = async () => {
+        const { api, index } = this.getNextWorkerAPI(workerName);
+        console.debug('index', index);
+        if (!api) {
+          const error = new Error(
+            `No available worker instance for '${workerName}'`
+          );
+          console.error(error);
+          reject(error);
+          return;
+        }
 
-      if (!api) {
-        console.error(`No available worker instance for '${workerName}'`);
-        return null;
-      }
+        try {
+          const results = await api[methodName](...args);
+          resolve(results);
+        } catch (err) {
+          console.error(
+            `Error executing method '${methodName}' on worker '${workerName}':`,
+            err
+          );
+          reject(err);
+        } finally {
+          this.workerLoadCounters[workerName][index]--;
+        }
+      };
 
-      try {
-        const results = await api[methodName](...args);
-        successCallback(results);
-      } catch (err) {
-        console.error(
-          `Error executing method '${methodName}' on worker '${workerName}':`,
-          err
-        );
-        return null;
-      } finally {
-        this.workerLoadCounters[workerName][index]--;
-      }
-    };
-
-    this.workerPoolManager.addRequest(requestFn, type, options, priority);
+      this.workerPoolManager.addRequest(requestFn, type, options, priority);
+    });
   }
 
   terminate(workerName) {

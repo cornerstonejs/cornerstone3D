@@ -7,6 +7,7 @@ import webWorkerManager from './webWorkerManager';
 import { ByteArray } from 'dicom-parser';
 import { inflateRaw } from 'pako/lib/inflate';
 import { ImageFrame, LoaderDecodeOptions } from '../types';
+import external from '../externalModules';
 
 (window as any).pako = { inflateRaw };
 
@@ -17,23 +18,36 @@ function processDecodeTask(
   options,
   decodeConfig: LoaderDecodeOptions
 ): Promise<ImageFrame> {
+  const webWorkerManager = external.cornerstone.getWebWorkerManager();
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]
     : undefined;
 
-  return webWorkerManager.addTask(
-    'decodeTask',
-    {
-      imageFrame,
-      transferSyntax,
-      pixelData,
-      options,
-      decodeConfig,
-    },
+  // return webWorkerManager.addTask(
+  //   'decodeTask',
+  //   {
+  //     imageFrame,
+  //     transferSyntax,
+  //     pixelData,
+  //     options,
+  //     decodeConfig,
+  //   },
+  //   priority,
+  //   transferList
+  // ).promise;
+  return webWorkerManager.executeTask('dicomImageLoader', 'decodeTask', {
     priority,
-    transferList
-  ).promise;
+    args: [
+      {
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig,
+      },
+    ],
+  });
 }
 
 function decodeImageFrame(

@@ -60,7 +60,7 @@ module.exports = {
           {
             loader: 'worker-loader',
             options: {
-              filename: '[name].[contenthash].worker.js',
+              filename: '[name].worker.js',
             },
           },
           // {

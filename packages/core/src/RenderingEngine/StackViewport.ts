@@ -171,7 +171,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Camera properties
   private initialViewUp: Point3;
-  workerI = 20;
+  workerI = 39;
 
   /**
    * Constructor for the StackViewport class
@@ -2284,19 +2284,16 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
-    webWorkerManager.executeTask(
-      'add',
-      'fib',
-      (res) => {
-        console.debug('result', res);
-      },
-      {
+    webWorkerManager
+      .executeTask('add', 'fib', {
         type: RequestType.Prefetch,
         priority: 0,
         args: [{ number: this.workerI++ }],
         options: {},
-      }
-    );
+      })
+      .then((res) => {
+        console.debug('result', res);
+      });
 
     this._throwIfDestroyed();
 

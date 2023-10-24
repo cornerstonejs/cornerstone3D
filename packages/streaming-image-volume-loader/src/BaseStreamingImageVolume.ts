@@ -259,9 +259,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     scalarData: Types.VolumeScalarData,
     priority: number
   ) => {
-    workerManager.executeTask('streaming', 'fib', 42).then((res) => {
-      console.debug('result', res);
-    });
+    // workerManager.executeTask('streaming', 'fib', 42).then((res) => {
+    //   console.debug('result', res);
+    // });
 
     const { loadStatus } = this;
     const { cachedFrames } = loadStatus;
