@@ -13,7 +13,7 @@ import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 
 export type VideoCamera = {
-  pan: Point2;
+  panWorld: Point2;
   parallelScale: number;
 };
 
@@ -56,7 +56,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private scrollSpeed = 1;
   private fps = 30; // TODO We need to find a good solution for this.
   private videoCamera: VideoCamera = {
-    pan: [0, 0],
+    panWorld: [0, 0],
     parallelScale: 1,
   };
 
@@ -294,9 +294,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
         focalPoint[1] - prevCamera.focalPoint[1],
       ];
 
-      this.videoCamera.pan = [
-        this.videoCamera.pan[0] - deltaWorld[0],
-        this.videoCamera.pan[1] - deltaWorld[1],
+      this.videoCamera.panWorld = [
+        this.videoCamera.panWorld[0] - deltaWorld[0],
+        this.videoCamera.panWorld[1] - deltaWorld[1],
       ];
     }
 
@@ -312,22 +312,18 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public getCamera(): ICamera {
-    const { parallelScale, pan } = this.videoCamera;
+    const { parallelScale, panWorld } = this.videoCamera;
 
     return {
       parallelProjection: true,
-      focalPoint: [pan[0], pan[1], 0],
-      position: [pan[0], pan[1], 0],
+      focalPoint: [panWorld[0], panWorld[1], 0],
+      position: [0, 0, 0],
       parallelScale: 1 / parallelScale, // Reverse zoom direction back
       viewPlaneNormal: [0, 0, 1],
     };
   }
 
-  public resetCamera = (
-    resetPan?: boolean,
-    resetZoom?: boolean,
-    resetToCenter?: boolean
-  ): boolean => {
+  public resetCamera = (): boolean => {
     this.refreshRenderValues();
 
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -378,17 +374,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * @returns World position
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
-    const pan: Point2 = this.videoCamera.pan; // In world coordinates
+    const pan: Point2 = this.videoCamera.panWorld; // In world coordinates
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
 
-    const panOffset: Point2 = [
+    const panOffsetCanvas: Point2 = [
       pan[0] * worldToCanvasRatio,
       pan[1] * worldToCanvasRatio,
     ];
 
     const subCanvasPos: Point2 = [
-      canvasPos[0] - panOffset[0],
-      canvasPos[1] - panOffset[1],
+      canvasPos[0] - panOffsetCanvas[0],
+      canvasPos[1] - panOffsetCanvas[1],
     ];
 
     const worldPos: Point3 = [
@@ -407,7 +403,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * @returns Canvas position
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const pan: Point2 = this.videoCamera.pan;
+    const pan: Point2 = this.videoCamera.panWorld;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
 
     const subCanvasPos: Point2 = [
@@ -421,6 +417,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   private refreshRenderValues() {
+    // this means that each unit (pixel) in the world (video) would be
+    // represented by n pixels in the canvas.
     let worldToCanvasRatio = this.canvas.width / this.videoWidth;
 
     if (this.videoHeight * worldToCanvasRatio > this.canvas.height) {
@@ -436,13 +434,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const drawWidth = Math.floor(this.videoWidth * worldToCanvasRatio);
     const drawHeight = Math.floor(this.videoHeight * worldToCanvasRatio);
 
+    // calculate x and y offset in order to center the image
     const xOffsetCanvas = this.canvas.width / 2 - drawWidth / 2;
     const yOffsetCanvas = this.canvas.height / 2 - drawHeight / 2;
 
     const xOffsetWorld = xOffsetCanvas / worldToCanvasRatio;
     const yOffsetWorld = yOffsetCanvas / worldToCanvasRatio;
 
-    this.videoCamera.pan = [xOffsetWorld, yOffsetWorld];
+    this.videoCamera.panWorld = [xOffsetWorld, yOffsetWorld];
     this.videoCamera.parallelScale = worldToCanvasRatio;
   }
 
@@ -459,7 +458,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   private renderFrame = () => {
-    const pan: Point2 = this.videoCamera.pan;
+    const pan: Point2 = this.videoCamera.panWorld;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
     const canvasToWorldRatio: number = this.getCanvasToWorldRatio();
 
@@ -471,7 +470,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     const transform = new Transform();
 
-    // Translate to the center of the canvas
+    // Translate to the center of the canvas (move origin of the transform
+    // to the center of the canvas)
     transform.translate(halfCanvas[0], halfCanvas[1]);
 
     // Scale
