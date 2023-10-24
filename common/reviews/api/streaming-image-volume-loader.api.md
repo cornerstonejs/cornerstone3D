@@ -44,6 +44,25 @@ type AffineMatrix = [
 ];
 
 // @public
+enum BlendModes {
+    AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
+    COMPOSITE = BlendMode.COMPOSITE_BLEND,
+    MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
+    MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
+}
+
+// @public
+enum CalibrationTypes {
+    ERMF = 'ERMF',
+    ERROR = 'Error',
+    NOT_APPLICABLE = '',
+    PROJECTION = 'Proj',
+    REGION = 'Region',
+    UNCALIBRATED = 'Uncalibrated',
+    USER = 'User',
+}
+
+// @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 
 // @public
@@ -94,6 +113,14 @@ type ContourSetData = {
     color?: Point3;
     segmentIndex?: number;
 };
+
+// @public (undocumented)
+enum ContourType {
+    // (undocumented)
+    CLOSED_PLANAR = 'CLOSED_PLANAR',
+    // (undocumented)
+    OPEN_PLANAR = 'OPEN_PLANAR',
+}
 
 // @public (undocumented)
 type Cornerstone3DConfig = {
@@ -413,6 +440,13 @@ type DisplayAreaModifiedEventDetail = {
 };
 
 // @public
+enum DynamicOperatorType {
+    AVERAGE = 'AVERAGE',
+    SUBTRACT = 'SUBTRACT',
+    SUM = 'SUM',
+}
+
+// @public
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public
@@ -434,13 +468,59 @@ type ElementEnabledEventDetail = {
 
 declare namespace Enums {
     export {
-        Events
+        Events_2 as Events
     }
 }
 export { Enums }
 
-// @public (undocumented)
+// @public
 enum Events {
+    CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
+    CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
+
+    CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+    CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
+    DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
+    ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
+    ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
+    GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
+    IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
+    IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
+    IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
+    IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+    IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
+    IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+
+    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
+    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
+    IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+    IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
+    STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+    STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+
+    STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
+
+    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+    VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
+    VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+
+    VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+
+    VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+
+    VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
+
+    VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
+
+    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+    // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
+    // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
+    // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+}
+
+// @public (undocumented)
+enum Events_2 {
     // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED"
 }
@@ -501,6 +581,14 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public (undocumented)
+enum GeometryType {
+    // (undocumented)
+    CONTOUR = 'contour',
+    // (undocumented)
+    SURFACE = 'Surface',
+}
 
 // @public (undocumented)
 export const helpers: {
@@ -894,6 +982,39 @@ type ImageLoadProgressEventDetail = {
 };
 
 // @public (undocumented)
+export interface ImageLoadRequests {
+    // (undocumented)
+    additionalDetails: {
+        volumeId: string;
+    };
+    // (undocumented)
+    callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
+    // (undocumented)
+    imageId: string;
+    // (undocumented)
+    imageIdIndex: number;
+    // (undocumented)
+    options: {
+        targetBuffer: {
+            arrayBuffer: SharedArrayBuffer;
+            offset: number;
+            length: number;
+            type: any;
+        };
+        skipCreateImage: boolean;
+        preScale: {
+            enabled: boolean;
+            scalingParameters: Types.ScalingParameters;
+        };
+        transferPixelData: boolean;
+    };
+    // (undocumented)
+    priority: number;
+    // (undocumented)
+    requestType: Enums_2.RequestType;
+}
+
+// @public (undocumented)
 interface ImagePixelModule {
     // (undocumented)
     bitsAllocated: number;
@@ -996,6 +1117,14 @@ type ImageVolumeModifiedEventDetail = {
     imageVolume: IImageVolume;
     FrameOfReferenceUID: string;
 };
+
+// @public
+enum InterpolationType {
+    // (undocumented)
+    FAST_LINEAR,
+    LINEAR,
+    NEAREST,
+}
 
 // @public
 interface IRegisterImageLoader {
@@ -1323,6 +1452,18 @@ type Metadata = {
     VOILUTFunction: string;
 };
 
+// @public (undocumented)
+enum OrientationAxis {
+    // (undocumented)
+    ACQUISITION = 'acquisition',
+    // (undocumented)
+    AXIAL = 'axial',
+    // (undocumented)
+    CORONAL = 'coronal',
+    // (undocumented)
+    SAGITTAL = 'sagittal',
+}
+
 // @public
 type OrientationVectors = {
     viewPlaneNormal: Point3;
@@ -1390,6 +1531,13 @@ type PublicViewportInput = {
 };
 
 // @public
+enum RequestType {
+    Interaction = 'interaction',
+    Prefetch = 'prefetch',
+    Thumbnail = 'thumbnail',
+}
+
+// @public
 type RGB = [number, number, number];
 
 // @public (undocumented)
@@ -1406,6 +1554,15 @@ type ScalingParameters = {
     suvlbm?: number;
     suvbsa?: number;
 };
+
+// @public
+enum SharedArrayBufferModes {
+    AUTO = 'auto',
+    // (undocumented)
+    FALSE = 'false',
+    // (undocumented)
+    TRUE = 'true',
+}
 
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
@@ -1469,30 +1626,7 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
 export class StreamingImageVolume extends BaseStreamingImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
-    getImageLoadRequests: (priority: number) => {
-        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
-        imageId: string;
-        imageIdIndex: number;
-        options: {
-            targetBuffer: {
-                arrayBuffer: SharedArrayBuffer;
-                offset: number;
-                length: number;
-                type: any;
-            };
-            skipCreateImage: boolean;
-            preScale: {
-                enabled: boolean;
-                scalingParameters: Types.ScalingParameters;
-            };
-            transferPixelData: boolean;
-        };
-        priority: number;
-        requestType: string;
-        additionalDetails: {
-            volumeId: string;
-        };
-    }[];
+    getImageLoadRequests(priority: number): ImageLoadRequests[];
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
 }
@@ -1549,10 +1683,37 @@ type ViewportProperties = {
 };
 
 // @public (undocumented)
+enum ViewportStatus {
+    LOADING = 'loading',
+    NO_DATA = 'noData',
+    PRE_RENDER = 'preRender',
+    RENDERED = 'rendered',
+    RESIZE = 'resize',
+}
+
+// @public
+enum ViewportType {
+    ORTHOGRAPHIC = 'orthographic',
+    PERSPECTIVE = 'perspective',
+    STACK = 'stack',
+    // (undocumented)
+    VOLUME_3D = 'volume3d',
+}
+
+// @public (undocumented)
 type VOI = {
     windowWidth: number;
     windowCenter: number;
 };
+
+// @public
+enum VOILUTFunctionType {
+    // (undocumented)
+    LINEAR = 'LINEAR',
+    // (undocumented)
+    SAMPLED_SIGMOID = 'SIGMOID', // SIGMOID is sampled in 1024 even steps so we call it SAMPLED_SIGMOID
+    // EXACT_LINEAR = 'EXACT_LINEAR', TODO: Add EXACT_LINEAR option from DICOM NEMA
+}
 
 // @public
 type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;

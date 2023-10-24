@@ -13,7 +13,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
 
-const requestType: string = Enums.RequestType.Prefetch;
+const requestType = Enums.RequestType.Prefetch;
 const { getMinMax } = csUtils;
 
 /**
