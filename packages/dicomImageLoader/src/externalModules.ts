@@ -18,7 +18,9 @@ const external = {
     registerLoaders(cornerstone);
 
     const workerManager = external.cornerstone.getWebWorkerManager();
-    workerManager.registerWorker('dicomImageLoader', workerFn);
+    workerManager.registerWorker('dicomImageLoader', workerFn, {
+      maxWorkerInstances: 10,
+    });
   },
   get cornerstone() {
     if (!cornerstone) {

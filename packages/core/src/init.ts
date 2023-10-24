@@ -139,7 +139,7 @@ async function init(configuration = {}): Promise<boolean> {
   csRenderInitialized = true;
 
   if (!webWorkerManager) {
-    webWorkerManager = new CentralizedWebWorkerManager(5);
+    webWorkerManager = new CentralizedWebWorkerManager();
   }
 
   return csRenderInitialized;
@@ -267,7 +267,7 @@ function _updateRenderingPipelinesForAllViewports(): void {
 
 function getWebWorkerManager() {
   if (!webWorkerManager) {
-    webWorkerManager = new CentralizedWebWorkerManager(5);
+    webWorkerManager = new CentralizedWebWorkerManager();
   }
 
   return webWorkerManager;

@@ -3,34 +3,32 @@ import { RequestType } from '../enums/';
 import { RequestPoolManager } from '../requestPool/requestPoolManager';
 
 class CentralizedWorkerManager {
-  constructor(maxGlobalWorkers = 5) {
-    this.maxGlobalWorkers = maxGlobalWorkers;
+  constructor() {
     this.workerTypes = {};
     this.currentWorkerIndices = {};
     this.workerPoolManager = new RequestPoolManager('webworker');
     this.workerLoadCounters = {};
+    window.loadCounters = this.workerLoadCounters;
   }
 
   registerWorker(workerName, workerFn, options = {}) {
-    const { maxWebWorkersForThisType = 1, overwrite = false } = options;
+    const { maxWorkerInstances = 1, overwrite = false } = options;
 
     if (this.workerTypes[workerName] && !overwrite) {
       console.warn(`Worker type '${workerName}' is already registered...`);
       return;
     }
 
-    this.workerLoadCounters[workerName] = Array(maxWebWorkersForThisType).fill(
-      0
-    );
+    this.workerLoadCounters[workerName] = Array(maxWorkerInstances).fill(0);
 
     this.workerTypes[workerName] = {
-      maxWorkers: maxWebWorkersForThisType,
+      maxWorkers: maxWorkerInstances,
       instances: [],
     };
 
     this.currentWorkerIndices[workerName] = 0;
 
-    for (let i = 0; i < maxWebWorkersForThisType; i++) {
+    for (let i = 0; i < maxWorkerInstances; i++) {
       const worker = workerFn();
       const workerWrapper = Comlink.wrap(worker);
       this.workerTypes[workerName].instances.push(workerWrapper);
@@ -96,6 +94,7 @@ class CentralizedWorkerManager {
           );
           reject(err);
         } finally {
+          console.debug('worker number', index, 'has become available');
           this.workerLoadCounters[workerName][index]--;
         }
       };

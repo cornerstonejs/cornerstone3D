@@ -118,7 +118,7 @@ const workerFn = () => {
 
 const webWorkerManager = getWebWorkerManager();
 webWorkerManager.registerWorker('add', workerFn, {
-  maxWebWorkersForThisType: 3,
+  maxWorkerInstances: 3,
 });
 
 /**
