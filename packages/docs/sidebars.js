@@ -98,7 +98,11 @@ module.exports = {
           label: 'Progressive Loading',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/progressive-loading/index' },
-          items: ['concepts/progressive-loading/progressive'],
+          items: [
+            'concepts/progressive-loading/stackProgressive',
+            'concepts/progressive-loading/volumeProgressive',
+            'concepts/progressive-loading/requirements',
+          ],
         },
         {
           type: 'category',

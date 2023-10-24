@@ -207,8 +207,6 @@ const configJLS = {
 };
 
 const configJLSMixed = {
-  minChunkSize: 65_536,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
@@ -224,8 +222,6 @@ const configJLSMixed = {
 };
 
 const configJLSThumbnail = {
-  minChunkSize: 65_536,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,

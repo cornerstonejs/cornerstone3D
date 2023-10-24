@@ -1,5 +1,0 @@
----
-id: progressive
----
-
-# Progressive Loading

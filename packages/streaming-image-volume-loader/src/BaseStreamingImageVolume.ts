@@ -750,7 +750,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.reRenderTarget = this.reRenderFraction;
     }
 
-    return progressiveLoader.load(imageIds, this);
+    return progressiveLoader.load(imageIds, this).catch((e) => {
+      console.warn('progressive loading failed to complete', e);
+    });
   }
 
   /**

@@ -147,8 +147,6 @@ const configJLS = {
 };
 
 const configJLSMixed = {
-  minChunkSize: 65_536,
-
   retrieveConfiguration: {
     'default-lossy': {
       isLossy: true,
@@ -179,8 +177,6 @@ const configJLSThumbnail = {
 };
 
 const configHtj2k = {
-  minChunkSize: 65_536,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       framesPath: '/htj2k/',

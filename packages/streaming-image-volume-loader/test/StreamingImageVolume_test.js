@@ -465,7 +465,7 @@ describe('StreamingImageVolume', () => {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    it('should not throw', async function () {
+    fit('should not throw', async function () {
       imageLoader.registerImageLoader('xxxx', (imageId) => {
         return {
           promise: Promise.reject(new Error('simulate loader error')),
