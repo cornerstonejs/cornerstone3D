@@ -883,6 +883,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
 };
 
 // @public (undocumented)
+export function getWebWorkerManager(): any;
+
+// @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
 
 // @public (undocumented)
@@ -2366,6 +2369,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     updateRenderingPipeline: () => void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    workerI: number;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
