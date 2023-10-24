@@ -86,10 +86,16 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * Canvas top position (pixels)
+   */
   public get top(): number {
     return Number.parseInt(this._canvas.style.top);
   }
 
+  /**
+   * Change the canvas top position (pixels)
+   */
   public set top(top: number) {
     const { _canvas: canvas } = this;
     const currentTop = this.top;
@@ -102,10 +108,16 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * Canvas left position (pixels)
+   */
   public get left(): number {
     return Number.parseInt(this._canvas.style.left);
   }
 
+  /**
+   * Change the canvas left position (pixels)
+   */
   public set left(left: number) {
     const { _canvas: canvas } = this;
     const currentLeft = this.left;
@@ -118,10 +130,16 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * Image range
+   */
   public get imageRange() {
     return { ...this._imageRange };
   }
 
+  /**
+   * Set the image range that should goes from minPixelValue to maxPixelValue
+   */
   public set imageRange(imageRange: ColorBarVOIRange) {
     if (
       !isRangeValid(imageRange) ||
@@ -134,10 +152,18 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * VOI range
+   * (lower: wc - ww / 2, upper: wc + ww / 2)
+   */
   public get voiRange() {
     return { ...this._voiRange };
   }
 
+  /**
+   * Set the VOI Range
+   * (lower: wc - ww / 2, upper: wc + ww / 2)
+   */
   public set voiRange(voiRange: ColorBarVOIRange) {
     if (
       !isRangeValid(voiRange) ||
@@ -150,10 +176,16 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * Tick size (pixels)
+   */
   public get tickSize(): number {
     return this._tickSize;
   }
 
+  /**
+   * Set the tick size
+   */
   public set tickSize(tickSize: number) {
     if (tickSize === this._tickSize) {
       return;
@@ -163,10 +195,18 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * Tick width (pixels)
+   */
   public get tickWidth(): number {
     return this._tickWidth;
   }
 
+  /**
+   * Set the tick width. This width is used as `lineWidth` by CanvasRenderingContext2D.
+   *
+   * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineWidth
+   */
   public set tickWidth(tickWidth: number) {
     if (tickWidth === this._tickWidth) {
       return;
@@ -176,23 +216,43 @@ class ColorBarTicks {
     this.render();
   }
 
-  public get tickColor(): string {
+  /**
+   * Color used for ticks and labels.
+   */
+  public get color(): string {
     return this._color;
   }
 
-  public set tickColor(tickColor: string) {
-    if (tickColor === this._color) {
+  /**
+   * Set the color used for ticks and labels. This color is used as `strokeStyle`
+   * and `fillStyle` by CanvasRenderingContext2D.
+   *
+   * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillStyle
+   * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/strokeStyle
+   */
+  public set color(color: string) {
+    if (color === this._color) {
       return;
     }
 
-    this._color = tickColor;
+    this._color = color;
     this.render();
   }
 
+  /**
+   * Return `true` when the ticks displayed are in the range from `imageRange.lower`
+   * to `imageRange.upper` or `false` when they are in the range from `voiRange.lower`
+   * to `voiRange.upper`
+   */
   public get showFullPixelValueRange(): boolean {
     return this._showFullPixelValueRange;
   }
 
+  /**
+   * Change which range should be used when rendering the ticks. Set it to `true`
+   * to show from `imageRange.lower` to `imageRange.upper` or `false` show from
+   * `voiRange.lower` to `voiRange.upper`.
+   */
   public set showFullPixelValueRange(showFullRange: boolean) {
     if (showFullRange === this._showFullPixelValueRange) {
       return;
@@ -202,10 +262,16 @@ class ColorBarTicks {
     this.render();
   }
 
+  /**
+   * Ticks visibility
+   */
   public get visible() {
     return this._canvas.style.display === 'block';
   }
 
+  /**
+   * Show/Hide the ticks
+   */
   public set visible(visible) {
     if (visible === this.visible) {
       return;
@@ -218,6 +284,10 @@ class ColorBarTicks {
     }
   }
 
+  /**
+   * Append the canvas to its parent element
+   * @param container - HTML element where the canvas should be added to
+   */
   public appendTo(container: HTMLElement) {
     container.appendChild(this._canvas);
     this.render();

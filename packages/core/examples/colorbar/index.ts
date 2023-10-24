@@ -400,7 +400,6 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
     position: 'relative',
     width: '100%',
     height: '100%',
-    border: 'solid 1px #0f0',
   });
 
   viewportGrid.appendChild(viewportContainer);

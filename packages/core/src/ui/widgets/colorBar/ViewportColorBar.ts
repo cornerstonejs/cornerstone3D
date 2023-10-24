@@ -17,6 +17,9 @@ class ViewportColorBar extends ColorBar {
   private _element: HTMLDivElement;
   private _volumeId: string;
 
+  private _hideTicksTime: number;
+  private _hideTicksTimeoutId: number;
+
   constructor(props: ViewportColorBarProps) {
     const { element, volumeId } = props;
     const imageRange = ViewportColorBar._getImageRange(element, volumeId);
@@ -107,6 +110,32 @@ class ViewportColorBar extends ColorBar {
       : { lower: voiRange[0], upper: voiRange[1] };
   }
 
+  private autoHideTicks = () => {
+    // Avoiding calling setTimeout multiple times when manipulating the VOI
+    // via WindowLevel tool for better performance
+    if (this._hideTicksTimeoutId) {
+      return;
+    }
+
+    const timeLeft = this._hideTicksTime - Date.now();
+
+    if (timeLeft <= 0) {
+      this.hideTicks();
+    } else {
+      this._hideTicksTimeoutId = window.setTimeout(() => {
+        // Recursive call until there is no more time left
+        this._hideTicksTimeoutId = 0;
+        this.autoHideTicks();
+      }, timeLeft);
+    }
+  };
+
+  private showAndAutoHideTicks(interval = 1000) {
+    this._hideTicksTime = Date.now() + interval;
+    this.showTicks();
+    this.autoHideTicks();
+  }
+
   private _stackNewImageCallback = () => {
     this.imageRange = ViewportColorBar._getImageRange(this._element);
   };
@@ -135,6 +164,7 @@ class ViewportColorBar extends ColorBar {
     }
 
     this.voiRange = voiRange;
+    this.showAndAutoHideTicks();
   };
 
   private _addCornerstoneEventListener() {

@@ -26,8 +26,10 @@ class ColorBar extends Widget {
   private _activeColormapName: string;
   private _eventListenersManager: MultiTargetEventListenerManager;
   private _canvas: ColorBarCanvas;
-  private _rangeText: ColorBarTicks;
+  private _ticksBar: ColorBarTicks;
   private _rangeTextPosition: ColorBarRangeTextPosition;
+
+  private _isMouseOver = false;
   private _isInteracting = false;
 
   constructor(props: ColorBarProps) {
@@ -37,32 +39,14 @@ class ColorBar extends Widget {
     this._colormaps = ColorBar.getColormapsMap(props);
     this._activeColormapName = ColorBar.getInitialColormapName(props);
     this._canvas = this._createCanvas(props);
-    this._rangeText = this._createTicksBar(props);
+    this._ticksBar = this._createTicksBar(props);
     this._rangeTextPosition =
       props.rangeTextPosition ?? DEFAULTS.RANGE_TEXT_POSITION;
 
     this._canvas.appendTo(this.rootElement);
-    this._rangeText.appendTo(document.body);
+    this._ticksBar.appendTo(document.body);
 
     this._addRootElementEventListeners();
-  }
-
-  private static getColormapsMap(props: ColorBarProps) {
-    const { colormaps } = props;
-
-    return colormaps.reduce(
-      (items, item) => items.set(item.Name, item),
-      new Map<string, Types.ColormapRegistration>()
-    );
-  }
-
-  private static getInitialColormapName(props: ColorBarProps) {
-    const { activeColormapName, colormaps } = props;
-    const colormapExists =
-      !!activeColormapName &&
-      colormaps.some((cm) => cm.Name === activeColormapName);
-
-    return colormapExists ? activeColormapName : colormaps[0].Name;
   }
 
   /**
@@ -97,7 +81,7 @@ class ColorBar extends Widget {
 
   public set imageRange(imageRange: ColorBarVOIRange) {
     this._canvas.imageRange = imageRange;
-    this._rangeText.imageRange = imageRange;
+    this._ticksBar.imageRange = imageRange;
   }
 
   public get voiRange() {
@@ -115,7 +99,7 @@ class ColorBar extends Widget {
     }
 
     this._canvas.voiRange = voiRange;
-    this._rangeText.voiRange = voiRange;
+    this._ticksBar.voiRange = voiRange;
     this.onVoiChange(voiRange);
   }
 
@@ -125,7 +109,7 @@ class ColorBar extends Widget {
 
   public set showFullImageRange(value: boolean) {
     this._canvas.showFullImageRange = value;
-    this._rangeText.showFullPixelValueRange = value;
+    this._ticksBar.showFullPixelValueRange = value;
   }
 
   public destroy() {
@@ -155,6 +139,37 @@ class ColorBar extends Widget {
 
   protected onVoiChange(voiRange: ColorBarVOIRange) {
     // no-op
+  }
+
+  protected showTicks() {
+    this.updateTicksBar();
+    this._ticksBar.visible = true;
+  }
+
+  protected hideTicks() {
+    if (this._isInteracting || this._isMouseOver) {
+      return;
+    }
+
+    this._ticksBar.visible = false;
+  }
+
+  private static getColormapsMap(props: ColorBarProps) {
+    const { colormaps } = props;
+
+    return colormaps.reduce(
+      (items, item) => items.set(item.Name, item),
+      new Map<string, Types.ColormapRegistration>()
+    );
+  }
+
+  private static getInitialColormapName(props: ColorBarProps) {
+    const { activeColormapName, colormaps } = props;
+    const colormapExists =
+      !!activeColormapName &&
+      colormaps.some((cm) => cm.Name === activeColormapName);
+
+    return colormapExists ? activeColormapName : colormaps[0].Name;
   }
 
   private _createCanvas(props: ColorBarProps) {
@@ -192,8 +207,8 @@ class ColorBar extends Widget {
     return { client: clientPoint, page: pagePoint, local: localPoints };
   }
 
-  private showTicksBar() {
-    const { _rangeText: ticksBar } = this;
+  private updateTicksBar() {
+    const { _ticksBar: ticksBar } = this;
     const { width: containerWidth, height: containerHeight } =
       this.containerSize;
     const { top: containerTop, left: containerLeft } =
@@ -225,23 +240,23 @@ class ColorBar extends Widget {
 
     ticksBar.top = ticksBarTop;
     ticksBar.left = ticksBarLeft;
-    ticksBar.visible = true;
   }
 
   private _mouseOverCallback = (evt) => {
-    this.showTicksBar();
+    this._isMouseOver = true;
+    this.showTicks();
     evt.stopPropagation();
   };
 
   private _mouseOutCallback = (evt) => {
-    if (!this._isInteracting) {
-      this._rangeText.visible = false;
-    }
+    this._isMouseOver = false;
+    this.hideTicks();
     evt.stopPropagation();
   };
 
   private _mouseDownCallback = (evt: MouseEvent) => {
     this._isInteracting = true;
+    this.showTicks();
     this._addVOIEventListeners(evt);
     evt.stopPropagation();
   };
@@ -284,6 +299,7 @@ class ColorBar extends Widget {
 
   private _mouseUpCallback = (evt) => {
     this._isInteracting = false;
+    this.hideTicks();
     this._removeVOIEventListeners();
     evt.stopPropagation();
   };
