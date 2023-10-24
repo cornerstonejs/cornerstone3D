@@ -108,18 +108,18 @@ type SetVOIOptions = {
   voiUpdatedWithSetProperties?: boolean;
 };
 
-const workerFn = () => {
-  const worker = new Worker(new URL('../workers/add.js', import.meta.url), {
-    name: 'worker',
-  });
+// const workerFn = () => {
+//   const worker = new Worker(new URL('../workers/add.js', import.meta.url), {
+//     name: 'worker',
+//   });
 
-  return worker;
-};
+//   return worker;
+// };
 
-const webWorkerManager = getWebWorkerManager();
-webWorkerManager.registerWorker('add', workerFn, {
-  maxWorkerInstances: 3,
-});
+// const webWorkerManager = getWebWorkerManager();
+// webWorkerManager.registerWorker('add', workerFn, {
+//   maxWorkerInstances: 3,
+// });
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -2284,16 +2284,16 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
-    webWorkerManager
-      .executeTask('add', 'fib', {
-        type: RequestType.Prefetch,
-        priority: 0,
-        args: [{ number: this.workerI++ }],
-        options: {},
-      })
-      .then((res) => {
-        console.debug('result', res);
-      });
+    // webWorkerManager
+    //   .executeTask('add', 'fib', {
+    //     type: RequestType.Prefetch,
+    //     priority: 0,
+    //     args: [{ number: this.workerI++ }],
+    //     options: {},
+    //   })
+    //   .then((res) => {
+    //     console.debug('result', res);
+    //   });
 
     this._throwIfDestroyed();
 
