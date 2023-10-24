@@ -1294,33 +1294,6 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-interface LossyConfiguration {
-    // Additional arguments to add to the URL, in the format
-    // arg1=value1 ('&' arg2=value2)*
-    // For example: '&lossy=jhc' to use JHC lossy values
-    // (undocumented)
-    decodeLevel?: number;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    framesPath?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    initialBytes?: number | ((metadata) => number);
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    isLossy?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    streaming?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    totalRanges?: number | ((metadata) => number);
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    urlArguments?: string;
-}
-
-// @public (undocumented)
 function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any): Types.Metadata;
 
 // @public
@@ -1407,7 +1380,7 @@ type PreStackNewImageEventDetail = {
 
 // @public (undocumented)
 type ProgressiveListener = {
-    successCallback: (imageId, imageIndex, image, status) => void;
+    successCallback: (imageId, image, status) => void;
     errorCallback: (imageId, permanent, reason) => void;
 
     getTargetOptions?: (imageId) => Record<string, unknown>;
@@ -1434,6 +1407,42 @@ type PublicViewportInput = {
 };
 
 // @public (undocumented)
+interface RetrieveOptions {
+    // Additional arguments to add to the URL, in the format
+    // arg1=value1 ('&' arg2=value2)*
+    // For example: '&lossy=jhc' to use JHC lossy values
+    // (undocumented)
+    decodeLevel?: number;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    framesPath?: string;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    initialBytes?: number | ((metadata) => number);
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    isLossy?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    partialStatus?: FrameStatus;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    range?: number;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    status?: FrameStatus;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    streaming?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    totalRanges?: number | ((metadata) => number);
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    urlArguments?: string;
+}
+
+// @public (undocumented)
 interface RetrieveStage {
     // (undocumented)
     decimate?: number;
@@ -1441,6 +1450,10 @@ interface RetrieveStage {
     // the beginning, and fractional values between 0 and 1 are relative to frame count
     // (undocumented)
     id: string;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    nearbyFrames?: NearbyFrames[];
     // Set of positions - negative values are relative to the end, positive to
     // the beginning, and fractional values between 0 and 1 are relative to frame count
     // (undocumented)

@@ -95,6 +95,13 @@ module.exports = {
         },
         {
           type: 'category',
+          label: 'Progressive Loading',
+          collapsed: true,
+          link: { type: 'doc', id: 'concepts/progressive-loading/index' },
+          items: ['concepts/progressive-loading/progressive'],
+        },
+        {
+          type: 'category',
           label: 'Tools',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/cornerstone-tools/index' },

@@ -1,6 +1,7 @@
 /* eslint-disable complexity */
 import { ByteArray } from 'dicom-parser';
-import * as imageUtils from './scaling/bilinear';
+import bilinear from './scaling/bilinear';
+import replicate from './scaling/replicate';
 import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
 import decodeRLE from './decoders/decodeRLE';
@@ -17,6 +18,11 @@ import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
 import getMinMax from './getMinMax';
 import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
 import isColorImage from './isColorImage';
+
+const imageUtils = {
+  bilinear,
+  replicate,
+};
 
 /**
  * Decodes the provided image frame.

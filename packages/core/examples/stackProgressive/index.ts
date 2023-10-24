@@ -55,6 +55,8 @@ itemInfo.innerHTML = `
 const devicePixelRatio = window.devicePixelRatio || 1;
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
+// Use devicePixelRatio here so that the window size fits all pixels, but not
+// larger than that.
 element.style.width = `${3036 / devicePixelRatio}px`;
 element.style.height = `${3036 / devicePixelRatio}px`;
 element.style.clear = 'both';

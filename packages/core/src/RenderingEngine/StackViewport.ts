@@ -1451,7 +1451,6 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);
-    console.log('setStack got imageId', imageId);
 
     const eventDetail: StackViewportNewStackEventDetail = {
       imageIds,
@@ -2270,7 +2269,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
-      return this.getCurrentImageId();
+      return Promise.resolve(this.getCurrentImageId());
     }
 
     // Otherwise, get the imageId and attempt to display it

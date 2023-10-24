@@ -760,13 +760,17 @@ type FlipDirection = {
 // @public (undocumented)
 enum FrameStatus {
     // (undocumented)
-    DONE = 5,
+    ADJACENT_REPLICATE = 3,
     // (undocumented)
-    LOADING = 3,
+    DONE = 7,
     // (undocumented)
-    LOSSY = 4,
+    LINEAR_REPLICATE = 2,
     // (undocumented)
-    NEARBY_REPLICATE = 2,
+    LOADING = 4,
+    // (undocumented)
+    LOSSY = 6,
+    // (undocumented)
+    PARTIAL = 5,
     // (undocumented)
     REPLICATE = 1
 }
@@ -2003,24 +2007,6 @@ function loadSingle(imageId: string, listener: ProgressiveListener, retrieveConf
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
-interface LossyConfiguration {
-    // (undocumented)
-    decodeLevel?: number;
-    // (undocumented)
-    framesPath?: string;
-    // (undocumented)
-    initialBytes?: number | ((metadata: any) => number);
-    // (undocumented)
-    isLossy?: boolean;
-    // (undocumented)
-    streaming?: boolean;
-    // (undocumented)
-    totalRanges?: number | ((metadata: any) => number);
-    // (undocumented)
-    urlArguments?: string;
-}
-
-// @public (undocumented)
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
@@ -2060,6 +2046,14 @@ const metadataProvider: {
 
 // @public (undocumented)
 const mprCameraValues: any;
+
+// @public (undocumented)
+type NearbyRequest = {
+    itemId: string;
+    linearId?: string;
+    status: FrameStatus;
+    nearbyItem: any;
+};
 
 // @public (undocumented)
 enum OrientationAxis {
@@ -2152,11 +2146,13 @@ class ProgressiveIterator<T> {
     nextPromise(): Promise<T>;
     // (undocumented)
     reject(reason: Error): void;
+    // (undocumented)
+    resolve(): void;
 }
 
 // @public (undocumented)
 type ProgressiveListener = {
-    successCallback: (imageId: any, imageIndex: any, image: any, status: any) => void;
+    successCallback: (imageId: any, image: any, status: any) => void;
     errorCallback: (imageId: any, permanent: any, reason: any) => void;
     getTargetOptions?: (imageId: any) => Record<string, unknown>;
 };
@@ -2167,6 +2163,7 @@ declare namespace progressiveLoader {
         loadSingle,
         sequentialRetrieveConfiguration,
         interleavedRetrieveConfiguration,
+        NearbyRequest,
         ProgressiveRequest
     }
 }
@@ -2177,6 +2174,7 @@ type ProgressiveRequest = {
     imageId: string;
     stage: RetrieveStage;
     next?: ProgressiveRequest;
+    nearbyRequests?: NearbyRequest[];
 };
 
 // @public (undocumented)
@@ -2296,11 +2294,37 @@ export function resetUseCPURendering(): void;
 export function resetUseSharedArrayBuffer(): void;
 
 // @public (undocumented)
+interface RetrieveOptions {
+    // (undocumented)
+    decodeLevel?: number;
+    // (undocumented)
+    framesPath?: string;
+    // (undocumented)
+    initialBytes?: number | ((metadata: any) => number);
+    // (undocumented)
+    isLossy?: boolean;
+    // (undocumented)
+    partialStatus?: FrameStatus;
+    // (undocumented)
+    range?: number;
+    // (undocumented)
+    status?: FrameStatus;
+    // (undocumented)
+    streaming?: boolean;
+    // (undocumented)
+    totalRanges?: number | ((metadata: any) => number);
+    // (undocumented)
+    urlArguments?: string;
+}
+
+// @public (undocumented)
 interface RetrieveStage {
     // (undocumented)
     decimate?: number;
     // (undocumented)
     id: string;
+    // (undocumented)
+    nearbyFrames?: NearbyFrames[];
     // (undocumented)
     offset?: number;
     // (undocumented)
@@ -2509,7 +2533,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
-    successCallback(imageId: any, image: any, status: any): void;
+    successCallback(imageId: any, image: any): void;
     // (undocumented)
     unsetColormap: () => void;
     // (undocumented)
@@ -2576,7 +2600,7 @@ export function triggerEvent(el: EventTarget, type: string, detail?: unknown): b
 declare namespace Types {
     export {
         RetrieveStage,
-        LossyConfiguration,
+        RetrieveOptions,
         IRetrieveConfiguration,
         Cornerstone3DConfig,
         ICamera,

@@ -570,14 +570,22 @@ type FlipDirection = {
 enum FrameStatus {
     // Replicate is a duplicated image, from some larger distance
     // (undocumented)
-    DONE = 5,
-    // Nearby replicate is a duplicated image of a nearby image
+    ADJACENT_REPLICATE = 3,
+    // Linear replicate is an average/linear interpolation of two images
     // (undocumented)
-    LOADING = 3,
+    DONE = 7,
+    // Adjacent replicate is a duplicated image of a nearby image
     // (undocumented)
-    LOSSY = 4,
+    LINEAR_REPLICATE = 2,
+    // Loading is used to prevent replication when the actual images start becoming available
     // (undocumented)
-    NEARBY_REPLICATE = 2,
+    LOADING = 4,
+    // Partial images
+    // (undocumented)
+    LOSSY = 6,
+    // Lossy images, either complete or partial
+    // (undocumented)
+    PARTIAL = 5,
     // (undocumented)
     REPLICATE = 1,
 }
@@ -1389,33 +1397,6 @@ interface IVolumeViewport extends IViewport {
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
-// @public (undocumented)
-interface LossyConfiguration {
-    // Additional arguments to add to the URL, in the format
-    // arg1=value1 ('&' arg2=value2)*
-    // For example: '&lossy=jhc' to use JHC lossy values
-    // (undocumented)
-    decodeLevel?: number;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    framesPath?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    initialBytes?: number | ((metadata) => number);
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    isLossy?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    streaming?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    totalRanges?: number | ((metadata) => number);
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    urlArguments?: string;
-}
-
 // @public
 type Mat3 =
 | [number, number, number, number, number, number, number, number, number]
@@ -1492,7 +1473,7 @@ type PreStackNewImageEventDetail = {
 
 // @public (undocumented)
 type ProgressiveListener = {
-    successCallback: (imageId, imageIndex, image, status) => void;
+    successCallback: (imageId, image, status) => void;
     errorCallback: (imageId, permanent, reason) => void;
 
     getTargetOptions?: (imageId) => Record<string, unknown>;
@@ -1526,6 +1507,42 @@ enum RequestType {
 }
 
 // @public (undocumented)
+interface RetrieveOptions {
+    // Additional arguments to add to the URL, in the format
+    // arg1=value1 ('&' arg2=value2)*
+    // For example: '&lossy=jhc' to use JHC lossy values
+    // (undocumented)
+    decodeLevel?: number;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    framesPath?: string;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    initialBytes?: number | ((metadata) => number);
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    isLossy?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    partialStatus?: FrameStatus;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    range?: number;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    status?: FrameStatus;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    streaming?: boolean;
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    totalRanges?: number | ((metadata) => number);
+    // Alternate way to encode argument information by updating the frames path
+    // (undocumented)
+    urlArguments?: string;
+}
+
+// @public (undocumented)
 interface RetrieveStage {
     // (undocumented)
     decimate?: number;
@@ -1533,6 +1550,10 @@ interface RetrieveStage {
     // the beginning, and fractional values between 0 and 1 are relative to frame count
     // (undocumented)
     id: string;
+    // Set of positions - negative values are relative to the end, positive to
+    // the beginning, and fractional values between 0 and 1 are relative to frame count
+    // (undocumented)
+    nearbyFrames?: NearbyFrames[];
     // Set of positions - negative values are relative to the end, positive to
     // the beginning, and fractional values between 0 and 1 are relative to frame count
     // (undocumented)
