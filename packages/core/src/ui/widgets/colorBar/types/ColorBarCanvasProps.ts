@@ -1,12 +1,12 @@
-import { ColorBarRange } from './ColorBarRange';
-import { ColorBarSize } from './ColorBarSize';
-import { ColorBarVOIRange } from './ColorBarVOIRange';
-import { Colormap } from './Colormap';
+import type { ColorBarImageRange } from './ColorBarImageRange';
+import type { ColorBarSize } from './ColorBarSize';
+import type { ColorBarVOIRange } from './ColorBarVOIRange';
+import type { Colormap } from './Colormap';
 
 export interface ColorBarCanvasProps {
   colormap: Colormap;
   size?: ColorBarSize;
-  range?: ColorBarRange;
+  imageRange?: ColorBarImageRange;
   voiRange?: ColorBarVOIRange;
 
   container?: HTMLElement;

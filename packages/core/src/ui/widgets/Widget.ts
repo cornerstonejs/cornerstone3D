@@ -1,14 +1,47 @@
-export type WidgetProps = {
-  id: string;
-  container?: HTMLElement;
-};
+import type { WidgetProps, WidgetSize } from './types';
 
-type WidgetSize = {
-  width: number;
-  height: number;
-};
-
-class Widget {
+/**
+ * Base class for any widget that can be added to cornerstone. Currently it is
+ * responsible only for holding the `rootElement`, contains a method that allows
+ * adding it to the DOM and it also listens to container's size changes when the
+ * widget is already added to the DOM. `dispose` must be called to destroy the
+ * widget because it removes the widget from the DOM and stop listening to
+ * container changes.
+ *
+ * You can apply some styles to widgets using the widget id or the `widget` class.
+ *
+ * Example:
+ *   type ColorPickerProps = WidgetProps & {
+ *     selectedColor: string;
+ *   }
+ *
+ *   class ColorPicker extends Widget {
+ *     constructor(props: ColorPickerProps) {
+ *       super(props);
+ *       // [code]
+ *     }
+ *
+ *     public show() {
+ *       console.log('Show color picker');
+ *     }
+ *
+ *     protected containerResized() {
+ *       console.log('New container size: ', this.containerSize);
+ *     }
+ *   }
+ *
+ *   const colorPicker = new ColorPicker({
+ *     container: document.body,
+ *     selectedColor: '#000';
+ *   });
+ *
+ *   // another way to add the color picker to the DOM
+ *   colorPicker.appendTo(document.body)
+ *
+ *   // Show color picker
+ *   colorPicker.show();
+ */
+abstract class Widget {
   private _id: string;
   private _rootElement: HTMLElement;
   private _containerSize: WidgetSize;
@@ -17,7 +50,7 @@ class Widget {
   constructor({ id, container }: WidgetProps) {
     this._id = id;
     this._containerSize = { width: 0, height: 0 };
-    this._rootElement = this.createRootElement();
+    this._rootElement = this.createRootElement(id);
     this._containerResizeObserver = new ResizeObserver(
       this._containerResizeCallback
     );
@@ -38,8 +71,11 @@ class Widget {
     return this._rootElement;
   }
 
-  protected createRootElement(): HTMLElement {
+  protected createRootElement(id: string): HTMLElement {
     const rootElement = document.createElement('div');
+
+    rootElement.id = id;
+    rootElement.classList.add('widget');
 
     Object.assign(rootElement.style, {
       width: '100%',
@@ -50,8 +86,8 @@ class Widget {
   }
 
   /**
-   * Append the color bar node to a parent element and re-renders the color bar
-   * @param container - HTML element where the color bar will be added to
+   * Append the widget to a parent element
+   * @param container - HTML element where the widget should be added to
    */
   public appendTo(container: HTMLElement) {
     const {
@@ -72,6 +108,20 @@ class Widget {
     resizeObserver.observe(container);
   }
 
+  /**
+   * Removes the widget from the DOM and stop listening to DOM events
+   */
+  public destroy() {
+    const {
+      _rootElement: rootElement,
+      _containerResizeObserver: resizeObserver,
+    } = this;
+    const { parentElement } = rootElement;
+
+    parentElement?.removeChild(rootElement);
+    resizeObserver.disconnect();
+  }
+
   protected get containerSize(): WidgetSize {
     // Returns a copy to prevent any external change
     return { ...this._containerSize };
@@ -81,7 +131,7 @@ class Widget {
    * Method called every time widget's container is resize giving the
    * opportunity to children classes to act when that happens.
    */
-  protected containerResized() {
+  protected onContainerResize() {
     // no-op
   }
 
@@ -104,22 +154,8 @@ class Widget {
     }
 
     this._containerSize = { width, height };
-    this.containerResized();
+    this.onContainerResize();
   };
-
-  /**
-   * Removes the widget from the DOM and stop listening to DOM events
-   */
-  public dispose() {
-    const {
-      _rootElement: rootElement,
-      _containerResizeObserver: resizeObserver,
-    } = this;
-    const { parentElement } = rootElement;
-
-    parentElement?.removeChild(rootElement);
-    resizeObserver.disconnect();
-  }
 }
 
 export { Widget as default, Widget };

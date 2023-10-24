@@ -6,6 +6,63 @@ enum EventListenerPhases {
 
 type ListenersMap = Map<EventListener, EventListenerPhases>;
 
+/**
+ * TargetEventListeners adds support for event types with namespace, allow
+ * removing events without having to pass a callback and makes it possible to
+ * remove all event listeners in a much simpler avoiding leaving listeners behind
+ * which would result in memory leaks.
+ *
+ * @example
+ * Creating a new TargetEventListeners instance
+ * ```javascript
+ *   const element = document.getElementById('foo');
+ *   const targetEventListeners = new TargetEventListeners(element)
+ * ```
+ *
+ * @example
+ * Adding and removing event listeners
+ * ```javascript
+ *   const dragCallback = () => { };
+ *
+ *   targetEventListeners.addEventListener('voi.mousemove', dragCallback);
+ *   targetEventListeners.addEventListener('voi.drag', dragCallback);
+ *   targetEventListeners.addEventListener('voi.mouseup', () => {
+ *     // do not need to store a reference of this function
+ *   }));
+ *
+ *   // Removes a specific event listener
+ *   targetEventListeners.removeEventListener('voi.mousemove', dragCallback)
+ *
+ *   // Removes all "mouseup" event listeners added to "colorbar.voi" namespace
+ *   targetEventListeners.removeEventListener('voi.mouseup')
+ *
+ *   // Removes all event listeners added to the element using this targetEventListeners
+ *   // instance. A TargetEventListeners instance does not removes the event listeners
+ *   // added by another one.
+ *   targetEventListeners.reset();
+ * ```
+ *
+ * @example
+ * Adding and removing event listeners for capture and bubble phases. Each
+ * listener must be removed indenpendently
+ * ```javascript
+ *   const clickCaptureCallback = () => { };
+ *   const clickBubbleCallback = () => { };
+ *
+ *   targetEventListeners.addEventListener('click', clickCaptureCallback, { capture: true });
+ *   targetEventListeners.addEventListener('click', clickBubbleCallback);
+ *
+ *   // Removes the event listener added to the capture phase
+ *   targetEventListeners.removeEventListener('click', clickCaptureCallback, { capture: true });
+ *
+ *   // Removes the event listener added to the bubble phase
+ *   targetEventListeners.removeEventListener('click', clickBubbleCallback);
+ *
+ *   // Removes all event listeners added to the HTML element
+ *   targetEventListeners.reset();
+ * ```
+
+ */
 class TargetEventListeners {
   private _target: EventTarget;
   private _eventListeners = new Map<string, ListenersMap>();
@@ -79,12 +136,12 @@ class TargetEventListeners {
   }
 
   /**
-   * Loop through all types, listeners and phases removing all of them
+   * Loop through all types, listeners and phases and removing all of them
    */
-  public dispose() {
-    // Dispose all children (DFS - depth first search)
+  public reset() {
+    // Destroy all children (DFS - depth first search)
     Array.from(this._children.entries()).forEach(([namespace, child]) => {
-      child.dispose();
+      child.reset();
 
       if (child.isEmpty) {
         this._children.delete(namespace);
@@ -218,52 +275,4 @@ class TargetEventListeners {
   }
 }
 
-class EventListenersManager {
-  private _targetsEventListeners = new Map<EventTarget, TargetEventListeners>();
-
-  public addEventListener(
-    target: EventTarget,
-    type: string,
-    callback: EventListener,
-    options?: AddEventListenerOptions
-  ) {
-    let eventListeners = this._targetsEventListeners.get(target);
-
-    if (!eventListeners) {
-      eventListeners = new TargetEventListeners(target);
-      this._targetsEventListeners.set(target, eventListeners);
-    }
-
-    eventListeners.addEventListener(type, callback, options);
-  }
-
-  public removeEventListener(
-    target: EventTarget,
-    type: string,
-    callback?: EventListener,
-    options?: EventListenerOptions
-  ) {
-    const eventListeners = this._targetsEventListeners.get(target);
-
-    if (!eventListeners) {
-      return;
-    }
-
-    eventListeners.removeEventListener(type, callback, options);
-
-    if (eventListeners.isEmpty) {
-      this._targetsEventListeners.delete(target);
-    }
-  }
-
-  public dispose() {
-    Array.from(this._targetsEventListeners.entries()).forEach(
-      ([target, targetEventListeners]) => {
-        targetEventListeners.dispose();
-        this._targetsEventListeners.delete(target);
-      }
-    );
-  }
-}
-
-export { TargetEventListeners, EventListenersManager };
+export { TargetEventListeners as default, TargetEventListeners };

@@ -1,11 +1,13 @@
 import { utilities } from '@cornerstonejs/core';
-import { ColorBarRange, ColorBarVOIRange, Colormap } from './types';
 import { ColorBarCanvasProps } from './types/ColorBarCanvasProps';
-import { ColorBarSize } from './types/ColorBarSize';
-import isRangeValid from './common/isRangeValid';
-import rangesEqual from './common/rangesEqual';
-import isSizeValid from './common/isSizeValid';
-import sizesEqual from './common/sizesEqual';
+import type { ColorBarImageRange, ColorBarVOIRange, Colormap } from './types';
+import type { ColorBarSize } from './types/ColorBarSize';
+import {
+  isRangeValid,
+  areColorBarRangesEqual,
+  isColorBarSizeValid,
+  areColorBarSizesEqual,
+} from './common';
 
 const clamp = (value, min, max) => Math.min(Math.max(min, value), max);
 
@@ -17,12 +19,16 @@ const interpolateVec3 = (a, b, t) => {
   ];
 };
 
+/**
+ * Canvas referenced by the color bar where the colormap is rendered. It may
+ * show the full image range or only the VOI range.
+ */
 class ColorBarCanvas {
   private _canvas: HTMLCanvasElement;
-  private _range: ColorBarRange;
+  private _imageRange: ColorBarImageRange;
   private _voiRange: ColorBarVOIRange;
   private _colormap: Colormap;
-  private _showFullPixelValueRange: boolean;
+  private _showFullImageRange: boolean;
 
   constructor(props: ColorBarCanvasProps) {
     ColorBarCanvas.validateProps(props);
@@ -30,16 +36,16 @@ class ColorBarCanvas {
     const {
       colormap,
       size = { width: 20, height: 100 },
-      range = { lower: 0, upper: 1 },
+      imageRange = { lower: 0, upper: 1 },
       voiRange = { lower: 0, upper: 1 },
       container,
       showFullPixelValueRange = false,
     } = props;
 
     this._colormap = colormap;
-    this._range = range;
+    this._imageRange = imageRange;
     this._voiRange = voiRange;
-    this._showFullPixelValueRange = showFullPixelValueRange;
+    this._showFullImageRange = showFullPixelValueRange;
     this._canvas = this._createRootElement(size);
 
     if (container) {
@@ -64,7 +70,7 @@ class ColorBarCanvas {
   public set size(size: ColorBarSize) {
     const { _canvas: canvas } = this;
 
-    if (!isSizeValid(size) || sizesEqual(canvas, size)) {
+    if (!isColorBarSizeValid(size) || areColorBarSizesEqual(canvas, size)) {
       return;
     }
 
@@ -72,16 +78,19 @@ class ColorBarCanvas {
     this.render();
   }
 
-  public get range(): ColorBarRange {
-    return { ...this._range };
+  public get imageRange(): ColorBarImageRange {
+    return { ...this._imageRange };
   }
 
-  public set range(range: ColorBarRange) {
-    if (!isRangeValid(range) || rangesEqual(range, this._range)) {
+  public set imageRange(imageRange: ColorBarImageRange) {
+    if (
+      !isRangeValid(imageRange) ||
+      areColorBarRangesEqual(imageRange, this._imageRange)
+    ) {
       return;
     }
 
-    this._range = range;
+    this._imageRange = imageRange;
     this.render();
   }
 
@@ -90,7 +99,10 @@ class ColorBarCanvas {
   }
 
   public set voiRange(voiRange: ColorBarVOIRange) {
-    if (!isRangeValid(voiRange) || rangesEqual(voiRange, this._voiRange)) {
+    if (
+      !isRangeValid(voiRange) ||
+      areColorBarRangesEqual(voiRange, this._voiRange)
+    ) {
       return;
     }
 
@@ -98,16 +110,16 @@ class ColorBarCanvas {
     this.render();
   }
 
-  public get showFullPixelValueRange(): boolean {
-    return this._showFullPixelValueRange;
+  public get showFullImageRange(): boolean {
+    return this._showFullImageRange;
   }
 
-  public set showFullPixelValueRange(showFullRange: boolean) {
-    if (showFullRange === this._showFullPixelValueRange) {
+  public set showFullImageRange(showFullImageRange: boolean) {
+    if (showFullImageRange === this._showFullImageRange) {
       return;
     }
 
-    this._showFullPixelValueRange = showFullRange;
+    this._showFullImageRange = showFullImageRange;
     this.render();
   }
 
@@ -124,14 +136,14 @@ class ColorBarCanvas {
   }
 
   private static validateProps(props: ColorBarCanvasProps) {
-    const { size, range, voiRange } = props;
+    const { size, imageRange, voiRange } = props;
 
-    if (size && !isSizeValid(size)) {
+    if (size && !isColorBarSizeValid(size)) {
       throw new Error('Invalid "size"');
     }
 
-    if (range && !isRangeValid(range)) {
-      throw new Error('Invalid "range"');
+    if (imageRange && !isRangeValid(imageRange)) {
+      throw new Error('Invalid "imageRange"');
     }
 
     if (voiRange && !isRangeValid(voiRange)) {
@@ -173,9 +185,15 @@ class ColorBarCanvas {
     const { RGBPoints: rgbPoints } = colormap;
     const colorsCount = rgbPoints.length / 4;
 
+    // Returns a color point from rgbPoints. Each point has position, red,
+    // green and blue components which means each point has an offset equal
+    // to `4 * index`
     const getColorPoint = (index) => {
       const offset = 4 * index;
 
+      // It can get out of bounds when `voiRange.upper` is smaller than
+      // `imageRange.upper`. It's also checking if is smaller than zero
+      // for safety only because that should never happens.
       if (index < 0 || index >= colorsCount) {
         return;
       }
@@ -196,7 +214,7 @@ class ColorBarCanvas {
     const isHorizontal = width > height;
     const maxValue = isHorizontal ? width : height;
     const { _voiRange: voiRange } = this;
-    const range = this._showFullPixelValueRange ? this._range : { ...voiRange };
+    const range = this._showFullImageRange ? this._imageRange : { ...voiRange };
 
     const { windowWidth } = utilities.windowLevel.toWindowLevel(
       voiRange.lower,
@@ -206,6 +224,7 @@ class ColorBarCanvas {
     let previousColorPoint = undefined;
     let currentColorPoint = getColorPoint(0);
 
+    // Starts from `range.lower` incrementing by incRawPixelValue on each iteration
     const incRawPixelValue = (range.upper - range.lower) / (maxValue - 1);
     let rawPixelValue = range.lower;
 

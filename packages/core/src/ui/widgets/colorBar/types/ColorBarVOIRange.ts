@@ -1,3 +1,3 @@
-import type { ColorBarRange } from './ColorBarRange';
+import type { ColorBarImageRange } from './ColorBarImageRange';
 
-export type ColorBarVOIRange = ColorBarRange;
+export type ColorBarVOIRange = ColorBarImageRange;

@@ -1,6 +1,6 @@
-import { ColorBarRange } from '../types/ColorBarRange';
+import type { ColorBarImageRange } from '../types/ColorBarImageRange';
 
-const isRangeValid = (range: ColorBarRange) => {
+const isRangeValid = (range: ColorBarImageRange) => {
   return range && range.upper > range.lower;
 };
 

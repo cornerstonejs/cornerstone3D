@@ -1,17 +1,19 @@
 import { vec2 } from 'gl-matrix';
 import { utilities, Types } from '@cornerstonejs/core';
-import { EventListenersManager } from './EventListeners';
 import { Widget } from '../Widget';
-import { ColorBarProps, ColorBarVOIRange, Colormap } from './types';
-import ColorBarCanvas from './ColorBarCanvas';
-import ColorBarScale from './ColorBarScale';
-import isRangeValid from './common/isRangeValid';
-import rangesEqual from './common/rangesEqual';
-import { ColorBarScalePosition } from './enums/ColorBarScalePosition';
+import type { ColorBarProps, ColorBarVOIRange } from './types';
+import { isRangeValid, areColorBarRangesEqual } from './common';
+import { ColorBarRangeTextPosition } from './enums/ColorBarRangeTextPosition';
+import { ColorBarCanvas } from './ColorBarCanvas';
+import ColorBarTicks from './ColorBarTicks';
 
-const DEFAULT_MULTIPLIER = 1;
-const DEFAULT_SCALE_BAR_POSITION = ColorBarScalePosition.BottomOrRight;
-const SCALE_BAR_SIZE = 50;
+const { MultiTargetEventListenerManager } = utilities.eventListener;
+
+const DEFAULTS = {
+  MULTIPLIER: 1,
+  RANGE_TEXT_POSITION: ColorBarRangeTextPosition.BottomOrRight,
+  TICKS_BAR_SIZE: 50,
+};
 
 type ColorBarPoints = {
   page: Types.Point2;
@@ -20,26 +22,27 @@ type ColorBarPoints = {
 };
 
 class ColorBar extends Widget {
-  private _colormaps: Map<string, Colormap>;
+  private _colormaps: Map<string, Types.ColormapRegistration>;
   private _activeColormapName: string;
-  private _eventListenersManager: EventListenersManager;
+  private _eventListenersManager: MultiTargetEventListenerManager;
   private _canvas: ColorBarCanvas;
-  private _scaleBar: ColorBarScale;
-  private _scalePosition: ColorBarScalePosition;
+  private _rangeText: ColorBarTicks;
+  private _rangeTextPosition: ColorBarRangeTextPosition;
   private _isInteracting = false;
 
   constructor(props: ColorBarProps) {
     super(props);
 
-    this._eventListenersManager = new EventListenersManager();
+    this._eventListenersManager = new MultiTargetEventListenerManager();
     this._colormaps = ColorBar.getColormapsMap(props);
     this._activeColormapName = ColorBar.getInitialColormapName(props);
     this._canvas = this._createCanvas(props);
-    this._scaleBar = this._createScaleBar(props);
-    this._scalePosition = props.scalePosition ?? DEFAULT_SCALE_BAR_POSITION;
+    this._rangeText = this._createTicksBar(props);
+    this._rangeTextPosition =
+      props.rangeTextPosition ?? DEFAULTS.RANGE_TEXT_POSITION;
 
     this._canvas.appendTo(this.rootElement);
-    this._scaleBar.appendTo(document.body);
+    this._rangeText.appendTo(document.body);
 
     this._addRootElementEventListeners();
   }
@@ -49,7 +52,7 @@ class ColorBar extends Widget {
 
     return colormaps.reduce(
       (items, item) => items.set(item.Name, item),
-      new Map<string, Colormap>()
+      new Map<string, Types.ColormapRegistration>()
     );
   }
 
@@ -88,13 +91,13 @@ class ColorBar extends Widget {
     this._canvas.colormap = colormap;
   }
 
-  public get range() {
-    return this._canvas.range;
+  public get imageRange() {
+    return this._canvas.imageRange;
   }
 
-  public set range(range: ColorBarVOIRange) {
-    this._canvas.range = range;
-    this._scaleBar.range = range;
+  public set imageRange(imageRange: ColorBarVOIRange) {
+    this._canvas.imageRange = imageRange;
+    this._rangeText.imageRange = imageRange;
   }
 
   public get voiRange() {
@@ -104,27 +107,30 @@ class ColorBar extends Widget {
   public set voiRange(voiRange: ColorBarVOIRange) {
     const { voiRange: currentVoiRange } = this._canvas;
 
-    if (!isRangeValid(voiRange) || rangesEqual(voiRange, currentVoiRange)) {
+    if (
+      !isRangeValid(voiRange) ||
+      areColorBarRangesEqual(voiRange, currentVoiRange)
+    ) {
       return;
     }
 
     this._canvas.voiRange = voiRange;
-    this._scaleBar.voiRange = voiRange;
-    this.voiChanged(voiRange);
+    this._rangeText.voiRange = voiRange;
+    this.onVoiChange(voiRange);
   }
 
-  public get showFullPixelValueRange() {
-    return this._canvas.showFullPixelValueRange;
+  public get showFullImageRange() {
+    return this._canvas.showFullImageRange;
   }
 
-  public set showFullPixelValueRange(value: boolean) {
-    this._canvas.showFullPixelValueRange = value;
-    this._scaleBar.showFullPixelValueRange = value;
+  public set showFullImageRange(value: boolean) {
+    this._canvas.showFullImageRange = value;
+    this._rangeText.showFullPixelValueRange = value;
   }
 
-  public dispose() {
-    super.dispose();
-    this._removeRootElementEventListeners();
+  public destroy() {
+    super.destroy();
+    this._eventListenersManager.reset();
   }
 
   protected createRootElement(): HTMLElement {
@@ -138,37 +144,37 @@ class ColorBar extends Widget {
     return rootElement;
   }
 
-  protected containerResized() {
-    super.containerResized();
+  protected onContainerResize() {
+    super.onContainerResize();
     this._canvas.size = this.containerSize;
   }
 
   protected getVOIMultipliers(): [number, number] {
-    return [DEFAULT_MULTIPLIER, DEFAULT_MULTIPLIER];
+    return [DEFAULTS.MULTIPLIER, DEFAULTS.MULTIPLIER];
   }
 
-  protected voiChanged(voiRange: ColorBarVOIRange) {
-    // TODO: override voiRange property?
+  protected onVoiChange(voiRange: ColorBarVOIRange) {
+    // no-op
   }
 
   private _createCanvas(props: ColorBarProps) {
-    const { range, voiRange, showFullPixelValueRange } = props;
+    const { imageRange, voiRange, showFullPixelValueRange } = props;
     const colormap = this._colormaps.get(this._activeColormapName);
 
     return new ColorBarCanvas({
       colormap,
-      range: range,
+      imageRange,
       voiRange: voiRange,
       showFullPixelValueRange,
     });
   }
 
-  public _createScaleBar(props: ColorBarProps): ColorBarScale {
-    return new ColorBarScale({
-      range: props.range,
+  public _createTicksBar(props: ColorBarProps): ColorBarTicks {
+    return new ColorBarTicks({
+      imageRange: props.imageRange,
       voiRange: props.voiRange,
-      scaleStyle: props.scaleStyle,
-      scalePosition: props.scalePosition,
+      ticksStyle: props.ticksStyle,
+      rangeTextPosition: props.rangeTextPosition,
       showFullPixelValueRange: props.showFullPixelValueRange,
     });
   }
@@ -186,49 +192,50 @@ class ColorBar extends Widget {
     return { client: clientPoint, page: pagePoint, local: localPoints };
   }
 
-  private showScaleBar() {
-    const { _scaleBar: scaleBar } = this;
+  private showTicksBar() {
+    const { _rangeText: ticksBar } = this;
     const { width: containerWidth, height: containerHeight } =
       this.containerSize;
     const { top: containerTop, left: containerLeft } =
       this.rootElement.getBoundingClientRect();
     const isHorizontal = containerWidth >= containerHeight;
-    const width = isHorizontal ? containerWidth : SCALE_BAR_SIZE;
-    const height = isHorizontal ? SCALE_BAR_SIZE : containerHeight;
+    const width = isHorizontal ? containerWidth : DEFAULTS.TICKS_BAR_SIZE;
+    const height = isHorizontal ? DEFAULTS.TICKS_BAR_SIZE : containerHeight;
 
-    let scaleBarTop;
-    let scaleBarLeft;
+    let ticksBarTop;
+    let ticksBarLeft;
 
-    scaleBar.size = { width, height };
+    ticksBar.size = { width, height };
 
     if (isHorizontal) {
-      scaleBarTop =
-        this._scalePosition === ColorBarScalePosition.TopOrLeft
+      ticksBarTop =
+        this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft
           ? containerTop - height
           : containerTop + containerHeight;
 
-      scaleBarLeft = containerLeft;
+      ticksBarLeft = containerLeft;
     } else {
-      scaleBarTop = containerTop;
+      ticksBarTop = containerTop;
 
-      scaleBarLeft =
-        this._scalePosition === ColorBarScalePosition.TopOrLeft
+      ticksBarLeft =
+        this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft
           ? containerLeft - width
           : containerLeft + containerWidth;
     }
 
-    scaleBar.position = { top: scaleBarTop, left: scaleBarLeft };
-    scaleBar.visible = true;
+    ticksBar.top = ticksBarTop;
+    ticksBar.left = ticksBarLeft;
+    ticksBar.visible = true;
   }
 
   private _mouseOverCallback = (evt) => {
-    this.showScaleBar();
+    this.showTicksBar();
     evt.stopPropagation();
   };
 
   private _mouseOutCallback = (evt) => {
     if (!this._isInteracting) {
-      this._scaleBar.visible = false;
+      this._rangeText.visible = false;
     }
     evt.stopPropagation();
   };
@@ -282,20 +289,12 @@ class ColorBar extends Widget {
   };
 
   private _addRootElementEventListeners() {
+    const { _eventListenersManager: manager } = this;
     const { rootElement: element } = this;
 
-    this._removeRootElementEventListeners();
-    element.addEventListener('mouseover', this._mouseOverCallback);
-    element.addEventListener('mouseout', this._mouseOutCallback);
-    element.addEventListener('mousedown', this._mouseDownCallback);
-  }
-
-  private _removeRootElementEventListeners() {
-    const { rootElement: element } = this;
-
-    element.removeEventListener('mouseover', this._mouseOverCallback);
-    element.removeEventListener('mouseout', this._mouseOutCallback);
-    element.removeEventListener('mousedown', this._mouseDownCallback);
+    manager.addEventListener(element, 'mouseover', this._mouseOverCallback);
+    manager.addEventListener(element, 'mouseout', this._mouseOutCallback);
+    manager.addEventListener(element, 'mousedown', this._mouseDownCallback);
   }
 
   private _addVOIEventListeners(evt: MouseEvent) {
@@ -306,8 +305,8 @@ class ColorBar extends Widget {
 
     this._removeVOIEventListeners();
 
-    document.addEventListener('mouseup', this._mouseUpCallback);
-    manager.addEventListener(document, 'colorbar.voi.mousemove', (evt) =>
+    manager.addEventListener(document, 'voi.mouseup', this._mouseUpCallback);
+    manager.addEventListener(document, 'voi.mousemove', (evt) =>
       this._mouseDragCallback(evt, initialDragState)
     );
   }
@@ -315,8 +314,8 @@ class ColorBar extends Widget {
   private _removeVOIEventListeners() {
     const { _eventListenersManager: manager } = this;
 
-    document.removeEventListener('mouseup', this._mouseUpCallback);
-    manager.removeEventListener(document, 'colorbar.voi.mousemove');
+    manager.removeEventListener(document, 'voi.mouseup');
+    manager.removeEventListener(document, 'voi.mousemove');
   }
 }
 

@@ -6,32 +6,26 @@ import {
   Enums,
   utilities,
   getEnabledElement,
-  cache,
 } from '@cornerstonejs/core';
 import { ColorBar } from './ColorBar';
-import { ColorBarProps, ColorBarVOIRange } from './types';
+import type { ViewportColorBarProps, ColorBarVOIRange } from './types';
 
 const { Events } = Enums;
-const DEFAULT_MULTIPLIER = 4;
-
-export interface ViewportColorBarProps extends ColorBarProps {
-  element: HTMLDivElement;
-  volumeId?: string;
-}
+const defaultImageRange = { lower: -1000, upper: 1000 };
 
 class ViewportColorBar extends ColorBar {
   private _element: HTMLDivElement;
   private _volumeId: string;
 
   constructor(props: ViewportColorBarProps) {
-    super({
-      ...props,
-      range: ViewportColorBar._getRange(props.element, props.volumeId),
-      voiRange: ViewportColorBar._getVOIRange(props.element, props.volumeId),
-    });
+    const { element, volumeId } = props;
+    const imageRange = ViewportColorBar._getImageRange(element, volumeId);
+    const voiRange = ViewportColorBar._getVOIRange(element, volumeId);
 
-    this._element = props.element;
-    this._volumeId = props.volumeId;
+    super({ ...props, imageRange, voiRange });
+
+    this._element = element;
+    this._volumeId = volumeId;
 
     this._addCornerstoneEventListener();
   }
@@ -44,54 +38,13 @@ class ViewportColorBar extends ColorBar {
     return getEnabledElement(this._element);
   }
 
-  private get modality() {
-    const { viewport } = this.enabledElement;
-
-    if (viewport instanceof VolumeViewport) {
-      const volume = cache.getVolume(this._volumeId);
-      return volume.metadata.Modality;
-    }
-
-    if (viewport instanceof StackViewport) {
-      return viewport.modality;
-    }
-
-    throw new Error('Invalid viewport type');
-  }
-
-  private get isPreScaled() {
-    const { viewport } = this.enabledElement;
-
-    if (viewport instanceof VolumeViewport) {
-      const volume = cache.getVolume(this._volumeId);
-      const { scaling } = volume;
-
-      return !!scaling && Object.keys(scaling).length > 0;
-    }
-
-    if (viewport instanceof StackViewport) {
-      const { preScale } = viewport.getImageData();
-      return preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
-    }
-
-    throw new Error('Invalid viewport type');
-  }
-
   protected getVOIMultipliers(): [number, number] {
-    const { isPreScaled, modality } = this;
-
-    if (modality === 'PT') {
-      const ptMultiplier =
-        5 / Math.max(this.containerSize.width, this.containerSize.height);
-
-      return isPreScaled ? [0, ptMultiplier] : [0, DEFAULT_MULTIPLIER];
-    }
-
-    return [DEFAULT_MULTIPLIER, DEFAULT_MULTIPLIER];
+    const { viewport } = this.enabledElement;
+    return utilities.getVOIMultipliers(viewport, this._volumeId);
   }
 
-  protected voiChanged(voiRange: ColorBarVOIRange) {
-    super.voiChanged(voiRange);
+  protected onVoiChange(voiRange: ColorBarVOIRange) {
+    super.onVoiChange(voiRange);
 
     const { viewport } = this.enabledElement;
 
@@ -112,8 +65,7 @@ class ViewportColorBar extends ColorBar {
     }
   }
 
-  private static _getRange(element, volumeId) {
-    const defaultValue = { lower: -1000, upper: 1000 };
+  private static _getImageRange(element, volumeId?) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -122,19 +74,18 @@ class ViewportColorBar extends ColorBar {
       : viewport.getDefaultActor();
 
     if (!actor) {
-      return defaultValue;
+      return defaultImageRange;
     }
 
     const imageData = actor.actor.getMapper().getInputData();
-    const range = imageData.getPointData().getScalars().getRange();
+    const imageRange = imageData.getPointData().getScalars().getRange();
 
-    return range[0] === 0 && range[1] === 0
-      ? defaultValue
-      : { lower: range[0], upper: range[1] };
+    return imageRange[0] === 0 && imageRange[1] === 0
+      ? defaultImageRange
+      : { lower: imageRange[0], upper: imageRange[1] };
   }
 
   private static _getVOIRange(element, volumeId) {
-    const defaultValue = { lower: -1000, upper: 1000 };
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -143,7 +94,7 @@ class ViewportColorBar extends ColorBar {
       : viewport.getDefaultActor();
 
     if (!actor) {
-      return { lower: -1000, upper: 1000 };
+      return defaultImageRange;
     }
 
     const voiRange = actor.actor
@@ -152,9 +103,13 @@ class ViewportColorBar extends ColorBar {
       .getRange();
 
     return voiRange[0] === 0 && voiRange[1] === 0
-      ? defaultValue
+      ? defaultImageRange
       : { lower: voiRange[0], upper: voiRange[1] };
   }
+
+  private _stackNewImageCallback = () => {
+    this.imageRange = ViewportColorBar._getImageRange(this._element);
+  };
 
   private _imageVolumeModifiedCallback = (
     evt: Types.EventTypes.ImageVolumeModifiedEvent
@@ -166,20 +121,20 @@ class ViewportColorBar extends ColorBar {
     }
 
     const { _element: element } = this;
-    this.range = ViewportColorBar._getRange(element, volumeId);
+    this.imageRange = ViewportColorBar._getImageRange(element, volumeId);
   };
 
   private _viewportVOIModifiedCallback = (
     evt: Types.EventTypes.VoiModifiedEvent
   ) => {
-    const { viewportId, volumeId, range } = evt.detail;
+    const { viewportId, volumeId, range: voiRange } = evt.detail;
     const { viewport } = this.enabledElement;
 
     if (viewportId !== viewport.id || volumeId !== this._volumeId) {
       return;
     }
 
-    this.voiRange = range;
+    this.voiRange = voiRange;
   };
 
   private _addCornerstoneEventListener() {
@@ -188,6 +143,11 @@ class ViewportColorBar extends ColorBar {
     eventTarget.addEventListener(
       Events.IMAGE_VOLUME_MODIFIED,
       this._imageVolumeModifiedCallback
+    );
+
+    element.addEventListener(
+      Events.STACK_NEW_IMAGE,
+      this._stackNewImageCallback
     );
 
     element.addEventListener(

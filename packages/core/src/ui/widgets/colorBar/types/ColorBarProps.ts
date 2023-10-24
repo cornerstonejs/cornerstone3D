@@ -1,16 +1,8 @@
-import { WidgetProps } from '../../Widget';
-import { ColorBarScalePosition } from '../enums/ColorBarScalePosition';
-import { ColorBarRange } from './ColorBarRange';
-import { ColorBarScaleStyle } from './ColorBarScaleStyle';
-import { ColorBarVOIRange } from './ColorBarVOIRange';
-import { Colormap } from './Colormap';
+import { Types } from '@cornerstonejs/core';
+import type { WidgetProps } from '../../types';
+import { ColorBarCommonProps } from '.';
 
-export interface ColorBarProps extends WidgetProps {
-  colormaps: Colormap[];
+export type ColorBarProps = (WidgetProps & ColorBarCommonProps) & {
+  colormaps: Types.ColormapRegistration[];
   activeColormapName?: string;
-  range?: ColorBarRange;
-  voiRange?: ColorBarVOIRange;
-  scalePosition?: ColorBarScalePosition;
-  scaleStyle?: ColorBarScaleStyle;
-  showFullPixelValueRange?: boolean;
-}
+};

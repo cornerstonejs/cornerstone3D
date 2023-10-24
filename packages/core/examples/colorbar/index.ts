@@ -19,7 +19,7 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { ViewportColorBar } = ui.widgets.colorbar;
-const { ColorBarScalePosition } = ui.widgets.colorbar.Enums;
+const { ColorBarRangeTextPosition } = ui.widgets.colorbar.Enums;
 
 // This is for debugging purposes
 console.warn(
@@ -36,7 +36,7 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const toolGroupIds = new Set<string>();
 const colorBarWidth = 20; // px
@@ -54,11 +54,20 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
+// Convert all VTK colormaps to the one supported by the colorbar which actualy
+// have almost the same properties.
 const colormaps = vtkColormaps.rgbPresetNames.map(
-  (presetName) => vtkColormaps.getPresetByName(presetName) as Colormap
+  (presetName) =>
+    vtkColormaps.getPresetByName(
+      presetName
+    ) as unknown as Types.ColormapRegistration
 );
+
+// Colormap to load right after loading the example page but it can be changed
+// after selecting a different one from the dropdown.
 let currentPTColormapName = 'Black-Body Radiation';
 
+// Info about all the three viewports (stack, volume sagittal and volume coronal)
 const viewportsInfo = [
   {
     toolGroupId: 'STACK_TOOLGROUP_ID',
@@ -123,6 +132,7 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
+// Grid were all viewports are added in a single row
 viewportGrid.style.display = 'grid';
 viewportGrid.style.width = '100%';
 viewportGrid.style.height = '500px';
@@ -155,6 +165,7 @@ addInstruction('- Click and drag on the color bar to change VOI');
 
 // ==[ Toolbar ]================================================================
 
+// Dropdown that allows the user to select a different colormap
 addDropdownToToolbar({
   options: {
     values: colormaps.map((cm) => cm.Name),
@@ -170,6 +181,7 @@ addDropdownToToolbar({
 
 // =============================================================================
 
+// Change the colormap of an specific viewport
 function setPTViewportColormap(viewportInfo, colormapName: string) {
   const { fusion, colorBar, viewportInput } = viewportInfo;
   const { viewportId } = viewportInput;
@@ -196,6 +208,7 @@ function setPTViewportColormap(viewportInfo, colormapName: string) {
   viewport.render();
 }
 
+// Change the colormap of all viewports
 function setPTColormap(colormapName: string) {
   currentPTColormapName = colormapName;
 
@@ -232,6 +245,7 @@ async function initializeVolumeViewport(
     callback: setCtTransferFunctionForVolumeActor,
   });
 
+  // Add PT volume on fusion viewports
   if (fusion) {
     const ptImageIds = await getPTImageIds();
 
@@ -246,11 +260,13 @@ async function initializeVolumeViewport(
   // Set the volume on the viewport
   await viewport.setVolumes(volumes);
 
+  // Update the colormap to the active one on PT/CT viewports
   if (fusion) {
     setPTViewportColormap(viewportInfo, currentPTColormapName);
   }
 }
 
+// Creates one or more containers at the right side of the viewport
 function createRightColorBarContainers(numContainers) {
   const containers = [];
   const height = 100 / numContainers;
@@ -273,6 +289,7 @@ function createRightColorBarContainers(numContainers) {
   return containers;
 }
 
+// Creates one or more containers at the bottom of the viewport
 function createBottomColorBarContainers(numContainers) {
   const containers = [];
   const width = 100 / numContainers;
@@ -295,6 +312,8 @@ function createBottomColorBarContainers(numContainers) {
   return containers;
 }
 
+// Creates one or more containers at the right side or at the bottom
+// of the viewport based on `colorBar.position` config
 function initializeColorBarContainers(viewportInfo, viewportContainer) {
   const numContainers = viewportInfo.fusion ? 2 : 1;
   const containers =
@@ -316,12 +335,13 @@ function initializeColorBarContainers(viewportInfo, viewportContainer) {
   return containers;
 }
 
+// Create instaces of the color bars for CT or PT/CT viewports and add them to the DOM
 function initializeColorBars(viewportInfo, colorBarContainers) {
   const { fusion, volumeIds = [], colorBar, viewportInput } = viewportInfo;
   const { element } = viewportInput;
 
   const scaleStyle = {
-    font: '16px Arial',
+    font: '12px Arial',
     color: '#fff',
     maxNumTicks: 8,
     tickSize: 5,
@@ -336,8 +356,8 @@ function initializeColorBars(viewportInfo, colorBarContainers) {
     volumeId: volumeIds[0],
     colormaps,
     activeColormapName: 'Grayscale',
-    scalePosition: ColorBarScalePosition.TopOrLeft,
-    scaleStyle,
+    rangeTextPosition: ColorBarRangeTextPosition.TopOrLeft,
+    ticksStyle: scaleStyle,
   });
 
   colorBar.instances.push(ctColorBar);
@@ -350,17 +370,30 @@ function initializeColorBars(viewportInfo, colorBarContainers) {
       volumeId: volumeIds[1],
       colormaps,
       activeColormapName: currentPTColormapName,
-      scalePosition: ColorBarScalePosition.TopOrLeft,
-      scaleStyle,
+      rangeTextPosition: ColorBarRangeTextPosition.TopOrLeft,
+      ticksStyle: scaleStyle,
     });
 
     colorBar.instances.push(ptColorBar);
   }
 }
 
+/**
+ * Creates a viewport, load its stack/volume and adds its color bar(s).
+ * HTML Structure:
+ *    viewportGrid
+ *        viewportContainer
+ *            viewport
+ *                canvas
+ *            color bar container (CT)
+ *                color bar (CT)
+ *            color bar container (PT)
+ *                color bar (PT)
+ */
 async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   const { viewportInput } = viewportInfo;
 
+  // Container where the viewport and the color bars are added to
   const viewportContainer = document.createElement('div');
 
   Object.assign(viewportContainer.style, {
@@ -376,6 +409,8 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   let width = '100%';
   let height = '100%';
 
+  // Leave some space for the color bar that can be added to the
+  // left or at the bottom of the viewport
   if (viewportInfo.colorBar?.position === 'right') {
     width = `calc(100% - ${colorBarWidth}px)`;
   } else {
@@ -386,12 +421,7 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   element.oncontextmenu = (e) => e.preventDefault();
 
   element.id = viewportInput.viewportId;
-  element.style.overflow = 'hidden';
-
-  Object.assign(element.style, {
-    width,
-    height,
-  });
+  Object.assign(element.style, { width, height, overflow: 'hidden' });
 
   viewportInput.element = element;
   viewportContainer.appendChild(element);
@@ -399,16 +429,20 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   const { viewportId } = viewportInput;
   const { id: renderingEngineId } = renderingEngine;
 
+  // Enable the viewport
   renderingEngine.enableElement(viewportInput);
 
   // Set the tool group on the viewport
   toolGroup.addViewport(viewportId, renderingEngineId);
 
+  // Create the color bar containers that will be used to append the
+  // colorBars' rootElement
   const colorBarContainers = initializeColorBarContainers(
     viewportInfo,
     viewportContainer
   );
 
+  // Create and add the color bars to the DOM
   initializeColorBars(viewportInfo, colorBarContainers);
 
   const ctImageIds = await getCTImageIds();
@@ -426,6 +460,7 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   }
 }
 
+// Create a tool group and add all necessary tools to it
 function initializeToolGroup(toolGroupId) {
   let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 

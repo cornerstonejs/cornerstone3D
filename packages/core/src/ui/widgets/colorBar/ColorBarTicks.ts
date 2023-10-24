@@ -1,60 +1,69 @@
-import { ColorBarRange } from './types/ColorBarRange';
-import { ColorBarVOIRange } from './types/ColorBarVOIRange';
-import { ColorBarSize } from './types/ColorBarSize';
-import { ColorBarScaleProps } from './types/ColorBarScaleProps';
-import { ColorBarPosition } from './types/ColorBarPosition';
-import isSizeValid from './common/isSizeValid';
-import isRangeValid from './common/isRangeValid';
-import rangesEqual from './common/rangesEqual';
-import sizesEqual from './common/sizesEqual';
-import positionsEqual from './common/positionsEquals';
-import { ColorBarScalePosition } from './enums/ColorBarScalePosition';
+import type {
+  ColorBarImageRange,
+  ColorBarVOIRange,
+  ColorBarSize,
+  ColorBarTicksProps,
+} from './types';
+import {
+  isColorBarSizeValid,
+  isRangeValid,
+  areColorBarRangesEqual,
+  areColorBarSizesEqual,
+} from './common';
+import { ColorBarRangeTextPosition } from './enums/ColorBarRangeTextPosition';
 
-const DEFAULT_FONT = '10px Arial';
-const DEFAULT_COLOR = 'white';
-const DEFAULT_TICK_SIZE = 5;
-const DEFAULT_TICK_WIDTH = 1;
-const DEFAULT_TICK_LABEL_MARGIN = 3;
-const DEFAULT_MAX_NUM_TICKS = 8;
+const DEFAULTS = {
+  FONT: '10px Arial',
+  COLOR: 'white',
+  TICK_SIZE: 5,
+  TICK_WIDTH: 1,
+  TICK_LABEL_MARGIN: 3,
+  MAX_NUM_TICKS: 8,
 
-class ColorBarScale {
+  // Must start with 1 and end with 10
+  TICKS_STEPS: [1, 2.5, 5, 10],
+};
+
+class ColorBarTicks {
   private _canvas: HTMLCanvasElement;
-  private _range: ColorBarRange;
+  private _imageRange: ColorBarImageRange;
   private _voiRange: ColorBarVOIRange;
   private _color: string;
   private _tickSize: number;
   private _tickWidth: number;
   private _labelMargin: number;
   private _maxNumTicks: number;
-  private _scalePosition: ColorBarScalePosition;
+  private _rangeTextPosition: ColorBarRangeTextPosition;
   private _showFullPixelValueRange: boolean;
   private _font: string;
 
-  constructor(props: ColorBarScaleProps) {
-    ColorBarScale.validateProps(props);
+  constructor(props: ColorBarTicksProps) {
+    ColorBarTicks.validateProps(props);
 
     const {
+      top = 0,
+      left = 0,
       size = { width: 20, height: 100 },
-      position = { top: 0, left: 0 },
-      range = { lower: 0, upper: 1 },
+      imageRange = { lower: 0, upper: 1 },
       voiRange = { lower: 0, upper: 1 },
-      scaleStyle,
-      scalePosition,
+      ticksStyle,
+      rangeTextPosition,
       container,
       showFullPixelValueRange = false,
     } = props;
 
-    this._range = range;
+    this._imageRange = imageRange;
     this._voiRange = voiRange;
-    this._font = scaleStyle?.font ?? DEFAULT_FONT;
-    this._color = scaleStyle?.color ?? DEFAULT_COLOR;
-    this._tickSize = scaleStyle?.tickSize ?? DEFAULT_TICK_SIZE;
-    this._tickWidth = scaleStyle?.tickWidth ?? DEFAULT_TICK_WIDTH;
-    this._labelMargin = scaleStyle?.labelMargin ?? DEFAULT_TICK_LABEL_MARGIN;
-    this._maxNumTicks = scaleStyle?.maxNumTicks ?? DEFAULT_MAX_NUM_TICKS;
-    this._scalePosition = scalePosition ?? ColorBarScalePosition.TopOrLeft;
+    this._font = ticksStyle?.font ?? DEFAULTS.FONT;
+    this._color = ticksStyle?.color ?? DEFAULTS.COLOR;
+    this._tickSize = ticksStyle?.tickSize ?? DEFAULTS.TICK_SIZE;
+    this._tickWidth = ticksStyle?.tickWidth ?? DEFAULTS.TICK_WIDTH;
+    this._labelMargin = ticksStyle?.labelMargin ?? DEFAULTS.TICK_LABEL_MARGIN;
+    this._maxNumTicks = ticksStyle?.maxNumTicks ?? DEFAULTS.MAX_NUM_TICKS;
+    this._rangeTextPosition =
+      rangeTextPosition ?? ColorBarRangeTextPosition.TopOrLeft;
     this._showFullPixelValueRange = showFullPixelValueRange;
-    this._canvas = this._createCanvasElement(size, position);
+    this._canvas = this._createCanvasElement(size, top, left);
 
     if (container) {
       this.appendTo(container);
@@ -69,7 +78,7 @@ class ColorBarScale {
   public set size(size: ColorBarSize) {
     const { _canvas: canvas } = this;
 
-    if (!isSizeValid(size) || sizesEqual(canvas, size)) {
+    if (!isColorBarSizeValid(size) || areColorBarSizesEqual(canvas, size)) {
       return;
     }
 
@@ -77,32 +86,51 @@ class ColorBarScale {
     this.render();
   }
 
-  public get position(): ColorBarPosition {
-    return this._getCanvasPosition(this._canvas);
+  public get top(): number {
+    return Number.parseInt(this._canvas.style.top);
   }
 
-  public set position(position: ColorBarPosition) {
+  public set top(top: number) {
     const { _canvas: canvas } = this;
-    const currentPosition = this._getCanvasPosition(canvas);
+    const currentTop = this.top;
 
-    if (positionsEqual(position, currentPosition)) {
+    if (top === currentTop) {
       return;
     }
 
-    this._setCanvasPosition(canvas, position);
+    canvas.style.top = `${top}px`;
     this.render();
   }
 
-  public get range() {
-    return { ...this._range };
+  public get left(): number {
+    return Number.parseInt(this._canvas.style.left);
   }
 
-  public set range(range: ColorBarVOIRange) {
-    if (!isRangeValid(range) || rangesEqual(range, this._range)) {
+  public set left(left: number) {
+    const { _canvas: canvas } = this;
+    const currentLeft = this.left;
+
+    if (left === currentLeft) {
       return;
     }
 
-    this._range = range;
+    canvas.style.left = `${left}px`;
+    this.render();
+  }
+
+  public get imageRange() {
+    return { ...this._imageRange };
+  }
+
+  public set imageRange(imageRange: ColorBarVOIRange) {
+    if (
+      !isRangeValid(imageRange) ||
+      areColorBarRangesEqual(imageRange, this._imageRange)
+    ) {
+      return;
+    }
+
+    this._imageRange = imageRange;
     this.render();
   }
 
@@ -111,7 +139,10 @@ class ColorBarScale {
   }
 
   public set voiRange(voiRange: ColorBarVOIRange) {
-    if (!isRangeValid(voiRange) || rangesEqual(voiRange, this._voiRange)) {
+    if (
+      !isRangeValid(voiRange) ||
+      areColorBarRangesEqual(voiRange, this._voiRange)
+    ) {
       return;
     }
 
@@ -192,15 +223,15 @@ class ColorBarScale {
     this.render();
   }
 
-  private static validateProps(props: ColorBarScaleProps) {
-    const { size, range, voiRange } = props;
+  private static validateProps(props: ColorBarTicksProps) {
+    const { size, imageRange, voiRange } = props;
 
-    if (size && !isSizeValid(size)) {
+    if (size && !isColorBarSizeValid(size)) {
       throw new Error('Invalid "size"');
     }
 
-    if (range && !isRangeValid(range)) {
-      throw new Error('Invalid "range"');
+    if (imageRange && !isRangeValid(imageRange)) {
+      throw new Error('Invalid "imageRange"');
     }
 
     if (voiRange && !isRangeValid(voiRange)) {
@@ -220,27 +251,10 @@ class ColorBarScale {
     });
   }
 
-  private _getCanvasPosition(canvas): ColorBarPosition {
-    const { top: canvasTop, left: canvasLeft } = this._canvas.style;
-    const top = Number.parseInt(canvasTop);
-    const left = Number.parseInt(canvasLeft);
-
-    return { top, left };
-  }
-
-  private _setCanvasPosition(
-    canvas: HTMLCanvasElement,
-    position: ColorBarPosition
-  ) {
-    Object.assign(canvas.style, {
-      top: `${position.top}px`,
-      left: `${position.left}px`,
-    });
-  }
-
   private _createCanvasElement(
     size: ColorBarSize,
-    position: ColorBarPosition
+    top: number,
+    left: number
   ): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
 
@@ -248,43 +262,58 @@ class ColorBarScale {
       display: 'none',
       position: 'absolute',
       boxSizing: 'border-box',
+      top: `${top}px`,
+      left: `${left}px`,
     });
 
     this._setCanvasSize(canvas, size);
-    this._setCanvasPosition(canvas, position);
 
     return canvas;
   }
 
   /**
-   * Calculate "ticks" to be displayed for the current range
+   * Calculate how many ticks can be displayed on the screen based on the
+   * pre-defined steps (`TICKS_STEPS`) as follow:
+   *   1. Calculate what should be the step (`roughStep`) based on the range and
+   *   the number of desired steps (`maxNumTicks`).
+   *   2. Find a number power of 10 (eg: 0.1, 1, 10, 100, etc.) that can be used
+   *   to multiply `roughStep` and return a number between 1 and 10 which is
+   *   called `roughtStepNormalized`.
+   *   3. Find in the TICKS_STEPS array a number that is bigger than or equal to
+   *   the `roughtStepNormalized` value (`normalizedStep`).
+   *   4. Multiply the `normalizedStep` to move it to the real range.
+   *
    * @param range - Range with "lower" and "upper" values
    */
-  private _getTicks(range: ColorBarRange) {
+  private _getTicks(range) {
     const { lower, upper } = range;
     const rangeValue = upper - lower;
 
-    // First approximation
+    // First approximation based on the max number of ticks
     const roughStep = rangeValue / (this._maxNumTicks - 1);
-
-    // Set best step for the range
-    const goodNormalizedSteps = [1, 2, 5, 10];
 
     // Normalize rough step to find the normalized one that fits best
     const stepPower = Math.pow(
       10,
       -Math.floor(Math.log10(Math.abs(roughStep)))
     );
-    const normalizedStep = roughStep * stepPower;
-    const goodNormalizedStep = goodNormalizedSteps.find(
-      (n) => n >= normalizedStep
+
+    // Get a number between 1 and 10
+    const roughtStepNormalized = roughStep * stepPower;
+
+    // Find a normalize step that is greater than or equal to `roughtStepNormalized`
+    const normalizedStep = DEFAULTS.TICKS_STEPS.find(
+      (n) => n >= roughtStepNormalized
     );
-    const step = goodNormalizedStep / stepPower;
+
+    // Move `normalizedStep` to the real range
+    const step = normalizedStep / stepPower;
 
     // Determine the scale limits based on the chosen step.
     const scaleMax = Math.ceil(upper / step) * step;
     const scaleMin = Math.floor(lower / step) * step;
 
+    // Find a possible tick values for the `step` computed
     const ticksCount = Math.round((scaleMax - scaleMin) / step) + 1;
     const ticks = [];
 
@@ -338,7 +367,9 @@ class ColorBarScale {
     const maxCanvasPixelValue = isHorizontal ? width : height;
     const canvasContext = canvas.getContext('2d');
     const { _voiRange: voiRange } = this;
-    const range = this._showFullPixelValueRange ? this._range : { ...voiRange };
+    const range = this._showFullPixelValueRange
+      ? this._imageRange
+      : { ...voiRange };
     const rangeWidth = range.upper - range.lower;
     const { ticks } = this._getTicks(range);
 
@@ -368,13 +399,13 @@ class ColorBarScale {
       let tickInfo;
 
       if (isHorizontal) {
-        if (this._scalePosition === ColorBarScalePosition.TopOrLeft) {
+        if (this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft) {
           tickInfo = this._getTopTickInfo({ position, labelMeasure });
         } else {
           tickInfo = this._getBottomTickInfo({ position, labelMeasure });
         }
       } else {
-        if (this._scalePosition === ColorBarScalePosition.TopOrLeft) {
+        if (this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft) {
           tickInfo = this._getLeftTickInfo({ position, labelMeasure });
         } else {
           tickInfo = this._getRightTickInfo({ position });
@@ -395,4 +426,4 @@ class ColorBarScale {
   }
 }
 
-export { ColorBarScale as default, ColorBarScale as ColorBarVOIScale };
+export { ColorBarTicks as default, ColorBarTicks };

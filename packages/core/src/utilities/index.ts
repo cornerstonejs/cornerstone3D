@@ -1,3 +1,4 @@
+import * as eventListener from './eventListener';
 import csUtils from './invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
@@ -10,11 +11,14 @@ import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import isEqual from './isEqual';
+import isViewportPreScaled from './isViewportPreScaled';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
 import createUint16SharedArray from './createUInt16SharedArray';
 import createInt16SharedArray from './createInt16SharedArray';
+import getViewportModality from './getViewportModality';
+import getVOIMultipliers from './getVOIMultipliers';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
@@ -54,6 +58,7 @@ import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 
 export {
+  eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
@@ -67,11 +72,14 @@ export {
   getMinMax,
   getRuntimeId,
   isEqual,
+  isViewportPreScaled,
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
   createUint16SharedArray,
   createInt16SharedArray,
+  getViewportModality,
+  getVOIMultipliers,
   windowLevel,
   getClosestImageId,
   getSpacingInNormalDirection,
