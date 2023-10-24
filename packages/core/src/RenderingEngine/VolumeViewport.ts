@@ -302,6 +302,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+    this.viewportProperties.slabThickness = slabThickness;
   }
 
   /**
