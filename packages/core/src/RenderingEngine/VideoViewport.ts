@@ -4,6 +4,7 @@ import {
   VideoViewportProperties,
   Point3,
   Point2,
+  ICamera,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import renderingEngineCache from './renderingEngineCache';
@@ -278,29 +279,47 @@ class VideoViewport extends Viewport implements IVideoViewport {
     });
   }
 
-  public setCamera(
-    videoInterface: VideoViewportProperties // TODO use a different interface here.
-  ): void {
-    if (videoInterface.pan !== undefined) {
-      this.videoCamera.pan = videoInterface.pan;
+  public getImageData() {
+    return null;
+  }
+  public setCamera(camera: ICamera): void {
+    const { parallelScale, focalPoint } = camera;
+
+    const prevCamera = this.getCamera();
+    console.debug('🚀 ~ focalPoint:', focalPoint);
+
+    const focalPointCanvas = this.worldToCanvas(focalPoint);
+    // Reverse pan direction
+    const pan = [-focalPointCanvas[0], -focalPointCanvas[1]] as Point2;
+
+    if (pan !== undefined) {
+      this.videoCamera.pan = pan;
     }
 
-    if (videoInterface.parallelScale !== undefined) {
-      this.videoCamera.parallelScale = videoInterface.parallelScale;
+    if (camera.parallelScale !== undefined) {
+      // Reverse zoom direction
+      this.videoCamera.parallelScale = 1 / camera.parallelScale;
     }
 
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     if (this.isPlaying === false) {
-      // If its not replaying, just re-render the frame on move.
       this.renderFrame();
     }
   }
 
-  public getCamera(): VideoViewportProperties {
+  public getCamera(): ICamera {
+    const { parallelScale, pan } = this.videoCamera;
+
+    // Focal point is the center of the canvas in world coordinate by construction
+    const canvasCenterWorld = this.canvasToWorld([-pan[0], -pan[1]]); // Reverse pan direction back
+
     return {
-      pan: this.videoCamera.pan,
-      parallelScale: this.videoCamera.parallelScale,
+      parallelProjection: true,
+      focalPoint: canvasCenterWorld,
+      position: [0, 0, 0],
+      parallelScale: 1 / parallelScale, // Reverse zoom direction back
+      viewPlaneNormal: [0, 1, 0],
     };
   }
 
@@ -435,6 +454,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private getCanvasToWorldRatio() {
     return 1.0 / this.videoCamera.parallelScale;
   }
+
+  public customRenderViewportToCanvas = () => {
+    this.renderFrame();
+  };
 
   private renderFrame = () => {
     const pan: Point2 = this.videoCamera.pan;

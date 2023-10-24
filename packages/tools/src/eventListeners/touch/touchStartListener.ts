@@ -134,9 +134,9 @@ let tapState: ITouchTapListnenerState = JSON.parse(
 function triggerEventCallback(ele, name, eventDetail) {
   if (runtimeSettings.get('debug')) {
     if (name === 'CORNERSTONE_TOOLS_TOUCH_DRAG') {
-      console.debug(name);
+      console.log(name);
     } else {
-      console.debug(name, eventDetail);
+      console.log(name, eventDetail);
     }
   }
   return triggerEvent(ele, name, eventDetail);

@@ -133,11 +133,6 @@ class ZoomTool extends BaseTool {
 
     const camera = viewport.getCamera();
 
-    if (viewport instanceof VideoViewport) {
-      this._dragCallbackVideoViewport(evt);
-      return;
-    }
-
     if (camera.parallelProjection) {
       this._dragParallelProjection(evt, viewport, camera);
     } else {
@@ -145,55 +140,6 @@ class ZoomTool extends BaseTool {
     }
 
     viewport.render();
-  }
-
-  _dragCallbackVideoViewport(evt) {
-    const { element: canvas, deltaPoints, currentPoints } = evt.detail;
-    const enabledElement = getEnabledElement(canvas);
-    const { viewport } = enabledElement;
-    // TODO - double check conversion types
-    const videoViewport: VideoViewport = <VideoViewport>(<unknown>viewport);
-
-    const { parallelScale } = videoViewport.getCamera();
-
-    const size = [canvas.clientWidth, canvas.clientHeight];
-    const zoomScale = 1.5 / size[1];
-    const deltaY = deltaPoints.canvas[1];
-    const k = -deltaY * zoomScale;
-
-    videoViewport.setCamera({
-      parallelScale: (1.0 - k) * parallelScale,
-    });
-
-    // Get start canvas position, get start world position
-
-    if (k !== 0) {
-      const canvasPosition = this.cachedCanvasPos;
-      const worldPosition = this.cachedWorldPos;
-      const newWorldPosition = videoViewport.canvasToWorld(canvasPosition);
-
-      console.log(canvasPosition);
-      console.log(worldPosition);
-      console.log(newWorldPosition);
-
-      const diffWorldPosition = [
-        newWorldPosition[0] - worldPosition[0],
-        newWorldPosition[1] - worldPosition[1],
-      ];
-
-      console.log(diffWorldPosition);
-
-      const { pan } = videoViewport.getCamera();
-
-      pan[0] += diffWorldPosition[0];
-      pan[1] += diffWorldPosition[1];
-
-      videoViewport.setCamera({ pan });
-    }
-
-    // Set the parallel scale, get the new world position of this canvas.
-
-    // Pan the camera so that this world position is the same.
   }
 
   _dragParallelProjection = (
