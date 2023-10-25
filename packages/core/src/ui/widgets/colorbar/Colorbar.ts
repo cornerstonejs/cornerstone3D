@@ -22,6 +22,11 @@ type ColorbarPoints = {
   local: Types.Point2;
 };
 
+/**
+ * A base colorbar class that is not associated with any viewport. It is
+ * possible to click and drag to change the VOI range, shows the ticks during
+ * interaction and it can show full image range or VOI range.
+ */
 class Colorbar extends Widget {
   private _colormaps: Map<string, Types.ColormapRegistration>;
   private _activeColormapName: string;

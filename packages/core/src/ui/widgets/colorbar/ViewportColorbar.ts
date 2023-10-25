@@ -12,7 +12,10 @@ import type { ViewportColorbarProps, ColorbarVOIRange } from './types';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };
-
+/**
+ * A colorbar associated with a viewport that updates automatically when the
+ * viewport VOI changes or when the stack/volume are updated..
+ */
 class ViewportColorbar extends Colorbar {
   private _element: HTMLDivElement;
   private _volumeId: string;
