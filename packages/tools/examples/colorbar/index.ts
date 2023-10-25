@@ -122,8 +122,8 @@ const viewportsInfo = [
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Color Bar',
-  'Interactive color bar that can be used to manipulate the VOI'
+  'Colorbar',
+  'Interactive colorbar that can be used to manipulate the VOI'
 );
 
 const content = document.getElementById('content');
