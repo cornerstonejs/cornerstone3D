@@ -1,1 +1,3 @@
-export * as colorbar from './colorbar';
+import * as colorbar from './colorbar';
+
+export { colorbar };

@@ -96,15 +96,15 @@ class ViewportColorbar extends Colorbar {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const actor = volumeId
+    const volumeActor = volumeId
       ? viewport.getActor(volumeId)
       : viewport.getDefaultActor();
 
-    if (!actor || !utilities.isImageActor(actor)) {
+    if (!volumeActor || !utilities.isImageActor(volumeActor)) {
       return defaultImageRange;
     }
 
-    const voiRange = actor.actor
+    const voiRange = (volumeActor.actor as Types.ImageActor)
       .getProperty()
       .getRGBTransferFunction(0)
       .getRange();
@@ -186,7 +186,7 @@ class ViewportColorbar extends Colorbar {
 
     element.addEventListener(
       Events.VOI_MODIFIED,
-      this._viewportVOIModifiedCallback
+      this._viewportVOIModifiedCallback as EventListener
     );
   }
 }

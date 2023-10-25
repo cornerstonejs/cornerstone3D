@@ -1,5 +1,5 @@
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import type { WidgetProps } from '../../types';
+import { WidgetProps } from '../../../../widgets/types';
 import { ColorbarCommonProps } from '.';
 
 export type ColorbarProps = (WidgetProps & ColorbarCommonProps) & {
