@@ -337,8 +337,8 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
   const { fusion, volumeIds, colorbar, viewportInput } = viewportInfo;
   const { element } = viewportInput;
 
-  // Stack viewports do not have volumeIds
-  const ctVolumeId = volumeIds?.length ? volumeIds[0] : undefined;
+  // Volume viewport has one or two volumeIds while stack viewport does not have
+  const isVolumeViewport = !!volumeIds?.length;
 
   const scaleStyle = {
     font: '12px Arial',
@@ -349,18 +349,24 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
     labelMargin: 3,
   };
 
-  const ctColorbar = new ViewportColorbar({
+  const ctColorbarProps: cstUtils.voi.colorbar.Types.ViewportColorbarProps = {
     id: 'ctColorbar',
     element,
     container: colorbarContainers[0],
-    volumeId: ctVolumeId,
     colormaps,
     activeColormapName: 'Grayscale',
     ticks: {
       position: ColorbarRangeTextPosition.Left,
       style: scaleStyle,
     },
-  });
+  };
+
+  // Colorbars on volume viewports must have a volumeId
+  if (isVolumeViewport) {
+    ctColorbarProps.volumeId = volumeIds[0];
+  }
+
+  const ctColorbar = new ViewportColorbar(ctColorbarProps);
 
   colorbar.instances.push(ctColorbar);
 
