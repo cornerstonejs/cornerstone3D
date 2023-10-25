@@ -12,7 +12,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType, FrameStatus } = Enums;
+const { ViewportType, ImageStatus } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -65,14 +65,14 @@ content.appendChild(element);
 // ============================= //
 
 const statusNames = {
-  [FrameStatus.DONE]: 'done',
-  [FrameStatus.LOSSY]: 'lossy',
-  [FrameStatus.PARTIAL]: 'partial',
+  [ImageStatus.DONE]: 'done',
+  [ImageStatus.LOSSY]: 'lossy',
+  [ImageStatus.PARTIAL]: 'partial',
 };
 async function newImageFunction(evt) {
   const { image } = evt.detail;
   const { status, decodeTimeInMS, loadTimeInMS } = image;
-  const complete = status === FrameStatus.DONE;
+  const complete = status === ImageStatus.DONE;
   if (complete) {
     element.removeEventListener(
       cornerstone.EVENTS.STACK_NEW_IMAGE,

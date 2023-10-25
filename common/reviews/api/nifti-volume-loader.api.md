@@ -556,8 +556,6 @@ interface ICachedImage {
     // (undocumented)
     sizeInBytes: number;
     // (undocumented)
-    status?: FrameStatus;
-    // (undocumented)
     timeStamp: number;
 }
 
@@ -693,8 +691,6 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
-    complete?: boolean;
-    // (undocumented)
     decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
@@ -752,7 +748,7 @@ interface IImage {
         lastRenderTime?: number;
     };
     // (undocumented)
-    status?: FrameStatus;
+    status?: ImageStatus;
     voiLUT?: CPUFallbackLUT;
     voiLUTFunction: string;
     width: number;
@@ -1115,7 +1111,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<FrameStatus>;
+        cachedFrames: Array<ImageStatus>;
         callbacks: Array<() => void>;
     };
 
@@ -1424,19 +1420,19 @@ interface RetrieveOptions {
     isLossy?: boolean;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
-    partialStatus?: FrameStatus;
+    partialStatus?: ImageStatus;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     range?: number;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
-    status?: FrameStatus;
+    status?: ImageStatus;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     streaming?: boolean;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
-    totalRanges?: number | ((metadata) => number);
+    totalRangesToFetch?: number | ((metadata) => number);
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     urlArguments?: string;

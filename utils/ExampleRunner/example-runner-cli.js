@@ -199,8 +199,10 @@ if (configuration.examples) {
     shell.ShellString(conf).to(webpackConfigPath);
 
     shell.cd(exBasePath);
+    // You can run this with --no-cache after the serve to prevent caching
+    // which can help when doing certain types of development.
     shell.exec(
-      `webpack serve --no-cache --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+      `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');

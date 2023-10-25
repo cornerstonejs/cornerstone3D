@@ -94,7 +94,7 @@ export default class ProgressiveIterator<T> {
           this.waiting.reject = reject;
         });
       }
-      //console.log('Awaiting on', this.name);
+      // console.log('Awaiting on', this.name);
       await this.waiting.promise;
     }
     // console.log('Final yield on', this.name);
@@ -104,21 +104,31 @@ export default class ProgressiveIterator<T> {
   /** Runs the forEach method on this filter */
   public async forEach(callback, errorCallback) {
     let index = 0;
-    for await (const value of this) {
-      const { done } = this;
-      try {
-        await callback(value, done, index);
-        index++;
-      } catch (e) {
-        if (!done) {
-          console.warn('Caught exception in intermediate value', e);
-          continue;
+    // Need to catch basic iteration errors first
+    try {
+      for await (const value of this) {
+        const { done } = this;
+        // Separately catch errors in the callback function
+        try {
+          await callback(value, done, index);
+          index++;
+        } catch (e) {
+          if (!done) {
+            console.warn('Caught exception in intermediate value', e);
+            continue;
+          }
+          if (errorCallback) {
+            errorCallback(e, done);
+          } else {
+            throw e;
+          }
         }
-        if (errorCallback) {
-          errorCallback(e);
-        } else {
-          throw e;
-        }
+      }
+    } catch (e) {
+      if (errorCallback) {
+        errorCallback(e, true);
+      } else {
+        throw e;
       }
     }
   }

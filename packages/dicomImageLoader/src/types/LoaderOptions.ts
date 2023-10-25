@@ -26,9 +26,19 @@ export interface LoaderOptions {
   onreadystatechange?: (event: Event, params: any) => void;
   onprogress?: (event: ProgressEvent<EventTarget>, params: any) => void;
   errorInterceptor?: (error: LoaderXhrRequestError) => void;
+  /**
+   * Gets retrieve options for the images.  This separates out the use of
+   * different retrieve types from the actual DICOMweb request back end
+   * configuration.
+   * @param transferSyntaxUID - the transfer syntax if available, defaults to
+   *       'unknown'
+   * @param retrieveType - the retrieve type, which is a user defined configuration,
+   *      although 'lossy' and 'final' are used internally.
+   * @returns RetrieveConfiguration to use for this pair of values.
+   */
   getRetrieveOptions?: (
-    transferSyntaxUid: string,
-    retrieveTypeId?: string
+    transferSyntaxUID: string,
+    retrieveType?: string
   ) => Types.RetrieveConfiguration;
 
   strict?: boolean;
@@ -39,8 +49,8 @@ export interface LoaderOptions {
    * to the method used to retrieve that type of image.  This allows configuring
    * different retrieves based on the phase/setup of the retrieve.
    * The format is:
-   *   transferSyntaxUid ('-' retrieveTypeId)?
-   * where transferSyntaxUid defaults to "unknown" when not specified, and
+   *   transferSyntaxUID ('-' retrieveTypeId)?
+   * where transferSyntaxUID defaults to "unknown" when not specified, and
    * retrieveTypeId is specified externally.  If no record is found, then
    * "default" will be accessed.
    */

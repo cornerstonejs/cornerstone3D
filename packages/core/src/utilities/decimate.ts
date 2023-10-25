@@ -6,7 +6,7 @@
  */
 export default function decimate(
   list: Array<unknown>,
-  interleave = 4,
+  interleave: number,
   offset = 0
 ): number[] {
   const interleaveIndices = [];

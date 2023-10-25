@@ -1,4 +1,4 @@
-import { FrameStatus, RequestType } from '../enums';
+import { ImageStatus, RequestType } from '../enums';
 
 export interface RetrieveStage {
   id: string;
@@ -25,7 +25,7 @@ export type NearbyFrames = {
   // If linear offset is provided, then a linear interpolation between two
   // frames will be used instead.
   linearOffset?: number;
-  status?: FrameStatus;
+  status?: ImageStatus;
 };
 
 export interface RetrieveOptions {
@@ -40,15 +40,15 @@ export interface RetrieveOptions {
   // byte range value to retrieve for initial decode
   initialBytes?: number | ((metadata) => number);
   range?: number;
-  totalRanges?: number | ((metadata) => number);
+  totalRangesToFetch?: number | ((metadata) => number);
   // Decode level to attempt
   decodeLevel?: number;
   // Load status when this item has complete - true to indicate lossy response
   isLossy?: boolean;
   // Status to use on done.  Defaults to Done for lossless, and LOSSY otherwise
-  status?: FrameStatus;
+  status?: ImageStatus;
   // Status to use on partial read. Defaults to Partial
-  partialStatus?: FrameStatus;
+  partialStatus?: ImageStatus;
 }
 
 /**

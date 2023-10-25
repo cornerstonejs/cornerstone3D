@@ -2,7 +2,7 @@ import { Types, utilities } from '@cornerstonejs/core';
 import { getOptions } from './options';
 import { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
-import { getFrameStatus } from '../wadors/getFrameStatus';
+import { getImageStatus } from '../wadors/getImageStatus';
 
 const { ProgressiveIterator } = utilities;
 type RetrieveOptions = Types.RetrieveOptions;
@@ -85,7 +85,7 @@ export default function streamRequest(
           encodedData,
           streamingData
         );
-        const status = getFrameStatus(retrieveOptions, readDone);
+        const status = getImageStatus(retrieveOptions, readDone);
         const detail = {
           url,
           imageId,

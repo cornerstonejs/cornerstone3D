@@ -11,7 +11,7 @@ import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
 import CalibrationTypes from './CalibrationTypes';
 import ViewportStatus from './ViewportStatus';
-import FrameStatus from './FrameStatus';
+import ImageStatus from './ImageStatus';
 
 export {
   Events,
@@ -27,5 +27,5 @@ export {
   VOILUTFunctionType,
   DynamicOperatorType,
   ViewportStatus,
-  FrameStatus,
+  ImageStatus,
 };

@@ -19,7 +19,7 @@ type IRetrieveConfiguration = Types.IRetrieveConfiguration;
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const { decimate, getMinMax, ProgressiveIterator } = csUtils;
-const { FrameStatus } = Enums;
+const { ImageStatus } = Enums;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -49,7 +49,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<Enums.FrameStatus>;
+    cachedFrames: Array<Enums.ImageStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
 
@@ -224,7 +224,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = [];
   }
 
-  public successCallback(imageId: string, image, status = FrameStatus.DONE) {
+  public successCallback(imageId: string, image, status = ImageStatus.DONE) {
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getTargetOptions(imageId);
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
@@ -368,14 +368,16 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.loadStatus.callbacks.push(callback);
     }
 
+    console.log('About to start prefetch');
     this._prefetchImageIds();
+    console.log('Initiated prefetch');
   };
 
   protected updateTextureAndTriggerEvents(
     volume: BaseStreamingImageVolume,
     imageIdIndex,
     imageId,
-    status = FrameStatus.DONE
+    status = ImageStatus.DONE
   ) {
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
@@ -386,10 +388,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       return;
     }
 
-    if (cachedFrames[frameIndex] === FrameStatus.DONE) {
+    if (cachedFrames[frameIndex] === ImageStatus.DONE) {
       return;
     }
-    const complete = status === FrameStatus.DONE;
+    const complete = status === ImageStatus.DONE;
     cachedFrames[imageIdIndex] = status;
     this.framesUpdated++;
     if (complete) {
@@ -461,7 +463,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   }
 
   public getTargetOptions(imageId: string) {
-    const { transferSyntaxUID: transferSyntaxUid } =
+    const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get('transferSyntax', imageId) || {};
 
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
@@ -538,7 +540,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         // and therefore doesn't have the scalingParameters
         scalingParameters,
       },
-      transferSyntaxUid,
+      transferSyntaxUID,
     };
   }
 
@@ -547,7 +549,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   callLoadImage(imageId, imageIdIndex, options) {
     const { cachedFrames } = this;
 
-    if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
+    if (cachedFrames[imageIdIndex] === ImageStatus.DONE) {
       console.log(
         'Skipping secondary load of complete image',
         cachedFrames[imageIdIndex]
@@ -561,11 +563,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     return uncompressedIterator.forEach((image) => {
       if (
         cachedFrames[imageIdIndex] === undefined ||
-        cachedFrames[imageIdIndex] < FrameStatus.LOADING
+        cachedFrames[imageIdIndex] < ImageStatus.LOADING
       ) {
-        cachedFrames[imageIdIndex] = FrameStatus.LOADING;
+        cachedFrames[imageIdIndex] = ImageStatus.LOADING;
       }
-      const { status = FrameStatus.DONE } = image;
+      const { status = ImageStatus.DONE } = image;
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
       this.successCallback(imageId, image, status);
@@ -598,7 +600,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const requests = imageIds.map((imageId) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
-      if (cachedFrames[imageIdIndex] === FrameStatus.DONE) {
+      if (cachedFrames[imageIdIndex] === ImageStatus.DONE) {
         this.framesLoaded++;
         return;
       }
@@ -750,9 +752,14 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.reRenderTarget = this.reRenderFraction;
     }
 
-    return progressiveLoader.load(imageIds, this).catch((e) => {
-      console.warn('progressive loading failed to complete', e);
-    });
+    return progressiveLoader
+      .load(imageIds, this)
+      .catch((e) => {
+        console.debug('progressive loading failed to complete', e);
+      })
+      .then(() => {
+        console.debug('_prefetchImageIds done');
+      });
   }
 
   /**

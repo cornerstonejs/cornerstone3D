@@ -1,7 +1,7 @@
 import { Enums } from '@cornerstonejs/core';
 import findIndexOfString from './findIndexOfString';
 
-const { FrameStatus } = Enums;
+const { ImageStatus } = Enums;
 /**
  * Extracts multipart/related data or single part data from a response byte
  * array.
@@ -26,7 +26,7 @@ export default function extractMultipart(
   if (contentType.indexOf('multipart') === -1) {
     return {
       contentType,
-      status: isPartial ? FrameStatus.PARTIAL : FrameStatus.DONE,
+      status: isPartial ? ImageStatus.PARTIAL : ImageStatus.DONE,
       pixelData: response,
     };
   }

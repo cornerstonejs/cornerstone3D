@@ -181,8 +181,6 @@ content.append(instructions);
  * ```
  */
 const configDefault = {
-  minChunkSize: 65_536 * 2,
-
   retrieveConfiguration: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
@@ -264,6 +262,7 @@ const configHtj2kMixed = {
       isLossy: true,
       streaming: true,
       framesPath: '/htj2k/',
+      // initialBytes: 16384,
       range: 0,
       decodeLevel: 0,
     },

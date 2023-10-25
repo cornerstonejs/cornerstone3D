@@ -566,30 +566,6 @@ type FlipDirection = {
     flipVertical?: boolean;
 };
 
-// @public
-enum FrameStatus {
-    // Replicate is a duplicated image, from some larger distance
-    // (undocumented)
-    ADJACENT_REPLICATE = 3,
-    // Linear replicate is an average/linear interpolation of two images
-    // (undocumented)
-    DONE = 7,
-    // Adjacent replicate is a duplicated image of a nearby image
-    // (undocumented)
-    LINEAR_REPLICATE = 2,
-    // Loading is used to prevent replication when the actual images start becoming available
-    // (undocumented)
-    LOADING = 4,
-    // Partial images
-    // (undocumented)
-    LOSSY = 6,
-    // Lossy images, either complete or partial
-    // (undocumented)
-    PARTIAL = 5,
-    // (undocumented)
-    REPLICATE = 1,
-}
-
 // @public (undocumented)
 enum GeometryType {
     // (undocumented)
@@ -651,8 +627,6 @@ interface ICachedImage {
     sharedCacheKey?: string;
     // (undocumented)
     sizeInBytes: number;
-    // (undocumented)
-    status?: FrameStatus;
     // (undocumented)
     timeStamp: number;
 }
@@ -789,8 +763,6 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
-    complete?: boolean;
-    // (undocumented)
     decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
@@ -848,7 +820,7 @@ interface IImage {
         lastRenderTime?: number;
     };
     // (undocumented)
-    status?: FrameStatus;
+    status?: ImageStatus;
     voiLUT?: CPUFallbackLUT;
     voiLUTFunction: string;
     width: number;
@@ -1079,6 +1051,32 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 // @public
+enum ImageStatus {
+    // Replicate is a duplicated image, from some larger distance
+    // (undocumented)
+    ADJACENT_REPLICATE = 3,
+
+    // Skipping a value here and after the next replicate to allow for interpolation
+    // enum values.
+
+    // Adjacent replicate is a duplicated image of a nearby image
+    // (undocumented)
+    DONE = 8,
+    // Loading is used to prevent replication when the actual images start becoming available
+    // (undocumented)
+    LOADING = 5,
+    // Partial images
+    // (undocumented)
+    LOSSY = 7,
+    // Lossy images, either complete or partial
+    // (undocumented)
+    PARTIAL = 6,
+    // Done means the image is full resolution/complete
+    // (undocumented)
+    REPLICATE = 1,
+}
+
+// @public
 type ImageVolumeLoadingCompletedEvent =
 CustomEvent_2<ImageVolumeLoadingCompletedEventDetail>;
 
@@ -1219,7 +1217,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<FrameStatus>;
+        cachedFrames: Array<ImageStatus>;
         callbacks: Array<() => void>;
     };
 
@@ -1524,19 +1522,19 @@ interface RetrieveOptions {
     isLossy?: boolean;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
-    partialStatus?: FrameStatus;
+    partialStatus?: ImageStatus;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     range?: number;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
-    status?: FrameStatus;
+    status?: ImageStatus;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     streaming?: boolean;
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
-    totalRanges?: number | ((metadata) => number);
+    totalRangesToFetch?: number | ((metadata) => number);
     // Alternate way to encode argument information by updating the frames path
     // (undocumented)
     urlArguments?: string;
@@ -1685,7 +1683,7 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
-            transferSyntaxUid: any;
+            transferSyntaxUID: any;
         };
         priority: number;
         requestType: default_2;

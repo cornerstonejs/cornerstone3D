@@ -3,12 +3,14 @@ import { getOptions } from './options';
 import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
-import { getFrameStatus } from '../wadors/getFrameStatus';
+import { getImageStatus } from '../wadors/getImageStatus';
+import { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 
 type RetrieveOptions = Types.RetrieveOptions;
 
 /**
- * Performs a range or thumbnail request.
+ * Performs a range request to fetch part of an encoded image, typically
+ * so that partial resolution images can be fetched.
  * The configuration of exactly what is requested is based on the transfer
  * syntax provided.
  * Note this generates 1 response for each call, and those reponses may or may
@@ -32,16 +34,17 @@ export default function rangeRequest(
 ): LoaderXhrRequestPromise<{
   contentType: string;
   pixelData: Uint8Array;
-  status: Enums.FrameStatus;
+  status: Enums.ImageStatus;
   percentComplete: number;
 }> {
   const globalOptions = getOptions();
-  const { retrieveOptions = {}, streamingData = {} } = options;
+  const { retrieveOptions = {}, streamingData } = options;
   const initialBytes =
     streamingData.initialBytes ||
     getValue(imageId, retrieveOptions, 'initialBytes') ||
     65536;
-  const totalRanges = getValue(imageId, retrieveOptions, 'totalRanges') || 2;
+  const totalRangesToFetch =
+    getValue(imageId, retrieveOptions, 'totalRangesToFetch') || 2;
 
   const errorInterceptor = (err: any) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -57,7 +60,7 @@ export default function rangeRequest(
     contentType: string;
     pixelData: Uint8Array;
     percentComplete: number;
-    status: Enums.FrameStatus;
+    status: Enums.ImageStatus;
   }>(async (resolve, reject) => {
     const headers = Object.assign(
       {},
@@ -66,25 +69,24 @@ export default function rangeRequest(
     );
 
     Object.keys(headers).forEach(function (key) {
-      if (headers[key] === null) {
-        headers[key] = undefined;
+      if (headers[key] === null || headers[key] === undefined) {
+        delete headers[key];
       }
     });
 
     try {
       if (!streamingData.encodedData) {
         streamingData.initialBytes = initialBytes;
-        streamingData.totalRanges = totalRanges;
+        streamingData.totalRanges = totalRangesToFetch;
         streamingData.rangesFetched = 0;
       }
-      const { rangesFetched } = streamingData;
       const byteRange = getByteRange(
         streamingData,
         retrieveOptions,
         initialBytes
       );
 
-      const { bytes, responseHeaders } = await fetchRangeAndAppend(
+      const { encodedData, responseHeaders } = await fetchRangeAndAppend(
         url,
         headers,
         byteRange,
@@ -95,14 +97,16 @@ export default function rangeRequest(
       // cornerstone via the usual image loading pathway. All subsequent
       // ranges will be passed and decoded via events.
       const contentType = responseHeaders.get('content-type');
-      const { totalBytes, encodedData } = streamingData;
+      const { totalBytes } = streamingData;
       const doneAllBytes = totalBytes === encodedData.byteLength;
-      const extract = extractMultipart(contentType, bytes, { isPartial: true });
+      const extract = extractMultipart(contentType, encodedData, {
+        isPartial: true,
+      });
 
       // Allow over-writing the done status to indicate complete on partial
       resolve({
         ...extract,
-        status: getFrameStatus(
+        status: getImageStatus(
           retrieveOptions,
           doneAllBytes || retrieveOptions.isLossy === false
         ),
@@ -167,7 +171,7 @@ async function fetchRangeAndAppend(
   }
 
   return {
-    bytes: newByteArray,
+    encodedData: newByteArray,
     responseHeaders: response.headers,
   };
 }

@@ -113,6 +113,7 @@ function xhrRequest(
         // TODO: consider sending out progress messages here as we receive
         // the pixel data
         if (xhr.readyState === 4) {
+          // Status OK (200) and partial content (206) are both handled
           if (xhr.status === 200 || xhr.status === 206) {
             options
               .beforeProcessing(xhr)

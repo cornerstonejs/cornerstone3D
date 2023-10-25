@@ -557,7 +557,7 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
-function decimate(list: Array<unknown>, interleave?: number, offset?: number): number[];
+function decimate(list: Array<unknown>, interleave: number, offset?: number): number[];
 
 // @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
@@ -628,7 +628,7 @@ declare namespace Enums {
         VOILUTFunctionType,
         DynamicOperatorType,
         ViewportStatus,
-        FrameStatus
+        ImageStatus
     }
 }
 export { Enums }
@@ -756,24 +756,6 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
-
-// @public (undocumented)
-enum FrameStatus {
-    // (undocumented)
-    ADJACENT_REPLICATE = 3,
-    // (undocumented)
-    DONE = 7,
-    // (undocumented)
-    LINEAR_REPLICATE = 2,
-    // (undocumented)
-    LOADING = 4,
-    // (undocumented)
-    LOSSY = 6,
-    // (undocumented)
-    PARTIAL = 5,
-    // (undocumented)
-    REPLICATE = 1
-}
 
 declare namespace geometryLoader {
     export {
@@ -957,8 +939,6 @@ interface ICachedImage {
     // (undocumented)
     sizeInBytes: number;
     // (undocumented)
-    status?: FrameStatus;
-    // (undocumented)
     timeStamp: number;
 }
 
@@ -1129,8 +1109,6 @@ interface IImage {
     // (undocumented)
     columns: number;
     // (undocumented)
-    complete?: boolean;
-    // (undocumented)
     decodeTimeInMS?: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
@@ -1203,7 +1181,7 @@ interface IImage {
         lastRenderTime?: number;
     };
     // (undocumented)
-    status?: FrameStatus;
+    status?: ImageStatus;
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
@@ -1508,6 +1486,22 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 // @public (undocumented)
+enum ImageStatus {
+    // (undocumented)
+    ADJACENT_REPLICATE = 3,
+    // (undocumented)
+    DONE = 8,
+    // (undocumented)
+    LOADING = 5,
+    // (undocumented)
+    LOSSY = 7,
+    // (undocumented)
+    PARTIAL = 6,
+    // (undocumented)
+    REPLICATE = 1
+}
+
+// @public (undocumented)
 function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | undefined;
 
 // @public (undocumented)
@@ -1758,7 +1752,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<FrameStatus>;
+        cachedFrames: Array<ImageStatus>;
         callbacks: Array<() => void>;
     };
     // (undocumented)
@@ -2051,7 +2045,7 @@ const mprCameraValues: any;
 type NearbyRequest = {
     itemId: string;
     linearId?: string;
-    status: FrameStatus;
+    status: ImageStatus;
     nearbyItem: any;
 };
 
@@ -2304,15 +2298,15 @@ interface RetrieveOptions {
     // (undocumented)
     isLossy?: boolean;
     // (undocumented)
-    partialStatus?: FrameStatus;
+    partialStatus?: ImageStatus;
     // (undocumented)
     range?: number;
     // (undocumented)
-    status?: FrameStatus;
+    status?: ImageStatus;
     // (undocumented)
     streaming?: boolean;
     // (undocumented)
-    totalRanges?: number | ((metadata: any) => number);
+    totalRangesToFetch?: number | ((metadata: any) => number);
     // (undocumented)
     urlArguments?: string;
 }

@@ -39,3 +39,42 @@ If the server supports HTJ2K in resolution first order using byte ranges, then
 it can be configured using the `range` and `initialBytes` parameters to control
 the range request and the initial bytes. It may also be required to use the
 decodeLevel configuration. For example:
+
+```javascript
+  retrieveConfiguration: {
+    'default-lossy': {
+      // Note initial request is lossy - could have alternatively used status here
+      isLossy: true,
+      // Streaming is true because this data isn't final.  Allows decode of streamed data
+      streaming: true,
+      // Path to use
+      framesPath: '/htj2k/',
+      // This SHOULD work, but fails due to HTJ2K errors
+      // initialBytes: 16384,
+      range: 0,
+      // Sets the decode level to commplete - this is ok for CT images at 64k
+      decodeLevel: 0,
+    },
+    'default-final': {
+      framesPath: '/htj2k/',
+      range: 1,
+      streaming: false,
+    },
+```
+
+## Decode Options
+
+There are a number of decode options to control how the decoder generates
+the output:
+
+- decodeLevel is used for progressive decoding. 0 is full size, while larger
+  values are smaller images/less data required. There is currently a bug in
+  the HTJ2K decoder with decoding at level 0 when not all data is available.
+- isLossy indicates that the resulting output is lossy/not final
+
+## Queue Options
+
+To control how the data is queued, it is possible to set some of the queing
+options:
+
+- priority can be set to control when the

@@ -5,7 +5,7 @@ import { xhrRequest } from '../internal/index';
 import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
-import { getFrameStatus } from './getFrameStatus';
+import { getImageStatus } from './getImageStatus';
 
 const { ProgressiveIterator } = utilities;
 
@@ -64,7 +64,7 @@ function getPixelData(
         contentType,
         new Uint8Array(imageFrameAsArrayBuffer)
       );
-      extracted.status = getFrameStatus(retrieveOptions, true);
+      extracted.status = getImageStatus(retrieveOptions, true);
       loadIterator.add(extracted, true);
     },
     (reason) => loadIterator.reject(reason)

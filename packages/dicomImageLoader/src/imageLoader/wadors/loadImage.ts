@@ -7,7 +7,7 @@ import { getOptions } from '../internal/options';
 import { RetrieveOptions } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
-const { FrameStatus } = Enums;
+const { ImageStatus } = Enums;
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
 
@@ -79,6 +79,12 @@ function getImageRetrievalPool() {
 
 export interface StreamingData {
   url: string;
+  encodedData?: Uint8Array;
+  // Some values used by instances of streaming data for range
+  totalBytes?: number;
+  initialBytes?: number;
+  totalRanges?: number;
+  rangesFetched?: number;
 }
 
 export interface CornerstoneWadoRsLoaderOptions
@@ -90,7 +96,7 @@ export interface CornerstoneWadoRsLoaderOptions
   priority?: number;
   addToBeginning?: boolean;
   retrieveTypeId?: string;
-  transferSyntaxUid?: string;
+  transferSyntaxUID?: string;
   // Retrieve options are stored to provide sub-options for nested calls
   retrieveOptions?: RetrieveOptions;
   // Streaming data adds information about already streamed results.
@@ -113,10 +119,10 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const { retrieveTypeId, transferSyntaxUid } = options;
+  const { retrieveTypeId, transferSyntaxUID } = options;
   const loaderOptions = getOptions();
   options.retrieveOptions =
-    loaderOptions.getRetrieveOptions(transferSyntaxUid, retrieveTypeId) || {};
+    loaderOptions.getRetrieveOptions(transferSyntaxUID, retrieveTypeId) || {};
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -130,7 +136,7 @@ function loadImage(
       for await (const result of compressedIt) {
         const {
           pixelData,
-          status = FrameStatus.DONE,
+          status = ImageStatus.DONE,
           percentComplete,
         } = result;
         const { done } = compressedIt;
@@ -146,7 +152,7 @@ function loadImage(
         }
         const decodeLevel =
           result.decodeLevel ??
-          (status === FrameStatus.DONE
+          (status === ImageStatus.DONE
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,

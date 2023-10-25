@@ -10,7 +10,7 @@ import interleavedRetrieveConfiguration from './interleavedRetrieveConfiguration
 import { loadAndCacheImage, loadImage } from './imageLoader';
 import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import { FrameStatus, RequestType, Events } from '../enums';
+import { ImageStatus, RequestType, Events } from '../enums';
 import cache from '../cache';
 import eventTarget from '../eventTarget';
 
@@ -62,11 +62,18 @@ export async function load(
   retrieveOptions: IRetrieveConfiguration = interleavedRetrieveConfiguration
 ): Promise<unknown> {
   const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
-  const frameStatus = new Map<string, FrameStatus>();
+  const imageStatus = new Map<string, ImageStatus>();
   const stageStatus = new Map<string, StageStatus>();
 
   function sendRequest(request, options) {
     const { imageId, next } = request;
+    const errorCallback = (reason, done) => {
+      // console.log('Erroring out', reason, done);
+      listener.errorCallback(imageId, complete || !next, reason);
+      if (done) {
+        updateStageStatus(stageStatus, request.stage, reason);
+      }
+    };
     let loadedPromise;
     if (options.target?.arrayBuffer) {
       loadedPromise = loadAndCacheImage(imageId, options);
@@ -76,36 +83,29 @@ export async function load(
     const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
     let complete = false;
 
-    const errorCallback = (reason, done) => {
-      console.log('Erroring out', reason, done);
-      listener.errorCallback(imageId, complete || !next, reason);
-      if (done) {
-        updateStageStatus(stageStatus, request.stage, reason);
-      }
-    };
     uncompressedIterator
       .forEach(async (image, done) => {
-        const oldStatus = frameStatus[imageId];
+        const oldStatus = imageStatus[imageId];
         if (!image) {
           console.warn('No image retrieved', imageId);
           return;
         }
         const { status } = image;
-        complete ||= status === FrameStatus.DONE;
+        complete ||= status === ImageStatus.DONE;
         if (oldStatus !== undefined && oldStatus > status) {
-          console.log('Already have better status', oldStatus, status);
+          // We already have a better status, so don't update it
           updateStageStatus(stageStatus, request.stage, null, true);
           return;
         }
-        frameStatus[imageId] = FrameStatus.LOADING;
+        imageStatus[imageId] = ImageStatus.LOADING;
 
         listener.successCallback(imageId, image, status);
-        frameStatus[imageId] = status;
+        imageStatus[imageId] = status;
         displayedIterator.add(image);
         if (done) {
           updateStageStatus(stageStatus, request.stage);
         }
-        fillNearbyFrames(listener, frameStatus, request, image, options);
+        fillNearbyFrames(listener, imageStatus, request, image, options);
       }, errorCallback)
       .finally(() => {
         if (next) {
@@ -125,7 +125,8 @@ export async function load(
         }
       });
     const doneLoad = uncompressedIterator.getDonePromise();
-    return doneLoad;
+    // Errors already handled above in the callback
+    return doneLoad.catch((e) => null);
   }
 
   /** Adds a rquest to the image load pool manager */
@@ -165,22 +166,13 @@ export function loadSingle(
   listener: ProgressiveListener,
   retrieveConfiguration = sequentialRetrieveConfiguration
 ) {
-  const loadPromise = load([imageId], listener, retrieveConfiguration);
-  loadPromise.then(
-    () => {
-      console.log('Load of image completed');
-    },
-    () => {
-      console.log('Load of image failed');
-    }
-  );
-  return loadPromise;
+  return load([imageId], listener, retrieveConfiguration);
 }
 
 export type NearbyRequest = {
   itemId: string;
   linearId?: string;
-  status: FrameStatus;
+  status: ImageStatus;
   nearbyItem;
 };
 
@@ -279,7 +271,7 @@ function findNearbyRequests(
 /** Actually fills the nearby frames from the given frame */
 function fillNearbyFrames(
   listener: ProgressiveListener,
-  frameStatus: Map<string, FrameStatus>,
+  imageStatus: Map<string, ImageStatus>,
   request,
   image,
   options
@@ -307,7 +299,7 @@ function fillNearbyFrames(
   for (const nearbyItem of request.nearbyRequests) {
     try {
       const { itemId: targetId, status } = nearbyItem;
-      const targetStatus = frameStatus.get(targetId);
+      const targetStatus = imageStatus.get(targetId);
       if (targetStatus !== undefined && targetStatus < status) {
         continue;
       }
@@ -319,7 +311,7 @@ function fillNearbyFrames(
         status,
       };
       listener.successCallback(targetId, nearbyImage, status);
-      frameStatus[targetId] = status;
+      imageStatus[targetId] = status;
     } catch (e) {
       console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);
     }

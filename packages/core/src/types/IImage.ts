@@ -2,7 +2,7 @@ import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackColormap from './CPUFallbackColormap';
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
-import { FrameStatus } from '../enums';
+import { ImageStatus } from '../enums';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -116,12 +116,8 @@ interface IImage {
     voiLUT?: CPUFallbackLUT;
   };
 
-  // Indicator if the image is complete, that is fully loaded.
-  // @deprecated - to be removed when status is done
-  complete?: boolean;
-
   // Information on how complete this image instance is.
-  status?: FrameStatus;
+  status?: ImageStatus;
 }
 
 export default IImage;

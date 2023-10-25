@@ -1,4 +1,4 @@
-import { FrameStatus } from '../enums';
+import { ImageStatus } from '../enums';
 import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 interface IStreamingVolumeProperties {
@@ -10,7 +10,7 @@ interface IStreamingVolumeProperties {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<FrameStatus>;
+    cachedFrames: Array<ImageStatus>;
     callbacks: Array<() => void>;
   };
 
