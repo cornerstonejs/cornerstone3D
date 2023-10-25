@@ -924,6 +924,9 @@ interface IImageVolume {
     vtkOpenGLTexture: any;
 }
 
+// @public (undocumented)
+type ImageActor = vtkImageSlice;
+
 // @public
 type ImageCacheImageAddedEvent =
 CustomEvent_2<ImageCacheImageAddedEventDetail>;
