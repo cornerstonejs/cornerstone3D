@@ -2328,7 +2328,7 @@ interface RetrieveStage {
     // (undocumented)
     requestType?: RequestType;
     // (undocumented)
-    retrieveTypeId?: string;
+    retrieveType?: string;
 }
 
 // @public (undocumented)

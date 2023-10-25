@@ -1571,7 +1571,7 @@ interface RetrieveStage {
     // Set of positions - negative values are relative to the end, positive to
     // the beginning, and fractional values between 0 and 1 are relative to frame count
     // (undocumented)
-    retrieveTypeId?: string;
+    retrieveType?: string;
 }
 
 // @public

@@ -1,3 +1,4 @@
+import { RetrieveOptions } from 'core/src/types';
 import { LoaderOptions } from '../../types';
 
 let options: LoaderOptions = {
@@ -32,19 +33,27 @@ let options: LoaderOptions = {
    *   `unknown`
    *   `default`
    */
-  getRetrieveOptions(transferSyntaxUID, retrieveType = '') {
+  getRetrieveOptions(
+    retrieveType = 'default',
+    transferSyntaxUID = 'unknown'
+  ): RetrieveOptions {
     const { retrieveOptions } = this;
     if (!retrieveOptions) {
       return null;
     }
+    // Handle null/empty string as well
     transferSyntaxUID ||= 'unknown';
 
-    const baseKey = retrieveType
-      ? `${transferSyntaxUID}-${retrieveType}`
-      : transferSyntaxUID;
-    const defaultKey = retrieveType ? `default-${retrieveType}` : 'default';
+    const retrieveTypeOptions = retrieveOptions[retrieveType];
+    const retrieveTypeDefault = retrieveOptions.default;
 
-    return retrieveOptions[baseKey] || retrieveOptions[defaultKey];
+    return (
+      retrieveTypeOptions?.[transferSyntaxUID] ||
+      retrieveOptions?.default ||
+      retrieveTypeDefault?.[transferSyntaxUID] ||
+      retrieveTypeDefault?.default ||
+      {}
+    );
   },
 
   strict: false,
@@ -54,24 +63,23 @@ let options: LoaderOptions = {
   },
 
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
+    // The request retrieve type is used for the initial request type defaults
+    // The default request type is used when not otherwise specified
+    default: {
+      // For HTJ2K, set streaming to true both for the request and retrieve phases
+      '3.2.840.10008.1.2.4.96': {
+        streaming: true,
+      },
+      // For unknown data elements, try streaming, so that if the actual data
+      // is HTJ2K, the response can be decoded streaming.
+      request: {
+        streaming: true,
+      },
+      // Otherwise, fallback to not streaming the request
+      default: {
+        streaming: false,
+      },
     },
-    'default-lossy': {},
-    '3.2.840.10008.1.2.4.96-lossy': {
-      isLossy: true,
-      streaming: false,
-      //needsScale: true,
-    },
-    '3.2.840.10008.1.2.4.96-final': {
-      isLossy: false,
-      streaming: false,
-      //needsScale: true,
-    },
-    // '3.2.840.10008.1.2.4.96-lossy': {
-    //   streaming: true,
-    //   // needsScale: true,
-    // },
   },
 };
 

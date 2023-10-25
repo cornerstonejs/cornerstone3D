@@ -141,7 +141,7 @@ export async function load(
     }
     const options = {
       ...baseOptions,
-      retrieveTypeId: stage.retrieveTypeId,
+      retrieveType: stage.retrieveType,
       streamingData,
     };
     const priority = stage.priority ?? -5;

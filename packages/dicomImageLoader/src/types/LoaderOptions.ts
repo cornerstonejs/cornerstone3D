@@ -30,16 +30,16 @@ export interface LoaderOptions {
    * Gets retrieve options for the images.  This separates out the use of
    * different retrieve types from the actual DICOMweb request back end
    * configuration.
-   * @param transferSyntaxUID - the transfer syntax if available, defaults to
-   *       'unknown'
    * @param retrieveType - the retrieve type, which is a user defined configuration,
    *      although 'lossy' and 'final' are used internally.
+   * @param transferSyntaxUID - the transfer syntax if available, defaults to
+   *       'unknown'
    * @returns RetrieveConfiguration to use for this pair of values.
    */
   getRetrieveOptions?: (
+    retrieveType: string
     transferSyntaxUID: string,
-    retrieveType?: string
-  ) => Types.RetrieveConfiguration;
+  ) => Types.RetrieveOptions;
 
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
@@ -48,11 +48,13 @@ export interface LoaderOptions {
    * retrieveOptions is used to map transfer syntax and a lossy id
    * to the method used to retrieve that type of image.  This allows configuring
    * different retrieves based on the phase/setup of the retrieve.
-   * The format is:
-   *   transferSyntaxUID ('-' retrieveTypeId)?
-   * where transferSyntaxUID defaults to "unknown" when not specified, and
-   * retrieveTypeId is specified externally.  If no record is found, then
-   * "default" will be accessed.
+   *
+   * The key is retrieve type to transfer syntax to retrieve options.
+   * There are defaults at both levels if a more specific value isnt' found.
+   * For the retrieve type, the default is 'default'
+   * For the transfer syntax, the default value will be provided based on
+   * if this is in the request or retrieve stage, so that values like streaming
+   * can be set to true in the request phase and false in the default retrieve.
    */
-  retrieveOptions?: Record<string, Types.RetrieveOptions>;
+  retrieveOptions?: Record<string, Record<string, Types.RetrieveOptions>>;
 }

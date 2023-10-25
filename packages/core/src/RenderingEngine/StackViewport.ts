@@ -1737,8 +1737,6 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: true,
-        progressivelyRender: true,
-        streamMethod: 'web-streams',
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {

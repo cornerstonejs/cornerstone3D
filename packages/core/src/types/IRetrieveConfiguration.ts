@@ -11,7 +11,7 @@ export interface RetrieveStage {
   offset?: number;
   // Use a specified retrieve type to add fetch arguments and configuration
   // on the retrieve URL.
-  retrieveTypeId?: string;
+  retrieveType?: string;
   // The type of request to use
   requestType?: RequestType;
   // THe priority to use

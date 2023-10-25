@@ -9,7 +9,7 @@ const sequentialRetrieveConfiguration: IRetrieveConfiguration = {
       id: 'lossySequential',
       decimate: 1,
       offset: 0,
-      retrieveTypeId: 'lossy',
+      retrieveType: 'lossy',
     },
     {
       id: 'finalSequential',

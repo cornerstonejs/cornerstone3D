@@ -25,6 +25,38 @@ decoding when used with either byte range or streaming responses. However,
 these are eventually replaced with full resolution data, so if an image comes
 in that format it will still work, just not progressively.
 
+## Byte Range Requests
+
+\***\* TODO - make this first \*\***
+
+If the server supports HTJ2K Progressive Resolution data fetched using byte ranges,
+then CS3D can be configured using the `range` and `initialBytes` parameters to
+progressively fetch image data.
+
+The HTJ2K decoder currently has some bugs when decoding full resolution data
+from a byte stream. To work around those, the decodeLevel may need to be specified
+as an integer value larger than 0.
+
+```javascript
+  retrieveConfiguration: {
+    'default-lossy': {
+      // Note initial request is lossy - could have alternatively used status here
+      isLossy: true,
+      // Streaming is true because this data isn't final.  Allows decode of streamed data
+      streaming: true,
+      urlArguments: 'accept=image/jhc; transfer-syntax=3.2.4.10008.1.2.96'
+      // This SHOULD work, but fails due to HTJ2K errors
+      // initialBytes: 16384,
+      range: 0,
+      // Sets the decode level to commplete - this is ok for CT images at 64k
+      decodeLevel: 0,
+    },
+    'default-final': {
+      range: 1,
+      streaming: false,
+    },
+```
+
 ## Separate Path or Argument Partial Resolution
 
 One way of configuration for partial image resolution loading is to add
@@ -58,38 +90,6 @@ encoded data on the given path for the given accept header, but in general eithe
 multipart or single part is handled.
 Note that it must include the transfer syntax information as a response
 or multipart header.
-
-## Byte Range Requests
-
-If the server supports HTJ2K Progressive Resolution data fetched using byte ranges,
-then CS3D can be configured using the `range` and `initialBytes` parameters to
-progressively fetch image data.
-
-The HTJ2K decoder currently has some bugs when decoding full resolution data
-from a byte stream. To work around those, the decodeLevel may need to be specified
-as an integer value larger than 0.
-
-```javascript
-  retrieveConfiguration: {
-    'default-lossy': {
-      // Note initial request is lossy - could have alternatively used status here
-      isLossy: true,
-      // Streaming is true because this data isn't final.  Allows decode of streamed data
-      streaming: true,
-      // Path to use
-      framesPath: '/htj2k/',
-      // This SHOULD work, but fails due to HTJ2K errors
-      // initialBytes: 16384,
-      range: 0,
-      // Sets the decode level to commplete - this is ok for CT images at 64k
-      decodeLevel: 0,
-    },
-    'default-final': {
-      framesPath: '/htj2k/',
-      range: 1,
-      streaming: false,
-    },
-```
 
 ## Decode Options
 

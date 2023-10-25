@@ -95,7 +95,7 @@ export interface CornerstoneWadoRsLoaderOptions
   };
   priority?: number;
   addToBeginning?: boolean;
-  retrieveTypeId?: string;
+  retrieveType?: string;
   transferSyntaxUID?: string;
   // Retrieve options are stored to provide sub-options for nested calls
   retrieveOptions?: RetrieveOptions;
@@ -119,10 +119,12 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const { retrieveTypeId, transferSyntaxUID } = options;
+  const { retrieveType, transferSyntaxUID } = options;
   const loaderOptions = getOptions();
-  options.retrieveOptions =
-    loaderOptions.getRetrieveOptions(transferSyntaxUID, retrieveTypeId) || {};
+  options.retrieveOptions = loaderOptions.getRetrieveOptions(
+    retrieveType,
+    transferSyntaxUID
+  );
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -144,8 +146,8 @@ function loadImage(
           result.contentType
         );
         options.retrieveOptions = loaderOptions.getRetrieveOptions(
-          transferSyntax,
-          retrieveTypeId
+          retrieveType,
+          transferSyntax
         );
         if (!done && !options.retrieveOptions?.streaming) {
           continue;
