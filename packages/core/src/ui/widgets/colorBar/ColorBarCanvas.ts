@@ -1,6 +1,6 @@
-import { utilities } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
 import { ColorBarCanvasProps } from './types/ColorBarCanvasProps';
-import type { ColorBarImageRange, ColorBarVOIRange, Colormap } from './types';
+import type { ColorBarImageRange, ColorBarVOIRange } from './types';
 import type { ColorBarSize } from './types/ColorBarSize';
 import {
   isRangeValid,
@@ -9,15 +9,7 @@ import {
   areColorBarSizesEqual,
 } from './common';
 
-const clamp = (value, min, max) => Math.min(Math.max(min, value), max);
-
-const interpolateVec3 = (a, b, t) => {
-  return [
-    a[0] * (1 - t) + b[0] * t,
-    a[1] * (1 - t) + b[1] * t,
-    a[2] * (1 - t) + b[2] * t,
-  ];
-};
+const { clamp, interpolateVec3 } = utilities;
 
 /**
  * Canvas referenced by the color bar where the colormap is rendered. It may
@@ -27,7 +19,7 @@ class ColorBarCanvas {
   private _canvas: HTMLCanvasElement;
   private _imageRange: ColorBarImageRange;
   private _voiRange: ColorBarVOIRange;
-  private _colormap: Colormap;
+  private _colormap: Types.ColormapRegistration;
   private _showFullImageRange: boolean;
 
   constructor(props: ColorBarCanvasProps) {
@@ -53,11 +45,11 @@ class ColorBarCanvas {
     }
   }
 
-  public get colormap(): Colormap {
+  public get colormap(): Types.ColormapRegistration {
     return this._colormap;
   }
 
-  public set colormap(colormap: Colormap) {
+  public set colormap(colormap: Types.ColormapRegistration) {
     this._colormap = colormap;
     this.render();
   }

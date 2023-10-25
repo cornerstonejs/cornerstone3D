@@ -67,22 +67,11 @@ abstract class Widget {
     return this._id;
   }
 
+  /**
+   * Widget's root element
+   */
   public get rootElement(): HTMLElement {
     return this._rootElement;
-  }
-
-  protected createRootElement(id: string): HTMLElement {
-    const rootElement = document.createElement('div');
-
-    rootElement.id = id;
-    rootElement.classList.add('widget');
-
-    Object.assign(rootElement.style, {
-      width: '100%',
-      height: '100%',
-    });
-
-    return rootElement;
   }
 
   /**
@@ -125,6 +114,25 @@ abstract class Widget {
   protected get containerSize(): WidgetSize {
     // Returns a copy to prevent any external change
     return { ...this._containerSize };
+  }
+
+  /**
+   * Creates the root element which is a div by default
+   * @param id - Root element id
+   * @returns A new HTML element where all other elements should be added to
+   */
+  protected createRootElement(id: string): HTMLElement {
+    const rootElement = document.createElement('div');
+
+    rootElement.id = id;
+    rootElement.classList.add('widget');
+
+    Object.assign(rootElement.style, {
+      width: '100%',
+      height: '100%',
+    });
+
+    return rootElement;
   }
 
   /**

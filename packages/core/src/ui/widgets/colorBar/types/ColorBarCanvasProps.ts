@@ -1,10 +1,10 @@
+import { Types } from '@cornerstonejs/core';
 import type { ColorBarImageRange } from './ColorBarImageRange';
 import type { ColorBarSize } from './ColorBarSize';
 import type { ColorBarVOIRange } from './ColorBarVOIRange';
-import type { Colormap } from './Colormap';
 
 export interface ColorBarCanvasProps {
-  colormap: Colormap;
+  colormap: Types.ColormapRegistration;
   size?: ColorBarSize;
   imageRange?: ColorBarImageRange;
   voiRange?: ColorBarVOIRange;

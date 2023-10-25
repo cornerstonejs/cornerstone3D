@@ -337,8 +337,11 @@ function initializeColorBarContainers(viewportInfo, viewportContainer) {
 
 // Create instaces of the color bars for CT or PT/CT viewports and add them to the DOM
 function initializeColorBars(viewportInfo, colorBarContainers) {
-  const { fusion, volumeIds = [], colorBar, viewportInput } = viewportInfo;
+  const { fusion, volumeIds, colorBar, viewportInput } = viewportInfo;
   const { element } = viewportInput;
+
+  // Stack viewports do not have volumeIds
+  const ctVolumeId = volumeIds?.length ? volumeIds[0] : undefined;
 
   const scaleStyle = {
     font: '12px Arial',
@@ -353,16 +356,18 @@ function initializeColorBars(viewportInfo, colorBarContainers) {
     id: 'ctColorBar',
     element,
     container: colorBarContainers[0],
-    volumeId: volumeIds[0],
+    volumeId: ctVolumeId,
     colormaps,
     activeColormapName: 'Grayscale',
-    rangeTextPosition: ColorBarRangeTextPosition.TopOrLeft,
-    ticksStyle: scaleStyle,
+    ticks: {
+      position: ColorBarRangeTextPosition.Left,
+      style: scaleStyle,
+    },
   });
 
   colorBar.instances.push(ctColorBar);
 
-  if (fusion && volumeIds.length === 2) {
+  if (fusion && volumeIds?.length === 2) {
     const ptColorBar = new ViewportColorBar({
       id: 'ptColorBar',
       element,
@@ -370,8 +375,10 @@ function initializeColorBars(viewportInfo, colorBarContainers) {
       volumeId: volumeIds[1],
       colormaps,
       activeColormapName: currentPTColormapName,
-      rangeTextPosition: ColorBarRangeTextPosition.TopOrLeft,
-      ticksStyle: scaleStyle,
+      ticks: {
+        position: ColorBarRangeTextPosition.Left,
+        style: scaleStyle,
+      },
     });
 
     colorBar.instances.push(ptColorBar);

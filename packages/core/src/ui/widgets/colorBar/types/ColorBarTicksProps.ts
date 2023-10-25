@@ -1,9 +1,8 @@
-import type { ColorBarCommonProps, ColorBarSize, ColorBarTicksStyle } from '.';
+import type { ColorBarCommonProps, ColorBarSize } from '.';
 
 export type ColorBarTicksProps = ColorBarCommonProps & {
   top?: number;
   left?: number;
   size?: ColorBarSize;
-  ticksStyle?: ColorBarTicksStyle;
   container?: HTMLElement;
 };

@@ -46,11 +46,12 @@ class ColorBarTicks {
       size = { width: 20, height: 100 },
       imageRange = { lower: 0, upper: 1 },
       voiRange = { lower: 0, upper: 1 },
-      ticksStyle,
-      rangeTextPosition,
+      ticks: ticksProps,
       container,
       showFullPixelValueRange = false,
     } = props;
+
+    const { style: ticksStyle, position: rangeTextPosition } = ticksProps ?? {};
 
     this._imageRange = imageRange;
     this._voiRange = voiRange;
@@ -61,7 +62,7 @@ class ColorBarTicks {
     this._labelMargin = ticksStyle?.labelMargin ?? DEFAULTS.TICK_LABEL_MARGIN;
     this._maxNumTicks = ticksStyle?.maxNumTicks ?? DEFAULTS.MAX_NUM_TICKS;
     this._rangeTextPosition =
-      rangeTextPosition ?? ColorBarRangeTextPosition.TopOrLeft;
+      rangeTextPosition ?? ColorBarRangeTextPosition.Right;
     this._showFullPixelValueRange = showFullPixelValueRange;
     this._canvas = this._createCanvasElement(size, top, left);
 
@@ -469,13 +470,13 @@ class ColorBarTicks {
       let tickInfo;
 
       if (isHorizontal) {
-        if (this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft) {
+        if (this._rangeTextPosition === ColorBarRangeTextPosition.Top) {
           tickInfo = this._getTopTickInfo({ position, labelMeasure });
         } else {
           tickInfo = this._getBottomTickInfo({ position, labelMeasure });
         }
       } else {
-        if (this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft) {
+        if (this._rangeTextPosition === ColorBarRangeTextPosition.Left) {
           tickInfo = this._getLeftTickInfo({ position, labelMeasure });
         } else {
           tickInfo = this._getRightTickInfo({ position });

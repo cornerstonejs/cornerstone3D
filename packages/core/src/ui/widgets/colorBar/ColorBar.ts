@@ -6,12 +6,13 @@ import { isRangeValid, areColorBarRangesEqual } from './common';
 import { ColorBarRangeTextPosition } from './enums/ColorBarRangeTextPosition';
 import { ColorBarCanvas } from './ColorBarCanvas';
 import ColorBarTicks from './ColorBarTicks';
+import isRangeTextPositionValid from './common/isRangeTextPositionValid';
 
 const { MultiTargetEventListenerManager } = utilities.eventListener;
 
 const DEFAULTS = {
   MULTIPLIER: 1,
-  RANGE_TEXT_POSITION: ColorBarRangeTextPosition.BottomOrRight,
+  RANGE_TEXT_POSITION: ColorBarRangeTextPosition.Right,
   TICKS_BAR_SIZE: 50,
 };
 
@@ -41,7 +42,7 @@ class ColorBar extends Widget {
     this._canvas = this._createCanvas(props);
     this._ticksBar = this._createTicksBar(props);
     this._rangeTextPosition =
-      props.rangeTextPosition ?? DEFAULTS.RANGE_TEXT_POSITION;
+      props.ticks?.position ?? DEFAULTS.RANGE_TEXT_POSITION;
 
     this._canvas.appendTo(this.rootElement);
     this._ticksBar.appendTo(document.body);
@@ -185,11 +186,12 @@ class ColorBar extends Widget {
   }
 
   public _createTicksBar(props: ColorBarProps): ColorBarTicks {
+    const ticksProps = props.ticks;
+
     return new ColorBarTicks({
       imageRange: props.imageRange,
       voiRange: props.voiRange,
-      ticksStyle: props.ticksStyle,
-      rangeTextPosition: props.rangeTextPosition,
+      ticks: ticksProps,
       showFullPixelValueRange: props.showFullPixelValueRange,
     });
   }
@@ -208,14 +210,32 @@ class ColorBar extends Widget {
   }
 
   private updateTicksBar() {
-    const { _ticksBar: ticksBar } = this;
     const { width: containerWidth, height: containerHeight } =
       this.containerSize;
+
+    // ResizeObserver have not triggered any event when this happen
+    if (containerWidth === 0 && containerHeight === 0) {
+      return;
+    }
+
+    const { _ticksBar: ticksBar, _rangeTextPosition: rangeTextPosition } = this;
     const { top: containerTop, left: containerLeft } =
       this.rootElement.getBoundingClientRect();
     const isHorizontal = containerWidth >= containerHeight;
     const width = isHorizontal ? containerWidth : DEFAULTS.TICKS_BAR_SIZE;
     const height = isHorizontal ? DEFAULTS.TICKS_BAR_SIZE : containerHeight;
+
+    if (
+      !isRangeTextPositionValid(
+        containerWidth,
+        containerHeight,
+        rangeTextPosition
+      )
+    ) {
+      throw new Error(
+        'Invalid rangeTextPosition value for the current colobar orientation'
+      );
+    }
 
     let ticksBarTop;
     let ticksBarLeft;
@@ -224,7 +244,7 @@ class ColorBar extends Widget {
 
     if (isHorizontal) {
       ticksBarTop =
-        this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft
+        rangeTextPosition === ColorBarRangeTextPosition.Top
           ? containerTop - height
           : containerTop + containerHeight;
 
@@ -233,7 +253,7 @@ class ColorBar extends Widget {
       ticksBarTop = containerTop;
 
       ticksBarLeft =
-        this._rangeTextPosition === ColorBarRangeTextPosition.TopOrLeft
+        rangeTextPosition === ColorBarRangeTextPosition.Left
           ? containerLeft - width
           : containerLeft + containerWidth;
     }

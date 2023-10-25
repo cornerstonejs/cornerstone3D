@@ -10,6 +10,7 @@ import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
+import clamp from './clamp';
 import isEqual from './isEqual';
 import isViewportPreScaled from './isViewportPreScaled';
 import isOpposite from './isOpposite';
@@ -24,6 +25,7 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
+import interpolateVec3 from './interpolateVec3';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
@@ -67,6 +69,7 @@ export {
   triggerEvent,
   imageIdToURI,
   calibratedPixelSpacingMetadataProvider,
+  clamp,
   uuidv4,
   planar,
   getMinMax,
@@ -86,6 +89,7 @@ export {
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
+  interpolateVec3,
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,

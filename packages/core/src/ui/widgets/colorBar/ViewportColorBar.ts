@@ -96,7 +96,7 @@ class ViewportColorBar extends ColorBar {
       ? viewport.getActor(volumeId)
       : viewport.getDefaultActor();
 
-    if (!actor) {
+    if (!actor || !utilities.isImageActor(actor)) {
       return defaultImageRange;
     }
 
