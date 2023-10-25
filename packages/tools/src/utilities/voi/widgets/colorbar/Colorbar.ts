@@ -1,5 +1,6 @@
+import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { vec2 } from 'gl-matrix';
-import { utilities, Types } from '@cornerstonejs/core';
+import { utilities as csUtils, Types } from '@cornerstonejs/core';
 import { Widget } from '../Widget';
 import type { ColorbarProps, ColorbarVOIRange } from './types';
 import { isRangeValid, areColorbarRangesEqual } from './common';
@@ -7,8 +8,6 @@ import { ColorbarRangeTextPosition } from './enums/ColorbarRangeTextPosition';
 import { ColorbarCanvas } from './ColorbarCanvas';
 import { ColorbarTicks } from './ColorbarTicks';
 import isRangeTextPositionValid from './common/isRangeTextPositionValid';
-
-const { MultiTargetEventListenerManager } = utilities.eventListener;
 
 const DEFAULTS = {
   MULTIPLIER: 1,
@@ -28,9 +27,9 @@ type ColorbarPoints = {
  * interaction and it can show full image range or VOI range.
  */
 class Colorbar extends Widget {
-  private _colormaps: Map<string, Types.ColormapRegistration>;
+  private _colormaps: Map<string, IColorMapPreset>;
   private _activeColormapName: string;
-  private _eventListenersManager: MultiTargetEventListenerManager;
+  private _eventListenersManager: csUtils.eventListener.MultiTargetEventListenerManager;
   private _canvas: ColorbarCanvas;
   private _ticksBar: ColorbarTicks;
   private _rangeTextPosition: ColorbarRangeTextPosition;
@@ -41,7 +40,8 @@ class Colorbar extends Widget {
   constructor(props: ColorbarProps) {
     super(props);
 
-    this._eventListenersManager = new MultiTargetEventListenerManager();
+    this._eventListenersManager =
+      new csUtils.eventListener.MultiTargetEventListenerManager();
     this._colormaps = Colorbar.getColormapsMap(props);
     this._activeColormapName = Colorbar.getInitialColormapName(props);
     this._canvas = this._createCanvas(props);
@@ -165,7 +165,7 @@ class Colorbar extends Widget {
 
     return colormaps.reduce(
       (items, item) => items.set(item.Name, item),
-      new Map<string, Types.ColormapRegistration>()
+      new Map<string, IColorMapPreset>()
     );
   }
 
@@ -304,7 +304,7 @@ class Colorbar extends Widget {
     }
 
     const { lower: voiLower, upper: voiUpper } = startVOIRange;
-    let { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(
+    let { windowWidth, windowCenter } = csUtils.windowLevel.toWindowLevel(
       voiLower,
       voiUpper
     );
@@ -312,7 +312,7 @@ class Colorbar extends Widget {
     windowWidth = Math.max(windowWidth + wwDelta, 1);
     windowCenter += wcDelta;
 
-    const newVoiRange = utilities.windowLevel.toLowHighRange(
+    const newVoiRange = csUtils.windowLevel.toLowHighRange(
       windowWidth,
       windowCenter
     );
@@ -335,7 +335,11 @@ class Colorbar extends Widget {
 
     manager.addEventListener(element, 'mouseover', this._mouseOverCallback);
     manager.addEventListener(element, 'mouseout', this._mouseOutCallback);
-    manager.addEventListener(element, 'mousedown', this._mouseDownCallback);
+    manager.addEventListener(
+      element,
+      'mousedown',
+      this._mouseDownCallback as EventListener
+    );
   }
 
   private _addVOIEventListeners(evt: MouseEvent) {

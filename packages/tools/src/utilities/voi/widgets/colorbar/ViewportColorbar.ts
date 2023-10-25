@@ -9,6 +9,7 @@ import {
 } from '@cornerstonejs/core';
 import { Colorbar } from './Colorbar';
 import type { ViewportColorbarProps, ColorbarVOIRange } from './types';
+import { getVOIMultipliers } from '../../../getVOIMultipliers';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };
@@ -46,7 +47,7 @@ class ViewportColorbar extends Colorbar {
 
   protected getVOIMultipliers(): [number, number] {
     const { viewport } = this.enabledElement;
-    return utilities.getVOIMultipliers(viewport, this._volumeId);
+    return getVOIMultipliers(viewport, this._volumeId);
   }
 
   protected onVoiChange(voiRange: ColorbarVOIRange) {

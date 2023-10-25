@@ -1,8 +1,8 @@
-import { Types } from '@cornerstonejs/core';
+import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { WidgetProps } from '../../types';
 import { ColorbarCommonProps } from '.';
 
 export type ColorbarProps = (WidgetProps & ColorbarCommonProps) & {
-  colormaps: Types.ColormapRegistration[];
+  colormaps: IColorMapPreset[];
   activeColormapName?: string;
 };

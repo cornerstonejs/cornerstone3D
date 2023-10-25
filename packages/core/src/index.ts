@@ -50,7 +50,6 @@ import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import * as Types from './types';
 import * as utilities from './utilities';
-import * as ui from './ui';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
@@ -123,6 +122,4 @@ export {
   resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
-  // User Interface
-  ui,
 };

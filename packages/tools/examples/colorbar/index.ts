@@ -6,8 +6,8 @@ import {
   cache,
   volumeLoader,
   getRenderingEngine,
-  ui,
 } from '@cornerstonejs/core';
+import { utilities as cstUtils } from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -18,8 +18,8 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-const { ViewportColorbar } = ui.widgets.colorbar;
-const { ColorbarRangeTextPosition } = ui.widgets.colorbar.Enums;
+const { ViewportColorbar } = cstUtils.voi.colorbar;
+const { ColorbarRangeTextPosition } = cstUtils.voi.colorbar.Enums;
 
 // This is for debugging purposes
 console.warn(
@@ -56,11 +56,8 @@ const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
 // Convert all VTK colormaps to the one supported by the colorbar which actualy
 // have almost the same properties.
-const colormaps = vtkColormaps.rgbPresetNames.map(
-  (presetName) =>
-    vtkColormaps.getPresetByName(
-      presetName
-    ) as unknown as Types.ColormapRegistration
+const colormaps = vtkColormaps.rgbPresetNames.map((presetName) =>
+  vtkColormaps.getPresetByName(presetName)
 );
 
 // Colormap to load right after loading the example page but it can be changed

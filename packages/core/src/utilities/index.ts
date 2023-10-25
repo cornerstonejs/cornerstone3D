@@ -12,20 +12,17 @@ import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
 import isEqual from './isEqual';
-import isViewportPreScaled from './isViewportPreScaled';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
 import createUint16SharedArray from './createUInt16SharedArray';
 import createInt16SharedArray from './createInt16SharedArray';
 import getViewportModality from './getViewportModality';
-import getVOIMultipliers from './getVOIMultipliers';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
-import interpolateVec3 from './interpolateVec3';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
@@ -75,21 +72,18 @@ export {
   getMinMax,
   getRuntimeId,
   isEqual,
-  isViewportPreScaled,
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
   createUint16SharedArray,
   createInt16SharedArray,
   getViewportModality,
-  getVOIMultipliers,
   windowLevel,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
-  interpolateVec3,
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,

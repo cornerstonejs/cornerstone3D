@@ -4,9 +4,9 @@
  * @param a - First vec3
  * @param b - Second vec3
  * @param t - Time "t".
- *   Vector A is returned for values smaller than or equel to 0.
- *   Vector B is returned for values greater than or equal to 1.
- *   An interpolation between vector A and B is returned otherwise.
+ *   - Vector A is returned for values smaller than or equel to 0.
+ *   - Vector B is returned for values greater than or equal to 1.
+ *   - An interpolation between vectors A and B is returned otherwise.
  * @returns
  */
 const interpolateVec3 = (a, b, t) => {

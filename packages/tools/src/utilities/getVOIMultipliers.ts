@@ -1,22 +1,22 @@
-import * as utils from '.';
-import { IViewport } from '../types';
+import { Types, utilities as csUtils } from '@cornerstonejs/core';
+import { isViewportPreScaled } from './viewport';
 
 const DEFAULT_MULTIPLIER = 4;
 
 function getVOIMultipliers(
-  viewport: IViewport,
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
   volumeId?: string,
   options?: {
     fixedPTWindowWidth?: boolean;
   }
 ): [number, number] {
-  const modality = utils.getViewportModality(viewport, volumeId);
-  const isPreScaled = utils.isViewportPreScaled(viewport, volumeId);
-  const { fixedPTWindowWidth = true } = options ?? {};
+  const modality = csUtils.getViewportModality(viewport, volumeId);
 
   if (modality === 'PT') {
     const { clientWidth, clientHeight } = viewport.element;
     const ptMultiplier = 5 / Math.max(clientWidth, clientHeight);
+    const isPreScaled = isViewportPreScaled(viewport, volumeId);
+    const { fixedPTWindowWidth = true } = options ?? {};
 
     // Set the "X" multiplier equal to zero in order to do not allow
     // any change to the window width (0 * cursorDeltaX = 0)

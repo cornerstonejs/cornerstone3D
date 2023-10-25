@@ -1,0 +1,1 @@
+export { colorbar } from './widgets';

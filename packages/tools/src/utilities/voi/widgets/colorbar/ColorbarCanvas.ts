@@ -1,4 +1,6 @@
-import { Types, utilities } from '@cornerstonejs/core';
+import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import { utilities } from '@cornerstonejs/core';
+import interpolateVec3 from '../../../math/vec3/interpolateVec3';
 import { ColorbarCanvasProps } from './types/ColorbarCanvasProps';
 import type { ColorbarImageRange, ColorbarVOIRange } from './types';
 import type { ColorbarSize } from './types/ColorbarSize';
@@ -9,7 +11,7 @@ import {
   areColorbarSizesEqual,
 } from './common';
 
-const { clamp, interpolateVec3 } = utilities;
+const { clamp } = utilities;
 
 /**
  * Canvas referenced by the color bar where the colormap is rendered. It may
@@ -19,7 +21,7 @@ class ColorbarCanvas {
   private _canvas: HTMLCanvasElement;
   private _imageRange: ColorbarImageRange;
   private _voiRange: ColorbarVOIRange;
-  private _colormap: Types.ColormapRegistration;
+  private _colormap: IColorMapPreset;
   private _showFullImageRange: boolean;
 
   constructor(props: ColorbarCanvasProps) {
@@ -45,11 +47,11 @@ class ColorbarCanvas {
     }
   }
 
-  public get colormap(): Types.ColormapRegistration {
+  public get colormap(): IColorMapPreset {
     return this._colormap;
   }
 
-  public set colormap(colormap: Types.ColormapRegistration) {
+  public set colormap(colormap: IColorMapPreset) {
     this._colormap = colormap;
     this.render();
   }
