@@ -368,9 +368,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.loadStatus.callbacks.push(callback);
     }
 
-    console.log('About to start prefetch');
     this._prefetchImageIds();
-    console.log('Initiated prefetch');
   };
 
   protected updateTextureAndTriggerEvents(
@@ -550,10 +548,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { cachedFrames } = this;
 
     if (cachedFrames[imageIdIndex] === ImageStatus.DONE) {
-      console.log(
-        'Skipping secondary load of complete image',
-        cachedFrames[imageIdIndex]
-      );
       return;
     }
 

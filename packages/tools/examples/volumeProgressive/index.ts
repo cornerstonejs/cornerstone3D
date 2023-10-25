@@ -180,18 +180,10 @@ content.append(instructions);
  * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
  * ```
  */
-const configDefault = {
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-  },
-};
-
 const configJLS = {
   minChunkSize: 65_536,
 
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -205,7 +197,7 @@ const configJLS = {
 };
 
 const configJLSMixed = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -220,7 +212,7 @@ const configJLSMixed = {
 };
 
 const configJLSThumbnail = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -238,7 +230,7 @@ const configJLSThumbnail = {
 const configHtj2k = {
   minChunkSize: 65_536,
 
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -254,7 +246,7 @@ const configHtj2k = {
 };
 
 const configHtj2kMixed = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -274,29 +266,8 @@ const configHtj2kMixed = {
   },
 };
 
-const configThumbnail = {
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      // isLossy: true,
-      framesPath: '/htj2kThumbnail/',
-    },
-    '3.2.840.10008.1.2.4.96-lossy': {
-      // isLossy: true,
-      framesPath: '/htj2kThumbnail/',
-      streaming: false,
-    },
-    '3.2.840.10008.1.2.4.96-final': {
-      framesPath: '/htj2kThumbnail/',
-      streaming: false,
-    },
-  },
-};
-
 const configByteRange = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -429,7 +400,7 @@ async function run() {
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
 
     // Set the volume to load
-    volume.load((progressEvt) => {
+    volume.load(() => {
       const now = Date.now();
       getOrCreateTiming('loadingStatus').innerText = `Took ${
         now - start

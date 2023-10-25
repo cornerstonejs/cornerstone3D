@@ -90,9 +90,11 @@ export default function streamRequest(
           url,
           imageId,
           ...extracted,
-          percentComplete: (extracted.pixelData?.length * 100) / totalBytes,
+          percentComplete: done
+            ? 100
+            : (extracted.pixelData?.length * 100) / totalBytes,
           status,
-          done: readDone,
+          done,
         };
 
         // All of the image load events will be handled by the imageLoader

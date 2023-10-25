@@ -33,8 +33,8 @@ let options: LoaderOptions = {
    *   `default`
    */
   getRetrieveOptions(transferSyntaxUID, retrieveType = '') {
-    const { retrieveConfiguration } = this;
-    if (!retrieveConfiguration) {
+    const { retrieveOptions } = this;
+    if (!retrieveOptions) {
       return null;
     }
     transferSyntaxUID ||= 'unknown';
@@ -44,7 +44,7 @@ let options: LoaderOptions = {
       : transferSyntaxUID;
     const defaultKey = retrieveType ? `default-${retrieveType}` : 'default';
 
-    return retrieveConfiguration[baseKey] || retrieveConfiguration[defaultKey];
+    return retrieveOptions[baseKey] || retrieveOptions[defaultKey];
   },
 
   strict: false,
@@ -53,9 +53,7 @@ let options: LoaderOptions = {
     use16BitDataType: false,
   },
 
-  minChunkSize: 65_536,
-
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },

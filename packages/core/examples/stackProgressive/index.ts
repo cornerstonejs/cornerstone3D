@@ -133,12 +133,14 @@ async function showStack(stack: string[], viewport, config, name: string) {
 const configJLS = {
   minChunkSize: 65_536,
 
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
     'default-lossy': {
       framesPath: '/jls/',
+      // Don't even stream the data, use the original fetch
+      streaming: false,
     },
     default: {
       framesPath: '/jls/',
@@ -147,7 +149,7 @@ const configJLS = {
 };
 
 const configJLSMixed = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     'default-lossy': {
       isLossy: true,
       framesPath: '/jlsThumbnail/',
@@ -159,9 +161,7 @@ const configJLSMixed = {
 };
 
 const configJLSThumbnail = {
-  minChunkSize: 65_536,
-
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -177,7 +177,7 @@ const configJLSThumbnail = {
 };
 
 const configHtj2k = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       framesPath: '/htj2k/',
       streaming: true,
@@ -196,7 +196,7 @@ const configHtj2k = {
 };
 
 const configHtj2kLossy = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },
@@ -217,7 +217,7 @@ const configHtj2kLossy = {
 };
 
 const configHtj2kMixed = {
-  retrieveConfiguration: {
+  retrieveOptions: {
     '3.2.840.10008.1.2.4.96': {
       streaming: true,
     },

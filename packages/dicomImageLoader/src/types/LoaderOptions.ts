@@ -54,5 +54,5 @@ export interface LoaderOptions {
    * retrieveTypeId is specified externally.  If no record is found, then
    * "default" will be accessed.
    */
-  retrieveOptions?: Record<string, Types.RetrieveConfiguration>;
+  retrieveOptions?: Record<string, Types.RetrieveOptions>;
 }

@@ -138,8 +138,8 @@ function loadImage(
           pixelData,
           status = ImageStatus.DONE,
           percentComplete,
+          done = true,
         } = result;
-        const { done } = compressedIt;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
@@ -179,6 +179,7 @@ function loadImage(
           const end = new Date().getTime();
 
           image.loadTimeInMS = end - start;
+          console.log('Adding result', status, done);
           image.status = status;
           it.add(image, done);
           lastDecodeLevel = decodeLevel;

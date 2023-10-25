@@ -1,13 +1,10 @@
-import { Types, utilities } from '@cornerstonejs/core';
-
 import { xhrRequest } from '../internal/index';
 // import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
 import { getImageStatus } from './getImageStatus';
-
-const { ProgressiveIterator } = utilities;
+import { CornerstoneWadoRsLoaderOptions } from './loadImage';
 
 function getPixelData(
   uri: string,
@@ -52,24 +49,19 @@ function getPixelData(
   /**
    * Not progressively rendering, use regular xhr request.
    */
-  const loadIterator = new ProgressiveIterator('xhrRequestImage');
   const loadPromise = xhrRequest(url, imageId, headers);
   const { xhr } = loadPromise;
 
-  loadPromise.then(
-    function (imageFrameAsArrayBuffer /* , xhr*/) {
-      const contentType =
-        xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
-      const extracted = extractMultipart(
-        contentType,
-        new Uint8Array(imageFrameAsArrayBuffer)
-      );
-      extracted.status = getImageStatus(retrieveOptions, true);
-      loadIterator.add(extracted, true);
-    },
-    (reason) => loadIterator.reject(reason)
-  );
-  return loadIterator.getNextPromise();
+  return loadPromise.then(function (imageFrameAsArrayBuffer /* , xhr*/) {
+    const contentType =
+      xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
+    const extracted = extractMultipart(
+      contentType,
+      new Uint8Array(imageFrameAsArrayBuffer)
+    );
+    extracted.status = getImageStatus(retrieveOptions, true);
+    return extracted;
+  });
 }
 
 export default getPixelData;

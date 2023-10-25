@@ -64,8 +64,10 @@ export async function load(
   const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
   const imageStatus = new Map<string, ImageStatus>();
   const stageStatus = new Map<string, StageStatus>();
+  let outstandingRequests = 0;
 
   function sendRequest(request, options) {
+    outstandingRequests--;
     const { imageId, next } = request;
     const errorCallback = (reason, done) => {
       // console.log('Erroring out', reason, done);
@@ -119,9 +121,9 @@ export async function load(
               updateStageStatus(stageStatus, skip.stage, null, true);
             }
           }
-        }
-        if (stageStatus.size === 0) {
-          displayedIterator.resolve();
+          if (outstandingRequests <= 0) {
+            displayedIterator.resolve();
+          }
         }
       });
     const doneLoad = uncompressedIterator.getDonePromise();
@@ -141,6 +143,7 @@ export async function load(
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
     const additionalDetails = { imageId };
+    outstandingRequests++;
 
     imageLoadPoolManager.addRequest(
       sendRequest.bind(this, request, options),
