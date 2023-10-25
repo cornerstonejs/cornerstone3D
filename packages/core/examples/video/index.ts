@@ -129,7 +129,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  await viewport.setVideo(
+  await viewport.setVideoURL(
     'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
   );
 

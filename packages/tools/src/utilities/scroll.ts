@@ -20,7 +20,7 @@ import { ScrollOptions, EventTypes } from '../types';
  * @returns
  */
 export default function scroll(
-  viewport: Types.IStackViewport | Types.IVolumeViewport | Types.IVideoViewport,
+  viewport: Types.IViewport,
   options: ScrollOptions
 ): void {
   // check if viewport is disabled then throw error

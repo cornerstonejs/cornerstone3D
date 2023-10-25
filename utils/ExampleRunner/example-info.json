@@ -18,6 +18,9 @@
     "adapters": {
       "description": "Cornerstone adapters"
     },
+    "video": {
+      "description": "Cornerstone Video Viewport"
+    },
     "nifti": {
       "description": "Nifti Volume loader"
     }

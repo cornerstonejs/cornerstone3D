@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { vec3, vec2 } from 'gl-matrix';
 
 import {
   getEnabledElement,
@@ -8,6 +8,7 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { AnnotationTool } from '../base';
 
 import throttle from '../../utilities/throttle';
 import {
@@ -29,32 +30,10 @@ import {
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import { SVGDrawingHelper } from '../../types';
+import { EventTypes, SVGDrawingHelper } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { vec3, vec2 } from 'gl-matrix';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
-
-// interface VideoRedactionSpecificToolData extends ToolSpecificToolData {
-//   data: {
-//     invalidated: boolean;
-//     handles: {
-//       points: Types.Point3[];
-//       activeHandleIndex: number | null;
-//       textBox: {
-//         hasMoved: boolean;
-//         worldPosition: Types.Point3;
-//         worldBoundingBox: {
-//           topLeft: Types.Point3;
-//           topRight: Types.Point3;
-//           bottomLeft: Types.Point3;
-//           bottomRight: Types.Point3;
-//         };
-//       };
-//     };
-//     cachedStats: any;
-//     active: boolean;
-//   };
-// }
+import { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 class VideoRedactionTool extends AnnotationTool {
   _throttledCalculateCachedStats: any;
@@ -62,7 +41,6 @@ class VideoRedactionTool extends AnnotationTool {
     annotation: any;
     viewportUIDsToRender: string[];
     handleIndex?: number;
-    movingTextBox: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
   } | null;
@@ -83,10 +61,9 @@ class VideoRedactionTool extends AnnotationTool {
     );
   }
 
-  // TODO_JAMES -> We are just adding this as a "global redaction for now".
-  // I.e. annotation tied to entire video, rather than a frame or a particular time
-  // Range, which would also be possible.
-  addNewAnnotation = (evt: CustomEvent) => {
+  addNewAnnotation = (
+    evt: EventTypes.InteractionEventType
+  ): VideoRedactionAnnotation => {
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const worldPos = currentPoints.world;
@@ -115,16 +92,6 @@ class VideoRedactionTool extends AnnotationTool {
             <Types.Point3>[...worldPos],
             <Types.Point3>[...worldPos],
           ],
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
           activeHandleIndex: null,
         },
         cachedStats: {},
@@ -144,7 +111,6 @@ class VideoRedactionTool extends AnnotationTool {
       annotation,
       viewportUIDsToRender,
       handleIndex: 3,
-      movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -167,28 +133,7 @@ class VideoRedactionTool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     const { data } = annotation;
-    const { points, textBox } = data.handles;
-    const { worldBoundingBox } = textBox;
-
-    if (worldBoundingBox) {
-      // If the bounding box for the textbox exists, see if we are clicking within it.
-      const canvasBoundingBox = {
-        topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
-        topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
-        bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
-        bottmRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      };
-
-      if (
-        canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
-        canvasCoords[0] <= canvasBoundingBox.bottmRight[0] &&
-        canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
-        canvasCoords[1] <= canvasBoundingBox.bottmRight[1]
-      ) {
-        data.handles.activeHandleIndex = null;
-        return textBox;
-      }
-    }
+    const { points } = data.handles;
 
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
@@ -251,7 +196,6 @@ class VideoRedactionTool extends AnnotationTool {
     this.editData = {
       annotation,
       viewportUIDsToRender,
-      movingTextBox: false,
     };
 
     this._activateModify(element);
@@ -301,7 +245,6 @@ class VideoRedactionTool extends AnnotationTool {
       annotation,
       viewportUIDsToRender,
       handleIndex,
-      movingTextBox,
     };
     this._activateModify(element);
 
@@ -363,24 +306,10 @@ class VideoRedactionTool extends AnnotationTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { annotation, viewportUIDsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const { annotation, viewportUIDsToRender, handleIndex } = this.editData;
     const { data } = annotation;
 
-    if (movingTextBox) {
-      // Move the text boxes world position
-      const { deltaPoints } = eventData;
-      const worldPosDelta = deltaPoints.world;
-
-      const { textBox } = data.handles;
-      const { worldPosition } = textBox;
-
-      worldPosition[0] += worldPosDelta[0];
-      worldPosition[1] += worldPosDelta[1];
-      worldPosition[2] += worldPosDelta[2];
-
-      textBox.hasMoved = true;
-    } else if (handleIndex === undefined) {
+    if (handleIndex === undefined) {
       // Moving tool, so move all points by the world points delta
       const { deltaPoints } = eventData;
       const worldPosDelta = deltaPoints.world;
@@ -472,30 +401,31 @@ class VideoRedactionTool extends AnnotationTool {
 
   cancel(element) {
     // If it is mid-draw or mid-modify
-    if (this.isDrawing) {
-      this.isDrawing = false;
-      this._deactivateDraw(element);
-      this._deactivateModify(element);
-      resetElementCursor(element);
-
-      const { annotation, viewportUIDsToRender } = this.editData;
-
-      const { data } = annotation;
-
-      data.active = false;
-      data.handles.activeHandleIndex = null;
-
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportUIDsToRender
-      );
-
-      this.editData = null;
-      return annotation.metadata.annotationUID;
+    if (!this.isDrawing) {
+      return;
     }
+    this.isDrawing = false;
+    this._deactivateDraw(element);
+    this._deactivateModify(element);
+    resetElementCursor(element);
+
+    const { annotation, viewportUIDsToRender } = this.editData;
+
+    const { data } = annotation;
+
+    data.active = false;
+    data.handles.activeHandleIndex = null;
+
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    triggerAnnotationRenderForViewportIds(
+      renderingEngine,
+      viewportUIDsToRender
+    );
+
+    this.editData = null;
+    return annotation.metadata.annotationUID;
   }
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
@@ -638,48 +568,12 @@ class VideoRedactionTool extends AnnotationTool {
         canvasCoordinates[0],
         canvasCoordinates[3],
         {
-          color,
+          color: 'black',
           lineDash,
           lineWidth,
         }
       );
     }
-  };
-
-  /**
-   * _findTextBoxAnchorPoints - Finds the middle points of each rectangle side
-   * to attach the linked textbox to.
-   *
-   * @param {} points - An array of points.
-   */
-  _findTextBoxAnchorPoints = (
-    points: Array<Types.Point2>
-  ): Array<Types.Point2> => {
-    const { left, top, width, height } =
-      this._getRectangleImageCoordinates(points);
-
-    return [
-      [
-        // Top middle point of rectangle
-        left + width / 2,
-        top,
-      ],
-      [
-        // Left middle point of rectangle
-        left,
-        top + height / 2,
-      ],
-      [
-        // Bottom middle point of rectangle
-        left + width / 2,
-        top + height,
-      ],
-      [
-        // Right middle point of rectangle
-        left + width,
-        top + height / 2,
-      ],
-    ];
   };
 
   _getRectangleImageCoordinates = (
@@ -698,46 +592,6 @@ class VideoRedactionTool extends AnnotationTool {
       width: Math.abs(point0[0] - point1[0]),
       height: Math.abs(point0[1] - point1[1]),
     };
-  };
-
-  /**
-   * _getTextLines - Returns the Area, mean and std deviation of the area of the
-   * target volume enclosed by the rectangle.
-   *
-   * @param {object} data - The toolDatas tool-specific data.
-   * @param {string} targetUID - The volumeUID of the volume to display the stats for.
-   */
-  _getTextLines = (data, targetUID: string) => {
-    const cachedVolumeStats = data.cachedStats[targetUID];
-    const { area, mean, stdDev, Modality } = cachedVolumeStats;
-
-    if (mean === undefined) {
-      return;
-    }
-
-    const textLines = [];
-
-    const areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
-    let meanLine = `Mean: ${mean.toFixed(2)}`;
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
-
-    // Give appropriate units for the modality.
-    if (Modality === 'PT') {
-      meanLine += ' SUV';
-      stdDevLine += ' SUV';
-    } else if (Modality === 'CT') {
-      meanLine += ' HU';
-      stdDevLine += ' HU';
-    } else {
-      meanLine += ' MO';
-      stdDevLine += ' MO';
-    }
-
-    textLines.push(areaLine);
-    textLines.push(meanLine);
-    textLines.push(stdDevLine);
-
-    return textLines;
   };
 
   _getImageVolumeFromTargetUID(targetUID, renderingEngine) {
@@ -794,7 +648,6 @@ class VideoRedactionTool extends AnnotationTool {
         scalarData,
         vtkImageData: imageData,
         metadata,
-        direction,
       } = imageVolume;
       const worldPos1Index = vec3.fromValues(0, 0, 0);
       const worldPos2Index = vec3.fromValues(0, 0, 0);

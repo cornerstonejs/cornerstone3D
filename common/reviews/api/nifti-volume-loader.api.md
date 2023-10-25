@@ -997,6 +997,12 @@ type ImageVolumeModifiedEventDetail = {
     FrameOfReferenceUID: string;
 };
 
+// @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
 // @public
 interface IRegisterImageLoader {
     // (undocumented)
@@ -1126,11 +1132,7 @@ interface IStreamingVolumeProperties {
 
 // @public
 interface IVideoViewport extends IViewport {
-    canvasToWorld: (canvasPos: Point2) => Point3;
-    getCamera(): ICamera;
-    getFrameOfReferenceUID: () => string;
     getProperties: () => VideoViewportProperties;
-    getRenderer(): any;
     // (undocumented)
     pause: () => void;
     // (undocumented)
@@ -1138,11 +1140,9 @@ interface IVideoViewport extends IViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
-    setCamera(cameraInterface: ICamera): void;
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideo: (url: string) => void;
-    worldToCanvas: (worldPos: Point3) => Point2;
+    setVideoURL: (url: string) => void;
 }
 
 // @public
@@ -1506,6 +1506,20 @@ type SurfaceData = {
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
 
 // @public
 type VideoViewportProperties = ViewportProperties & {

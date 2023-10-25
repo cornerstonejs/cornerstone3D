@@ -636,7 +636,8 @@ declare namespace Enums {
         ContourType,
         VOILUTFunctionType,
         DynamicOperatorType,
-        ViewportStatus
+        ViewportStatus,
+        VideoViewport_2 as VideoViewport
     }
 }
 export { Enums }
@@ -1592,6 +1593,12 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
 
 // @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
+// @public (undocumented)
 enum InterpolationType {
     // (undocumented)
     FAST_LINEAR = 2,
@@ -1763,15 +1770,7 @@ interface IStreamingVolumeProperties {
 // @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
-    // (undocumented)
-    getCamera(): ICamera;
-    // (undocumented)
-    getFrameOfReferenceUID: () => string;
-    // (undocumented)
     getProperties: () => VideoViewportProperties;
-    // (undocumented)
-    getRenderer(): any;
     // (undocumented)
     pause: () => void;
     // (undocumented)
@@ -1783,13 +1782,9 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     resize: () => void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
-    // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideo: (url: string) => void;
-    // (undocumented)
-    worldToCanvas: (worldPos: Point3) => Point2;
+    setVideoURL: (url: string) => void;
 }
 
 // @public (undocumented)
@@ -2356,6 +2351,14 @@ const spatialRegistrationMetadataProvider: {
 };
 
 // @public (undocumented)
+enum SpeedUnit {
+    // (undocumented)
+    FRAME = "f",
+    // (undocumented)
+    SECOND = "s"
+}
+
+// @public (undocumented)
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
 // @public (undocumented)
@@ -2618,7 +2621,9 @@ declare namespace Types {
         PixelDataTypedArray,
         ImagePixelModule,
         ImagePlaneModule,
-        AffineMatrix
+        AffineMatrix,
+        InternalVideoCamera,
+        VideoViewportInput
     }
 }
 export { Types }
@@ -2690,21 +2695,23 @@ function uuidv4(): string;
 
 // @public (undocumented)
 export class VideoViewport extends Viewport implements IVideoViewport {
-    constructor(props: ViewportInput_2);
+    constructor(props: VideoViewportInput);
     // (undocumented)
     readonly canvasContext: CanvasRenderingContext2D;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
+    customRenderViewportToCanvas: () => void;
+    // (undocumented)
     end(): Promise<void>;
     // (undocumented)
-    getCamera(): VideoViewportProperties;
+    getCamera(): ICamera;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getProperties: () => VideoViewportProperties;
+    getImageData(): any;
     // (undocumented)
-    getRenderingEngine(): IRenderingEngine;
+    getProperties: () => VideoViewportProperties;
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
@@ -2712,7 +2719,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)
-    resetCamera: (resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean) => boolean;
+    resetCamera: () => boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -2720,7 +2727,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     scroll(delta?: number): Promise<void>;
     // (undocumented)
-    setCamera(videoInterface: VideoViewportProperties): void;
+    setCamera(camera: ICamera): void;
     // (undocumented)
     setFrame(frame: number): Promise<void>;
     // (undocumented)
@@ -2728,11 +2735,11 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setProperties(videoInterface: VideoViewportProperties): void;
     // (undocumented)
-    setScrollSpeed(scrollSpeed?: number, unit?: string): void;
+    setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
-    setVideo(videoURL: string): Promise<unknown>;
+    setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)
     start(): Promise<void>;
     // (undocumented)
@@ -2744,6 +2751,26 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
+
+declare namespace VideoViewport_2 {
+    export {
+        SpeedUnit
+    }
+}
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
 
 // @public (undocumented)
 type VideoViewportProperties = ViewportProperties & {

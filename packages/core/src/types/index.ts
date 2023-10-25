@@ -85,7 +85,10 @@ import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type IVideoViewport from './IVideoViewport';
-
+import type {
+  InternalVideoCamera,
+  VideoViewportInput,
+} from './VideoViewportTypes';
 type IVtkViewport = IStackViewport | IVolumeViewport;
 
 export type {
@@ -186,4 +189,7 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  // video
+  InternalVideoCamera,
+  VideoViewportInput,
 };

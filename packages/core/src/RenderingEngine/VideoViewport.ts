@@ -1,39 +1,17 @@
-import { Events as EVENTS, ViewportType } from '../enums';
+import { Events as EVENTS, VideoViewport as VideoViewportEnum } from '../enums';
 import {
   IVideoViewport,
   VideoViewportProperties,
   Point3,
   Point2,
   ICamera,
+  InternalVideoCamera,
+  VideoViewportInput,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
-import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
-
-export type VideoCamera = {
-  panWorld: Point2;
-  parallelScale: number;
-};
-
-export type IVideoCamera = {
-  pan?: Point2;
-  parallelScale?: number;
-};
-
-export type ViewportInput = {
-  id: string;
-  renderingEngineId: string;
-  type: ViewportType;
-  element: HTMLDivElement;
-  sx: number;
-  sy: number;
-  sWidth: number;
-  sHeight: number;
-  defaultOptions: any;
-  canvas: HTMLCanvasElement;
-};
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -55,12 +33,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private isPlaying = false;
   private scrollSpeed = 1;
   private fps = 30; // TODO We need to find a good solution for this.
-  private videoCamera: VideoCamera = {
+  private videoCamera: InternalVideoCamera = {
     panWorld: [0, 0],
     parallelScale: 1,
   };
 
-  constructor(props: ViewportInput) {
+  constructor(props: VideoViewportInput) {
     super({
       ...props,
       canvas: props.canvas || getOrCreateCanvas(props.element),
@@ -102,7 +80,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement.remove();
   }
 
-  public async setVideo(videoURL: string) {
+  public async setVideoURL(videoURL: string) {
     return new Promise((resolve) => {
       this.videoElement.src = videoURL;
       this.videoElement.preload = 'auto';
@@ -261,8 +239,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.play();
   }
 
-  public setScrollSpeed(scrollSpeed = 1, unit = 'f') {
-    this.scrollSpeed = unit === 's' ? scrollSpeed * this.fps : scrollSpeed;
+  public setScrollSpeed(
+    scrollSpeed = 1,
+    unit = VideoViewportEnum.SpeedUnit.FRAME
+  ) {
+    this.scrollSpeed =
+      unit === VideoViewportEnum.SpeedUnit.SECOND
+        ? scrollSpeed * this.fps
+        : scrollSpeed;
   }
 
   public getProperties = (): VideoViewportProperties => {
@@ -357,15 +341,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.renderFrame();
     }
   };
-
-  /**
-   * Returns the rendering engine driving the `Scene`.
-   *
-   * @returns The RenderingEngine instance.
-   */
-  getRenderingEngine() {
-    return renderingEngineCache.get(this.renderingEngineId);
-  }
 
   /**
    * Converts a VideoViewport canvas coordinate to a video coordinate.

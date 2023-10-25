@@ -252,7 +252,7 @@ type Annotation = {
             textBox?: {
                 hasMoved: boolean;
                 worldPosition: Types_2.Point3;
-                worldBoundingBox: {
+                worldBoundingBox?: {
                     topLeft: Types_2.Point3;
                     topRight: Types_2.Point3;
                     bottomLeft: Types_2.Point3;
@@ -301,7 +301,7 @@ export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport | Types_2.IVideoViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
     getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
     // (undocumented)
@@ -2940,6 +2940,12 @@ type InteractionStartType = Types_2.CustomEventType<InteractionStartEventDetail>
 type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
+// @public (undocumented)
 function interpolateAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
 
 // @public (undocumented)
@@ -3213,11 +3219,7 @@ type ITouchPoints = IPoints & {
 
 // @public
 interface IVideoViewport extends IViewport {
-    canvasToWorld: (canvasPos: Point2) => Point3;
-    getCamera(): ICamera;
-    getFrameOfReferenceUID: () => string;
     getProperties: () => VideoViewportProperties;
-    getRenderer(): any;
     // (undocumented)
     pause: () => void;
     // (undocumented)
@@ -3225,11 +3227,9 @@ interface IVideoViewport extends IViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
-    setCamera(cameraInterface: ICamera): void;
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideo: (url: string) => void;
-    worldToCanvas: (worldPos: Point3) => Point2;
+    setVideoURL: (url: string) => void;
 }
 
 // @public
@@ -4821,7 +4821,7 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-function scroll_2(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport | Types_2.IVideoViewport, options: ScrollOptions_2): void;
+function scroll_2(viewport: Types_2.IViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
 type ScrollOptions_2 = {
@@ -5591,7 +5591,8 @@ declare namespace ToolSpecificAnnotationTypes {
         CobbAngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
-        ScaleOverlayAnnotation
+        ScaleOverlayAnnotation,
+        VideoRedactionAnnotation
     }
 }
 
@@ -5849,6 +5850,30 @@ declare namespace vec2 {
 }
 
 // @public (undocumented)
+interface VideoRedactionAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        invalidated: boolean;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+        cachedStats: {
+            [key: string]: any;
+        };
+        active: boolean;
+    };
+    // (undocumented)
+    metadata: {
+        viewPlaneNormal: Types_2.Point3;
+        viewUp: Types_2.Point3;
+        FrameOfReferenceUID: string;
+        referencedImageId: string;
+        toolName: string;
+    };
+}
+
+// @public (undocumented)
 export class VideoRedactionTool extends AnnotationTool {
     constructor(toolConfiguration?: {});
     // (undocumented)
@@ -5856,34 +5881,7 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: CustomEvent) => {
-        metadata: {
-            viewPlaneNormal: Types_2.Point3;
-            viewUp: Types_2.Point3;
-            FrameOfReferenceUID: string;
-            referencedImageId: string;
-            toolName: string;
-        };
-        data: {
-            invalidated: boolean;
-            handles: {
-                points: Types_2.Point3[];
-                textBox: {
-                    hasMoved: boolean;
-                    worldPosition: Types_2.Point3;
-                    worldBoundingBox: {
-                        topLeft: Types_2.Point3;
-                        topRight: Types_2.Point3;
-                        bottomLeft: Types_2.Point3;
-                        bottomRight: Types_2.Point3;
-                    };
-                };
-                activeHandleIndex: any;
-            };
-            cachedStats: {};
-            active: boolean;
-        };
-    };
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => VideoRedactionAnnotation;
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
@@ -5899,12 +5897,9 @@ export class VideoRedactionTool extends AnnotationTool {
         annotation: any;
         viewportUIDsToRender: string[];
         handleIndex?: number;
-        movingTextBox: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
-    // (undocumented)
-    _findTextBoxAnchorPoints: (points: Array<Types_2.Point2>) => Array<Types_2.Point2>;
     // (undocumented)
     getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
     // (undocumented)
@@ -5923,8 +5918,6 @@ export class VideoRedactionTool extends AnnotationTool {
     _getTargetStackUID(viewport: any): string;
     // (undocumented)
     _getTargetVolumeUID: (scene: any) => any;
-    // (undocumented)
-    _getTextLines: (data: any, targetUID: string) => any[];
     // (undocumented)
     handleSelectedCallback: (evt: any, annotation: any, handle: any, interactionType?: string) => void;
     // (undocumented)
@@ -5946,6 +5939,20 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     toolSelectedCallback: (evt: any, annotation: any, interactionType?: string) => void;
 }
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
 
 // @public
 type VideoViewportProperties = ViewportProperties & {
@@ -6207,15 +6214,9 @@ export class WindowLevelTool extends BaseTool {
 export class ZoomTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    cachedCanvasPos: Types_2.Point2;
-    // (undocumented)
-    cachedWorldPos: Types_2.Point2;
-    // (undocumented)
     dirVec: Types_2.Point3;
     // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
-    // (undocumented)
-    _dragCallbackVideoViewport(evt: any): void;
     // (undocumented)
     _dragParallelProjection: (evt: EventTypes_2.InteractionEventType, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, camera: Types_2.ICamera, pinch?: boolean) => void;
     // (undocumented)

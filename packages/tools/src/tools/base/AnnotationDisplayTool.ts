@@ -1,7 +1,6 @@
 import {
   utilities,
   getEnabledElement,
-  VolumeViewport,
   StackViewport,
   cache,
   VideoViewport,
@@ -124,10 +123,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
   };
 
   protected getReferencedImageId(
-    viewport:
-      | Types.IStackViewport
-      | Types.IVolumeViewport
-      | Types.IVideoViewport,
+    viewport: Types.IViewport,
     worldPos: Types.Point3,
     viewPlaneNormal: Types.Point3,
     viewUp: Types.Point3

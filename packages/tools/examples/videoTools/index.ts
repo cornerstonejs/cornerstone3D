@@ -124,6 +124,7 @@ const scrollSpeeds = ['1 f', '2 f', '4 f', '0.5 s', '1 s', '2 s', '4 s'];
 addDropdownToToolbar({
   options: { values: scrollSpeeds, defaultValue: '1 f' },
   onSelectedValueChange: (value) => {
+    value = value.toString();
     const unit = value[value.length - 1];
     const newScrollSpeed = Number(value.substring(0, value.length - 2));
     viewport.setScrollSpeed(newScrollSpeed, unit);
@@ -202,7 +203,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(
+  await viewport.setVideoURL(
     'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
   );
 
