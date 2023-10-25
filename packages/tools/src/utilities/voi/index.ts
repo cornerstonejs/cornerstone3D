@@ -1,1 +1,1 @@
-export { colorbar } from './widgets';
+export * as colorbar from './colorbar';

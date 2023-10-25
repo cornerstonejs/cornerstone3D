@@ -1,13 +1,13 @@
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { vec2 } from 'gl-matrix';
 import { utilities as csUtils, Types } from '@cornerstonejs/core';
-import { Widget } from '../Widget';
 import type { ColorbarProps, ColorbarVOIRange } from './types';
 import { isRangeValid, areColorbarRangesEqual } from './common';
 import { ColorbarRangeTextPosition } from './enums/ColorbarRangeTextPosition';
 import { ColorbarCanvas } from './ColorbarCanvas';
 import { ColorbarTicks } from './ColorbarTicks';
 import isRangeTextPositionValid from './common/isRangeTextPositionValid';
+import Widget from '../../../widgets/Widget';
 
 const DEFAULTS = {
   MULTIPLIER: 1,
