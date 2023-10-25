@@ -3410,9 +3410,6 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-type IVtkViewport = IStackViewport | IVolumeViewport;
-
-// @public (undocumented)
 function jumpToSlice(element: HTMLDivElement, options?: JumpToSliceOptions): Promise<void>;
 
 // @public (undocumented)

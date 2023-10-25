@@ -2011,9 +2011,6 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-type IVtkViewport = IStackViewport | IVolumeViewport;
-
-// @public (undocumented)
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3;
 
 // @public (undocumented)
@@ -2563,7 +2560,6 @@ declare namespace Types {
         IRegisterImageLoader,
         IStreamingVolumeProperties,
         IViewport,
-        IVtkViewport,
         StackViewportProperties,
         VolumeViewportProperties,
         ViewportProperties,

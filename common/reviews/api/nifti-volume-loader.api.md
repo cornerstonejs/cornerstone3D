@@ -1323,9 +1323,6 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-type IVtkViewport = IStackViewport | IVolumeViewport;
-
-// @public (undocumented)
 function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any): Types.Metadata;
 
 // @public

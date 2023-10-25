@@ -89,7 +89,6 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
-type IVtkViewport = IStackViewport | IVolumeViewport;
 
 export type {
   // config
@@ -122,7 +121,6 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
-  IVtkViewport,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,

@@ -1419,9 +1419,6 @@ interface IVolumeViewport extends IViewport {
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
-// @public (undocumented)
-type IVtkViewport = IStackViewport | IVolumeViewport;
-
 // @public
 type Mat3 =
 | [number, number, number, number, number, number, number, number, number]
