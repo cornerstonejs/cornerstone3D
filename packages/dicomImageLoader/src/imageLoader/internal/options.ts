@@ -49,7 +49,7 @@ let options: LoaderOptions = {
 
     return (
       retrieveTypeOptions?.[transferSyntaxUID] ||
-      retrieveOptions?.default ||
+      retrieveTypeOptions?.default ||
       retrieveTypeDefault?.[transferSyntaxUID] ||
       retrieveTypeDefault?.default ||
       {}

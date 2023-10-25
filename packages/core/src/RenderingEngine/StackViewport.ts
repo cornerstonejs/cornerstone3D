@@ -1819,6 +1819,8 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   public getTargetOptions(imageId: string) {
+    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
+
     /**
      * If use16bittexture is specified, the CSWIL will automatically choose the
      * array type when no targetBuffer is provided. When CSWIL is initialized,
@@ -1835,6 +1837,7 @@ class StackViewport extends Viewport implements IStackViewport {
         enabled: true,
       },
       useRGBA: false,
+      transferSyntaxUID,
     };
     return options;
   }

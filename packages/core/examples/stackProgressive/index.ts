@@ -31,7 +31,7 @@ const loaders = document.createElement('div');
 content.appendChild(loaders);
 
 const timingInfo = document.createElement('div');
-timingInfo.style.width = '35em';
+timingInfo.style.width = '45em';
 timingInfo.style.height = '10em';
 timingInfo.style.float = 'left';
 timingInfo.innerText = 'Timing Info Here';
@@ -71,7 +71,7 @@ const statusNames = {
 };
 async function newImageFunction(evt) {
   const { image } = evt.detail;
-  const { status, decodeTimeInMS, loadTimeInMS } = image;
+  const { status, decodeTimeInMS, loadTimeInMS, transferSyntaxUID } = image;
   const complete = status === ImageStatus.DONE;
   if (complete) {
     element.removeEventListener(
@@ -80,7 +80,7 @@ async function newImageFunction(evt) {
     );
   }
   const completeText = statusNames[status] || `other ${status}`;
-  timingInfo.innerHTML += `<p style="margin:0">Render ${completeText} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${
+  timingInfo.innerHTML += `<p style="margin:0">Render ${completeText} of ${transferSyntaxUID} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${
     loadTimeInMS + decodeTimeInMS
   } total</p>`;
 }
@@ -131,113 +131,77 @@ async function showStack(stack: string[], viewport, config, name: string) {
  * ```
  */
 const configJLS = {
-  minChunkSize: 65_536,
-
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      framesPath: '/jls/',
-      // Don't even stream the data, use the original fetch
-      streaming: false,
-    },
     default: {
-      framesPath: '/jls/',
+      default: {
+        framesPath: '/jls/',
+      },
     },
   },
 };
 
 const configJLSMixed = {
   retrieveOptions: {
-    'default-lossy': {
-      isLossy: true,
-      framesPath: '/jlsThumbnail/',
-    },
-    default: {
-      framesPath: '/jls/',
+    ...configJLS.retrieveOptions,
+    singleFast: {
+      default: {
+        isLossy: true,
+        framesPath: '/jlsThumbnail/',
+      },
     },
   },
 };
 
 const configJLSThumbnail = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      // isLossy: true,
-      framesPath: '/jlsThumbnail/',
-    },
-    'default-final': {
-      // isLossy: true,
-      framesPath: '/jlsThumbnail/',
+    default: {
+      default: {
+        framesPath: '/jlsThumbnail/',
+      },
     },
   },
 };
 
 const configHtj2k = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      framesPath: '/htj2k/',
-      streaming: true,
-    },
-    '3.2.840.10008.1.2.4.96-lossy': {
-      streaming: true,
-      framesPath: '/htj2k',
-    },
-    'default-lossy': {
-      framesPath: '/htj2k/',
-    },
-    'default-final': {
-      framesPath: '/htj2k/',
+    default: {
+      '3.2.840.10008.1.2.4.96': {
+        streaming: true,
+      },
+      default: {},
     },
   },
 };
 
 const configHtj2kLossy = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      isLossy: true,
-      framesPath: '/lossy/',
-      range: 0,
-      streaming: true,
-      decodeLevel: 3,
-    },
     default: {
-      framesPath: '/lossy/',
-      decodeLevel: 0,
-      range: 1,
-      streaming: false,
+      default: {
+        streaming: true,
+        framesPath: '/lossy/',
+      },
     },
   },
 };
 
 const configHtj2kMixed = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
+    ...configHtj2k,
+    singleFinal: {
+      default: {
+        range: 1,
+        streaming: false,
+      },
     },
-    'default-lossy': {
-      isLossy: true,
-      streaming: true,
-      range: 0,
-      initialBytes: 128000,
-      framesPath: '/htj2k/',
-      decodeLevel: 3,
-    },
-    'default-final': {
-      range: 1,
-      framesPath: '/htj2k/',
-      streaming: false,
-    },
-    default: {
-      range: 1,
-      framesPath: '/htj2k/',
-      streaming: false,
+    singleFast: {
+      default: {
+        isLossy: true,
+        streaming: true,
+        range: 0,
+        initialBytes: 128000,
+        framesPath: '/htj2k/',
+        decodeLevel: 3,
+      },
     },
   },
 };

@@ -7,14 +7,11 @@ const sequentialRetrieveConfiguration: IRetrieveConfiguration = {
   stages: [
     {
       id: 'lossySequential',
-      decimate: 1,
-      offset: 0,
-      retrieveType: 'lossy',
+      retrieveType: 'singleFast',
     },
     {
       id: 'finalSequential',
-      decimate: 1,
-      offset: 0,
+      retrieveType: 'singleFinal',
     },
   ],
 };
