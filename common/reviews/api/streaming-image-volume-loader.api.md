@@ -4,7 +4,6 @@
 
 ```ts
 
-import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
@@ -1594,30 +1593,7 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
 export class StreamingImageVolume extends BaseStreamingImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
-    getImageLoadRequests: (priority: number) => {
-        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
-        imageId: string;
-        imageIdIndex: number;
-        options: {
-            targetBuffer: {
-                arrayBuffer: SharedArrayBuffer;
-                offset: number;
-                length: number;
-                type: any;
-            };
-            skipCreateImage: boolean;
-            preScale: {
-                enabled: boolean;
-                scalingParameters: Types.ScalingParameters;
-            };
-            transferPixelData: boolean;
-        };
-        priority: number;
-        requestType: default_2;
-        additionalDetails: {
-            volumeId: string;
-        };
-    }[];
+    getImageLoadRequests(priority: number): ImageLoadRequests[];
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
 }
