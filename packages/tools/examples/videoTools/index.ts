@@ -48,7 +48,7 @@ const rangeDiv = document.createElement('div');
 rangeDiv.innerHTML =
   '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
 content.appendChild(rangeDiv);
-const rangeElement = document.getElementById('range');
+const rangeElement = document.getElementById('range') as HTMLInputElement;
 rangeElement.onchange = () => {
   viewport.setTime(Number(rangeElement.value));
 };
@@ -69,9 +69,25 @@ let viewport;
 
 addButtonToToolbar({
   id: 'play',
-  title: 'Play',
+  title: 'pause',
   onClick() {
     viewport.togglePlayPause();
+
+    // toggle the title
+    const button = document.getElementById('play');
+    if (button.innerText === 'pause') {
+      button.innerText = 'play';
+    } else {
+      button.innerText = 'pause';
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'previous',
+  title: 'previous',
+  onClick() {
+    viewport.scroll(-1);
   },
 });
 
@@ -82,13 +98,7 @@ addButtonToToolbar({
     viewport.scroll(1);
   },
 });
-addButtonToToolbar({
-  id: 'previous',
-  title: 'previous',
-  onClick() {
-    viewport.scroll(-1);
-  },
-});
+
 addButtonToToolbar({
   id: 'jump',
   title: 'jump to 50',
@@ -207,15 +217,11 @@ async function run() {
     'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
   );
 
-  // Set the VOI of the stack
-  // viewport.setProperties({ voiRange: ctVoiRange });
-
-  // Render the image
   viewport.play();
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt) => {
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
     const { time, duration } = evt.detail;
     rangeElement.value = time;
     rangeElement.max = duration;

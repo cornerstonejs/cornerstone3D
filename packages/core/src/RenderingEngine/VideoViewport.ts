@@ -270,22 +270,30 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public setCamera(camera: ICamera): void {
     const { parallelScale, focalPoint } = camera;
 
-    if (focalPoint !== undefined) {
-      const prevCamera = this.getCamera();
+    // NOTE: the parallel scale should be done first
+    // because it affects the focal point later
+    if (camera.parallelScale !== undefined) {
+      this.videoCamera.parallelScale = 1 / parallelScale;
+    }
 
-      const deltaWorld = [
-        focalPoint[0] - prevCamera.focalPoint[0],
-        focalPoint[1] - prevCamera.focalPoint[1],
+    if (focalPoint !== undefined) {
+      const focalPointCanvas = this.worldToCanvas(focalPoint);
+      const canvasCenter: Point2 = [
+        this.element.clientWidth / 2,
+        this.element.clientHeight / 2,
+      ];
+
+      const panWorldDelta: Point2 = [
+        (focalPointCanvas[0] - canvasCenter[0]) /
+          this.videoCamera.parallelScale,
+        (focalPointCanvas[1] - canvasCenter[1]) /
+          this.videoCamera.parallelScale,
       ];
 
       this.videoCamera.panWorld = [
-        this.videoCamera.panWorld[0] - deltaWorld[0],
-        this.videoCamera.panWorld[1] - deltaWorld[1],
+        this.videoCamera.panWorld[0] - panWorldDelta[0],
+        this.videoCamera.panWorld[1] - panWorldDelta[1],
       ];
-    }
-
-    if (camera.parallelScale !== undefined) {
-      this.videoCamera.parallelScale = 1 / parallelScale;
     }
 
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -296,11 +304,21 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public getCamera(): ICamera {
-    const { parallelScale, panWorld } = this.videoCamera;
+    const { parallelScale } = this.videoCamera;
+
+    const canvasCenter: Point2 = [
+      this.element.clientWidth / 2,
+      this.element.clientHeight / 2,
+    ];
+
+    // All other viewports have the focal point in canvas coordinates in the center
+    // of the canvas, so to make tools work the same, we need to do the same here
+    // and convert to the world coordinate system since focal point is in world coordinates.
+    const canvasCenterWorld = this.canvasToWorld(canvasCenter);
 
     return {
       parallelProjection: true,
-      focalPoint: [panWorld[0], panWorld[1], 0],
+      focalPoint: canvasCenterWorld,
       position: [0, 0, 0],
       parallelScale: 1 / parallelScale, // Reverse zoom direction back
       viewPlaneNormal: [0, 0, 1],
@@ -367,6 +385,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       subCanvasPos[1] / worldToCanvasRatio,
       0,
     ];
+    console.debug('🚀 ~ worldPos:', worldPos);
 
     return worldPos;
   };
