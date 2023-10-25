@@ -135,6 +135,10 @@ export async function load(
   function addRequest(request, streamingData = {}) {
     const { imageId, stage } = request;
     const baseOptions = listener.getTargetOptions(imageId);
+    if (!baseOptions) {
+      // Image no longer of interest
+      return;
+    }
     const options = {
       ...baseOptions,
       retrieveTypeId: stage.retrieveTypeId,
@@ -158,6 +162,9 @@ export async function load(
   const interleaved = interleave(imageIds, retrieveOptions, stageStatus);
   for (const request of interleaved) {
     addRequest(request);
+  }
+  if (outstandingRequests === 0) {
+    return Promise.resolve(null);
   }
 
   return displayedIterator.getDonePromise();

@@ -468,6 +468,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { rows, columns } = imagePlaneModule;
     const imageIdIndex = this.getImageIdIndex(imageId);
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
+    if (!scalarData) {
+      return null;
+    }
     const arrayBuffer = scalarData.buffer;
     // Length of one frame in voxels: length
     // Length of one frame in bytes: lengthInBytes
