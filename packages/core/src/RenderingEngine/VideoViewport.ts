@@ -385,7 +385,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
       subCanvasPos[1] / worldToCanvasRatio,
       0,
     ];
-    console.debug('🚀 ~ worldPos:', worldPos);
 
     return worldPos;
   };

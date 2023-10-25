@@ -104,7 +104,7 @@ class VideoRedactionTool extends AnnotationTool {
     const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName(),
-      false // TODO_JAMES: Just trying to bypass the vtk specific stuff as fast as possible.
+      false
     );
 
     this.editData = {
@@ -190,7 +190,7 @@ class VideoRedactionTool extends AnnotationTool {
     const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName(),
-      false // TODO_JAMES: Just trying to bypass the vtk specific stuff as fast as possible.
+      false
     );
 
     this.editData = {
@@ -238,7 +238,7 @@ class VideoRedactionTool extends AnnotationTool {
     const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName(),
-      false // TODO_JAMES: Just trying to bypass the vtk specific stuff as fast as possible.
+      false
     );
 
     this.editData = {

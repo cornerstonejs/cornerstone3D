@@ -57,7 +57,7 @@ RenderingEngine will handle creation of the viewports, and we can get the viewpo
 ```js
 const viewport = renderingEngine.getViewport(viewportId);
 
-viewport.setVideo('https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4');
+viewport.setVideoURL('https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4');
 
 viewport.render();
 ```
