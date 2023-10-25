@@ -1,21 +1,21 @@
-import { ColorBarRangeTextPosition } from '../enums/ColorBarRangeTextPosition';
+import { ColorbarRangeTextPosition } from '../enums/ColorbarRangeTextPosition';
 import type {
-  ColorBarImageRange,
-  ColorBarTicksStyle,
-  ColorBarVOIRange,
+  ColorbarImageRange,
+  ColorbarTicksStyle,
+  ColorbarVOIRange,
 } from '.';
 
-export type ColorBarCommonProps = {
+export type ColorbarCommonProps = {
   // Image range from minPixelValue (lower) to maxPixelValue (upper)
-  imageRange?: ColorBarImageRange;
+  imageRange?: ColorbarImageRange;
   // VOI Range that is related to Window Width and Window Center
-  voiRange?: ColorBarVOIRange;
+  voiRange?: ColorbarVOIRange;
   // Ticks props
   ticks?: {
     // Position where the range text (tiks) should be displayed related to the ticks bar
-    position?: ColorBarRangeTextPosition;
+    position?: ColorbarRangeTextPosition;
     // Ticks style
-    style?: ColorBarTicksStyle;
+    style?: ColorbarTicksStyle;
   };
   // The color bar shall show a range from `imageRange.lower` to `imageRange.upper`
   // when it is set to `true` or from `voiRange.lower` to `voiRange.upper` otherwise.

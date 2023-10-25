@@ -1,4 +1,4 @@
-export type ColorBarSize = {
+export type ColorbarSize = {
   width: number;
   height: number;
 };

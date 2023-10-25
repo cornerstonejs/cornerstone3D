@@ -1,1 +1,1 @@
-export * as colorbar from './colorBar';
+export * as colorbar from './colorbar';

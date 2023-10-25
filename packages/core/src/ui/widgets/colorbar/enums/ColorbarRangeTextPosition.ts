@@ -3,7 +3,7 @@
  * Left/Right are the valid options for a vertical colorbars and Top/Bottom
  * for the horizontal ones.
  */
-export enum ColorBarRangeTextPosition {
+export enum ColorbarRangeTextPosition {
   Top = 'top',
   Left = 'left',
   Bottom = 'bottom',

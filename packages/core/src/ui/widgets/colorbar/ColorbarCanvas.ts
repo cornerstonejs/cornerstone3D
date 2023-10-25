@@ -1,12 +1,12 @@
 import { Types, utilities } from '@cornerstonejs/core';
-import { ColorBarCanvasProps } from './types/ColorBarCanvasProps';
-import type { ColorBarImageRange, ColorBarVOIRange } from './types';
-import type { ColorBarSize } from './types/ColorBarSize';
+import { ColorbarCanvasProps } from './types/ColorbarCanvasProps';
+import type { ColorbarImageRange, ColorbarVOIRange } from './types';
+import type { ColorbarSize } from './types/ColorbarSize';
 import {
   isRangeValid,
-  areColorBarRangesEqual,
-  isColorBarSizeValid,
-  areColorBarSizesEqual,
+  areColorbarRangesEqual,
+  isColorbarSizeValid,
+  areColorbarSizesEqual,
 } from './common';
 
 const { clamp, interpolateVec3 } = utilities;
@@ -15,15 +15,15 @@ const { clamp, interpolateVec3 } = utilities;
  * Canvas referenced by the color bar where the colormap is rendered. It may
  * show the full image range or only the VOI range.
  */
-class ColorBarCanvas {
+class ColorbarCanvas {
   private _canvas: HTMLCanvasElement;
-  private _imageRange: ColorBarImageRange;
-  private _voiRange: ColorBarVOIRange;
+  private _imageRange: ColorbarImageRange;
+  private _voiRange: ColorbarVOIRange;
   private _colormap: Types.ColormapRegistration;
   private _showFullImageRange: boolean;
 
-  constructor(props: ColorBarCanvasProps) {
-    ColorBarCanvas.validateProps(props);
+  constructor(props: ColorbarCanvasProps) {
+    ColorbarCanvas.validateProps(props);
 
     const {
       colormap,
@@ -54,15 +54,15 @@ class ColorBarCanvas {
     this.render();
   }
 
-  public get size(): ColorBarSize {
+  public get size(): ColorbarSize {
     const { width, height } = this._canvas;
     return { width, height };
   }
 
-  public set size(size: ColorBarSize) {
+  public set size(size: ColorbarSize) {
     const { _canvas: canvas } = this;
 
-    if (!isColorBarSizeValid(size) || areColorBarSizesEqual(canvas, size)) {
+    if (!isColorbarSizeValid(size) || areColorbarSizesEqual(canvas, size)) {
       return;
     }
 
@@ -70,14 +70,14 @@ class ColorBarCanvas {
     this.render();
   }
 
-  public get imageRange(): ColorBarImageRange {
+  public get imageRange(): ColorbarImageRange {
     return { ...this._imageRange };
   }
 
-  public set imageRange(imageRange: ColorBarImageRange) {
+  public set imageRange(imageRange: ColorbarImageRange) {
     if (
       !isRangeValid(imageRange) ||
-      areColorBarRangesEqual(imageRange, this._imageRange)
+      areColorbarRangesEqual(imageRange, this._imageRange)
     ) {
       return;
     }
@@ -86,14 +86,14 @@ class ColorBarCanvas {
     this.render();
   }
 
-  public get voiRange(): ColorBarVOIRange {
+  public get voiRange(): ColorbarVOIRange {
     return { ...this._voiRange };
   }
 
-  public set voiRange(voiRange: ColorBarVOIRange) {
+  public set voiRange(voiRange: ColorbarVOIRange) {
     if (
       !isRangeValid(voiRange) ||
-      areColorBarRangesEqual(voiRange, this._voiRange)
+      areColorbarRangesEqual(voiRange, this._voiRange)
     ) {
       return;
     }
@@ -127,10 +127,10 @@ class ColorBarCanvas {
     parentElement?.removeChild(canvas);
   }
 
-  private static validateProps(props: ColorBarCanvasProps) {
+  private static validateProps(props: ColorbarCanvasProps) {
     const { size, imageRange, voiRange } = props;
 
-    if (size && !isColorBarSizeValid(size)) {
+    if (size && !isColorbarSizeValid(size)) {
       throw new Error('Invalid "size"');
     }
 
@@ -143,7 +143,7 @@ class ColorBarCanvas {
     }
   }
 
-  private _setCanvasSize(canvas: HTMLCanvasElement, size: ColorBarSize) {
+  private _setCanvasSize(canvas: HTMLCanvasElement, size: ColorbarSize) {
     const { width, height } = size;
 
     canvas.width = width;
@@ -155,7 +155,7 @@ class ColorBarCanvas {
     });
   }
 
-  private _createRootElement(size: ColorBarSize) {
+  private _createRootElement(size: ColorbarSize) {
     const canvas = document.createElement('canvas');
 
     Object.assign(canvas.style, {
@@ -282,4 +282,4 @@ class ColorBarCanvas {
   }
 }
 
-export { ColorBarCanvas as default, ColorBarCanvas };
+export { ColorbarCanvas as default, ColorbarCanvas };

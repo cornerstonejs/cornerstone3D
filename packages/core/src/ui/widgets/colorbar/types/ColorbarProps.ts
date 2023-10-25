@@ -1,8 +1,8 @@
 import { Types } from '@cornerstonejs/core';
 import type { WidgetProps } from '../../types';
-import { ColorBarCommonProps } from '.';
+import { ColorbarCommonProps } from '.';
 
-export type ColorBarProps = (WidgetProps & ColorBarCommonProps) & {
+export type ColorbarProps = (WidgetProps & ColorbarCommonProps) & {
   colormaps: Types.ColormapRegistration[];
   activeColormapName?: string;
 };

@@ -7,23 +7,23 @@ import {
   utilities,
   getEnabledElement,
 } from '@cornerstonejs/core';
-import { ColorBar } from './ColorBar';
-import type { ViewportColorBarProps, ColorBarVOIRange } from './types';
+import { Colorbar } from './Colorbar';
+import type { ViewportColorbarProps, ColorbarVOIRange } from './types';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };
 
-class ViewportColorBar extends ColorBar {
+class ViewportColorbar extends Colorbar {
   private _element: HTMLDivElement;
   private _volumeId: string;
 
   private _hideTicksTime: number;
   private _hideTicksTimeoutId: number;
 
-  constructor(props: ViewportColorBarProps) {
+  constructor(props: ViewportColorbarProps) {
     const { element, volumeId } = props;
-    const imageRange = ViewportColorBar._getImageRange(element, volumeId);
-    const voiRange = ViewportColorBar._getVOIRange(element, volumeId);
+    const imageRange = ViewportColorbar._getImageRange(element, volumeId);
+    const voiRange = ViewportColorbar._getVOIRange(element, volumeId);
 
     super({ ...props, imageRange, voiRange });
 
@@ -46,7 +46,7 @@ class ViewportColorBar extends ColorBar {
     return utilities.getVOIMultipliers(viewport, this._volumeId);
   }
 
-  protected onVoiChange(voiRange: ColorBarVOIRange) {
+  protected onVoiChange(voiRange: ColorbarVOIRange) {
     super.onVoiChange(voiRange);
 
     const { viewport } = this.enabledElement;
@@ -137,7 +137,7 @@ class ViewportColorBar extends ColorBar {
   }
 
   private _stackNewImageCallback = () => {
-    this.imageRange = ViewportColorBar._getImageRange(this._element);
+    this.imageRange = ViewportColorbar._getImageRange(this._element);
   };
 
   private _imageVolumeModifiedCallback = (
@@ -150,7 +150,7 @@ class ViewportColorBar extends ColorBar {
     }
 
     const { _element: element } = this;
-    this.imageRange = ViewportColorBar._getImageRange(element, volumeId);
+    this.imageRange = ViewportColorbar._getImageRange(element, volumeId);
   };
 
   private _viewportVOIModifiedCallback = (
@@ -187,4 +187,4 @@ class ViewportColorBar extends ColorBar {
   }
 }
 
-export { ViewportColorBar as default, ViewportColorBar as ViewportColorBar };
+export { ViewportColorbar as default, ViewportColorbar };

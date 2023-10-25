@@ -1,4 +1,4 @@
-export type ColorBarImageRange = {
+export type ColorbarImageRange = {
   lower: number;
   upper: number;
 };

@@ -1,4 +1,4 @@
-export type ColorBarTicksStyle = {
+export type ColorbarTicksStyle = {
   font?: string;
   color?: string;
   tickSize?: number;

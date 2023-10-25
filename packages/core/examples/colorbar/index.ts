@@ -18,8 +18,8 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-const { ViewportColorBar } = ui.widgets.colorbar;
-const { ColorBarRangeTextPosition } = ui.widgets.colorbar.Enums;
+const { ViewportColorbar } = ui.widgets.colorbar;
+const { ColorbarRangeTextPosition } = ui.widgets.colorbar.Enums;
 
 // This is for debugging purposes
 console.warn(
@@ -39,7 +39,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const toolGroupIds = new Set<string>();
-const colorBarWidth = 20; // px
+const colorbarWidth = 20; // px
 const imageIdsCache = new Map<string, string[]>();
 
 const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
@@ -72,7 +72,7 @@ const viewportsInfo = [
   {
     toolGroupId: 'STACK_TOOLGROUP_ID',
     fusion: false,
-    colorBar: {
+    colorbar: {
       position: 'right',
       instances: [],
     },
@@ -89,7 +89,7 @@ const viewportsInfo = [
     volumeIds: [ctVolumeId, ptVolumeId],
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     fusion: true,
-    colorBar: {
+    colorbar: {
       position: 'right',
       instances: [],
     },
@@ -107,7 +107,7 @@ const viewportsInfo = [
     volumeIds: [ctVolumeId, ptVolumeId],
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     fusion: true,
-    colorBar: {
+    colorbar: {
       position: 'right',
       instances: [],
     },
@@ -183,17 +183,17 @@ addDropdownToToolbar({
 
 // Change the colormap of an specific viewport
 function setPTViewportColormap(viewportInfo, colormapName: string) {
-  const { fusion, colorBar, viewportInput } = viewportInfo;
+  const { fusion, colorbar, viewportInput } = viewportInfo;
   const { viewportId } = viewportInput;
 
   if (!fusion) {
     return;
   }
 
-  const ptColorBar = colorBar?.instances?.[1];
+  const ptColorbar = colorbar?.instances?.[1];
 
-  if (ptColorBar) {
-    ptColorBar.activeColormapName = colormapName;
+  if (ptColorbar) {
+    ptColorbar.activeColormapName = colormapName;
   }
 
   // Get the rendering engine
@@ -267,7 +267,7 @@ async function initializeVolumeViewport(
 }
 
 // Creates one or more containers at the right side of the viewport
-function createRightColorBarContainers(numContainers) {
+function createRightColorbarContainers(numContainers) {
   const containers = [];
   const height = 100 / numContainers;
   let top = 0;
@@ -278,8 +278,8 @@ function createRightColorBarContainers(numContainers) {
     Object.assign(container.style, {
       position: 'absolute',
       top: `${top}%`,
-      left: `calc(100% - ${colorBarWidth}px)`,
-      width: `${colorBarWidth}px`,
+      left: `calc(100% - ${colorbarWidth}px)`,
+      width: `${colorbarWidth}px`,
       height: `${100 / numContainers}%`,
     });
 
@@ -290,7 +290,7 @@ function createRightColorBarContainers(numContainers) {
 }
 
 // Creates one or more containers at the bottom of the viewport
-function createBottomColorBarContainers(numContainers) {
+function createBottomColorbarContainers(numContainers) {
   const containers = [];
   const width = 100 / numContainers;
   let left = 0;
@@ -300,10 +300,10 @@ function createBottomColorBarContainers(numContainers) {
 
     Object.assign(container.style, {
       position: 'absolute',
-      top: `calc(100% - ${colorBarWidth}px)`,
+      top: `calc(100% - ${colorbarWidth}px)`,
       left: `${left}%`,
       width: `${width}%`,
-      height: `${colorBarWidth}px`,
+      height: `${colorbarWidth}px`,
     });
 
     containers.push(container);
@@ -313,13 +313,13 @@ function createBottomColorBarContainers(numContainers) {
 }
 
 // Creates one or more containers at the right side or at the bottom
-// of the viewport based on `colorBar.position` config
-function initializeColorBarContainers(viewportInfo, viewportContainer) {
+// of the viewport based on `colorbar.position` config
+function initializeColorbarContainers(viewportInfo, viewportContainer) {
   const numContainers = viewportInfo.fusion ? 2 : 1;
   const containers =
-    viewportInfo.colorBar?.position === 'right'
-      ? createRightColorBarContainers(numContainers)
-      : createBottomColorBarContainers(numContainers);
+    viewportInfo.colorbar?.position === 'right'
+      ? createRightColorbarContainers(numContainers)
+      : createBottomColorbarContainers(numContainers);
 
   containers.forEach((container) => {
     Object.assign(container.style, {
@@ -336,8 +336,8 @@ function initializeColorBarContainers(viewportInfo, viewportContainer) {
 }
 
 // Create instaces of the color bars for CT or PT/CT viewports and add them to the DOM
-function initializeColorBars(viewportInfo, colorBarContainers) {
-  const { fusion, volumeIds, colorBar, viewportInput } = viewportInfo;
+function initializeColorbars(viewportInfo, colorbarContainers) {
+  const { fusion, volumeIds, colorbar, viewportInput } = viewportInfo;
   const { element } = viewportInput;
 
   // Stack viewports do not have volumeIds
@@ -352,36 +352,36 @@ function initializeColorBars(viewportInfo, colorBarContainers) {
     labelMargin: 3,
   };
 
-  const ctColorBar = new ViewportColorBar({
-    id: 'ctColorBar',
+  const ctColorbar = new ViewportColorbar({
+    id: 'ctColorbar',
     element,
-    container: colorBarContainers[0],
+    container: colorbarContainers[0],
     volumeId: ctVolumeId,
     colormaps,
     activeColormapName: 'Grayscale',
     ticks: {
-      position: ColorBarRangeTextPosition.Left,
+      position: ColorbarRangeTextPosition.Left,
       style: scaleStyle,
     },
   });
 
-  colorBar.instances.push(ctColorBar);
+  colorbar.instances.push(ctColorbar);
 
   if (fusion && volumeIds?.length === 2) {
-    const ptColorBar = new ViewportColorBar({
-      id: 'ptColorBar',
+    const ptColorbar = new ViewportColorbar({
+      id: 'ptColorbar',
       element,
-      container: colorBarContainers[1],
+      container: colorbarContainers[1],
       volumeId: volumeIds[1],
       colormaps,
       activeColormapName: currentPTColormapName,
       ticks: {
-        position: ColorBarRangeTextPosition.Left,
+        position: ColorbarRangeTextPosition.Left,
         style: scaleStyle,
       },
     });
 
-    colorBar.instances.push(ptColorBar);
+    colorbar.instances.push(ptColorbar);
   }
 }
 
@@ -417,10 +417,10 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
 
   // Leave some space for the color bar that can be added to the
   // left or at the bottom of the viewport
-  if (viewportInfo.colorBar?.position === 'right') {
-    width = `calc(100% - ${colorBarWidth}px)`;
+  if (viewportInfo.colorbar?.position === 'right') {
+    width = `calc(100% - ${colorbarWidth}px)`;
   } else {
-    height = `calc(100% - ${colorBarWidth}px)`;
+    height = `calc(100% - ${colorbarWidth}px)`;
   }
 
   // Disable right click context menu so we can have right click tools
@@ -442,14 +442,14 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Create the color bar containers that will be used to append the
-  // colorBars' rootElement
-  const colorBarContainers = initializeColorBarContainers(
+  // colorbars' rootElement
+  const colorbarContainers = initializeColorbarContainers(
     viewportInfo,
     viewportContainer
   );
 
   // Create and add the color bars to the DOM
-  initializeColorBars(viewportInfo, colorBarContainers);
+  initializeColorbars(viewportInfo, colorbarContainers);
 
   const ctImageIds = await getCTImageIds();
   const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);

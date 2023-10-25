@@ -1,14 +1,14 @@
-import { ColorBarRangeTextPosition } from '../enums';
+import { ColorbarRangeTextPosition } from '../enums';
 
 function isRangeTextPositionValid(
   colorbarWidth: number,
   colorbarHeight: number,
-  rangeTextPosition: ColorBarRangeTextPosition
+  rangeTextPosition: ColorbarRangeTextPosition
 ) {
   const isHorizontal = colorbarWidth >= colorbarHeight;
   const validRangeTextPositions = isHorizontal
-    ? [ColorBarRangeTextPosition.Top, ColorBarRangeTextPosition.Bottom]
-    : [ColorBarRangeTextPosition.Left, ColorBarRangeTextPosition.Right];
+    ? [ColorbarRangeTextPosition.Top, ColorbarRangeTextPosition.Bottom]
+    : [ColorbarRangeTextPosition.Left, ColorbarRangeTextPosition.Right];
 
   return validRangeTextPositions.includes(rangeTextPosition);
 }

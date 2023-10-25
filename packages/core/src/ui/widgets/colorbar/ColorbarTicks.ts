@@ -1,16 +1,16 @@
 import type {
-  ColorBarImageRange,
-  ColorBarVOIRange,
-  ColorBarSize,
-  ColorBarTicksProps,
+  ColorbarImageRange,
+  ColorbarVOIRange,
+  ColorbarSize,
+  ColorbarTicksProps,
 } from './types';
 import {
-  isColorBarSizeValid,
+  isColorbarSizeValid,
   isRangeValid,
-  areColorBarRangesEqual,
-  areColorBarSizesEqual,
+  areColorbarRangesEqual,
+  areColorbarSizesEqual,
 } from './common';
-import { ColorBarRangeTextPosition } from './enums/ColorBarRangeTextPosition';
+import { ColorbarRangeTextPosition } from './enums/ColorbarRangeTextPosition';
 
 const DEFAULTS = {
   FONT: '10px Arial',
@@ -24,21 +24,21 @@ const DEFAULTS = {
   TICKS_STEPS: [1, 2.5, 5, 10],
 };
 
-class ColorBarTicks {
+class ColorbarTicks {
   private _canvas: HTMLCanvasElement;
-  private _imageRange: ColorBarImageRange;
-  private _voiRange: ColorBarVOIRange;
+  private _imageRange: ColorbarImageRange;
+  private _voiRange: ColorbarVOIRange;
   private _color: string;
   private _tickSize: number;
   private _tickWidth: number;
   private _labelMargin: number;
   private _maxNumTicks: number;
-  private _rangeTextPosition: ColorBarRangeTextPosition;
+  private _rangeTextPosition: ColorbarRangeTextPosition;
   private _showFullPixelValueRange: boolean;
   private _font: string;
 
-  constructor(props: ColorBarTicksProps) {
-    ColorBarTicks.validateProps(props);
+  constructor(props: ColorbarTicksProps) {
+    ColorbarTicks.validateProps(props);
 
     const {
       top = 0,
@@ -62,7 +62,7 @@ class ColorBarTicks {
     this._labelMargin = ticksStyle?.labelMargin ?? DEFAULTS.TICK_LABEL_MARGIN;
     this._maxNumTicks = ticksStyle?.maxNumTicks ?? DEFAULTS.MAX_NUM_TICKS;
     this._rangeTextPosition =
-      rangeTextPosition ?? ColorBarRangeTextPosition.Right;
+      rangeTextPosition ?? ColorbarRangeTextPosition.Right;
     this._showFullPixelValueRange = showFullPixelValueRange;
     this._canvas = this._createCanvasElement(size, top, left);
 
@@ -71,15 +71,15 @@ class ColorBarTicks {
     }
   }
 
-  public get size(): ColorBarSize {
+  public get size(): ColorbarSize {
     const { width, height } = this._canvas;
     return { width, height };
   }
 
-  public set size(size: ColorBarSize) {
+  public set size(size: ColorbarSize) {
     const { _canvas: canvas } = this;
 
-    if (!isColorBarSizeValid(size) || areColorBarSizesEqual(canvas, size)) {
+    if (!isColorbarSizeValid(size) || areColorbarSizesEqual(canvas, size)) {
       return;
     }
 
@@ -141,10 +141,10 @@ class ColorBarTicks {
   /**
    * Set the image range that should goes from minPixelValue to maxPixelValue
    */
-  public set imageRange(imageRange: ColorBarVOIRange) {
+  public set imageRange(imageRange: ColorbarVOIRange) {
     if (
       !isRangeValid(imageRange) ||
-      areColorBarRangesEqual(imageRange, this._imageRange)
+      areColorbarRangesEqual(imageRange, this._imageRange)
     ) {
       return;
     }
@@ -165,10 +165,10 @@ class ColorBarTicks {
    * Set the VOI Range
    * (lower: wc - ww / 2, upper: wc + ww / 2)
    */
-  public set voiRange(voiRange: ColorBarVOIRange) {
+  public set voiRange(voiRange: ColorbarVOIRange) {
     if (
       !isRangeValid(voiRange) ||
-      areColorBarRangesEqual(voiRange, this._voiRange)
+      areColorbarRangesEqual(voiRange, this._voiRange)
     ) {
       return;
     }
@@ -294,10 +294,10 @@ class ColorBarTicks {
     this.render();
   }
 
-  private static validateProps(props: ColorBarTicksProps) {
+  private static validateProps(props: ColorbarTicksProps) {
     const { size, imageRange, voiRange } = props;
 
-    if (size && !isColorBarSizeValid(size)) {
+    if (size && !isColorbarSizeValid(size)) {
       throw new Error('Invalid "size"');
     }
 
@@ -310,7 +310,7 @@ class ColorBarTicks {
     }
   }
 
-  private _setCanvasSize(canvas: HTMLCanvasElement, size: ColorBarSize) {
+  private _setCanvasSize(canvas: HTMLCanvasElement, size: ColorbarSize) {
     const { width, height } = size;
 
     canvas.width = width;
@@ -323,7 +323,7 @@ class ColorBarTicks {
   }
 
   private _createCanvasElement(
-    size: ColorBarSize,
+    size: ColorbarSize,
     top: number,
     left: number
   ): HTMLCanvasElement {
@@ -456,7 +456,7 @@ class ColorBarTicks {
         maxCanvasPixelValue * ((tick - range.lower) / rangeWidth)
       );
 
-      // Zero at the bottom and max at the top of the colorBar on vertical colorBar
+      // Zero at the bottom and max at the top on vertical colorbars
       if (!isHorizontal) {
         position = height - position;
       }
@@ -470,13 +470,13 @@ class ColorBarTicks {
       let tickInfo;
 
       if (isHorizontal) {
-        if (this._rangeTextPosition === ColorBarRangeTextPosition.Top) {
+        if (this._rangeTextPosition === ColorbarRangeTextPosition.Top) {
           tickInfo = this._getTopTickInfo({ position, labelMeasure });
         } else {
           tickInfo = this._getBottomTickInfo({ position, labelMeasure });
         }
       } else {
-        if (this._rangeTextPosition === ColorBarRangeTextPosition.Left) {
+        if (this._rangeTextPosition === ColorbarRangeTextPosition.Left) {
           tickInfo = this._getLeftTickInfo({ position, labelMeasure });
         } else {
           tickInfo = this._getRightTickInfo({ position });
@@ -497,4 +497,4 @@ class ColorBarTicks {
   }
 }
 
-export { ColorBarTicks as default, ColorBarTicks };
+export { ColorbarTicks as default, ColorbarTicks };

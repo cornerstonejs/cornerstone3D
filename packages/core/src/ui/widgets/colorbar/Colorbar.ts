@@ -1,44 +1,44 @@
 import { vec2 } from 'gl-matrix';
 import { utilities, Types } from '@cornerstonejs/core';
 import { Widget } from '../Widget';
-import type { ColorBarProps, ColorBarVOIRange } from './types';
-import { isRangeValid, areColorBarRangesEqual } from './common';
-import { ColorBarRangeTextPosition } from './enums/ColorBarRangeTextPosition';
-import { ColorBarCanvas } from './ColorBarCanvas';
-import ColorBarTicks from './ColorBarTicks';
+import type { ColorbarProps, ColorbarVOIRange } from './types';
+import { isRangeValid, areColorbarRangesEqual } from './common';
+import { ColorbarRangeTextPosition } from './enums/ColorbarRangeTextPosition';
+import { ColorbarCanvas } from './ColorbarCanvas';
+import { ColorbarTicks } from './ColorbarTicks';
 import isRangeTextPositionValid from './common/isRangeTextPositionValid';
 
 const { MultiTargetEventListenerManager } = utilities.eventListener;
 
 const DEFAULTS = {
   MULTIPLIER: 1,
-  RANGE_TEXT_POSITION: ColorBarRangeTextPosition.Right,
+  RANGE_TEXT_POSITION: ColorbarRangeTextPosition.Right,
   TICKS_BAR_SIZE: 50,
 };
 
-type ColorBarPoints = {
+type ColorbarPoints = {
   page: Types.Point2;
   client: Types.Point2;
   local: Types.Point2;
 };
 
-class ColorBar extends Widget {
+class Colorbar extends Widget {
   private _colormaps: Map<string, Types.ColormapRegistration>;
   private _activeColormapName: string;
   private _eventListenersManager: MultiTargetEventListenerManager;
-  private _canvas: ColorBarCanvas;
-  private _ticksBar: ColorBarTicks;
-  private _rangeTextPosition: ColorBarRangeTextPosition;
+  private _canvas: ColorbarCanvas;
+  private _ticksBar: ColorbarTicks;
+  private _rangeTextPosition: ColorbarRangeTextPosition;
 
   private _isMouseOver = false;
   private _isInteracting = false;
 
-  constructor(props: ColorBarProps) {
+  constructor(props: ColorbarProps) {
     super(props);
 
     this._eventListenersManager = new MultiTargetEventListenerManager();
-    this._colormaps = ColorBar.getColormapsMap(props);
-    this._activeColormapName = ColorBar.getInitialColormapName(props);
+    this._colormaps = Colorbar.getColormapsMap(props);
+    this._activeColormapName = Colorbar.getInitialColormapName(props);
     this._canvas = this._createCanvas(props);
     this._ticksBar = this._createTicksBar(props);
     this._rangeTextPosition =
@@ -80,7 +80,7 @@ class ColorBar extends Widget {
     return this._canvas.imageRange;
   }
 
-  public set imageRange(imageRange: ColorBarVOIRange) {
+  public set imageRange(imageRange: ColorbarVOIRange) {
     this._canvas.imageRange = imageRange;
     this._ticksBar.imageRange = imageRange;
   }
@@ -89,12 +89,12 @@ class ColorBar extends Widget {
     return this._canvas.voiRange;
   }
 
-  public set voiRange(voiRange: ColorBarVOIRange) {
+  public set voiRange(voiRange: ColorbarVOIRange) {
     const { voiRange: currentVoiRange } = this._canvas;
 
     if (
       !isRangeValid(voiRange) ||
-      areColorBarRangesEqual(voiRange, currentVoiRange)
+      areColorbarRangesEqual(voiRange, currentVoiRange)
     ) {
       return;
     }
@@ -138,7 +138,7 @@ class ColorBar extends Widget {
     return [DEFAULTS.MULTIPLIER, DEFAULTS.MULTIPLIER];
   }
 
-  protected onVoiChange(voiRange: ColorBarVOIRange) {
+  protected onVoiChange(voiRange: ColorbarVOIRange) {
     // no-op
   }
 
@@ -155,7 +155,7 @@ class ColorBar extends Widget {
     this._ticksBar.visible = false;
   }
 
-  private static getColormapsMap(props: ColorBarProps) {
+  private static getColormapsMap(props: ColorbarProps) {
     const { colormaps } = props;
 
     return colormaps.reduce(
@@ -164,7 +164,7 @@ class ColorBar extends Widget {
     );
   }
 
-  private static getInitialColormapName(props: ColorBarProps) {
+  private static getInitialColormapName(props: ColorbarProps) {
     const { activeColormapName, colormaps } = props;
     const colormapExists =
       !!activeColormapName &&
@@ -173,11 +173,11 @@ class ColorBar extends Widget {
     return colormapExists ? activeColormapName : colormaps[0].Name;
   }
 
-  private _createCanvas(props: ColorBarProps) {
+  private _createCanvas(props: ColorbarProps) {
     const { imageRange, voiRange, showFullPixelValueRange } = props;
     const colormap = this._colormaps.get(this._activeColormapName);
 
-    return new ColorBarCanvas({
+    return new ColorbarCanvas({
       colormap,
       imageRange,
       voiRange: voiRange,
@@ -185,10 +185,10 @@ class ColorBar extends Widget {
     });
   }
 
-  public _createTicksBar(props: ColorBarProps): ColorBarTicks {
+  public _createTicksBar(props: ColorbarProps): ColorbarTicks {
     const ticksProps = props.ticks;
 
-    return new ColorBarTicks({
+    return new ColorbarTicks({
       imageRange: props.imageRange,
       voiRange: props.voiRange,
       ticks: ticksProps,
@@ -196,7 +196,7 @@ class ColorBar extends Widget {
     });
   }
 
-  private _getPointsFromMouseEvent(evt: MouseEvent): ColorBarPoints {
+  private _getPointsFromMouseEvent(evt: MouseEvent): ColorbarPoints {
     const { rootElement: element } = this;
     const clientPoint: Types.Point2 = [evt.clientX, evt.clientY];
     const pagePoint: Types.Point2 = [evt.pageX, evt.pageY];
@@ -244,7 +244,7 @@ class ColorBar extends Widget {
 
     if (isHorizontal) {
       ticksBarTop =
-        rangeTextPosition === ColorBarRangeTextPosition.Top
+        rangeTextPosition === ColorbarRangeTextPosition.Top
           ? containerTop - height
           : containerTop + containerHeight;
 
@@ -253,7 +253,7 @@ class ColorBar extends Widget {
       ticksBarTop = containerTop;
 
       ticksBarLeft =
-        rangeTextPosition === ColorBarRangeTextPosition.Left
+        rangeTextPosition === ColorbarRangeTextPosition.Left
           ? containerLeft - width
           : containerLeft + containerWidth;
     }
@@ -355,4 +355,4 @@ class ColorBar extends Widget {
   }
 }
 
-export { ColorBar as default, ColorBar };
+export { Colorbar as default, Colorbar };

@@ -1,1 +1,0 @@
-export { ColorBarRangeTextPosition } from './ColorBarRangeTextPosition';
