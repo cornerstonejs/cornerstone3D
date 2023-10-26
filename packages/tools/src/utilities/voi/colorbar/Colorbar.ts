@@ -127,6 +127,8 @@ class Colorbar extends Widget {
     const rootElement = document.createElement('div');
 
     Object.assign(rootElement.style, {
+      position: 'relative',
+      fontSize: '0',
       width: '100%',
       height: '100%',
     });
