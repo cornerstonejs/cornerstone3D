@@ -35,6 +35,7 @@ import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
+import * as voi from './voi';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -72,4 +73,5 @@ export {
   roundNumber,
   pointToString,
   polyDataUtils,
+  voi,
 };
