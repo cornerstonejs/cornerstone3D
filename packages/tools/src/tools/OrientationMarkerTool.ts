@@ -114,11 +114,9 @@ class OrientationMarkerTool extends BaseTool {
       orientationWidget?.delete();
       actor?.delete();
 
-      const renderer = viewport.getRenderer();
       const renderWindow = viewport
         .getRenderingEngine()
         .offscreenMultiRenderWindow.getRenderWindow();
-      renderer.resetCamera();
       renderWindow.render();
       viewport.getRenderingEngine().render();
 
