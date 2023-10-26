@@ -60,9 +60,9 @@ const colormaps = vtkColormaps.rgbPresetNames.map((presetName) =>
   vtkColormaps.getPresetByName(presetName)
 );
 
-// Colormap to load right after loading the example page but it can be changed
-// after selecting a different one from the dropdown.
-let currentPTColormapName = 'Black-Body Radiation';
+// Initial colormaps for CT and PT in this order
+const initialColormapNames = ['Grayscale', 'Black-Body Radiation'];
+const colormapDropdownLabels = ['CT', 'PT'];
 
 // Info about all the three viewports (stack, volume sagittal and volume coronal)
 const viewportsInfo = [
@@ -127,22 +127,22 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const viewportGrid = document.createElement('div');
+const viewportsGrid = document.createElement('div');
 
 // Grid were all viewports are added in a single row
-viewportGrid.style.display = 'grid';
-viewportGrid.style.width = '100%';
-viewportGrid.style.height = '500px';
-viewportGrid.style.marginTop = '5px';
-viewportGrid.style.gap = '5px';
+viewportsGrid.style.display = 'grid';
+viewportsGrid.style.width = '100%';
+viewportsGrid.style.height = '512px';
+viewportsGrid.style.marginTop = '5px';
+viewportsGrid.style.gap = '5px';
 
 // Generate the template columns based on the number of viewports to render.
-// The template is set to "auto auto auto" for 3 viewports.
-viewportGrid.style.gridTemplateColumns = new Array(viewportsInfo.length)
-  .fill('auto')
+// The template is set to "1fr 1fr 1fr" for 3 viewports.
+viewportsGrid.style.gridTemplateColumns = new Array(viewportsInfo.length)
+  .fill('1fr')
   .join(' ');
 
-content.appendChild(viewportGrid);
+content.appendChild(viewportsGrid);
 
 const info = document.createElement('div');
 content.appendChild(info);
@@ -160,39 +160,9 @@ addInstruction('- Select different colormaps');
 addInstruction('- Click and drag on the viewport to change VOI');
 addInstruction('- Click and drag on the color bar to change VOI');
 
-// ==[ Toolbar ]================================================================
-
-// Dropdown that allows the user to select a different colormap
-addDropdownToToolbar({
-  options: {
-    values: colormaps.map((cm) => cm.Name),
-    defaultValue: currentPTColormapName,
-  },
-  style: {
-    maxWidth: '200px',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    setPTColormap(<string>selectedValue);
-  },
-});
-
 // =============================================================================
 
-// Change the colormap of an specific viewport
-function setPTViewportColormap(viewportInfo, colormapName: string) {
-  const { fusion, colorbar, viewportInput } = viewportInfo;
-  const { viewportId } = viewportInput;
-
-  if (!fusion) {
-    return;
-  }
-
-  const ptColorbar = colorbar?.instances?.[1];
-
-  if (ptColorbar) {
-    ptColorbar.activeColormapName = colormapName;
-  }
-
+function setViewportColormap(viewportId, volumeId, colormapName) {
   // Get the rendering engine
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -201,17 +171,8 @@ function setPTViewportColormap(viewportInfo, colormapName: string) {
     renderingEngine.getViewport(viewportId)
   );
 
-  viewport.setProperties({ colormap: { name: colormapName } }, ptVolumeId);
+  viewport.setProperties({ colormap: { name: colormapName } }, volumeId);
   viewport.render();
-}
-
-// Change the colormap of all viewports
-function setPTColormap(colormapName: string) {
-  currentPTColormapName = colormapName;
-
-  viewportsInfo.forEach((viewportInfo) =>
-    setPTViewportColormap(viewportInfo, colormapName)
-  );
 }
 
 async function createAndCacheVolume(volumeId, imageIds) {
@@ -257,9 +218,12 @@ async function initializeVolumeViewport(
   // Set the volume on the viewport
   await viewport.setVolumes(volumes);
 
-  // Update the colormap to the active one on PT/CT viewports
+  // Apply initial CT colormap
+  setViewportColormap(viewport.id, ctVolumeId, initialColormapNames[0]);
+
+  // Apply initial PT colormap on fusion viewports
   if (fusion) {
-    setPTViewportColormap(viewportInfo, currentPTColormapName);
+    setViewportColormap(viewport.id, ptVolumeId, initialColormapNames[1]);
   }
 }
 
@@ -275,8 +239,8 @@ function createRightColorbarContainers(numContainers) {
     Object.assign(container.style, {
       position: 'absolute',
       top: `${top}%`,
-      left: `calc(100% - ${colorbarWidth}px)`,
-      width: `${colorbarWidth}px`,
+      left: '0px',
+      width: '100%',
       height: `${100 / numContainers}%`,
     });
 
@@ -297,10 +261,10 @@ function createBottomColorbarContainers(numContainers) {
 
     Object.assign(container.style, {
       position: 'absolute',
-      top: `calc(100% - ${colorbarWidth}px)`,
+      top: '0px',
       left: `${left}%`,
       width: `${width}%`,
-      height: `${colorbarWidth}px`,
+      height: '100%',
     });
 
     containers.push(container);
@@ -354,7 +318,7 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
     element,
     container: colorbarContainers[0],
     colormaps,
-    activeColormapName: 'Grayscale',
+    activeColormapName: initialColormapNames[0],
     ticks: {
       position: ColorbarRangeTextPosition.Left,
       style: scaleStyle,
@@ -377,7 +341,7 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
       container: colorbarContainers[1],
       volumeId: volumeIds[1],
       colormaps,
-      activeColormapName: currentPTColormapName,
+      activeColormapName: initialColormapNames[1],
       ticks: {
         position: ColorbarRangeTextPosition.Left,
         style: scaleStyle,
@@ -388,49 +352,131 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
   }
 }
 
-/**
- * Creates a viewport, load its stack/volume and adds its color bar(s).
- * HTML Structure:
- *    viewportGrid
- *        viewportContainer
- *            viewport
- *                canvas
- *            color bar container (CT)
- *                color bar (CT)
- *            color bar container (PT)
- *                color bar (PT)
- */
-async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
-  const { viewportInput } = viewportInfo;
+function initializeViewportToolbar(container, viewportInfo) {
+  const numColorbars = viewportInfo.fusion ? 2 : 1;
+  const { volumeIds, viewportInput } = viewportInfo;
+  const { viewportId } = viewportInput;
 
-  // Container where the viewport and the color bars are added to
+  // The grid have one line per colorbar/colormap and each line
+  // have a label + dropdown
+  Object.assign(container.style, {
+    display: 'grid',
+    gridTemplateColumns: 'max-content 1fr',
+    columnGap: '5px',
+  });
+
+  for (let i = 0; i < numColorbars; i++) {
+    const label = document.createElement('div');
+
+    label.innerText = colormapDropdownLabels[i];
+
+    Object.assign(label.style, {
+      textAlign: 'right',
+      padding: '5px 0px 5px 5px',
+    });
+
+    container.appendChild(label);
+
+    addDropdownToToolbar({
+      container,
+      options: {
+        values: colormaps.map((cm) => cm.Name),
+        defaultValue: initialColormapNames[i],
+      },
+      style: {
+        margin: '3px 0px',
+      },
+      onSelectedValueChange: (selectedValue) => {
+        const colorbar = viewportInfo.colorbar.instances[i];
+        colorbar.activeColormapName = selectedValue;
+
+        // Volume viewports have volumeIds but stack viewports do not
+        if (volumeIds) {
+          setViewportColormap(viewportId, volumeIds[i], <string>selectedValue);
+        } else {
+          setViewportColormap(viewportId, undefined, <string>selectedValue);
+        }
+      },
+    });
+  }
+}
+
+function createViewportGrid(rootElement) {
+  const viewportGrid = document.createElement('div');
+  rootElement.append(viewportGrid);
+
+  const viewportToolsContainer = document.createElement('div');
   const viewportContainer = document.createElement('div');
+  const colorbarsContainer = document.createElement('div');
+
+  viewportGrid.appendChild(viewportToolsContainer);
+  viewportGrid.appendChild(viewportContainer);
+  viewportGrid.appendChild(colorbarsContainer);
+
+  Object.assign(viewportGrid.style, {
+    position: 'relative',
+    display: 'grid',
+    gridTemplateColumns: `1fr ${colorbarWidth}px`,
+    gridTemplateRows: 'max-content 1fr',
+  });
+
+  Object.assign(viewportToolsContainer.style, {
+    position: 'relative',
+    gridColumn: '1 / 3',
+  });
 
   Object.assign(viewportContainer.style, {
     position: 'relative',
-    width: '100%',
-    height: '100%',
+    gridRow: '2',
+    gridColumn: '1',
   });
 
-  viewportGrid.appendChild(viewportContainer);
+  Object.assign(colorbarsContainer.style, {
+    position: 'relative',
+    gridRow: '2',
+    gridColumn: '2',
+  });
+
+  return { viewportToolsContainer, viewportContainer, colorbarsContainer };
+}
+
+/**
+ * Creates a viewport, load its stack/volume and adds its color bar(s).
+ * HTML Structure:
+ *    viewportsGrid (N columns where N is the number of viewports)
+ *       viewportGrid (1x1 [1st row] + 1x2 [2nd row])
+ *          viewportToolsContainer (grid 2 x 2)
+ *             label CT
+ *             dropdown CT
+ *             label PT
+ *             dropdown PT
+ *          viewportContainer
+ *              viewport
+ *                 canvas
+ *          colorbarsContainer
+ *             colorbarContainer (CT)
+ *                colorbar (CT)
+ *             colorbarContainer (PT)
+ *                colorbar (PT)
+ */
+async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
+  const { viewportInput } = viewportInfo;
+  const { viewportToolsContainer, viewportContainer, colorbarsContainer } =
+    createViewportGrid(viewportsGrid);
+
+  initializeViewportToolbar(viewportToolsContainer, viewportInfo);
 
   const element = document.createElement('div');
-  let width = '100%';
-  let height = '100%';
-
-  // Leave some space for the color bar that can be added to the
-  // left or at the bottom of the viewport
-  if (viewportInfo.colorbar?.position === 'right') {
-    width = `calc(100% - ${colorbarWidth}px)`;
-  } else {
-    height = `calc(100% - ${colorbarWidth}px)`;
-  }
 
   // Disable right click context menu so we can have right click tools
   element.oncontextmenu = (e) => e.preventDefault();
 
   element.id = viewportInput.viewportId;
-  Object.assign(element.style, { width, height, overflow: 'hidden' });
+  Object.assign(element.style, {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  });
 
   viewportInput.element = element;
   viewportContainer.appendChild(element);
@@ -448,7 +494,7 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   // colorbars' rootElement
   const colorbarContainers = initializeColorbarContainers(
     viewportInfo,
-    viewportContainer
+    colorbarsContainer
   );
 
   // Create and add the color bars to the DOM
@@ -458,7 +504,10 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);
 
   if (viewportInput.type === ViewportType.STACK) {
-    (<Types.IStackViewport>viewport).setStack(ctImageIds);
+    await (<Types.IStackViewport>viewport).setStack(ctImageIds);
+
+    // Apply initial CT colormap
+    setViewportColormap(viewport.id, undefined, initialColormapNames[0]);
   } else if (viewportInput.type === ViewportType.ORTHOGRAPHIC) {
     await initializeVolumeViewport(
       viewportInfo,
