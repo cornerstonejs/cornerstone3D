@@ -64,7 +64,7 @@ Note the data path for these is, in general the normal DICOMweb path with
 
 # Configuration
 
-See the volumeProgressive example for stack details.
+See the volumeProgressive example for full details.
 
 No special configuration is required for HTJ2K images streaming, but that isn't
 particularly effective. The byte range request is preferably, but requires
@@ -75,60 +75,33 @@ configuration.
 
 ```javascript
 cornerstoneDicomImageLoader.configure({
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
+  retrieveOptions: {
+    default: {
+      '3.2.840.10008.1.2.4.96': {
+        streaming: true,
+      },
+      default: {},
     },
-    // Configures byte range 0, with decode level 0 on initial fetch, using
-    // the /htj2k initial path.
-    'default-lossy': {
-      isLossy: true,
-      streaming: true,
-      framesPath: '/htj2k/',
-      range: 0,
-      decodeLevel: 0,
+    multipleFinal: {
+      default: {
+        range: 1,
+      },
     },
-    // Configures fetching the second range, and do not continue stream decoding
-    // Note that the framesPath must match, otherwise a NEW request will be
-    // started, assuming that the data in different paths is different.
-    'default-final': {
-      framesPath: '/htj2k/',
-      range: 1,
-      streaming: false,
-    },
-  },
-});
-```
-
-## JLS Thumbnail (Mixed) Configuration
-
-```javascript
-cornerstoneDicomImageLoader.configure({
-  retrieveConfiguration: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    // Retrieve first the lossy /jlsThumbnail/ path
-    // Could be replaced with generic DICOMweb lossy JLS retrieve options
-    // using the urlArguments to update the retrieve request.
-    'default-lossy': {
-      isLossy: true,
-      framesPath: '/jlsThumbnail/',
-    },
-    // Then retrieve the /jls/ encoded data.  Note this path
-    // allows for static-DICOMweb to have multiple encoding stored, but
-    // could be replaced on a generic DICOMweb server with accept parameters.
-    'default-final': {
-      framesPath: '/jls/',
+    multipleFast: {
+      default: {
+        streaming: true,
+        range: 0,
+        initialBytes: 64000,
+        decodeLevel: 0,
+      },
     },
   },
-});
 ```
 
 # Performance
 
 The performance gains on this vary quite a bit depending on size of data
-and capabilities of the DICOMweb server components. In general, a 400% speed improvement
+and capabilities of the DICOMweb server components. In general, a 350% speed improvement
 to first volume render is seen because of the interleaved images filling
 nearby images. For straight JLS versus HTJ2K, that depends on the compression
 size - JLS compresses a bit better than HTJ2K, resulting in faster downloads.
@@ -147,10 +120,10 @@ both types.
 
 | Type             | Network | First Render | Final Render |
 | ---------------- | ------- | ------------ | ------------ |
-| JLS              | 4g      | 3816 ms      | 12940 ms     |
-| JLS Reduced      | 4g      | 1040 ms      | 13245 ms     |
-| HTJ2K            | 4g      | 3898 ms      | 13719 ms     |
-| HTJ2K Byte Range | 4g      | 1522 ms      | 13182 ms     |
+| JLS              | 4g      | 2265 ms      | 8106 ms      |
+| JLS Reduced      | 4g      | 1690 ms      | 8455 ms      |
+| HTJ2K            | 4g      | 2503 ms      | 8817 ms      |
+| HTJ2K Byte Range | 4g      | 985 ms       | 8786 ms      |
 
 The HTJ2K byte range is very slightly slower than straight JLS, but can be
 done against any DICOMweb server supporting HTJ2K and byte range requests.

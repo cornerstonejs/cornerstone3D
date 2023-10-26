@@ -24,10 +24,10 @@ and compression ratios.
 
 | Type             | Network | First Render | Final Render |
 | ---------------- | ------- | ------------ | ------------ |
-| JLS              | 4g      |              | 7188 ms      |
-| JLS Reduced      | 4g      | 509 ms       | 7359 ms      |
-| HTJ2K            | 4g      | 128 ms       | 6878 ms      |
-| HTJ2K Byte Range | 4g      | 126 ms       | 6171 ms      |
+| JLS              | 4g      |              | 4586 ms      |
+| JLS Reduced      | 4g      | 359 ms       | 4903 ms      |
+| HTJ2K            | 4g      | 897 ms       | 5213 ms      |
+| HTJ2K Byte Range | 4g      | 780 ms       | 5431 ms      |
 
 - JLS Reduced uses 1/16 size JLS 'thumbnails'
 - HTJ2K uses streaming data
@@ -42,17 +42,11 @@ disabled by setting the streaming values to false, for example:
 
 ```javascript
 cornerstoneDicomImageLoader.configure({
-  retrieveConfiguration: {
-      '3.2.840.10008.1.2.4.96': {
-      // Need a specific streaming to false to disable streaming support
-      streaming: false,
-    },
-    default: {
-      // Disabled even attempting to stream
-      streaming: false,
-    },
-
-});
+  retrieveOptions: {
+      default: {
+        '3.2.840.10008.1.2.4.96': {
+        // Need a specific streaming to false to disable streaming support
+        streaming: false,
 ```
 
 ## JLS Thumbnails
@@ -71,16 +65,14 @@ This can then be used by configuring:
 
 ```javascript
 cornerstoneDicomImageLoader.configure({
-  retrieveConfiguration: {
-    'default-lossy': {
-      // isLossy indicates that even when complete, the image is lossy
-      isLossy: true,
-      // framesPath replaces the /frames/ portion of the URL path with /jlsThumbnail/
-      framesPath: '/jlsThumbnail/',
-    },
+  retrieveOptions: {
     default: {
-      framesPath: '/jls/',
+      default: {
+        framesPath: '/jls/',
+      },
     },
-  },
-});
+    singleFast: {
+      default: {
+        isLossy: true,
+        framesPath: '/jlsThumbnail/',
 ```

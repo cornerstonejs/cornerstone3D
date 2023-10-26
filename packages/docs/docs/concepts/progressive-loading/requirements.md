@@ -4,99 +4,186 @@ id: requirements
 
 # Requirements and Configuration for Progressive Loading
 
+Fast initial display of images requires some method of being able to retrieve
+just part of an image or volume that can be rendered as a complete but lossy image.
+For example, a thumbnail image could be rendered full size, or images in a volume
+could be interpolated to produce an alternate image. These images are retrieved
+first for fast initial display, followed by retrieving a full resolution image,
+thus producing a progressively better display as more data is loaded.
+
+The DICOM standards committee is currently adding support in DICOM for
+a new encoding method, High Throughput JPEG 2000 `htj2k`. This encoding
+method can be configured to allow for progressive decoding of images.
+That is, if the first N bytes of the image encoding are available they can be
+decoded to a lower resolution or lossy image. The configuration that allows this
+is the HTJ2K Progressive Resolution (HTJ2K RPCL).
+
+The existing JPEG 2000 encoding and the new HTJ2K in the standard also have a
+format specifying a partial resolution endpoint.
+The exact endpoint needs to be specified in the
+JPIP referenced data URL, but is configured statically below as an example only.
+The options data could be used to provide the exact URL required in a future revision.
+
+Finally, some servers can be configured to serve up reduced (partial) resolution
+versions of images on other URL endpoints.
+
 The progressive loading will improve stack image display just given support
 of HTJ2K progressive resolution encoded data, while volumetric data is improved
-in time to first volume for all back ends not using customized streaming loaders.
-However, the support of different types of reduced resolution and streaming
-responses is quite varied between DICOMweb implementations. Thus, this
-guide provides some additional details on how to configure various options,
-as well as how to modify the default load order for different requirements.
+in time to first volume for all back ends when not otherwise configured for
+custom load order. However, the support of different types of reduced
+resolution and streaming responses is quite varied between DICOMweb
+implementations. Thus, this guide provides some additional details on how to
+configure various standard and non-standard based options, as well as details
+on how to set that up in the
+[Static DICOMweb](https://github.com/RadicalImaging/Static-DICOMWeb), mostly
+as an example of how it could be done.
 
-## HTJ2K Progressive Resolution
+## Stack Viewport Streaming Decode
 
-The HTJ2K standard defines different organizations of imaging data. This
-determines how the image encoding is organized in the response. The progressive
-resolution encoding has the low resolution data encoded at the start, and the
-higher frequency data encoded towards the back. That permits loading some
-number of initial bytes and decoding it to produce a lossy version of the final
-image. This encoding is required by the DICOM standard for one of the HTJ2K
-formats. Other encodings may result in decoder exceptions or partial image
-decoding when used with either byte range or streaming responses. However,
-these are eventually replaced with full resolution data, so if an image comes
-in that format it will still work, just not progressively.
+For stack viewports, larger images can be decoding using a streaming method,
+where the HTJ2K RPCL image is received as a stream, and parts of it decoded
+as it is available. This can improve the stack viewing of images quite considerably,
+without any special server requirements other than the support of HTJ2K RPCL
+encoded data.
 
-## Byte Range Requests
+## Volume Viewport Interleaved Decode
 
-\***\* TODO - make this first \*\***
+For volumes, the streaming decode of HTJ2K is typically slower than non-streaming
+decoding because the image retrieval of the low resolution data is immediately
+succeeded by the high resolution data, so it consumes the total bandwidth for
+retrieval regardless of handling, and extra decodes require additional time.
 
-If the server supports HTJ2K Progressive Resolution data fetched using byte ranges,
-then CS3D can be configured using the `range` and `initialBytes` parameters to
-progressively fetch image data.
+There is an alternative low resolution data first retrieval that can be used.
+Interleaving the images applies to any encoding for a volume.
+That is, fetching every Nth image first allows a 1/Nth frequency image to be
+displayed.
+The interleave code then simply replicates the images to the missing
+positions to produce a low resolution in the longitudinal direction.
 
-The HTJ2K decoder currently has some bugs when decoding full resolution data
-from a byte stream. To work around those, the decodeLevel may need to be specified
-as an integer value larger than 0.
+This interleaving can then be combined with any discrete fetch for a lossy
+version of an image - that is, a non-streamed decoding version of an image
+that returns an entire request at once. Typically the options are to use
+byte range requests or complete requests for reduced resolution versions.
+These options are described below, and provide enhanced performance beyond
+the basic interleaved performance gains.
+
+### Byte Range Requests
+
+HTTP byte range requests are an optional part of the DICOMweb standard, but
+when combined with HTJ2K RPCL encoding, allow for fetching a prefix of an
+image encoding followed by fetching the remaining data, with the prefix of the
+image being loaded and decoded quite quickly to improve the time to low resolution
+volume render. The sequence is basically:
+
+1. Fetch images shown intiially at full resolution (first and last)
+2. Fetch every 4th image first `initialByteRange` bytes
+
+- Fetch byte range [0,64000]
+- Display partial resolution version immediately
+- Use partial resolution version to display nearby slices
+
+3. Other steps
+
+- There are other partial and full resolution views here to fill in data
+
+4. Fetch remaining data for #2 (do not refetch original data)
+
+- Replaces the low resolution data from #2 with full data
+
+The configuration for this is (assuming standards based DICOMweb support):
 
 ```javascript
-  retrieveConfiguration: {
-    'default-lossy': {
-      // Note initial request is lossy - could have alternatively used status here
-      isLossy: true,
-      // Streaming is true because this data isn't final.  Allows decode of streamed data
-      streaming: true,
-      urlArguments: 'accept=image/jhc; transfer-syntax=3.2.4.10008.1.2.96'
-      // This SHOULD work, but fails due to HTJ2K errors
-      // initialBytes: 16384,
-      range: 0,
-      // Sets the decode level to commplete - this is ok for CT images at 64k
-      decodeLevel: 0,
+  retrieveOptions: {
+    multipleFinal: {
+      default: {
+        range: 1,
+        urlArguments: 'accept=image/jhc',
+      },
     },
-    'default-final': {
-      range: 1,
-      streaming: false,
+    multipleFast: {
+      default: {
+        range: 0,
+        urlArguments: 'accept=image/jhc',
+        streaming: true,
+        decodeLevel: 0,
+      },
     },
+  },
 ```
 
-## Separate Path or Argument Partial Resolution
+The arguments for the byte range request are:
 
-One way of configuration for partial image resolution loading is to add
-a separate path. This is done with the framesPath argument, which replaces
-the /frames/ part of the path with an alternate path. Alternatively, or in
-addition, the urlArguments can be added.
+- range - this is a number between 0 and the totalRangesToFetch
+  - Fetches data starting at the last fetch end point, or 0
+  - Fetches data ending with the total length or (range+1)\*initialBytesToFetch
+  - Ranges do NOT need to be all fetched, but do need to be increasing
+- totalRangesToFetch - how many pieces of size initialBytesToFetch are retrieved
+- initialBytesToFetch - the number of bytes in each fetch chunk
+  - last chunk is always the remaining data, regardless of size
+- streaming - a flag to indicate that a partial range can be decoded
+- decodeLevel is the resolution level to decode to. This can sometimes be
+  determined from the stream, but for CORS requests, the header is not available,
+  and so a value specified based on the type of images retrieved.
+- urlArguments - is a set of arguments to add to the URL
+  - This distinguishes this request from other requests which cannot be combined with this one
+  - The DICOMweb standard allows for the `accept` parameter to specify a content type
+  - The HTJ2K content type is image/jhc
 
-In the context of DICOMweb, the urlArguments can be used to add a custom
-`accept` argument which will specify the desired transfer syntax, allowing
-standards based access to lossy or format specific requests.
-See [Part 18](https://dicom.nema.org/medical/dicom/current/output/html/part18.html#sect_8.3.3.1)
-for details on the accept parameter. Note that the accept header can be
-used only with the accept parameter, as the URL being used keys to the
-streaming data storage, which will not necessarily be the same type if the
-header is used.
+### Separate URL For Sub-Resolution Images
 
-In addition to the accept parameter, the example below shows a resolution
-parameter, a non DICOMweb standard parameter which could hypothetically
-fetch a reduced resolution image.
+An alternative to a byte range request is to make an different request for
+a complete, but lossy/low resolution image. This can be standards based
+assuming the DICOMweb supports JPIP, or more likely is non-standards based using
+a separate path for the low resolution fetch.
+
+For the JPIP approach shown here, the JPIP server must expose an endpoint
+identical in path to the normal pixel data endpoint, except ending in `/jpip?target=<FRAMENO>`,
+and supporting the `fsiz` parameter. See
+[Part 5](https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_8.4.1)
+and
+[Part 18](https://dicom.nema.org/medical/dicom/current/output/html/part18.html#sect_8.3.3.1)
+of the DICOM standard.
+
+For the non-standard path approach, the assumption is that there are other
+endpoints related to the normal `/frames` endpoint, except that the `/frames/`
+part of the URL is replaced by another value. For example, this could be used
+to fetch a `/jlsThumbnail/` data as used in the `stackProgressive` example.
+
+An example configuration for JPIP:
 
 ```
-retrieveConfiguration: {
-  'default-lossy': {
-    isLossy: true,
-    urlArguments: "accept=image/jls;transferSyntax=1.2.4.10008.1.2.81&resolution=256,256",
-    framesPath: '/jlsThumbnail/',
+  retrieveOptions: {
+    multipleFast: {
+      default: {
+        // Need to note this is a lossy encoding, as it isn't possible to
+        // detect based on the general configuration here.
+        isLossy: true,
+        // Hypothetical JPIP server using a path that is the normal DICOMweb
+        // path but with /jpip?target= replacing the /frames path
+        // This uses the standards based target JPIP parameter, and assigns
+        // the frame number as the value here.
+        framesPath: '/jpip?target=',
+        // Standards based fsiz parameter retrieves a sub-resolution image
+        urlArguments: 'fsiz=128,128',
+      },
+    },
+  },
 ```
 
-The image data being served up should then either be single part
-encoded data on the given path for the given accept header, but in general either
-multipart or single part is handled.
-Note that it must include the transfer syntax information as a response
-or multipart header.
+Arguments are:
+
+- isLossy - to indicate that this is a lossy retrieve
+- framesPath - to update the URL path portion
+- urlArguments - to add extra arguments to the URL
+
+# General Description of RetrieveOptions
 
 ## Decode Options
 
 There are a number of decode options to control how the decoder generates
 the output:
 
-- decodeLevel is used for progressive decoding. 0 is full size, while larger
+- decodeLevel - used for progressive decoding. 0 is full size, while larger
   values are smaller images/less data required. There is currently a bug in
   the HTJ2K decoder with decoding at level 0 when not all data is available.
 - isLossy indicates that the resulting output is lossy/not final
@@ -110,21 +197,105 @@ options:
   values are fetched before lower priority ones.
 - requestType determines which fetch queue is used
 
-## Retrieve Stage
+# Retrieve Stage
 
-A retrieve stage is a configuration for matching up a list of image ids
-with one or more retrieve configurations. The stage contains selection
-rules for the image ID's to match up with, as well as information on how
-to choose the appropriate retrieve options for the given stage.
+Both stack and volume viewports can be configured with a list of methods used
+to retrieve images, specified during the setup of the stack viewport or streaming
+image volume. The default stack load is `sequentialRetrieveConfiguration.ts`,
+while the volumes use `interleavedRetrieveConfiguration.ts`.
 
-The matching from stage to options is done via the `transferSyntaxUID` and
-`retrieveType`, plus default values. The retrieve type is just a string key
-that allows selecting different options based on the stage. In the
-`dicom-image-loader` options, there is a
+The configuration contains a list of stages, which are applied in turn to the
+set of `imageIds` to display, and can select or interleave image ids, as well
+as specifying the `retrieveType` to allow choosing the retrieve options for that
+image.
 
-- retrieveType - this is a string value that is used to pair the retrieve
-  request with the configuration value. The default values used are:
-  - lossy - for reduced resolution or lossy retrieve configurations
-  - final - for the volume retrieve final stage replacing lossy data
-  - (empty) - for the stack retrieve full retrieve request
--
+## Sequential Retrieve Configuration
+
+The sequential retrieve configuration has two stages specified, each of
+which applies to the entire stack of image ids. The first stage will
+load every image using the `singleFast` retrieve type, followed by the
+second stage retrieving using `singleFinal`. If the first stage
+results in lossless images, the second stage never gets run, and thus the
+behaviour is identical to previous behaviour for stack images.
+
+This configuration can also be used for volumes, producing the old/previous
+behaviour for streaming volume loading.
+
+The configuration is:
+
+```javascript
+stages: [
+    {
+      id: 'lossySequential',
+      // Just retrieve using type singleFast, all images
+      retrieveType: 'singleFast',
+    },
+    {
+      id: 'finalSequential',
+      // Finish off with the all images final version.
+      retrieveType: 'singleFinal',
+    },
+  ],
+```
+
+## Interleaved Retrieve Configuration
+
+For volume viewports, the priorities are to show images currently on screen
+as fast as possible, and to load a low resolution volume as soon as possible.
+
+Note that this stage model will interleave requests across different viewports
+for the various stages, by the selection of the queue and the priority of the
+requests. The interleaving isn't perfect, as it interleaves stages rather than
+individual requests, but the appearance works reasonably well without complex
+logic being needed to work between volumes.
+
+Decimation is a selection of every Nth' image at the F offset, described as N/F,
+eg `4/3` is positions `3,7,11,...`
+This is done by retrieving, in order, the following stages:
+
+- Initial images - images at position 0, 50%, 100%
+- Decimated 4/3 image using multipleFast retrieve type
+  - Displays a full volume at low resolution once this is complete
+- Decimated 4/1 image using multipleFast retrieve type
+  - Updates the intiial volume with twice the resolution
+- Decimated 4/2 and 4/0 images using multipleFinal
+  - Replaces the replicated images with full resolution images
+- Decimated 4/3 and 4/1 using multipleFinal
+  - Replices the low resolution images with full resolution
+
+The configuration looks like:
+
+```javascript
+  stages: [
+    {
+      id: 'initialImages',
+      // positions selects specific positions - middle image, first and last
+      positions: [0.5, 0, -1],
+      // Use teh default render type for these, which should retrieve full resolution
+      retrieveType: 'default',
+      // Use the Interaction queue
+      requestType: RequestType.Interaction,
+      // Priority 10, do first
+      priority: 10,
+      // Fill nearby frames from this data
+      nearbyFrames: {....},
+    },
+    {
+      id: 'quarterThumb',
+      decimate: 4,
+      offset: 3,
+      retrieveType: 'multipleFast',
+      priority: 9,
+      nearbyFrames,
+    },
+    ... other versions
+    // Replace the first data with final data
+    {
+      id: 'finalFull',
+      decimate: 4,
+      offset: 3,
+      priority: 4,
+      retrieveType: 'multipleFinal',
+    },
+  ],
+```
