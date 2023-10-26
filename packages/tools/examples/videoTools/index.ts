@@ -57,8 +57,13 @@ rangeElement.oninput = () => {
 };
 
 const instructions = document.createElement('p');
-instructions.innerText =
-  'Left Click: Video Redaction\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+instructions.innerText = `Playback speed to change CINE playback speed
+Scroll Distance to change amount scrolled on next/prev button or wheel
+Left Click: Video Redaction
+Middle Click: Pan
+Right Click: Zoom
+Mouse Wheel: Stack Scroll';
+`;
 
 content.append(instructions);
 // ============================= //
@@ -121,8 +126,13 @@ const playbackSpeeds = [
   '10',
 ];
 
+const toolbar = document.getElementById('demo-toolbar');
+const rateTitle = document.createElement('div');
+rateTitle.style.display = 'inline';
+rateTitle.innerText = 'Playback Rate:';
+toolbar.appendChild(rateTitle);
 addDropdownToToolbar({
-  options: { values: playbackSpeeds, defaultValue: '1' },
+  options: { values: playbackSpeeds, defaultValue: '1', id: 'frameRate' },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newPlaybackSpeed = Number(newSelectedToolNameAsStringOrNumber);
     viewport.setPlaybackRate(newPlaybackSpeed);
@@ -130,6 +140,11 @@ addDropdownToToolbar({
 });
 
 const scrollSpeeds = ['1 f', '2 f', '4 f', '0.5 s', '1 s', '2 s', '4 s'];
+
+const scrollTitle = document.createElement('div');
+scrollTitle.style.display = 'inline';
+scrollTitle.innerText = 'Scroll Distance:';
+toolbar.appendChild(scrollTitle);
 
 addDropdownToToolbar({
   options: { values: scrollSpeeds, defaultValue: '1 f' },
