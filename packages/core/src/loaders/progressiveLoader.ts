@@ -67,7 +67,6 @@ export async function load(
   let outstandingRequests = 0;
 
   function sendRequest(request, options) {
-    outstandingRequests--;
     const { imageId, next } = request;
     const errorCallback = (reason, done) => {
       // console.log('Erroring out', reason, done);
@@ -110,20 +109,19 @@ export async function load(
         fillNearbyFrames(listener, imageStatus, request, image, options);
       }, errorCallback)
       .finally(() => {
-        if (next) {
-          if (!complete) {
-            if (cache.getImageLoadObject(imageId)) {
-              cache.removeImageLoadObject(imageId);
-            }
-            addRequest(next, options.streamingData);
-          } else {
-            for (let skip = next; skip; skip = skip.next) {
-              updateStageStatus(stageStatus, skip.stage, null, true);
-            }
+        if (!complete && next) {
+          if (cache.getImageLoadObject(imageId)) {
+            cache.removeImageLoadObject(imageId);
           }
-          if (outstandingRequests <= 0) {
-            displayedIterator.resolve();
+          addRequest(next, options.streamingData);
+        } else {
+          outstandingRequests--;
+          for (let skip = next; skip; skip = skip.next) {
+            updateStageStatus(stageStatus, skip.stage, null, true);
           }
+        }
+        if (outstandingRequests <= 0) {
+          displayedIterator.resolve();
         }
       });
     const doneLoad = uncompressedIterator.getDonePromise();
@@ -147,7 +145,6 @@ export async function load(
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
     const additionalDetails = { imageId };
-    outstandingRequests++;
 
     imageLoadPoolManager.addRequest(
       sendRequest.bind(this, request, options),
@@ -160,6 +157,7 @@ export async function load(
   // The actual function is to just setup the interleave and add the
   // requests, with all the actual work being handled by the nested functions
   const interleaved = interleave(imageIds, retrieveOptions, stageStatus);
+  outstandingRequests = interleaved.length;
   for (const request of interleaved) {
     addRequest(request);
   }

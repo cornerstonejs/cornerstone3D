@@ -1583,15 +1583,13 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageId - string representing the imageId
    * @param imageIdIndex - index of the imageId in the imageId list
    */
-  private async _loadAndDisplayImage(
+  private _loadAndDisplayImage(
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
-    await (this.useCPURendering
+    return this.useCPURendering
       ? this._loadAndDisplayImageCPU(imageId, imageIdIndex)
-      : this._loadAndDisplayImageGPU(imageId, imageIdIndex));
-
-    return imageId;
+      : this._loadAndDisplayImageGPU(imageId, imageIdIndex);
   }
 
   private _loadAndDisplayImageCPU(
@@ -1851,7 +1849,9 @@ class StackViewport extends Viewport implements IStackViewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    return progressiveLoader.loadSingle(imageId, this);
+    return progressiveLoader.loadSingle(imageId, this).then((v) => {
+      return imageId;
+    });
   }
 
   /**

@@ -125,12 +125,6 @@ function loadImage(
     retrieveType,
     transferSyntaxUID
   );
-  console.log(
-    'Initial retrieve options',
-    retrieveType,
-    transferSyntaxUID,
-    options.retrieveOptions
-  );
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -188,7 +182,6 @@ function loadImage(
 
           image.loadTimeInMS = end - start;
           image.transferSyntaxUID = transferSyntax;
-          console.log('Adding result', status, done);
           image.status = status;
           it.add(image, done);
           lastDecodeLevel = decodeLevel;

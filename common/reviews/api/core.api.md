@@ -2491,6 +2491,7 @@ export class StackViewport extends Viewport implements IStackViewport {
             enabled: boolean;
         };
         useRGBA: boolean;
+        transferSyntaxUID: any;
     };
     // (undocumented)
     hasImageId: (imageId: string) => boolean;

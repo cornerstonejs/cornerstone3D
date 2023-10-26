@@ -8,7 +8,7 @@ export function getImageStatus(
   done = true
 ) {
   if (!done) {
-    return retrieveOptions?.partialStatus || ImageStatus.PARTIAL;
+    return retrieveOptions?.partialStatus ?? ImageStatus.PARTIAL;
   }
   if (retrieveOptions?.isLossy) {
     return retrieveOptions.status || ImageStatus.LOSSY;

@@ -181,109 +181,77 @@ content.append(instructions);
  * ```
  */
 const configJLS = {
-  minChunkSize: 65_536,
-
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      framesPath: '/jls/',
-    },
-    'default-final': {
-      framesPath: '/jls/',
+    default: {
+      default: {
+        framesPath: '/jls/',
+      },
     },
   },
 };
-
 const configJLSMixed = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      isLossy: true,
-      framesPath: '/jlsThumbnail/',
-    },
-    'default-final': {
-      framesPath: '/jls/',
+    ...configJLS.retrieveOptions,
+    multipleFast: {
+      default: {
+        isLossy: true,
+        framesPath: '/jlsThumbnail/',
+      },
     },
   },
 };
 
 const configJLSThumbnail = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      // isLossy: true,
-      framesPath: '/jlsThumbnail/',
-    },
-    'default-final': {
-      // isLossy: true,
-      framesPath: '/jlsThumbnail/',
+    default: {
+      default: {
+        framesPath: '/jlsThumbnail/',
+      },
     },
   },
 };
 
 const configHtj2k = {
-  minChunkSize: 65_536,
-
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
+    default: {
+      '3.2.840.10008.1.2.4.96': {
+        streaming: true,
+      },
+      default: {},
     },
-    'default-lossy': {
-      // isLossy: true,
-      framesPath: '/htj2k/',
-    },
-    'default-final': {
-      // isLossy: true,
-      framesPath: '/htj2k/',
+  },
+};
+
+const configHtj2kByteRange = {
+  retrieveOptions: {
+    ...configHtj2k,
+    multipleFast: {
+      default: {
+        isLossy: false,
+        streaming: true,
+        range: 0,
+        initialBytes: 64000,
+        decodeLevel: 0,
+      },
     },
   },
 };
 
 const configHtj2kMixed = {
   retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
+    ...configHtj2k,
+    multipleFinal: {
+      default: {
+        range: 1,
+      },
     },
-    'default-lossy': {
-      isLossy: true,
-      streaming: true,
-      framesPath: '/htj2k/',
-      // initialBytes: 16384,
-      range: 0,
-      decodeLevel: 0,
-    },
-    'default-final': {
-      framesPath: '/htj2k/',
-      range: 1,
-      streaming: false,
-    },
-  },
-};
-
-const configByteRange = {
-  retrieveOptions: {
-    '3.2.840.10008.1.2.4.96': {
-      streaming: true,
-    },
-    'default-lossy': {
-      isLossy: false,
-      streaming: false,
-      framesPath: '/htj2k/',
-      range: 0,
-      decodeLevel: 0,
-    },
-    'default-final': {
-      isLossy: false,
-      streaming: true,
-      framesPath: '/htj2k/',
-      range: 0,
-      decodeLevel: 0,
+    multipleFast: {
+      default: {
+        streaming: true,
+        range: 0,
+        initialBytes: 64000,
+        decodeLevel: 0,
+      },
     },
   },
 };
@@ -435,7 +403,7 @@ async function run() {
   createButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
   createButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
   createButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  createButton('J2K Bytes', volumeId, imageIdsCT, configByteRange);
+  createButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
   createButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
 }
 

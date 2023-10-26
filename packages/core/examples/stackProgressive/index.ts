@@ -120,7 +120,7 @@ async function showStack(stack: string[], viewport, config, name: string) {
  *
  * JLS and JLS thumbnails:
  * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls "/dicom/DE Images for Rad"
+ * mkdicomweb create -t jhc --recompress true --alternate jlsLossless --alternate-name jls "/dicom/DE Images for Rad"
  * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
  * ```
  *
@@ -195,7 +195,6 @@ const configHtj2kMixed = {
     },
     singleFast: {
       default: {
-        isLossy: true,
         streaming: true,
         range: 0,
         initialBytes: 128000,
