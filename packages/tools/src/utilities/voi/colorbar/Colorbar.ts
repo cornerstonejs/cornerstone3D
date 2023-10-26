@@ -50,7 +50,7 @@ class Colorbar extends Widget {
       props.ticks?.position ?? DEFAULTS.RANGE_TEXT_POSITION;
 
     this._canvas.appendTo(this.rootElement);
-    this._ticksBar.appendTo(document.body);
+    this._ticksBar.appendTo(this.rootElement);
 
     this._addRootElementEventListeners();
   }
@@ -136,6 +136,7 @@ class Colorbar extends Widget {
 
   protected onContainerResize() {
     super.onContainerResize();
+    this.updateTicksBar();
     this._canvas.size = this.containerSize;
   }
 
@@ -224,8 +225,6 @@ class Colorbar extends Widget {
     }
 
     const { _ticksBar: ticksBar, _rangeTextPosition: rangeTextPosition } = this;
-    const { top: containerTop, left: containerLeft } =
-      this.rootElement.getBoundingClientRect();
     const isHorizontal = containerWidth >= containerHeight;
     const width = isHorizontal ? containerWidth : DEFAULTS.TICKS_BAR_SIZE;
     const height = isHorizontal ? DEFAULTS.TICKS_BAR_SIZE : containerHeight;
@@ -248,19 +247,17 @@ class Colorbar extends Widget {
     ticksBar.size = { width, height };
 
     if (isHorizontal) {
+      ticksBarLeft = 0;
       ticksBarTop =
         rangeTextPosition === ColorbarRangeTextPosition.Top
-          ? containerTop - height
-          : containerTop + containerHeight;
-
-      ticksBarLeft = containerLeft;
+          ? -height
+          : containerHeight;
     } else {
-      ticksBarTop = containerTop;
-
+      ticksBarTop = 0;
       ticksBarLeft =
         rangeTextPosition === ColorbarRangeTextPosition.Left
-          ? containerLeft - width
-          : containerLeft + containerWidth;
+          ? -width
+          : containerWidth;
     }
 
     ticksBar.top = ticksBarTop;
