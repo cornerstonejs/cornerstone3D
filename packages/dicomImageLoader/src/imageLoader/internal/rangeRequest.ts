@@ -3,7 +3,7 @@ import { getOptions } from './options';
 import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
-import { getImageStatus } from '../wadors/getImageStatus';
+import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 
 type RetrieveOptions = Types.RetrieveOptions;
@@ -34,7 +34,7 @@ export default function rangeRequest(
 ): LoaderXhrRequestPromise<{
   contentType: string;
   pixelData: Uint8Array;
-  status: Enums.ImageStatus;
+  status: Enums.ImageQualityStatus;
   percentComplete: number;
 }> {
   const globalOptions = getOptions();
@@ -60,7 +60,7 @@ export default function rangeRequest(
     contentType: string;
     pixelData: Uint8Array;
     percentComplete: number;
-    status: Enums.ImageStatus;
+    status: Enums.ImageQualityStatus;
   }>(async (resolve, reject) => {
     const headers = Object.assign(
       {},
@@ -106,7 +106,7 @@ export default function rangeRequest(
       // Allow over-writing the done status to indicate complete on partial
       resolve({
         ...extract,
-        status: getImageStatus(retrieveOptions, doneAllBytes),
+        status: getImageQualityStatus(retrieveOptions, doneAllBytes),
         percentComplete: (initialBytes * 100) / totalBytes,
       });
     } catch (err: any) {

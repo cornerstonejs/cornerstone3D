@@ -748,7 +748,7 @@ interface IImage {
         lastRenderTime?: number;
     };
     // (undocumented)
-    status?: ImageStatus;
+    status?: ImageQualityStatus;
     voiLUT?: CPUFallbackLUT;
     voiLUTFunction: string;
     width: number;
@@ -1111,7 +1111,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<ImageStatus>;
+        cachedFrames: Array<ImageQualityStatus>;
         callbacks: Array<() => void>;
     };
 
@@ -1325,7 +1325,7 @@ type NearbyFrames = {
     // If linear offset is provided, then a linear interpolation between two
     // frames will be used instead.
     linearOffset?: number;
-    status?: ImageStatus;
+    status?: ImageQualityStatus;
 };
 
 // @public (undocumented)
@@ -1430,9 +1430,9 @@ type RetrieveOptions = {
     // Load status when this item has complete - true to indicate lossy response
     isLossy?: boolean;
     // Status to use on done.  Defaults to Done for lossless, and LOSSY otherwise
-    status?: ImageStatus;
+    status?: ImageQualityStatus;
     // Status to use on partial read. Defaults to Partial
-    partialStatus?: ImageStatus;
+    partialStatus?: ImageQualityStatus;
 };
 
 // @public (undocumented)

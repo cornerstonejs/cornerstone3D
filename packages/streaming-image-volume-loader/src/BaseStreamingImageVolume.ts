@@ -14,12 +14,11 @@ import type { Types } from '@cornerstonejs/core';
 
 import { scaleArray, autoLoad } from './helpers';
 
-type RetrieveStage = Types.RetrieveStage;
 type IRetrieveConfiguration = Types.IRetrieveConfiguration;
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
-const { decimate, getMinMax, ProgressiveIterator } = csUtils;
-const { ImageStatus } = Enums;
+const { getMinMax, ProgressiveIterator } = csUtils;
+const { ImageQualityStatus } = Enums;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -49,7 +48,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<Enums.ImageStatus>;
+    cachedFrames: Array<Enums.ImageQualityStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
 
@@ -62,8 +61,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus = streamingProperties.loadStatus;
     this.numFrames = this._getNumFrames();
     this.retrieveConfiguration =
-      streamingProperties.retrieveConfiguration ||
-      progressiveLoader.interleavedRetrieveConfiguration;
+      typeof streamingProperties.progressiveLoading === 'object'
+        ? streamingProperties.progressiveLoading
+        : streamingProperties.progressiveLoading &&
+          progressiveLoader.interleavedRetrieveConfiguration;
     this._createCornerstoneImageMetaData();
   }
 
@@ -227,10 +228,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   public successCallback(
     imageId: string,
     image,
-    status = ImageStatus.FULL_RESOLUTION
+    status = ImageQualityStatus.FULL_RESOLUTION
   ) {
     const imageIdIndex = this.getImageIdIndex(imageId);
-    const options = this.getTargetOptions(imageId);
+    const options = this.getLoaderImageOptions(imageId);
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
     handleArrayBufferLoad(scalarData, image, options);
 
@@ -379,7 +380,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     volume: BaseStreamingImageVolume,
     imageIdIndex,
     imageId,
-    status = ImageStatus.FULL_RESOLUTION
+    status = ImageQualityStatus.FULL_RESOLUTION
   ) {
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
@@ -390,10 +391,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       return;
     }
 
-    if (cachedFrames[frameIndex] === ImageStatus.FULL_RESOLUTION) {
+    if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
       return;
     }
-    const complete = status === ImageStatus.FULL_RESOLUTION;
+    const complete = status === ImageQualityStatus.FULL_RESOLUTION;
     cachedFrames[imageIdIndex] = status;
     this.framesUpdated++;
     if (complete) {
@@ -464,7 +465,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     }
   }
 
-  public getTargetOptions(imageId: string) {
+  public getLoaderImageOptions(imageId: string) {
     const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get('transferSyntax', imageId) || {};
 
@@ -546,6 +547,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         scalingParameters,
       },
       transferSyntaxUID,
+      loader: imageLoader.loadImage,
     };
   }
 
@@ -554,7 +556,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   callLoadImage(imageId, imageIdIndex, options) {
     const { cachedFrames } = this;
 
-    if (cachedFrames[imageIdIndex] === ImageStatus.FULL_RESOLUTION) {
+    if (cachedFrames[imageIdIndex] === ImageQualityStatus.FULL_RESOLUTION) {
       return;
     }
 
@@ -562,7 +564,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       imageLoader.loadImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
-      const { status = ImageStatus.FULL_RESOLUTION } = image;
+      const { status = ImageQualityStatus.FULL_RESOLUTION } = image;
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
       this.successCallback(imageId, image, status);
@@ -595,13 +597,13 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const requests = imageIds.map((imageId) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
-      if (cachedFrames[imageIdIndex] === ImageStatus.FULL_RESOLUTION) {
+      if (cachedFrames[imageIdIndex] === ImageQualityStatus.FULL_RESOLUTION) {
         this.framesLoaded++;
         return;
       }
       const requestType = requestTypeDefault;
       const priority = priorityDefault;
-      const options = this.getTargetOptions(imageId);
+      const options = this.getLoaderImageOptions(imageId);
 
       return {
         callLoadImage: this.callLoadImage.bind(this),
@@ -691,7 +693,37 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     throw new Error('Abstract method');
   }
 
-  private _prefetchImageIds(): Promise<unknown> {
+  protected _nonProgressiveRetrieve() {
+    this.loadStatus.loading = true;
+
+    const requests = this.getImageLoadRequests(5);
+
+    requests.reverse().forEach((request) => {
+      if (!request) {
+        // there is a cached image for the imageId and no requests will fire
+        return;
+      }
+
+      const {
+        callLoadImage,
+        imageId,
+        imageIdIndex,
+        options,
+        priority,
+        requestType,
+        additionalDetails,
+      } = request;
+
+      imageLoadPoolManager.addRequest(
+        callLoadImage.bind(this, imageId, imageIdIndex, options),
+        requestType,
+        additionalDetails,
+        priority
+      );
+    });
+  }
+
+  private _prefetchImageIds() {
     // Note: here is the correct location to set the loading flag
     // since getImageIdsRequest is just grabbing and building requests
     // and not actually executing them
@@ -709,8 +741,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.reRenderTarget = this.reRenderFraction;
     }
 
+    if (!this.retrieveConfiguration) {
+      return this._nonProgressiveRetrieve();
+    }
+
     return progressiveLoader
-      .load(imageIds, this)
+      .load(imageIds, this, this.retrieveConfiguration)
       .catch((e) => {
         console.debug('progressive loading failed to complete', e);
       })

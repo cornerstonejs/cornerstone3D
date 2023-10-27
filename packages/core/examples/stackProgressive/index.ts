@@ -1,4 +1,10 @@
-import { RenderingEngine, Types, Enums, cache } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  cache,
+  setUseCPURendering,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -12,7 +18,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType, ImageStatus } = Enums;
+const { ViewportType, ImageQualityStatus } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -21,7 +27,6 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const { cornerstone } = window;
 
 const instructions = document.createElement('p');
 instructions.innerText = 'Click on a button to perform the given load type';
@@ -65,15 +70,15 @@ content.appendChild(element);
 // ============================= //
 
 const statusNames = {
-  [ImageStatus.FULL_RESOLUTION]: 'full resolution',
-  [ImageStatus.LOSSY]: 'lossy',
-  [ImageStatus.SUBRESOLUTION]: 'sub-resolution',
+  [ImageQualityStatus.FULL_RESOLUTION]: 'full resolution',
+  [ImageQualityStatus.LOSSY]: 'lossy',
+  [ImageQualityStatus.SUBRESOLUTION]: 'sub-resolution',
 };
 
 async function newImageFunction(evt) {
   const { image } = evt.detail;
   const { status, decodeTimeInMS, loadTimeInMS, transferSyntaxUID } = image;
-  const complete = status === ImageStatus.FULL_RESOLUTION;
+  const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
     element.removeEventListener(
       cornerstone.EVENTS.STACK_NEW_IMAGE,
@@ -146,7 +151,7 @@ const configJLSMixed = {
     ...configJLS.retrieveOptions,
     singleFast: {
       default: {
-        status: ImageStatus.SUBRESOLUTION,
+        status: ImageQualityStatus.SUBRESOLUTION,
         framesPath: '/jlsThumbnail/',
       },
     },
@@ -249,26 +254,50 @@ async function run() {
   const viewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId)
   );
+  viewport.setProgressiveRendering(true);
 
-  const createButton = (text, imageIds, config) => {
+  const createButton = (text, action) => {
     const button = document.createElement('button');
     button.innerText = text;
     button.id = text;
-    button.onclick = showStack.bind(null, imageIds, viewport, config, text);
+    button.onclick = action;
     loaders.appendChild(button);
     return button;
   };
 
-  createButton('JLS', imageIds, configJLS);
-  createButton('JLS Thumbnail', imageIds, configJLSThumbnail);
-  createButton('JLS Mixed', imageIds, configJLSMixed);
+  const loadButton = (text, imageIds, config) => {
+    return createButton(
+      text,
+      showStack.bind(null, imageIds, viewport, config, text)
+    );
+  };
 
-  createButton('HTJ2K', imageIds, configHtj2k);
-  createButton('HTJ2K Lossy', imageIds, configHtj2kLossy);
-  createButton('HTJ2K Bytes', imageIds, configHtj2kMixed);
+  loadButton('JLS', imageIds, configJLS);
+  loadButton('JLS Thumbnail', imageIds, configJLSThumbnail);
+  loadButton('JLS Mixed', imageIds, configJLSMixed);
 
-  createButton('CT JLS Mixed', imageIdsCt, configJLSMixed);
-  createButton('CT HTJ2K Bytes', imageIdsCt, configHtj2kMixed);
+  loadButton('HTJ2K', imageIds, configHtj2k);
+  loadButton('HTJ2K Lossy', imageIds, configHtj2kLossy);
+  loadButton('HTJ2K Bytes', imageIds, configHtj2kMixed);
+
+  loadButton('CT JLS Mixed', imageIdsCt, configJLSMixed);
+  loadButton('CT HTJ2K Bytes', imageIdsCt, configHtj2kMixed);
+
+  createButton('Set CPU', (onclick) => {
+    const button = document.getElementById('Set CPU');
+    const cpuValue = button.innerText === 'Set CPU';
+    setUseCPURendering(cpuValue);
+    viewport.setUseCPURendering(cpuValue);
+    button.innerText = cpuValue ? 'Set GPU' : 'Set CPU';
+  });
+
+  const nonProgressive = 'Set Non Progressive';
+  createButton(nonProgressive, (onclick) => {
+    const button = document.getElementById(nonProgressive);
+    const progressive = button.innerText !== nonProgressive;
+    viewport.setProgressiveRendering(progressive);
+    button.innerText = progressive ? nonProgressive : 'Set Progressive';
+  });
 }
 
 run();

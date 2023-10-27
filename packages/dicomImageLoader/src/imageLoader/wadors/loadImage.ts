@@ -7,7 +7,7 @@ import { getOptions } from '../internal/options';
 import { RetrieveOptions } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
-const { ImageStatus } = Enums;
+const { ImageQualityStatus } = Enums;
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
 
@@ -138,7 +138,7 @@ function loadImage(
       for await (const result of compressedIt) {
         const {
           pixelData,
-          status = ImageStatus.FULL_RESOLUTION,
+          status = ImageQualityStatus.FULL_RESOLUTION,
           percentComplete,
           done = true,
         } = result;
@@ -154,7 +154,7 @@ function loadImage(
         }
         const decodeLevel =
           result.decodeLevel ??
-          (status === ImageStatus.FULL_RESOLUTION
+          (status === ImageQualityStatus.FULL_RESOLUTION
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,
@@ -210,7 +210,7 @@ function loadImage(
   );
 
   return {
-    promise: uncompressedIterator.getNextPromise(),
+    promise: uncompressedIterator.getDonePromise(),
     cancelFn: undefined,
   };
 }

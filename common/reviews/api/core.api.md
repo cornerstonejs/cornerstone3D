@@ -628,7 +628,7 @@ declare namespace Enums {
         VOILUTFunctionType,
         DynamicOperatorType,
         ViewportStatus,
-        ImageStatus
+        ImageQualityStatus
     }
 }
 export { Enums }
@@ -1181,7 +1181,7 @@ interface IImage {
         lastRenderTime?: number;
     };
     // (undocumented)
-    status?: ImageStatus;
+    status?: ImageQualityStatus;
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
@@ -1451,6 +1451,20 @@ interface ImagePlaneModule {
 }
 
 // @public (undocumented)
+enum ImageQualityStatus {
+    // (undocumented)
+    ADJACENT_REPLICATE = 3,
+    // (undocumented)
+    FAR_REPLICATE = 1,
+    // (undocumented)
+    FULL_RESOLUTION = 8,
+    // (undocumented)
+    LOSSY = 7,
+    // (undocumented)
+    SUBRESOLUTION = 6
+}
+
+// @public (undocumented)
 type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public (undocumented)
@@ -1484,20 +1498,6 @@ type ImageSpacingCalibratedEventDetail = {
     imageData: vtkImageData;
     worldToIndex: mat4;
 };
-
-// @public (undocumented)
-enum ImageStatus {
-    // (undocumented)
-    ADJACENT_REPLICATE = 3,
-    // (undocumented)
-    FAR_REPLICATE = 1,
-    // (undocumented)
-    FULL_RESOLUTION = 8,
-    // (undocumented)
-    LOSSY = 7,
-    // (undocumented)
-    SUBRESOLUTION = 6
-}
 
 // @public (undocumented)
 function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | undefined;
@@ -1750,11 +1750,11 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<ImageStatus>;
+        cachedFrames: Array<ImageQualityStatus>;
         callbacks: Array<() => void>;
     };
     // (undocumented)
-    retrieveConfiguration?: IRetrieveConfiguration;
+    progressiveLoading?: boolean | IRetrieveConfiguration;
 }
 
 // @public (undocumented)
@@ -1831,6 +1831,8 @@ interface IViewport {
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
+    // (undocumented)
+    setProgressiveRendering: (progressive: boolean | IRetrieveConfiguration) => void;
     // (undocumented)
     setRendered(): void;
     // (undocumented)
@@ -1993,9 +1995,6 @@ function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImag
 function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 
 // @public (undocumented)
-function loadSingle(imageId: string, listener: ProgressiveListener, retrieveConfiguration?: IRetrieveConfiguration): Promise<unknown>;
-
-// @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
@@ -2043,14 +2042,14 @@ const mprCameraValues: any;
 type NearbyFrames = {
     offset: number;
     linearOffset?: number;
-    status?: ImageStatus;
+    status?: ImageQualityStatus;
 };
 
 // @public (undocumented)
 type NearbyRequest = {
     itemId: string;
     linearId?: string;
-    status: ImageStatus;
+    status: ImageQualityStatus;
     nearbyItem: any;
 };
 
@@ -2153,13 +2152,12 @@ class ProgressiveIterator<T> {
 type ProgressiveListener = {
     successCallback: (imageId: any, image: any, status: any) => void;
     errorCallback: (imageId: any, permanent: any, reason: any) => void;
-    getTargetOptions?: (imageId: any) => Record<string, unknown>;
+    getLoaderImageOptions?: (imageId: any) => Record<string, unknown>;
 };
 
 declare namespace progressiveLoader {
     export {
         load,
-        loadSingle,
         sequentialRetrieveConfiguration,
         interleavedRetrieveConfiguration,
         NearbyRequest,
@@ -2302,8 +2300,8 @@ type RetrieveOptions = {
     totalRangesToFetch?: number | ((metadata: any) => number);
     decodeLevel?: number;
     isLossy?: boolean;
-    status?: ImageStatus;
-    partialStatus?: ImageStatus;
+    status?: ImageQualityStatus;
+    partialStatus?: ImageQualityStatus;
 };
 
 // @public (undocumented)
@@ -2470,15 +2468,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
-    getProperties: () => StackViewportProperties;
-    // (undocumented)
-    getRenderer: () => any;
-    // (undocumented)
-    getRotation: () => number;
-    // (undocumented)
-    getTargetImageIdIndex: () => number;
-    // (undocumented)
-    getTargetOptions(imageId: string): {
+    getLoaderImageOptions(imageId: string): {
         targetBuffer: {
             type: string;
         };
@@ -2487,7 +2477,23 @@ export class StackViewport extends Viewport implements IStackViewport {
         };
         useRGBA: boolean;
         transferSyntaxUID: any;
+        priority: number;
+        requestType: RequestType;
+        additionalDetails: {
+            imageId: string;
+            imageIdIndex: number;
+        };
     };
+    // (undocumented)
+    getProperties: () => StackViewportProperties;
+    // (undocumented)
+    getRenderer: () => any;
+    // (undocumented)
+    getRetrieveConfiguration(): IRetrieveConfiguration;
+    // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
+    getTargetImageIdIndex: () => number;
     // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
@@ -2827,6 +2833,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
+    protected progressiveRendering: boolean | IRetrieveConfiguration;
+    // (undocumented)
     _removeActor(actorUID: string): void;
     // (undocumented)
     removeActors(actorUIDs: Array<string>): void;
@@ -2862,6 +2870,8 @@ export class Viewport implements IViewport {
     setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
+    // (undocumented)
+    setProgressiveRendering(progressiveRendering: boolean | IRetrieveConfiguration): void;
     // (undocumented)
     setRendered(): void;
     // (undocumented)

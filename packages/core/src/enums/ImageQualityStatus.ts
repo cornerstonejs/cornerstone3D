@@ -2,7 +2,7 @@
  * Status of a frame as it gets loaded.  This is ordered, with lower
  * values being more lossy, and higher values being less lossy.
  */
-enum ImageStatus {
+enum ImageQualityStatus {
   /**
    *  Replicate is a duplicated image, from some larger distance
    */
@@ -32,4 +32,4 @@ enum ImageStatus {
   FULL_RESOLUTION = 8,
 }
 
-export default ImageStatus;
+export default ImageQualityStatus;

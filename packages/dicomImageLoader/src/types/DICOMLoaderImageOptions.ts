@@ -19,4 +19,6 @@ export interface DICOMLoaderImageOptions {
   isSharedArrayBuffer?: boolean;
   loader?: LoadRequestFunction;
   decodeLevel?: number;
+  retrieveOptions?: Types.RetrieveOptions;
+  streamingData?: Record<string, unknown>;
 }

@@ -40,7 +40,7 @@ interface ImageFrame {
   decodeTimeInMS?: number;
   loadTimeInMS?: number;
   decodeLevel?: number;
-  status?: Enums.ImageStatus;
+  status?: Enums.ImageQualityStatus;
 }
 
 export default ImageFrame;

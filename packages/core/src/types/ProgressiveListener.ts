@@ -10,8 +10,9 @@ export type ProgressiveListener = {
 
   /**
    * Gets the target options for loading a given image, used by the image loader.
-   * @returns Target options to use when loading the image.
+   * @returns Loader image options to use when loading the image.  Note this
+   *          is often a DICOMLoaderImageOptions, but doesn't have to be.
    * @throws exception to prevent further loading of this image
    */
-  getTargetOptions?: (imageId) => Record<string, unknown>;
+  getLoaderImageOptions?: (imageId) => Record<string, unknown>;
 };

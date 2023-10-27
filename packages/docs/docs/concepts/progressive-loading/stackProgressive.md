@@ -75,6 +75,6 @@ cornerstoneDicomImageLoader.configure({
     },
     singleFast: {
       default: {
-        status: ImageStatus.SUBRESOLUTION,
+        status: ImageQualityStatus.SUBRESOLUTION,
         framesPath: '/jlsThumbnail/',
 ```

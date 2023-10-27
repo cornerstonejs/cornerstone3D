@@ -3,7 +3,7 @@ import { xhrRequest } from '../internal/index';
 import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
-import { getImageStatus } from './getImageStatus';
+import { getImageQualityStatus } from './getImageQualityStatus';
 import { CornerstoneWadoRsLoaderOptions } from './loadImage';
 
 function getPixelData(
@@ -59,7 +59,7 @@ function getPixelData(
       contentType,
       new Uint8Array(imageFrameAsArrayBuffer)
     );
-    extracted.status = getImageStatus(retrieveOptions, true);
+    extracted.status = getImageQualityStatus(retrieveOptions, true);
     return extracted;
   });
 }

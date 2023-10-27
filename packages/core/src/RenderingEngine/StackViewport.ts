@@ -41,12 +41,13 @@ import {
   Mat3,
   ColormapRegistration,
   IImageCalibration,
+  IRetrieveConfiguration,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getColormap } from './helpers/cpuFallback/colors/index';
 
-import { loadAndCacheImage } from '../loaders/imageLoader';
+import { loadAndCacheImage, ImageLoaderOptions } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import {
   InterpolationType,
@@ -187,7 +188,8 @@ class StackViewport extends Viewport implements IStackViewport {
 
   public setUseCPURendering(value: boolean) {
     this.useCPURendering = value;
-    this._configureRenderingPipeline();
+    console.log('setUseCPURendering', value);
+    this._configureRenderingPipeline(value);
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -198,9 +200,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this._configureRenderingPipeline();
   };
 
-  private _configureRenderingPipeline() {
+  private _configureRenderingPipeline(value?: boolean) {
     this.useNativeDataType = this._shouldUseNativeDataType();
-    this.useCPURendering = getShouldUseCPURendering();
+    this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const [funcName, functions] of Object.entries(
       this.renderingPipelineFunctions
@@ -249,6 +251,13 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns IImageData: dimensions, direction, scalarData, vtkImageData, metadata, scaling
    */
   public getImageData: () => IImageData | CPUIImageData;
+
+  public getRetrieveConfiguration(): IRetrieveConfiguration {
+    return typeof this.progressiveRendering === 'object'
+      ? this.progressiveRendering
+      : this.progressiveRendering &&
+          progressiveLoader.sequentialRetrieveConfiguration;
+  }
 
   /**
    * Sets the colormap for the current viewport.
@@ -1587,6 +1596,7 @@ class StackViewport extends Viewport implements IStackViewport {
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
+    console.log('Load and display image', this.useCPURendering);
     return this.useCPURendering
       ? this._loadAndDisplayImageCPU(imageId, imageIdIndex)
       : this._loadAndDisplayImageGPU(imageId, imageIdIndex);
@@ -1596,6 +1606,7 @@ class StackViewport extends Viewport implements IStackViewport {
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
+    console.log('Loading and displaying CPU', imageIdIndex);
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(
@@ -1816,7 +1827,8 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
   }
 
-  public getTargetOptions(imageId: string) {
+  public getLoaderImageOptions(imageId: string) {
+    const imageIdIndex = this.imageIds.indexOf(imageId);
     const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
     /**
@@ -1827,6 +1839,7 @@ class StackViewport extends Viewport implements IStackViewport {
      *
      * If use16bittexture is not specified, we force the Float32Array for now
      */
+    const additionalDetails = { imageId, imageIdIndex };
     const options = {
       targetBuffer: {
         type: this.useNativeDataType ? undefined : 'Float32Array',
@@ -1836,8 +1849,27 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       useRGBA: false,
       transferSyntaxUID,
+      priority: 5,
+      requestType: RequestType.Interaction,
+      additionalDetails,
     };
     return options;
+  }
+
+  private _loadNonProgressive(imageId: string): Promise<string> {
+    const options = this.getLoaderImageOptions(imageId) as ImageLoaderOptions;
+
+    console.log('Loading non progressive');
+    return loadAndCacheImage(imageId, options).then(
+      (image) => {
+        this.successCallback.call(this, imageId, image);
+        return imageId;
+      },
+      (error) => {
+        this.errorCallback.call(this, imageId, true, error);
+        return imageId;
+      }
+    );
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
@@ -1849,9 +1881,17 @@ class StackViewport extends Viewport implements IStackViewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    return progressiveLoader.loadSingle(imageId, this).then((v) => {
-      return imageId;
-    });
+    const retrieveConfiguration = this.getRetrieveConfiguration();
+
+    if (!retrieveConfiguration) {
+      return this._loadNonProgressive(imageId);
+    }
+
+    return progressiveLoader
+      .load([imageId], this, retrieveConfiguration)
+      .then((v) => {
+        return imageId;
+      });
   }
 
   /**

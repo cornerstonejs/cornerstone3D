@@ -81,7 +81,7 @@ export default class ProgressiveIterator<T> {
         throw this.rejectReason;
       }
       if (this.nextValue !== undefined) {
-        //console.log('Yielding on', this.name, this.nextValue);
+        console.log('Yielding on', this.name, this.nextValue);
         yield this.nextValue;
         if (this.done) {
           break;
@@ -94,10 +94,10 @@ export default class ProgressiveIterator<T> {
           this.waiting.reject = reject;
         });
       }
-      // console.log('Awaiting on', this.name);
+      console.log('Awaiting on', this.name);
       await this.waiting.promise;
     }
-    // console.log('Final yield on', this.name);
+    console.log('Final yield on', this.name);
     yield this.nextValue;
   }
 
@@ -167,9 +167,7 @@ export default class ProgressiveIterator<T> {
 
   async donePromise(): Promise<T> {
     for await (const i of this) {
-      if (this.done) {
-        return i;
-      }
+      // No-op
     }
     return this.nextValue;
   }

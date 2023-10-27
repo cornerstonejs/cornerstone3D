@@ -6,6 +6,7 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
+import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 /**
  * Viewport interface for cornerstone viewports
@@ -107,6 +108,13 @@ interface IViewport {
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
   updateRenderingPipeline: () => void;
+  /**
+   * Sets progressive rendering to be used, using the progressive loader.
+   * Can be set to true to enable, or a specific configuration provided.
+   */
+  setProgressiveRendering: (
+    progressive: boolean | IRetrieveConfiguration
+  ) => void;
 }
 
 /**
@@ -153,6 +161,12 @@ type ViewportInput = {
   sWidth: number;
   sHeight: number;
   defaultOptions: ViewportInputOptions;
+  /**
+   * progressive rendering can be set to true to apply progressive rendering
+   * options, or set to a specific configuration for a specific rendering
+   * option.
+   */
+  progressiveRendering?: boolean | IRetrieveConfiguration;
 };
 
 export type {

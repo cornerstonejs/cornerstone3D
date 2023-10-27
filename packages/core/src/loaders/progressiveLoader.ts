@@ -10,9 +10,10 @@ import interleavedRetrieveConfiguration from './configuration/interleavedRetriev
 import { loadAndCacheImage, loadImage } from './imageLoader';
 import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import { ImageStatus, RequestType, Events } from '../enums';
+import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache';
 import eventTarget from '../eventTarget';
+import { fillNearbyFrames } from './fillNearbyFrames';
 
 export { sequentialRetrieveConfiguration, interleavedRetrieveConfiguration };
 
@@ -62,8 +63,8 @@ export async function load(
   retrieveOptions: IRetrieveConfiguration = interleavedRetrieveConfiguration
 ): Promise<unknown> {
   const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
-  const imageStatus = new Map<string, ImageStatus>();
-  const stageStatus = new Map<string, StageStatus>();
+  const imageQualityStatusMap = new Map<string, ImageQualityStatus>();
+  const stageStatusMap = new Map<string, StageStatus>();
   let outstandingRequests = 0;
 
   function sendRequest(request, options) {
@@ -72,40 +73,44 @@ export async function load(
       // console.log('Erroring out', reason, done);
       listener.errorCallback(imageId, complete || !next, reason);
       if (done) {
-        updateStageStatus(stageStatus, request.stage, reason);
+        updateStageStatus(stageStatusMap, request.stage, reason);
       }
     };
-    let loadedPromise;
-    if (options.target?.arrayBuffer) {
-      loadedPromise = loadAndCacheImage(imageId, options);
-    } else {
-      loadedPromise = loadImage(imageId, options);
-    }
+    const loadedPromise = (options.loader || loadAndCacheImage)(
+      imageId,
+      options
+    );
     const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
     let complete = false;
 
     uncompressedIterator
       .forEach(async (image, done) => {
-        const oldStatus = imageStatus[imageId];
+        const oldStatus = imageQualityStatusMap[imageId];
         if (!image) {
           console.warn('No image retrieved', imageId);
           return;
         }
         const { status } = image;
-        complete ||= status === ImageStatus.FULL_RESOLUTION;
+        complete ||= status === ImageQualityStatus.FULL_RESOLUTION;
         if (oldStatus !== undefined && oldStatus > status) {
           // We already have a better status, so don't update it
-          updateStageStatus(stageStatus, request.stage, null, true);
+          updateStageStatus(stageStatusMap, request.stage, null, true);
           return;
         }
 
         listener.successCallback(imageId, image, status);
-        imageStatus[imageId] = status;
+        imageQualityStatusMap[imageId] = status;
         displayedIterator.add(image);
         if (done) {
-          updateStageStatus(stageStatus, request.stage);
+          updateStageStatus(stageStatusMap, request.stage);
         }
-        fillNearbyFrames(listener, imageStatus, request, image, options);
+        fillNearbyFrames(
+          listener,
+          imageQualityStatusMap,
+          request,
+          image,
+          options
+        );
       }, errorCallback)
       .finally(() => {
         if (!complete && next) {
@@ -116,7 +121,7 @@ export async function load(
         } else {
           outstandingRequests--;
           for (let skip = next; skip; skip = skip.next) {
-            updateStageStatus(stageStatus, skip.stage, null, true);
+            updateStageStatus(stageStatusMap, skip.stage, null, true);
           }
         }
         if (outstandingRequests <= 0) {
@@ -131,7 +136,7 @@ export async function load(
   /** Adds a rquest to the image load pool manager */
   function addRequest(request, streamingData = {}) {
     const { imageId, stage } = request;
-    const baseOptions = listener.getTargetOptions(imageId);
+    const baseOptions = listener.getLoaderImageOptions(imageId);
     if (!baseOptions) {
       // Image no longer of interest
       return;
@@ -155,7 +160,11 @@ export async function load(
 
   // The actual function is to just setup the interleave and add the
   // requests, with all the actual work being handled by the nested functions
-  const interleaved = interleave(imageIds, retrieveOptions, stageStatus);
+  const interleaved = createStageRequests(
+    imageIds,
+    retrieveOptions,
+    stageStatusMap
+  );
   outstandingRequests = interleaved.length;
   for (const request of interleaved) {
     addRequest(request);
@@ -167,19 +176,10 @@ export async function load(
   return displayedIterator.getDonePromise();
 }
 
-/** Loads a single image, using the sequential retrieve configuration */
-export function loadSingle(
-  imageId: string,
-  listener: ProgressiveListener,
-  retrieveConfiguration = sequentialRetrieveConfiguration
-) {
-  return load([imageId], listener, retrieveConfiguration);
-}
-
 export type NearbyRequest = {
   itemId: string;
   linearId?: string;
-  status: ImageStatus;
+  status: ImageQualityStatus;
   nearbyItem;
 };
 
@@ -191,7 +191,7 @@ export type ProgressiveRequest = {
 };
 
 /** Interleaves the values according to the stages definition */
-function interleave(
+function createStageRequests(
   requests: string[],
   retrieveConfiguration: IRetrieveConfiguration,
   stageStatus: Map<string, StageStatus>
@@ -273,56 +273,6 @@ function findNearbyRequests(
   }
 
   return nearby;
-}
-
-/** Actually fills the nearby frames from the given frame */
-function fillNearbyFrames(
-  listener: ProgressiveListener,
-  imageStatus: Map<string, ImageStatus>,
-  request,
-  image,
-  options
-) {
-  if (!request?.nearbyRequests?.length) {
-    return;
-  }
-
-  const {
-    arrayBuffer,
-    offset: srcOffset,
-    type,
-    length: frameLength,
-  } = options.targetBuffer;
-  if (!arrayBuffer || srcOffset === undefined || !type) {
-    return;
-  }
-  const scalarData = new Float32Array(arrayBuffer);
-  const bytesPerPixel = scalarData.byteLength / scalarData.length;
-  const offset = options.targetBuffer.offset / bytesPerPixel; // in bytes
-  // since set is based on the underlying type,
-  // we need to divide the offset bytes by the byte type
-  const src = scalarData.slice(offset, offset + frameLength);
-
-  for (const nearbyItem of request.nearbyRequests) {
-    try {
-      const { itemId: targetId, status } = nearbyItem;
-      const targetStatus = imageStatus.get(targetId);
-      if (targetStatus !== undefined && targetStatus < status) {
-        continue;
-      }
-      const targetOptions = listener.getTargetOptions(targetId);
-      const { offset: targetOffset } = targetOptions.targetBuffer as any;
-      scalarData.set(src, targetOffset / bytesPerPixel);
-      const nearbyImage = {
-        ...image,
-        status,
-      };
-      listener.successCallback(targetId, nearbyImage, status);
-      imageStatus[targetId] = status;
-    } catch (e) {
-      console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);
-    }
-  }
 }
 
 function addStageStatus(stageStatus: Map<string, StageStatus>, stage) {

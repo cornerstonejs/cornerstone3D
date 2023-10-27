@@ -1,4 +1,4 @@
-import { ImageStatus } from '../enums';
+import { ImageQualityStatus } from '../enums';
 import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 interface IStreamingVolumeProperties {
@@ -10,12 +10,12 @@ interface IStreamingVolumeProperties {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<ImageStatus>;
+    cachedFrames: Array<ImageQualityStatus>;
     callbacks: Array<() => void>;
   };
 
-  /** Information on how to configure the retrieval */
-  retrieveConfiguration?: IRetrieveConfiguration;
+  /** Set to true to use progressive loading, or to a specific loading config */
+  progressiveLoading?: boolean | IRetrieveConfiguration;
 }
 
 export default IStreamingVolumeProperties;
