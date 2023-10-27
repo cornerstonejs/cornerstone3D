@@ -189,7 +189,6 @@ class OrientationMarkerTool extends BaseTool {
       orientationWidget,
       actor,
     };
-    renderer.resetCamera();
     renderWindow.render();
     viewport.getRenderingEngine().render();
 

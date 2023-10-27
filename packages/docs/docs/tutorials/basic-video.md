@@ -68,6 +68,11 @@ It may require an accept header to force it to be served in MP4 format if it is 
 It may not support either the fast start encoding or the byte range format, absence of
 which will prevent seeking through large videos.  Small videos will likely be buffered
 entirely, so they can still seek.
+
+For instance you can look at this example in OHIF which uses the rendered endpoint:
+`https://d33do7qe4w26qo.cloudfront.net/dicomweb/studies/2.25.96975534054447904995905761963464388233/series/2.25.15054212212536476297201250326674987992/instances/2.25.179478223177027022014772769075050874231/rendered`
+
+
 :::
 
 ## Final code
