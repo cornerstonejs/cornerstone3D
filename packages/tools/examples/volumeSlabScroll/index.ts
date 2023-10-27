@@ -125,9 +125,20 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = renderingEngine.getViewport(activeViewportId);
 
-    viewport.setSlabThickness(targetSlabThickness);
+    viewport.setProperties({ slabThickness: targetSlabThickness });
 
+    // Todo: i think we should move this to set properties as well
     viewport.setBlendMode(Enums.BlendModes.AVERAGE_INTENSITY_BLEND);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reset',
+  onClick: () => {
+    const viewport = renderingEngine.getViewport(activeViewportId);
+
+    viewport.resetProperties();
     viewport.render();
   },
 });
