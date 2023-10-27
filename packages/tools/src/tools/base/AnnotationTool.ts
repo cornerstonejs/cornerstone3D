@@ -219,7 +219,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
         ) {
           data.handles.activeHandleIndex = null;
-          return textBox;
+          return textBox as ToolHandle;
         }
       }
     }
