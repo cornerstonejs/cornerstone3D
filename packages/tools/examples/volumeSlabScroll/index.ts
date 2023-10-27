@@ -48,7 +48,6 @@ const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
-viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
