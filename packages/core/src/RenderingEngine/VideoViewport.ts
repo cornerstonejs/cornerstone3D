@@ -18,8 +18,6 @@ import { getOrCreateCanvas } from './helpers';
  * looking into an internal scene, and an associated target output `canvas`.
  */
 class VideoViewport extends Viewport implements IVideoViewport {
-  public static readonly useCustomRenderingPipeline = true;
-
   // Viewport Data
   readonly uid;
   readonly renderingEngineId: string;
@@ -59,6 +57,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     this.addEventListeners();
     this.resize();
+  }
+
+  public static get useCustomRenderingPipeline() {
+    return true;
   }
 
   private addEventListeners() {

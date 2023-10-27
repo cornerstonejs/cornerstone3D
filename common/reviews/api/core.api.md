@@ -2788,7 +2788,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     readonly uid: any;
     // (undocumented)
-    static readonly useCustomRenderingPipeline = true;
+    static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
