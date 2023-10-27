@@ -161,6 +161,9 @@ class ColorbarCanvas {
     const canvas = document.createElement('canvas');
 
     Object.assign(canvas.style, {
+      position: 'absolute',
+      top: '0',
+      left: '0',
       pointerEvents: 'none',
       boxSizing: 'border-box',
     });

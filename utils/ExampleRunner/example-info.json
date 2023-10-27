@@ -204,7 +204,11 @@
       },
       "colorBar": {
         "name": "Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack and volume viewports"
+        "description": "Demonstrates how to add an interactive colobar to stack viewport"
+      },
+      "advancedColorBar": {
+        "name": "Advanced Colorbar",
+        "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
       }
     },
     "tools-segmentation" : {
