@@ -423,7 +423,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       worldToCanvasRatio *= secondWorldToCanvasRatio;
     }
 
-    // Set the width as big as possible
+    // Set the width as big as possible, this is the portion of the canvas
+    // that the video will occupy.
     const drawWidth = Math.floor(this.videoWidth * worldToCanvasRatio);
     const drawHeight = Math.floor(this.videoHeight * worldToCanvasRatio);
 
@@ -451,7 +452,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   private renderFrame = () => {
-    const pan: Point2 = this.videoCamera.panWorld;
+    const panWorld: Point2 = this.videoCamera.panWorld;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
     const canvasToWorldRatio: number = this.getCanvasToWorldRatio();
 
@@ -471,7 +472,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     transform.scale(worldToCanvasRatio, worldToCanvasRatio);
 
     // Apply the translation
-    transform.translate(pan[0], pan[1]);
+    transform.translate(panWorld[0], panWorld[1]);
 
     // Translate back
     transform.translate(
