@@ -6,6 +6,7 @@
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
+import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -1027,6 +1028,110 @@ declare namespace color {
 }
 
 // @public (undocumented)
+class Colorbar extends Widget {
+    constructor(props: ColorbarProps);
+    // (undocumented)
+    get activeColormapName(): string;
+    set activeColormapName(colormapName: string);
+    // (undocumented)
+    protected createRootElement(): HTMLElement;
+    // (undocumented)
+    _createTicksBar(props: ColorbarProps): ColorbarTicks;
+    // (undocumented)
+    destroy(): void;
+    // (undocumented)
+    protected getVOIMultipliers(): [number, number];
+    // (undocumented)
+    protected hideTicks(): void;
+    // (undocumented)
+    get imageRange(): ColorbarVOIRange;
+    set imageRange(imageRange: ColorbarVOIRange);
+    // (undocumented)
+    protected onContainerResize(): void;
+    // (undocumented)
+    protected onVoiChange(voiRange: ColorbarVOIRange): void;
+    // (undocumented)
+    get showFullImageRange(): boolean;
+    set showFullImageRange(value: boolean);
+    // (undocumented)
+    protected showTicks(): void;
+    // (undocumented)
+    get voiRange(): ColorbarVOIRange;
+    set voiRange(voiRange: ColorbarVOIRange);
+}
+
+declare namespace colorbar {
+    export {
+        Types_3 as Types,
+        Enums_2 as Enums,
+        Colorbar,
+        ViewportColorbar
+    }
+}
+
+// @public (undocumented)
+type ColorbarCommonProps = {
+    imageRange?: ColorbarImageRange;
+    voiRange?: ColorbarVOIRange;
+    ticks?: {
+        position?: ColorbarRangeTextPosition;
+        style?: ColorbarTicksStyle;
+    };
+    showFullPixelValueRange?: boolean;
+};
+
+// @public (undocumented)
+type ColorbarImageRange = {
+    lower: number;
+    upper: number;
+};
+
+// @public (undocumented)
+type ColorbarProps = (WidgetProps & ColorbarCommonProps) & {
+    colormaps: IColorMapPreset[];
+    activeColormapName?: string;
+};
+
+// @public (undocumented)
+enum ColorbarRangeTextPosition {
+    // (undocumented)
+    Bottom = "bottom",
+    // (undocumented)
+    Left = "left",
+    // (undocumented)
+    Right = "right",
+    // (undocumented)
+    Top = "top"
+}
+
+// @public (undocumented)
+type ColorbarSize = {
+    width: number;
+    height: number;
+};
+
+// @public (undocumented)
+type ColorbarTicksProps = ColorbarCommonProps & {
+    top?: number;
+    left?: number;
+    size?: ColorbarSize;
+    container?: HTMLElement;
+};
+
+// @public (undocumented)
+type ColorbarTicksStyle = {
+    font?: string;
+    color?: string;
+    tickSize?: number;
+    tickWidth?: number;
+    labelMargin?: number;
+    maxNumTicks?: number;
+};
+
+// @public (undocumented)
+type ColorbarVOIRange = ColorbarImageRange;
+
+// @public (undocumented)
 type ColorLUT = Array<Color>;
 
 // @public (undocumented)
@@ -1874,6 +1979,12 @@ declare namespace Enums {
     }
 }
 export { Enums }
+
+declare namespace Enums_2 {
+    export {
+        ColorbarRangeTextPosition
+    }
+}
 
 // @public (undocumented)
 enum Events {
@@ -2746,6 +2857,9 @@ interface IImageVolume {
     readonly volumeId: string;
     vtkOpenGLTexture: any;
 }
+
+// @public (undocumented)
+type ImageActor = vtkImageSlice;
 
 // @public
 type ImageCacheImageAddedEvent =
@@ -5770,6 +5884,19 @@ declare namespace Types {
 }
 export { Types }
 
+declare namespace Types_3 {
+    export {
+        ColorbarCommonProps,
+        ColorbarProps,
+        ColorbarImageRange,
+        ColorbarVOIRange,
+        ColorbarSize,
+        ColorbarTicksProps,
+        ColorbarTicksStyle,
+        ViewportColorbarProps
+    }
+}
+
 // @public (undocumented)
 function unlockAllAnnotations(): void;
 
@@ -5806,7 +5933,8 @@ declare namespace utilities {
         scroll_2 as scroll,
         roundNumber,
         pointToString,
-        polyDataUtils
+        polyDataUtils,
+        voi
     }
 }
 export { utilities }
@@ -5825,6 +5953,25 @@ declare namespace viewport {
         jumpToWorld
     }
 }
+
+// @public (undocumented)
+class ViewportColorbar extends Colorbar {
+    constructor(props: ViewportColorbarProps);
+    // (undocumented)
+    get element(): HTMLDivElement;
+    // (undocumented)
+    get enabledElement(): Types_2.IEnabledElement;
+    // (undocumented)
+    protected getVOIMultipliers(): [number, number];
+    // (undocumented)
+    protected onVoiChange(voiRange: ColorbarVOIRange): void;
+}
+
+// @public (undocumented)
+type ViewportColorbarProps = ColorbarProps & {
+    element: HTMLDivElement;
+    volumeId?: string;
+};
 
 declare namespace viewportFilters {
     export {
@@ -5900,6 +6047,12 @@ type VOI = {
     windowWidth: number;
     windowCenter: number;
 };
+
+declare namespace voi {
+    export {
+        colorbar
+    }
+}
 
 // @public
 type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;

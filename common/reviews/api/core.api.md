@@ -211,6 +211,9 @@ function cancelLoadImage(imageId: string): void;
 // @public (undocumented)
 function cancelLoadImages(imageIds: Array<string>): void;
 
+// @public (undocumented)
+function clamp(value: number, min: number, max: number): number;
+
 declare namespace colormap {
     export {
         getColormap,
@@ -646,6 +649,13 @@ export { Enums }
 // @public (undocumented)
 const EPSILON = 0.001;
 
+declare namespace eventListener {
+    export {
+        TargetEventListeners,
+        MultiTargetEventListenerManager
+    }
+}
+
 // @public (undocumented)
 export enum EVENTS {
     // (undocumented)
@@ -869,6 +879,9 @@ function getTransferFunctionNodes(transferFunction: any): any[];
 
 // @public (undocumented)
 function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
+
+// @public (undocumented)
+function getViewportModality(viewport: IViewport, volumeId?: string): string;
 
 // @public (undocumented)
 function getViewportsWithImageURI(imageURI: string, renderingEngineId?: string): Array<Viewport_2>;
@@ -1333,6 +1346,9 @@ interface IImageVolume {
     // (undocumented)
     vtkOpenGLTexture: any;
 }
+
+// @public (undocumented)
+type ImageActor = vtkImageSlice;
 
 // @public (undocumented)
 type ImageCacheImageAddedEvent = CustomEvent_2<ImageCacheImageAddedEventDetail>;
@@ -2043,6 +2059,16 @@ const metadataProvider: {
 const mprCameraValues: any;
 
 // @public (undocumented)
+class MultiTargetEventListenerManager {
+    // (undocumented)
+    addEventListener(target: EventTarget, type: string, callback: EventListener, options?: AddEventListenerOptions): void;
+    // (undocumented)
+    removeEventListener(target: EventTarget, type: string, callback?: EventListener, options?: EventListenerOptions): void;
+    // (undocumented)
+    reset(): void;
+}
+
+// @public (undocumented)
 enum OrientationAxis {
     // (undocumented)
     ACQUISITION = "acquisition",
@@ -2463,6 +2489,19 @@ type SurfaceData = {
 };
 
 // @public (undocumented)
+class TargetEventListeners {
+    constructor(target: EventTarget);
+    // (undocumented)
+    addEventListener(type: string, callback: EventListener, options?: AddEventListenerOptions): void;
+    // (undocumented)
+    get isEmpty(): boolean;
+    // (undocumented)
+    removeEventListener(type: string, callback?: EventListener, options?: EventListenerOptions): void;
+    // (undocumented)
+    reset(): void;
+}
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -2529,6 +2568,7 @@ declare namespace Types {
         VolumeActor,
         Actor,
         ActorEntry,
+        ImageActor,
         IImageLoadObject,
         IVolumeLoadObject,
         IVolumeInput,
@@ -2588,6 +2628,7 @@ function unregisterAllImageLoaders(): void;
 
 declare namespace utilities {
     export {
+        eventListener,
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
         getVoiFromSigmoidRGBTransferFunction,
@@ -2596,6 +2637,7 @@ declare namespace utilities {
         triggerEvent,
         imageIdToURI,
         metadataProvider as calibratedPixelSpacingMetadataProvider,
+        clamp,
         uuidv4,
         planar,
         getMinMax,
@@ -2606,6 +2648,7 @@ declare namespace utilities {
         createUint8SharedArray,
         createUint16SharedArray,
         createInt16SharedArray,
+        getViewportModality,
         windowLevel,
         getClosestImageId,
         getSpacingInNormalDirection,
