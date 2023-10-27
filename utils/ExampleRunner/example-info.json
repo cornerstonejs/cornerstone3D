@@ -122,6 +122,10 @@
       "stackProperties": {
         "name": "Stack viewport default properties",
         "description": "Demonstrates how you can set per image properties for a stack viewport that acts as default values for that specific image"
+      },
+      "volumeSlabScroll": {
+        "name": "Volume Slab Scroll",
+        "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
       }
     },
     "tools-basic": {

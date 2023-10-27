@@ -148,6 +148,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
+    protected viewportProperties: VolumeViewportProperties;
+    // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 

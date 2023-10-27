@@ -31,7 +31,6 @@ import type {
   Point2,
   Point3,
   VOIRange,
-  ViewportProperties,
   VolumeViewportProperties,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
@@ -79,7 +78,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     VolumeViewportProperties
   >();
 
-  private viewportProperties: VolumeViewportProperties = {};
+  protected viewportProperties: VolumeViewportProperties = {};
 
   constructor(props: ViewportInput) {
     super(props);
@@ -606,9 +605,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (properties.slabThickness !== undefined) {
       this.setSlabThickness(properties.slabThickness);
-      //We need to set the current slabthickness here since setSlabThickness is define in VolumeViewport
-      // this.currentViewportProperties.get(volumeId).slabThickness =
-      //   properties.slabThickness;
+      //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
     }
 
