@@ -10,7 +10,13 @@ import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
+import {
+  triggerEvent,
+  planar,
+  isImageActor,
+  actorIsA,
+  isEqual,
+} from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
 import { EPSILON, RENDERING_DEFAULTS } from '../constants';
 import type {
@@ -1085,8 +1091,12 @@ class Viewport implements IViewport {
 
     // update clipping range only if focal point changed of a new actor is added
     const prevFocalPoint = previousCamera.focalPoint;
-    if (prevFocalPoint && focalPoint) {
+    const prevViewUp = previousCamera.viewUp;
+
+    if ((prevFocalPoint && focalPoint) || (prevViewUp && viewUp)) {
       const currentViewPlaneNormal = <Point3>vtkCamera.getViewPlaneNormal();
+      const currentViewUp = <Point3>vtkCamera.getViewUp();
+
       const deltaCamera = <Point3>[
         focalPoint[0] - prevFocalPoint[0],
         focalPoint[1] - prevFocalPoint[1],
@@ -1096,9 +1106,11 @@ class Viewport implements IViewport {
       const cameraModifiedOutOfPlane =
         Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > EPSILON;
 
+      const viewUpHasChanged = isEqual(prevViewUp, currentViewUp);
+
       // only modify the clipping planes if the camera is modified out of plane
       // or a new actor is added and we need to update the clipping planes
-      if (cameraModifiedOutOfPlane || this.newActorAdded) {
+      if (cameraModifiedOutOfPlane || viewUpHasChanged || this.newActorAdded) {
         const actorEntry = this.getDefaultActor();
         if (!actorEntry?.actor) {
           return;
