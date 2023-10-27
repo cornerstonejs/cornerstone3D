@@ -118,12 +118,15 @@ Note that none of the times include time to load the decoder, which can be
 a second or more, but is only seen on first render. These times are similar for
 both types.
 
-| Type             | Network | First Render | Final Render |
-| ---------------- | ------- | ------------ | ------------ |
-| JLS              | 4g      | 2265 ms      | 8106 ms      |
-| JLS Reduced      | 4g      | 1690 ms      | 8455 ms      |
-| HTJ2K            | 4g      | 2503 ms      | 8817 ms      |
-| HTJ2K Byte Range | 4g      | 985 ms       | 8786 ms      |
+Full size images are 512x512, and JLS reduced ones are 128x128. Note that
+JLS reduced images are JLS lossy compressed in addition to sub resolution.
+
+| Type             | Size  | Network | First Render | Final Render |
+| ---------------- | ----- | ------- | ------------ | ------------ |
+| JLS              | 30 M  | 4g      | 2265 ms      | 8106 ms      |
+| JLS Reduced      | 3.6 M | 4g      | 1690 ms      | 8455 ms      |
+| HTJ2K            | 33 M  | 4g      | 2503 ms      | 8817 ms      |
+| HTJ2K Byte Range | 11.1M | 4g      | 985 ms       | 8786 ms      |
 
 The HTJ2K byte range is very slightly slower than straight JLS, but can be
 done against any DICOMweb server supporting HTJ2K and byte range requests.

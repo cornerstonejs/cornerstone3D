@@ -67,7 +67,6 @@ export default function streamRequest(
 
       while (!readDone) {
         const { done, value } = await responseReader.read();
-        readDone = done;
         encodedData = appendChunk(encodedData, value);
         if (!encodedData) {
           if (readDone) {
@@ -75,6 +74,7 @@ export default function streamRequest(
           }
           continue;
         }
+        readDone = done || encodedData.byteLength === totalBytes;
         if (!readDone && encodedData.length < lastSize + minChunkSize) {
           continue;
         }
@@ -94,7 +94,7 @@ export default function streamRequest(
             ? 100
             : (extracted.pixelData?.length * 100) / totalBytes,
           status,
-          done,
+          done: readDone,
         };
 
         // All of the image load events will be handled by the imageLoader

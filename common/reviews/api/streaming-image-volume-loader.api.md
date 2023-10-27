@@ -1052,28 +1052,16 @@ type ImageSpacingCalibratedEventDetail = {
 
 // @public
 enum ImageStatus {
-    // Replicate is a duplicated image, from some larger distance
-    // (undocumented)
     ADJACENT_REPLICATE = 3,
 
     // Skipping a value here and after the next replicate to allow for interpolation
     // enum values.
 
-    // Adjacent replicate is a duplicated image of a nearby image
-    // (undocumented)
-    DONE = 8,
-    // Loading is used to prevent replication when the actual images start becoming available
-    // (undocumented)
-    LOADING = 5,
-    // Partial images
-    // (undocumented)
+    FAR_REPLICATE = 1,
+
+    FULL_RESOLUTION = 8,
     LOSSY = 7,
-    // Lossy images, either complete or partial
-    // (undocumented)
-    PARTIAL = 6,
-    // Done means the image is full resolution/complete
-    // (undocumented)
-    REPLICATE = 1,
+    SUBRESOLUTION = 6,
 }
 
 // @public
@@ -1420,6 +1408,15 @@ type Metadata = {
 };
 
 // @public (undocumented)
+type NearbyFrames = {
+    offset: number;
+    // If linear offset is provided, then a linear interpolation between two
+    // frames will be used instead.
+    linearOffset?: number;
+    status?: ImageStatus;
+};
+
+// @public (undocumented)
 enum OrientationAxis {
     // (undocumented)
     ACQUISITION = 'acquisition',
@@ -1505,40 +1502,28 @@ enum RequestType {
 }
 
 // @public (undocumented)
-interface RetrieveOptions {
+type RetrieveOptions = {
     // Additional arguments to add to the URL, in the format
     // arg1=value1 ('&' arg2=value2)*
     // For example: '&lossy=jhc' to use JHC lossy values
-    // (undocumented)
-    decodeLevel?: number;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    framesPath?: string;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    initialBytes?: number | ((metadata) => number);
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    isLossy?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    partialStatus?: ImageStatus;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    range?: number;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    status?: ImageStatus;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    streaming?: boolean;
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
-    totalRangesToFetch?: number | ((metadata) => number);
-    // Alternate way to encode argument information by updating the frames path
-    // (undocumented)
     urlArguments?: string;
-}
+    // Alternate way to encode argument information by updating the frames path
+    framesPath?: string;
+    // True to use streaming decode
+    streaming?: boolean;
+    // byte range value to retrieve for initial decode
+    initialBytes?: number | ((metadata) => number);
+    range?: number;
+    totalRangesToFetch?: number | ((metadata) => number);
+    // Decode level to attempt
+    decodeLevel?: number;
+    // Load status when this item has complete - true to indicate lossy response
+    isLossy?: boolean;
+    // Status to use on done.  Defaults to Done for lossless, and LOSSY otherwise
+    status?: ImageStatus;
+    // Status to use on partial read. Defaults to Partial
+    partialStatus?: ImageStatus;
+};
 
 // @public (undocumented)
 interface RetrieveStage {

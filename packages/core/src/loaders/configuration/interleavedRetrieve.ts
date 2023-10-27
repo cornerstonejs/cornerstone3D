@@ -1,12 +1,11 @@
-import type { IRetrieveConfiguration } from '../types';
-import { RequestType, ImageStatus } from '../enums';
-import { NearbyFrames } from '../types/IRetrieveConfiguration';
+import type { IRetrieveConfiguration, NearbyFrames } from '../../types';
+import { RequestType, ImageStatus } from '../../enums';
 
 // Defines some nearby frames to replicate to
 const nearbyFrames: NearbyFrames[] = [
   { offset: -1, status: ImageStatus.ADJACENT_REPLICATE, linearOffset: -2 },
   { offset: +1, status: ImageStatus.ADJACENT_REPLICATE, linearOffset: 2 },
-  { offset: +2, status: ImageStatus.REPLICATE, linearOffset: +4 },
+  { offset: +2, status: ImageStatus.FAR_REPLICATE, linearOffset: +4 },
 ];
 
 /**

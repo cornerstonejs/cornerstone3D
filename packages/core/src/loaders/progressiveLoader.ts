@@ -5,8 +5,8 @@ import type {
   EventTypes,
   ProgressiveListener,
 } from '../types';
-import sequentialRetrieveConfiguration from './sequentialRetrieveConfiguration';
-import interleavedRetrieveConfiguration from './interleavedRetrieveConfiguration';
+import sequentialRetrieveConfiguration from './configuration/sequentialRetrieve';
+import interleavedRetrieveConfiguration from './configuration/interleavedRetrieve';
 import { loadAndCacheImage, loadImage } from './imageLoader';
 import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
@@ -92,13 +92,12 @@ export async function load(
           return;
         }
         const { status } = image;
-        complete ||= status === ImageStatus.DONE;
+        complete ||= status === ImageStatus.FULL_RESOLUTION;
         if (oldStatus !== undefined && oldStatus > status) {
           // We already have a better status, so don't update it
           updateStageStatus(stageStatus, request.stage, null, true);
           return;
         }
-        imageStatus[imageId] = ImageStatus.LOADING;
 
         listener.successCallback(imageId, image, status);
         imageStatus[imageId] = status;

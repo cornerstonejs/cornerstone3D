@@ -224,7 +224,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = [];
   }
 
-  public successCallback(imageId: string, image, status = ImageStatus.DONE) {
+  public successCallback(
+    imageId: string,
+    image,
+    status = ImageStatus.FULL_RESOLUTION
+  ) {
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getTargetOptions(imageId);
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
@@ -375,7 +379,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     volume: BaseStreamingImageVolume,
     imageIdIndex,
     imageId,
-    status = ImageStatus.DONE
+    status = ImageStatus.FULL_RESOLUTION
   ) {
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
@@ -386,10 +390,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       return;
     }
 
-    if (cachedFrames[frameIndex] === ImageStatus.DONE) {
+    if (cachedFrames[frameIndex] === ImageStatus.FULL_RESOLUTION) {
       return;
     }
-    const complete = status === ImageStatus.DONE;
+    const complete = status === ImageStatus.FULL_RESOLUTION;
     cachedFrames[imageIdIndex] = status;
     this.framesUpdated++;
     if (complete) {
@@ -550,7 +554,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   callLoadImage(imageId, imageIdIndex, options) {
     const { cachedFrames } = this;
 
-    if (cachedFrames[imageIdIndex] === ImageStatus.DONE) {
+    if (cachedFrames[imageIdIndex] === ImageStatus.FULL_RESOLUTION) {
       return;
     }
 
@@ -558,13 +562,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       imageLoader.loadImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
-      if (
-        cachedFrames[imageIdIndex] === undefined ||
-        cachedFrames[imageIdIndex] < ImageStatus.LOADING
-      ) {
-        cachedFrames[imageIdIndex] = ImageStatus.LOADING;
-      }
-      const { status = ImageStatus.DONE } = image;
+      const { status = ImageStatus.FULL_RESOLUTION } = image;
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
       this.successCallback(imageId, image, status);
@@ -597,7 +595,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const requests = imageIds.map((imageId) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
-      if (cachedFrames[imageIdIndex] === ImageStatus.DONE) {
+      if (cachedFrames[imageIdIndex] === ImageStatus.FULL_RESOLUTION) {
         this.framesLoaded++;
         return;
       }
@@ -671,44 +669,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       .catch((err) => {
         errorCallback.call(this, err, imageIdIndex, imageId);
       });
-  }
-
-  /** Interleaves the values according to the stages definition */
-  public interleave(
-    requests: string[],
-    retrieveStages: RetrieveStage[],
-    retrieveIdCounts: Record<string, number>
-  ): string[] {
-    const { stages } = this.retrieveConfiguration;
-
-    if (!stages?.length) {
-      return requests;
-    }
-
-    const addValue = (stage, position) => {
-      const index =
-        position < 0
-          ? requests.length + position
-          : position < 1
-          ? Math.floor((requests.length - 1) * position)
-          : position;
-      const value = requests[index];
-      if (!value) {
-        throw new Error(`No value found to add to requests at ${position}`);
-      }
-      retrieveIdCounts[stage.id] = 1 + (retrieveIdCounts[stage.id] || 0);
-      interleaved.push(value);
-      retrieveStages[interleaved.length - 1] = stage;
-    };
-
-    const interleaved = [];
-    for (const stage of stages) {
-      const indices =
-        stage.positions ||
-        decimate(requests, stage.decimate || 1, stage.offset ?? 0);
-      indices.forEach((index) => addValue(stage, index));
-    }
-    return interleaved;
   }
 
   /**

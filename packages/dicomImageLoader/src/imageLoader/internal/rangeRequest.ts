@@ -16,10 +16,10 @@ type RetrieveOptions = Types.RetrieveOptions;
  * Note this generates 1 response for each call, and those reponses may or may
  * not be combined with each other depending on the configuration applied.
  *
- * * HTJ2K Streaming TSUID -> Use actual range requests, and set it up for partial
- *   docding.
- * * JLS and Non-streaming HTJ2K -> Use a thumbnail endpoint followed by normal
- *   endpoint
+ * * HTJ2K Streaming TSUID -> Use actual range requests, and set it up for streaming
+ *   image decoding of byte range requests
+ * * JLS and Non-streaming HTJ2K -> Use a sub-resolution (or thumbnail) endpoint
+ *   followed by normal endpoint
  *
  * @param url - including an fsiz parameter
  * @param imageId - to fetch for
@@ -106,10 +106,7 @@ export default function rangeRequest(
       // Allow over-writing the done status to indicate complete on partial
       resolve({
         ...extract,
-        status: getImageStatus(
-          retrieveOptions,
-          doneAllBytes || retrieveOptions.isLossy === false
-        ),
+        status: getImageStatus(retrieveOptions, doneAllBytes),
         percentComplete: (initialBytes * 100) / totalBytes,
       });
     } catch (err: any) {

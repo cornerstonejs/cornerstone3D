@@ -1,4 +1,4 @@
-import type { IRetrieveConfiguration } from '../types';
+import type { IRetrieveConfiguration } from '../../types';
 
 /**
  * This simply retrieves the images sequentially as provided.

@@ -1490,15 +1490,13 @@ enum ImageStatus {
     // (undocumented)
     ADJACENT_REPLICATE = 3,
     // (undocumented)
-    DONE = 8,
+    FAR_REPLICATE = 1,
     // (undocumented)
-    LOADING = 5,
+    FULL_RESOLUTION = 8,
     // (undocumented)
     LOSSY = 7,
     // (undocumented)
-    PARTIAL = 6,
-    // (undocumented)
-    REPLICATE = 1
+    SUBRESOLUTION = 6
 }
 
 // @public (undocumented)
@@ -2042,6 +2040,13 @@ const metadataProvider: {
 const mprCameraValues: any;
 
 // @public (undocumented)
+type NearbyFrames = {
+    offset: number;
+    linearOffset?: number;
+    status?: ImageStatus;
+};
+
+// @public (undocumented)
 type NearbyRequest = {
     itemId: string;
     linearId?: string;
@@ -2288,28 +2293,18 @@ export function resetUseCPURendering(): void;
 export function resetUseSharedArrayBuffer(): void;
 
 // @public (undocumented)
-interface RetrieveOptions {
-    // (undocumented)
-    decodeLevel?: number;
-    // (undocumented)
-    framesPath?: string;
-    // (undocumented)
-    initialBytes?: number | ((metadata: any) => number);
-    // (undocumented)
-    isLossy?: boolean;
-    // (undocumented)
-    partialStatus?: ImageStatus;
-    // (undocumented)
-    range?: number;
-    // (undocumented)
-    status?: ImageStatus;
-    // (undocumented)
-    streaming?: boolean;
-    // (undocumented)
-    totalRangesToFetch?: number | ((metadata: any) => number);
-    // (undocumented)
+type RetrieveOptions = {
     urlArguments?: string;
-}
+    framesPath?: string;
+    streaming?: boolean;
+    initialBytes?: number | ((metadata: any) => number);
+    range?: number;
+    totalRangesToFetch?: number | ((metadata: any) => number);
+    decodeLevel?: number;
+    isLossy?: boolean;
+    status?: ImageStatus;
+    partialStatus?: ImageStatus;
+};
 
 // @public (undocumented)
 interface RetrieveStage {
@@ -2596,6 +2591,7 @@ declare namespace Types {
     export {
         RetrieveStage,
         RetrieveOptions,
+        NearbyFrames,
         IRetrieveConfiguration,
         Cornerstone3DConfig,
         ICamera,

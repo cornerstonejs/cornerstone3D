@@ -138,7 +138,7 @@ function loadImage(
       for await (const result of compressedIt) {
         const {
           pixelData,
-          status = ImageStatus.DONE,
+          status = ImageStatus.FULL_RESOLUTION,
           percentComplete,
           done = true,
         } = result;
@@ -154,7 +154,7 @@ function loadImage(
         }
         const decodeLevel =
           result.decodeLevel ??
-          (status === ImageStatus.DONE
+          (status === ImageStatus.FULL_RESOLUTION
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,

@@ -22,12 +22,14 @@ version of the image. This results in about a 10x speed improvement to first
 images. It is affected fairly strongly by overall image size, network performance
 and compression ratios.
 
-| Type             | Network | First Render | Final Render |
-| ---------------- | ------- | ------------ | ------------ |
-| JLS              | 4g      |              | 4586 ms      |
-| JLS Reduced      | 4g      | 359 ms       | 4903 ms      |
-| HTJ2K            | 4g      | 897 ms       | 5213 ms      |
-| HTJ2K Byte Range | 4g      | 780 ms       | 5431 ms      |
+The full size images are 3036 x 3036, while the JLS reduced images are 759 x 759
+
+| Type             | Network | Size   | First Render | Final Render |
+| ---------------- | ------- | ------ | ------------ | ------------ |
+| JLS              | 4g      | 10.6 M |              | 4586 ms      |
+| JLS Reduced      | 4g      | 766 K  | 359 ms       | 4903 ms      |
+| HTJ2K            | 4g      | 11.1 M | 897 ms       | 5213 ms      |
+| HTJ2K Byte Range | 4g      | 128 K  | 780 ms       | 5431 ms      |
 
 - JLS Reduced uses 1/16 size JLS 'thumbnails'
 - HTJ2K uses streaming data
@@ -73,6 +75,6 @@ cornerstoneDicomImageLoader.configure({
     },
     singleFast: {
       default: {
-        isLossy: true,
+        status: ImageStatus.SUBRESOLUTION,
         framesPath: '/jlsThumbnail/',
 ```

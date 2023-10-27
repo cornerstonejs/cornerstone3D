@@ -29,7 +29,7 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { ViewportType, Events } = Enums;
+const { ImageStatus, ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
@@ -194,7 +194,7 @@ const configJLSMixed = {
     ...configJLS.retrieveOptions,
     multipleFast: {
       default: {
-        isLossy: true,
+        status: ImageStatus.SUBRESOLUTION,
         framesPath: '/jlsThumbnail/',
       },
     },
@@ -227,7 +227,7 @@ const configHtj2kByteRange = {
     ...configHtj2k,
     multipleFast: {
       default: {
-        isLossy: false,
+        status: ImageStatus.FULL_RESOLUTION,
         streaming: true,
         range: 0,
         initialBytes: 64000,

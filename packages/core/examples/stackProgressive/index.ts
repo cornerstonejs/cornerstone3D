@@ -65,14 +65,15 @@ content.appendChild(element);
 // ============================= //
 
 const statusNames = {
-  [ImageStatus.DONE]: 'done',
+  [ImageStatus.FULL_RESOLUTION]: 'full resolution',
   [ImageStatus.LOSSY]: 'lossy',
-  [ImageStatus.PARTIAL]: 'partial',
+  [ImageStatus.SUBRESOLUTION]: 'sub-resolution',
 };
+
 async function newImageFunction(evt) {
   const { image } = evt.detail;
   const { status, decodeTimeInMS, loadTimeInMS, transferSyntaxUID } = image;
-  const complete = status === ImageStatus.DONE;
+  const complete = status === ImageStatus.FULL_RESOLUTION;
   if (complete) {
     element.removeEventListener(
       cornerstone.EVENTS.STACK_NEW_IMAGE,
@@ -145,7 +146,7 @@ const configJLSMixed = {
     ...configJLS.retrieveOptions,
     singleFast: {
       default: {
-        isLossy: true,
+        status: ImageStatus.SUBRESOLUTION,
         framesPath: '/jlsThumbnail/',
       },
     },

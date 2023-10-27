@@ -85,6 +85,7 @@ import type { AffineMatrix } from './AffineMatrix';
 export type {
   RetrieveStage,
   RetrieveOptions,
+  NearbyFrames,
   IRetrieveConfiguration,
 } from './IRetrieveConfiguration';
 import type { ProgressiveListener } from './ProgressiveListener';

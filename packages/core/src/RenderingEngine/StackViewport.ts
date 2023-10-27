@@ -53,6 +53,7 @@ import {
   RequestType,
   Events,
   VOILUTFunctionType,
+  ViewportStatus,
 } from '../enums';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
@@ -77,7 +78,6 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
-import ViewportStatus from '../enums/ViewportStatus';
 import * as progressiveLoader from '../loaders/progressiveLoader';
 
 const EPSILON = 1; // Slice Thickness
@@ -1442,6 +1442,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
+    this.viewportStatus = ViewportStatus.LOADING;
 
     this.fillWithBackgroundColor();
 
@@ -1460,7 +1461,6 @@ class StackViewport extends Viewport implements IStackViewport {
     };
 
     triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
-    this.viewportStatus = ViewportStatus.LOADING;
 
     return imageId;
   }

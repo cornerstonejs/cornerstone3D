@@ -28,7 +28,7 @@ export type NearbyFrames = {
   status?: ImageStatus;
 };
 
-export interface RetrieveOptions {
+export type RetrieveOptions = {
   // Additional arguments to add to the URL, in the format
   // arg1=value1 ('&' arg2=value2)*
   // For example: '&lossy=jhc' to use JHC lossy values
@@ -49,7 +49,7 @@ export interface RetrieveOptions {
   status?: ImageStatus;
   // Status to use on partial read. Defaults to Partial
   partialStatus?: ImageStatus;
-}
+};
 
 /**
  * Defines how the retrieve configuration is handled for single and multi

@@ -157,7 +157,7 @@ An example configuration for JPIP:
       default: {
         // Need to note this is a lossy encoding, as it isn't possible to
         // detect based on the general configuration here.
-        isLossy: true,
+        status: ImageStatus.SUBRESOLUTION,
         // Hypothetical JPIP server using a path that is the normal DICOMweb
         // path but with /jpip?target= replacing the /frames path
         // This uses the standards based target JPIP parameter, and assigns

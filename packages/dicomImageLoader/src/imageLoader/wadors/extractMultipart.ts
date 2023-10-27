@@ -26,7 +26,7 @@ export default function extractMultipart(
   if (contentType.indexOf('multipart') === -1) {
     return {
       contentType,
-      status: isPartial ? ImageStatus.PARTIAL : ImageStatus.DONE,
+      status: isPartial ? ImageStatus.SUBRESOLUTION : ImageStatus.FULL_RESOLUTION,
       pixelData: response,
     };
   }
