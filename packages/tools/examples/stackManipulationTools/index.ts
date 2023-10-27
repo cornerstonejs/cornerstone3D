@@ -163,11 +163,10 @@ async function run() {
     renderingEngine.getViewport(viewportId)
   );
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0], imageIds[1], imageIds[2]];
-
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  viewport.setStack(imageIds);
+
+  cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
 
   // Render the image
   viewport.render();

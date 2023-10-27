@@ -1,6 +1,8 @@
 import IStackViewport from './IStackViewport';
 import { PublicViewportInput } from './IViewport';
 import IVolumeViewport from './IVolumeViewport';
+import { IViewport } from './IViewport';
+import IVideoViewport from './IVideoViewport';
 
 export default interface IRenderingEngine {
   id: string;
@@ -9,8 +11,8 @@ export default interface IRenderingEngine {
   offScreenCanvasContainer: any;
   setViewports(viewports: Array<PublicViewportInput>): void;
   resize(immediate?: boolean, keepCamera?: boolean): void;
-  getViewport(id: string): IStackViewport | IVolumeViewport;
-  getViewports(): Array<IStackViewport | IVolumeViewport>;
+  getViewport(id: string): IViewport;
+  getViewports(): Array<IViewport>;
   render(): void;
   renderViewports(viewportIds: Array<string>): void;
   renderViewport(viewportId: string): void;
@@ -23,6 +25,7 @@ export default interface IRenderingEngine {
   disableElement(viewportId: string): void;
   getStackViewports(): Array<IStackViewport>;
   getVolumeViewports(): Array<IVolumeViewport>;
+  getVideoViewports(): Array<IVideoViewport>;
   destroy(): void;
   _debugRender(): void;
 }

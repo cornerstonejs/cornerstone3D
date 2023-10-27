@@ -368,3 +368,24 @@ export interface ScaleOverlayAnnotation extends Annotation {
     viewportId: string;
   };
 }
+
+export interface VideoRedactionAnnotation extends Annotation {
+  metadata: {
+    viewPlaneNormal: Types.Point3;
+    viewUp: Types.Point3;
+    FrameOfReferenceUID: string;
+    referencedImageId: string;
+    toolName: string;
+  };
+  data: {
+    invalidated: boolean;
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+    };
+    cachedStats: {
+      [key: string]: any; // Can be more specific if the structure is known
+    };
+    active: boolean;
+  };
+}

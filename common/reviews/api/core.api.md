@@ -639,7 +639,8 @@ declare namespace Enums {
         ContourType,
         VOILUTFunctionType,
         DynamicOperatorType,
-        ViewportStatus
+        ViewportStatus,
+        VideoViewport_2 as VideoViewport
     }
 }
 export { Enums }
@@ -1608,6 +1609,12 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
 
 // @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
+// @public (undocumented)
 enum InterpolationType {
     // (undocumented)
     FAST_LINEAR = 2,
@@ -1641,9 +1648,11 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(id: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(id: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -1772,6 +1781,26 @@ interface IStreamingVolumeProperties {
         cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
+}
+
+// @public (undocumented)
+interface IVideoViewport extends IViewport {
+    // (undocumented)
+    getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    pause: () => void;
+    // (undocumented)
+    play: () => void;
+    // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    // (undocumented)
+    resetProperties(): void;
+    // (undocumented)
+    resize: () => void;
+    // (undocumented)
+    setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideoURL: (url: string) => void;
 }
 
 // @public (undocumented)
@@ -2203,9 +2232,11 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(viewportId: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(viewportId: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -2341,6 +2372,14 @@ const spatialRegistrationMetadataProvider: {
     add: (query: string[], payload: mat4) => void;
     get: (type: string, query: string[]) => mat4;
 };
+
+// @public (undocumented)
+enum SpeedUnit {
+    // (undocumented)
+    FRAME = "f",
+    // (undocumented)
+    SECOND = "s"
+}
 
 // @public (undocumented)
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
@@ -2535,6 +2574,7 @@ declare namespace Types {
         Cornerstone3DConfig,
         ICamera,
         IStackViewport,
+        IVideoViewport,
         IVolumeViewport,
         IEnabledElement,
         ICache,
@@ -2580,6 +2620,7 @@ declare namespace Types {
         Mat3,
         Plane,
         ViewportInputOptions,
+        VideoViewportProperties,
         VOIRange,
         VOI,
         DisplayArea,
@@ -2616,7 +2657,9 @@ declare namespace Types {
         PixelDataTypedArray,
         ImagePixelModule,
         ImagePlaneModule,
-        AffineMatrix
+        AffineMatrix,
+        InternalVideoCamera,
+        VideoViewportInput
     }
 }
 export { Types }
@@ -2688,6 +2731,94 @@ export { utilities }
 
 // @public (undocumented)
 function uuidv4(): string;
+
+// @public (undocumented)
+export class VideoViewport extends Viewport implements IVideoViewport {
+    constructor(props: VideoViewportInput);
+    // (undocumented)
+    readonly canvasContext: CanvasRenderingContext2D;
+    // (undocumented)
+    canvasToWorld: (canvasPos: Point2) => Point3;
+    // (undocumented)
+    customRenderViewportToCanvas: () => void;
+    // (undocumented)
+    end(): Promise<void>;
+    // (undocumented)
+    getCamera(): ICamera;
+    // (undocumented)
+    getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getImageData(): any;
+    // (undocumented)
+    getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    pause(): Promise<void>;
+    // (undocumented)
+    play(): void;
+    // (undocumented)
+    readonly renderingEngineId: string;
+    // (undocumented)
+    resetCamera: () => boolean;
+    // (undocumented)
+    resetProperties(): void;
+    // (undocumented)
+    resize: () => void;
+    // (undocumented)
+    scroll(delta?: number): Promise<void>;
+    // (undocumented)
+    setCamera(camera: ICamera): void;
+    // (undocumented)
+    setFrame(frame: number): Promise<void>;
+    // (undocumented)
+    setPlaybackRate(rate?: number): void;
+    // (undocumented)
+    setProperties(videoInterface: VideoViewportProperties): void;
+    // (undocumented)
+    setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
+    // (undocumented)
+    setTime(timeInSeconds: number): Promise<void>;
+    // (undocumented)
+    setVideoURL(videoURL: string): Promise<unknown>;
+    // (undocumented)
+    start(): Promise<void>;
+    // (undocumented)
+    togglePlayPause(): boolean;
+    // (undocumented)
+    readonly uid: any;
+    // (undocumented)
+    static readonly useCustomRenderingPipeline = true;
+    // (undocumented)
+    worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+declare namespace VideoViewport_2 {
+    export {
+        SpeedUnit
+    }
+}
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
+
+// @public (undocumented)
+type VideoViewportProperties = ViewportProperties & {
+    loop?: boolean;
+    muted?: boolean;
+    pan?: Point2;
+    playbackRate?: number;
+    parallelScale?: number;
+};
 
 // @public (undocumented)
 export class Viewport implements IViewport {
@@ -2905,6 +3036,8 @@ enum ViewportType {
     PERSPECTIVE = "perspective",
     // (undocumented)
     STACK = "stack",
+    // (undocumented)
+    VIDEO = "video",
     // (undocumented)
     VOLUME_3D = "volume3d"
 }

@@ -1088,6 +1088,12 @@ type ImageVolumeModifiedEventDetail = {
     FrameOfReferenceUID: string;
 };
 
+// @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
 // @public
 enum InterpolationType {
     // (undocumented)
@@ -1120,9 +1126,11 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(id: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(id: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -1219,6 +1227,21 @@ interface IStreamingVolumeProperties {
         cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
+}
+
+// @public
+interface IVideoViewport extends IViewport {
+    getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    pause: () => void;
+    // (undocumented)
+    play: () => void;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetProperties(): void;
+    resize: () => void;
+    setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideoURL: (url: string) => void;
 }
 
 // @public
@@ -1535,6 +1558,14 @@ enum SharedArrayBufferModes {
 }
 
 // @public
+enum SpeedUnit {
+    // (undocumented)
+    FRAME = 'f',
+    // (undocumented)
+    SECOND = 's',
+}
+
+// @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
 // @public
@@ -1610,6 +1641,37 @@ type SurfaceData = {
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
 
+declare namespace VideoViewport {
+    export {
+        SpeedUnit
+    }
+}
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
+
+// @public
+type VideoViewportProperties = ViewportProperties & {
+    loop?: boolean;
+    muted?: boolean;
+    pan?: Point2;
+    playbackRate?: number;
+    // The zoom factor, naming consistent with vtk cameras for now,
+    // but this isn't necessarily necessary.
+    parallelScale?: number;
+};
+
 // @public
 type ViewportInputOptions = {
     background?: RGB;
@@ -1666,6 +1728,8 @@ enum ViewportType {
     ORTHOGRAPHIC = 'orthographic',
     PERSPECTIVE = 'perspective',
     STACK = 'stack',
+    // (undocumented)
+    VIDEO = 'video',
     // (undocumented)
     VOLUME_3D = 'volume3d',
 }

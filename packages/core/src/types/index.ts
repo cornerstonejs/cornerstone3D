@@ -83,6 +83,12 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+import type VideoViewportProperties from './VideoViewportProperties';
+import type IVideoViewport from './IVideoViewport';
+import type {
+  InternalVideoCamera,
+  VideoViewportInput,
+} from './VideoViewportTypes';
 
 export type {
   // config
@@ -90,6 +96,7 @@ export type {
   //
   ICamera,
   IStackViewport,
+  IVideoViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
@@ -136,6 +143,7 @@ export type {
   Mat3,
   Plane,
   ViewportInputOptions,
+  VideoViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -180,4 +188,7 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  // video
+  InternalVideoCamera,
+  VideoViewportInput,
 };
