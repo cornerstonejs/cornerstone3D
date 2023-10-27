@@ -3975,6 +3975,8 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     onSetToolActive: () => void;
     // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
     orientationMarkers: any;
