@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "1.25.0",
+  "version": "1.26.0",
   "description": "Cornerstone3D Tools",
   "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
