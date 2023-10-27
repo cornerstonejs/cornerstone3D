@@ -1091,11 +1091,9 @@ class Viewport implements IViewport {
 
     // update clipping range only if focal point changed of a new actor is added
     const prevFocalPoint = previousCamera.focalPoint;
-    const prevViewUp = previousCamera.viewUp;
 
-    if ((prevFocalPoint && focalPoint) || (prevViewUp && viewUp)) {
+    if (prevFocalPoint && focalPoint) {
       const currentViewPlaneNormal = <Point3>vtkCamera.getViewPlaneNormal();
-      const currentViewUp = <Point3>vtkCamera.getViewUp();
 
       const deltaCamera = <Point3>[
         focalPoint[0] - prevFocalPoint[0],
@@ -1104,13 +1102,11 @@ class Viewport implements IViewport {
       ];
 
       const cameraModifiedOutOfPlane =
-        Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > EPSILON;
-
-      const viewUpHasChanged = isEqual(prevViewUp, currentViewUp);
+        Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > 0;
 
       // only modify the clipping planes if the camera is modified out of plane
       // or a new actor is added and we need to update the clipping planes
-      if (cameraModifiedOutOfPlane || viewUpHasChanged || this.newActorAdded) {
+      if (cameraModifiedOutOfPlane || this.newActorAdded) {
         const actorEntry = this.getDefaultActor();
         if (!actorEntry?.actor) {
           return;
