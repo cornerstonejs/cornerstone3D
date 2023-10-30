@@ -49,7 +49,8 @@ import * as volumeLoader from './loaders/volumeLoader';
 import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import * as progressiveLoader from './loaders/progressiveLoader';
-import * as Types from './types';
+import type * as Types from './types';
+import type { IRetrieveConfiguration } from './types';
 import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
@@ -60,7 +61,7 @@ import {
   addVolumesToViewports,
 } from './RenderingEngine/helpers';
 
-export type { Types };
+export type { Types, IRetrieveConfiguration };
 
 export {
   // init

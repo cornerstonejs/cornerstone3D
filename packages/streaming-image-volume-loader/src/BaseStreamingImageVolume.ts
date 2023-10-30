@@ -10,11 +10,9 @@ import {
   progressiveLoader,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, IRetrieveConfiguration } from '@cornerstonejs/core';
 
 import { scaleArray, autoLoad } from './helpers';
-
-type IRetrieveConfiguration = Types.IRetrieveConfiguration;
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const { getMinMax, ProgressiveIterator } = csUtils;

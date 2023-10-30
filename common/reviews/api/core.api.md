@@ -1650,7 +1650,7 @@ interface IRenderingEngine {
 }
 
 // @public (undocumented)
-interface IRetrieveConfiguration {
+export interface IRetrieveConfiguration {
     // (undocumented)
     stages?: RetrieveStage[];
 }
