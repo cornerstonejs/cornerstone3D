@@ -3,7 +3,7 @@
   "version": "2.0.0-beta.4",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
-  "types": "dist/esm/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
@@ -24,7 +24,7 @@
     "api-check": "api-extractor --debug run",
     "clean": "shx rm -rf dist",
     "dev": "tsc --project ./tsconfig.esm.json --watch",
-    "build:update-api": "yarn run build && api-extractor run --local",
+    "build:update-api": "yarn run build && api-extractor run --local --diagnostics",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
