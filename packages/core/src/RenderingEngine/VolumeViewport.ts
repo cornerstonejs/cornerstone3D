@@ -1,5 +1,6 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 
 import { vec3 } from 'gl-matrix';
 
@@ -12,6 +13,7 @@ import type {
   IVolumeInput,
   OrientationVectors,
   Point3,
+  EventTypes,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import {
@@ -36,12 +38,26 @@ import { ImageActor } from '../types/IActor';
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport extends BaseVolumeViewport {
+  // Camera properties
+  private initialViewUp: Point3;
+
   private _useAcquisitionPlaneForViewPlane = false;
   constructor(props: ViewportInput) {
     super(props);
 
-    const { orientation } = this.options;
+    const camera = vtkCamera.newInstance();
 
+    this.initialViewUp = <Point3>[0, -1, 0];
+    const viewPlaneNormal = <Point3>[0, 0, -1];
+
+    camera.setDirectionOfProjection(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
+    camera.setViewUp(...this.initialViewUp);
+
+    const { orientation } = this.options;
     // if the camera is set to be acquisition axis then we need to skip
     // it for now until the volume is set
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
@@ -171,6 +187,85 @@ class VolumeViewport extends BaseVolumeViewport {
       viewPlaneNormal,
       viewUp,
     };
+  }
+
+  /**
+   * Gets the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently.
+   *
+   * @returns the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently.
+   */
+  private getRotationGPU = (): number => {
+    const {
+      viewUp: currentViewUp,
+      viewPlaneNormal,
+      flipVertical,
+    } = this.getCamera();
+
+    // The initial view up vector without any rotation, but incorporating vertical flip.
+    const initialViewUp = flipVertical
+      ? vec3.negate(vec3.create(), this.initialViewUp)
+      : this.initialViewUp;
+
+    // The angle between the initial and current view up vectors.
+    // TODO: check with VTK about rounding errors here.
+    const initialToCurrentViewUpAngle =
+      (vec3.angle(initialViewUp, currentViewUp) * 180) / Math.PI;
+
+    // Now determine if initialToCurrentViewUpAngle is positive or negative by comparing
+    // the direction of the initial/current view up cross product with the current
+    // viewPlaneNormal.
+
+    const initialToCurrentViewUpCross = vec3.cross(
+      vec3.create(),
+      initialViewUp,
+      currentViewUp
+    );
+
+    // The sign of the dot product of the start/end view up cross product and
+    // the viewPlaneNormal indicates a positive or negative rotation respectively.
+    const normalDot = vec3.dot(initialToCurrentViewUpCross, viewPlaneNormal);
+
+    return normalDot >= 0
+      ? initialToCurrentViewUpAngle
+      : (360 - initialToCurrentViewUpAngle) % 360;
+  };
+
+  public setRotation(rotation: number): void {
+    const previousCamera = this.getCamera();
+
+    this.setRotationGPU(rotation);
+
+    // New camera after rotation
+    const camera = this.getCamera();
+
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      previousCamera,
+      camera,
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      rotation,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+  }
+
+  private setRotationGPU(rotation: number): void {
+    const { flipVertical } = this.getCamera();
+
+    // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
+    const initialViewUp = flipVertical
+      ? vec3.negate(vec3.create(), this.initialViewUp)
+      : this.initialViewUp;
+
+    this.setCameraNoEvent({
+      viewUp: initialViewUp as Point3,
+    });
+
+    // rotating camera to the new value
+    this.getVtkActiveCamera().roll(-rotation);
   }
 
   private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
@@ -363,7 +458,7 @@ class VolumeViewport extends BaseVolumeViewport {
     return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
 
-  getRotation = (): number => 0;
+  getRotation = this.getRotationGPU.bind(this);
 
   /**
    * Reset the viewport properties to the default values
