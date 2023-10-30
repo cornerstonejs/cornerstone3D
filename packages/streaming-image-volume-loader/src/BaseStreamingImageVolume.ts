@@ -61,9 +61,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus = streamingProperties.loadStatus;
     this.numFrames = this._getNumFrames();
     this.retrieveConfiguration =
-      typeof streamingProperties.progressiveLoading === 'object'
-        ? streamingProperties.progressiveLoading
-        : streamingProperties.progressiveLoading &&
+      typeof streamingProperties.progressiveRendering === 'object'
+        ? streamingProperties.progressiveRendering
+        : streamingProperties.progressiveRendering &&
           progressiveLoader.interleavedRetrieveConfiguration;
     this._createCornerstoneImageMetaData();
   }

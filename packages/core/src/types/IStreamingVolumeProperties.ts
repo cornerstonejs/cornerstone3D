@@ -15,7 +15,7 @@ interface IStreamingVolumeProperties {
   };
 
   /** Set to true to use progressive loading, or to a specific loading config */
-  progressiveLoading?: boolean | IRetrieveConfiguration;
+  progressiveRendering?: boolean | IRetrieveConfiguration;
 }
 
 export default IStreamingVolumeProperties;

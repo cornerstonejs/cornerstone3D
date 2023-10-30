@@ -356,16 +356,19 @@ async function run() {
   );
   renderingEngine.renderViewports(viewportIds);
 
+  let progressiveRendering = true;
+
   async function loadVolume(volumeId, imageIds, config, text) {
     cornerstoneDicomImageLoader.configure(config);
     cache.purgeCache();
     resetTimingInfo();
     // Define a volume in memory
+    getOrCreateTiming('loadingStatus').innerText = 'Loading...';
     const start = Date.now();
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
+      progressiveRendering,
     });
-    getOrCreateTiming('loadingStatus').innerText = 'Loading...';
 
     // Set the volume to load
     volume.load(() => {
@@ -392,19 +395,38 @@ async function run() {
 
   eventTarget.addEventListener(Events.IMAGE_LOAD_STAGE, imageLoadStage);
 
-  const createButton = (text, volId, imageIds, config) => {
+  const createButton = (text, action) => {
     const button = document.createElement('button');
     button.innerText = text;
-    button.onclick = loadVolume.bind(null, volId, imageIds, config, text);
+    button.id = text;
+    button.onclick = action;
     loaders.appendChild(button);
+    return button;
   };
 
-  createButton('JLS', volumeId, imageIdsCT, configJLS);
-  createButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
-  createButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
-  createButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  createButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
-  createButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+  const loadButton = (text, volId, imageIds, config) =>
+    createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
+
+  loadButton('JLS', volumeId, imageIdsCT, configJLS);
+  loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
+  loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
+  loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
+  loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
+  loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+
+  const nonProgressiveText = 'Set Non Progressive';
+  createButton(nonProgressiveText, () => {
+    const button = document.getElementById(nonProgressiveText);
+    const isProgressive = nonProgressiveText === button.innerText;
+    if (isProgressive) {
+      // It is progrossive now, so set non-progressive
+      button.innerText = 'Set Progressive';
+      progressiveRendering = false;
+    } else {
+      button.innerText = nonProgressiveText;
+      progressiveRendering = true;
+    }
+  });
 }
 
 run();
