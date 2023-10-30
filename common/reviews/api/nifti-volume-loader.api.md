@@ -1115,7 +1115,7 @@ interface IStreamingVolumeProperties {
         callbacks: Array<() => void>;
     };
 
-    retrieveConfiguration?: IRetrieveConfiguration;
+    progressiveLoading?: boolean | IRetrieveConfiguration;
 }
 
 // @public
@@ -1161,6 +1161,9 @@ interface IViewport {
     );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setProgressiveRendering: (
+    progressive: boolean | IRetrieveConfiguration
+    ) => void;
     setRendered(): void;
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
@@ -1388,7 +1391,7 @@ type ProgressiveListener = {
     successCallback: (imageId, image, status) => void;
     errorCallback: (imageId, permanent, reason) => void;
 
-    getTargetOptions?: (imageId) => Record<string, unknown>;
+    getLoaderImageOptions?: (imageId) => Record<string, unknown>;
 };
 
 // @public (undocumented)

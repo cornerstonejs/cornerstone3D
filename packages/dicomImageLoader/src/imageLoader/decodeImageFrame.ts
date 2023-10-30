@@ -14,9 +14,15 @@ function processDecodeTask(
   imageFrame: ImageFrame,
   transferSyntax: string,
   pixelData: ByteArray,
-  options,
+  srcOptions,
   decodeConfig: LoaderDecodeOptions
 ): Promise<ImageFrame> {
+  const options = { ...srcOptions };
+  // If a loader is specified, it can't be passed through
+  delete options.loader;
+  // streamData may contain larger data information and shouldn't be passed
+  delete options.streamingData;
+
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]

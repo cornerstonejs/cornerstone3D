@@ -698,6 +698,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     const requests = this.getImageLoadRequests(5);
 
+    console.log('*** nonProgressive load', requests.length);
     requests.reverse().forEach((request) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
@@ -745,6 +746,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       return this._nonProgressiveRetrieve();
     }
 
+    console.log('*** progressive loader', this.imageIds.length);
     return progressiveLoader
       .load(imageIds, this, this.retrieveConfiguration)
       .catch((e) => {
