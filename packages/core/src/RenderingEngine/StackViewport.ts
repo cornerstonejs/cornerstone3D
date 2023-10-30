@@ -829,13 +829,14 @@ class StackViewport extends Viewport implements IStackViewport {
       this.setRotation(0);
     }
     this.setInterpolationType(InterpolationType.LINEAR);
-    this.setInvertColor(this.initialInvert);
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
       transferFunction,
       this.initialTransferFunctionNodes
     );
+
+    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {
