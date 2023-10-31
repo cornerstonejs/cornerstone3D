@@ -64,7 +64,14 @@ cornerstoneDicomImageLoader.configure({
   retrieveOptions: {
       singleFast: {
         '3.2.840.10008.1.2.4.96': {
+          // Both retrieve and decode streaming
+          streamingDecode: true,
           streaming: true,
+        },
+        // Retrieve streaming, but don't try decoding that
+        default: {
+          streaming: true,
+        }
 
 
 renderingEngine.enableElement({

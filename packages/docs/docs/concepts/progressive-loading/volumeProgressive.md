@@ -78,7 +78,7 @@ cornerstoneDicomImageLoader.configure({
   retrieveOptions: {
     default: {
       '3.2.840.10008.1.2.4.96': {
-        streaming: true,
+        streamingDecode: true,
       },
       default: {},
     },
@@ -89,7 +89,9 @@ cornerstoneDicomImageLoader.configure({
     },
     multipleFast: {
       default: {
-        streaming: true,
+        // Note it is the decode that is streaming, but a range request to
+        // get the data, not a streaming request.
+        streamingDecode: true,
         range: 0,
         initialBytes: 64000,
         decodeLevel: 0,
