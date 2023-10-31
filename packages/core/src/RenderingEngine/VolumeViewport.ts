@@ -196,7 +196,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns the rotation resulting from the value set in setRotation AND taking into
    * account any flips that occurred subsequently.
    */
-  private getRotationGPU = (): number => {
+  public getRotation = (): number => {
     const {
       viewUp: currentViewUp,
       viewPlaneNormal,
@@ -235,7 +235,7 @@ class VolumeViewport extends BaseVolumeViewport {
   public setRotation(rotation: number): void {
     const previousCamera = this.getCamera();
 
-    this.setRotationGPU(rotation);
+    this.rotateCamera(rotation);
 
     // New camera after rotation
     const camera = this.getCamera();
@@ -252,7 +252,7 @@ class VolumeViewport extends BaseVolumeViewport {
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
   }
 
-  private setRotationGPU(rotation: number): void {
+  private rotateCamera(rotation: number): void {
     const { flipVertical } = this.getCamera();
 
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
@@ -457,8 +457,6 @@ class VolumeViewport extends BaseVolumeViewport {
 
     return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
-
-  getRotation = this.getRotationGPU.bind(this);
 
   /**
    * Reset the viewport properties to the default values
