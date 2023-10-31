@@ -94,7 +94,6 @@ async function newImageFunction(evt) {
 async function showStack(stack: string[], viewport, config, name: string) {
   cornerstoneDicomImageLoader.configure(config);
   cache.purgeCache();
-  console.time('imageLoad');
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   element.addEventListener(
     cornerstone.EVENTS.STACK_NEW_IMAGE,
@@ -106,7 +105,6 @@ async function showStack(stack: string[], viewport, config, name: string) {
 
   // Render the image
   viewport.render();
-  console.timeEnd('imageLoad');
   const end = Date.now();
   const { transferSyntaxUID } = cornerstone.metaData.get(
     'transferSyntax',
@@ -173,8 +171,12 @@ const configHtj2k = {
     default: {
       '3.2.840.10008.1.2.4.96': {
         streaming: true,
+        streamingDecode: true,
       },
-      default: {},
+      default: {
+        streaming: true,
+        streamingDecode: false,
+      },
     },
   },
 };
@@ -184,6 +186,7 @@ const configHtj2kLossy = {
     default: {
       default: {
         streaming: true,
+        streamingDecode: true,
         framesPath: '/lossy/',
       },
     },
@@ -196,16 +199,29 @@ const configHtj2kMixed = {
     singleFinal: {
       default: {
         range: 1,
-        streaming: false,
+        streamingDecode: true,
       },
     },
     singleFast: {
       default: {
-        streaming: true,
+        streamingDecode: true,
         range: 0,
-        initialBytes: 128000,
-        framesPath: '/htj2k/',
+        initialBytes: 64000,
         decodeLevel: 3,
+      },
+    },
+  },
+};
+
+const configHtj2kThumbnail = {
+  retrieveOptions: {
+    singleFinal: {
+      default: {},
+    },
+    singleFast: {
+      default: {
+        status: ImageQualityStatus.SUBRESOLUTION,
+        framesPath: '/htj2kThumbnail/',
       },
     },
   },
@@ -278,6 +294,7 @@ async function run() {
 
   loadButton('HTJ2K', imageIds, configHtj2k);
   loadButton('HTJ2K Lossy', imageIds, configHtj2kLossy);
+  loadButton('HTJ2K Thumbnail', imageIds, configHtj2kThumbnail);
   loadButton('HTJ2K Bytes', imageIds, configHtj2kMixed);
 
   loadButton('CT JLS Mixed', imageIdsCt, configJLSMixed);

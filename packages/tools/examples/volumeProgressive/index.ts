@@ -216,8 +216,12 @@ const configHtj2k = {
     default: {
       '3.2.840.10008.1.2.4.96': {
         streaming: true,
+        streamingDecode: true,
       },
-      default: {},
+      default: {
+        streaming: true,
+        // Don't attempt decoding streaming data unless it is specifically HTJ2K
+      },
     },
   },
 };
@@ -228,7 +232,7 @@ const configHtj2kByteRange = {
     multipleFast: {
       default: {
         status: ImageQualityStatus.FULL_RESOLUTION,
-        streaming: true,
+        streamingDecode: true,
         range: 0,
         initialBytes: 64000,
         decodeLevel: 0,
@@ -247,7 +251,7 @@ const configHtj2kMixed = {
     },
     multipleFast: {
       default: {
-        streaming: true,
+        streamingDecode: true,
         range: 0,
         initialBytes: 64000,
         decodeLevel: 0,

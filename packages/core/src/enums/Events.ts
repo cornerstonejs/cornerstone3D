@@ -93,9 +93,8 @@ enum Events {
    */
   IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
   /**
-   * Triggers on the eventTarget when progressive loading stages are completed.
-   * Allows tracking of the progress of overall volume loads, as well as progress
-   * of stack viewport loading.
+   * Triggers on the eventTarget when progressive loading stages are completed
+   * for all images for a given volume.
    */
   IMAGE_LOAD_STAGE = 'CORNESRTONE_IMAGE_LOAD_STAGE',
   /**

@@ -223,6 +223,95 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus.callbacks = [];
   }
 
+  protected callLoadStatusCallback(evt) {
+    const { framesUpdated, framesProcessed, totalNumFrames } = evt;
+    const { volumeId, reRenderFraction, loadStatus, metadata } = this;
+    const { FrameOfReferenceUID } = metadata;
+
+    // TODO: probably don't want this here
+    if (this.autoRenderOnLoad) {
+      if (
+        framesUpdated > this.reRenderTarget ||
+        framesProcessed === totalNumFrames
+      ) {
+        this.reRenderTarget += reRenderFraction;
+        autoLoad(volumeId);
+      }
+    }
+    if (framesProcessed === totalNumFrames) {
+      loadStatus.callbacks.forEach((callback) => callback(evt));
+
+      const eventDetail = {
+        FrameOfReferenceUID,
+        volumeId: volumeId,
+      };
+
+      triggerEvent(
+        eventTarget,
+        Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        eventDetail
+      );
+    }
+  }
+
+  protected updateTextureAndTriggerEvents(
+    volume: BaseStreamingImageVolume,
+    imageIdIndex,
+    imageId,
+    status = ImageQualityStatus.FULL_RESOLUTION
+  ) {
+    const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
+    const { cachedFrames, numFrames, totalNumFrames } = this;
+    const { FrameOfReferenceUID } = this.metadata;
+    const currentStatus = cachedFrames[frameIndex];
+    if (currentStatus > status) {
+      // This is common for initial versus decimated images.
+      return;
+    }
+
+    if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
+      return;
+    }
+    const complete = status === ImageQualityStatus.FULL_RESOLUTION;
+    cachedFrames[imageIdIndex] = status;
+    this.framesUpdated++;
+    if (complete) {
+      this.framesLoaded++;
+      this.framesProcessed++;
+    }
+
+    this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
+    this.imageData.modified();
+
+    const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
+      FrameOfReferenceUID,
+      imageVolume: volume,
+    };
+
+    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
+
+    if (complete && this.framesProcessed === this.totalNumFrames) {
+      this.loadStatus.loaded = true;
+      this.loadStatus.loading = false;
+    }
+
+    this.callLoadStatusCallback({
+      success: true,
+      imageIdIndex,
+      imageId,
+      framesLoaded: this.framesLoaded,
+      framesProcessed: this.framesProcessed,
+      framesUpdated: this.framesUpdated,
+      numFrames,
+      totalNumFrames,
+      complete,
+      status,
+    });
+    if (this.loadStatus.loaded) {
+      this.loadStatus.callbacks = [];
+    }
+  }
+
   public successCallback(
     imageId: string,
     image,
@@ -373,95 +462,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     this._prefetchImageIds();
   };
-
-  protected updateTextureAndTriggerEvents(
-    volume: BaseStreamingImageVolume,
-    imageIdIndex,
-    imageId,
-    status = ImageQualityStatus.FULL_RESOLUTION
-  ) {
-    const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
-    const { cachedFrames, numFrames, totalNumFrames } = this;
-    const { FrameOfReferenceUID } = this.metadata;
-    const currentStatus = cachedFrames[frameIndex];
-    if (currentStatus > status) {
-      // This is common for initial versus decimated images.
-      return;
-    }
-
-    if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
-      return;
-    }
-    const complete = status === ImageQualityStatus.FULL_RESOLUTION;
-    cachedFrames[imageIdIndex] = status;
-    this.framesUpdated++;
-    if (complete) {
-      this.framesLoaded++;
-      this.framesProcessed++;
-    }
-
-    this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
-    this.imageData.modified();
-
-    const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
-      FrameOfReferenceUID,
-      imageVolume: volume,
-    };
-
-    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
-
-    if (complete && this.framesProcessed === this.totalNumFrames) {
-      this.loadStatus.loaded = true;
-      this.loadStatus.loading = false;
-    }
-
-    this.callLoadStatusCallback({
-      success: true,
-      imageIdIndex,
-      imageId,
-      framesLoaded: this.framesLoaded,
-      framesProcessed: this.framesProcessed,
-      framesUpdated: this.framesUpdated,
-      numFrames,
-      totalNumFrames,
-      complete,
-      status,
-    });
-    if (this.loadStatus.loaded) {
-      this.loadStatus.callbacks = [];
-    }
-  }
-
-  protected callLoadStatusCallback(evt) {
-    const { framesUpdated, framesProcessed, totalNumFrames } = evt;
-    const { volumeId, reRenderFraction, loadStatus, metadata } = this;
-    const { FrameOfReferenceUID } = metadata;
-
-    // TODO: probably don't want this here
-    if (this.autoRenderOnLoad) {
-      if (
-        framesUpdated > this.reRenderTarget ||
-        framesProcessed === totalNumFrames
-      ) {
-        this.reRenderTarget += reRenderFraction;
-        autoLoad(volumeId);
-      }
-    }
-    if (framesProcessed === totalNumFrames) {
-      loadStatus.callbacks.forEach((callback) => callback(evt));
-
-      const eventDetail = {
-        FrameOfReferenceUID,
-        volumeId: volumeId,
-      };
-
-      triggerEvent(
-        eventTarget,
-        Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
-        eventDetail
-      );
-    }
-  }
 
   public getLoaderImageOptions(imageId: string) {
     const { transferSyntaxUID: transferSyntaxUID } =
@@ -696,7 +696,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     const requests = this.getImageLoadRequests(5);
 
-    console.log('*** nonProgressive load', requests.length);
     requests.reverse().forEach((request) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
@@ -744,7 +743,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       return this._nonProgressiveRetrieve();
     }
 
-    console.log('*** progressive loader', this.imageIds.length);
     return progressiveLoader
       .load(imageIds, this, this.retrieveConfiguration)
       .catch((e) => {

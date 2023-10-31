@@ -1,4 +1,4 @@
-import { RetrieveOptions } from 'core/src/types';
+import type { RetrieveOptions } from '@cornerstonejs/core';
 import { LoaderOptions } from '../../types';
 
 let options: LoaderOptions = {

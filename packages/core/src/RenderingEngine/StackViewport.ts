@@ -188,7 +188,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
   public setUseCPURendering(value: boolean) {
     this.useCPURendering = value;
-    console.log('setUseCPURendering', value);
     this._configureRenderingPipeline(value);
   }
 
@@ -1596,7 +1595,6 @@ class StackViewport extends Viewport implements IStackViewport {
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
-    console.log('Load and display image', this.useCPURendering);
     return this.useCPURendering
       ? this._loadAndDisplayImageCPU(imageId, imageIdIndex)
       : this._loadAndDisplayImageGPU(imageId, imageIdIndex);
@@ -1606,7 +1604,6 @@ class StackViewport extends Viewport implements IStackViewport {
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
-    console.log('Loading and displaying CPU', imageIdIndex);
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(
@@ -1718,24 +1715,14 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       function sendRequest(imageId, imageIdIndex, options) {
-        const uncompressedIterator = ProgressiveIterator.as(
-          loadAndCacheImage(imageId, options)
-        );
-        const displayedIterator = new ProgressiveIterator<void | IImage>(
-          'displayed'
-        );
-        displayedIterator.generate(async (it) => {
-          for await (const image of uncompressedIterator) {
-            // Update cache
-            cache.removeImageLoadObject(imageId);
-            cache.putImageLoadObject(imageId, {
-              promise: Promise.resolve(image),
-            });
+        return loadAndCacheImage(imageId, options).then(
+          (image) => {
             successCallback.call(this, image, imageIdIndex, imageId);
-            it.add(image, uncompressedIterator.done);
+          },
+          (error) => {
+            errorCallback.call(this, error, imageIdIndex, imageId);
           }
-        });
-        return displayedIterator.getDonePromise();
+        );
       }
 
       const priority = -5;
@@ -1859,7 +1846,6 @@ class StackViewport extends Viewport implements IStackViewport {
   private _loadNonProgressive(imageId: string): Promise<string> {
     const options = this.getLoaderImageOptions(imageId) as ImageLoaderOptions;
 
-    console.log('Loading non progressive');
     return loadAndCacheImage(imageId, options).then(
       (image) => {
         this.successCallback.call(this, imageId, image);

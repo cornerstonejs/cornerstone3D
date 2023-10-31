@@ -4,7 +4,7 @@ import { ImageQualityStatus } from '../enums';
 /** Actually fills the nearby frames from the given frame */
 export function fillNearbyFrames(
   listener: ProgressiveListener,
-  ImageQualityStatus: Map<string, ImageQualityStatus>,
+  imageQualityStatusMap: Map<string, ImageQualityStatus>,
   request,
   image,
   options
@@ -33,7 +33,7 @@ export function fillNearbyFrames(
   for (const nearbyItem of request.nearbyRequests) {
     try {
       const { itemId: targetId, status } = nearbyItem;
-      const targetStatus = ImageQualityStatus.get(targetId);
+      const targetStatus = imageQualityStatusMap.get(targetId);
       if (targetStatus !== undefined && targetStatus < status) {
         continue;
       }
@@ -45,7 +45,7 @@ export function fillNearbyFrames(
         status,
       };
       listener.successCallback(targetId, nearbyImage, status);
-      ImageQualityStatus[targetId] = status;
+      imageQualityStatusMap[targetId] = status;
     } catch (e) {
       console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);
     }

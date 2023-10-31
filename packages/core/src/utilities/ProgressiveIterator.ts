@@ -30,12 +30,16 @@ export default class ProgressiveIterator<T> {
       return promise.iterator;
     }
     const iterator = new ProgressiveIterator('as iterator');
-    iterator.generate((iterator) => {
-      return promise.then(
-        (v) => iterator.add(v, true),
-        (reason) => iterator.reject(reason)
-      );
-    });
+    promise.then(
+      (v) => {
+        try {
+          iterator.add(v, true);
+        } catch (e) {
+          iterator.reject(e as Error);
+        }
+      },
+      (reason) => iterator.reject(reason)
+    );
     return iterator;
   }
 

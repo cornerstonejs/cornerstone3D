@@ -39,7 +39,8 @@ interface ImageFrame {
   // Remaining information is about the general load process
   decodeTimeInMS?: number;
   loadTimeInMS?: number;
-  decodeLevel?: number;
+  // Status is used for the image quality status to allow differentiating between
+  // higher loss images and full resolution/lossless images.
   status?: Enums.ImageQualityStatus;
 }
 

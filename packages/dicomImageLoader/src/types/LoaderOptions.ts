@@ -30,15 +30,17 @@ export interface LoaderOptions {
    * Gets retrieve options for the images.  This separates out the use of
    * different retrieve types from the actual DICOMweb request back end
    * configuration.
-   * @param retrieveType - the retrieve type, which is a user defined configuration,
-   *      although 'lossy' and 'final' are used internally.
+   * @param retrieveType - the retrieve type, which is a user defined string,
+   *    with some existing configurations using 'singleFast', 'singleFinal',
+   *    'multipleFast' and 'multipleFinal' to define single image or multiple
+   *    image retrieves in fast (lossy or partial) and final (complete) versions.
    * @param transferSyntaxUID - the transfer syntax if available, defaults to
    *       'unknown'
    * @returns RetrieveConfiguration to use for this pair of values.
    */
   getRetrieveOptions?: (
-    retrieveType: string
-    transferSyntaxUID: string,
+    retrieveType: string,
+    transferSyntaxUID: string
   ) => Types.RetrieveOptions;
 
   strict?: boolean;

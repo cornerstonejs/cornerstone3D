@@ -2291,21 +2291,10 @@ export function resetUseCPURendering(): void;
 export function resetUseSharedArrayBuffer(): void;
 
 // @public (undocumented)
-type RetrieveOptions = {
-    urlArguments?: string;
-    framesPath?: string;
-    streaming?: boolean;
-    initialBytes?: number | ((metadata: any) => number);
-    range?: number;
-    totalRangesToFetch?: number | ((metadata: any) => number);
-    decodeLevel?: number;
-    isLossy?: boolean;
-    status?: ImageQualityStatus;
-    partialStatus?: ImageQualityStatus;
-};
+export type RetrieveOptions = BaseRetrieveOptions | StreamingRetrieveOptions | RangeRetrieveOptions;
 
 // @public (undocumented)
-interface RetrieveStage {
+export interface RetrieveStage {
     // (undocumented)
     decimate?: number;
     // (undocumented)

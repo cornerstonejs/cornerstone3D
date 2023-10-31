@@ -7,7 +7,7 @@ import type {
 } from '../types';
 import sequentialRetrieveConfiguration from './configuration/sequentialRetrieve';
 import interleavedRetrieveConfiguration from './configuration/interleavedRetrieve';
-import { loadAndCacheImage, loadImage } from './imageLoader';
+import { loadAndCacheImage } from './imageLoader';
 import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { ImageQualityStatus, RequestType, Events } from '../enums';
@@ -19,11 +19,35 @@ export { sequentialRetrieveConfiguration, interleavedRetrieveConfiguration };
 
 type StageStatus = {
   stageId: string;
+  // startTime is the overall start of loading a given image id
   startTime?: number;
+  // stageStartTime is the time to start loading this stage item
   stageStartTime?: number;
-  numberOfImages: number;
-  numberOfFailures: number;
-  remaining: number;
+  totalImageCount: number;
+  imageLoadFailedCount: number;
+  imageLoadPendingCount: number;
+};
+
+/**
+ * A nearby request is a request that can be fulfilled by copying another image
+ */
+export type NearbyRequest = {
+  itemId: string;
+  linearId?: string;
+  status: ImageQualityStatus;
+  nearbyItem;
+};
+
+export type ProgressiveRequest = {
+  imageId: string;
+  stage: RetrieveStage;
+  next?: ProgressiveRequest;
+  /**
+   * Nearby requests are a set of requests for filling nearby images which
+   * could be filled by using this image as a copied image to generate the
+   * nearby data as a low-resolution alternative image.
+   */
+  nearbyRequests?: NearbyRequest[];
 };
 
 /**
@@ -176,20 +200,6 @@ export async function load(
   return displayedIterator.getDonePromise();
 }
 
-export type NearbyRequest = {
-  itemId: string;
-  linearId?: string;
-  status: ImageQualityStatus;
-  nearbyItem;
-};
-
-export type ProgressiveRequest = {
-  imageId: string;
-  stage: RetrieveStage;
-  next?: ProgressiveRequest;
-  nearbyRequests?: NearbyRequest[];
-};
-
 /** Interleaves the values according to the stages definition */
 function createStageRequests(
   requests: string[],
@@ -239,13 +249,13 @@ function createStageRequests(
 /**
  * Finds nearby requests to fulfill to show the merge information earlier.
  * @param index - to use as the base value
- * @param requests - set of image ids to request
+ * @param imageIds - set of image ids to request
  * @param stage - to find information from
  * @returns Array of nearby frames to fill when the main stage is done
  */
 function findNearbyRequests(
   index: number,
-  requests: string[],
+  imageIds: string[],
   stage
 ): NearbyRequest[] {
   const nearby = new Array<NearbyRequest>();
@@ -254,11 +264,11 @@ function findNearbyRequests(
   }
   for (const nearbyItem of stage.nearbyFrames) {
     const nearbyIndex = index + nearbyItem.offset;
-    if (nearbyIndex < 0 || nearbyIndex >= requests.length) {
+    if (nearbyIndex < 0 || nearbyIndex >= imageIds.length) {
       continue;
     }
     nearby.push({
-      itemId: requests[nearbyIndex],
+      itemId: imageIds[nearbyIndex],
       nearbyItem,
       status: nearbyItem.status,
     });
@@ -266,8 +276,8 @@ function findNearbyRequests(
       const linearIndex =
         nearbyItem.linearOffset !== undefined &&
         nearbyItem.linearOffset + nearbyItem.offset;
-      if (linearIndex >= 0 && linearIndex < requests.length) {
-        nearby[nearby.length - 1].linearId = requests[linearIndex];
+      if (linearIndex >= 0 && linearIndex < imageIds.length) {
+        nearby[nearby.length - 1].linearId = imageIds[linearIndex];
       }
     }
   }
@@ -281,11 +291,11 @@ function addStageStatus(stageStatus: Map<string, StageStatus>, stage) {
     stageId: id,
     startTime: Date.now(),
     stageStartTime: null,
-    numberOfImages: 0,
-    numberOfFailures: 0,
-    remaining: 0,
+    totalImageCount: 0,
+    imageLoadFailedCount: 0,
+    imageLoadPendingCount: 0,
   };
-  status.remaining++;
+  status.imageLoadPendingCount++;
   stageStatus.set(id, status);
   return status;
 }
@@ -302,19 +312,19 @@ function updateStageStatus(
     console.warn('Stage already completed:', id);
     return;
   }
-  status.remaining--;
+  status.imageLoadPendingCount--;
   if (failure) {
-    status.numberOfFailures++;
+    status.imageLoadFailedCount++;
   } else if (!skipped) {
-    status.numberOfImages++;
+    status.totalImageCount++;
   }
   if (!skipped && !status.stageStartTime) {
     status.stageStartTime = Date.now();
   }
-  if (!status.remaining) {
+  if (!status.imageLoadPendingCount) {
     const {
-      numberOfFailures,
-      numberOfImages,
+      imageLoadFailedCount: numberOfFailures,
+      totalImageCount: numberOfImages,
       stageStartTime = Date.now(),
       startTime,
     } = status;

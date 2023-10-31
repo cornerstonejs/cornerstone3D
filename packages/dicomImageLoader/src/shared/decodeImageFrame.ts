@@ -383,7 +383,11 @@ function _validateScalingParameters(scalingParameters) {
   }
 }
 
-function createDest(imageFrame, targetBuffer, TypedArrayConstructor) {
+function createDestinationImage(
+  imageFrame,
+  targetBuffer,
+  TypedArrayConstructor
+) {
   const { samplesPerPixel } = imageFrame;
   const { rows, columns } = targetBuffer;
   const typedLength = rows * columns * samplesPerPixel;
@@ -411,15 +415,11 @@ function createDest(imageFrame, targetBuffer, TypedArrayConstructor) {
  * version of it (in place modification)
  */
 function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
-  const dest = createDest(imageFrame, targetBuffer, TypedArrayConstructor);
-  if (!dest) {
-    console.warn(
-      'Not scaling, no destination created',
-      imageFrame,
-      targetBuffer
-    );
-    return;
-  }
+  const dest = createDestinationImage(
+    imageFrame,
+    targetBuffer,
+    TypedArrayConstructor
+  );
   const { scalingType = 'replicate' } = targetBuffer;
   imageUtils[scalingType](imageFrame, dest);
   Object.assign(imageFrame, dest);

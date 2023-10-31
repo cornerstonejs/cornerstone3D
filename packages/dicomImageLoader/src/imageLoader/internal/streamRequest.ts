@@ -53,6 +53,13 @@ export default function streamRequest(
         headers: defaultHeaders,
         signal: undefined,
       });
+
+      // Response is expected to be a 200 status response
+      if (response.status !== 200) {
+        throw new Error(
+          `Couldn't retrieve ${url} got status ${response.status}`
+        );
+      }
       const responseReader = response.body.getReader();
       const responseHeaders = response.headers;
 

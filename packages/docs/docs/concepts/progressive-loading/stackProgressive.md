@@ -39,16 +39,38 @@ The full size images are 3036 x 3036, while the JLS reduced images are 759 x 759
 
 See the stackProgressive example for stack details.
 
-No special configuration is required for HTJ2K images, however they can be
-disabled by setting the streaming values to false, for example:
+Stack viewports need to be configured for progressive streaming by setting
+the `option.progressiveRendering` either to true, or to a retrieve configuration
+which renders progressively. Additionally, to render non-standard DICOMweb
+configurations progressively, the global retrieve options need to be set for the
+`retrieveType` and `transferSyntaxUID` values.
+
+The retrieve options in the global configuration is an object with keys
+being (arbitrary) `retrieveType` string values, and the values being
+a Record from string transfer syntax UID's to `RetrieveOptions` instances.
+This design allows settings values for both a retrieve type or phase, as
+well as specific transfer syntaxes, allowing different retrieve options to be
+set for differing encodings.
+
+The two retrieve types used for the progressive rendering for stack (which
+is defined in `sequentialRetrieveConfiguration`) are `singleFast` and `singleFinal`.
+This allows differing requests to be made for a fast initial request and a final,
+lossless request. The example `stackProgressive` shows several possible configurations
+for this which demonstrate how to load different URL paths or different parts
+of the image across repeated requests using byte range retrieves.
 
 ```javascript
 cornerstoneDicomImageLoader.configure({
   retrieveOptions: {
-      default: {
+      singleFast: {
         '3.2.840.10008.1.2.4.96': {
-        // Need a specific streaming to false to disable streaming support
-        streaming: false,
+          streaming: true,
+
+
+renderingEngine.enableElement({
+  ... normal stack configuration,
+  progressiveRendering: true,
+};
 ```
 
 ## JLS Thumbnails
@@ -58,7 +80,7 @@ by doing:
 
 ```
 # Create a JLS directory containing JLS encoded data in the /jls sub-path
-mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls "/dicom/DE Images for Rad"
+mkdicomweb create -t jhc --recompress true --alternate jlsLossless --alternate-name jls "/dicom/DE Images for Rad"
 # Create a jlsThumbnail sub-directory containing reduce resolution data
 mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
 ```
