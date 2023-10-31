@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.27.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.1...v1.27.2) (2023-10-31)
+
+### Bug Fixes
+
+- **invert:** Call setInvertColor after setTransferFunction in StackViewport.\_resetProperties. ([#861](https://github.com/cornerstonejs/cornerstone3D/issues/861)) ([016a14a](https://github.com/cornerstonejs/cornerstone3D/commit/016a14a8a8b9bed530689bba5920ab3b1ac42093))
+
 ## [1.27.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.0...v1.27.1) (2023-10-27)
 
 ### Bug Fixes
