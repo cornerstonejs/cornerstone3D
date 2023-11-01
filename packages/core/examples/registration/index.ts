@@ -310,10 +310,10 @@ const parametersSettings = {
     inputType: 'number',
     defaultValue: defaultFinalGridSpacing,
   },
-  ResultImageFormat: {
-    inputType: 'dropdown',
-    values: ['mhd', 'nii', 'nrrd', 'vti'],
-  },
+  // ResultImageFormat: {
+  //   inputType: 'dropdown',
+  //   values: ['mhd', 'nii', 'nrrd', 'vti'],
+  // },
 };
 
 // ==[ Set up page ]============================================================
