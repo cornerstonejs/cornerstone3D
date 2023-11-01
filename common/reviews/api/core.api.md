@@ -1756,7 +1756,7 @@ interface IStreamingVolumeProperties {
         callbacks: Array<() => void>;
     };
     // (undocumented)
-    progressiveRendering?: boolean | IRetrieveConfiguration;
+    progressiveRetrieveConfiguration?: boolean | IRetrieveConfiguration;
 }
 
 // @public (undocumented)

@@ -36,6 +36,8 @@ export const helpers: {
 export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
+    getImageIdsLoad(): string[];
+    // (undocumented)
     getImageLoadRequests: (priority: number) => any[];
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
