@@ -40,7 +40,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    * No special configuration is required for streaming decoding, as that is
    * done based on the capabilities of the decoder whenever streaming is possible
    */
-  protected retrieveConfiguration: IRetrieveConfiguration;
+  protected progressiveRetrieveConfiguration: IRetrieveConfiguration;
 
   loadStatus: {
     loaded: boolean;
@@ -58,10 +58,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.imageIds = streamingProperties.imageIds;
     this.loadStatus = streamingProperties.loadStatus;
     this.numFrames = this._getNumFrames();
-    this.retrieveConfiguration =
-      typeof streamingProperties.progressiveRendering === 'object'
-        ? streamingProperties.progressiveRendering
-        : streamingProperties.progressiveRendering &&
+    this.progressiveRetrieveConfiguration =
+      typeof streamingProperties.progressiveRetrieveConfiguration === 'object'
+        ? streamingProperties.progressiveRetrieveConfiguration
+        : streamingProperties.progressiveRetrieveConfiguration &&
           progressiveLoader.interleavedRetrieveConfiguration;
     this._createCornerstoneImageMetaData();
   }
@@ -424,9 +424,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { imageIds, loadStatus, numFrames } = this;
 
     if (loadStatus.loading === true) {
-      console.log(
-        `loadVolume: Loading is already in progress for ${this.volumeId}`
-      );
       return; // Already loading, will get callbacks from main load.
     }
 
@@ -509,6 +506,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
      * not, which we store it in the this.scaling.PT.suvbw.
      */
     this.isPreScaled = isSlopeAndInterceptNumbers;
+    const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
     return {
       // WADO Image Loader
@@ -520,7 +518,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         // set in the main thread.
         arrayBuffer:
           arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-        offset: imageIdIndex * lengthInBytes,
+        offset: frameIndex * lengthInBytes,
         length,
         type,
         rows,
@@ -564,8 +562,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { cachedFrames } = loadStatus;
 
     // SharedArrayBuffer
-    this.numFrames = imageIds.length;
-
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
 
@@ -718,7 +714,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.loadStatus.loading = true;
 
     const imageIds = this.getImageIdsLoad();
-    this.numFrames = imageIds.length;
 
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
@@ -729,12 +724,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.reRenderTarget = this.reRenderFraction;
     }
 
-    if (!this.retrieveConfiguration) {
+    if (!this.progressiveRetrieveConfiguration) {
       return this._nonProgressiveRetrieve();
     }
 
     return progressiveLoader
-      .load(imageIds, this, this.retrieveConfiguration)
+      .load(imageIds, this, this.progressiveRetrieveConfiguration)
       .catch((e) => {
         console.debug('progressive loading failed to complete', e);
       })

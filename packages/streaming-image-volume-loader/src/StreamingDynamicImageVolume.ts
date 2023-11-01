@@ -114,6 +114,18 @@ export default class StreamingDynamicImageVolume
     return timePointsRequests;
   };
 
+  public getImageIdsLoad(): string[] {
+    const timePoints = this._getTimePointsToLoad();
+    let imageIds = [];
+
+    timePoints.forEach((timePoint) => {
+      const { imageIds: timePointIds } = timePoint;
+      imageIds = imageIds.concat(timePointIds);
+    });
+
+    return imageIds;
+  }
+
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
     return true;
