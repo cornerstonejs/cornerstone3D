@@ -15,7 +15,6 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -33,15 +32,40 @@ addButtonToToolbar({
       return;
     }
 
-    const labelmap = await fetch(assetsURL.Labelmap).then((res) => res.json());
-
-    const int32Array = new Int32Array(labelmap.data);
+    const labelMapHeader = await fetch('/labelMap.json').then((res) =>
+      res.json()
+    );
+    const labelMap = await fetch('/labelMap.bin').then((res) =>
+      res.arrayBuffer()
+    );
+    const values = new Uint8Array(labelMap);
+    const int32Array = new Int32Array(values.length);
+    for (let i = 0; i < values.length; i++) {
+      int32Array[i] = values[i];
+    }
+    // we need to convert the labelMapHeader attributes from objects to arrays
     const result = instance.convertLabelmapToSurface(
       int32Array,
-      labelmap.dimensions,
-      labelmap.spacing,
-      labelmap.direction,
-      labelmap.origin,
+      [
+        labelMapHeader.dimensions[0],
+        labelMapHeader.dimensions[1],
+        labelMapHeader.dimensions[2],
+      ],
+      [
+        labelMapHeader.spacing[0],
+        labelMapHeader.spacing[1],
+        labelMapHeader.spacing[2],
+      ],
+      [
+        labelMapHeader.direction[0],
+        labelMapHeader.direction[1],
+        labelMapHeader.direction[2],
+      ],
+      [
+        labelMapHeader.origin[0],
+        labelMapHeader.origin[1],
+        labelMapHeader.origin[2],
+      ],
       [1]
     );
 

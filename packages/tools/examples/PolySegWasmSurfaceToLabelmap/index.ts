@@ -26,6 +26,30 @@ console.warn(
 
 let instance = undefined;
 
+function saveBinaryData(data, name) {
+  function downloadBlob(data, fileName, mimeType) {
+    const blob = new Blob([data], {
+      type: mimeType,
+    });
+    const url = window.URL.createObjectURL(blob);
+    downloadURL(url, fileName);
+    setTimeout(function () {
+      return window.URL.revokeObjectURL(url);
+    }, 1000);
+  }
+
+  function downloadURL(data, fileName) {
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.style = 'display: none';
+    a.click();
+    a.remove();
+  }
+
+  downloadBlob(data, name, 'application/octet-stream');
+}
 function downloadObjectAsJson(exportObj, exportName) {
   const dataStr =
     'data:text/json;charset=utf-8,' +
@@ -52,19 +76,23 @@ addButtonToToolbar({
 
     const pointsWasm = new Float32Array(points);
     const polysArrayWasm = new Float32Array(polys);
-    const direction = [0, 0, 0];
-    const spacing = [1, 1, 1];
-    const origin = [0, 0, 0];
-    const dimensions = [1, 1, 1];
+    const inputDirection = [0, 0, 0];
+    const inputSpacing = [1, 1, 1];
+    const inputOrigin = [0, 0, 0];
+    const inputDimensions = [1, 1, 1];
     const result = instance.convertSurfaceToLabelmap(
       pointsWasm,
       polysArrayWasm,
-      dimensions,
-      spacing,
-      direction,
-      origin
+      inputDimensions,
+      inputSpacing,
+      inputDirection,
+      inputOrigin
     );
-    downloadObjectAsJson(result, 'labelMap');
+    const { data, dimensions, spacing, direction, origin } = result;
+
+    const header = { dimensions, spacing, direction, origin };
+    downloadObjectAsJson(header, 'labelMap');
+    saveBinaryData(data, 'labelMap.bin');
   },
 });
 
