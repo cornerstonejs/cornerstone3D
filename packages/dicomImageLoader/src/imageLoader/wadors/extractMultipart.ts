@@ -79,7 +79,8 @@ export default function extractMultipart(
     responseHeaders,
     boundary,
     multipartContentType,
-    pixelData: imageFrameAsArrayBuffer.slice(offset, endIndex),
+    // Exclude the \r\n as well as the boundary
+    pixelData: imageFrameAsArrayBuffer.slice(offset, endIndex - 2),
   };
 }
 
