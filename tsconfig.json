@@ -6,6 +6,8 @@
       "@cornerstonejs/streaming-image-volume-loader": [
         "streaming-image-volume-loader/src"
       ],
+      // Include the types before the src so that api-extractor doesn't barf
+      // on the typescript files referenced in core/src.
       "@cornerstonejs/core": ["core/dist/types", "core/src"],
       "@cornerstonejs/tools": ["tools/src"],
       "@cornerstonejs/dicomImageLoader": ["dicomImageLoader/src"],
