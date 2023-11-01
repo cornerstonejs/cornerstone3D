@@ -16,9 +16,10 @@ a new encoding method, High Throughput JPEG 2000 `htj2k`. This encoding
 method can be configured to allow for progressive decoding of images.
 That is, if the first N bytes of the image encoding are available they can be
 decoded to a lower resolution or lossy image. The configuration that allows this
-is the HTJ2K Progressive Resolution (HTJ2K RPCL).
+is the HTJ2K Progressive Resolution
+(HTJ2K RPCL or High Throughput JPEG 2000 Resolution Position Component Layer).
 
-The existing JPEG 2000 encoding and the new HTJ2K in the standard also have a
+The existing JPEG 2000 encoding and the new [HTJ2K in the standard](https://dicom.nema.org/medical/dicom/Supps/LB/sup235_lb_HTJ2K.pdf) also have a
 format specifying a partial resolution endpoint.
 The exact endpoint needs to be specified in the
 JPIP referenced data URL, but is configured statically below as an example only.

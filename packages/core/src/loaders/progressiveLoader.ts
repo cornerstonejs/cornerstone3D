@@ -32,10 +32,12 @@ type StageStatus = {
  * A nearby request is a request that can be fulfilled by copying another image
  */
 export type NearbyRequest = {
+  // The item id to fill
   itemId: string;
   linearId?: string;
+  // The new status of the filled image (will only fill if the existing status
+  // is less than this one)
   status: ImageQualityStatus;
-  nearbyItem;
 };
 
 export type ProgressiveRequest = {
@@ -114,16 +116,16 @@ export async function load(
           console.warn('No image retrieved', imageId);
           return;
         }
-        const { status } = image;
-        complete ||= status === ImageQualityStatus.FULL_RESOLUTION;
-        if (oldStatus !== undefined && oldStatus > status) {
+        const { imageQualityStatus } = image;
+        complete ||= imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
+        if (oldStatus !== undefined && oldStatus > imageQualityStatus) {
           // We already have a better status, so don't update it
           updateStageStatus(stageStatusMap, request.stage, null, true);
           return;
         }
 
-        listener.successCallback(imageId, image, status);
-        imageQualityStatusMap[imageId] = status;
+        listener.successCallback(imageId, image, imageQualityStatus);
+        imageQualityStatusMap[imageId] = imageQualityStatus;
         displayedIterator.add(image);
         if (done) {
           updateStageStatus(stageStatusMap, request.stage);
@@ -269,7 +271,6 @@ function findNearbyRequests(
     }
     nearby.push({
       itemId: imageIds[nearbyIndex],
-      nearbyItem,
       status: nearbyItem.status,
     });
     if (nearbyItem.linearOffset !== undefined) {
@@ -335,7 +336,7 @@ function updateStageStatus(
       stageDurationInMS: stageStartTime ? Date.now() - stageStartTime : null,
       startDurationInMS: Date.now() - startTime,
     };
-    triggerEvent(eventTarget, Events.IMAGE_LOAD_STAGE, detail);
+    triggerEvent(eventTarget, Events.IMAGE_RETRIEVAL_STAGE, detail);
     stageStatus.delete(id);
   }
 }

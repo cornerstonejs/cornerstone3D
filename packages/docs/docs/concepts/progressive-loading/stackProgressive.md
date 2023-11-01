@@ -76,7 +76,8 @@ cornerstoneDicomImageLoader.configure({
 
 renderingEngine.enableElement({
   ... normal stack configuration,
-  progressiveRendering: true,
+  // Just use the default progressive retrieve configuration
+  progressiveRetrieveConfiguration: true,
 };
 ```
 

@@ -258,22 +258,24 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     volume: BaseStreamingImageVolume,
     imageIdIndex,
     imageId,
-    status = ImageQualityStatus.FULL_RESOLUTION
+    imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION
   ) {
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
     const { FrameOfReferenceUID } = this.metadata;
     const currentStatus = cachedFrames[frameIndex];
-    if (currentStatus > status) {
+    if (currentStatus > imageQualityStatus) {
       // This is common for initial versus decimated images.
       return;
     }
 
     if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
+      // Sometimes the frame can be delivered multiple times, so just return
+      // here if that happens.
       return;
     }
-    const complete = status === ImageQualityStatus.FULL_RESOLUTION;
-    cachedFrames[imageIdIndex] = status;
+    const complete = imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
+    cachedFrames[imageIdIndex] = imageQualityStatus;
     this.framesUpdated++;
     if (complete) {
       this.framesLoaded++;
@@ -305,7 +307,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       numFrames,
       totalNumFrames,
       complete,
-      status,
+      imageQualityStatus,
     });
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
@@ -315,7 +317,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   public successCallback(
     imageId: string,
     image,
-    status = ImageQualityStatus.FULL_RESOLUTION
+    imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION
   ) {
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getLoaderImageOptions(imageId);
@@ -353,7 +355,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         this,
         imageIdIndex,
         imageId,
-        status
+        imageQualityStatus
       );
     }
 
@@ -387,33 +389,21 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     if (this.framesProcessed === totalNumFrames) {
       this.loadStatus.loaded = true;
       this.loadStatus.loading = false;
-
-      this.callLoadStatusCallback({
-        success: false,
-        imageId,
-        imageIdIndex,
-        error,
-        framesLoaded: this.framesLoaded,
-        framesProcessed: this.framesProcessed,
-        framesUpdated: this.framesUpdated,
-        numFrames,
-        totalNumFrames,
-      });
-
-      this.loadStatus.callbacks = [];
-    } else {
-      this.callLoadStatusCallback({
-        success: false,
-        imageId,
-        imageIdIndex,
-        error,
-        framesLoaded: this.framesLoaded,
-        framesProcessed: this.framesProcessed,
-        framesUpdated: this.framesUpdated,
-        numFrames,
-        totalNumFrames,
-      });
     }
+
+    this.callLoadStatusCallback({
+      success: false,
+      imageId,
+      imageIdIndex,
+      error,
+      framesLoaded: this.framesLoaded,
+      framesProcessed: this.framesProcessed,
+      framesUpdated: this.framesUpdated,
+      numFrames,
+      totalNumFrames,
+    });
+
+    this.loadStatus.callbacks = [];
 
     const eventDetail = {
       error,
@@ -562,10 +552,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       imageLoader.loadImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
-      const { status = ImageQualityStatus.FULL_RESOLUTION } = image;
+      const { imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION } = image;
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-      this.successCallback(imageId, image, status);
+      this.successCallback(imageId, image, imageQualityStatus);
     }, this.errorCallback.bind(this, imageIdIndex, imageId));
   }
 

@@ -34,7 +34,7 @@ export default function rangeRequest(
 ): LoaderXhrRequestPromise<{
   contentType: string;
   pixelData: Uint8Array;
-  status: Enums.ImageQualityStatus;
+  imageQualityStatus: Enums.ImageQualityStatus;
   percentComplete: number;
 }> {
   const globalOptions = getOptions();
@@ -60,7 +60,7 @@ export default function rangeRequest(
     contentType: string;
     pixelData: Uint8Array;
     percentComplete: number;
-    status: Enums.ImageQualityStatus;
+    imageQualityStatus: Enums.ImageQualityStatus;
   }>(async (resolve, reject) => {
     const headers = Object.assign(
       {},
@@ -104,9 +104,13 @@ export default function rangeRequest(
       });
 
       // Allow over-writing the done status to indicate complete on partial
+      const imageQualityStatus = getImageQualityStatus(
+        retrieveOptions,
+        doneAllBytes
+      );
       resolve({
         ...extract,
-        status: getImageQualityStatus(retrieveOptions, doneAllBytes),
+        imageQualityStatus,
         percentComplete: (initialBytes * 100) / totalBytes,
       });
     } catch (err: any) {

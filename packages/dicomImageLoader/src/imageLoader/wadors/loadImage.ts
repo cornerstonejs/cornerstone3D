@@ -138,7 +138,7 @@ function loadImage(
       for await (const result of compressedIt) {
         const {
           pixelData,
-          status = ImageQualityStatus.FULL_RESOLUTION,
+          imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION,
           percentComplete,
           done = true,
         } = result;
@@ -155,7 +155,7 @@ function loadImage(
         }
         const decodeLevel =
           result.decodeLevel ??
-          (status === ImageQualityStatus.FULL_RESOLUTION
+          (imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,
@@ -183,7 +183,7 @@ function loadImage(
 
           image.loadTimeInMS = end - start;
           image.transferSyntaxUID = transferSyntax;
-          image.status = status;
+          image.imageQualityStatus = imageQualityStatus;
           // The iteration is done even if the image itself isn't done yet
           it.add(image, done || compressedDone);
           lastDecodeLevel = decodeLevel;

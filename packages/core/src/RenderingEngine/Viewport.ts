@@ -76,7 +76,6 @@ class Viewport implements IViewport {
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
   protected calibration: IImageCalibration;
-  protected progressiveRendering: boolean | IRetrieveConfiguration;
 
   /** The camera that is initially defined on the reset for
    * the relative pan/zoom
@@ -111,7 +110,6 @@ class Viewport implements IViewport {
       : false;
     this.options = structuredClone(props.defaultOptions);
     this.isDisabled = false;
-    this.setProgressiveRendering(props.progressiveRendering);
   }
 
   getRotation: () => number;
@@ -125,12 +123,6 @@ class Viewport implements IViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
-  }
-
-  public setProgressiveRendering(
-    progressiveRendering: boolean | IRetrieveConfiguration
-  ) {
-    this.progressiveRendering = progressiveRendering ?? false;
   }
 
   /**

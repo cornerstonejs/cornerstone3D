@@ -124,6 +124,10 @@ class StackViewport extends Viewport implements IStackViewport {
   private targetImageIdIndex: number;
   // setTimeout if the image is debounced to be loaded
   private debouncedTimeout: number;
+  /**
+   * The progressive retrieval configuration used for this viewport.
+   */
+  protected progressiveRetrieveConfiguration: IRetrieveConfiguration;
 
   // Viewport Properties
   private voiRange: VOIRange;
@@ -184,6 +188,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
+    this.setProgressiveRetrieveConfiguration(
+      props.progressiveRetrieveConfiguration
+    );
   }
 
   public setUseCPURendering(value: boolean) {
@@ -243,6 +250,23 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
+   * Sets the progressive rendering on or off, or sets it to a specific
+   * configuration of progressive rendering.  See progresive rendering documentation
+   * for more details.
+   *
+   * @param progressiveRendering - set to true to use progressive rendering
+   */
+  public setProgressiveRetrieveConfiguration(
+    progressiveRendering: boolean | IRetrieveConfiguration
+  ) {
+    this.progressiveRetrieveConfiguration =
+      typeof progressiveRendering === 'object'
+        ? progressiveRendering
+        : progressiveRendering &&
+          progressiveLoader.sequentialRetrieveConfiguration;
+  }
+
+  /**
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
@@ -251,11 +275,8 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public getImageData: () => IImageData | CPUIImageData;
 
-  public getRetrieveConfiguration(): IRetrieveConfiguration {
-    return typeof this.progressiveRendering === 'object'
-      ? this.progressiveRendering
-      : this.progressiveRendering &&
-          progressiveLoader.sequentialRetrieveConfiguration;
+  public getProgressiveRetrieveConfiguration(): IRetrieveConfiguration {
+    return this.progressiveRetrieveConfiguration;
   }
 
   /**
@@ -1867,7 +1888,7 @@ class StackViewport extends Viewport implements IStackViewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    const retrieveConfiguration = this.getRetrieveConfiguration();
+    const retrieveConfiguration = this.getProgressiveRetrieveConfiguration();
 
     if (!retrieveConfiguration) {
       return this._loadNonProgressive(imageId);

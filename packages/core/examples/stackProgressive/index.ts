@@ -77,7 +77,12 @@ const statusNames = {
 
 async function newImageFunction(evt) {
   const { image } = evt.detail;
-  const { status, decodeTimeInMS, loadTimeInMS, transferSyntaxUID } = image;
+  const {
+    imageQualityStatus: status,
+    decodeTimeInMS,
+    loadTimeInMS,
+    transferSyntaxUID,
+  } = image;
   const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
     element.removeEventListener(
@@ -206,7 +211,6 @@ const configHtj2kMixed = {
       default: {
         streamingDecode: true,
         range: 0,
-        initialBytes: 64000,
         decodeLevel: 3,
       },
     },
@@ -270,7 +274,7 @@ async function run() {
   const viewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId)
   );
-  viewport.setProgressiveRendering(true);
+  viewport.setProgressiveRetrieveConfiguration(true);
 
   const createButton = (text, action) => {
     const button = document.createElement('button');
@@ -312,7 +316,7 @@ async function run() {
   createButton(nonProgressive, (onclick) => {
     const button = document.getElementById(nonProgressive);
     const progressive = button.innerText !== nonProgressive;
-    viewport.setProgressiveRendering(progressive);
+    viewport.setProgressiveRetrieveConfiguration(progressive);
     button.innerText = progressive ? nonProgressive : 'Set Progressive';
   });
 }

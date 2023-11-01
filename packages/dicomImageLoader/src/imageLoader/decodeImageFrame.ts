@@ -18,9 +18,11 @@ function processDecodeTask(
   decodeConfig: LoaderDecodeOptions
 ): Promise<ImageFrame> {
   const options = { ...srcOptions };
-  // If a loader is specified, it can't be passed through
+  // If a loader is specified, it can't be passed through because it is a function
+  // and can't be safely cloned/copied externally.
   delete options.loader;
-  // streamData may contain larger data information and shouldn't be passed
+  // Similarly, the streamData may contain larger data information and
+  // although it can be passed to the decoder, it isn't needed and is slow
   delete options.streamingData;
 
   const priority = options.priority || undefined;

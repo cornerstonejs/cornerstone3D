@@ -116,8 +116,7 @@ interface IImage {
     voiLUT?: CPUFallbackLUT;
   };
 
-  // Information on how complete this image instance is.
-  status?: ImageQualityStatus;
+  imageQualityStatus?: ImageQualityStatus;
 }
 
 export default IImage;

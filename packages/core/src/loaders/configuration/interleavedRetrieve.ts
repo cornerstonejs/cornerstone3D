@@ -21,7 +21,7 @@ const nearbyFrames: NearbyFrames[] = [
  * lossy/thumbnail requests when available, but falling back to full retrieve
  * requests in an interleaved manner.
  * The basic ordering is:
- *   1. Retrieve first/last
+ *   1. Retrieve middle image, first, last
  *   2. Retrieve every 4th image, offset 1, lossy if available
  *   3. Retrieve every 4th image, offset 3, lossy if available
  *   4. Retrieve every 4th image, offset 0, full images
@@ -30,17 +30,10 @@ const nearbyFrames: NearbyFrames[] = [
  */
 const interleavedRetrieveConfiguration: IRetrieveConfiguration = {
   stages: [
-    // Can choose to do initial lossy images for testing
-    // {
-    //   id: 'initialImagesLossy',
-    //   positions: [0.5, 0, -1],
-    //   retrieveType: 'multipleFast',
-    //   requestType: RequestType.Interaction,
-    //   priority: 9,
-    //   nearbyFrames,
-    // },
     {
       id: 'initialImages',
+      // Values between -1 and 1 are relative to size, so 0.5 is middle image
+      // and 0 is first image, -1 is last image
       positions: [0.5, 0, -1],
       retrieveType: 'default',
       requestType: RequestType.Interaction,

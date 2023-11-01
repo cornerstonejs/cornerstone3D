@@ -8,7 +8,8 @@ import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
 import { ColormapRegistration } from './Colormap';
-import IImage from './IImage';
+import type IImage from './IImage';
+import type { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 /**
  * Interface for Stack Viewport
@@ -141,4 +142,11 @@ export default interface IStackViewport extends IViewport {
    * It sets the colormap to the default colormap.
    */
   unsetColormap(): void;
+  /**
+   * Sets progressive rendering to be used, using the progressive loader.
+   * Can be set to true to enable, or a specific configuration provided.
+   */
+  setProgressiveRetrieveConfiguration: (
+    progressive: boolean | IRetrieveConfiguration
+  ) => void;
 }

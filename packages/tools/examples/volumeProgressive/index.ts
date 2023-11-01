@@ -234,8 +234,30 @@ const configHtj2kByteRange = {
         status: ImageQualityStatus.FULL_RESOLUTION,
         streamingDecode: true,
         range: 0,
-        initialBytes: 64000,
         decodeLevel: 0,
+      },
+    },
+  },
+};
+
+const configHtj2kLossy = {
+  retrieveOptions: {
+    default: {
+      default: {
+        streaming: true,
+        streamingDecode: true,
+        framesPath: '/htj2kThumbnail/',
+      },
+    },
+    multipleFinal: {
+      default: {
+        framesPath: '/htj2kThumbnail/',
+      },
+    },
+    multipleFast: {
+      default: {
+        status: ImageQualityStatus.SUBRESOLUTION,
+        framesPath: '/htj2kThumbnail/',
       },
     },
   },
@@ -397,7 +419,7 @@ async function run() {
       : `Stage ${stageId} not run`;
   };
 
-  eventTarget.addEventListener(Events.IMAGE_LOAD_STAGE, imageLoadStage);
+  eventTarget.addEventListener(Events.IMAGE_RETRIEVAL_STAGE, imageLoadStage);
 
   const createButton = (text, action) => {
     const button = document.createElement('button');
@@ -416,6 +438,7 @@ async function run() {
   loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
   loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
   loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
+  loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
   loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
 
   const nonProgressiveText = 'Set Non Progressive';

@@ -92,7 +92,10 @@ export default function streamRequest(
           encodedData,
           streamingData
         );
-        const status = getImageQualityStatus(retrieveOptions, readDone);
+        const imageQualityStatus = getImageQualityStatus(
+          retrieveOptions,
+          readDone
+        );
         const detail = {
           url,
           imageId,
@@ -100,7 +103,7 @@ export default function streamRequest(
           percentComplete: done
             ? 100
             : (extracted.pixelData?.length * 100) / totalBytes,
-          status,
+          imageQualityStatus,
           done: readDone,
         };
 

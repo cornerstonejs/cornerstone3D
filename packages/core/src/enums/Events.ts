@@ -93,10 +93,13 @@ enum Events {
    */
   IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
   /**
-   * Triggers on the eventTarget when progressive loading stages are completed
-   * for all images for a given volume.
+   * Triggers on the eventTarget when progressive loading stages are completed.
+   * That is, the stage is complete for all images included in that stage (which
+   * can be zero).  If you need individual image load information related to
+   * the stage, see the status attribute on the IMAGE_LOADED event - which has
+   * the status of the image, but not the actual stage that loaded it.
    */
-  IMAGE_LOAD_STAGE = 'CORNESRTONE_IMAGE_LOAD_STAGE',
+  IMAGE_RETRIEVAL_STAGE = 'CORNERSTONE_IMAGE_RETRIEVAL_STAGE',
   /**
    * Triggers on the eventTarget when the image has failed loading by imageLoaders
    *

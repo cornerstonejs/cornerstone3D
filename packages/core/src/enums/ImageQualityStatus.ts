@@ -17,12 +17,14 @@ enum ImageQualityStatus {
   ADJACENT_REPLICATE = 3,
 
   /**
-   * Sub resolution images are encodings of smaller than full size, and are
-   * generally lower quality than a lossy regular image.
+   * Sub resolution images are encodings of smaller than full resolution
+   * images.  The encoding may or may not be lossy, but the lower resolution
+   * means it has lost information already compared to full resolution/lossless.
    */
   SUBRESOLUTION = 6,
+
   /**
-   *  Lossy images, either complete or partial
+   *  Lossy images, encoded with a lossy encoding, but full resolution or size.
    */
   LOSSY = 7,
   /**

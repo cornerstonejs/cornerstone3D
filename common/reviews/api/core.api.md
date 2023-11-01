@@ -661,11 +661,11 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_LOAD_FAILED = "CORNERSTONE_IMAGE_LOAD_FAILED",
     // (undocumented)
-    IMAGE_LOAD_STAGE = "CORNESRTONE_IMAGE_LOAD_STAGE",
-    // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
     IMAGE_RENDERED = "CORNERSTONE_IMAGE_RENDERED",
+    // (undocumented)
+    IMAGE_RETRIEVAL_STAGE = "CORNERSTONE_IMAGE_RETRIEVAL_STAGE",
     // (undocumented)
     IMAGE_SPACING_CALIBRATED = "CORNERSTONE_IMAGE_SPACING_CALIBRATED",
     // (undocumented)
@@ -1119,6 +1119,8 @@ interface IImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
+    imageQualityStatus?: ImageQualityStatus;
+    // (undocumented)
     intercept: number;
     // (undocumented)
     invert: boolean;
@@ -1180,8 +1182,6 @@ interface IImage {
         lastRenderedViewport?: unknown;
         lastRenderTime?: number;
     };
-    // (undocumented)
-    status?: ImageQualityStatus;
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
@@ -1722,6 +1722,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
+    setProgressiveRetrieveConfiguration: (progressive: boolean | IRetrieveConfiguration) => void;
+    // (undocumented)
     setProperties({ voiRange, invert, interpolationType, rotation }: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
@@ -1831,8 +1833,6 @@ interface IViewport {
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
-    // (undocumented)
-    setProgressiveRendering: (progressive: boolean | IRetrieveConfiguration) => void;
     // (undocumented)
     setRendered(): void;
     // (undocumented)
@@ -2050,7 +2050,6 @@ type NearbyRequest = {
     itemId: string;
     linearId?: string;
     status: ImageQualityStatus;
-    nearbyItem: any;
 };
 
 // @public (undocumented)
@@ -2474,11 +2473,11 @@ export class StackViewport extends Viewport implements IStackViewport {
         };
     };
     // (undocumented)
+    getProgressiveRetrieveConfiguration(): IRetrieveConfiguration;
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer: () => any;
-    // (undocumented)
-    getRetrieveConfiguration(): IRetrieveConfiguration;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -2489,6 +2488,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
+    // (undocumented)
+    protected progressiveRetrieveConfiguration: IRetrieveConfiguration;
     // (undocumented)
     removeAllActors: () => void;
     // (undocumented)
@@ -2511,6 +2512,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     setColormap: (colormap: CPUFallbackColormapData | ColormapRegistration) => void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
+    // (undocumented)
+    setProgressiveRetrieveConfiguration(progressiveRendering: boolean | IRetrieveConfiguration): void;
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
@@ -2822,8 +2825,6 @@ export class Viewport implements IViewport {
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
-    protected progressiveRendering: boolean | IRetrieveConfiguration;
-    // (undocumented)
     _removeActor(actorUID: string): void;
     // (undocumented)
     removeActors(actorUIDs: Array<string>): void;
@@ -2859,8 +2860,6 @@ export class Viewport implements IViewport {
     setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
-    // (undocumented)
-    setProgressiveRendering(progressiveRendering: boolean | IRetrieveConfiguration): void;
     // (undocumented)
     setRendered(): void;
     // (undocumented)

@@ -59,7 +59,7 @@ function getPixelData(
       contentType,
       new Uint8Array(imageFrameAsArrayBuffer)
     );
-    extracted.status = getImageQualityStatus(retrieveOptions, true);
+    extracted.imageQualityStatus = getImageQualityStatus(retrieveOptions, true);
     return extracted;
   });
 }

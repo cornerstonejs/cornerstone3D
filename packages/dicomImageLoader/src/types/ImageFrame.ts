@@ -39,9 +39,12 @@ interface ImageFrame {
   // Remaining information is about the general load process
   decodeTimeInMS?: number;
   loadTimeInMS?: number;
-  // Status is used for the image quality status to allow differentiating between
-  // higher loss images and full resolution/lossless images.
-  status?: Enums.ImageQualityStatus;
+  /**
+   * imageQualityStatus is used for differentiating between
+   * higher loss images and full resolution/lossless images so that a higher
+   * loss image can be replaced by a lower loss one.
+   */
+  imageQualityStatus?: Enums.ImageQualityStatus;
 }
 
 export default ImageFrame;

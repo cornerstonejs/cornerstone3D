@@ -1,42 +1,75 @@
 import { ImageQualityStatus, RequestType } from '../enums';
 
+/**
+ * Retrieve stages are part of a retrieval of a set of image ids.
+ * Each retrieve stage defines which imageIds to include, as well as how
+ * that set should be handled.  An imageID can be retrieved multiple times,
+ * done in order, one after the other, so that it is first retrieved as a
+ * lossy/low quality image, followed by higher qualities.  The actual
+ * retrieve options used are abstracted out by the retrieve type, a simple
+ * string that defines what type of retrieve values are used.
+ *
+ * See Progressive Loading in the overall docs for information on retrieval
+ * stages.
+ */
 export interface RetrieveStage {
   /**
    * An id for the stage for use in the stage completion events
    */
   id: string;
   /**
-   * Set of positions - negative values are relative to the end, positive to
-   * the beginning, and fractional values between 0 and 1 are relative to frame count
+   * Set of positions in a list of imageID's to select for this stage.
+   * Negative values are relative to the end, positive to
+   * the beginning, and fractional values between -1 and 1 are relative to frame count
    */
   positions?: number[];
   /**
-   * Alternately, choose positions by decimating at the given interval
+   * Alternately to the positions, choose imageId's by decimating
+   * at the given interval decimate interval/offset.
    */
   decimate?: number;
   /**
-   * With the given offset to decimation
+   * Use the given offset.  For example, a decimate of 4 and offset of 1 will
+   * choose from the set `[0...12]`  the values `1,5,9`
    */
   offset?: number;
   /**
-   * Use a specified retrieve type to add fetch arguments and configuration
-   * on the retrieve URL.
+   * Use a specified retrieve type to specify the type of retrieve this stage
+   * uses.  There are four standard retrieve types, but others can be defined
+   * as required.  The four standard ones are:
+   *
+   * * singleFast - for a fast/low quality single image
+   * * singleFinal - for the final quality single image
+   * * multipleFast - for a fast/low quality image for multiples
+   * * multipleFinal - for a final image for multiple images
+   *
+   * The single/multiple split is done so that the single retrieve can be
+   * a streaming type retrieve, which doesn't work well for multiple images where
+   * an entire set of lower quality images is desireable before starting with the
+   * high quality set, but the streaming retrieve does work very well for single
+   * images.
    */
   retrieveType?: string;
   /**
-   * The type of request to use
+   * The queue request type to use.
    */
   requestType?: RequestType;
   /**
-   * THe priority to use
+   * The queue priority to use
    */
   priority?: number;
   /**
    * A set of frames which are nearby to replicate this frame to
+   * This allows defining how replication within the volume occurs.
    */
   nearbyFrames?: NearbyFrames[];
 }
 
+/**
+ * Nearby frames are used in a volume to fill the entire volume quickly without
+ * needing to have retrieved them from a remote/slow location.  This gives the
+ * appearance of a complete volume extremely quickly.
+ */
 export type NearbyFrames = {
   /**
    * The offset of the nearby frame to fill from the current position.
@@ -73,11 +106,16 @@ export type BaseRetrieveOptions = {
    */
   framesPath?: string;
   /**
-   * True to use streaming decode
+   * True to use streaming decode - this applies to different types of
+   * retrieve options as it is part of the decoder logic, so it has to be in the
+   * base retrieve options.
    */
   streamingDecode?: boolean;
   /**
    * Decode level to attempt.  Currently only HTJ2K decoders support this.
+   * Value of 0 means decode full resolution,
+   * * 1 means 1/2 resolution in each dimension (eg 1/4 size)
+   * * i means 1/2^i resolution in each dimension, or 1/4^i size.
    */
   decodeLevel?: number;
   /**
@@ -151,8 +189,13 @@ export type RetrieveOptions =
 
 /**
  * Defines how the retrieve configuration is handled for single and multi
- * frame volumes.  This includes things like prefetch information and
- * ordering for streaming volumes.
+ * frame volumes.  Currently, the only configuration is a list of stages
+ * specify how sets of images ids get retrieved together or separately, and
+ * what type of retrieves and which queue is used for retrieving.
+ *
+ * The intent is to add other information on how to retrieve here in the future.
+ * This could include the specific retrieve options or could control queue
+ * strategy, prefetch etc.
  */
 export interface IRetrieveConfiguration {
   stages?: RetrieveStage[];

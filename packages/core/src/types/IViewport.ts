@@ -108,13 +108,6 @@ interface IViewport {
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
   updateRenderingPipeline: () => void;
-  /**
-   * Sets progressive rendering to be used, using the progressive loader.
-   * Can be set to true to enable, or a specific configuration provided.
-   */
-  setProgressiveRendering: (
-    progressive: boolean | IRetrieveConfiguration
-  ) => void;
 }
 
 /**
@@ -166,7 +159,7 @@ type ViewportInput = {
    * options, or set to a specific configuration for a specific rendering
    * option.
    */
-  progressiveRendering?: boolean | IRetrieveConfiguration;
+  progressiveRetrieveConfiguration?: boolean | IRetrieveConfiguration;
 };
 
 export type {
