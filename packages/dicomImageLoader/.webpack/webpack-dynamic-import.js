@@ -21,7 +21,7 @@ const prodConfig = {
     clean: true,
   },
   optimization: {
-    minimize: false,
+    // minimize: false,
     minimizer: [
       new TerserPlugin({
         parallel: true,

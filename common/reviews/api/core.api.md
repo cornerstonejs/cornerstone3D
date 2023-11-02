@@ -801,7 +801,7 @@ function getImageLegacy(element: HTMLDivElement): Types.IImage | undefined;
 function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
 
 // @public (undocumented)
-function getMetaData(type: string, query: string): any;
+function getMetaData(type: string, ...queries: any[]): any;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -1487,6 +1487,16 @@ type ImageRenderedEventDetail = {
 export const imageRetrievalPoolManager: RequestPoolManager;
 
 // @public (undocumented)
+const imageRetrieveMetadataProvider: {
+    IMAGE_RETRIEVE_CONFIGURATION: string;
+    IMAGE_RETRIEVE_OPTIONS: string;
+    clear: () => void;
+    addImageRetrieveConfiguration: (uidOrImageId: string, payload: any) => void;
+    addImageRetrieveOptions: (uidOrImageId: string, payload: any) => void;
+    get: (type: string, queriesOrQuery: string | string[]) => any;
+};
+
+// @public (undocumented)
 type ImageSliceData = {
     numberOfSlices: number;
     imageIndex: number;
@@ -2143,11 +2153,26 @@ class ProgressiveIterator<T> {
 
 // @public (undocumented)
 export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
-    constructor(stages: RetrieveStage[], retrieveOptions: Record<string, RetrieveOptions>);
+    constructor(imageRetrieveConfiguration: any);
+    // (undocumented)
+    static interleavedRetrieveStages: {
+        stages: RetrieveStage[];
+        constructor: typeof ProgressiveRetrieveImages;
+    };
     // (undocumented)
     retrieveImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
     retrieveOptions: Record<string, RetrieveOptions>;
+    // (undocumented)
+    static sequentialRetrieveStages: {
+        stages: RetrieveStage[];
+        constructor: typeof ProgressiveRetrieveImages;
+    };
+    // (undocumented)
+    static singleRetrieveStages: {
+        stages: RetrieveStage[];
+        constructor: typeof ProgressiveRetrieveImages;
+    };
     // (undocumented)
     stages: RetrieveStage[];
 }
@@ -2491,7 +2516,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setStack(imageIds: Array<string>, currentImageIdIndex: number, retrieveConfiguration: IRetrieveConfiguration): Promise<string>;
+    setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
@@ -2710,7 +2735,8 @@ declare namespace utilities {
         colormap,
         getImageLegacy,
         ProgressiveIterator,
-        decimate
+        decimate,
+        imageRetrieveMetadataProvider
     }
 }
 export { utilities }

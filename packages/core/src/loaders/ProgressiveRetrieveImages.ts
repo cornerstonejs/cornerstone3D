@@ -6,17 +6,28 @@ import {
   ImageLoadListener,
   RetrieveOptions,
 } from '../types';
-import sequentialRetrieveConfiguration from './configuration/sequentialRetrieve';
-import interleavedRetrieveConfiguration from './configuration/interleavedRetrieve';
+import * as metaData from '../metaData';
+import singleRetrieveStages from './configuration/singleRetrieve';
+import sequentialRetrieveStages from './configuration/sequentialRetrieve';
+import interleavedRetrieveStages from './configuration/interleavedRetrieve';
 import { loadAndCacheImage } from './imageLoader';
-import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
+import {
+  triggerEvent,
+  ProgressiveIterator,
+  decimate,
+  imageRetrieveMetadataProvider,
+} from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
 
-export { sequentialRetrieveConfiguration, interleavedRetrieveConfiguration };
+export {
+  sequentialRetrieveStages,
+  interleavedRetrieveStages,
+  singleRetrieveStages,
+};
 
 type StageStatus = {
   stageId: string;
@@ -85,15 +96,26 @@ export type ProgressiveRequest = {
  * @param retrieveOptions - is a set of retrieve options to use
  */
 export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
+  public static interleavedRetrieveStages = {
+    stages: interleavedRetrieveStages,
+    constructor: ProgressiveRetrieveImages,
+  };
+
+  public static singleRetrieveStages = {
+    stages: singleRetrieveStages,
+    constructor: ProgressiveRetrieveImages,
+  };
+
+  public static sequentialRetrieveStages = {
+    stages: sequentialRetrieveStages,
+    constructor: ProgressiveRetrieveImages,
+  };
+
   stages: RetrieveStage[];
   retrieveOptions: Record<string, RetrieveOptions>;
 
-  constructor(
-    stages: RetrieveStage[],
-    retrieveOptions: Record<string, RetrieveOptions>
-  ) {
-    this.stages = stages;
-    this.retrieveOptions = retrieveOptions;
+  constructor(imageRetrieveConfiguration) {
+    this.stages = imageRetrieveConfiguration.stages;
   }
 
   public retrieveImages(imageIds: string[], listener: ImageLoadListener) {
@@ -114,7 +136,6 @@ export async function load(
   function sendRequest(request, options) {
     const { imageId, next } = request;
     const errorCallback = (reason, done) => {
-      // console.log('Erroring out', reason, done);
       listener.errorCallback(imageId, complete || !next, reason);
       if (done) {
         updateStageStatus(stageStatusMap, request.stage, reason);
@@ -185,9 +206,16 @@ export async function load(
       // Image no longer of interest
       return;
     }
+    const { retrieveType = 'default' } = stage;
+    const retrieveOptions = metaData.get(
+      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_OPTIONS,
+      retrieveType,
+      'default'
+    );
     const options = {
       ...baseOptions,
-      retrieveType: stage.retrieveType,
+      retrieveType,
+      retrieveOptions,
       streamingData,
     };
     const priority = stage.priority ?? -5;

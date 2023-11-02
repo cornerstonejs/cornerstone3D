@@ -21,6 +21,9 @@ import {
 } from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
+  if (Array.isArray(imageId)) {
+    return;
+  }
   if (type === 'multiframeModule') {
     // the get function removes the PerFrameFunctionalGroupsSequence
     const { metadata, frame } =

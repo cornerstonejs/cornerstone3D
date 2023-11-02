@@ -18,8 +18,9 @@ import {
   imageIdToURI,
   isImageActor,
   actorIsA,
+  imageRetrieveMetadataProvider,
 } from '../utilities';
-import {
+import type {
   Point2,
   Point3,
   VOIRange,
@@ -1431,15 +1432,22 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public async setStack(
     imageIds: Array<string>,
-    currentImageIdIndex = 0,
-    retrieveConfiguration: IRetrieveConfiguration
+    currentImageIdIndex = 0
   ): Promise<string> {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
-    this.retrieveConfiguration = retrieveConfiguration || this;
+    const imageRetrieveConfiguration = metaData.get(
+      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+      imageIds[currentImageIdIndex],
+      'stack'
+    );
+
+    this.retrieveConfiguration = imageRetrieveConfiguration?.constructor
+      ? new imageRetrieveConfiguration.constructor(imageRetrieveConfiguration)
+      : this;
 
     // reset the stack
     this.stackInvalidated = true;

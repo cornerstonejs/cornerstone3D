@@ -1,4 +1,4 @@
-import { Enums, utilities } from '@cornerstonejs/core';
+import { Enums, utilities, metaData } from '@cornerstonejs/core';
 import type { Types, RetrieveOptions } from '@cornerstonejs/core';
 
 import external from '../../externalModules';
@@ -7,7 +7,7 @@ import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { getOptions } from '../internal/options';
 
-const { ProgressiveIterator } = utilities;
+const { imageRetrieveMetadataProvider, ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
@@ -122,7 +122,11 @@ function loadImage(
 
   const { retrieveType, transferSyntaxUID } = options;
   const loaderOptions = getOptions();
-  options.retrieveOptions = {};
+  options.retrieveOptions ||= metaData.get(
+    imageRetrieveMetadataProvider.IMAGE_RETRIEVE_OPTIONS,
+    transferSyntaxUID,
+    'default'
+  );
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -144,7 +148,6 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        options.retrieveOptions = {};
         if (!done && !options.retrieveOptions?.streamingDecode) {
           continue;
         }
