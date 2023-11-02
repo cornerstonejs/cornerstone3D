@@ -197,7 +197,6 @@ if (configuration.examples) {
       });
   });
 
-  // Sort the suggestions based on their similarity and select top N (e.g., top 3 here)
   closestExampleNames.sort((a, b) => a.similarity - b.similarity);
 
   let topClosestNames = closestExampleNames
@@ -237,7 +236,6 @@ if (configuration.examples) {
           // If user selected a valid example, run that example
           filterExamples[0] = topClosestNames[selectedIndex];
           filteredExampleCorrectCase = filterExamples;
-          // Here you can call some logic to re-evaluate with the new filterExample or you might need to refactor your script to make this efficient.
           rl.close();
           run();
         } else {
