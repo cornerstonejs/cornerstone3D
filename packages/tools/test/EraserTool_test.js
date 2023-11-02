@@ -117,7 +117,7 @@ describe('EraserTool:', () => {
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationRemoved = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_REMOVED, () => {
+        eventTarget.addEventListener(csToolsEvents.ANNOTATION_REMOVED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
             element
