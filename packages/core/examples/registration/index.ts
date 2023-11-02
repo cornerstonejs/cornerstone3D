@@ -75,39 +75,15 @@ let webWorker = null;
 const volumesInfo = [
   {
     volumeId: `${volumeLoaderScheme}:CT_VOLUME_ID_1`,
-
-    // Neptune
-    // wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-    // StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095438.5',
-    // SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095449.8',
-
-    // Juno
-    wadoRsRoot: 'http://localhost/dicom-web',
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125112931.11',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113028.6',
-
-    // Registration Patient
-    // wadoRsRoot: 'http://localhost/dicom-web',
-    // StudyInstanceUID: '1.2.276.0.7230010.3.1.2.8323329.48268.1698701222.813076',
-    // SeriesInstanceUID: '1.2.826.0.1.3680043.8.498.84963501100167841758743213842999883579',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095438.5',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095449.8',
   },
   {
     volumeId: `${volumeLoaderScheme}:CT_VOLUME_ID_2`,
-
-    // Neptune
-    // wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-    // StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1',
-    // SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095305.12',
-
-    // Juno
-    wadoRsRoot: 'http://localhost/dicom-web',
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113420.1',
-
-    // Registration Patient
-    // wadoRsRoot: 'http://localhost/dicom-web',
-    // StudyInstanceUID: '1.2.826.0.1.3680043.8.498.12964356232224616523807475287136128640',
-    // SeriesInstanceUID: '1.2.826.0.1.3680043.8.498.75254374739656968107738714604787374813',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095305.12',
   },
 ];
 
