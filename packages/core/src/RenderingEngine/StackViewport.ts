@@ -18,7 +18,6 @@ import {
   imageIdToURI,
   isImageActor,
   actorIsA,
-  ProgressiveIterator,
 } from '../utilities';
 import {
   Point2,
@@ -42,6 +41,7 @@ import {
   ColormapRegistration,
   IImageCalibration,
   IRetrieveConfiguration,
+  ImageLoadListener,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -79,7 +79,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
-import * as progressiveLoader from '../loaders/progressiveLoader';
+import * as progressiveLoader from '../loaders/ProgressiveRetrieveImages';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -127,7 +127,7 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * The progressive retrieval configuration used for this viewport.
    */
-  protected progressiveRetrieveConfiguration: IRetrieveConfiguration;
+  protected retrieveConfiguration: IRetrieveConfiguration = this;
 
   // Viewport Properties
   private voiRange: VOIRange;
@@ -188,9 +188,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
-    this.setProgressiveRetrieveConfiguration(
-      props.progressiveRetrieveConfiguration
-    );
   }
 
   public setUseCPURendering(value: boolean) {
@@ -250,23 +247,6 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
-   * Sets the progressive rendering on or off, or sets it to a specific
-   * configuration of progressive rendering.  See progresive rendering documentation
-   * for more details.
-   *
-   * @param progressiveRendering - set to true to use progressive rendering
-   */
-  public setProgressiveRetrieveConfiguration(
-    progressiveRendering: boolean | IRetrieveConfiguration
-  ) {
-    this.progressiveRetrieveConfiguration =
-      typeof progressiveRendering === 'object'
-        ? progressiveRendering
-        : progressiveRendering &&
-          progressiveLoader.sequentialRetrieveConfiguration;
-  }
-
-  /**
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
@@ -274,10 +254,6 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns IImageData: dimensions, direction, scalarData, vtkImageData, metadata, scaling
    */
   public getImageData: () => IImageData | CPUIImageData;
-
-  public getProgressiveRetrieveConfiguration(): IRetrieveConfiguration {
-    return this.progressiveRetrieveConfiguration;
-  }
 
   /**
    * Sets the colormap for the current viewport.
@@ -1456,13 +1432,15 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public async setStack(
     imageIds: Array<string>,
-    currentImageIdIndex = 0
+    currentImageIdIndex = 0,
+    retrieveConfiguration: IRetrieveConfiguration
   ): Promise<string> {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
+    this.retrieveConfiguration = retrieveConfiguration || this;
 
     // reset the stack
     this.stackInvalidated = true;
@@ -1864,18 +1842,27 @@ class StackViewport extends Viewport implements IStackViewport {
     return options;
   }
 
-  private _loadNonProgressive(imageId: string): Promise<string> {
-    const options = this.getLoaderImageOptions(imageId) as ImageLoaderOptions;
+  public retrieveImages(
+    imageIds: string[],
+    listener: ImageLoadListener
+  ): Promise<unknown> {
+    return Promise.allSettled(
+      imageIds.map((imageId) => {
+        const options = this.getLoaderImageOptions(
+          imageId
+        ) as ImageLoaderOptions;
 
-    return loadAndCacheImage(imageId, options).then(
-      (image) => {
-        this.successCallback.call(this, imageId, image);
-        return imageId;
-      },
-      (error) => {
-        this.errorCallback.call(this, imageId, true, error);
-        return imageId;
-      }
+        return loadAndCacheImage(imageId, options).then(
+          (image) => {
+            listener.successCallback(imageId, image);
+            return imageId;
+          },
+          (error) => {
+            listener.errorCallback(imageId, true, error);
+            return imageId;
+          }
+        );
+      })
     );
   }
 
@@ -1888,14 +1875,8 @@ class StackViewport extends Viewport implements IStackViewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    const retrieveConfiguration = this.getProgressiveRetrieveConfiguration();
-
-    if (!retrieveConfiguration) {
-      return this._loadNonProgressive(imageId);
-    }
-
-    return progressiveLoader
-      .load([imageId], this, retrieveConfiguration)
+    return this.retrieveConfiguration
+      .retrieveImages([imageId], this)
       .then((v) => {
         return imageId;
       });

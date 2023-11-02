@@ -1,4 +1,4 @@
-import type { IRetrieveConfiguration, NearbyFrames } from '../../types';
+import { RetrieveStage, NearbyFrames } from '../../types';
 import { RequestType, ImageQualityStatus } from '../../enums';
 
 // Defines some nearby frames to replicate to
@@ -28,64 +28,61 @@ const nearbyFrames: NearbyFrames[] = [
  *   5. Retrieve every 4th image, offset 2, full images
  *   6. Retrieve every 4th image, offsets 1 and 3, full images if not already done
  */
-const interleavedRetrieveConfiguration: IRetrieveConfiguration = {
-  stages: [
-    {
-      id: 'initialImages',
-      // Values between -1 and 1 are relative to size, so 0.5 is middle image
-      // and 0 is first image, -1 is last image
-      positions: [0.5, 0, -1],
-      retrieveType: 'default',
-      requestType: RequestType.Interaction,
-      priority: 10,
-      nearbyFrames,
-    },
-    {
-      id: 'quarterThumb',
-      decimate: 4,
-      offset: 3,
-      retrieveType: 'multipleFast',
-      // requestType: RequestType.Interaction,
-      priority: 9,
-      nearbyFrames,
-    },
-    {
-      id: 'halfThumb',
-      decimate: 4,
-      offset: 1,
-      priority: 8,
-      retrieveType: 'multipleFast',
-      nearbyFrames,
-    },
-    {
-      id: 'quarterFull',
-      decimate: 4,
-      offset: 2,
-      priority: 7,
-      retrieveType: 'multipleFinal',
-    },
-    {
-      id: 'halfFull',
-      decimate: 4,
-      offset: 0,
-      priority: 6,
-      retrieveType: 'multipleFinal',
-    },
-    {
-      id: 'threeQuarterFull',
-      decimate: 4,
-      offset: 1,
-      priority: 5,
-      retrieveType: 'multipleFinal',
-    },
-    {
-      id: 'finalFull',
-      decimate: 4,
-      offset: 3,
-      priority: 4,
-      retrieveType: 'multipleFinal',
-    },
-  ],
-};
-
+const interleavedRetrieveConfiguration: RetrieveStage[] = [
+  {
+    id: 'initialImages',
+    // Values between -1 and 1 are relative to size, so 0.5 is middle image
+    // and 0 is first image, -1 is last image
+    positions: [0.5, 0, -1],
+    retrieveType: 'default',
+    requestType: RequestType.Interaction,
+    priority: 10,
+    nearbyFrames,
+  },
+  {
+    id: 'quarterThumb',
+    decimate: 4,
+    offset: 3,
+    retrieveType: 'multipleFast',
+    // requestType: RequestType.Interaction,
+    priority: 9,
+    nearbyFrames,
+  },
+  {
+    id: 'halfThumb',
+    decimate: 4,
+    offset: 1,
+    priority: 8,
+    retrieveType: 'multipleFast',
+    nearbyFrames,
+  },
+  {
+    id: 'quarterFull',
+    decimate: 4,
+    offset: 2,
+    priority: 7,
+    retrieveType: 'multipleFinal',
+  },
+  {
+    id: 'halfFull',
+    decimate: 4,
+    offset: 0,
+    priority: 6,
+    retrieveType: 'multipleFinal',
+  },
+  {
+    id: 'threeQuarterFull',
+    decimate: 4,
+    offset: 1,
+    priority: 5,
+    retrieveType: 'multipleFinal',
+  },
+  {
+    id: 'finalFull',
+    decimate: 4,
+    offset: 3,
+    priority: 4,
+    retrieveType: 'multipleFinal',
+  },
+];
 export default interleavedRetrieveConfiguration;

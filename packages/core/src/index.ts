@@ -48,12 +48,13 @@ import Settings from './Settings';
 import * as volumeLoader from './loaders/volumeLoader';
 import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
-import * as progressiveLoader from './loaders/progressiveLoader';
+import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
 import type * as Types from './types';
-import type {
+import {
   IRetrieveConfiguration,
   RetrieveOptions,
   RetrieveStage,
+  ImageLoadListener,
 } from './types';
 import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
@@ -66,7 +67,13 @@ import {
 } from './RenderingEngine/helpers';
 
 // Add new types here so that they can be imported singly as required.
-export type { Types, IRetrieveConfiguration, RetrieveOptions, RetrieveStage };
+export type {
+  Types,
+  IRetrieveConfiguration,
+  RetrieveOptions,
+  RetrieveStage,
+  ImageLoadListener,
+};
 
 export {
   // init
@@ -129,6 +136,5 @@ export {
   resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
-  // Progressive loader uses the other loaders to configure interleaving
-  progressiveLoader,
+  ProgressiveRetrieveImages,
 };

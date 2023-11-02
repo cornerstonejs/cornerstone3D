@@ -1385,6 +1385,13 @@ interface ImageLoaderOptions {
 }
 
 // @public (undocumented)
+export type ImageLoadListener = {
+    successCallback: (imageId: any, image: any) => void;
+    errorCallback: (imageId: any, permanent: any, reason: any) => void;
+    getLoaderImageOptions?: (imageId: any) => Record<string, unknown>;
+};
+
+// @public (undocumented)
 const imageLoadPoolManager: RequestPoolManager;
 export { imageLoadPoolManager }
 export { imageLoadPoolManager as requestPoolManager }
@@ -1586,9 +1593,6 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 export function init(configuration?: Cornerstone3DConfig): Promise<boolean>;
 
 // @public (undocumented)
-const interleavedRetrieveConfiguration: IRetrieveConfiguration;
-
-// @public (undocumented)
 enum InterpolationType {
     // (undocumented)
     FAST_LINEAR = 2,
@@ -1652,7 +1656,9 @@ interface IRenderingEngine {
 // @public (undocumented)
 export interface IRetrieveConfiguration {
     // (undocumented)
-    stages?: RetrieveStage[];
+    retrieveImages: (imageIds: string[], listener: ImageLoadListener) => Promise<unknown>;
+    // (undocumented)
+    retrieveOptions?: Record<string, RetrieveOptions>;
 }
 
 // @public (undocumented)
@@ -1722,11 +1728,9 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProgressiveRetrieveConfiguration: (progressive: boolean | IRetrieveConfiguration) => void;
-    // (undocumented)
     setProperties({ voiRange, invert, interpolationType, rotation }: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
+    setStack(imageIds: Array<string>, currentImageIdIndex?: number, retrieveConfiguration?: IRetrieveConfiguration): Promise<string>;
     // (undocumented)
     unsetColormap(): void;
     // (undocumented)
@@ -1980,9 +1984,6 @@ interface IVolumeViewport extends IViewport {
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3;
 
 // @public (undocumented)
-function load(imageIds: string[], listener: ProgressiveListener, retrieveOptions?: IRetrieveConfiguration): Promise<unknown>;
-
-// @public (undocumented)
 function loadAndCacheImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
@@ -2043,13 +2044,6 @@ type NearbyFrames = {
     offset: number;
     linearOffset?: number;
     status?: ImageQualityStatus;
-};
-
-// @public (undocumented)
-type NearbyRequest = {
-    itemId: string;
-    linearId?: string;
-    status: ImageQualityStatus;
 };
 
 // @public (undocumented)
@@ -2148,30 +2142,15 @@ class ProgressiveIterator<T> {
 }
 
 // @public (undocumented)
-type ProgressiveListener = {
-    successCallback: (imageId: any, image: any, status: any) => void;
-    errorCallback: (imageId: any, permanent: any, reason: any) => void;
-    getLoaderImageOptions?: (imageId: any) => Record<string, unknown>;
-};
-
-declare namespace progressiveLoader {
-    export {
-        load,
-        sequentialRetrieveConfiguration,
-        interleavedRetrieveConfiguration,
-        NearbyRequest,
-        ProgressiveRequest
-    }
+export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
+    constructor(stages: RetrieveStage[], retrieveOptions: Record<string, RetrieveOptions>);
+    // (undocumented)
+    retrieveImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
+    // (undocumented)
+    retrieveOptions: Record<string, RetrieveOptions>;
+    // (undocumented)
+    stages: RetrieveStage[];
 }
-export { progressiveLoader }
-
-// @public (undocumented)
-type ProgressiveRequest = {
-    imageId: string;
-    stage: RetrieveStage;
-    next?: ProgressiveRequest;
-    nearbyRequests?: NearbyRequest[];
-};
 
 // @public (undocumented)
 type PTScaling = {
@@ -2334,9 +2313,6 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-const sequentialRetrieveConfiguration: IRetrieveConfiguration;
-
-// @public (undocumented)
 export function setConfiguration(c: Cornerstone3DConfig): void;
 
 // @public (undocumented)
@@ -2473,8 +2449,6 @@ export class StackViewport extends Viewport implements IStackViewport {
         };
     };
     // (undocumented)
-    getProgressiveRetrieveConfiguration(): IRetrieveConfiguration;
-    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer: () => any;
@@ -2489,8 +2463,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
-    protected progressiveRetrieveConfiguration: IRetrieveConfiguration;
-    // (undocumented)
     removeAllActors: () => void;
     // (undocumented)
     renderImageObject: (image: any) => void;
@@ -2500,6 +2472,10 @@ export class StackViewport extends Viewport implements IStackViewport {
     resetProperties(): void;
     // (undocumented)
     resize: () => void;
+    // (undocumented)
+    protected retrieveConfiguration: IRetrieveConfiguration;
+    // (undocumented)
+    retrieveImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
     scaling: Scaling;
     // (undocumented)
@@ -2513,11 +2489,9 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProgressiveRetrieveConfiguration(progressiveRendering: boolean | IRetrieveConfiguration): void;
-    // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
+    setStack(imageIds: Array<string>, currentImageIdIndex: number, retrieveConfiguration: IRetrieveConfiguration): Promise<string>;
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
@@ -2673,7 +2647,7 @@ declare namespace Types {
         ImagePixelModule,
         ImagePlaneModule,
         AffineMatrix,
-        ProgressiveListener
+        ImageLoadListener
     }
 }
 export { Types }

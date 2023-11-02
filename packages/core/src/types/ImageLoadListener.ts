@@ -1,9 +1,9 @@
-export type ProgressiveListener = {
+export type ImageLoadListener = {
   /**
    * Called when an image is loaded.  May be called multiple times with increasing
    * status values.
    */
-  successCallback: (imageId, image, status) => void;
+  successCallback: (imageId, image) => void;
   /**
    * Called when an image fails to load.  A failure is permanent if no more attempts
    * will be made.

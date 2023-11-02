@@ -274,7 +274,6 @@ async function run() {
   const viewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId)
   );
-  viewport.setProgressiveRetrieveConfiguration(true);
 
   const createButton = (text, action) => {
     const button = document.createElement('button');
@@ -316,7 +315,6 @@ async function run() {
   createButton(nonProgressive, (onclick) => {
     const button = document.getElementById(nonProgressive);
     const progressive = button.innerText !== nonProgressive;
-    viewport.setProgressiveRetrieveConfiguration(progressive);
     button.innerText = progressive ? nonProgressive : 'Set Progressive';
   });
 }

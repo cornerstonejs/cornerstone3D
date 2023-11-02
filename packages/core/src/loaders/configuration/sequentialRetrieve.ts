@@ -1,19 +1,17 @@
-import type { IRetrieveConfiguration } from '../../types';
+import type { RetrieveStage } from '../../types';
 
 /**
  * This simply retrieves the images sequentially as provided.
  */
-const sequentialRetrieveConfiguration: IRetrieveConfiguration = {
-  stages: [
-    {
-      id: 'lossySequential',
-      retrieveType: 'singleFast',
-    },
-    {
-      id: 'finalSequential',
-      retrieveType: 'singleFinal',
-    },
-  ],
-};
+const sequentialRetrieveStages: RetrieveStage[] = [
+  {
+    id: 'lossySequential',
+    retrieveType: 'singleFast',
+  },
+  {
+    id: 'finalSequential',
+    retrieveType: 'singleFinal',
+  },
+];
 
-export default sequentialRetrieveConfiguration;
+export default sequentialRetrieveStages;

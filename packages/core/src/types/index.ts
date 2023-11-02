@@ -88,7 +88,7 @@ export type {
   NearbyFrames,
   IRetrieveConfiguration,
 } from './IRetrieveConfiguration';
-import type { ProgressiveListener } from './ProgressiveListener';
+import type { ImageLoadListener } from './ImageLoadListener';
 
 export type {
   // config
@@ -182,5 +182,5 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
-  ProgressiveListener,
+  ImageLoadListener,
 };

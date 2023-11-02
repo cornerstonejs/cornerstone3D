@@ -108,10 +108,14 @@ export default interface IStackViewport extends IViewport {
    * list of imageIds, the index of the first imageId to be viewed. It is a
    * asynchronous function that returns a promise resolving to imageId being
    * displayed in the stack viewport.
+   *
+   * @param retrieveConfiguration - Set this to a progressive retriever of your
+   *       choice for progressive retrieval, or leave empty for non-progressive.
    */
   setStack(
     imageIds: Array<string>,
-    currentImageIdIndex?: number
+    currentImageIdIndex?: number,
+    retrieveConfiguration?: IRetrieveConfiguration
   ): Promise<string>;
   /**
    * Centers Pan and resets the zoom for stack viewport.
@@ -142,11 +146,4 @@ export default interface IStackViewport extends IViewport {
    * It sets the colormap to the default colormap.
    */
   unsetColormap(): void;
-  /**
-   * Sets progressive rendering to be used, using the progressive loader.
-   * Can be set to true to enable, or a specific configuration provided.
-   */
-  setProgressiveRetrieveConfiguration: (
-    progressive: boolean | IRetrieveConfiguration
-  ) => void;
 }

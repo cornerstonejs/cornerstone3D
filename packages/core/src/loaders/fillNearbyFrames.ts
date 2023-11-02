@@ -1,9 +1,9 @@
-import type { ProgressiveListener } from '../types';
+import { ImageLoadListener } from '../types';
 import { ImageQualityStatus } from '../enums';
 
 /** Actually fills the nearby frames from the given frame */
 export function fillNearbyFrames(
-  listener: ProgressiveListener,
+  listener: ImageLoadListener,
   imageQualityStatusMap: Map<string, ImageQualityStatus>,
   request,
   image,
@@ -42,9 +42,9 @@ export function fillNearbyFrames(
       scalarData.set(src, targetOffset / bytesPerPixel);
       const nearbyImage = {
         ...image,
-        status,
+        imageQualityStatus: status,
       };
-      listener.successCallback(targetId, nearbyImage, status);
+      listener.successCallback(targetId, nearbyImage);
       imageQualityStatusMap[targetId] = status;
     } catch (e) {
       console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);

@@ -10,7 +10,11 @@ import {
   progressiveLoader,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types, IRetrieveConfiguration } from '@cornerstonejs/core';
+import type {
+  Types,
+  IRetrieveConfiguration,
+  ImageLoadListener,
+} from '@cornerstonejs/core';
 
 import { scaleArray, autoLoad } from './helpers';
 
@@ -23,7 +27,10 @@ const { ImageQualityStatus } = Enums;
  * It implements load method to load the imageIds and insert them into the volume.
  *
  */
-export default class BaseStreamingImageVolume extends ImageVolume {
+export default class BaseStreamingImageVolume
+  extends ImageVolume
+  implements IRetrieveConfiguration
+{
   private framesLoaded = 0;
   private framesProcessed = 0;
   private framesUpdated = 0;
@@ -49,6 +56,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     cachedFrames: Array<Enums.ImageQualityStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
+  retrieveConfiguration: Types.IRetrieveConfiguration;
 
   constructor(
     imageVolumeProperties: Types.IVolume,
@@ -58,11 +66,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     this.imageIds = streamingProperties.imageIds;
     this.loadStatus = streamingProperties.loadStatus;
     this.numFrames = this._getNumFrames();
-    this.progressiveRetrieveConfiguration =
-      typeof streamingProperties.progressiveRetrieveConfiguration === 'object'
-        ? streamingProperties.progressiveRetrieveConfiguration
-        : streamingProperties.progressiveRetrieveConfiguration &&
-          progressiveLoader.interleavedRetrieveConfiguration;
     this._createCornerstoneImageMetaData();
   }
 
@@ -420,8 +423,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    * @param priority - The priority for loading the volume images, lower number is higher priority
    * @returns
    */
-  public load = (callback: (...args: unknown[]) => void): void => {
+  public load = (
+    callback: (...args: unknown[]) => void,
+    retrieveConfiguration?: IRetrieveConfiguration
+  ): void => {
     const { imageIds, loadStatus, numFrames } = this;
+    this.retrieveConfiguration = retrieveConfiguration || this;
 
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.
@@ -677,7 +684,12 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     throw new Error('Abstract method');
   }
 
-  protected _nonProgressiveRetrieve() {
+  /**
+   * Retrieves images using the older getImageLoadRequests method
+   * to setup all the requests.  Ensures compatibility with the custom image
+   * loaders.
+   */
+  public retrieveImages(imageIds: string[], listener: ImageLoadListener) {
     this.loadStatus.loading = true;
 
     const requests = this.getImageLoadRequests(5);
@@ -705,6 +717,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         priority
       );
     });
+    return Promise.resolve(true);
   }
 
   private _prefetchImageIds() {
@@ -724,12 +737,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       this.reRenderTarget = this.reRenderFraction;
     }
 
-    if (!this.progressiveRetrieveConfiguration) {
-      return this._nonProgressiveRetrieve();
-    }
-
-    return progressiveLoader
-      .load(imageIds, this, this.progressiveRetrieveConfiguration)
+    return this.retrieveConfiguration
+      .retrieveImages(imageIds, this)
       .catch((e) => {
         console.debug('progressive loading failed to complete', e);
       })

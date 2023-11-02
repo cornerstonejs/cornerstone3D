@@ -1,9 +1,9 @@
-import type {
+import {
   IRetrieveConfiguration,
   IImage,
   RetrieveStage,
   EventTypes,
-  ProgressiveListener,
+  ImageLoadListener,
 } from '../types';
 import sequentialRetrieveConfiguration from './configuration/sequentialRetrieve';
 import interleavedRetrieveConfiguration from './configuration/interleavedRetrieve';
@@ -14,6 +14,7 @@ import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
+import { RetrieveOptions } from '@cornerstonejs/core';
 
 export { sequentialRetrieveConfiguration, interleavedRetrieveConfiguration };
 
@@ -83,10 +84,27 @@ export type ProgressiveRequest = {
  *                   have a getTargetOptions to get information on the retrieve
  * @param retrieveOptions - is a set of retrieve options to use
  */
+export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
+  stages: RetrieveStage[];
+  retrieveOptions: Record<string, RetrieveOptions>;
+
+  constructor(
+    stages: RetrieveStage[],
+    retrieveOptions: Record<string, RetrieveOptions>
+  ) {
+    this.stages = stages;
+    this.retrieveOptions = retrieveOptions;
+  }
+
+  public retrieveImages(imageIds: string[], listener: ImageLoadListener) {
+    return load(imageIds, listener, this);
+  }
+}
+
 export async function load(
   imageIds: string[],
-  listener: ProgressiveListener,
-  retrieveOptions: IRetrieveConfiguration = interleavedRetrieveConfiguration
+  listener: ImageLoadListener,
+  retrieveConfiguration: ProgressiveRetrieveImages
 ): Promise<unknown> {
   const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
   const imageQualityStatusMap = new Map<string, ImageQualityStatus>();
@@ -124,7 +142,7 @@ export async function load(
           return;
         }
 
-        listener.successCallback(imageId, image, imageQualityStatus);
+        listener.successCallback(imageId, image);
         imageQualityStatusMap[imageId] = imageQualityStatus;
         displayedIterator.add(image);
         if (done) {
@@ -188,7 +206,7 @@ export async function load(
   // requests, with all the actual work being handled by the nested functions
   const interleaved = createStageRequests(
     imageIds,
-    retrieveOptions,
+    retrieveConfiguration,
     stageStatusMap
   );
   outstandingRequests = interleaved.length;
@@ -205,7 +223,7 @@ export async function load(
 /** Interleaves the values according to the stages definition */
 function createStageRequests(
   requests: string[],
-  retrieveConfiguration: IRetrieveConfiguration,
+  retrieveConfiguration: ProgressiveRetrieveImages,
   stageStatus: Map<string, StageStatus>
 ) {
   const { stages } = retrieveConfiguration;
@@ -340,3 +358,5 @@ function updateStageStatus(
     stageStatus.delete(id);
   }
 }
+
+export default ProgressiveRetrieveImages;

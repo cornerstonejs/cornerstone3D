@@ -1,4 +1,5 @@
 import { ImageQualityStatus, RequestType } from '../enums';
+import { ImageLoadListener } from './ImageLoadListener';
 
 /**
  * Retrieve stages are part of a retrieval of a set of image ids.
@@ -198,5 +199,10 @@ export type RetrieveOptions =
  * strategy, prefetch etc.
  */
 export interface IRetrieveConfiguration {
-  stages?: RetrieveStage[];
+  retrieveImages: (
+    imageIds: string[],
+    listener: ImageLoadListener
+  ) => Promise<unknown>;
+
+  retrieveOptions?: Record<string, RetrieveOptions>;
 }

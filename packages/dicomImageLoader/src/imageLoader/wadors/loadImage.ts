@@ -1,10 +1,11 @@
-import { Types, Enums, utilities } from '@cornerstonejs/core';
+import { Enums, utilities } from '@cornerstonejs/core';
+import type { Types, RetrieveOptions } from '@cornerstonejs/core';
+
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { getOptions } from '../internal/options';
-import { RetrieveOptions } from 'core/src/types';
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
@@ -121,10 +122,7 @@ function loadImage(
 
   const { retrieveType, transferSyntaxUID } = options;
   const loaderOptions = getOptions();
-  options.retrieveOptions = loaderOptions.getRetrieveOptions(
-    retrieveType,
-    transferSyntaxUID
-  );
+  options.retrieveOptions = {};
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );
@@ -146,10 +144,7 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        options.retrieveOptions = loaderOptions.getRetrieveOptions(
-          retrieveType,
-          transferSyntax
-        );
+        options.retrieveOptions = {};
         if (!done && !options.retrieveOptions?.streamingDecode) {
           continue;
         }
