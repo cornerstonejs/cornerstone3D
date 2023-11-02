@@ -7,7 +7,6 @@ import {
   ImageVolume,
   cache,
   imageLoader,
-  progressiveLoader,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type {

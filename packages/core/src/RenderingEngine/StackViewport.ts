@@ -79,7 +79,6 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
-import * as progressiveLoader from '../loaders/ProgressiveRetrieveImages';
 
 const EPSILON = 1; // Slice Thickness
 

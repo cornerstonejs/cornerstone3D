@@ -4,6 +4,7 @@ import {
   RetrieveStage,
   EventTypes,
   ImageLoadListener,
+  RetrieveOptions,
 } from '../types';
 import sequentialRetrieveConfiguration from './configuration/sequentialRetrieve';
 import interleavedRetrieveConfiguration from './configuration/interleavedRetrieve';
@@ -14,7 +15,6 @@ import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
-import { RetrieveOptions } from '@cornerstonejs/core';
 
 export { sequentialRetrieveConfiguration, interleavedRetrieveConfiguration };
 
