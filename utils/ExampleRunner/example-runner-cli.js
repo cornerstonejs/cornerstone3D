@@ -4,6 +4,8 @@
 var { program } = require('commander');
 var path = require('path');
 var shell = require('shelljs');
+const readline = require('readline');
+
 var examples = {};
 var webpackConfigPath = path.join(
   __dirname,
@@ -22,6 +24,11 @@ const options = program.opts();
 //var configFilePath = path.join(process.cwd(), options.config.replace(/\//g, path.sep));
 //var configuration = require(configFilePath);
 
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
 function getSplittedPath(filePath) {
   var a = filePath.split('/');
   var b = filePath.split('\\');
@@ -31,6 +38,45 @@ function getSplittedPath(filePath) {
 function validPath(str) {
   return str.replace(/\\\\/g, '/');
 }
+
+function calculateSubstringSimilarity(a, b) {
+  let shorter = a;
+  let longer = b;
+
+  if (a.length > b.length) {
+    shorter = b;
+    longer = a;
+  }
+
+  let index = longer.indexOf(shorter);
+  if (index !== -1) {
+    // Prioritize matches that start at the beginning of the word.
+    return shorter.length + (index === 0 ? 0.5 : 0);
+  }
+
+  for (let i = shorter.length; i >= 1; i--) {
+    for (let j = 0; j + i <= shorter.length; j++) {
+      const subString = shorter.substr(j, i);
+      if (longer.includes(subString)) {
+        return i;
+      }
+    }
+  }
+
+  return 0; // No substring match
+}
+
+function calculateSimilarity(a, b) {
+  const substringScore = calculateSubstringSimilarity(a, b);
+
+  if (substringScore > 0) {
+    return -substringScore;
+  } else {
+    return levenshteinDistance(a, b);
+  }
+}
+
+let closestExampleNames = []; // Stores multiple closest names
 
 // from https://github.com/systemed/iD/blob/1e78ee5c87669aac407c69493f3f532c823346ef/js/id/util.js#L97-L115
 function levenshteinDistance(a, b) {
@@ -93,8 +139,6 @@ if (configuration.examples) {
 
   var buildExample = filterExamples.length === 1;
   var exampleCount = 0;
-  var closestExampleName = null;
-  var closestSimilarity = 100;
   var filteredExampleCorrectCase = null;
 
   console.log('\n=> Extract examples\n');
@@ -137,73 +181,107 @@ if (configuration.examples) {
         } else {
           // store the similarity of the example name to the filter name
           // so that we can suggest the user the correct name later
-          var similarity = Math.max(
-            0,
-            levenshteinDistance(exampleName, filterExamples[0])
+          // Adjusted this block to consider multiple suggestions and the new similarity metric
+          var similarity = calculateSimilarity(
+            exampleName.toLowerCase(),
+            filterExamples[0].toLowerCase()
           );
-
-          if (similarity < closestSimilarity) {
-            closestExampleName = exampleName;
-            closestSimilarity = similarity;
-          }
+          closestExampleNames.push({
+            name: exampleName,
+            similarity: similarity,
+          });
         }
       });
   });
 
-  if (exampleCount === 0 && closestExampleName) {
+  // Sort the suggestions based on their similarity and select top N (e.g., top 3 here)
+  closestExampleNames.sort((a, b) => a.similarity - b.similarity);
+  const topClosestNames = closestExampleNames
+    .slice(0, 3)
+    .map((item) => item.name);
+
+  if (exampleCount === 0 && topClosestNames.length) {
     console.log(
-      `\n=> Error: Did not find any examples matching ${filterExamples[0]}; Did you mean \x1b[32m${closestExampleName}\x1b[0m?\n`
+      `\n=> Error: Did not find any examples matching ${filterExamples[0]}`
     );
 
-    process.exit(1);
-  }
+    // Showing up to 7 suggestions
+    const topClosestNames = closestExampleNames
+      .slice(0, 10)
+      .map((item) => item.name);
 
-  if (exampleCount === 0) {
-    examples = null;
-    if (buildExample) {
-      console.error(
-        `\n=> Error: Did not find any examples matching ${filterExamples[0]}`
-      );
-      process.exit(1);
-    }
-  }
-
-  // say name of running example
-  console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
-
-  // run the build for dicom image loader
-  const currentWD = process.cwd();
-  // run the build for dicom image loader
-  shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run webpack:dynamic-import`);
-  shell.cd(currentWD);
-
-  if (buildExample) {
-    var exBasePath = null;
-    const exampleName = filteredExampleCorrectCase;
-    Object.keys(examples).forEach((exampleBasePath) => {
-      if (examples[exampleBasePath][exampleName]) {
-        exBasePath = exampleBasePath;
-      }
+    // Prompting the user to select a suggested example by number
+    console.log('Did you mean any of these?');
+    topClosestNames.forEach((name, index) => {
+      console.log(`\x1b[32m[${index + 1}] ${name}\x1b[0m`); // Display in green color
     });
+    console.log('[Enter "exit" to quit]');
 
-    const conf = buildConfig(
-      exampleName,
-      validPath(examples[exBasePath][exampleName]),
-      distDir,
-      validPath(rootPath),
-      validPath(exBasePath)
-    );
+    rl.question(
+      'Enter the number of the example you want to run: ',
+      (input) => {
+        const selectedIndex = parseInt(input) - 1;
 
-    // console.log('conf', conf);
-    shell.ShellString(conf).to(webpackConfigPath);
-
-    shell.cd(exBasePath);
-    shell.exec(
-      `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+        // If user entered "exit", close the readline interface and exit
+        if (input.toLowerCase() === 'exit') {
+          rl.close();
+          process.exit(0); // Exit gracefully
+        } else if (
+          selectedIndex >= 0 &&
+          selectedIndex < topClosestNames.length
+        ) {
+          // If user selected a valid example, run that example
+          filterExamples[0] = topClosestNames[selectedIndex];
+          // Here you can call some logic to re-evaluate with the new filterExample or you might need to refactor your script to make this efficient.
+          rl.close();
+        } else {
+          // Invalid input; prompt again
+          console.log(
+            'Invalid selection. Please select a valid number or enter "exit" to quit.'
+          );
+          rl.close();
+          process.exit(1); // Exit with error after user input
+        }
+      }
     );
   } else {
-    console.log('=> To run an example:');
-    console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');
+    // say name of running example
+    console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
+
+    // run the build for dicom image loader
+    const currentWD = process.cwd();
+    // run the build for dicom image loader
+    shell.cd('../../dicomImageLoader');
+    shell.exec(`yarn run webpack:dynamic-import`);
+    shell.cd(currentWD);
+
+    if (buildExample) {
+      var exBasePath = null;
+      const exampleName = filteredExampleCorrectCase;
+      Object.keys(examples).forEach((exampleBasePath) => {
+        if (examples[exampleBasePath][exampleName]) {
+          exBasePath = exampleBasePath;
+        }
+      });
+
+      const conf = buildConfig(
+        exampleName,
+        validPath(examples[exBasePath][exampleName]),
+        distDir,
+        validPath(rootPath),
+        validPath(exBasePath)
+      );
+
+      // console.log('conf', conf);
+      shell.ShellString(conf).to(webpackConfigPath);
+
+      shell.cd(exBasePath);
+      shell.exec(
+        `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+      );
+    } else {
+      console.log('=> To run an example:');
+      console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');
+    }
   }
 }
