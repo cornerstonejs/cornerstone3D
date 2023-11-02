@@ -13,7 +13,6 @@ import {
   PixelTypes,
   Metadata,
 } from 'itk-wasm';
-import * as hdf5 from 'jsfive';
 import {
   RenderingEngine,
   Types,
@@ -24,7 +23,6 @@ import {
 } from '@cornerstonejs/core';
 import {
   initDemo,
-  createImageIdsAndCacheMetaData,
   setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addButtonToToolbar,
@@ -37,7 +35,8 @@ import {
   defaultFinalGridSpacing,
   parametersSettings,
 } from './elastixParametersSettings';
-import { getFormatedDateTime } from './utils';
+import { getImageIds, stringify } from './utils';
+import RegistrationConsole from './RegistrationConsole';
 
 // This is for debugging purposes
 console.warn(
@@ -69,7 +68,6 @@ const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const toolGroupIds = new Set<string>();
-const imageIdsCache = new Map();
 let webWorker = null;
 
 const volumesInfo = [
@@ -151,40 +149,7 @@ Object.assign(viewportGrid.style, {
 
 content.appendChild(viewportGrid);
 
-const statusFieldset = document.createElement('fieldset');
-statusFieldset.style.fontSize = '12px';
-statusFieldset.style.height = '200px';
-statusFieldset.style.overflow = 'scroll';
-content.appendChild(statusFieldset);
-
-const statusFieldsetLegent = document.createElement('legend');
-statusFieldsetLegent.innerText = 'Processing logs';
-statusFieldset.appendChild(statusFieldsetLegent);
-
-const statusNode = document.createElement('div');
-statusNode.style.fontFamily = 'monospace';
-statusFieldset.appendChild(statusNode);
-
-const logStatus = (text, preFormated = false) => {
-  const node = document.createElement(preFormated ? 'pre' : 'p');
-
-  node.innerHTML = `${getFormatedDateTime()} ${text}`;
-  node.style.margin = '0';
-  node.style.fontSize = '10px';
-  statusNode.appendChild(node);
-
-  // Scroll to the end
-  statusFieldset.scrollBy(
-    0,
-    statusFieldset.scrollHeight - statusFieldset.scrollTop
-  );
-};
-
-const clearStatus = () => {
-  while (statusNode.hasChildNodes()) {
-    statusNode.removeChild(statusNode.firstChild);
-  }
-};
+const regConsole = new RegistrationConsole(content);
 
 // ==[ Toolbar ]================================================================
 const toolbar = document.getElementById('demo-toolbar');
@@ -275,7 +240,7 @@ addButtonToToolbar({
   id: 'btnRegister',
   title: 'Register volumes',
   onClick: async () => {
-    clearStatus();
+    regConsole.clear();
 
     // Fake call just to get a new webWorker because we need to make sure
     // it will be destroyed even if an error occur during registration
@@ -287,7 +252,7 @@ addButtonToToolbar({
     // Use the same parameter map updated by the user
     const parameterMap = currentParameterMap;
 
-    logStatus(`Parameters map:\n${stringify(parameterMap, 4)}`, true);
+    regConsole.log(`Parameters map:\n${stringify(parameterMap, 4)}`, true);
 
     const [fixedViewportInfo, movingViewportInfo] = viewportsInfo;
     const { viewportId: fixedViewportId } = fixedViewportInfo.viewportInput;
@@ -295,8 +260,8 @@ addButtonToToolbar({
     const fixedImage = getImageFromViewport(fixedViewportId, 'fixed');
     const movingImage = getImageFromViewport(movingViewportId, 'moving');
 
-    logImageInfo(fixedImage);
-    logImageInfo(movingImage);
+    regConsole.logImageInfo(fixedImage);
+    regConsole.logImageInfo(movingImage);
 
     const elastixOptions: ElastixOptions = {
       fixed: fixedImage,
@@ -305,7 +270,7 @@ addButtonToToolbar({
       initialTransformParameterObject: undefined,
     };
 
-    logStatus(`Registration in progress (${activeTransformName})...`);
+    regConsole.log(`Registration in progress (${activeTransformName})...`);
 
     console.log('Registration:');
     console.log('    parameterMap:', parameterMap);
@@ -328,18 +293,16 @@ addButtonToToolbar({
       console.log('    transform:', transform);
       console.log('    transformParameterObject:', transformParameterObject);
 
-      logStatus(
+      regConsole.log(
         `transformParameterObject:\n${stringify(transformParameterObject, 4)}`,
         true
       );
 
-      logStatus('Resulting image:');
-      logImageInfo(result);
-
-      logTransform(transform);
-
-      logStatus(`Total time: ${(totalTime / 1000).toFixed(3)} seconds`);
-      logStatus('Registration complete');
+      regConsole.log('Resulting image:');
+      regConsole.logImageInfo(result);
+      regConsole.logTransform(transform);
+      regConsole.log(`Total time: ${(totalTime / 1000).toFixed(3)} seconds`);
+      regConsole.log('Registration complete');
     } catch (error: any) {
       window.error = error;
       let message = 'unknown error';
@@ -350,7 +313,7 @@ addButtonToToolbar({
         message = error.message;
       }
 
-      logStatus(`An error ocurred during : ${message}`);
+      regConsole.log(`An error ocurred during : ${message}`);
       console.log('Error: ', error);
     } finally {
       webWorker.terminate();
@@ -422,68 +385,6 @@ function loadParameterMap(transformName: string) {
     // Some parameters needs to update a global variable
     parameterSettings.onLoad?.(parameterValue);
   });
-}
-
-/**
- * Converts a JavaScript object to a JSON string ignoring circular references
- * @param obj - The object to convert to a JSON string
- * @param space - Parameter passed to JSON.stringify() that's used to insert
- *   white space (including indentation, line break characters, etc.) into the
- *   output JSON string for readability purposes
- * @returns A JSON string representing the given object, or undefined.
- */
-function stringify(obj, space = 0) {
-  const cache = new Set();
-  const str = JSON.stringify(
-    obj,
-    (key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        if (cache.has(value)) {
-          // Circular reference found, discard key
-          return;
-        }
-        // Store value in our collection
-        cache.add(value);
-      }
-      return value;
-    },
-    space
-  );
-
-  return str;
-}
-
-/**
- * Log all image information
- */
-function logImageInfo(image) {
-  logStatus(`image "${image.name}"`);
-  logStatus(`    origin: ${image.origin.join(', ')}`, true);
-  logStatus(`    spacing: ${image.spacing.join(', ')}`, true);
-  logStatus(`    direction: ${image.direction.join(', ')}`, true);
-  logStatus(`    size: ${image.size.join(', ')}`, true);
-  logStatus(`    imageType:`, true);
-  logStatus(`        dimension: ${image.imageType.dimension}`, true);
-  logStatus(`        components: ${image.imageType.components}`, true);
-  logStatus(`        componentType: ${image.imageType.componentType}`, true);
-  logStatus(`        pixelType: ${image.imageType.pixelType}`, true);
-}
-
-function logTransform(transform) {
-  let buffer = transform.data.buffer;
-
-  // Convert SharedArrayBuffer into ArrayBuffer
-  if (buffer instanceof SharedArrayBuffer) {
-    buffer = new Uint8ClampedArray(buffer).slice().buffer;
-  }
-
-  const fileName = transform.path;
-  const hdfFile = new hdf5.File(buffer, transform.path);
-  const transformBlob = new Blob([buffer], { type: 'application/x-hdf5' });
-  const url = URL.createObjectURL(transformBlob);
-
-  logStatus(`Download <a href="${url}" download="${fileName}">${fileName}</a>`);
-  console.log('Transform (HDF5):', hdfFile);
 }
 
 /**
@@ -604,7 +505,9 @@ async function initializeViewport(
     throw new Error('Invalid viewport type');
   }
 
-  logStatus(`Viewport ${viewportId} initialized (${imageIds.length} slices)`);
+  regConsole.log(
+    `Viewport ${viewportId} initialized (${imageIds.length} slices)`
+  );
 }
 
 function initializeToolGroup(toolGroupId) {
@@ -635,27 +538,6 @@ function initializeToolGroup(toolGroupId) {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   return toolGroup;
-}
-
-async function getImageIds(
-  wadoRsRoot: string,
-  StudyInstanceUID: string,
-  SeriesInstanceUID: string
-) {
-  const imageIdsKey = `${StudyInstanceUID}:${SeriesInstanceUID}`;
-  let imageIds = imageIdsCache.get(imageIdsKey);
-
-  if (!imageIds) {
-    imageIds = await createImageIdsAndCacheMetaData({
-      wadoRsRoot,
-      StudyInstanceUID,
-      SeriesInstanceUID,
-    });
-
-    imageIdsCache.set(imageIdsKey, imageIds);
-  }
-
-  return imageIds;
 }
 
 /**
