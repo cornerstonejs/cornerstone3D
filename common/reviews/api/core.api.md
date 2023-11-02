@@ -142,11 +142,11 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
-    use16BitTexture: boolean;
-    // (undocumented)
     useCPURendering: boolean;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    useNativeDataType: boolean;
     // (undocumented)
     protected viewportProperties: VolumeViewportProperties;
     // (undocumented)
@@ -560,7 +560,7 @@ function createUint16SharedArray(length: number): Uint16Array;
 function createUint8SharedArray(length: number): Uint8Array;
 
 // @public (undocumented)
-export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean, use16BitTexture?: boolean): Promise<VolumeActor>;
+export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean, useNativeDataType?: boolean): Promise<VolumeActor>;
 
 // @public (undocumented)
 export function createVolumeMapper(imageData: any, vtkOpenGLTexture: any): any;
