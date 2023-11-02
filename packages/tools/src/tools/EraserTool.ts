@@ -1,33 +1,31 @@
+import { BaseTool } from './base';
+import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { ToolGroupManager } from '../store';
 import {
-  BaseTool,
-  Types,
-  ToolGroupManager,
-  annotation,
-} from '@cornerstonejs/tools';
+  getAnnotations,
+  removeAnnotation,
+} from '../stateManagement/annotation/annotationState';
+import { setAnnotationSelected } from '../stateManagement/annotation/annotationSelection';
 
 class EraserTool extends BaseTool {
   static toolName;
   constructor(
-    toolProps: Types.PublicToolProps = {},
-    defaultToolProps: Types.ToolProps = {
+    toolProps: PublicToolProps = {},
+    defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
     }
   ) {
     super(toolProps, defaultToolProps);
   }
-  preMouseDownCallback = (
-    evt: Types.EventTypes.InteractionEventType
-  ): boolean => {
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     return this._deleteNearbyAnnotations(evt, 'mouse');
   };
-  preTouchStartCallback = (
-    evt: Types.EventTypes.InteractionEventType
-  ): boolean => {
+  preTouchStartCallback = (evt: EventTypes.InteractionEventType): boolean => {
     return this._deleteNearbyAnnotations(evt, 'touch');
   };
 
   _deleteNearbyAnnotations(
-    evt: Types.EventTypes.InteractionEventType,
+    evt: EventTypes.InteractionEventType,
     interactionType: string
   ): boolean {
     const { renderingEngineId, viewportId, element, currentPoints } =
@@ -56,7 +54,7 @@ class EraserTool extends BaseTool {
         continue;
       }
 
-      const annotations = annotation.state.getAnnotations(toolName, element);
+      const annotations = getAnnotations(toolName, element);
 
       if (!annotations) {
         continue;
@@ -84,8 +82,8 @@ class EraserTool extends BaseTool {
     }
 
     for (const annotationUID of annotationsToRemove) {
-      annotation.selection.setAnnotationSelected(annotationUID);
-      annotation.state.removeAnnotation(annotationUID);
+      setAnnotationSelected(annotationUID);
+      removeAnnotation(annotationUID);
     }
 
     evt.preventDefault();
