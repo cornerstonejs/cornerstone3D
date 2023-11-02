@@ -5,7 +5,15 @@ import {
   DefaultParameterMapResult,
   ElastixOptions,
 } from '@itk-wasm/elastix';
-import { Image, ImageType, FloatTypes, PixelTypes, Metadata } from 'itk-wasm';
+import {
+  Image,
+  ImageType,
+  IntTypes,
+  FloatTypes,
+  PixelTypes,
+  Metadata,
+} from 'itk-wasm';
+import * as hdf5 from 'jsfive';
 import {
   RenderingEngine,
   Types,
@@ -24,11 +32,30 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
+import {
+  defaultNumberOfResolutions,
+  defaultFinalGridSpacing,
+  parametersSettings,
+} from './elastixParametersSettings';
+import { getFormatedDateTime } from './utils';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const dataTypesMap = {
+  Int8: IntTypes.Int8,
+  UInt8: IntTypes.UInt8,
+  Int16: IntTypes.Int16,
+  UInt16: IntTypes.UInt16,
+  Int32: IntTypes.Int32,
+  UInt32: IntTypes.UInt32,
+  Int64: IntTypes.Int64,
+  UInt64: IntTypes.UInt64,
+  Float32: FloatTypes.Float32,
+  Float64: FloatTypes.Float64,
+};
 
 const {
   WindowLevelTool,
@@ -50,14 +77,14 @@ const volumesInfo = [
     volumeId: `${volumeLoaderScheme}:CT_VOLUME_ID_1`,
 
     // Neptune
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095438.5',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095449.8',
+    // wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    // StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095438.5',
+    // SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095449.8',
 
     // Juno
-    // wadoRsRoot: 'http://localhost/dicom-web',
-    // StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125112931.11',
-    // SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113028.6',
+    wadoRsRoot: 'http://localhost/dicom-web',
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125112931.11',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113028.6',
 
     // Registration Patient
     // wadoRsRoot: 'http://localhost/dicom-web',
@@ -68,14 +95,14 @@ const volumesInfo = [
     volumeId: `${volumeLoaderScheme}:CT_VOLUME_ID_2`,
 
     // Neptune
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095305.12',
+    // wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    // StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1',
+    // SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095305.12',
 
     // Juno
-    // wadoRsRoot: 'http://localhost/dicom-web',
-    // StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-    // SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113420.1',
+    wadoRsRoot: 'http://localhost/dicom-web',
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113420.1',
 
     // Registration Patient
     // wadoRsRoot: 'http://localhost/dicom-web',
@@ -89,11 +116,11 @@ const viewportsInfo = [
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     volumeInfo: volumesInfo[0],
     viewportInput: {
-      viewportId: 'CT_VOLUME_AXIAL_FIXED',
+      viewportId: 'CT_VOLUME_FIXED',
       type: ViewportType.ORTHOGRAPHIC,
       element: null,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -102,19 +129,17 @@ const viewportsInfo = [
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     volumeInfo: volumesInfo[1],
     viewportInput: {
-      viewportId: 'CT_VOLUME_AXIAL_MOVING',
+      viewportId: 'CT_VOLUME_MOVING',
       type: ViewportType.ORTHOGRAPHIC,
       element: null,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   },
 ];
 
-const defaultNumberOfResolutions = 2;
-const defaultFinalGridSpacing = 8;
 const transformNames = [
   'translation',
   'rigid',
@@ -128,193 +153,6 @@ let activeTransformName = transformNames[1];
 let currentParameterMap = {};
 
 const defaultParameterMaps = {};
-const parametersSettings = {
-  NumberOfResolutions: {
-    inputType: 'number',
-    defaultValue: defaultNumberOfResolutions,
-  },
-  MaximumNumberOfIterations: {
-    inputType: 'number',
-    defaultValue: 256,
-  },
-  Registration: {
-    inputType: 'dropdown',
-    values: [
-      'MultiResolutionRegistration',
-      'MultiResolutionRegistrationWithFeatures',
-      'MultiMetricMultiResolutionRegistration',
-    ],
-  },
-  Metric: {
-    inputType: 'dropdown',
-    values: [
-      'AdvancedKappaStatistic',
-      'AdvancedMattesMutualInformation',
-      'AdvancedMeanSquares',
-      'AdvancedNormalizedCorrelation',
-      'CorrespondingPointsEuclideanDistanceMetric',
-      'DisplacementMagnitudePenalty',
-      'DistancePreservingRigidityPenalty',
-      'GradientDifference',
-      'KNNGraphAlphaMutualInformation',
-      'MissingStructurePenalty',
-      'NormalizedGradientCorrelation',
-      'NormalizedMutualInformation',
-      'PCAMetric',
-      'PCAMetric2',
-      'PatternIntensity',
-      'PolydataDummyPenalty',
-      'StatisticalShapePenalty',
-      'SumOfPairwiseCorrelationCoefficientsMetric',
-      'SumSquaredTissueVolumeDifference',
-      'TransformBendingEnergyPenalty',
-      'TransformRigidityPenalty',
-      'VarianceOverLastDimensionMetric',
-    ],
-  },
-  Interpolator: {
-    inputType: 'dropdown',
-    values: [
-      'BSplineInterpolator',
-      'BSplineInterpolatorFloat',
-      'LinearInterpolator',
-      'NearestNeighborInterpolator',
-      'RayCastInterpolator',
-      'ReducedDimensionBSplineInterpolator',
-    ],
-  },
-  FixedImagePyramid: {
-    inputType: 'dropdown',
-    values: [
-      'FixedGenericImagePyramid',
-      'FixedRecursiveImagePyramid',
-      'FixedSmoothingImagePyramid',
-      'FixedShrinkingImagePyramid',
-      'OpenCLFixedGenericImagePyramid',
-    ],
-  },
-  MovingImagePyramid: {
-    inputType: 'dropdown',
-    values: [
-      'MovingGenericImagePyramid',
-      'MovingRecursiveImagePyramid',
-      'MovingShrinkingImagePyramid',
-      'MovingSmoothingImagePyramid',
-      'OpenCLMovingGenericImagePyramid',
-    ],
-  },
-  Optimizer: {
-    inputType: 'dropdown',
-    values: [
-      'AdaGrad',
-      'AdaptiveStochasticGradientDescent',
-      'AdaptiveStochasticLBFGS',
-      'AdaptiveStochasticVarianceReducedGradient',
-      'CMAEvolutionStrategy',
-      'ConjugateGradient',
-      'ConjugateGradientFRPR',
-      'FiniteDifferenceGradientDescent',
-      'FullSearch',
-      'Powell',
-      'PreconditionedGradientDescent',
-      'PreconditionedStochasticGradientDescent',
-      'QuasiNewtonLBFGS',
-      'RSGDEachParameterApart',
-      'RegularStepGradientDescent',
-      'Simplex',
-      'SimultaneousPerturbation',
-      'StandardGradientDescent',
-    ],
-  },
-  Resampler: {
-    inputType: 'dropdown',
-    values: ['DefaultResampler', 'OpenCLResampler'],
-  },
-  ResampleInterpolator: {
-    inputType: 'dropdown',
-    values: [
-      'FinalBSplineInterpolator',
-      'FinalBSplineInterpolatorFloat',
-      'FinalLinearInterpolator',
-      'FinalNearestNeighborInterpolator',
-      'FinalReducedDimensionBSplineInterpolator',
-      'FinalRayCastInterpolator',
-    ],
-  },
-  FinalBSplineInterpolationOrder: {
-    inputType: 'number',
-  },
-  ImageSampler: {
-    inputType: 'dropdown',
-    values: [
-      'Random',
-      'RandomCoordinate',
-      'Full',
-      'Grid',
-      'MultiInputRandomCoordinate',
-      'RandomSparseMask',
-    ],
-  },
-  NumberOfSpatialSamples: {
-    inputType: 'number',
-    defaultValue: 2048,
-  },
-  CheckNumberOfSamples: {
-    inputType: 'dropdown',
-    values: ['true', 'false'],
-    defaultValue: 'true',
-  },
-  MaximumNumberOfSamplingAttempts: {
-    inputType: 'number',
-    defaultValue: 8,
-  },
-  NewSamplesEveryIteration: {
-    inputType: 'dropdown',
-    values: ['true', 'false'],
-    defaultValue: 'true',
-  },
-  NumberOfSamplesForExactGradient: {
-    inputType: 'number',
-    defaultValue: 4096,
-  },
-  DefaultPixelValue: {
-    inputType: 'number',
-    defaultValue: 0,
-  },
-  AutomaticParameterEstimation: {
-    inputType: 'dropdown',
-    values: ['true', 'false'],
-    defaultValue: 'true',
-  },
-  AutomaticScalesEstimation: {
-    inputType: 'dropdown',
-    values: ['true', 'false'],
-    defaultValue: 'true',
-  },
-  AutomaticTransformInitialization: {
-    inputType: 'dropdown',
-    values: ['true', 'false'],
-    defaultValue: 'true',
-  },
-  Metric0Weight: {
-    inputType: 'number',
-    defaultValue: '1.0',
-    step: 0.1,
-  },
-  Metric1Weight: {
-    inputType: 'number',
-    defaultValue: '1.0',
-    step: 0.1,
-  },
-  FinalGridSpacing: {
-    inputType: 'number',
-    defaultValue: defaultFinalGridSpacing,
-  },
-  // ResultImageFormat: {
-  //   inputType: 'dropdown',
-  //   values: ['mhd', 'nii', 'nrrd', 'vti'],
-  // },
-};
 
 // ==[ Set up page ]============================================================
 
@@ -354,7 +192,7 @@ statusFieldset.appendChild(statusNode);
 const logStatus = (text, preFormated = false) => {
   const node = document.createElement(preFormated ? 'pre' : 'p');
 
-  node.innerText = `${getFormatedDateTime()} ${text}`;
+  node.innerHTML = `${getFormatedDateTime()} ${text}`;
   node.style.margin = '0';
   node.style.fontSize = '10px';
   statusNode.appendChild(node);
@@ -463,6 +301,13 @@ addButtonToToolbar({
   onClick: async () => {
     clearStatus();
 
+    // Fake call just to get a new webWorker because we need to make sure
+    // it will be destroyed even if an error occur during registration
+    // Is there a better way to get a WebWorker?
+    const { webWorker } = await defaultParameterMap(undefined, 'rigid', {
+      numberOfResolutions: 4,
+    });
+
     // Use the same parameter map updated by the user
     const parameterMap = currentParameterMap;
 
@@ -484,35 +329,56 @@ addButtonToToolbar({
       initialTransformParameterObject: undefined,
     };
 
-    logStatus('Registration in progress (rigid)...');
+    logStatus(`Registration in progress (${activeTransformName})...`);
 
-    console.log('Registration:', parameterMap);
+    console.log('Registration:');
     console.log('    parameterMap:', parameterMap);
     console.log('    options:', elastixOptions);
 
-    const startTime = performance.now();
-    const elastixResult = await elastix(
-      webWorker,
-      [parameterMap],
-      'transform.h5',
-      elastixOptions
-    );
+    try {
+      const startTime = performance.now();
+      const elastixResult = await elastix(
+        webWorker,
+        [parameterMap],
+        'transform.h5',
+        elastixOptions
+      );
 
-    const totalTime = performance.now() - startTime;
-    const { result, transform, transformParameterObject } = elastixResult;
+      const totalTime = performance.now() - startTime;
+      const { result, transform, transformParameterObject } = elastixResult;
 
-    console.log('Elastix result');
-    console.log('    result:', result);
-    console.log('    transform:', transform);
-    console.log('    transformParameterObject:', transformParameterObject);
+      console.log('Elastix result');
+      console.log('    result:', result);
+      console.log('    transform:', transform);
+      console.log('    transformParameterObject:', transformParameterObject);
 
-    logStatus(
-      `transformParameterObject:\n${stringify(transformParameterObject, 4)}`,
-      true
-    );
+      logStatus(
+        `transformParameterObject:\n${stringify(transformParameterObject, 4)}`,
+        true
+      );
 
-    logStatus(`Total time: ${(totalTime / 1000).toFixed(3)} seconds`);
-    logStatus('Registration complete');
+      logStatus('Resulting image:');
+      logImageInfo(result);
+
+      logTransform(transform);
+
+      logStatus(`Total time: ${(totalTime / 1000).toFixed(3)} seconds`);
+      logStatus('Registration complete');
+    } catch (error: any) {
+      window.error = error;
+      let message = 'unknown error';
+
+      if (typeof error === 'string') {
+        message = error.toUpperCase();
+      } else if (error.message) {
+        message = error.message;
+      }
+
+      logStatus(`An error ocurred during : ${message}`);
+      console.log('Error: ', error);
+    } finally {
+      webWorker.terminate();
+    }
   },
 });
 
@@ -583,22 +449,6 @@ function loadParameterMap(transformName: string) {
 }
 
 /**
- * Get the current date/time ("YYYY-MM-DD hh:mm:ss.SSS")
- */
-function getFormatedDateTime() {
-  const now = new Date();
-  const day = `0${now.getDate()}`.slice(-2);
-  const month = `0${now.getMonth() + 1}`.slice(-2);
-  const year = now.getFullYear();
-  const hours = `0${now.getHours()}`.slice(-2);
-  const minutes = `0${now.getMinutes()}`.slice(-2);
-  const seconds = `0${now.getSeconds()}`.slice(-2);
-  const ms = `00${now.getMilliseconds()}`.slice(-3);
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
-}
-
-/**
  * Converts a JavaScript object to a JSON string ignoring circular references
  * @param obj - The object to convert to a JSON string
  * @param space - Parameter passed to JSON.stringify() that's used to insert
@@ -643,6 +493,23 @@ function logImageInfo(image) {
   logStatus(`        pixelType: ${image.imageType.pixelType}`, true);
 }
 
+function logTransform(transform) {
+  let buffer = transform.data.buffer;
+
+  // Convert SharedArrayBuffer into ArrayBuffer
+  if (buffer instanceof SharedArrayBuffer) {
+    buffer = new Uint8ClampedArray(buffer).slice().buffer;
+  }
+
+  const fileName = transform.path;
+  const hdfFile = new hdf5.File(buffer, transform.path);
+  const transformBlob = new Blob([buffer], { type: 'application/x-hdf5' });
+  const url = URL.createObjectURL(transformBlob);
+
+  logStatus(`Download <a href="${url}" download="${fileName}">${fileName}</a>`);
+  console.log('Transform (HDF5):', hdfFile);
+}
+
 /**
  * Get the ITK Image from a given viewport
  * @param viewportId - Viewport Id
@@ -654,6 +521,7 @@ function getImageFromViewport(viewportId, imageName?: string): Image {
   const viewport = <Types.IVolumeViewport>(
     renderingEngine.getViewport(viewportId)
   );
+
   const { actor: volumeActor } = viewport.getDefaultActor();
   const imageData = volumeActor.getMapper().getInputData();
   const pointData = imageData.getPointData();
@@ -664,12 +532,15 @@ function getImageFromViewport(viewportId, imageName?: string): Image {
   const directionArray = imageData.getDirection();
   const direction = new Float64Array(directionArray);
   const numComponents = pointData.getNumberOfComponents();
-  const dataType = scalars.getDataType().replace('Array', '');
+  const dataType = scalars
+    .getDataType()
+    .replace(/^Ui/, 'UI')
+    .replace(/Array$/, '');
   const metadata: Metadata = undefined;
   const scalarData = scalars.getData();
   const imageType: ImageType = new ImageType(
     dimensions.length,
-    FloatTypes[dataType],
+    dataTypesMap[dataType],
     PixelTypes.Scalar,
     numComponents
   );
@@ -682,9 +553,10 @@ function getImageFromViewport(viewportId, imageName?: string): Image {
   image.direction = direction;
   image.size = dimensions;
   image.metadata = metadata;
-  image.data = new scalarData.constructor(scalarData.length);
+  image.data = scalarData;
 
-  image.data.set(scalarData, 0);
+  // image.data = new scalarData.constructor(scalarData.length);
+  // image.data.set(scalarData, 0);
 
   return image;
 }
@@ -755,6 +627,8 @@ async function initializeViewport(
   } else {
     throw new Error('Invalid viewport type');
   }
+
+  logStatus(`Viewport ${viewportId} initialized (${imageIds.length} slices)`);
 }
 
 function initializeToolGroup(toolGroupId) {
