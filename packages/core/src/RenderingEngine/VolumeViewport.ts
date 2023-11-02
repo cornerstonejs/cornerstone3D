@@ -14,6 +14,7 @@ import type {
   OrientationVectors,
   Point3,
   EventTypes,
+  VolumeViewportProperties,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import {
@@ -66,6 +67,88 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     this._useAcquisitionPlaneForViewPlane = true;
+  }
+
+  /**
+   * Sets the properties for the volume viewport on the volume
+   * and if setProperties is called for the first time, the properties will also become the default one.
+   * (if fusion, it sets it for the first volume in the fusion)
+   *
+   * @param VolumeViewportProperties - The properties to set
+   * @param [VolumeViewportProperties.voiRange] - Sets the lower and upper voi
+   * @param [VolumeViewportProperties.VOILUTFunction] - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
+   * @param [VolumeViewportProperties.invert] - Inverts the color transfer function
+   * @param [VolumeViewportProperties.colormap] - Sets the colormap
+   * @param [VolumeViewportProperties.preset] - Sets the colormap preset
+   * @param [VolumeViewportProperties.rotation] - Sets the camera rotation
+   * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
+   * @param suppressEvents - If true, the viewport will not emit events
+   */
+  public setProperties(
+    {
+      voiRange,
+      VOILUTFunction,
+      invert,
+      colormap,
+      preset,
+      interpolationType,
+      slabThickness,
+      rotation,
+    }: VolumeViewportProperties = {},
+    volumeId?: string,
+    suppressEvents = false
+  ): void {
+    //If the viewport hasn't been initialized, we need to set the default properties
+    if (this.globalDefaultProperties == null) {
+      this.setDefaultProperties({
+        voiRange,
+        VOILUTFunction,
+        invert,
+        colormap,
+        preset,
+        slabThickness,
+      });
+    }
+
+    // Note: colormap should always be done first, since we can then
+    // modify the voiRange
+
+    if (colormap?.name) {
+      this.setColormap(colormap, volumeId, suppressEvents);
+    }
+    if (colormap?.opacity != null) {
+      this.setOpacity(colormap, volumeId);
+    }
+
+    if (voiRange !== undefined) {
+      this.setVOI(voiRange, volumeId, suppressEvents);
+    }
+
+    if (typeof interpolationType !== 'undefined') {
+      this.setInterpolationType(interpolationType);
+    }
+
+    if (VOILUTFunction !== undefined) {
+      this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
+    }
+
+    if (invert !== undefined && this.viewportProperties.invert !== invert) {
+      this.setInvert(invert, volumeId, suppressEvents);
+    }
+
+    if (preset !== undefined) {
+      this.setPreset(preset, volumeId, suppressEvents);
+    }
+
+    if (slabThickness !== undefined) {
+      this.setSlabThickness(slabThickness);
+      //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
+      this.viewportProperties.slabThickness = slabThickness;
+    }
+
+    if (rotation !== undefined && this.getRotation() !== rotation) {
+      this.setRotation(rotation);
+    }
   }
 
   /**
@@ -232,7 +315,7 @@ class VolumeViewport extends BaseVolumeViewport {
       : (360 - initialToCurrentViewUpAngle) % 360;
   };
 
-  public setRotation(rotation: number): void {
+  private setRotation(rotation: number): void {
     const previousCamera = this.getCamera();
 
     this.rotateCamera(rotation);

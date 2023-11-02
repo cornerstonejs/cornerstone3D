@@ -72,7 +72,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   protected initialTransferFunctionNodes: any;
   // Viewport Properties
-  private globalDefaultProperties: VolumeViewportProperties;
+  protected globalDefaultProperties: VolumeViewportProperties;
   private perVolumeIdDefaultProperties = new Map<
     string,
     VolumeViewportProperties
@@ -213,7 +213,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
-  private setVOILUTFunction(
+  protected setVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType,
     volumeId?: string,
     suppressEvents?: boolean
@@ -236,7 +236,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @returns void
    */
-  private setColormap(
+  protected setColormap(
     colormap: ColormapPublic,
     volumeId: string,
     suppressEvents?: boolean
@@ -284,7 +284,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @returns void
    */
-  private setOpacity(colormap: ColormapPublic, volumeId: string) {
+  protected setOpacity(colormap: ColormapPublic, volumeId: string) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
     if (!applicableVolumeActorInfo) {
       return;
@@ -319,7 +319,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @returns void
    */
-  private setInvert(
+  protected setInvert(
     inverted: boolean,
     volumeId?: string,
     suppressEvents?: boolean
@@ -379,7 +379,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return newRGBTransferFunction;
   }
 
-  private setInterpolationType(
+  protected setInterpolationType(
     interpolationType: InterpolationType,
     volumeId?: string
   ) {
@@ -405,7 +405,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
-  private setVOI(
+  protected setVOI(
     voiRange: VOIRange,
     volumeId?: string,
     suppressEvents = false
@@ -621,7 +621,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @returns void
    */
-  private setPreset(presetName, volumeId, suppressEvents) {
+  protected setPreset(presetName, volumeId, suppressEvents) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {

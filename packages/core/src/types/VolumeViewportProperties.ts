@@ -8,6 +8,8 @@ type VolumeViewportProperties = ViewportProperties & {
   preset?: string;
 
   slabThickness?: number;
+
+  rotation?: number;
 };
 
 export default VolumeViewportProperties;
