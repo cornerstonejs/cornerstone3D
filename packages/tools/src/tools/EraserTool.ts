@@ -1,28 +1,33 @@
-import BaseTool from './base/BaseTool';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
-import * as ToolGroupManager from '../store/ToolGroupManager';
-import { annotation } from '../index';
-import { state } from '../stateManagement/annotation';
+import {
+  BaseTool,
+  Types,
+  ToolGroupManager,
+  annotation,
+} from '@cornerstonejs/tools';
 
 class EraserTool extends BaseTool {
   static toolName;
   constructor(
-    toolProps: PublicToolProps = {},
-    defaultToolProps: ToolProps = {
+    toolProps: Types.PublicToolProps = {},
+    defaultToolProps: Types.ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
     }
   ) {
     super(toolProps, defaultToolProps);
   }
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
+  preMouseDownCallback = (
+    evt: Types.EventTypes.InteractionEventType
+  ): boolean => {
     return this._deleteNearbyAnnotations(evt, 'mouse');
   };
-  preTouchStartCallback = (evt: EventTypes.InteractionEventType): boolean => {
+  preTouchStartCallback = (
+    evt: Types.EventTypes.InteractionEventType
+  ): boolean => {
     return this._deleteNearbyAnnotations(evt, 'touch');
   };
 
   _deleteNearbyAnnotations(
-    evt: EventTypes.InteractionEventType,
+    evt: Types.EventTypes.InteractionEventType,
     interactionType: string
   ): boolean {
     const { renderingEngineId, viewportId, element, currentPoints } =
@@ -43,19 +48,33 @@ class EraserTool extends BaseTool {
     for (const toolName in tools) {
       const toolInstance = tools[toolName];
 
-      if (typeof toolInstance.isPointNearTool !== 'function') {
+      if (
+        typeof toolInstance.isPointNearTool !== 'function' ||
+        typeof toolInstance.filterInteractableAnnotationsForElement !==
+          'function'
+      ) {
         continue;
       }
 
-      const annotations = state.getAnnotations(toolName, viewportId);
+      const annotations = annotation.state.getAnnotations(toolName, element);
 
-      for (const annotation of annotations) {
+      if (!annotations) {
+        continue;
+      }
+
+      const interactableAnnotations =
+        toolInstance.filterInteractableAnnotationsForElement(
+          element,
+          annotations
+        );
+
+      for (const annotation of interactableAnnotations) {
         if (
           toolInstance.isPointNearTool(
             element,
             annotation,
             currentPoints.canvas,
-            6,
+            10,
             interactionType
           )
         ) {
@@ -65,6 +84,7 @@ class EraserTool extends BaseTool {
     }
 
     for (const annotationUID of annotationsToRemove) {
+      annotation.selection.setAnnotationSelected(annotationUID);
       annotation.state.removeAnnotation(annotationUID);
     }
 
