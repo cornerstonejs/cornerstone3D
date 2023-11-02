@@ -134,7 +134,7 @@ const defaultParameterMaps = {};
 
 setTitleAndDescription(
   'Registration',
-  'Spatially align two volumes from different frames of reference'
+  'Spatially align two volumes from different frames of reference using the itk-wasm/elastix package. Please note that in this demo, we only explore the different parameters that are available. Visually, you will not see any rendering of the registered moving image on top of the fixed image yet. '
 );
 
 const content = document.getElementById('content');
@@ -384,6 +384,7 @@ async function loadAndCacheAllParameterMaps() {
     const transformName = transformNames[i];
     const { parameterMap } = await getElastixParameterMap(transformName);
 
+    parameterMap['AutomaticTransformInitialization'] = ['true'];
     defaultParameterMaps[transformName] = parameterMap;
     console.log(`Default parameter map (${transformName}):`, parameterMap);
   }
