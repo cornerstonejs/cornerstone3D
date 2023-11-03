@@ -28,12 +28,12 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/adapters": "^1.27.2",
-    "@cornerstonejs/core": "^1.27.2",
-    "@cornerstonejs/dicom-image-loader": "^1.27.2",
-    "@cornerstonejs/nifti-volume-loader": "^1.27.2",
-    "@cornerstonejs/streaming-image-volume-loader": "^1.27.2",
-    "@cornerstonejs/tools": "^1.27.2",
+    "@cornerstonejs/adapters": "^1.27.3",
+    "@cornerstonejs/core": "^1.27.3",
+    "@cornerstonejs/dicom-image-loader": "^1.27.3",
+    "@cornerstonejs/nifti-volume-loader": "^1.27.3",
+    "@cornerstonejs/streaming-image-volume-loader": "^1.27.3",
+    "@cornerstonejs/tools": "^1.27.3",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",
     "@docusaurus/plugin-google-gtag": "2.3.1",
