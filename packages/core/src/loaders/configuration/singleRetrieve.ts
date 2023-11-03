@@ -5,7 +5,7 @@ import type { RetrieveStage } from '../../types';
  */
 const singleRetrieveStages: RetrieveStage[] = [
   {
-    id: 'single',
+    id: 'initialImages',
     retrieveType: 'single',
   },
 ];

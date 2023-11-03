@@ -146,7 +146,7 @@ export async function load(
 
     uncompressedIterator
       .forEach(async (image, done) => {
-        const oldStatus = imageQualityStatusMap[imageId];
+        const oldStatus = imageQualityStatusMap.get(imageId);
         if (!image) {
           console.warn('No image retrieved', imageId);
           return;
@@ -160,7 +160,7 @@ export async function load(
         }
 
         listener.successCallback(imageId, image);
-        imageQualityStatusMap[imageId] = imageQualityStatus;
+        imageQualityStatusMap.set(imageId, imageQualityStatus);
         displayedIterator.add(image);
         if (done) {
           updateStageStatus(stageStatusMap, request.stage);

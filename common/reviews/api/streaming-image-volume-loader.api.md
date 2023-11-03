@@ -76,6 +76,11 @@ export class StreamingImageVolume extends BaseStreamingImageVolume {
             };
             transferSyntaxUID: any;
             loader: loadImage_2;
+            additionalDetails: {
+                imageId: string;
+                imageIdIndex: number;
+                volumeId: string;
+            };
         };
         priority: number;
         requestType: default_2;

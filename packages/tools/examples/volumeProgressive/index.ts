@@ -194,6 +194,15 @@ const configJLS = {
   },
 };
 
+const configJLSNonInterleaved = {
+  ...singleRetrieveStages,
+  retrieveOptions: {
+    default: {
+      framesPath: '/jls/',
+    },
+  },
+};
+
 const configJLSThumbnail = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
@@ -438,6 +447,12 @@ async function run() {
     createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
 
   loadButton('JLS', volumeId, imageIdsCT, configJLS);
+  loadButton(
+    'JLS Non Interleaved',
+    volumeId,
+    imageIdsCT,
+    configJLSNonInterleaved
+  );
   loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
   loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
   loadButton('J2K', volumeId, imageIdsCT, configHtj2k);

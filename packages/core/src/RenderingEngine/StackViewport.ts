@@ -1733,7 +1733,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
       const priority = -5;
       const requestType = RequestType.Interaction;
-      const additionalDetails = { imageId };
+      const additionalDetails = { imageId, imageIdIndex };
       const options = {
         preScale: {
           enabled: true,

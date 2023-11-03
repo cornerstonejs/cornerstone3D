@@ -137,7 +137,6 @@ function loadImage(
           percentComplete,
           done = true,
         } = result;
-        const { done: compressedDone } = compressedIt;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
@@ -176,7 +175,7 @@ function loadImage(
           image.transferSyntaxUID = transferSyntax;
           image.imageQualityStatus = imageQualityStatus;
           // The iteration is done even if the image itself isn't done yet
-          it.add(image, done || compressedDone);
+          it.add(image, done);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           console.warn("Couldn't decode", e);

@@ -54,7 +54,6 @@ export default class BaseStreamingImageVolume
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<Enums.ImageQualityStatus>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
   retrieveConfiguration: Types.IRetrieveConfiguration;
@@ -270,12 +269,19 @@ export default class BaseStreamingImageVolume
     const currentStatus = cachedFrames[frameIndex];
     if (currentStatus > imageQualityStatus) {
       // This is common for initial versus decimated images.
+      console.debug(
+        'Already cached',
+        imageIdIndex,
+        currentStatus,
+        imageQualityStatus
+      );
       return;
     }
 
     if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
       // Sometimes the frame can be delivered multiple times, so just return
       // here if that happens.
+      console.debug('Already lossless', imageIdIndex);
       return;
     }
     const complete = imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
@@ -318,17 +324,16 @@ export default class BaseStreamingImageVolume
     }
   }
 
-  public successCallback(
-    imageId: string,
-    image,
-    imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION
-  ) {
+  public successCallback(imageId: string, image) {
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getLoaderImageOptions(imageId);
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
     handleArrayBufferLoad(scalarData, image, options);
 
-    const { scalingParameters } = image;
+    const {
+      scalingParameters,
+      imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION,
+    } = image;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
     // Check if there is a cached image for the same imageURI (different
@@ -546,6 +551,11 @@ export default class BaseStreamingImageVolume
       },
       transferSyntaxUID,
       loader: imageLoader.loadImage,
+      additionalDetails: {
+        imageId,
+        imageIdIndex,
+        volumeId: this.volumeId,
+      },
     };
   }
 
@@ -562,17 +572,13 @@ export default class BaseStreamingImageVolume
       imageLoader.loadImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
-      const { imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION } = image;
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-      this.successCallback(imageId, image, imageQualityStatus);
+      this.successCallback(imageId, image);
     }, this.errorCallback.bind(this, imageIdIndex, imageId));
   }
 
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
-    const { loadStatus } = this;
-    const { cachedFrames } = loadStatus;
-
     // SharedArrayBuffer
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
@@ -593,10 +599,6 @@ export default class BaseStreamingImageVolume
     const requests = imageIds.map((imageId) => {
       const imageIdIndex = this.getImageIdIndex(imageId);
 
-      if (cachedFrames[imageIdIndex] === ImageQualityStatus.FULL_RESOLUTION) {
-        this.framesLoaded++;
-        return;
-      }
       const requestType = requestTypeDefault;
       const priority = priorityDefault;
       const options = this.getLoaderImageOptions(imageId);
