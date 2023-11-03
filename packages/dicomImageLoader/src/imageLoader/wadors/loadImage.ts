@@ -7,7 +7,7 @@ import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 import { getOptions } from '../internal/options';
 
-const { imageRetrieveMetadataProvider, ProgressiveIterator } = utilities;
+const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
 const streamableTransferSyntaxes = new Set<string>();
 streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
@@ -120,13 +120,6 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const { retrieveType, transferSyntaxUID } = options;
-  const loaderOptions = getOptions();
-  options.retrieveOptions ||= metaData.get(
-    imageRetrieveMetadataProvider.IMAGE_RETRIEVE_OPTIONS,
-    transferSyntaxUID,
-    'default'
-  );
   const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
     'decompress'
   );

@@ -106,21 +106,12 @@ async function showStack(
   stack: string[],
   viewport,
   retrieveConfiguration,
-  retrieveOptions,
   name: string
 ) {
   cache.purgeCache();
   imageRetrieveMetadataProvider.clear();
   if (retrieveConfiguration) {
-    imageRetrieveMetadataProvider.addImageRetrieveConfiguration(
-      'stack',
-      retrieveConfiguration
-    );
-  }
-  if (retrieveOptions) {
-    Object.entries(retrieveOptions).forEach(([key, value]) =>
-      imageRetrieveMetadataProvider.addImageRetrieveOptions(key, value)
-    );
+    imageRetrieveMetadataProvider.add('stack', retrieveConfiguration);
   }
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   startTime = Date.now();
@@ -163,63 +154,84 @@ async function showStack(
  * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
  * ```
  */
-const jlsRetrieveOptions: Record<string, RetrieveOptions> = {
-  default: {
-    framesPath: '/jls/',
+const jlsRetrieveOptions = {
+  ...singleRetrieveStages,
+  retrieveOptions: {
+    default: {
+      framesPath: '/jls/',
+    },
   },
 };
 
-const jlsThumbnailOptions: Record<string, RetrieveOptions> = {
-  default: {
-    framesPath: '/jlsThumbnail/',
+const jlsThumbnailOptions = {
+  ...singleRetrieveStages,
+  retrieveOptions: {
+    default: {
+      framesPath: '/jlsThumbnail/',
+    },
   },
 };
 
 const jlsMixedOptions = {
-  singleFast: {
-    status: ImageQualityStatus.SUBRESOLUTION,
-    framesPath: '/jlsThumbnail/',
-  },
-  singleFinal: {
-    framesPath: '/jls/',
+  ...sequentialRetrieveStages,
+  retrieveOptions: {
+    singleFast: {
+      status: ImageQualityStatus.SUBRESOLUTION,
+      framesPath: '/jlsThumbnail/',
+    },
+    singleFinal: {
+      framesPath: '/jls/',
+    },
   },
 };
 
 const htj2kProgressiveOptions = {
-  single: {
-    streaming: true,
-    streamingDecode: true,
+  ...singleRetrieveStages,
+  retrieveOptions: {
+    single: {
+      streaming: true,
+      streamingDecode: true,
+    },
   },
 };
 
 const htj2kLossyOptions = {
-  singleFast: {
-    status: ImageQualityStatus.LOSSY,
-    framesPath: '/lossy/',
-    streaming: true,
-    streamingDecode: true,
+  ...sequentialRetrieveStages,
+  retrieveOptions: {
+    singleFast: {
+      status: ImageQualityStatus.LOSSY,
+      framesPath: '/lossy/',
+      streaming: true,
+      streamingDecode: true,
+    },
   },
 };
 
 const htj2kMixedOptions = {
-  singleFinal: {
-    range: 1,
-    streamingDecode: true,
-  },
-  singleFast: {
-    streamingDecode: true,
-    range: 0,
-    decodeLevel: 3,
+  ...sequentialRetrieveStages,
+  retrieveOptions: {
+    singleFinal: {
+      range: 1,
+      streamingDecode: true,
+    },
+    singleFast: {
+      streamingDecode: true,
+      range: 0,
+      decodeLevel: 3,
+    },
   },
 };
 
 const htj2kThumbnailOptions = {
-  singleFinal: {},
-  singleFast: {
-    status: ImageQualityStatus.SUBRESOLUTION,
-    framesPath: '/htj2kThumbnail/',
-    streaming: true,
-    streamingDecode: true,
+  ...sequentialRetrieveStages,
+  retrieveOptions: {
+    singleFinal: {},
+    singleFast: {
+      status: ImageQualityStatus.SUBRESOLUTION,
+      framesPath: '/htj2kThumbnail/',
+      streaming: true,
+      streamingDecode: true,
+    },
   },
 };
 
@@ -276,68 +288,26 @@ async function run() {
     return button;
   };
 
-  const loadButton = (
-    text,
-    imageIds,
-    retrieveConfiguration,
-    retrieveOptions
-  ) => {
+  const loadButton = (text, imageIds, retrieveConfiguration) => {
     return createButton(
       text,
-      showStack.bind(
-        null,
-        imageIds,
-        viewport,
-        retrieveConfiguration,
-        retrieveOptions,
-        text
-      )
+      showStack.bind(null, imageIds, viewport, retrieveConfiguration, text)
     );
   };
 
-  loadButton('JLS', imageIds, singleRetrieveStages, jlsRetrieveOptions);
+  loadButton('JLS', imageIds, jlsRetrieveOptions);
 
-  loadButton(
-    'JLS Thumbnail',
-    imageIds,
-    singleRetrieveStages,
-    jlsThumbnailOptions
-  );
-  loadButton('JLS Mixed', imageIds, sequentialRetrieveStages, jlsMixedOptions);
+  loadButton('JLS Thumbnail', imageIds, jlsThumbnailOptions);
+  loadButton('JLS Mixed', imageIds, jlsMixedOptions);
 
-  loadButton('HTJ2K Non Progressive', imageIds, undefined, undefined);
-  loadButton('HTJ2K', imageIds, singleRetrieveStages, htj2kProgressiveOptions);
-  loadButton(
-    'HTJ2K Lossy',
-    imageIds,
-    sequentialRetrieveStages,
-    htj2kLossyOptions
-  );
-  loadButton(
-    'HTJ2K Thumbnail',
-    imageIds,
-    sequentialRetrieveStages,
-    htj2kThumbnailOptions
-  );
-  loadButton(
-    'HTJ2K Bytes',
-    imageIds,
-    sequentialRetrieveStages,
-    htj2kMixedOptions
-  );
+  loadButton('HTJ2K Non Progressive', imageIds, undefined);
+  loadButton('HTJ2K', imageIds, htj2kProgressiveOptions);
+  loadButton('HTJ2K Lossy', imageIds, htj2kLossyOptions);
+  loadButton('HTJ2K Thumbnail', imageIds, htj2kThumbnailOptions);
+  loadButton('HTJ2K Bytes', imageIds, htj2kMixedOptions);
 
-  loadButton(
-    'CT JLS Mixed',
-    imageIdsCt,
-    sequentialRetrieveStages,
-    jlsMixedOptions
-  );
-  loadButton(
-    'CT HTJ2K Bytes',
-    imageIdsCt,
-    sequentialRetrieveStages,
-    htj2kMixedOptions
-  );
+  loadButton('CT JLS Mixed', imageIdsCt, jlsMixedOptions);
+  loadButton('CT HTJ2K Bytes', imageIdsCt, htj2kMixedOptions);
 
   createButton('Set CPU', (onclick) => {
     const button = document.getElementById('Set CPU');

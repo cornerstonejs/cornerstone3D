@@ -1489,10 +1489,8 @@ export const imageRetrievalPoolManager: RequestPoolManager;
 // @public (undocumented)
 const imageRetrieveMetadataProvider: {
     IMAGE_RETRIEVE_CONFIGURATION: string;
-    IMAGE_RETRIEVE_OPTIONS: string;
     clear: () => void;
-    addImageRetrieveConfiguration: (uidOrImageId: string, payload: any) => void;
-    addImageRetrieveOptions: (uidOrImageId: string, payload: any) => void;
+    add: (key: string, payload: any) => void;
     get: (type: string, queriesOrQuery: string | string[]) => any;
 };
 
@@ -1669,6 +1667,8 @@ export interface IRetrieveConfiguration {
     retrieveImages: (imageIds: string[], listener: ImageLoadListener) => Promise<unknown>;
     // (undocumented)
     retrieveOptions?: Record<string, RetrieveOptions>;
+    // (undocumented)
+    stages?: RetrieveStage[];
 }
 
 // @public (undocumented)

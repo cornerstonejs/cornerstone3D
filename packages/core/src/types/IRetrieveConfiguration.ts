@@ -205,4 +205,6 @@ export interface IRetrieveConfiguration {
   ) => Promise<unknown>;
 
   retrieveOptions?: Record<string, RetrieveOptions>;
+
+  stages?: RetrieveStage[];
 }

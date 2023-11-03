@@ -11,12 +11,7 @@ import singleRetrieveStages from './configuration/singleRetrieve';
 import sequentialRetrieveStages from './configuration/sequentialRetrieve';
 import interleavedRetrieveStages from './configuration/interleavedRetrieve';
 import { loadAndCacheImage } from './imageLoader';
-import {
-  triggerEvent,
-  ProgressiveIterator,
-  decimate,
-  imageRetrieveMetadataProvider,
-} from '../utilities';
+import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache';
@@ -116,6 +111,7 @@ export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
 
   constructor(imageRetrieveConfiguration) {
     this.stages = imageRetrieveConfiguration.stages;
+    this.retrieveOptions = imageRetrieveConfiguration.retrieveOptions || {};
   }
 
   public retrieveImages(imageIds: string[], listener: ImageLoadListener) {
@@ -207,11 +203,9 @@ export async function load(
       return;
     }
     const { retrieveType = 'default' } = stage;
-    const retrieveOptions = metaData.get(
-      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_OPTIONS,
-      retrieveType,
-      'default'
-    );
+    const { retrieveOptions: keyedRetrieveOptions } = retrieveConfiguration;
+    const retrieveOptions =
+      keyedRetrieveOptions[retrieveType] || keyedRetrieveOptions.default;
     const options = {
       ...baseOptions,
       retrieveType,
