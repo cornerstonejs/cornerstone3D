@@ -74,7 +74,7 @@ export default function extractMultipart(
     contentType: multipartContentType,
     // done indicates if the read has finished the entire image, not if
     // the image is completely available
-    done: !isPartial || endIndex !== -1,
+    extractDone: !isPartial || endIndex !== -1,
     tokenIndex,
     responseHeaders,
     boundary,

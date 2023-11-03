@@ -687,7 +687,7 @@ export default class BaseStreamingImageVolume
     throw new Error('Abstract method');
   }
 
-  public getImageIdsLoad(): string[] {
+  public getImageIdsToLoad(): string[] {
     throw new Error('Abstract method');
   }
 
@@ -733,7 +733,7 @@ export default class BaseStreamingImageVolume
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const imageIds = this.getImageIdsLoad();
+    const imageIds = this.getImageIdsToLoad();
 
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;

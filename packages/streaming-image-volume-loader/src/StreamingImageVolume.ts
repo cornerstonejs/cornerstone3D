@@ -39,7 +39,7 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
     return this.getImageIdsRequests(imageIds, priority);
   };
 
-  public getImageIdsLoad = () => {
+  public getImageIdsToLoad = () => {
     const { imageIds } = this;
     this.numFrames = imageIds.length;
     return imageIds;

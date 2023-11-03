@@ -136,11 +136,16 @@ function loadImage(
           imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION,
           percentComplete,
           done = true,
+          extractDone = true,
         } = result;
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        if (!done && !options.retrieveOptions?.streamingDecode) {
+        if (
+          !done &&
+          !extractDone &&
+          !options.retrieveOptions?.streamingDecode
+        ) {
           continue;
         }
         const decodeLevel =

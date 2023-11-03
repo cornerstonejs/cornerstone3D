@@ -103,25 +103,25 @@ cornerstoneDicomImageLoader.configure({
 # Performance
 
 The performance gains on this vary quite a bit depending on size of data
-and capabilities of the DICOMweb server components. In general, a 350% speed improvement
-to first volume render is seen because of the interleaved images filling
-nearby images. For straight JLS versus HTJ2K, that depends on the compression
-size - JLS compresses a bit better than HTJ2K, resulting in faster downloads.
-However, HTJ2K is faster decoding, resulting in lower times from download
-until image rendering.
+and capabilities of the DICOMweb server components.
+In general, a 350% speed improvement to first volume render is seen because of
+the interleaved images filling nearby images. That is independent of server
+and is just because of the organization.
+For straight JLS versus HTJ2K, that depends on the compression
+size - JLS compresses a bit better than HTJ2K, resulting in faster downloads
+on slow connections, but, HTJ2K is faster decoding, resulting in faster times
+from the completion of retrieval until image rendering.
 
-For reduced resolution images, both the HTJ2K and JLS versions are slower
-to final image data than the original versions because there are additional
-requests required to fetch all data. HTJ2K decoding still has some decompression
-issues on very small thumbnails resulting in some issues decoding small
-reduced resolution versions. That results in higher time to first volume times.
+For reduced resolution images, both the JLS versions is slower
+to final image data than the original version because of the additional
+requests required to fetch all data. However, HTJ2K does not require
+additional data as it re-uses the first range request data. That results
+in identical timings between the final display of the HTJ2K data, but improved
+timing for first render.
 
 Note that none of the times include time to load the decoder, which can be
 a second or more, but is only seen on first render. These times are similar for
 both types.
-
-Full size images are 512x512, and JLS reduced ones are 128x128. Note that
-JLS reduced images are JLS lossy compressed in addition to sub resolution.
 
 | Type             | Size  | Network | First Render | Complete |
 | ---------------- | ----- | ------- | ------------ | -------- |
@@ -138,4 +138,7 @@ The HTJ2K byte range is very slightly slower than straight JLS, but can be
 done against any DICOMweb server supporting HTJ2K and byte range requests.
 
 - 4g speed - 30 mbit/s down, 5 mbit/s up, 10 ms latency
-- complete time for JLS/HTJ2K is same as non-progressive complete time
+- Complete time for the JLS and HTJ2K was essentially identical to
+  baseline non-progressive
+- Full size images are 512x512
+- Reduce resolution images are 128x128 and lossy compressed

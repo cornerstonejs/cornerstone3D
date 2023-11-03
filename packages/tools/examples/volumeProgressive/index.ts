@@ -238,12 +238,8 @@ const configHtj2kByteRange = {
   retrieveOptions: {
     ...configHtj2k,
     multipleFast: {
-      default: {
-        status: ImageQualityStatus.FULL_RESOLUTION,
-        streamingDecode: true,
-        range: 0,
-        decodeLevel: 0,
-      },
+      range: 0,
+      decodeLevel: 0,
     },
   },
 };

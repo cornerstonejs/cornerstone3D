@@ -114,7 +114,7 @@ export default class StreamingDynamicImageVolume
     return timePointsRequests;
   };
 
-  public getImageIdsLoad(): string[] {
+  public getImageIdsToLoad(): string[] {
     const timePoints = this._getTimePointsToLoad();
     let imageIds = [];
 
