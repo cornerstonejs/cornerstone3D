@@ -330,10 +330,8 @@ export default class BaseStreamingImageVolume
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
     handleArrayBufferLoad(scalarData, image, options);
 
-    const {
-      scalingParameters,
-      imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION,
-    } = image;
+    const { scalingParameters } = image.preScale || {};
+    const { imageQualityStatus } = image;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
     // Check if there is a cached image for the same imageURI (different
@@ -687,7 +685,7 @@ export default class BaseStreamingImageVolume
     throw new Error('Abstract method');
   }
 
-  public getImageIdsLoad(): string[] {
+  public getImageIdsToLoad(): string[] {
     throw new Error('Abstract method');
   }
 
@@ -733,7 +731,7 @@ export default class BaseStreamingImageVolume
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const imageIds = this.getImageIdsLoad();
+    const imageIds = this.getImageIdsToLoad();
 
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;

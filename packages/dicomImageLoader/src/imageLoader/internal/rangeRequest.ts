@@ -106,12 +106,14 @@ export default function rangeRequest(
       // Allow over-writing the done status to indicate complete on partial
       const imageQualityStatus = getImageQualityStatus(
         retrieveOptions,
-        doneAllBytes
+        doneAllBytes || extract.extractDone
       );
       resolve({
         ...extract,
         imageQualityStatus,
-        percentComplete: (initialBytes * 100) / totalBytes,
+        percentComplete: extract.extractDone
+          ? 100
+          : (initialBytes * 100) / totalBytes,
       });
     } catch (err: any) {
       errorInterceptor(err);

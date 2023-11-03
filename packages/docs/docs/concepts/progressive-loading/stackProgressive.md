@@ -53,7 +53,7 @@ The Static DICOMweb toolkit includes some options to create such images.
 # Performance
 
 In general, about 1/16-1/10th of the image is retrieved for the lossy/first
-version of the image. This results in about a 10x speed improvement to first
+version of the image. This results in a significant speed improvement to first
 images. It is affected fairly strongly by overall image size, network performance
 and compression ratios.
 
@@ -63,8 +63,8 @@ The full size images are 3036 x 3036, while the JLS reduced images are 759 x 759
 | ---------------- | ------- | ------ | ------------ | ------------ |
 | JLS              | 4g      | 10.6 M |              | 4586 ms      |
 | JLS Reduced      | 4g      | 766 K  | 359 ms       | 4903 ms      |
-| HTJ2K            | 4g      | 11.1 M | 897 ms       | 5213 ms      |
-| HTJ2K Byte Range | 4g      | 128 K  | 780 ms       | 5431 ms      |
+| HTJ2K            | 4g      | 11.1 M | 66 ms        | 5053 ms      |
+| HTJ2K Byte Range | 4g      | 128 K  | 45 ms        | 4610 ms      |
 
 - JLS Reduced uses 1/16 size JLS 'thumbnails'
 - HTJ2K uses streaming data

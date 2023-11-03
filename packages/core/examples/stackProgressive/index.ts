@@ -149,7 +149,6 @@ async function showStack(
  *
  * HTJ2K and HTJ2K thumbnail - lossless:
  * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k "/dicom/DE Images for Rad"
  * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
  * ```
  */
@@ -211,10 +210,8 @@ const htj2kMixedOptions = {
   retrieveOptions: {
     singleFinal: {
       range: 1,
-      streamingDecode: true,
     },
     singleFast: {
-      streamingDecode: true,
       range: 0,
       decodeLevel: 3,
     },
@@ -234,6 +231,8 @@ const htj2kThumbnailOptions = {
   },
 };
 
+const isLocal = false;
+
 /**
  * Runs the demo
  */
@@ -247,13 +246,17 @@ async function run() {
       '1.3.6.1.4.1.9590.100.1.2.19841440611855834937505752510708699165',
     SeriesInstanceUID:
       '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: isLocal
+      ? 'http://localhost:5000/dicomweb'
+      : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   const imageIdsCt = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: isLocal
+      ? 'http://localhost:5000/dicomweb'
+      : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

@@ -299,6 +299,14 @@
       "dicomImageLoaderWADOURI": {
         "name": "WADO-URI (DICOM P10)",
         "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
+      },
+      "stackProgressive": {
+        "name": "Stack Progressive Loading",
+        "description": "Stack progressive loading using HTJ2K and/or other methods."
+      },
+      "volumeProgressive": {
+        "name": "Volume Progressive Loading",
+        "description": "Volume progressive loading inter and intra image"
       }
     },
     "adapters": {
