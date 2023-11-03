@@ -1,8 +1,43 @@
 ---
 id: stackProgressive
+title: Stack Progressive Loading
 ---
 
-# Stack Progressive Loading
+
+## Stack Viewport Streaming Decode
+
+For stacked viewports, larger images can be decoded using a streaming method, where the HTJ2K RPCL image is received as a stream, and parts of it are decoded as they become available. This can significantly improve the viewing of stacked images, without requiring any special server requirements other than support for HTJ2K RPCL encoded data.
+
+
+## Sequential Retrieve Configuration
+
+The sequential retrieve configuration has two stages specified, each of
+which applies to the entire stack of image ids. The first stage will
+load every image using the `singleFast` retrieve type, followed by the
+second stage retrieving using `singleFinal`. If the first stage
+results in lossless images, the second stage never gets run, and thus the
+behaviour is identical to previous behaviour for stack images.
+
+This configuration can also be used for volumes, producing the old/previous
+behaviour for streaming volume loading.
+
+The configuration is:
+
+```javascript
+stages: [
+    {
+      id: 'lossySequential',
+      // Just retrieve using type singleFast, all images
+      retrieveType: 'singleFast',
+    },
+    {
+      id: 'finalSequential',
+      // Finish off with the all images final version.
+      retrieveType: 'singleFinal',
+    },
+  ],
+```
+
 
 Images for the stack viewport can be loaded with a lower resolution/lossy
 version first, followed by increasingly higher resolutions, and finally
@@ -79,32 +114,4 @@ renderingEngine.enableElement({
   // Just use the default progressive retrieve configuration
   progressiveRetrieveConfiguration: true,
 };
-```
-
-## JLS Thumbnails
-
-JLS thumbnails can be created using the static-dicomweb toolkit, for example,
-by doing:
-
-```
-# Create a JLS directory containing JLS encoded data in the /jls sub-path
-mkdicomweb create -t jhc --recompress true --alternate jlsLossless --alternate-name jls "/dicom/DE Images for Rad"
-# Create a jlsThumbnail sub-directory containing reduce resolution data
-mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
-```
-
-This can then be used by configuring:
-
-```javascript
-cornerstoneDicomImageLoader.configure({
-  retrieveOptions: {
-    default: {
-      default: {
-        framesPath: '/jls/',
-      },
-    },
-    singleFast: {
-      default: {
-        status: ImageQualityStatus.SUBRESOLUTION,
-        framesPath: '/jlsThumbnail/',
 ```

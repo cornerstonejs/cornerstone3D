@@ -1,8 +1,109 @@
 ---
 id: volumeProgressive
+title: Volume Progressive Loading
 ---
 
-# Volume Progressive Loading
+
+## Volume Viewport Interleaved Decode
+
+For volumes, the streaming decode of HTJ2K is typically slower than non-streaming
+decoding because the image retrieval of the low resolution data is immediately
+succeeded by the high resolution data, so it consumes the total bandwidth for
+retrieval regardless of handling, and extra decodes require additional time.
+
+There is an alternative low resolution data first retrieval that can be used.
+Interleaving the images applies to any encoding for a volume.
+That is, fetching every Nth image first allows a 1/Nth frequency image to be
+displayed.
+The interleave code then simply replicates the images to the missing
+positions to produce a low resolution in the longitudinal direction.
+
+This interleaving can then be combined with any discrete fetch for a lossy
+version of an image - that is, a non-streamed decoding version of an image
+that returns an entire request at once. Typically the options are to use
+byte range requests or complete requests for reduced resolution versions.
+These options are described below, and provide enhanced performance beyond
+the basic interleaved performance gains.
+
+//
+//
+//
+//
+//
+//
+
+## Interleaved Retrieve Configuration
+
+For volume viewports, the priorities are to show images currently on screen
+as fast as possible, and to load a low resolution volume as soon as possible.
+
+Note that this stage model will interleave requests across different viewports
+for the various stages, by the selection of the queue and the priority of the
+requests. The interleaving isn't perfect, as it interleaves stages rather than
+individual requests, but the appearance works reasonably well without complex
+logic being needed to work between volumes.
+
+Decimation is a selection of every Nth' image at the F offset, described as N/F,
+eg `4/3` is positions `3,7,11,...`
+This is done by retrieving, in order, the following stages:
+
+- Initial images - images at position 0, 50%, 100%
+- Decimated 4/3 image using multipleFast retrieve type
+  - Displays a full volume at low resolution once this is complete
+- Decimated 4/1 image using multipleFast retrieve type
+  - Updates the intiial volume with twice the resolution
+- Decimated 4/2 and 4/0 images using multipleFinal
+  - Replaces the replicated images with full resolution images
+- Decimated 4/3 and 4/1 using multipleFinal
+  - Replices the low resolution images with full resolution
+
+The configuration looks like:
+
+```javascript
+  stages: [
+    {
+      id: 'initialImages',
+      // positions selects specific positions - middle image, first and last
+      positions: [0.5, 0, -1],
+      // Use teh default render type for these, which should retrieve full resolution
+      retrieveType: 'default',
+      // Use the Interaction queue
+      requestType: RequestType.Interaction,
+      // Priority 10, do first
+      priority: 10,
+      // Fill nearby frames from this data
+      nearbyFrames: {....},
+    },
+    {
+      id: 'quarterThumb',
+      decimate: 4,
+      offset: 3,
+      retrieveType: 'multipleFast',
+      priority: 9,
+      nearbyFrames,
+    },
+    ... other versions
+    // Replace the first data with final data
+    {
+      id: 'finalFull',
+      decimate: 4,
+      offset: 3,
+      priority: 4,
+      retrieveType: 'multipleFinal',
+    },
+  ],
+```
+
+//
+//
+//
+//
+//
+//
+//
+
+
+
 
 The volume progressive loading extends the basic stack loading with the ability
 to interleave various images, interpolating them from a reduced resolution

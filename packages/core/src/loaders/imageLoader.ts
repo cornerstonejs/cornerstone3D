@@ -10,7 +10,6 @@ export interface ImageLoaderOptions {
   requestType: string;
   additionalDetails?: Record<string, unknown>;
 }
-
 /**
  * This module deals with ImageLoaders, loading images and caching images
  */

@@ -99,9 +99,34 @@ module.exports = {
           collapsed: true,
           link: { type: 'doc', id: 'concepts/progressive-loading/index' },
           items: [
-            'concepts/progressive-loading/stackProgressive',
-            'concepts/progressive-loading/volumeProgressive',
             'concepts/progressive-loading/requirements',
+            {
+              type: 'category',
+              label: 'Retrieve Configuration',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/retrieve-configuration',
+              },
+              items: ['concepts/progressive-loading/advance-retrieve-config'],
+            },
+            'concepts/progressive-loading/usage',
+            {
+              type: 'category',
+              label: 'Examples',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/stackProgressive',
+              },
+              items: [
+                'concepts/progressive-loading/stackProgressive',
+                'concepts/progressive-loading/volumeProgressive',
+              ],
+            },
+
+            'concepts/progressive-loading/static-wado',
+            'concepts/progressive-loading/non-htj2k-progressive',
           ],
         },
         {

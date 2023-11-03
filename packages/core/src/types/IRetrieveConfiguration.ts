@@ -91,7 +91,7 @@ export type NearbyFrames = {
 };
 
 /**
- * Base retrieves define some alternate path information, the decode leve,
+ * Base retrieves define some alternate path information, the decode level,
  * whether the transfer syntax supports streaming decode, and the desired
  * status and partial status used for retrieval.
  */

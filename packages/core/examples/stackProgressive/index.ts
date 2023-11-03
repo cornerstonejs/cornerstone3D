@@ -5,7 +5,6 @@ import {
   cache,
   setUseCPURendering,
   ProgressiveRetrieveImages,
-  RetrieveOptions,
   utilities,
 } from '@cornerstonejs/core';
 import {

@@ -22,7 +22,6 @@ import type {
   FlipDirection,
   EventTypes,
   DisplayArea,
-  IRetrieveConfiguration,
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
@@ -76,7 +75,6 @@ class Viewport implements IViewport {
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
   protected calibration: IImageCalibration;
-
   /** The camera that is initially defined on the reset for
    * the relative pan/zoom
    */
