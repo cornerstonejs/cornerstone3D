@@ -330,10 +330,8 @@ export default class BaseStreamingImageVolume
     const scalarData = this._getScalarDataByImageIdIndex(imageIdIndex);
     handleArrayBufferLoad(scalarData, image, options);
 
-    const {
-      scalingParameters,
-      imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION,
-    } = image;
+    const { scalingParameters } = image.preScale || {};
+    const { imageQualityStatus } = image;
     const frameIndex = this._imageIdIndexToFrameIndex(imageIdIndex);
 
     // Check if there is a cached image for the same imageURI (different

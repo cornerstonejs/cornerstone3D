@@ -6,7 +6,6 @@ import {
   ImageLoadListener,
   RetrieveOptions,
 } from '../types';
-import * as metaData from '../metaData';
 import singleRetrieveStages from './configuration/singleRetrieve';
 import sequentialRetrieveStages from './configuration/sequentialRetrieve';
 import interleavedRetrieveStages from './configuration/interleavedRetrieve';

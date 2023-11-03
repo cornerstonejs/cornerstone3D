@@ -8,6 +8,7 @@ import {
   eventTarget,
   utilities,
   ProgressiveRetrieveImages,
+  imageLoadPoolManager,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -20,6 +21,8 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const { RequestType } = Enums;
 
 const {
   PanTool,
@@ -383,6 +386,10 @@ async function run() {
   renderingEngine.renderViewports(viewportIds);
 
   const progressiveRendering = true;
+
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 6);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
 
   async function loadVolume(volumeId, imageIds, config, text) {
     cache.purgeCache();
