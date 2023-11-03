@@ -8,6 +8,7 @@ import {
   cache,
   imageLoader,
   utilities as csUtils,
+  utilities,
 } from '@cornerstonejs/core';
 import type {
   Types,
@@ -20,6 +21,7 @@ import { scaleArray, autoLoad } from './helpers';
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const { getMinMax, ProgressiveIterator } = csUtils;
 const { ImageQualityStatus } = Enums;
+const { imageRetrieveMetadataProvider } = utilities;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -422,12 +424,16 @@ export default class BaseStreamingImageVolume
    * @param priority - The priority for loading the volume images, lower number is higher priority
    * @returns
    */
-  public load = (
-    callback: (...args: unknown[]) => void,
-    retrieveConfiguration?: IRetrieveConfiguration
-  ): void => {
+  public load = (callback: (...args: unknown[]) => void): void => {
     const { imageIds, loadStatus, numFrames } = this;
-    this.retrieveConfiguration = retrieveConfiguration || this;
+    const imageRetrieveConfiguration = metaData.get(
+      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+      this.volumeId,
+      'volume'
+    );
+    this.retrieveConfiguration = imageRetrieveConfiguration?.constructor
+      ? new imageRetrieveConfiguration.constructor(imageRetrieveConfiguration)
+      : this;
 
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.

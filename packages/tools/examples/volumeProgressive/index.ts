@@ -6,8 +6,9 @@ import {
   setVolumesForViewports,
   cache,
   eventTarget,
+  utilities,
+  ProgressiveRetrieveImages,
 } from '@cornerstonejs/core';
-import cornerstoneDicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -29,8 +30,12 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
+const { imageRetrieveMetadataProvider } = utilities;
 const { ImageQualityStatus, ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
+
+const { singleRetrieveStages, interleavedRetrieveStages } =
+  ProgressiveRetrieveImages;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -181,52 +186,46 @@ content.append(instructions);
  * ```
  */
 const configJLS = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     default: {
-      default: {
-        framesPath: '/jls/',
-      },
-    },
-  },
-};
-const configJLSMixed = {
-  retrieveOptions: {
-    ...configJLS.retrieveOptions,
-    multipleFast: {
-      default: {
-        status: ImageQualityStatus.SUBRESOLUTION,
-        framesPath: '/jlsThumbnail/',
-      },
+      framesPath: '/jls/',
     },
   },
 };
 
 const configJLSThumbnail = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     default: {
-      default: {
-        framesPath: '/jlsThumbnail/',
-      },
+      framesPath: '/jlsThumbnail/',
+    },
+  },
+};
+
+const configJLSMixed = {
+  ...interleavedRetrieveStages,
+  retrieveOptions: {
+    ...configJLS.retrieveOptions,
+    multipleFast: {
+      status: ImageQualityStatus.SUBRESOLUTION,
+      framesPath: '/jlsThumbnail/',
     },
   },
 };
 
 const configHtj2k = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     default: {
-      '3.2.840.10008.1.2.4.96': {
-        streaming: true,
-        streamingDecode: true,
-      },
-      default: {
-        streaming: true,
-        // Don't attempt decoding streaming data unless it is specifically HTJ2K
-      },
+      streaming: true,
+      streamingDecode: true,
     },
   },
 };
 
 const configHtj2kByteRange = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     ...configHtj2k,
     multipleFast: {
@@ -241,6 +240,7 @@ const configHtj2kByteRange = {
 };
 
 const configHtj2kLossy = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     default: {
       default: {
@@ -264,6 +264,7 @@ const configHtj2kLossy = {
 };
 
 const configHtj2kMixed = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     ...configHtj2k,
     multipleFinal: {
@@ -382,11 +383,14 @@ async function run() {
   );
   renderingEngine.renderViewports(viewportIds);
 
-  let progressiveRendering = true;
+  const progressiveRendering = true;
 
   async function loadVolume(volumeId, imageIds, config, text) {
-    cornerstoneDicomImageLoader.configure(config);
     cache.purgeCache();
+    imageRetrieveMetadataProvider.clear();
+    if (config) {
+      imageRetrieveMetadataProvider.add('volume', config);
+    }
     resetTimingInfo();
     // Define a volume in memory
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
@@ -437,23 +441,10 @@ async function run() {
   loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
   loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
   loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
+  loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
   loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
   loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
   loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
-
-  const nonProgressiveText = 'Set Non Progressive';
-  createButton(nonProgressiveText, () => {
-    const button = document.getElementById(nonProgressiveText);
-    const isProgressive = nonProgressiveText === button.innerText;
-    if (isProgressive) {
-      // It is progrossive now, so set non-progressive
-      button.innerText = 'Set Progressive';
-      progressiveRendering = false;
-    } else {
-      button.innerText = nonProgressiveText;
-      progressiveRendering = true;
-    }
-  });
 }
 
 run();
