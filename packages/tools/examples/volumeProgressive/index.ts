@@ -251,23 +251,16 @@ const configHtj2kByteRange = {
 const configHtj2kLossy = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
-    default: {
-      default: {
-        streaming: true,
-        streamingDecode: true,
-        framesPath: '/htj2kThumbnail/',
-      },
-    },
     multipleFinal: {
-      default: {
-        framesPath: '/htj2kThumbnail/',
-      },
+      streaming: true,
+      streamingDecode: true,
     },
     multipleFast: {
-      default: {
-        status: ImageQualityStatus.SUBRESOLUTION,
-        framesPath: '/htj2kThumbnail/',
-      },
+      status: ImageQualityStatus.SUBRESOLUTION,
+      framesPath: '/lossy/',
+      range: 0,
+      decodeLevel: 2,
+      streamingDecode: true,
     },
   },
 };
@@ -277,17 +270,13 @@ const configHtj2kMixed = {
   retrieveOptions: {
     ...configHtj2k,
     multipleFinal: {
-      default: {
-        range: 1,
-      },
+      range: 1,
     },
     multipleFast: {
-      default: {
-        streamingDecode: true,
-        range: 0,
-        initialBytes: 64000,
-        decodeLevel: 0,
-      },
+      streamingDecode: true,
+      range: 0,
+      initialBytes: 64000,
+      decodeLevel: 0,
     },
   },
 };
@@ -344,10 +333,15 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
+  // Use isLocal for performance testing
+  const isLocal = false;
+
   const imageIdsCT = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: isLocal
+      ? 'http://localhost:5000/dicomweb'
+      : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

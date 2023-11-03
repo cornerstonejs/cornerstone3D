@@ -123,12 +123,19 @@ both types.
 Full size images are 512x512, and JLS reduced ones are 128x128. Note that
 JLS reduced images are JLS lossy compressed in addition to sub resolution.
 
-| Type             | Size  | Network | First Render | Final Render |
-| ---------------- | ----- | ------- | ------------ | ------------ |
-| JLS              | 30 M  | 4g      | 2265 ms      | 8106 ms      |
-| JLS Reduced      | 3.6 M | 4g      | 1690 ms      | 8455 ms      |
-| HTJ2K            | 33 M  | 4g      | 2503 ms      | 8817 ms      |
-| HTJ2K Byte Range | 11.1M | 4g      | 985 ms       | 8786 ms      |
+| Type             | Size  | Network | First Render | Complete |
+| ---------------- | ----- | ------- | ------------ | -------- |
+| JLS              | 30 M  | 4g      | 2265 ms      | 8106 ms  |
+| JLS Reduced      | 3.6 M | 4g      | 1028 ms      | 8455 ms  |
+| HTJ2K            | 33 M  | 4g      | 2503 ms      | 8817 ms  |
+| HTJ2K Byte Range | 11.1M | 4g      | 1002 ms      | 8813 ms  |
+| JLS              | 30 M  | local   | 1322 ms      | 1487 ms  |
+| JLS Reduced      | 3.6 M | local   | 1084 ms      | 1679 ms  |
+| HTJ2K            | 33 M  | local   | 1253 ms      | 1736 ms  |
+| HTJ2K Byte Range | 11.1M | local   | 1359 ms      | 1964 ms  |
 
 The HTJ2K byte range is very slightly slower than straight JLS, but can be
 done against any DICOMweb server supporting HTJ2K and byte range requests.
+
+- 4g speed - 30 mbit/s down, 5 mbit/s up, 10 ms latency
+- complete time for JLS/HTJ2K is same as non-progressive complete time
