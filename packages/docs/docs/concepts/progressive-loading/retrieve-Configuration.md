@@ -37,6 +37,7 @@ So, in summary, the Retrieve Stage is a configuration that specifies which image
 
 
 ![](../../assets/retrieve-stages.png)
+<!-- <img src="../../assets/retrieve-stages.png"  style={{width:"300px"}}/> -->
 
 As seen above, the retrieve stages can be as simple a list of objects, each with an `id`
 and a `retrieveType` (which is a reference to the retrieve options which we will talk next).
@@ -124,71 +125,62 @@ as soon as possible.
 ### Byte Range Options
 
 #### Options
-#### Decoding Frequency
-#### Example
-#### Use cases
 
+- `initialBytes`: byte range value to retrieve for initial decode (default is 64kb)
+- `totalRangesToFetch`: How many total ranges to break the request up into (deafult to 2 ranges)
+- `range`: is the range number (index) that you want to fetch (should be less than `totalRangesToFetch`)
 
-
-HTTP byte range requests are an optional part of the DICOMweb standard, but
-when combined with HTJ2K RPCL encoding, allow for fetching a prefix of an
-image encoding followed by fetching the remaining data, with the prefix of the
-image being loaded and decoded quite quickly to improve the time to low resolution
-volume render. The sequence is basically:
-
-1. Fetch images shown intiially at full resolution (first and last)
-2. Fetch every 4th image first `initialByteRange` bytes
-
-- Fetch byte range [0,64000]
-- Display partial resolution version immediately
-- Use partial resolution version to display nearby slices
-
-3. Other steps
-
-- There are other partial and full resolution views here to fill in data
-
-4. Fetch remaining data for #2 (do not refetch original data)
-
-- Replaces the low resolution data from #2 with full data
-
-The configuration for this is (assuming standards based DICOMweb support):
-
-```javascript
-  retrieveOptions: {
-    multipleFinal: {
-      default: {
-        range: 1,
-        urlArguments: 'accept=image/jhc',
-      },
-    },
-    multipleFast: {
-      default: {
-        range: 0,
-        urlArguments: 'accept=image/jhc',
-        streaming: true,
-        decodeLevel: 0,
-      },
-    },
-  },
-```
-
-The arguments for the byte range request are:
-
-- range - this is a number between 0 and the totalRangesToFetch
+<!-- - range - this is a number between 0 and the totalRangesToFetch
   - Fetches data starting at the last fetch end point, or 0
   - Fetches data ending with the total length or (range+1)\*initialBytesToFetch
   - Ranges do NOT need to be all fetched, but do need to be increasing
 - totalRangesToFetch - how many pieces of size initialBytesToFetch are retrieved
 - initialBytesToFetch - the number of bytes in each fetch chunk
-  - last chunk is always the remaining data, regardless of size
-- streaming - a flag to indicate that a partial range can be decoded
-- decodeLevel is the resolution level to decode to. This can sometimes be
-  determined from the stream, but for CORS requests, the header is not available,
-  and so a value specified based on the type of images retrieved.
-- urlArguments - is a set of arguments to add to the URL
-  - This distinguishes this request from other requests which cannot be combined with this one
-  - The DICOMweb standard allows for the `accept` parameter to specify a content type
-  - The HTJ2K content type is image/jhc
+  - last chunk is always the remaining data, regardless of size -->
+
+#### Decoding Frequency
+
+There are two scenarios for byte range requests:
+
+- The server sends back the total size of the data in the header of the response for the byte range in which we use our automatic
+  decoding frequency (similar to the streaming scenario).
+- The server does not send back the total size of the data in the header of the response for the byte range in which we wait
+  until the range request is finished and then decode the image.
+
+#### Example
+
+For instance for the options of
+
+```js
+{
+  range: 0,
+  initialBytes: 256000, // 256kb
+}
+```
+
+![](../../assets/range-0.png)
+
+another example
+
+```js
+{
+  range: 0,
+  decodeLevel: 3
+}
+```
+
+![](../../assets/range-0-decode-3.png)
+
+
+#### Use cases
+
+
+Other than we can use the range request to progressively request and load a better quality
+images there are some other usecases
+
+-  Thumbnails: Often, for thumbnails, we want to load the image as quickly as possible but don't need the full resolution. We can use a byte range request to fetch a lower resolution version of the data.
+- CINE: For certain imaging needs, the frame rate is absolutely essential in the cine mode. Often, the gross anatomy is desired in these scenarios, not the details, but the frame rate is of greater importance. We can use the byte range request to fetch the subresolution of the data, guaranteeing that we can achieve the target frame rate.
+
 
 
 ## Conclusion

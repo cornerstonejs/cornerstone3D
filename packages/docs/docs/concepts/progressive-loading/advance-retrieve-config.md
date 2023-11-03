@@ -3,16 +3,56 @@ id: advance-retrieve-config
 title: Advance Options
 ---
 
-There are more advanced options for the retrieve configuration that can be used
-to handle more use cases. Let's dive in
+There are more advanced options both for `retrieve stages` and also for
+`retrieve options` that can be used to customize the behavior of the
+progressive loading.
+
+:::tip
+You can skip this section if you are not interested in the advanced options (yet) and still move to the [`usage` section](./usage). Basically, some of these options (position, decimate, offset, priority, and nearbyFrames) are used in the "volume progressive" example,
+which you can revisit later.
+:::
 
 
-## Options
+## Advanced Retrieve Stages Options
+
+### positions?: number[];
+
+### decimate?: number;
+### offset?: number;
+### priority?: number;
+### nearbyFrames?: NearbyFrames[];
+
+## Advanced Retrieve Options
+
+
 
 
 ### urlArguments
-- urlArguments - to add extra arguments to the URL
+- urlArguments - is a set of arguments to add to the URL
+  - This distinguishes this request from other requests which cannot be combined with this one
+  - The DICOMweb standard allows for the `accept` parameter to specify a content type
+  - The HTJ2K content type is image/jhc
 
+The configuration for this is (assuming standards based DICOMweb support):
+
+```javascript
+  retrieveOptions: {
+    multipleFinal: {
+      default: {
+        range: 1,
+        urlArguments: 'accept=image/jhc',
+      },
+    },
+    multipleFast: {
+      default: {
+        range: 0,
+        urlArguments: 'accept=image/jhc',
+        streaming: true,
+        decodeLevel: 0,
+      },
+    },
+  },
+```
 
 ### framePath
 - framesPath - to update the URL path portion

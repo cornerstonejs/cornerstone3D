@@ -96,7 +96,27 @@ The configuration looks like:
 
 //
 //
-//
+
+
+
+1. Fetch images shown intiially at full resolution (first and last)
+2. Fetch every 4th image first `initialByteRange` bytes
+
+- Fetch byte range [0,64000]
+- Display partial resolution version immediately
+- Use partial resolution version to display nearby slices
+
+3. Other steps
+
+- There are other partial and full resolution views here to fill in data
+
+4. Fetch remaining data for #2 (do not refetch original data)
+
+- Replaces the low resolution data from #2 with full data
+
+
+
+
 //
 //
 //
