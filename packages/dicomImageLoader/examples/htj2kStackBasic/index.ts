@@ -216,7 +216,7 @@ const htj2kThumbnailOptions = {
   },
 };
 
-const isLocal = true;
+const isLocal = false;
 
 /**
  * Runs the demo
