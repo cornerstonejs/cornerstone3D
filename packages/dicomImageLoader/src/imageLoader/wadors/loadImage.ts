@@ -217,23 +217,17 @@ function loadImage(
  * level 4 only needs 1/25 of the data (eg (4+1)^2).  Add 2% to ensure
  * there is enough space
  */
-function decodeLevelFromComplete(
-  percent: number,
-  retrieveDecodeLevel?: number
-) {
-  if (retrieveDecodeLevel !== undefined) {
-    return retrieveDecodeLevel;
-  }
+function decodeLevelFromComplete(percent: number, retrieveDecodeLevel = 4) {
   if (percent < 8) {
-    return 4;
+    return Math.min(retrieveDecodeLevel, 4);
   }
   if (percent < 13) {
-    return 3;
+    return Math.min(retrieveDecodeLevel, 3);
   }
   if (percent < 27) {
-    return 2;
+    return Math.min(retrieveDecodeLevel, 2);
   }
-  return 1;
+  return Math.min(retrieveDecodeLevel, 1);
 }
 
 export default loadImage;

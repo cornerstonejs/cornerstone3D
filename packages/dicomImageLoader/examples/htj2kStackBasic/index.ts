@@ -146,72 +146,13 @@ const jlsRetrieveOptions = {
   },
 };
 
-const jlsThumbnailOptions = {
-  ...singleRetrieveStages,
-  retrieveOptions: {
-    default: {
-      framesPath: '/jlsThumbnail/',
-    },
-  },
-};
-
-const jlsMixedOptions = {
-  ...sequentialRetrieveStages,
-  retrieveOptions: {
-    singleFast: {
-      status: ImageQualityStatus.SUBRESOLUTION,
-      framesPath: '/jlsThumbnail/',
-    },
-    singleFinal: {
-      framesPath: '/jls/',
-    },
-  },
-};
-
 const htj2kProgressiveOptions = {
   ...singleRetrieveStages,
   retrieveOptions: {
     single: {
       streaming: true,
       streamingDecode: true,
-    },
-  },
-};
-
-const htj2kLossyOptions = {
-  ...sequentialRetrieveStages,
-  retrieveOptions: {
-    singleFast: {
-      status: ImageQualityStatus.LOSSY,
-      framesPath: '/lossy/',
-      streaming: true,
-      streamingDecode: true,
-    },
-  },
-};
-
-const htj2kMixedOptions = {
-  ...sequentialRetrieveStages,
-  retrieveOptions: {
-    singleFinal: {
-      range: 1,
-    },
-    singleFast: {
-      range: 0,
-      decodeLevel: 3,
-    },
-  },
-};
-
-const htj2kThumbnailOptions = {
-  ...sequentialRetrieveStages,
-  retrieveOptions: {
-    singleFinal: {},
-    singleFast: {
-      status: ImageQualityStatus.SUBRESOLUTION,
-      framesPath: '/htj2kThumbnail/',
-      streaming: true,
-      streamingDecode: true,
+      decodeLevel: 2,
     },
   },
 };
