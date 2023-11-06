@@ -1,4 +1,8 @@
-import { Events as EVENTS, VideoViewport as VideoViewportEnum } from '../enums';
+import {
+  Events as EVENTS,
+  VideoViewport as VideoViewportEnum,
+  MetadataModules,
+} from '../enums';
 import {
   IVideoViewport,
   VideoViewportProperties,
@@ -8,6 +12,7 @@ import {
   InternalVideoCamera,
   VideoViewportInput,
 } from '../types';
+import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
@@ -89,8 +94,16 @@ class VideoViewport extends Viewport implements IVideoViewport {
   ): Promise<unknown> {
     this.imageId = Array.isArray(imageIds) ? imageIds[0] : imageIds;
     const { imageId } = this;
-    const videoURL = imageId.substring(7).replace('/frames/1', '/rendered');
-    return this.setVideoURL(videoURL).then(() => {
+    const { rendered } = metaData.get(
+      MetadataModules.IMAGE_URL_MODULE,
+      imageId
+    );
+    return this.setVideoURL(rendered).then(() => {
+      const { cineRate = 30 } = metaData.get(
+        MetadataModules.CINE_MODULE,
+        imageId
+      );
+      this.fps = cineRate;
       this.setFrame(currentImageIdIndex);
     });
   }
@@ -352,9 +365,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return true;
   };
 
-  public getNumberOfSlices(): number {
-    return this.videoElement.duration * this.fps;
-  }
+  public getNumberOfSlices = (): number => {
+    return (this.videoElement.duration * this.fps) / this.scrollSpeed;
+  };
 
   public getFrameOfReferenceUID = (): string => {
     // The video itself is the frame of reference.

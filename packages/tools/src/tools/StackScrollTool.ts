@@ -1,9 +1,4 @@
-import {
-  getEnabledElementByIds,
-  VolumeViewport,
-  StackViewport,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElementByIds, VolumeViewport } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { scroll } from '../utilities';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';

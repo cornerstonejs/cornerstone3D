@@ -642,7 +642,8 @@ declare namespace Enums {
         VOILUTFunctionType,
         DynamicOperatorType,
         ViewportStatus,
-        VideoViewport_2 as VideoViewport
+        VideoViewport_2 as VideoViewport,
+        MetadataModules
     }
 }
 export { Enums }
@@ -1786,6 +1787,9 @@ interface IStreamingVolumeProperties {
 }
 
 // @public (undocumented)
+function isVideoTransferSyntax(uidOrUids: string | string[]): string | false;
+
+// @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
@@ -2081,6 +2085,14 @@ declare namespace metaData {
     }
 }
 export { metaData }
+
+// @public (undocumented)
+enum MetadataModules {
+    // (undocumented)
+    CINE_MODULE = "cineModule",
+    // (undocumented)
+    IMAGE_URL_MODULE = "imageUrlModule"
+}
 
 // @public (undocumented)
 const metadataProvider: {
@@ -2443,7 +2455,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
-    getNumberOfSlices(): number;
+    getNumberOfSlices: () => number;
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
@@ -2732,7 +2744,8 @@ declare namespace utilities {
         getScalarDataType,
         colormap,
         getImageLegacy,
-        transferFunctionUtils
+        transferFunctionUtils,
+        isVideoTransferSyntax
     }
 }
 export { utilities }
@@ -2758,7 +2771,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getImageData(): any;
     // (undocumented)
-    getNumberOfSlices(): number;
+    getNumberOfSlices: () => number;
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
@@ -2835,7 +2848,7 @@ type VideoViewportProperties = ViewportProperties & {
 };
 
 // @public (undocumented)
-export abstract class Viewport implements IViewport {
+export class Viewport implements IViewport {
     constructor(props: ViewportInput);
     // (undocumented)
     _actors: Map<string, any>;
@@ -2889,7 +2902,7 @@ export abstract class Viewport implements IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    abstract getNumberOfSlices(): number;
+    getNumberOfSlices: () => number;
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
@@ -3177,7 +3190,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageIdIndex: (volumeId?: string) => number;
     // (undocumented)
-    getNumberOfSlices(): number;
+    getNumberOfSlices: () => number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -3201,8 +3214,6 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
-    // (undocumented)
-    getNumberOfSlices(): number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)

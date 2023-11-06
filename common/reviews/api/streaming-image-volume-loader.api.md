@@ -1451,6 +1451,14 @@ type Metadata = {
     VOILUTFunction: string;
 };
 
+// @public
+enum MetadataModules {
+    // (undocumented)
+    CINE_MODULE = 'cineModule',
+    // (undocumented)
+    IMAGE_URL_MODULE = 'imageUrlModule',
+}
+
 // @public (undocumented)
 enum OrientationAxis {
     // (undocumented)

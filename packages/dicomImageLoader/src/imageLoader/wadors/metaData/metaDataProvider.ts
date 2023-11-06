@@ -1,3 +1,4 @@
+import { utilities, Enums } from '@cornerstonejs/core';
 import external from '../../../externalModules';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
@@ -19,6 +20,8 @@ import {
   getInstanceModule,
   instanceModuleNames,
 } from '../../getInstanceModule';
+
+const { MetadataModules } = Enums;
 
 function metaDataProvider(type, imageId) {
   if (type === 'multiframeModule') {
@@ -164,6 +167,14 @@ function metaDataProvider(type, imageId) {
     };
   }
 
+  if (type === MetadataModules.IMAGE_URL_MODULE) {
+    getImageUrlModule(imageId, metaData);
+  }
+
+  if (type === MetadataModules.CINE_MODULE) {
+    getCineModule(imageId, metaData);
+  }
+
   if (type === 'imagePixelModule') {
     return {
       samplesPerPixel: getNumberValue(metaData['00280002']),
@@ -251,9 +262,11 @@ function metaDataProvider(type, imageId) {
   // Note: this is not a DICOM module, but a useful metadata that can be
   // retrieved from the image
   if (type === 'transferSyntax') {
-    return {
-      transferSyntaxUID: getValue<string>(metaData['00020010']),
-    };
+    return getTransferSyntax(imageId, metaData);
+  }
+
+  if (type === MetadataModules.CINE_MODULE) {
+    return getCineModule(imageId, metaData);
   }
 
   if (type === 'petSeriesModule') {
@@ -277,4 +290,34 @@ function metaDataProvider(type, imageId) {
   }
 }
 
+export function getImageUrlModule(imageId, metaData) {
+  const { transferSyntaxUID } = getTransferSyntax(imageId, metaData);
+  const isVideo = utilities.isVideo(transferSyntaxUID);
+  const imageUrl = imageId.substring(7);
+  const thumbnail = imageUrl.replace('/frames/', '/thumbnail/');
+  let rendered = imageUrl.replace('/frames/', '/rendered/');
+  if (isVideo) {
+    rendered = rendered.replace('/rendered/1', '/rendered');
+  }
+  return {
+    isVideo,
+    rendered,
+    thumbnail,
+  };
+}
+
+export function getCineModule(imageId, metaData) {
+  const cineRate = getValue<string>(metaData['00180040']);
+  return {
+    cineRate,
+  };
+}
+
+export function getTransferSyntax(imageId, metaData) {
+  return {
+    transferSyntaxUID: getValue<string>(
+      metaData['00020010'] || metaData['00083002']
+    ),
+  };
+}
 export default metaDataProvider;

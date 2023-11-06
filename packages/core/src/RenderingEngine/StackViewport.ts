@@ -547,9 +547,9 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   /** Gets the number of slices */
-  public getNumberOfSlices(): number {
+  public getNumberOfSlices = (): number => {
     return this.imageIds.length;
-  }
+  };
 
   /**
    * Retrieves the metadata from the metadata provider, and optionally adds the

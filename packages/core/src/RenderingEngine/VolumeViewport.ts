@@ -84,11 +84,11 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /** Gets the number of slices the volume is broken up into in the camera direction */
-  public getNumberOfSlices(): number {
+  public getNumberOfSlices = (): number => {
     const { numberOfSlices } =
       utilities.getImageSliceDataForVolumeViewport(this);
     return numberOfSlices;
-  }
+  };
 
   /**
    * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
