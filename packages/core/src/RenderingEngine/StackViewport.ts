@@ -546,6 +546,11 @@ class StackViewport extends Viewport implements IStackViewport {
     return actor;
   };
 
+  /** Gets the number of slices */
+  public getNumberOfSlices(): number {
+    return this.imageIds.length;
+  }
+
   /**
    * Retrieves the metadata from the metadata provider, and optionally adds the
    * scaling to the viewport if modality is PET and scaling metadata is provided.

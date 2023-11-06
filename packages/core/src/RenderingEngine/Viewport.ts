@@ -44,7 +44,7 @@ import IImageCalibration from '../types/IImageCalibration';
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
-class Viewport implements IViewport {
+abstract class Viewport implements IViewport {
   /** unique identifier for the viewport */
   readonly id: string;
   /** HTML element in DOM that is used for rendering the viewport */
@@ -1166,6 +1166,9 @@ class Viewport implements IViewport {
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
   }
+
+  /** Gets the number of slices in the current orientation */
+  abstract getNumberOfSlices(): number;
 
   /**
    * Updates the actors clipping planes orientation from the camera properties

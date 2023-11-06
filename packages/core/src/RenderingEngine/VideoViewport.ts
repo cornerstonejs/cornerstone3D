@@ -19,6 +19,7 @@ import { getOrCreateCanvas } from './helpers';
  */
 class VideoViewport extends Viewport implements IVideoViewport {
   // Viewport Data
+  protected imageId: string;
   readonly uid;
   readonly renderingEngineId: string;
   readonly canvasContext: CanvasRenderingContext2D;
@@ -80,6 +81,18 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private elementDisabledHandler() {
     this.removeEventListeners();
     this.videoElement.remove();
+  }
+
+  public setVideoImageId(
+    imageIds: string | string[],
+    currentImageIdIndex = 0
+  ): Promise<unknown> {
+    this.imageId = Array.isArray(imageIds) ? imageIds[0] : imageIds;
+    const { imageId } = this;
+    const videoURL = imageId.substring(7).replace('/frames/1', '/rendered');
+    return this.setVideoURL(videoURL).then(() => {
+      this.setFrame(currentImageIdIndex);
+    });
   }
 
   public async setVideoURL(videoURL: string) {
@@ -338,6 +351,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
     return true;
   };
+
+  public getNumberOfSlices(): number {
+    return this.videoElement.duration * this.fps;
+  }
 
   public getFrameOfReferenceUID = (): string => {
     // The video itself is the frame of reference.

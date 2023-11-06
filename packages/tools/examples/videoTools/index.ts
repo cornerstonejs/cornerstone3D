@@ -4,6 +4,7 @@ import {
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
+  createImageIdsAndCacheMetaData,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -17,12 +18,13 @@ const {
   ZoomTool,
   VideoRedactionTool,
   StackScrollMouseWheelTool,
+  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
 const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
@@ -59,9 +61,10 @@ rangeElement.oninput = () => {
 const instructions = document.createElement('p');
 instructions.innerText = `Playback speed to change CINE playback speed
 Scroll Distance to change amount scrolled on next/prev button or wheel
-Left Click: Video Redaction
-Middle Click: Pan
-Right Click: Zoom
+Left Drag: Up/down scroll images
+Middle Click or Ctrl+Left: Pan
+Shift+Left: Zoom
+Right Click: Redaction
 Mouse Wheel: Stack Scroll';
 `;
 
@@ -156,6 +159,8 @@ addDropdownToToolbar({
   },
 });
 
+const useLocal = true;
+
 /**
  * Runs the demo
  */
@@ -163,11 +168,26 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
+    SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+    wadoRsRoot: useLocal
+      ? 'http://localhost:5000/dicomweb'
+      : 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+
+  // Only one SOP instances is DICOM, so find it
+  const videoId = imageIds.find(
+    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
+  );
+
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -177,12 +197,12 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   });
@@ -191,16 +211,27 @@ async function run() {
       {
         mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
+      {
+        mouseButton: MouseBindings.Primary, // Ctrl Left drag
+        modifierKey: KeyboardBindings.Ctrl,
+      },
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Right Click
+        mouseButton: MouseBindings.Primary, // Shift Left Click
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
@@ -228,9 +259,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideoURL(
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
-  );
+  await viewport.setVideoImageId(videoId);
 
   viewport.play();
 

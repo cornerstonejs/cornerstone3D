@@ -45,7 +45,6 @@ class StackScrollTool extends BaseTool {
     const { debounceIfNotLoaded, invert, loop } = this.configuration;
 
     const deltaPointY = deltaPoints.canvas[1];
-
     let volumeId;
     if (viewport instanceof VolumeViewport) {
       volumeId = targetId.split('volumeId:')[1];
@@ -76,20 +75,10 @@ class StackScrollTool extends BaseTool {
 
   _getPixelPerImage(viewport) {
     const { element } = viewport;
-    const numberOfSlices = this._getNumberOfSlices(viewport);
+    const numberOfSlices = viewport.getNumberOfSlices();
 
     // The Math.max here makes it easier to mouseDrag-scroll small or really large image stacks
     return Math.max(2, element.offsetHeight / Math.max(numberOfSlices, 8));
-  }
-
-  _getNumberOfSlices(viewport) {
-    if (viewport instanceof VolumeViewport) {
-      const { numberOfSlices } =
-        csUtils.getImageSliceDataForVolumeViewport(viewport);
-      return numberOfSlices;
-    } else if (viewport instanceof StackViewport) {
-      return viewport.getImageIds().length;
-    }
   }
 }
 

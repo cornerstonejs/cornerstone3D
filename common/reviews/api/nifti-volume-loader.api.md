@@ -1145,6 +1145,11 @@ interface IVideoViewport extends IViewport {
     resize: () => void;
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
+    setVideoImageId: (
+    imageIds: string | string[],
+    imageIdIndex?: number
+    ) => Promise<unknown>;
+    // (undocumented)
     setVideoURL: (url: string) => void;
 }
 
@@ -1169,6 +1174,7 @@ interface IViewport {
     getDefaultActor(): ActorEntry;
     getDisplayArea(): DisplayArea | undefined;
     getFrameOfReferenceUID: () => string;
+    getNumberOfSlices(): number;
     getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;

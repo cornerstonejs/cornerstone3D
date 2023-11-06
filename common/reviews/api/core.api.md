@@ -1802,6 +1802,8 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
+    setVideoImageId: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
+    // (undocumented)
     setVideoURL: (url: string) => void;
 }
 
@@ -1843,6 +1845,8 @@ interface IViewport {
     getDisplayArea(): DisplayArea | undefined;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getNumberOfSlices(): number;
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
@@ -2439,6 +2443,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
+    getNumberOfSlices(): number;
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer: () => any;
@@ -2752,7 +2758,11 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getImageData(): any;
     // (undocumented)
+    getNumberOfSlices(): number;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    protected imageId: string;
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
@@ -2779,6 +2789,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
+    // (undocumented)
+    setVideoImageId(imageIds: string | string[], currentImageIdIndex?: number): Promise<unknown>;
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)
@@ -2823,7 +2835,7 @@ type VideoViewportProperties = ViewportProperties & {
 };
 
 // @public (undocumented)
-export class Viewport implements IViewport {
+export abstract class Viewport implements IViewport {
     constructor(props: ViewportInput);
     // (undocumented)
     _actors: Map<string, any>;
@@ -2876,6 +2888,8 @@ export class Viewport implements IViewport {
     }): Point3;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    abstract getNumberOfSlices(): number;
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
@@ -3163,6 +3177,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageIdIndex: (volumeId?: string) => number;
     // (undocumented)
+    getNumberOfSlices(): number;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
@@ -3185,6 +3201,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
+    // (undocumented)
+    getNumberOfSlices(): number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)

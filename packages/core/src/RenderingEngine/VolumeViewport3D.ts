@@ -72,6 +72,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
   resetProperties(volumeId?: string): void {
     return null;
   }
+
+  getNumberOfSlices(): number {
+    throw new Error(`Not implemented for VolumeViewport3D`);
+  }
 }
 
 export default VolumeViewport3D;

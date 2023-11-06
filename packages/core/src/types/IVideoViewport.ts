@@ -19,6 +19,11 @@ export default interface IVideoViewport extends IViewport {
    */
   getProperties: () => VideoViewportProperties;
 
+  setVideoImageId: (
+    imageIds: string | string[],
+    imageIdIndex?: number
+  ) => Promise<unknown>;
+
   setVideoURL: (url: string) => void;
 
   play: () => void;
