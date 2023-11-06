@@ -168,11 +168,11 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === MetadataModules.IMAGE_URL_MODULE) {
-    getImageUrlModule(imageId, metaData);
+    return getImageUrlModule(imageId, metaData);
   }
 
   if (type === MetadataModules.CINE_MODULE) {
-    getCineModule(imageId, metaData);
+    return getCineModule(imageId, metaData);
   }
 
   if (type === 'imagePixelModule') {
@@ -292,7 +292,7 @@ function metaDataProvider(type, imageId) {
 
 export function getImageUrlModule(imageId, metaData) {
   const { transferSyntaxUID } = getTransferSyntax(imageId, metaData);
-  const isVideo = utilities.isVideo(transferSyntaxUID);
+  const isVideo = utilities.isVideoTransferSyntax(transferSyntaxUID);
   const imageUrl = imageId.substring(7);
   const thumbnail = imageUrl.replace('/frames/', '/thumbnail/');
   let rendered = imageUrl.replace('/frames/', '/rendered/');
