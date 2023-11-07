@@ -1047,21 +1047,11 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private setPanCPU(pan: Point2): void {
     const camera = this.getCameraCPU();
-    const { focalPoint } = camera;
 
-    const zero3 = this.canvasToWorldCPU([0, 0]);
-    const delta2 = vec2.subtract(vec2.create(), pan, this.getPanCPU());
-    if (Math.abs(delta2[0]) < 1 && Math.abs(delta2[1]) < 1) {
-      return;
-    }
-    const delta = vec3.subtract(
-      vec3.create(),
-      this.canvasToWorldCPU(<Point2>delta2),
-      zero3
-    );
-    const newFocal = vec3.subtract(vec3.create(), focalPoint, delta);
-
-    this.setCameraCPU({ ...camera, focalPoint: newFocal as Point3 });
+    this.setCameraCPU({
+      ...camera,
+      focalPoint: [...pan.map((p) => -p), 0] as Point3,
+    });
   }
 
   private getZoomCPU(): number {
