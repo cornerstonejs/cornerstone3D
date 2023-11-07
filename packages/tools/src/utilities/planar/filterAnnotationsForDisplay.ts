@@ -1,6 +1,7 @@
 import {
   StackViewport,
   VolumeViewport,
+  VolumeViewport3D,
   VideoViewport,
   Types,
   utilities as csUtils,
@@ -69,6 +70,9 @@ export default function filterAnnotationsForDisplay(
       camera,
       spacingInNormalDirection
     );
+  } else if (viewport instanceof VolumeViewport3D) {
+    // just pass all annotations for volume viewport 3D
+    return annotations;
   } else {
     throw new Error(`Viewport Type ${viewport.type} not supported`);
   }
