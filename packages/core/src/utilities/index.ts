@@ -49,6 +49,7 @@ import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
+import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWithCornerstoneImage';
 
 // name spaces
 import * as planar from './planar';
@@ -113,4 +114,5 @@ export {
   colormap,
   getImageLegacy,
   transferFunctionUtils,
+  updateVTKImageDataWithCornerstoneImage,
 };

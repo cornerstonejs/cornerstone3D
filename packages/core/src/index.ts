@@ -58,6 +58,7 @@ import triggerEvent from './utilities/triggerEvent';
 import {
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
 } from './RenderingEngine/helpers';
 
 export type { Types };
@@ -109,6 +110,7 @@ export {
   utilities,
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

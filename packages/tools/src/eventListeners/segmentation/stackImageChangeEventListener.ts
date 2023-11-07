@@ -1,10 +1,16 @@
-import { StackViewport, getEnabledElement, Enums } from '@cornerstonejs/core';
+import {
+  StackViewport,
+  getEnabledElement,
+  Enums,
+  getEnabledElementByIds,
+  cache,
+  utilities,
+  metaData,
+} from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
-// import { updateVTKImageDataFromImageId } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationDataStack } from 'tools/src/types/LabelmapTypes';
-// import getDerivedImageId from '../../../src/tools/segmentation/getDerivedImageId';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -54,50 +60,98 @@ const disable = function (element: HTMLDivElement): void {
 function _stackImageChangeEventListener(evt) {
   const eventData = evt.detail;
   const { viewportId, renderingEngineId } = eventData;
+  const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
+
+  if (!(viewport instanceof StackViewport)) {
+    return;
+  }
 
   const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-  const toolGroupSegmentationRepresentations =
-    SegmentationState.getSegmentationRepresentations(toolGroup.id);
+  let toolGroupSegmentationRepresentations =
+    SegmentationState.getSegmentationRepresentations(toolGroup.id) || [];
+
+  toolGroupSegmentationRepresentations =
+    toolGroupSegmentationRepresentations.filter(
+      (representation) => representation.type === Representations.Labelmap
+    );
 
   if (!toolGroupSegmentationRepresentations?.length) {
     return;
   }
 
-  debugger;
   const segmentationRepresentations = {};
   toolGroupSegmentationRepresentations.forEach((representation) => {
-    if (representation.type === Representations.Labelmap) {
-      const segmentation = SegmentationState.getSegmentation(
-        representation.segmentationId
-      );
-      const labelmapData =
-        segmentation.representationData[Representations.Labelmap];
-      if (!labelmapData?.volumeId) {
-        const { referencedImageIds, imageIds } =
-          labelmapData as LabelmapSegmentationDataStack;
-        segmentationRepresentations[
-          representation.segmentationRepresentationUID
-        ] = {
-          referencedImageIds,
-          segmentationImageIds: imageIds,
-        };
-      }
+    const segmentation = SegmentationState.getSegmentation(
+      representation.segmentationId
+    );
+
+    if (!segmentation) {
+      return;
     }
+
+    const labelmapData =
+      segmentation.representationData[Representations.Labelmap];
+
+    if ('volumeId' in labelmapData) {
+      return;
+    }
+
+    const { referencedImageIds, imageIds } =
+      labelmapData as LabelmapSegmentationDataStack;
+
+    segmentationRepresentations[representation.segmentationRepresentationUID] =
+      {
+        referencedImageIds,
+        segmentationImageIds: imageIds,
+      };
   });
 
   const representationList = Object.keys(segmentationRepresentations);
   const imageId = viewport.getCurrentImageId();
   const actors = viewport.getActors();
+
   actors.forEach((actor) => {
     if (representationList.includes(actor.uid)) {
+      const segmentationActor = actor.actor;
+
       const { referencedImageIds, segmentationImageIds } =
         segmentationRepresentations[actor.uid];
-      updateVTKImageDataFromImageId(
-        getDerivedImageId(imageId, referencedImageIds, segmentationImageIds),
-        actor.actor.getMapper().getInputData()
+
+      const derivedImageId = getDerivedImageId(
+        imageId,
+        referencedImageIds,
+        segmentationImageIds
       );
+
+      const imageData = segmentationActor.getMapper().getInputData();
+      const derivedImage = cache.getImage(derivedImageId);
+
+      const { imagePositionPatient } = metaData.get(
+        'imagePlaneModule',
+        derivedImage?.referencedImageId || derivedImage.imageId
+      );
+      let origin = imagePositionPatient;
+
+      if (origin == null) {
+        origin = [0, 0, 0];
+      }
+      imageData.setOrigin(origin);
+
+      utilities.updateVTKImageDataWithCornerstoneImage(imageData, derivedImage);
+      viewport.render();
     }
   });
+}
+
+function getDerivedImageId(
+  imageId: string,
+  imageIds: Array<string>,
+  derivedImageIds: Array<string>
+) {
+  const index = imageIds.indexOf(imageId);
+  if (index > -1) {
+    return derivedImageIds[index];
+  }
 }
 
 export default {
