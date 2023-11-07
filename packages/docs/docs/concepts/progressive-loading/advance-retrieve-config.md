@@ -58,6 +58,9 @@ The configuration for this is (assuming standards based DICOMweb support):
 
 - framesPath - to update the URL path portion
 
+this is useful for rendering the lossy encoded as they might be located
+in a different path than the lossless encoded images.
+
 ### imageQualityStatus
 
 ### partialImageQualityStatus

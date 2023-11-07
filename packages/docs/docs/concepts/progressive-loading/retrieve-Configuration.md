@@ -46,6 +46,15 @@ The `retrieveType` is an optional string that is only used for referencing the o
 with key of `'lkajsdflkjaslfkjsadlkfj'` in the `retrieveOptions` object as we will see below).
 :::
 
+<details>
+<summary>
+What would happen if we reference a retrieve type that is not defined in the retrieve options?
+</summary>
+
+Cornerstone will ignore the progressive loading configuration and will load the image as if progressive loading is not enabled (like before)
+
+</details>
+
 ## Retrieve Options
 
 Now we an talk about retrieve options for each of the methods (streaming or byte range) in more detail. Let's dive into the common options first.
@@ -162,9 +171,33 @@ another example
   range: 0,
   decodeLevel: 3
 }
+
+// chunkSize is default 64kb
 ```
 
 ![](../../assets/range-0-decode-3.png)
+
+:::tip
+Since you can specify the `totalRangesToFetch`, the `range` should always be
+less than `totalRangesToFetch` and the `totalRangesToFetch` should be greater than 0.
+In addition, `range = 0` will always be the first chunk, and the last chunk will always be the remaining data.
+
+For instance, if you have `totalRangesToFetch = 4`, then your ranges would be
+
+- `range 0`: `0` to `chunkSize` (in bytes)
+- `range 1`: `chunkSize` to `2 * chunkSize` (in bytes)
+- `range 2`: `2 * chunkSize` to `3 * chunkSize` (in bytes)
+- `range 3`: `3 * chunkSize` to `totalSize` (in bytes) - the rest of the data
+  :::
+
+<details>
+<summary>
+What if I start with a range 1 instead of 0?
+</summary>
+
+Cornerstone will automatically fetch the range 0 first and then fetch the range 1 (which would be the rest of the data)
+
+</details>
 
 #### Use cases
 
@@ -182,10 +215,12 @@ Let's look at an example of one of the examples that we have in the stackProgres
 
 ```js
 const retrieveConfiguration = {
-  stages: {
-    id: 'initialImages',
-    retrieveType: 'single',
-  },
+  stages: [
+    {
+      id: 'initialImages',
+      retrieveType: 'single',
+    },
+  ],
   retrieveOptions: {
     single: {
       streaming: true,

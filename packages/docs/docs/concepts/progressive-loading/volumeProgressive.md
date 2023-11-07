@@ -112,9 +112,55 @@ The configuration looks like:
 - Replaces the low resolution data from #2 with full data
 
 //
+
+retrieve the first three image first hieghts priority, and then stream the rest. All
+are streaming in fact
+
+```js
+  {
+    id: 'initialImages',
+    positions: [0.5, 0, -1],
+    retrieveType: 'default',
+    requestType: RequestType.Thumbnail,
+    priority: 5,
+  },
+  {
+    id: 'quarterThumb',
+    priority: 6,
+    retrieveType: 'default',
+  },
+
+```
+
 //
+Retrieve the first image first, then stream every other one starting with 0, 2,4,6
+and then 1, 3,5,7, 9
+
+```js
+{
+  id: 'initialImages',
+  positions: [0.5, 0, -1],
+  retrieveType: 'default',
+  requestType: RequestType.Thumbnail,
+  priority: 5,
+  // nearbyFrames,
+},
+{
+  id: 'quarterThumb',
+  decimate: 2,
+  offset: 0,
+  priority: 6,
+},
+{
+  id: 'halfThumb',
+  decimate: 2,
+  offset: 1,
+  retrieveType: 'default',
+},
+```
+
 //
-//
+for range request we can do
 
 The volume progressive loading extends the basic stack loading with the ability
 to interleave various images, interpolating them from a reduced resolution
