@@ -1039,6 +1039,43 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
   }
 
+  private getPanCPU(): Point2 {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    return [viewport.translation.x, viewport.translation.y];
+  }
+
+  private setPanCPU(pan: Point2): void {
+    const camera = this.getCameraCPU();
+    const { focalPoint } = camera;
+
+    const zero3 = this.canvasToWorldCPU([0, 0]);
+    const delta2 = vec2.subtract(vec2.create(), pan, this.getPanCPU());
+    if (Math.abs(delta2[0]) < 1 && Math.abs(delta2[1]) < 1) {
+      return;
+    }
+    const delta = vec3.subtract(
+      vec3.create(),
+      this.canvasToWorldCPU(<Point2>delta2),
+      zero3
+    );
+    const newFocal = vec3.subtract(vec3.create(), focalPoint, delta);
+
+    this.setCameraCPU({ ...camera, focalPoint: newFocal as Point3 });
+  }
+
+  private getZoomCPU(): number {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    return viewport.scale;
+  }
+
+  private setZoomCPU(zoom: number): void {
+    const camera = this.getCameraCPU();
+
+    this.setCameraCPU({ ...camera, scale: zoom });
+  }
+
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
     const { viewport } = this._cpuFallbackEnabledElement;
 
@@ -2926,6 +2963,22 @@ class StackViewport extends Viewport implements IStackViewport {
     setCamera: {
       cpu: this.setCameraCPU,
       gpu: super.setCamera,
+    },
+    getPan: {
+      cpu: this.getPanCPU,
+      gpu: super.getPan,
+    },
+    setPan: {
+      cpu: this.setPanCPU,
+      gpu: super.setPan,
+    },
+    getZoom: {
+      cpu: this.getZoomCPU,
+      gpu: super.getZoom,
+    },
+    setZoom: {
+      cpu: this.setZoomCPU,
+      gpu: super.setZoom,
     },
     setVOI: {
       cpu: this.setVOICPU,
