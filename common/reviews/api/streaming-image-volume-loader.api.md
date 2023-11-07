@@ -1454,9 +1454,19 @@ type Metadata = {
 // @public
 enum MetadataModules {
     // (undocumented)
-    CINE_MODULE = 'cineModule',
+    CINE = 'cineModule',
     // (undocumented)
-    IMAGE_URL_MODULE = 'imageUrlModule',
+    GENERAL_SERIES = 'generalSeriesModule',
+    // (undocumented)
+    IMAGE_PLANE = 'imagePlaneModule',
+    // (undocumented)
+    IMAGE_URL = 'imageUrlModule',
+    // (undocumented)
+    MULTIFRAME = 'multiframeModule',
+    // (undocumented)
+    NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',
+    // (undocumented)
+    PATIENT_STUDY = 'patientStudyModule',
 }
 
 // @public (undocumented)

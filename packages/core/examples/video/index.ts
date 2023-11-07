@@ -101,13 +101,12 @@ addButtonToToolbar({
   },
 });
 
-const useLocal = true;
+const useLocal = false;
 
 /**
  * Runs the demo
  */
 async function run() {
-  ///dicomweb/studies//series//metadata
   // Init Cornerstone and related libraries
   await initDemo();
 

@@ -25,7 +25,7 @@ import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { ImageActor } from '../types/IActor';
-import { utilities } from '..';
+import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -85,8 +85,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
   /** Gets the number of slices the volume is broken up into in the camera direction */
   public getNumberOfSlices = (): number => {
-    const { numberOfSlices } =
-      utilities.getImageSliceDataForVolumeViewport(this);
+    const { numberOfSlices } = getImageSliceDataForVolumeViewport(this);
     return numberOfSlices;
   };
 

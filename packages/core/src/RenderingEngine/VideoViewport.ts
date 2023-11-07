@@ -88,23 +88,22 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement.remove();
   }
 
+  /**
+   * Sets the video image id to show and hte frame number.
+   * Requirements are to have the imageUrlModule in the metadata
+   * with the rendered endpoint being the raw video in video/mp4 format.
+   */
   public setVideoImageId(
     imageIds: string | string[],
-    currentImageIdIndex = 0
+    frameNumber = 0
   ): Promise<unknown> {
     this.imageId = Array.isArray(imageIds) ? imageIds[0] : imageIds;
     const { imageId } = this;
-    const { rendered } = metaData.get(
-      MetadataModules.IMAGE_URL_MODULE,
-      imageId
-    );
+    const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
     return this.setVideoURL(rendered).then(() => {
-      const { cineRate = 30 } = metaData.get(
-        MetadataModules.CINE_MODULE,
-        imageId
-      );
+      const { cineRate = 30 } = metaData.get(MetadataModules.CINE, imageId);
       this.fps = cineRate;
-      this.setFrame(currentImageIdIndex);
+      this.setFrame(frameNumber);
     });
   }
 

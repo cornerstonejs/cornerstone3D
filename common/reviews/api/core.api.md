@@ -2089,9 +2089,19 @@ export { metaData }
 // @public (undocumented)
 enum MetadataModules {
     // (undocumented)
-    CINE_MODULE = "cineModule",
+    CINE = "cineModule",
     // (undocumented)
-    IMAGE_URL_MODULE = "imageUrlModule"
+    GENERAL_SERIES = "generalSeriesModule",
+    // (undocumented)
+    IMAGE_PLANE = "imagePlaneModule",
+    // (undocumented)
+    IMAGE_URL = "imageUrlModule",
+    // (undocumented)
+    MULTIFRAME = "multiframeModule",
+    // (undocumented)
+    NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
+    // (undocumented)
+    PATIENT_STUDY = "patientStudyModule"
 }
 
 // @public (undocumented)
@@ -2803,7 +2813,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
-    setVideoImageId(imageIds: string | string[], currentImageIdIndex?: number): Promise<unknown>;
+    setVideoImageId(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)

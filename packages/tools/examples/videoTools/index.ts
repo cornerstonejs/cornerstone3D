@@ -159,7 +159,7 @@ addDropdownToToolbar({
   },
 });
 
-const useLocal = true;
+const useLocal = false;
 
 /**
  * Runs the demo

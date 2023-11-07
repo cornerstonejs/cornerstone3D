@@ -1,4 +1,3 @@
-import { utilities, Enums } from '@cornerstonejs/core';
 import external from '../../../externalModules';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
@@ -21,10 +20,9 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 
-const { MetadataModules } = Enums;
-
 function metaDataProvider(type, imageId) {
-  if (type === 'multiframeModule') {
+  const { MetadataModules } = external.cornerstone.Enums;
+  if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
     const { metadata, frame } =
       multiframeMetadata.retrieveMultiframeMetadata(imageId);
@@ -66,7 +64,7 @@ function metaDataProvider(type, imageId) {
     return;
   }
 
-  if (type === 'generalSeriesModule') {
+  if (type === MetadataModules.GENERAL_SERIES) {
     return {
       modality: getValue<string>(metaData['00080060']),
       seriesInstanceUID: getValue<string>(metaData['0020000E']),
@@ -86,7 +84,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'patientStudyModule') {
+  if (type === MetadataModules.PATIENT_STUDY) {
     return {
       patientAge: getNumberValue(metaData['00101010']),
       patientSize: getNumberValue(metaData['00101020']),
@@ -95,7 +93,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'nmMultiframeGeometryModule') {
+  if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
     const modality = getValue(metaData['00080060']);
     const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
 
@@ -113,7 +111,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'imagePlaneModule') {
+  if (type === MetadataModules.IMAGE_PLANE) {
     //metaData = fixNMMetadata(metaData);
     const imageOrientationPatient = extractOrientationFromMetadata(metaData);
     const imagePositionPatient = extractPositionFromMetadata(metaData);
@@ -167,11 +165,11 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === MetadataModules.IMAGE_URL_MODULE) {
+  if (type === MetadataModules.IMAGE_URL) {
     return getImageUrlModule(imageId, metaData);
   }
 
-  if (type === MetadataModules.CINE_MODULE) {
+  if (type === MetadataModules.CINE) {
     return getCineModule(imageId, metaData);
   }
 
@@ -265,10 +263,6 @@ function metaDataProvider(type, imageId) {
     return getTransferSyntax(imageId, metaData);
   }
 
-  if (type === MetadataModules.CINE_MODULE) {
-    return getCineModule(imageId, metaData);
-  }
-
   if (type === 'petSeriesModule') {
     return {
       correctedImage: getValue(metaData['00280051']),
@@ -292,7 +286,8 @@ function metaDataProvider(type, imageId) {
 
 export function getImageUrlModule(imageId, metaData) {
   const { transferSyntaxUID } = getTransferSyntax(imageId, metaData);
-  const isVideo = utilities.isVideoTransferSyntax(transferSyntaxUID);
+  const isVideo =
+    external.cornerstone.utilities.isVideoTransferSyntax(transferSyntaxUID);
   const imageUrl = imageId.substring(7);
   const thumbnail = imageUrl.replace('/frames/', '/thumbnail/');
   let rendered = imageUrl.replace('/frames/', '/rendered/');
