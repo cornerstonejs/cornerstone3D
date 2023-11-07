@@ -166,6 +166,7 @@ class RectangleROITool extends AnnotationTool {
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    console.log('frameofreferenceuid', FrameOfReferenceUID);
 
     const annotation = {
       invalidated: true,
@@ -175,7 +176,7 @@ class RectangleROITool extends AnnotationTool {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
-        referencedImageId,
+        //referencedImageId,
       },
       data: {
         label: '',
@@ -604,6 +605,19 @@ class RectangleROITool extends AnnotationTool {
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
+  filterInteractableAnnotationsForElement = (element, annotations) => {
+    if (!annotations || !annotations.length) {
+      return [];
+    }
+
+    const enabledElement = getEnabledElement(element);
+    const { viewportId } = enabledElement;
+
+    const filteredAnnotations = annotations.filter((annotation) => true);
+
+    return filteredAnnotations;
+  };
+
   /**
    * it is used to draw the rectangleROI annotation in each
    * request animation frame. It calculates the updated cached statistics if
@@ -696,7 +710,7 @@ class RectangleROITool extends AnnotationTool {
         // we re-render the correct tool position. This is due to stackViewport
         // which doesn't have the full volume at each time, and we are only working
         // on one slice at a time.
-        if (viewport instanceof VolumeViewport) {
+        /*if (viewport instanceof VolumeViewport) {
           const { referencedImageId } = annotation.metadata;
 
           // invalidate all the relevant stackViewports if they are not
@@ -722,7 +736,7 @@ class RectangleROITool extends AnnotationTool {
               }
             }
           }
-        }
+        }*/
       }
 
       // If rendering engine has been destroyed while rendering
@@ -1023,11 +1037,12 @@ function defaultGetTextLines(data, targetId: string): string[] {
   }
 
   const textLines: string[] = [];
-
+  /*
   textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
   textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
   textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
   textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  */
 
   return textLines;
 }

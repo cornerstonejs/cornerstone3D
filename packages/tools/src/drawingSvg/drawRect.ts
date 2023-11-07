@@ -20,12 +20,16 @@ export default function drawRect(
     width: _width,
     lineWidth,
     lineDash,
+    fill,
+    'fill-opacity': fillOpacity,
   } = Object.assign(
     {
       color: 'dodgerblue',
       width: '2',
       lineWidth: undefined,
       lineDash: undefined,
+      fill: 'black',
+      'fill-opacity': '50%',
     },
     options
   );
@@ -47,7 +51,8 @@ export default function drawRect(
     width: `${width}`,
     height: `${height}`,
     stroke: color,
-    fill: 'transparent',
+    fill: fill,
+    'fill-opacity': fillOpacity,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };

@@ -35,6 +35,7 @@ export default function filterAnnotationsForDisplay(
     // and we don't have a proper way to check distance either since a stack can be
     // composed of multiple unrelated images
     return annotations.filter((annotation) => {
+      return true;
       if (!annotation.isVisible) {
         return false;
       }
@@ -55,6 +56,7 @@ export default function filterAnnotationsForDisplay(
     const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
 
     return annotations.filter((toolData) => {
+      return true;
       return toolData.metadata.FrameOfReferenceUID === frameOfReferenceUID;
     });
   } else if (viewport instanceof VolumeViewport) {
