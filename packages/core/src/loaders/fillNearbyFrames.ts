@@ -32,9 +32,9 @@ export function fillNearbyFrames(
 
   for (const nearbyItem of request.nearbyRequests) {
     try {
-      const { itemId: targetId, status } = nearbyItem;
+      const { itemId: targetId, imageQualityStatus } = nearbyItem;
       const targetStatus = imageQualityStatusMap.get(targetId);
-      if (targetStatus !== undefined && targetStatus >= status) {
+      if (targetStatus !== undefined && targetStatus >= imageQualityStatus) {
         continue;
       }
       const targetOptions = listener.getLoaderImageOptions(targetId);
@@ -42,10 +42,10 @@ export function fillNearbyFrames(
       scalarData.set(src, targetOffset / bytesPerPixel);
       const nearbyImage = {
         ...image,
-        imageQualityStatus: status,
+        imageQualityStatus,
       };
       listener.successCallback(targetId, nearbyImage);
-      imageQualityStatusMap.set(targetId, status);
+      imageQualityStatusMap.set(targetId, imageQualityStatus);
     } catch (e) {
       console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);
     }

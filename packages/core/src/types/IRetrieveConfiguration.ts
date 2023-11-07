@@ -79,15 +79,9 @@ export type NearbyFrames = {
    */
   offset: number;
   /**
-   * A second offset value use to choose a second image index to use as a
-   * linear combination for this image.  Assumes the combination is
-   * `value[offset] + value[linearOffset])/2`
-   */
-  linearOffset?: number;
-  /**
    *  The status to set a newly filled image from
    */
-  status?: ImageQualityStatus;
+  imageQualityStatus?: ImageQualityStatus;
 };
 
 /**
@@ -107,12 +101,6 @@ export type BaseRetrieveOptions = {
    */
   framesPath?: string;
   /**
-   * True to use streaming decode - this applies to different types of
-   * retrieve options as it is part of the decoder logic, so it has to be in the
-   * base retrieve options.
-   */
-  streamingDecode?: boolean;
-  /**
    * Decode level to attempt.  Currently only HTJ2K decoders support this.
    * Value of 0 means decode full resolution,
    * * 1 means 1/2 resolution in each dimension (eg 1/4 size)
@@ -124,12 +112,12 @@ export type BaseRetrieveOptions = {
    * the bytes for a given image.  Defaults to FULL_RESOLUTION, so if the
    * complete image is lossy, this should be set to LOSSY.
    */
-  status?: ImageQualityStatus;
+  imageQualityStatus?: ImageQualityStatus;
   /**
    * Status to use when not all the bytes have been retrieved.  Defaults to
    * SUBRESOLUTION.
    */
-  partialStatus?: ImageQualityStatus;
+  progressiveImageQualityStatus?: ImageQualityStatus;
 };
 
 /**
@@ -148,7 +136,7 @@ export type RangeRetrieveOptions = BaseRetrieveOptions & {
    * byte range value to retrieve for initial decode
    * Defaults to 64,000 bytes.
    */
-  initialBytes?: number | ((metadata) => number);
+  chunkSize?: number | ((metadata) => number);
   /**
    * Defines the range to use, a number less than total ranges.
    * Stages do not need to use sequential ranges, the missing data
@@ -199,12 +187,20 @@ export type RetrieveOptions =
  * strategy, prefetch etc.
  */
 export interface IRetrieveConfiguration {
-  retrieveImages: (
+  /**
+   * Creates an image loader, defaulting to ProgressiveRetrieveImages
+   */
+  create?: (IRetrieveConfiguration) => IImagesLoader;
+  retrieveOptions?: Record<string, RetrieveOptions>;
+  stages?: RetrieveStage[];
+}
+
+/**
+ * Provides a method to load a stack of images.
+ */
+export interface IImagesLoader {
+  loadImages: (
     imageIds: string[],
     listener: ImageLoadListener
   ) => Promise<unknown>;
-
-  retrieveOptions?: Record<string, RetrieveOptions>;
-
-  stages?: RetrieveStage[];
 }

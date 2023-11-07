@@ -154,12 +154,6 @@ type ViewportInput = {
   sWidth: number;
   sHeight: number;
   defaultOptions: ViewportInputOptions;
-  /**
-   * progressive rendering can be set to true to apply progressive rendering
-   * options, or set to a specific configuration for a specific rendering
-   * option.
-   */
-  progressiveRetrieveConfiguration?: boolean | IRetrieveConfiguration;
 };
 
 export type {

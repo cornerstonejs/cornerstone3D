@@ -37,8 +37,7 @@ const { imageRetrieveMetadataProvider } = utilities;
 const { ImageQualityStatus, ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
-const { singleRetrieveStages, interleavedRetrieveStages } =
-  ProgressiveRetrieveImages;
+const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -198,7 +197,6 @@ const configJLS = {
 };
 
 const configJLSNonInterleaved = {
-  ...singleRetrieveStages,
   retrieveOptions: {
     default: {
       framesPath: '/jls/',
@@ -220,26 +218,17 @@ const configJLSMixed = {
   retrieveOptions: {
     ...configJLS.retrieveOptions,
     multipleFast: {
-      status: ImageQualityStatus.SUBRESOLUTION,
+      imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
       framesPath: '/jlsThumbnail/',
     },
   },
 };
 
-const configHtj2k = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    default: {
-      streaming: true,
-      streamingDecode: true,
-    },
-  },
-};
+const configHtj2k = interleavedRetrieveStages;
 
 const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
-    ...configHtj2k,
     multipleFast: {
       range: 0,
       decodeLevel: 0,
@@ -252,14 +241,12 @@ const configHtj2kLossy = {
   retrieveOptions: {
     multipleFinal: {
       streaming: true,
-      streamingDecode: true,
     },
     multipleFast: {
-      status: ImageQualityStatus.SUBRESOLUTION,
+      imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
       framesPath: '/lossy/',
       range: 0,
       decodeLevel: 2,
-      streamingDecode: true,
     },
   },
 };
@@ -267,18 +254,19 @@ const configHtj2kLossy = {
 const configHtj2kMixed = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
-    ...configHtj2k,
-    multipleFinal: {
-      range: 1,
-    },
     multipleFast: {
-      streamingDecode: true,
       range: 0,
-      initialBytes: 64000,
-      decodeLevel: 0,
+      chunkSize: 32000,
+      decodeLevel: 1,
+    },
+    multipleFinal: {
+      range: 1000,
     },
   },
 };
+
+const urlParams = new URLSearchParams(window.location.search);
+const useLocal = urlParams.get('useLocal') === 'true';
 
 /**
  * Runs the demo
@@ -332,13 +320,10 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  // Use isLocal for performance testing
-  const isLocal = false;
-
   const imageIdsCT = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: isLocal
+    wadoRsRoot: useLocal
       ? 'http://localhost:5000/dicomweb'
       : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });

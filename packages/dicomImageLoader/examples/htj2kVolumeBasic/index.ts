@@ -161,29 +161,29 @@ content.append(instructions);
  */
 const configHtj2k = {
   ...interleavedRetrieveStages,
+};
+
+const configHtj2kByteRange = {
+  ...interleavedRetrieveStages,
   retrieveOptions: {
     default: {
-      streaming: true,
-      streamingDecode: true,
+      range: 0,
+      chunkSize: 32000,
+      decodeLevel: 1,
+    },
+    multipleFast: {
+      range: 0,
+      chunkSize: 32000,
+      decodeLevel: 1,
+    },
+    multipleFinal: {
+      range: 1,
     },
   },
 };
 
-const configHtj2kMixed = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    ...configHtj2k,
-    multipleFinal: {
-      range: 1,
-    },
-    multipleFast: {
-      streamingDecode: true,
-      range: 0,
-      initialBytes: 64000,
-      decodeLevel: 0,
-    },
-  },
-};
+const urlParams = new URLSearchParams(window.location.search);
+const useLocal = urlParams.get('useLocal') === 'true';
 
 /**
  * Runs the demo
@@ -237,13 +237,10 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  // Use isLocal for performance testing
-  const isLocal = false;
-
   const imageIdsCT = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: isLocal
+    wadoRsRoot: useLocal
       ? 'http://localhost:5000/dicomweb'
       : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
@@ -350,7 +347,7 @@ async function run() {
 
   loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
   loadButton('J2K Interleaved', volumeId, imageIdsCT, configHtj2k);
-  loadButton('J2K Full Progressive', volumeId, imageIdsCT, configHtj2kMixed);
+  loadButton('J2K Byte Ranges', volumeId, imageIdsCT, configHtj2kByteRange);
 }
 
 run();

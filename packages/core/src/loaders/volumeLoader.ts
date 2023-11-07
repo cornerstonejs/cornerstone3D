@@ -16,7 +16,6 @@ import { getConfiguration } from '../init';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
-  progressiveRendering?: boolean | Types.IRetrieveConfiguration;
 }
 
 interface DerivedVolumeOptions {

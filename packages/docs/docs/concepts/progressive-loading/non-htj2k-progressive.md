@@ -3,10 +3,7 @@ id: non-htj2k-progressive
 title: Progressive Loading for non-HTJ2K
 ---
 
-
 # Progressive Loading for non-HTJ2K Progressive Encoded Data
-
-
 
 ## JLS Thumbnails
 
@@ -32,6 +29,6 @@ cornerstoneDicomImageLoader.configure({
     },
     singleFast: {
       default: {
-        status: ImageQualityStatus.SUBRESOLUTION,
+        imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
         framesPath: '/jlsThumbnail/',
 ```

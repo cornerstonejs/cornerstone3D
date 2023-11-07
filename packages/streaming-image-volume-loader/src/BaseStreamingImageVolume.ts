@@ -9,10 +9,11 @@ import {
   imageLoader,
   utilities as csUtils,
   utilities,
+  ProgressiveRetrieveImages,
 } from '@cornerstonejs/core';
 import type {
   Types,
-  IRetrieveConfiguration,
+  IImagesLoader,
   ImageLoadListener,
 } from '@cornerstonejs/core';
 
@@ -30,7 +31,7 @@ const { imageRetrieveMetadataProvider } = utilities;
  */
 export default class BaseStreamingImageVolume
   extends ImageVolume
-  implements IRetrieveConfiguration
+  implements IImagesLoader
 {
   private framesLoaded = 0;
   private framesProcessed = 0;
@@ -43,20 +44,13 @@ export default class BaseStreamingImageVolume
   protected reRenderTarget = 0;
   protected reRenderFraction = 2;
 
-  /**
-   * Information on how to retrieve images.
-   * No special configuration is required for streaming decoding, as that is
-   * done based on the capabilities of the decoder whenever streaming is possible
-   */
-  protected progressiveRetrieveConfiguration: IRetrieveConfiguration;
-
   loadStatus: {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
     callbacks: Array<(...args: unknown[]) => void>;
   };
-  retrieveConfiguration: Types.IRetrieveConfiguration;
+  imagesLoader: IImagesLoader = this;
 
   constructor(
     imageVolumeProperties: Types.IVolume,
@@ -269,19 +263,12 @@ export default class BaseStreamingImageVolume
     const currentStatus = cachedFrames[frameIndex];
     if (currentStatus > imageQualityStatus) {
       // This is common for initial versus decimated images.
-      console.debug(
-        'Already cached',
-        imageIdIndex,
-        currentStatus,
-        imageQualityStatus
-      );
       return;
     }
 
     if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
       // Sometimes the frame can be delivered multiple times, so just return
-      // here if that happens.
-      console.debug('Already lossless', imageIdIndex);
+      // here if that happens
       return;
     }
     const complete = imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
@@ -434,10 +421,13 @@ export default class BaseStreamingImageVolume
       this.volumeId,
       'volume'
     );
-    this.retrieveConfiguration = imageRetrieveConfiguration?.constructor
-      ? new imageRetrieveConfiguration.constructor(imageRetrieveConfiguration)
-      : this;
 
+    this.imagesLoader = imageRetrieveConfiguration
+      ? (
+          imageRetrieveConfiguration.create ||
+          ProgressiveRetrieveImages.createProgressive
+        )(imageRetrieveConfiguration)
+      : this;
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.
     }
@@ -694,7 +684,7 @@ export default class BaseStreamingImageVolume
    * to setup all the requests.  Ensures compatibility with the custom image
    * loaders.
    */
-  public retrieveImages(imageIds: string[], listener: ImageLoadListener) {
+  public loadImages(imageIds: string[], listener: ImageLoadListener) {
     this.loadStatus.loading = true;
 
     const requests = this.getImageLoadRequests(5);
@@ -731,7 +721,8 @@ export default class BaseStreamingImageVolume
     // and not actually executing them
     this.loadStatus.loading = true;
 
-    const imageIds = this.getImageIdsToLoad();
+    const imageIds = [...this.getImageIdsToLoad()];
+    imageIds.reverse();
 
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
@@ -742,14 +733,9 @@ export default class BaseStreamingImageVolume
       this.reRenderTarget = this.reRenderFraction;
     }
 
-    return this.retrieveConfiguration
-      .retrieveImages(imageIds, this)
-      .catch((e) => {
-        console.debug('progressive loading failed to complete', e);
-      })
-      .then(() => {
-        console.debug('_prefetchImageIds done');
-      });
+    return this.imagesLoader.loadImages(imageIds, this).catch((e) => {
+      console.debug('progressive loading failed to complete', e);
+    });
   }
 
   /**

@@ -1259,6 +1259,12 @@ interface IImageLoadObject {
 }
 
 // @public (undocumented)
+export interface IImagesLoader {
+    // (undocumented)
+    loadImages: (imageIds: string[], listener: ImageLoadListener) => Promise<unknown>;
+}
+
+// @public (undocumented)
 interface IImageVolume {
     // (undocumented)
     cancelLoading?: () => void;
@@ -1664,7 +1670,7 @@ interface IRenderingEngine {
 // @public (undocumented)
 export interface IRetrieveConfiguration {
     // (undocumented)
-    retrieveImages: (imageIds: string[], listener: ImageLoadListener) => Promise<unknown>;
+    create?: (IRetrieveConfiguration: any) => IImagesLoader;
     // (undocumented)
     retrieveOptions?: Record<string, RetrieveOptions>;
     // (undocumented)
@@ -1740,7 +1746,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setProperties({ voiRange, invert, interpolationType, rotation }: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setStack(imageIds: Array<string>, currentImageIdIndex?: number, retrieveConfiguration?: IRetrieveConfiguration): Promise<string>;
+    setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
     unsetColormap(): void;
     // (undocumented)
@@ -1769,8 +1775,6 @@ interface IStreamingVolumeProperties {
         cachedFrames: Array<ImageQualityStatus>;
         callbacks: Array<() => void>;
     };
-    // (undocumented)
-    progressiveRetrieveConfiguration?: boolean | IRetrieveConfiguration;
 }
 
 // @public (undocumented)
@@ -2052,8 +2056,7 @@ const mprCameraValues: any;
 // @public (undocumented)
 type NearbyFrames = {
     offset: number;
-    linearOffset?: number;
-    status?: ImageQualityStatus;
+    imageQualityStatus?: ImageQualityStatus;
 };
 
 // @public (undocumented)
@@ -2152,26 +2155,25 @@ class ProgressiveIterator<T> {
 }
 
 // @public (undocumented)
-export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
-    constructor(imageRetrieveConfiguration: any);
+export class ProgressiveRetrieveImages implements IImagesLoader, IRetrieveConfiguration {
+    constructor(imageRetrieveConfiguration: IRetrieveConfiguration);
+    // (undocumented)
+    static createProgressive: typeof createProgressive;
     // (undocumented)
     static interleavedRetrieveStages: {
         stages: RetrieveStage[];
-        constructor: typeof ProgressiveRetrieveImages;
     };
     // (undocumented)
-    retrieveImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
+    loadImages(imageIds: string[], listener: ImageLoadListener): Promise<any>;
     // (undocumented)
     retrieveOptions: Record<string, RetrieveOptions>;
     // (undocumented)
     static sequentialRetrieveStages: {
         stages: RetrieveStage[];
-        constructor: typeof ProgressiveRetrieveImages;
     };
     // (undocumented)
     static singleRetrieveStages: {
         stages: RetrieveStage[];
-        constructor: typeof ProgressiveRetrieveImages;
     };
     // (undocumented)
     stages: RetrieveStage[];
@@ -2195,6 +2197,13 @@ type PublicViewportInput = {
     viewportId: string;
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
+};
+
+// @public (undocumented)
+type RangeRetrieveOptions = BaseRetrieveOptions & {
+    chunkSize?: number | ((metadata: any) => number);
+    range: number;
+    totalRangesToFetch?: number | ((metadata: any) => number);
 };
 
 // @public (undocumented)
@@ -2416,7 +2425,7 @@ type StackNewImageEventDetail = {
 };
 
 // @public (undocumented)
-export class StackViewport extends Viewport implements IStackViewport {
+export class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     constructor(props: ViewportInput);
     // (undocumented)
     addActor: (actorEntry: ActorEntry) => void;
@@ -2486,6 +2495,10 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
+    protected imagesLoader: IImagesLoader;
+    // (undocumented)
+    loadImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
+    // (undocumented)
     modality: string;
     // (undocumented)
     removeAllActors: () => void;
@@ -2497,10 +2510,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     resetProperties(): void;
     // (undocumented)
     resize: () => void;
-    // (undocumented)
-    protected retrieveConfiguration: IRetrieveConfiguration;
-    // (undocumented)
-    retrieveImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
     scaling: Scaling;
     // (undocumented)
@@ -2561,6 +2570,11 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
+type StreamingRetrieveOptions = BaseRetrieveOptions & {
+    streaming: boolean;
+};
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -2588,8 +2602,11 @@ declare namespace Types {
     export {
         RetrieveStage,
         RetrieveOptions,
+        RangeRetrieveOptions,
+        StreamingRetrieveOptions,
         NearbyFrames,
         IRetrieveConfiguration,
+        IImagesLoader,
         Cornerstone3DConfig,
         ICamera,
         IStackViewport,

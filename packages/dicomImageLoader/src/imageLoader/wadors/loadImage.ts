@@ -5,12 +5,10 @@ import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
-import { getOptions } from '../internal/options';
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
-const streamableTransferSyntaxes = new Set<string>();
-streamableTransferSyntaxes.add('3.2.840.10008.1.2.4.96'); // 'jphc'
+const streamableTransferSyntaxes = new Set<string>(['3.2.840.10008.1.2.4.96']);
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
@@ -83,7 +81,7 @@ export interface StreamingData {
   encodedData?: Uint8Array;
   // Some values used by instances of streaming data for range
   totalBytes?: number;
-  initialBytes?: number;
+  chunkSize?: number;
   totalRanges?: number;
   rangesFetched?: number;
 }
@@ -141,11 +139,7 @@ function loadImage(
         const transferSyntax = getTransferSyntaxForContentType(
           result.contentType
         );
-        if (
-          !done &&
-          !extractDone &&
-          !options.retrieveOptions?.streamingDecode
-        ) {
+        if (!extractDone && !streamableTransferSyntaxes.has(transferSyntax)) {
           continue;
         }
         const decodeLevel =
@@ -154,7 +148,7 @@ function loadImage(
             ? 0
             : decodeLevelFromComplete(
                 percentComplete,
-                options.retrieveOptions.decodeLevel
+                options.retrieveOptions?.decodeLevel
               ));
         if (!done && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
@@ -184,7 +178,7 @@ function loadImage(
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           console.warn("Couldn't decode", e);
-          if (done) {
+          if (extractDone) {
             throw e;
           }
         }
@@ -218,16 +212,17 @@ function loadImage(
  * there is enough space
  */
 function decodeLevelFromComplete(percent: number, retrieveDecodeLevel = 4) {
-  if (percent < 8) {
-    return Math.min(retrieveDecodeLevel, 4);
+  const testSize = percent / 100 - 0.02;
+  if (testSize > 1 / 4) {
+    return Math.min(retrieveDecodeLevel, 0);
   }
-  if (percent < 13) {
-    return Math.min(retrieveDecodeLevel, 3);
+  if (testSize > 1 / 16) {
+    return Math.min(retrieveDecodeLevel, 1);
   }
-  if (percent < 27) {
+  if (testSize > 1 / 64) {
     return Math.min(retrieveDecodeLevel, 2);
   }
-  return Math.min(retrieveDecodeLevel, 1);
+  return Math.min(retrieveDecodeLevel, 3);
 }
 
 export default loadImage;

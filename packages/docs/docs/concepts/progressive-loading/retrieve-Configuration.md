@@ -2,7 +2,6 @@
 id: retrieve-configuration
 title: Retrieve Configuration
 toc_max_heading_level: 5
-
 ---
 
 # Retrieve Configuration
@@ -27,16 +26,16 @@ Since you can have multiple stages, the two methods (streaming and byte range) c
 For instance you can create a configuration that
 
 1.  start **streaming** of specific initial slices (typically the first, middle, or last slice) for immediate viewing.
-2. Subsequently, in the second stage, **byte range requests** (only couple of `kb`) can be made for the rest of the slices to efficiently render the complete volume as quickly as possible (even if lossy).
-3. Finally, you perform supplementary **byte range requests** for the remaining segments that have not yet been requested, following the initial byte range request in step 2.
+2.  Subsequently, in the second stage, **byte range requests** (only couple of `kb`) can be made for the rest of the slices to efficiently render the complete volume as quickly as possible (even if lossy).
+3.  Finally, you perform supplementary **byte range requests** for the remaining segments that have not yet been requested, following the initial byte range request in step 2.
 
 This approach is actually employed in the volume loading process, which will be further elaborated upon in our subsequent discussion.
 :::
 
 So, in summary, the Retrieve Stage is a configuration that specifies which images load with which settings. For the simplicity of this document and to not lose focus, we will only talk about the `retrieveType`, which is just a reference to the retrieve options. We will discuss more advanced options, such as selecting images for strategy, prioritizing, and queuing loading, later.
 
-
 ![](../../assets/retrieve-stages.png)
+
 <!-- <img src="../../assets/retrieve-stages.png"  style={{width:"300px"}}/> -->
 
 As seen above, the retrieve stages can be as simple a list of objects, each with an `id`
@@ -59,7 +58,6 @@ There are more advanced options for the retrieval configuration that can be used
 
 One natural question that might arise is, regardless of the method (stream or byte range) how often the image is decoded and when we decode what is the resolution of the image that we should decode to?
 
-
 The resolution of decoding is controlled by `decodeLevel` configuration and it can be
 
 - 0 = full resolution
@@ -76,9 +74,7 @@ For volume viewports, we currently don't allow decoding into sub-resolution beca
 However, for the stack viewport, we do allow decoding into sub-resolution since this re-allocation is cheaper than the whole volume. Additionally, in this scneario, future enhanced qualities of the image will wipe out the old image and create a new image with new size until full resolution is reached.
 :::
 
-
 We will talk about `frequency` in the each method's section below.
-
 
 ### Streaming Options
 
@@ -89,8 +85,8 @@ For streaming requests, you can configure the following options:
 - `streaming`: whether to use streaming or not
 - `streamingDecode`: whether to decode the image as it is being downloaded or not (most often you want to set this to true)
 
-
 #### Decoding Frequency
+
 Most often, when the stream is coming from a server, the server lets the client know about the final size of the data. So, at each point in time, we can identify the percentage of the data that has been downloaded and decode the image to the relevant resolution so in the streaming scenario you really don't have to set it manually.
 
 Different levels are, if the downloaded portion at the time of decoding is
@@ -121,21 +117,20 @@ using the streaming method is suitable for the scenarios that you eventually
 require the full resolution of the data and you want to start viewing the data
 as soon as possible.
 
-
 ### Byte Range Options
 
 #### Options
 
-- `initialBytes`: byte range value to retrieve for initial decode (default is 64kb)
+- `chunkSize`: byte range value to retrieve for initial decode (default is 64kb)
 - `totalRangesToFetch`: How many total ranges to break the request up into (deafult to 2 ranges)
 - `range`: is the range number (index) that you want to fetch (should be less than `totalRangesToFetch`)
 
 <!-- - range - this is a number between 0 and the totalRangesToFetch
   - Fetches data starting at the last fetch end point, or 0
-  - Fetches data ending with the total length or (range+1)\*initialBytesToFetch
+  - Fetches data ending with the total length or (range+1)\*chunkSizeToFetch
   - Ranges do NOT need to be all fetched, but do need to be increasing
-- totalRangesToFetch - how many pieces of size initialBytesToFetch are retrieved
-- initialBytesToFetch - the number of bytes in each fetch chunk
+- totalRangesToFetch - how many pieces of size chunkSizeToFetch are retrieved
+- chunkSizeToFetch - the number of bytes in each fetch chunk
   - last chunk is always the remaining data, regardless of size -->
 
 #### Decoding Frequency
@@ -154,7 +149,7 @@ For instance for the options of
 ```js
 {
   range: 0,
-  initialBytes: 256000, // 256kb
+  chunkSize: 256000, // 256kb
 }
 ```
 
@@ -171,19 +166,16 @@ another example
 
 ![](../../assets/range-0-decode-3.png)
 
-
 #### Use cases
-
 
 Other than we can use the range request to progressively request and load a better quality
 images there are some other usecases
 
--  Thumbnails: Often, for thumbnails, we want to load the image as quickly as possible but don't need the full resolution. We can use a byte range request to fetch a lower resolution version of the data.
+- Thumbnails: Often, for thumbnails, we want to load the image as quickly as possible but don't need the full resolution. We can use a byte range request to fetch a lower resolution version of the data.
 - CINE: For certain imaging needs, the frame rate is absolutely essential in the cine mode. Often, the gross anatomy is desired in these scenarios, not the details, but the frame rate is of greater importance. We can use the byte range request to fetch the subresolution of the data, guaranteeing that we can achieve the target frame rate.
 
-
-
 ## Conclusion
+
 So, we learned that a "retrieve configuration" is composed of at least one (can be more) "retrieve stage" and an accompanying "retrieve options" that have the keys referenced in the "retrieve stages." We also learned that each "retrieve stage" can be configured to use a different method (streaming or byte range) and has common or specific retrieve options.
 
 Let's look at an example of one of the examples that we have in the stackProgressive demo
@@ -191,21 +183,19 @@ Let's look at an example of one of the examples that we have in the stackProgres
 ```js
 const retrieveConfiguration = {
   stages: {
-    id: "initialImages",
-    retrieveType: "single",
+    id: 'initialImages',
+    retrieveType: 'single',
   },
   retrieveOptions: {
     single: {
       streaming: true,
-      streamingDecode: true,
     },
   },
-}
+};
 ```
 
 :::tip
 Note the common use of 'single' in both the `stages` and `retrieveOptions` objects. This is just a reference to the retrieve options that we have defined in the `retrieveOptions` object.
 :::
-
 
 Now your question might be, how do we [use this configuration](./usage)? We will talk about that in the next section. But curious readers can move to the advanced configuration section to learn more about the advanced options that we have for the retrieve configuration.

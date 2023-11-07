@@ -12,22 +12,22 @@ You can skip this section if you are not interested in the advanced options (yet
 which you can revisit later.
 :::
 
-
 ## Advanced Retrieve Stages Options
 
 ### positions?: number[];
 
 ### decimate?: number;
+
 ### offset?: number;
+
 ### priority?: number;
+
 ### nearbyFrames?: NearbyFrames[];
 
 ## Advanced Retrieve Options
 
-
-
-
 ### urlArguments
+
 - urlArguments - is a set of arguments to add to the URL
   - This distinguishes this request from other requests which cannot be combined with this one
   - The DICOMweb standard allows for the `accept` parameter to specify a content type
@@ -55,16 +55,12 @@ The configuration for this is (assuming standards based DICOMweb support):
 ```
 
 ### framePath
-- framesPath - to update the URL path portion
 
+- framesPath - to update the URL path portion
 
 ### imageQualityStatus
 
-
 ### partialImageQualityStatus
-
-
-
 
 ### Separate URL For Sub-Resolution Images
 
@@ -94,7 +90,7 @@ An example configuration for JPIP:
       default: {
         // Need to note this is a lossy encoding, as it isn't possible to
         // detect based on the general configuration here.
-        status: ImageQualityStatus.SUBRESOLUTION,
+        imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
         // Hypothetical JPIP server using a path that is the normal DICOMweb
         // path but with /jpip?target= replacing the /frames path
         // This uses the standards based target JPIP parameter, and assigns

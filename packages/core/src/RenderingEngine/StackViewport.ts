@@ -41,7 +41,7 @@ import type {
   Mat3,
   ColormapRegistration,
   IImageCalibration,
-  IRetrieveConfiguration,
+  IImagesLoader,
   ImageLoadListener,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
@@ -80,6 +80,7 @@ import {
   ImagePixelModule,
   ImagePlaneModule,
 } from '../types';
+import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -116,7 +117,7 @@ type SetVOIOptions = {
  * is not available (or low performance). Read more about StackViewports in
  * the documentation section of this website.
  */
-class StackViewport extends Viewport implements IStackViewport {
+class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   private imageIds: Array<string>;
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex: number;
@@ -127,7 +128,7 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * The progressive retrieval configuration used for this viewport.
    */
-  protected retrieveConfiguration: IRetrieveConfiguration = this;
+  protected imagesLoader: IImagesLoader = this;
 
   // Viewport Properties
   private voiRange: VOIRange;
@@ -1445,8 +1446,10 @@ class StackViewport extends Viewport implements IStackViewport {
       'stack'
     );
 
-    this.retrieveConfiguration = imageRetrieveConfiguration?.constructor
-      ? new imageRetrieveConfiguration.constructor(imageRetrieveConfiguration)
+    this.imagesLoader = imageRetrieveConfiguration
+      ? (imageRetrieveConfiguration.create || createProgressive)(
+          imageRetrieveConfiguration
+        )
       : this;
 
     // reset the stack
@@ -1849,7 +1852,7 @@ class StackViewport extends Viewport implements IStackViewport {
     return options;
   }
 
-  public retrieveImages(
+  public loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
@@ -1882,11 +1885,9 @@ class StackViewport extends Viewport implements IStackViewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    return this.retrieveConfiguration
-      .retrieveImages([imageId], this)
-      .then((v) => {
-        return imageId;
-      });
+    return this.imagesLoader.loadImages([imageId], this).then((v) => {
+      return imageId;
+    });
   }
 
   /**

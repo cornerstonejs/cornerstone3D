@@ -83,7 +83,7 @@ async function newImageFunction(evt) {
   }
   const completeText = statusNames[status] || `other ${status}`;
   const totalTime = Date.now() - startTime;
-  timingInfo.innerHTML += `<p style="margin:0">Render ${completeText} of ${transferSyntaxUID} took ${loadTimeInMS} ms to load and ${decodeTimeInMS} to decode ${totalTime} total</p>`;
+  timingInfo.innerHTML += `<p style="margin:0">Render ${completeText} of ${transferSyntaxUID} load ${loadTimeInMS} ms decode ${decodeTimeInMS} ms from start ${totalTime} ms</p>`;
 }
 
 async function showStack(
@@ -137,27 +137,68 @@ async function showStack(
  * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail "/dicom/DE Images for Rad"
  * ```
  */
-const jlsRetrieveOptions = {
-  ...singleRetrieveStages,
-  retrieveOptions: {
-    default: {
-      framesPath: '/jls/',
-    },
-  },
-};
-
 const htj2kProgressiveOptions = {
-  ...singleRetrieveStages,
   retrieveOptions: {
     single: {
       streaming: true,
-      streamingDecode: true,
-      decodeLevel: 2,
+      decodeLevel: 1,
     },
   },
 };
 
-const isLocal = false;
+const htj2kByteRanges = {
+  stages: [
+    {
+      id: 'lossySequential',
+      retrieveType: 'singleFast',
+    },
+    {
+      id: 'lossySequentialFailure',
+      retrieveType: 'singleFastFailure',
+    },
+    {
+      id: 'lossyMiddle',
+      retrieveType: 'singleMiddle',
+    },
+    {
+      id: 'lossyMiddleFailure',
+      retrieveType: 'singleMiddleFailure',
+    },
+    {
+      id: 'finalSequential',
+      retrieveType: 'singleFinal',
+    },
+  ],
+  retrieveOptions: {
+    singleFast: {
+      totalRangesToFetch: 15,
+      decodeLevel: 2,
+      chunkSize: 128 * 1024,
+      range: 0,
+    },
+    // This is a fallback phase if decodeLevel 2 fails, then try at 3
+    singleFastFailure: {
+      decodeLevel: 3,
+      range: 0,
+    },
+    // Note how the range increases significantly to get much more data
+    singleMiddle: {
+      decodeLevel: 0,
+      range: 10,
+    },
+    singleMiddleFailure: {
+      decodeLevel: 1,
+      range: 10,
+    },
+    singleFinal: {
+      // Just do the final range retrieve
+      range: 1000,
+    },
+  },
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+const useLocal = urlParams.get('useLocal') === 'true';
 
 /**
  * Runs the demo
@@ -172,7 +213,7 @@ async function run() {
       '1.3.6.1.4.1.9590.100.1.2.19841440611855834937505752510708699165',
     SeriesInstanceUID:
       '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
-    wadoRsRoot: isLocal
+    wadoRsRoot: useLocal
       ? 'http://localhost:5000/dicomweb'
       : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
@@ -180,7 +221,7 @@ async function run() {
   const imageIdsCt = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: isLocal
+    wadoRsRoot: useLocal
       ? 'http://localhost:5000/dicomweb'
       : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
@@ -225,6 +266,7 @@ async function run() {
 
   loadButton('HTJ2K Non Progressive', imageIds, undefined);
   loadButton('HTJ2K Progressive', imageIds, htj2kProgressiveOptions);
+  loadButton('HTJ2K 3 Range', imageIds, htj2kByteRanges);
 }
 
 run();

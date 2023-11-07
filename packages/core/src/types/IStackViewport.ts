@@ -9,7 +9,6 @@ import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
 import { ColormapRegistration } from './Colormap';
 import type IImage from './IImage';
-import type { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 /**
  * Interface for Stack Viewport
@@ -114,8 +113,7 @@ export default interface IStackViewport extends IViewport {
    */
   setStack(
     imageIds: Array<string>,
-    currentImageIdIndex?: number,
-    retrieveConfiguration?: IRetrieveConfiguration
+    currentImageIdIndex?: number
   ): Promise<string>;
   /**
    * Centers Pan and resets the zoom for stack viewport.

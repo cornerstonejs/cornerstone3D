@@ -52,6 +52,7 @@ import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
 import type * as Types from './types';
 import {
   IRetrieveConfiguration,
+  IImagesLoader,
   RetrieveOptions,
   RetrieveStage,
   ImageLoadListener,
@@ -73,6 +74,7 @@ export type {
   RetrieveOptions,
   RetrieveStage,
   ImageLoadListener,
+  IImagesLoader,
 };
 
 export {

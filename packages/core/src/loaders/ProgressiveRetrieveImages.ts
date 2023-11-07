@@ -1,5 +1,6 @@
 import {
   IRetrieveConfiguration,
+  IImagesLoader,
   IImage,
   RetrieveStage,
   EventTypes,
@@ -43,7 +44,7 @@ export type NearbyRequest = {
   linearId?: string;
   // The new status of the filled image (will only fill if the existing status
   // is less than this one)
-  status: ImageQualityStatus;
+  imageQualityStatus: ImageQualityStatus;
 };
 
 export type ProgressiveRequest = {
@@ -89,51 +90,80 @@ export type ProgressiveRequest = {
  *                   have a getTargetOptions to get information on the retrieve
  * @param retrieveOptions - is a set of retrieve options to use
  */
-export class ProgressiveRetrieveImages implements IRetrieveConfiguration {
+export class ProgressiveRetrieveImages
+  implements IImagesLoader, IRetrieveConfiguration
+{
+  public static createProgressive = createProgressive;
+
   public static interleavedRetrieveStages = {
     stages: interleavedRetrieveStages,
-    constructor: ProgressiveRetrieveImages,
   };
 
   public static singleRetrieveStages = {
     stages: singleRetrieveStages,
-    constructor: ProgressiveRetrieveImages,
   };
 
   public static sequentialRetrieveStages = {
     stages: sequentialRetrieveStages,
-    constructor: ProgressiveRetrieveImages,
   };
 
   stages: RetrieveStage[];
   retrieveOptions: Record<string, RetrieveOptions>;
 
-  constructor(imageRetrieveConfiguration) {
-    this.stages = imageRetrieveConfiguration.stages;
+  constructor(imageRetrieveConfiguration: IRetrieveConfiguration) {
+    this.stages = imageRetrieveConfiguration.stages || singleRetrieveStages;
     this.retrieveOptions = imageRetrieveConfiguration.retrieveOptions || {};
   }
 
-  public retrieveImages(imageIds: string[], listener: ImageLoadListener) {
-    return load(imageIds, listener, this);
+  public loadImages(imageIds: string[], listener: ImageLoadListener) {
+    const instance = new ProgressiveRetrieveImagesInstance(
+      this,
+      imageIds,
+      listener
+    );
+    return instance.loadImages();
   }
 }
 
-export async function load(
-  imageIds: string[],
-  listener: ImageLoadListener,
-  retrieveConfiguration: ProgressiveRetrieveImages
-): Promise<unknown> {
-  const displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
-  const imageQualityStatusMap = new Map<string, ImageQualityStatus>();
-  const stageStatusMap = new Map<string, StageStatus>();
-  let outstandingRequests = 0;
+class ProgressiveRetrieveImagesInstance {
+  imageIds: string[];
+  listener: ImageLoadListener;
+  stages: RetrieveStage[];
+  retrieveOptions: Record<string, RetrieveOptions>;
+  outstandingRequests = 0;
 
-  function sendRequest(request, options) {
+  stageStatusMap = new Map<string, StageStatus>();
+  imageQualityStatusMap = new Map<string, ImageQualityStatus>();
+  displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
+
+  constructor(configuration: IRetrieveConfiguration, imageIds, listener) {
+    this.stages = configuration.stages;
+    this.retrieveOptions = configuration.retrieveOptions;
+    this.imageIds = imageIds;
+    this.listener = listener;
+  }
+
+  public async loadImages() {
+    // The actual function is to just setup the interleave and add the
+    // requests, with all the actual work being handled by the nested functions
+    const interleaved = this.createStageRequests();
+    this.outstandingRequests = interleaved.length;
+    for (const request of interleaved) {
+      this.addRequest(request);
+    }
+    if (this.outstandingRequests === 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.displayedIterator.getDonePromise();
+  }
+
+  protected sendRequest(request, options) {
     const { imageId, next } = request;
     const errorCallback = (reason, done) => {
-      listener.errorCallback(imageId, complete || !next, reason);
+      this.listener.errorCallback(imageId, complete || !next, reason);
       if (done) {
-        updateStageStatus(stageStatusMap, request.stage, reason);
+        this.updateStageStatus(request.stage, reason);
       }
     };
     const loadedPromise = (options.loader || loadAndCacheImage)(
@@ -145,7 +175,7 @@ export async function load(
 
     uncompressedIterator
       .forEach(async (image, done) => {
-        const oldStatus = imageQualityStatusMap.get(imageId);
+        const oldStatus = this.imageQualityStatusMap.get(imageId);
         if (!image) {
           console.warn('No image retrieved', imageId);
           return;
@@ -154,19 +184,19 @@ export async function load(
         complete ||= imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
         if (oldStatus !== undefined && oldStatus > imageQualityStatus) {
           // We already have a better status, so don't update it
-          updateStageStatus(stageStatusMap, request.stage, null, true);
+          this.updateStageStatus(request.stage, null, true);
           return;
         }
 
-        listener.successCallback(imageId, image);
-        imageQualityStatusMap.set(imageId, imageQualityStatus);
-        displayedIterator.add(image);
+        this.listener.successCallback(imageId, image);
+        this.imageQualityStatusMap.set(imageId, imageQualityStatus);
+        this.displayedIterator.add(image);
         if (done) {
-          updateStageStatus(stageStatusMap, request.stage);
+          this.updateStageStatus(request.stage);
         }
         fillNearbyFrames(
-          listener,
-          imageQualityStatusMap,
+          this.listener,
+          this.imageQualityStatusMap,
           request,
           image,
           options
@@ -177,15 +207,15 @@ export async function load(
           if (cache.getImageLoadObject(imageId)) {
             cache.removeImageLoadObject(imageId);
           }
-          addRequest(next, options.streamingData);
+          this.addRequest(next, options.streamingData);
         } else {
-          outstandingRequests--;
+          this.outstandingRequests--;
           for (let skip = next; skip; skip = skip.next) {
-            updateStageStatus(stageStatusMap, skip.stage, null, true);
+            this.updateStageStatus(skip.stage, null, true);
           }
         }
-        if (outstandingRequests <= 0) {
-          displayedIterator.resolve();
+        if (this.outstandingRequests <= 0) {
+          this.displayedIterator.resolve();
         }
       });
     const doneLoad = uncompressedIterator.getDonePromise();
@@ -194,15 +224,15 @@ export async function load(
   }
 
   /** Adds a rquest to the image load pool manager */
-  function addRequest(request, streamingData = {}) {
+  protected addRequest(request, streamingData = {}) {
     const { imageId, stage } = request;
-    const baseOptions = listener.getLoaderImageOptions(imageId);
+    const baseOptions = this.listener.getLoaderImageOptions(imageId);
     if (!baseOptions) {
       // Image no longer of interest
       return;
     }
     const { retrieveType = 'default' } = stage;
-    const { retrieveOptions: keyedRetrieveOptions } = retrieveConfiguration;
+    const { retrieveOptions: keyedRetrieveOptions } = this;
     const retrieveOptions =
       keyedRetrieveOptions[retrieveType] || keyedRetrieveOptions.default;
     const options = {
@@ -216,168 +246,132 @@ export async function load(
     const additionalDetails = { imageId };
 
     imageLoadPoolManager.addRequest(
-      sendRequest.bind(this, request, options),
+      this.sendRequest.bind(this, request, options),
       requestType,
       additionalDetails,
       priority
     );
   }
 
-  // The actual function is to just setup the interleave and add the
-  // requests, with all the actual work being handled by the nested functions
-  const interleaved = createStageRequests(
-    imageIds,
-    retrieveConfiguration,
-    stageStatusMap
-  );
-  outstandingRequests = interleaved.length;
-  for (const request of interleaved) {
-    addRequest(request);
-  }
-  if (outstandingRequests === 0) {
-    return Promise.resolve(null);
-  }
-
-  return displayedIterator.getDonePromise();
-}
-
-/** Interleaves the values according to the stages definition */
-function createStageRequests(
-  requests: string[],
-  retrieveConfiguration: ProgressiveRetrieveImages,
-  stageStatus: Map<string, StageStatus>
-) {
-  const { stages } = retrieveConfiguration;
-  const interleaved = new Array<ProgressiveRequest>();
-  // Maps image id to the LAST progressive request - to allow tail append
-  const imageRequests = new Map<string, ProgressiveRequest>();
-
-  const addStageInstance = (stage, position) => {
-    const index =
-      position < 0
-        ? requests.length + position
-        : position < 1
-        ? Math.floor((requests.length - 1) * position)
-        : position;
-    const imageId = requests[index];
-    if (!imageId) {
-      throw new Error(`No value found to add to requests at ${position}`);
+  protected updateStageStatus(stage, failure?, skipped = false) {
+    const { id } = stage;
+    const stageStatus = this.stageStatusMap.get(id);
+    if (!stageStatus) {
+      return;
     }
-    const request: ProgressiveRequest = {
-      imageId,
-      stage,
-      nearbyRequests: findNearbyRequests(index, requests, stage),
+    stageStatus.imageLoadPendingCount--;
+    if (failure) {
+      stageStatus.imageLoadFailedCount++;
+    } else if (!skipped) {
+      stageStatus.totalImageCount++;
+    }
+    if (!skipped && !stageStatus.stageStartTime) {
+      stageStatus.stageStartTime = Date.now();
+    }
+    if (!stageStatus.imageLoadPendingCount) {
+      const {
+        imageLoadFailedCount: numberOfFailures,
+        totalImageCount: numberOfImages,
+        stageStartTime = Date.now(),
+        startTime,
+      } = stageStatus;
+      const detail: EventTypes.ImageLoadStageEventDetail = {
+        stageId: id,
+        numberOfFailures,
+        numberOfImages,
+        stageDurationInMS: stageStartTime ? Date.now() - stageStartTime : null,
+        startDurationInMS: Date.now() - startTime,
+      };
+      triggerEvent(eventTarget, Events.IMAGE_RETRIEVAL_STAGE, detail);
+      this.stageStatusMap.delete(id);
+    }
+  }
+
+  /** Interleaves the values according to the stages definition */
+  protected createStageRequests() {
+    const interleaved = new Array<ProgressiveRequest>();
+    // Maps image id to the LAST progressive request - to allow tail append
+    const imageRequests = new Map<string, ProgressiveRequest>();
+
+    const addStageInstance = (stage, position) => {
+      const index =
+        position < 0
+          ? this.imageIds.length + position
+          : position < 1
+          ? Math.floor((this.imageIds.length - 1) * position)
+          : position;
+      const imageId = this.imageIds[index];
+      if (!imageId) {
+        throw new Error(`No value found to add to requests at ${position}`);
+      }
+      const request: ProgressiveRequest = {
+        imageId,
+        stage,
+        nearbyRequests: this.findNearbyRequests(index, stage),
+      };
+      this.addStageStatus(stage);
+      const existingRequest = imageRequests.get(imageId);
+      if (existingRequest) {
+        existingRequest.next = request;
+      } else {
+        interleaved.push(request);
+      }
+      imageRequests.set(imageId, request);
     };
-    addStageStatus(stageStatus, stage);
-    const existingRequest = imageRequests.get(imageId);
-    if (existingRequest) {
-      existingRequest.next = request;
-    } else {
-      interleaved.push(request);
+
+    for (const stage of this.stages) {
+      const indices =
+        stage.positions ||
+        decimate(this.imageIds, stage.decimate || 1, stage.offset ?? 0);
+      indices.forEach((index) => addStageInstance(stage, index));
     }
-    imageRequests.set(imageId, request);
-  };
-
-  for (const stage of stages) {
-    const indices =
-      stage.positions ||
-      decimate(requests, stage.decimate || 1, stage.offset ?? 0);
-    indices.forEach((index) => addStageInstance(stage, index));
+    return interleaved;
   }
-  return interleaved;
-}
 
-/**
- * Finds nearby requests to fulfill to show the merge information earlier.
- * @param index - to use as the base value
- * @param imageIds - set of image ids to request
- * @param stage - to find information from
- * @returns Array of nearby frames to fill when the main stage is done
- */
-function findNearbyRequests(
-  index: number,
-  imageIds: string[],
-  stage
-): NearbyRequest[] {
-  const nearby = new Array<NearbyRequest>();
-  if (!stage.nearbyFrames) {
+  /**
+   * Finds nearby requests to fulfill to show the merge information earlier.
+   * @param index - to use as the base value
+   * @param imageIds - set of image ids to request
+   * @param stage - to find information from
+   * @returns Array of nearby frames to fill when the main stage is done
+   */
+  protected findNearbyRequests(index: number, stage): NearbyRequest[] {
+    const nearby = new Array<NearbyRequest>();
+    if (!stage.nearbyFrames) {
+      return nearby;
+    }
+    for (const nearbyItem of stage.nearbyFrames) {
+      const nearbyIndex = index + nearbyItem.offset;
+      if (nearbyIndex < 0 || nearbyIndex >= this.imageIds.length) {
+        continue;
+      }
+      nearby.push({
+        itemId: this.imageIds[nearbyIndex],
+        imageQualityStatus: nearbyItem.imageQualityStatus,
+      });
+    }
+
     return nearby;
   }
-  for (const nearbyItem of stage.nearbyFrames) {
-    const nearbyIndex = index + nearbyItem.offset;
-    if (nearbyIndex < 0 || nearbyIndex >= imageIds.length) {
-      continue;
-    }
-    nearby.push({
-      itemId: imageIds[nearbyIndex],
-      status: nearbyItem.status,
-    });
-    if (nearbyItem.linearOffset !== undefined) {
-      const linearIndex =
-        nearbyItem.linearOffset !== undefined &&
-        nearbyItem.linearOffset + nearbyItem.offset;
-      if (linearIndex >= 0 && linearIndex < imageIds.length) {
-        nearby[nearby.length - 1].linearId = imageIds[linearIndex];
-      }
-    }
-  }
 
-  return nearby;
-}
-
-function addStageStatus(stageStatus: Map<string, StageStatus>, stage) {
-  const { id } = stage;
-  const status = stageStatus.get(id) || {
-    stageId: id,
-    startTime: Date.now(),
-    stageStartTime: null,
-    totalImageCount: 0,
-    imageLoadFailedCount: 0,
-    imageLoadPendingCount: 0,
-  };
-  status.imageLoadPendingCount++;
-  stageStatus.set(id, status);
-  return status;
-}
-
-function updateStageStatus(
-  stageStatus: Map<string, StageStatus>,
-  stage,
-  failure?,
-  skipped = false
-) {
-  const { id } = stage;
-  const status = stageStatus.get(id);
-  if (!status) {
-    console.warn('Stage already completed:', id);
-    return;
-  }
-  status.imageLoadPendingCount--;
-  if (failure) {
-    status.imageLoadFailedCount++;
-  } else if (!skipped) {
-    status.totalImageCount++;
-  }
-  if (!skipped && !status.stageStartTime) {
-    status.stageStartTime = Date.now();
-  }
-  if (!status.imageLoadPendingCount) {
-    const {
-      imageLoadFailedCount: numberOfFailures,
-      totalImageCount: numberOfImages,
-      stageStartTime = Date.now(),
-      startTime,
-    } = status;
-    const detail: EventTypes.ImageLoadStageEventDetail = {
+  protected addStageStatus(stage) {
+    const { id } = stage;
+    const stageStatus = this.stageStatusMap.get(id) || {
       stageId: id,
-      numberOfFailures,
-      numberOfImages,
-      stageDurationInMS: stageStartTime ? Date.now() - stageStartTime : null,
-      startDurationInMS: Date.now() - startTime,
+      startTime: Date.now(),
+      stageStartTime: null,
+      totalImageCount: 0,
+      imageLoadFailedCount: 0,
+      imageLoadPendingCount: 0,
     };
-    triggerEvent(eventTarget, Events.IMAGE_RETRIEVAL_STAGE, detail);
-    stageStatus.delete(id);
+    stageStatus.imageLoadPendingCount++;
+    this.stageStatusMap.set(id, stageStatus);
+    return stageStatus;
   }
+}
+
+export function createProgressive(configuration: IRetrieveConfiguration) {
+  return new ProgressiveRetrieveImages(configuration);
 }
 
 export default ProgressiveRetrieveImages;

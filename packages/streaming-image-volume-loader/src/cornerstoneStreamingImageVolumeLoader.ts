@@ -255,7 +255,6 @@ function cornerstoneStreamingImageVolumeLoader(
           cachedFrames: [],
           callbacks: [],
         },
-        progressiveRetrieveConfiguration: progressiveRendering,
       }
     );
 

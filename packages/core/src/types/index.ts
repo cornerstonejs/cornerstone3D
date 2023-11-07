@@ -85,8 +85,11 @@ import type { AffineMatrix } from './AffineMatrix';
 export type {
   RetrieveStage,
   RetrieveOptions,
+  RangeRetrieveOptions,
+  StreamingRetrieveOptions,
   NearbyFrames,
   IRetrieveConfiguration,
+  IImagesLoader,
 } from './IRetrieveConfiguration';
 import type { ImageLoadListener } from './ImageLoadListener';
 

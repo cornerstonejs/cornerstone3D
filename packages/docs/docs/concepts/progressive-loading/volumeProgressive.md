@@ -3,7 +3,6 @@ id: volumeProgressive
 title: Volume Progressive Loading
 ---
 
-
 ## Volume Viewport Interleaved Decode
 
 For volumes, the streaming decode of HTJ2K is typically slower than non-streaming
@@ -97,8 +96,6 @@ The configuration looks like:
 //
 //
 
-
-
 1. Fetch images shown intiially at full resolution (first and last)
 2. Fetch every 4th image first `initialByteRange` bytes
 
@@ -114,16 +111,10 @@ The configuration looks like:
 
 - Replaces the low resolution data from #2 with full data
 
-
-
-
 //
 //
 //
 //
-
-
-
 
 The volume progressive loading extends the basic stack loading with the ability
 to interleave various images, interpolating them from a reduced resolution
@@ -214,7 +205,7 @@ cornerstoneDicomImageLoader.configure({
         // get the data, not a streaming request.
         streamingDecode: true,
         range: 0,
-        initialBytes: 64000,
+        chunkSize: 64000,
         decodeLevel: 0,
       },
     },

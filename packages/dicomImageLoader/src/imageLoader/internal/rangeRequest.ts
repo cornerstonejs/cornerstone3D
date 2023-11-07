@@ -6,7 +6,7 @@ import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 
-type RetrieveOptions = Types.RetrieveOptions;
+type RangeRetrieveOptions = Types.RangeRetrieveOptions;
 
 /**
  * Performs a range request to fetch part of an encoded image, typically
@@ -39,9 +39,9 @@ export default function rangeRequest(
 }> {
   const globalOptions = getOptions();
   const { retrieveOptions = {}, streamingData } = options;
-  const initialBytes =
-    streamingData.initialBytes ||
-    getValue(imageId, retrieveOptions, 'initialBytes') ||
+  const chunkSize =
+    streamingData.chunkSize ||
+    getValue(imageId, retrieveOptions, 'chunkSize') ||
     65536;
   const totalRangesToFetch =
     getValue(imageId, retrieveOptions, 'totalRangesToFetch') || 2;
@@ -76,15 +76,11 @@ export default function rangeRequest(
 
     try {
       if (!streamingData.encodedData) {
-        streamingData.initialBytes = initialBytes;
-        streamingData.totalRanges = totalRangesToFetch;
+        streamingData.chunkSize = chunkSize;
+        streamingData.totalRangesToFetch = totalRangesToFetch;
         streamingData.rangesFetched = 0;
       }
-      const byteRange = getByteRange(
-        streamingData,
-        retrieveOptions,
-        initialBytes
-      );
+      const byteRange = getByteRange(streamingData, retrieveOptions);
 
       const { encodedData, responseHeaders } = await fetchRangeAndAppend(
         url,
@@ -113,7 +109,7 @@ export default function rangeRequest(
         imageQualityStatus,
         percentComplete: extract.extractDone
           ? 100
-          : (initialBytes * 100) / totalBytes,
+          : (chunkSize * 100) / totalBytes,
       });
     } catch (err: any) {
       errorInterceptor(err);
@@ -128,13 +124,17 @@ export default function rangeRequest(
 async function fetchRangeAndAppend(
   url: string,
   headers: any,
-  range: [number, number],
+  range: [number, number | ''],
   streamingData
 ) {
   if (range) {
     headers = Object.assign(headers, {
       Range: `bytes=${range[0]}-${range[1]}`,
     });
+  }
+  let { encodedData } = streamingData;
+  if (range[1] && encodedData?.byteLength > range[1]) {
+    return streamingData;
   }
   const response = await fetch(url, {
     headers,
@@ -146,7 +146,6 @@ async function fetchRangeAndAppend(
   const { status } = response;
 
   // Append new data
-  let { encodedData } = streamingData;
   let newByteArray: Uint8Array;
   if (encodedData) {
     newByteArray = new Uint8Array(
@@ -161,22 +160,20 @@ async function fetchRangeAndAppend(
     streamingData.rangesFetched++;
   }
   streamingData.encodedData = encodedData = newByteArray;
+  streamingData.responseHeaders = response.headers;
 
   const contentRange = response.headers.get('Content-Range');
   if (contentRange) {
     streamingData.totalBytes = Number(contentRange.split('/')[1]);
   } else if (status !== 206 || !range) {
     streamingData.totalBytes = encodedData?.byteLength;
-  } else if (encodedData?.length < range[1]) {
+  } else if (range[1] === '' || encodedData?.length < range[1]) {
     streamingData.totalBytes = encodedData.byteLength;
   } else {
     streamingData.totalBytes = Number.MAX_SAFE_INTEGER;
   }
 
-  return {
-    encodedData: newByteArray,
-    responseHeaders: response.headers,
-  };
+  return streamingData;
 }
 
 function getValue(imageId: string, src, attr: string) {
@@ -190,26 +187,35 @@ function getValue(imageId: string, src, attr: string) {
 
 function getByteRange(
   streamingData,
-  retrieveOptions: RetrieveOptions,
-  initialBytes = 65536,
-  totalRanges = 2
-): [number, number] {
-  const { totalBytes, encodedData } = streamingData;
+  retrieveOptions: RangeRetrieveOptions
+): [number, number | ''] {
+  const {
+    totalBytes,
+    encodedData,
+    totalRangesToFetch = 2,
+    chunkSize = 65536,
+  } = streamingData;
   const { range = 0 } = retrieveOptions;
   if (range > 0 && (!totalBytes || !encodedData)) {
-    return null;
+    return [0, ''];
   }
   if (range === 0) {
-    return [0, initialBytes];
+    return [0, chunkSize - 1];
   }
-  const endPoints = [initialBytes];
-  for (let endRange = 1; endRange < totalRanges; endRange++) {
-    if (endRange === totalRanges - 1) {
-      endPoints.push(totalBytes);
+  if (range >= totalRangesToFetch) {
+    return [encodedData.byteLength, ''];
+  }
+  const endPoints: (number | '')[] = [chunkSize - 1];
+  for (let endRange = 1; endRange < totalRangesToFetch; endRange++) {
+    if (endRange === totalRangesToFetch - 1) {
+      // Use empty value to fetch remaining data
+      endPoints.push('');
     } else {
-      const previous = endPoints[endPoints.length - 1];
-      endPoints.push(Math.min(totalBytes, previous + initialBytes));
+      const previous = endPoints[endPoints.length - 1] as number;
+      endPoints.push(Math.min(totalBytes, previous + chunkSize));
     }
   }
+  // Note the byte range is inclusive at both ends and zero based,
+  // so the byteLength is the next index to fetch.
   return [encodedData.byteLength, endPoints[range]];
 }

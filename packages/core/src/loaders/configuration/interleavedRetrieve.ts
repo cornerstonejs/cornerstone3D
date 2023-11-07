@@ -5,15 +5,13 @@ import { RequestType, ImageQualityStatus } from '../../enums';
 const nearbyFrames: NearbyFrames[] = [
   {
     offset: -1,
-    status: ImageQualityStatus.ADJACENT_REPLICATE,
-    linearOffset: -2,
+    imageQualityStatus: ImageQualityStatus.ADJACENT_REPLICATE,
   },
   {
     offset: +1,
-    status: ImageQualityStatus.ADJACENT_REPLICATE,
-    linearOffset: 2,
+    imageQualityStatus: ImageQualityStatus.ADJACENT_REPLICATE,
   },
-  { offset: +2, status: ImageQualityStatus.FAR_REPLICATE, linearOffset: +4 },
+  { offset: +2, imageQualityStatus: ImageQualityStatus.FAR_REPLICATE },
 ];
 
 /**
