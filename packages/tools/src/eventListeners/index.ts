@@ -7,6 +7,7 @@ import {
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
+  stackImageChangeEventListener,
 } from './segmentation';
 import {
   annotationSelectionListener,
@@ -23,6 +24,7 @@ export {
   segmentationModifiedListener,
   segmentationRepresentationRemovedEventListener,
   segmentationDataModifiedEventListener,
+  stackImageChangeEventListener,
   annotationSelectionListener,
   annotationModifiedListener,
 };

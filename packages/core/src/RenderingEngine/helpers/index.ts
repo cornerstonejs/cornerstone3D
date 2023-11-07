@@ -4,6 +4,7 @@ import getOrCreateCanvas from './getOrCreateCanvas';
 import setVolumesForViewports from './setVolumesForViewports';
 import addVolumesToViewports from './addVolumesToViewports';
 import volumeNewImageEventDispatcher from './volumeNewImageEventDispatcher';
+import addImageSlicesToViewports from './addImageSlicesToViewports';
 
 export {
   createVolumeActor,
@@ -11,5 +12,6 @@ export {
   getOrCreateCanvas,
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
   volumeNewImageEventDispatcher,
 };

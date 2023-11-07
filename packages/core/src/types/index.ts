@@ -62,6 +62,7 @@ import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
 import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
 import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
+import type { IStackInput, StackInputCallback } from './IStackInput';
 import type * as EventTypes from './EventTypes';
 import type IRenderingEngine from './IRenderingEngine';
 import type ActorSliceRange from './ActorSliceRange';
@@ -133,6 +134,8 @@ export type {
   IVolumeLoadObject,
   IVolumeInput,
   VolumeInputCallback,
+  IStackInput,
+  StackInputCallback,
   ViewportPreset,
   //
   Metadata,

@@ -35,7 +35,16 @@ export type LabelmapRenderingConfig = {
   ofun?: vtkPiecewiseFunction;
 };
 
-export type LabelmapSegmentationData = {
+export type LabelmapSegmentationDataVolume = {
   volumeId: string;
   referencedVolumeId?: string;
 };
+
+export type LabelmapSegmentationDataStack = {
+  imageIds: Array<string>;
+  referencedImageIds: Array<string>;
+};
+
+export type LabelmapSegmentationData =
+  | LabelmapSegmentationDataVolume
+  | LabelmapSegmentationDataStack;

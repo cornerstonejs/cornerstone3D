@@ -23,6 +23,7 @@ import { removeAnnotation } from '../stateManagement';
 import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersForViewport';
 import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport';
 import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender';
+import stackImageChangeEventListener from '../eventListeners/segmentation/stackImageChangeEventListener';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 
@@ -43,7 +44,9 @@ function removeEnabledElement(
   wheelEventListener.disable(element);
   touchEventListeners.disable(element);
   keyEventListener.disable(element);
+
   // labelmap
+  stackImageChangeEventListener.disable(element);
 
   // Dispatchers: renderer
   imageRenderedEventDispatcher.disable(element);

@@ -1,9 +1,14 @@
 import {
   getEnabledElement,
   addVolumesToViewports,
+  addImageSlicesToViewports,
   Types,
   Enums,
 } from '@cornerstonejs/core';
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
+} from '../../../types/LabelmapTypes';
 
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.

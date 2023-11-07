@@ -9,6 +9,8 @@ import { PixelDataTypedArray } from './PixelDataTypedArray';
 interface IImage {
   /** Image Id */
   imageId: string;
+  /** referenced imageId if this image is derived from */
+  referencedImageId?: string;
   sharedCacheKey?: string;
   /** Whether the image is Pre-scaled during loading */
   isPreScaled?: boolean;
