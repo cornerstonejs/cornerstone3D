@@ -36,7 +36,7 @@ function getPixelData(
     options.streamingData = { url };
   }
 
-  if (retrieveOptions.chunkSize || retrieveOptions.range !== undefined) {
+  if (retrieveOptions.chunkSize || retrieveOptions.rangeIndex !== undefined) {
     return rangeRequest(url, imageId, headers, options);
   }
 

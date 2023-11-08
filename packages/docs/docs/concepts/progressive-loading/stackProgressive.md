@@ -62,12 +62,12 @@ const retrieveConfiguration = {
     },
   ],
   retrieveOptions: {
-    singleFinal: {
-      range: 1,
-    },
     singleFast: {
-      range: 0,
+      rangeIndex: 0,
       decodeLevel: 3,
+    },
+    singleFinal: {
+      rangeIndex: 1,
     },
   },
 };

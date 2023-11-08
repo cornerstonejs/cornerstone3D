@@ -99,7 +99,16 @@ module.exports = {
           collapsed: true,
           link: { type: 'doc', id: 'concepts/progressive-loading/index' },
           items: [
-            'concepts/progressive-loading/requirements',
+            {
+              type: 'category',
+              label: 'Server Requirements',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/requirements',
+              },
+              items: ['concepts/progressive-loading/encoding'],
+            },
             {
               type: 'category',
               label: 'Retrieve Configuration',
@@ -124,8 +133,7 @@ module.exports = {
                 'concepts/progressive-loading/volumeProgressive',
               ],
             },
-
-            'concepts/progressive-loading/static-wado',
+            // 'concepts/progressive-loading/static-wado',
             'concepts/progressive-loading/non-htj2k-progressive',
           ],
         },

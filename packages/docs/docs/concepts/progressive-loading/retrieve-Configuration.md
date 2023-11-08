@@ -51,7 +51,7 @@ with key of `'lkajsdflkjaslfkjsadlkfj'` in the `retrieveOptions` object as we wi
 What would happen if we reference a retrieve type that is not defined in the retrieve options?
 </summary>
 
-Cornerstone will ignore the progressive loading configuration and will load the image as if progressive loading is not enabled (like before)
+Cornerstone will check if a `default` retrieve options is specified, if true, it will use that otherwise will ignore the progressive loading configuration and will load the image as if progressive loading is not enabled (like before)
 
 </details>
 
@@ -92,7 +92,6 @@ We will talk about `frequency` in the each method's section below.
 For streaming requests, you can configure the following options:
 
 - `streaming`: whether to use streaming or not
-- `streamingDecode`: whether to decode the image as it is being downloaded or not (most often you want to set this to true)
 
 #### Decoding Frequency
 
@@ -116,7 +115,7 @@ To answer the question of how many decoding levels will occur, it totally depend
 
 #### Example
 
-For the simple streaming scenario (streaming true and streamingDecode to true) you should expect the following behavior:
+For the simple streaming scenario (streaming true) you should expect the following behavior:
 
 ![](../../assets/streaming-decode.png)
 
@@ -131,14 +130,14 @@ as soon as possible.
 #### Options
 
 - `chunkSize`: byte range value to retrieve for initial decode (default is 64kb)
-- `totalRangesToFetch`: How many total ranges to break the request up into (deafult to 2 ranges)
-- `range`: is the range number (index) that you want to fetch (should be less than `totalRangesToFetch`)
+- `numberOfRanges`: How many total ranges to break the request up into (default to 2 ranges)
+- `rangeIndex`: is the range number (index) that you want to fetch (should be less than `numberOfRanges`)
 
-<!-- - range - this is a number between 0 and the totalRangesToFetch
+<!-- - range - this is a number between 0 and the numberOfRanges
   - Fetches data starting at the last fetch end point, or 0
   - Fetches data ending with the total length or (range+1)\*chunkSizeToFetch
   - Ranges do NOT need to be all fetched, but do need to be increasing
-- totalRangesToFetch - how many pieces of size chunkSizeToFetch are retrieved
+- numberOfRanges - how many pieces of size chunkSizeToFetch are retrieved
 - chunkSizeToFetch - the number of bytes in each fetch chunk
   - last chunk is always the remaining data, regardless of size -->
 
@@ -146,7 +145,7 @@ as soon as possible.
 
 There are two scenarios for byte range requests:
 
-- The server sends back the total size of the data in the header of the response for the byte range in which we use our automatic
+- If the server sends back the total size of the data in the header of the response for the byte range in which we use our automatic
   decoding frequency (similar to the streaming scenario).
 - The server does not send back the total size of the data in the header of the response for the byte range in which we wait
   until the range request is finished and then decode the image.
@@ -157,7 +156,7 @@ For instance for the options of
 
 ```js
 {
-  range: 0,
+  rangeIndex: 0,
   chunkSize: 256000, // 256kb
 }
 ```
@@ -168,7 +167,7 @@ another example
 
 ```js
 {
-  range: 0,
+  rangeIndex: 0,
   decodeLevel: 3
 }
 
@@ -178,24 +177,25 @@ another example
 ![](../../assets/range-0-decode-3.png)
 
 :::tip
-Since you can specify the `totalRangesToFetch`, the `range` should always be
-less than `totalRangesToFetch` and the `totalRangesToFetch` should be greater than 0.
-In addition, `range = 0` will always be the first chunk, and the last chunk will always be the remaining data.
+Since you can specify the `numberOfRanges`, the `rangeIndex` should always be
+less than `numberOfRanges` and the `numberOfRanges` should be greater than 0.
+In addition, `rangeIndex = 0` will always be the first chunk, and the last chunk will always be the remaining data.
 
-For instance, if you have `totalRangesToFetch = 4`, then your ranges would be
+For instance, if you have `numberOfRanges = 4`, then your ranges would be
 
 - `range 0`: `0` to `chunkSize` (in bytes)
 - `range 1`: `chunkSize` to `2 * chunkSize` (in bytes)
 - `range 2`: `2 * chunkSize` to `3 * chunkSize` (in bytes)
 - `range 3`: `3 * chunkSize` to `totalSize` (in bytes) - the rest of the data
-  :::
+
+:::
 
 <details>
 <summary>
 What if I start with a range 1 instead of 0?
 </summary>
 
-Cornerstone will automatically fetch the range 0 first and then fetch the range 1 (which would be the rest of the data)
+Cornerstone will automatically fetch the range 0 first and then fetch the range 1 (which would be the rest of the data in case of two ranges)
 
 </details>
 

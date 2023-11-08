@@ -138,26 +138,21 @@ export type RangeRetrieveOptions = BaseRetrieveOptions & {
    */
   chunkSize?: number | ((metadata) => number);
   /**
-   * Defines the range to use, a number less than total ranges.
+   * Defines the rangeIndex to use, a number less than total ranges.
    * Stages do not need to use sequential ranges, the missing data
    * will be fetched as a larger fetch as required.
    */
-  range: number;
+  rangeIndex: number;
   /**
    * How many total ranges to break the request up into.
    */
-  totalRangesToFetch?: number | ((metadata) => number);
+  numberOfRanges?: number | ((metadata) => number);
 };
 
 /**
  * Streaming retrieve is done when a request is decoded as it arrives.
  * That is, if you receive the first 73k as the first part of the request,
- * then that will attempt to be decoded, assuming the streamingDecode is also
- * set.  If the streamingDecode is not set, the retrieve will be streaming, but
- * the decoding wont be, so you will get a  single decode at the end.  This
- * can be used to differentiate between partially decodable transfer syntaxes
- * such as HTJ2K and others such as JLS which can be streamed for retrieve, but
- * cannot be decoded partially.
+ * then that will attempt to be decoded.
  */
 export type StreamingRetrieveOptions = BaseRetrieveOptions & {
   /**
