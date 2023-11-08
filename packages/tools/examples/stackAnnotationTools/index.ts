@@ -184,7 +184,7 @@ addButtonToToolbar({
 addSliderToToolbar({
   title: 'Rotation',
   range: [0, 360],
-  step: 5,
+  step: 10,
   defaultValue: 0,
   onSelectedValueChange: (value) => {
     const valueAsNumber = Number(value);
