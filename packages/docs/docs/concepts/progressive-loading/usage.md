@@ -47,7 +47,8 @@ For loading a volume as progressive loading, you can use the `volumeId` as the k
 ```js
 import { utilities } from '@cornerstone3d/core';
 
-utilities.imageRetrieveMetadataProvider.add('volumeId', retrieveConfiguration);
+const volumeId = ....get volume id....
+utilities.imageRetrieveMetadataProvider.add(volumeId, retrieveConfiguration);
 ```
 
 Or you can scope your metadata to `volume` in order for it to be applied to all volumeIds.

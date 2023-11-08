@@ -34,11 +34,10 @@ const {
 } = cornerstoneTools;
 
 const { imageRetrieveMetadataProvider } = utilities;
-const { ImageQualityStatus, ViewportType, Events } = Enums;
+const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
-const { singleRetrieveStages, interleavedRetrieveStages } =
-  ProgressiveRetrieveImages;
+const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -166,18 +165,13 @@ const configHtj2k = {
 const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
-    default: {
-      range: 0,
-      chunkSize: 32000,
-      decodeLevel: 1,
-    },
     multipleFast: {
-      range: 0,
-      chunkSize: 32000,
+      rangeIndex: 1,
+      chunkSize: 16384,
       decodeLevel: 1,
     },
     multipleFinal: {
-      range: 1,
+      rangeIndex: -1,
     },
   },
 };

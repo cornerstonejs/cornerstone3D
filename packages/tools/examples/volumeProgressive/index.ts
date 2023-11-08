@@ -230,7 +230,7 @@ const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
     multipleFast: {
-      range: 0,
+      rangeIndex: 0,
       decodeLevel: 0,
     },
   },
@@ -245,7 +245,7 @@ const configHtj2kLossy = {
     multipleFast: {
       imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
       framesPath: '/lossy/',
-      range: 0,
+      rangeIndex: 0,
       decodeLevel: 2,
     },
   },
@@ -255,12 +255,12 @@ const configHtj2kMixed = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
     multipleFast: {
-      range: 0,
+      rangeIndex: 0,
       chunkSize: 32000,
       decodeLevel: 1,
     },
     multipleFinal: {
-      range: 1000,
+      rangeIndex: -1,
     },
   },
 };

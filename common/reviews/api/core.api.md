@@ -2201,9 +2201,8 @@ type PublicViewportInput = {
 
 // @public (undocumented)
 type RangeRetrieveOptions = BaseRetrieveOptions & {
-    chunkSize?: number | ((metadata: any) => number);
     rangeIndex: number;
-    numberOfRanges?: number | ((metadata: any) => number);
+    chunkSize?: number | ((metadata: any) => number);
 };
 
 // @public (undocumented)

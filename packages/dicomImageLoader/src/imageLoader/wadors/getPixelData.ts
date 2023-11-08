@@ -5,6 +5,7 @@ import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
 import { getImageQualityStatus } from './getImageQualityStatus';
 import { CornerstoneWadoRsLoaderOptions } from './loadImage';
+import { RangeRetrieveOptions } from 'core/dist/types/types';
 
 function getPixelData(
   uri: string,
@@ -36,7 +37,7 @@ function getPixelData(
     options.streamingData = { url };
   }
 
-  if (retrieveOptions.chunkSize || retrieveOptions.rangeIndex !== undefined) {
+  if ((retrieveOptions as RangeRetrieveOptions).rangeIndex !== undefined) {
     return rangeRequest(url, imageId, headers, options);
   }
 

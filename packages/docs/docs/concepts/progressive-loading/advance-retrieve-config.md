@@ -18,7 +18,8 @@ which you can revisit later.
 
 Used for volume-progressive loading, where we need to specify the exact image index we want to retrieve. This is generally true in general hanging protocols, as the initial image is usually in the middle, top, or bottom of the stack.
 
-You can use relative positions between [0, 1] and use -1 to indicate the last image in the stack.
+You can use absolution positions, or relative positions between [0, 1].
+Positions less than 0 are relative to the end, so you can use -1 to indicate the last image in the stack.
 
 Example
 
@@ -34,9 +35,19 @@ stages: [
 
 in the above example, we are requesting the middle image, the first image, and the last image in the stack.
 
+:::tip
+To retrieve another initial image automatically based on initial display positions,
+copy the stages, and add a new stage with your desired position, putting that stage
+first.
+This can be used to ensure the initial image is fetched.
+:::
+
 ### decimate?: number & offset?: number;
 
 By utilizing the decimate and offset features, we can enhance the flexibility of specifying the desired images for retrieval. For example, if a volume comprises 100 images, applying a decimate value of 2 and an offset of 0 will retrieve images 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, and so on. Similarly, employing a decimate value of 2 and an offset of 1 will retrieve images 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, and so forth. This demonstrates how we can effectively interleave the images by leveraging different offsets and decimate values.
+
+It is safe to repeat image fetches, as the fetches will be discarded when the
+image quality status is already better than that of the specified fetch.
 
 ```js
 stages: [
@@ -64,8 +75,9 @@ Above we have three stages where we first retrieve the initial images, then we r
 
 ### priority?: number & requestType
 
-Using combination of requestType (thumbnail, prefetch, interaction) and priority (the lower the higher) you can
-effectively prioritize the requests. For example, you can set the priority of the initial images to be higher than the rest of the images. This will ensure that the initial images are retrieved first in the queue.
+Using combination of requestType (thumbnail, prefetch, interaction) and priority (the lower the higher) you can effectively prioritize the requests.
+For example, you can set the priority of the initial images to be higher (lower number) than the rest of the images.
+This will ensure that the initial images are retrieved first in the queue.
 
 ```js
 stages: [
@@ -94,6 +106,16 @@ stages: [
   },
 ];
 ```
+
+:::tip
+Set the maximum number of requests to run to a lower value to ensure that
+your required requests are performed first. For example:
+
+```javascript
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 6);
+```
+
+:::
 
 ### nearbyFrames?: NearbyFrames[];
 
@@ -145,7 +167,7 @@ The configuration for this is (assuming standards based DICOMweb support):
 retrieveOptions: {
   default: {
     urlArguments: 'accept=image/jhc',
-    rangeIndex: 1,
+    rangeIndex: -1,
   },
   multipleFast: {
     urlArguments: 'accept=image/jhc',
@@ -155,16 +177,31 @@ retrieveOptions: {
 },
 ```
 
+:::warning
+You MUST repeat the same framesPath and urlArguments for each stage in a range
+request, otherwise the assumption is that the data retrieved in the first range
+is NOT the same data retrieved in the second range, and the second range
+request will just retrieve the entire request.
+:::
+
 ### framePath
 
 - framesPath - to update the URL path portion
 
-this is useful for rendering the lossy encoded as they might be located
-in a different path than the lossless encoded images.
+This is useful for fetching another available path such as the thumbnail, JPIP or
+rendered endpoints for lossy encoded retrieves as they are located
+on different paths than the lossless encoded images.
+
+This is also useful for integration with fixed path alternate encoding servers
+which choose the response to return based on the URL path, storing various lossy
+renderings on alternate paths.
 
 ### imageQualityStatus
 
-### partialImageQualityStatus
+- imageQualityStatus - used to set the retrieve status to lossy or sub-resolution
+
+This is typically used when the URL or retrieve parameters specify a lossy final
+rendering of the given path such as for a lossy encoded HTJ2K image.
 
 ## Separate URL For Sub-Resolution Images
 

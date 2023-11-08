@@ -171,28 +171,27 @@ const htj2kByteRanges = {
   ],
   retrieveOptions: {
     singleFast: {
-      totalRangesToFetch: 15,
       decodeLevel: 2,
       chunkSize: 128 * 1024,
-      range: 0,
+      rangeIndex: 0,
     },
     // This is a fallback phase if decodeLevel 2 fails, then try at 3
     singleFastFailure: {
       decodeLevel: 3,
-      range: 0,
+      rangeIndex: 0,
     },
     // Note how the range increases significantly to get much more data
     singleMiddle: {
       decodeLevel: 0,
-      range: 10,
+      rangeIndex: 10,
     },
     singleMiddleFailure: {
       decodeLevel: 1,
-      range: 10,
+      rangeIndex: 10,
     },
     singleFinal: {
       // Just do the final range retrieve
-      range: 1000,
+      rangeIndex: -1,
     },
   },
 };

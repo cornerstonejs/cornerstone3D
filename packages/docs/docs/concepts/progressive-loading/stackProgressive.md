@@ -3,11 +3,10 @@ id: stackProgressive
 title: Stack Progressive Loading
 ---
 
-Here, we will explore the progressive loading of stackViewports as an example use case for progressive loading and benchmark it compared to regular loading. We will discuss this in more detail, including scenarios
-that involve multiple stages of progressive loading and different retrieval types.
+Here, we will explore the progressive loading of stackViewports as an example use case for progressive loading and benchmark it compared to regular loading. We will discuss this in more detail, including scenarios that involve multiple stages of progressive loading and different retrieval types.
 
 :::tip
-For stacked viewports, larger images can be decoded using a streaming method, where the HTJ2K RPCL image is received as a stream, and parts of it are decoded as they become available. This can significantly improve the viewing of stacked images, without requiring any special server requirements other than support for HTJ2K RPCL encoded data.
+For stacked viewports, larger images can be decoded using a streaming method, where the HTJ2K RPCL image is received as a stream, and parts of it are decoded as they become available. This can significantly improve the viewing of stacked images, without requiring any special server requirements other than support for the HTJ2K RPCL transfer syntax.
 :::
 
 # Benchmark
@@ -26,16 +25,23 @@ The configuration for the above test is as follows
 
 ## HTJ2K Streaming (1 stage)
 
+This configuration will retrieve an image using a single stage streaming response.
+It is safe to use for both streaming and non-streaming transfer syntaxes, but
+will only activate for the decoding portion when used with HTJ2K transfer syntaxes.
+For HTJ2K decoding, if the image is NOT in RPCL format, then other decoding
+progressions may occur, such as decoding by by region (eg top-left, top-right, bottom-left, bottom-right),
+or decoding may fail until the full data is available.
+
+:::tip
+You can use `urlParameters: accept=image/jhc` to request HTJ2K in a standards
+compliant fashion.
+:::
+
 ```js
 const retrieveConfiguration = {
-  stages: [
-    {
-      id: 'initialImages',
-      retrieveType: 'singleFast',
-    },
-  ],
+  // stages defaults to singleRetrieveConfiguration
   retrieveOptions: {
-    singleFast: {
+    single: {
       streaming: true,
     },
   },
@@ -49,8 +55,19 @@ which applies to the entire stack of image ids. The first stage will
 load every image using the `singleFast` retrieve type, followed by the
 second stage retrieving using `singleFinal`.
 
+Note that this retrieve configuration requires support for byte-range requests
+on the server side. It MAY be safe for servers not supporting byte range requests,
+but the requests may also fail when attempted. Read your DICOM Conformance Statement.
+
+:::tip
+You can add a third, error recovery stage removing any byte range requests.
+This stage will only end up being run if the previous stages fail. This allows
+dealing with unknown server support.
+:::
+
 ```js
 const retrieveConfiguration = {
+  // This stages list is available as sequentialRetrieveStages
   stages: [
     {
       id: 'lossySequential',
@@ -67,7 +84,7 @@ const retrieveConfiguration = {
       decodeLevel: 3,
     },
     singleFinal: {
-      rangeIndex: 1,
+      rangeIndex: -1,
     },
   },
 };

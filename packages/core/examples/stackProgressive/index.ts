@@ -226,7 +226,6 @@ const htj2kMixedOptions = {
   ],
   retrieveOptions: {
     singleFast: {
-      numberOfRanges: 15,
       decodeLevel: 2,
       chunkSize: 128 * 1024,
       rangeIndex: 0,
@@ -247,7 +246,7 @@ const htj2kMixedOptions = {
     },
     singleFinal: {
       // Just do the final rangeIndex retrieve
-      rangeIndex: 1000,
+      rangeIndex: -1,
     },
   },
 };

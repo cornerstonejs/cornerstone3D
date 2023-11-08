@@ -91,10 +91,9 @@ The full size images are 3036 x 3036, while the JLS reduced images are 759 x 759
 - HTJ2K uses streaming data
 - HTJ2K Byte Range uses 64k initial retrieve, followed by remaining data
 
-
 # Interleave performance
 
- that none of the times include time to load the decoder, which can be
+that none of the times include time to load the decoder, which can be
 a second or more, but is only seen on first render. These times are similar for
 both types.
 
@@ -118,23 +117,22 @@ done against any DICOMweb server supporting HTJ2K and byte range requests.
 - Full size images are 512x512
 - Reduce resolution images are 128x128 and lossy compressed
 
-
 # Configuration
 
 See the stackProgressive example for stack details.
 
-Stack viewports need to be configured for progressive streaming by setting
-the `option.progressiveRendering` either to true, or to a retrieve configuration
-which renders progressively. Additionally, to render non-standard DICOMweb
-configurations progressively, the global retrieve options need to be set for the
-`retrieveType` and `transferSyntaxUID` values.
+Stack viewports need to be configured for progressive streaming by registering
+metadata for the imageId or the default `stack` metadata as an `IRetrieveConfiguration`
+value. This value contains the stages to run, as well as the retrieve configuration
+for each stage. In specific, the `streaming` value needs to be set on the
+retrieve configuration for the value `single` retrieveType.
 
-The retrieve options in the global configuration is an object with keys
-being (arbitrary) `retrieveType` string values, and the values being
-a Record from string transfer syntax UID's to `RetrieveOptions` instances.
-This design allows settings values for both a retrieve type or phase, as
-well as specific transfer syntaxes, allowing different retrieve options to be
-set for differing encodings.
+The retrieve configuration has two pieces, the stages and the retrieve options
+(additionally, it can completely replace the retriever with a custom one).
+The stages are used to select the image ID's to retrieve, and provide the
+retrieve type to use. Then, the retrieve options map the retrieve type to
+the actual options to use. That allows multiple stages to use the same
+retrieve type for different purposes.
 
 The two retrieve types used for the progressive rendering for stack (which
 is defined in `sequentialRetrieveConfiguration`) are `singleFast` and `singleFinal`.

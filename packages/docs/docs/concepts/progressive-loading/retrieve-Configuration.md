@@ -99,16 +99,17 @@ Most often, when the stream is coming from a server, the server lets the client 
 
 Different levels are, if the downloaded portion at the time of decoding is
 
-- <8% of the total data, then decode to level 4
-- 8 < x < 13% of the total data, then decode to level 3
-- 13 < x < 27% of the total data, then decode to level 2
-- < 100 (means it is not finished) then decode to level 1
+- <8% of the total data, then decode to level 3
+- 8 < x < 13% of the total data, then decode to level 2
+- 13 < x < 27% of the total data, then decode to level 1
+- < 100 (means it is not finished) then decode to level 0
 - 100% of the total data (stream is finished), then decode to level 0
 
 :::tip
 How did we come up with these levels? It is kind of simple.
 
-For instance, if we have only downloaded 1/16th of the total data, it means we have downloaded 6.25% of the data (8% is 6.25% with some offset). This means we can decode the image to 1/16th of the original size, which is level 4, and the same goes for the rest of the levels.
+For instance, if we have only downloaded 1/16th of the total data, it means we have downloaded 6.25% of the data (8% is 6.25% with some offset). This means we can decode the image to 1/16th of the original size, which is level 4. However, the interpolation provided by the decoder is slightly better than that provided by straight image rendering, and thus one can decode to a slightly lower level, using level 3 instead.
+The same goes for the rest of the levels.
 :::
 
 To answer the question of how many decoding levels will occur, it totally depends on the initial data that is downloaded and how the stream progresses. But at any given time when the data is downloaded, we check the progress against the above levels and decode the image to the relevant resolution if possible. If an error is thrown or the image is not decoded, we simply wait for the next progress event to occur.
@@ -129,17 +130,13 @@ as soon as possible.
 
 #### Options
 
-- `chunkSize`: byte range value to retrieve for initial decode (default is 64kb)
-- `numberOfRanges`: How many total ranges to break the request up into (default to 2 ranges)
-- `rangeIndex`: is the range number (index) that you want to fetch (should be less than `numberOfRanges`)
+- `chunkSize`: byte range value to retrieve for initial decode (default is 64kb).
+  Ignored for all but the first range request (regardless of rangeIndex).
+- `rangeIndex`: is the range number (index) that you want to fetch, -1 for remaining data
 
-<!-- - range - this is a number between 0 and the numberOfRanges
-  - Fetches data starting at the last fetch end point, or 0
-  - Fetches data ending with the total length or (range+1)\*chunkSizeToFetch
-  - Ranges do NOT need to be all fetched, but do need to be increasing
-- numberOfRanges - how many pieces of size chunkSizeToFetch are retrieved
-- chunkSizeToFetch - the number of bytes in each fetch chunk
-  - last chunk is always the remaining data, regardless of size -->
+Note that there is no guarantee that the rangeIndex will actually fetch another
+range since it will discontinue fetching once all the data has been fetched.
+Also, -1 is used to flag the "remaining" data.
 
 #### Decoding Frequency
 
@@ -147,8 +144,14 @@ There are two scenarios for byte range requests:
 
 - If the server sends back the total size of the data in the header of the response for the byte range in which we use our automatic
   decoding frequency (similar to the streaming scenario).
-- The server does not send back the total size of the data in the header of the response for the byte range in which we wait
-  until the range request is finished and then decode the image.
+- The server does not send back the total size of the data in the header of the response for the byte range in which we wait until the range request is finished and then decode the image.
+
+:::tip
+The server should send the cors header `Access-Control-Expose-Headers: *` to
+enable reading the `Range-Response` header required for seeing the total size.
+Otherwise, the range request is finished when the multipart/related header
+is complete OR the returned data is smaller than the requested data.
+:::
 
 #### Example
 
@@ -177,17 +180,18 @@ another example
 ![](../../assets/range-0-decode-3.png)
 
 :::tip
-Since you can specify the `numberOfRanges`, the `rangeIndex` should always be
-less than `numberOfRanges` and the `numberOfRanges` should be greater than 0.
-In addition, `rangeIndex = 0` will always be the first chunk, and the last chunk will always be the remaining data.
+You can fetch the remaining data by using `rangeIndex: -1`.
+In addition, `rangeIndex = 0` will always be the first chunk.
 
-For instance, if you have `numberOfRanges = 4`, then your ranges would be
+For instance, if you have 4 ranges, then your ranges would be
 
-- `range 0`: `0` to `chunkSize` (in bytes)
-- `range 1`: `chunkSize` to `2 * chunkSize` (in bytes)
-- `range 2`: `2 * chunkSize` to `3 * chunkSize` (in bytes)
-- `range 3`: `3 * chunkSize` to `totalSize` (in bytes) - the rest of the data
+- `rangeIndex 0`: `0` to `chunkSize-1` (in bytes)
+- `rangeIndex 5`: `chunkSize` to `5 * chunkSize-1` (in bytes)
+- `rangeIndex 25`: `5 * chunkSize` to `25 * chunkSize-1` (in bytes)
+- `rangeIndex -1`: `25 * chunkSize` to `totalSize` (in bytes) - the rest of the data
 
+This use of rangeIndex allows retrieving larger increments to agree with the
+amount of data required for decodeLevel values.
 :::
 
 <details>
@@ -195,7 +199,8 @@ For instance, if you have `numberOfRanges = 4`, then your ranges would be
 What if I start with a range 1 instead of 0?
 </summary>
 
-Cornerstone will automatically fetch the range 0 first and then fetch the range 1 (which would be the rest of the data in case of two ranges)
+Cornerstone will automatically fetch the range 0 combined with range 1 as a single request.
+This avoids needing to perform multiple intermediate requests.
 
 </details>
 
@@ -206,6 +211,10 @@ images there are some other usecases
 
 - Thumbnails: Often, for thumbnails, we want to load the image as quickly as possible but don't need the full resolution. We can use a byte range request to fetch a lower resolution version of the data.
 - CINE: For certain imaging needs, the frame rate is absolutely essential in the cine mode. Often, the gross anatomy is desired in these scenarios, not the details, but the frame rate is of greater importance. We can use the byte range request to fetch the subresolution of the data, guaranteeing that we can achieve the target frame rate.
+
+In the future, a separate memory cache might be used for range request details,
+but right now the intermediate data is held alongside the image data. Storing
+it in a cache would allow for CINE display with only the cost of decoding the image.
 
 ## Conclusion
 

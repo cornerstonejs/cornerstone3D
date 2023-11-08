@@ -43,8 +43,6 @@ export default function rangeRequest(
     streamingData.chunkSize ||
     getValue(imageId, retrieveOptions, 'chunkSize') ||
     65536;
-  const numberOfRanges =
-    getValue(imageId, retrieveOptions, 'numberOfRanges') || 2;
 
   const errorInterceptor = (err: any) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -77,7 +75,6 @@ export default function rangeRequest(
     try {
       if (!streamingData.encodedData) {
         streamingData.chunkSize = chunkSize;
-        streamingData.numberOfRanges = numberOfRanges;
         streamingData.rangesFetched = 0;
       }
       const byteRange = getByteRange(streamingData, retrieveOptions);
@@ -127,7 +124,6 @@ async function fetchRangeAndAppend(
   range: [number, number | ''],
   streamingData
 ) {
-  console.debug('🚀 ~ range:', range);
   if (range) {
     headers = Object.assign(headers, {
       Range: `bytes=${range[0]}-${range[1]}`,
@@ -190,33 +186,15 @@ function getByteRange(
   streamingData,
   retrieveOptions: RangeRetrieveOptions
 ): [number, number | ''] {
-  const {
-    totalBytes,
-    encodedData,
-    numberOfRanges = 2,
-    chunkSize = 65536,
-  } = streamingData;
-  const { rangeIndex: range = 0 } = retrieveOptions;
-  if (range > 0 && (!totalBytes || !encodedData)) {
+  const { totalBytes, encodedData, chunkSize = 65536 } = streamingData;
+  const { rangeIndex = 0 } = retrieveOptions;
+  if (rangeIndex === -1 && (!totalBytes || !encodedData)) {
     return [0, ''];
   }
-  if (range === 0) {
-    return [0, chunkSize - 1];
-  }
-  if (range >= numberOfRanges) {
-    return [encodedData.byteLength, ''];
-  }
-  const endPoints: (number | '')[] = [chunkSize - 1];
-  for (let endRange = 1; endRange < numberOfRanges; endRange++) {
-    if (endRange === numberOfRanges - 1) {
-      // Use empty value to fetch remaining data
-      endPoints.push('');
-    } else {
-      const previous = endPoints[endPoints.length - 1] as number;
-      endPoints.push(Math.min(totalBytes, previous + chunkSize));
-    }
+  if (rangeIndex === -1 || encodedData?.byteLength > totalBytes - chunkSize) {
+    return [encodedData?.byteLength || 0, ''];
   }
   // Note the byte range is inclusive at both ends and zero based,
   // so the byteLength is the next index to fetch.
-  return [encodedData.byteLength, endPoints[range]];
+  return [encodedData?.byteLength || 0, chunkSize * (rangeIndex + 1) - 1];
 }

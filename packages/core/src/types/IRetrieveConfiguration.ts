@@ -113,11 +113,6 @@ export type BaseRetrieveOptions = {
    * complete image is lossy, this should be set to LOSSY.
    */
   imageQualityStatus?: ImageQualityStatus;
-  /**
-   * Status to use when not all the bytes have been retrieved.  Defaults to
-   * SUBRESOLUTION.
-   */
-  progressiveImageQualityStatus?: ImageQualityStatus;
 };
 
 /**
@@ -133,20 +128,18 @@ export type BaseRetrieveOptions = {
  */
 export type RangeRetrieveOptions = BaseRetrieveOptions & {
   /**
+   * Defines the rangeIndex to use.
+   * Stages do not need to use sequential ranges, the missing data
+   * will be fetched as a larger fetch as required.
+   * Terminate range requests with a rangeIndex: -1 to fetch remaining data.
+   */
+  rangeIndex: number;
+
+  /**
    * byte range value to retrieve for initial decode
    * Defaults to 64,000 bytes.
    */
   chunkSize?: number | ((metadata) => number);
-  /**
-   * Defines the rangeIndex to use, a number less than total ranges.
-   * Stages do not need to use sequential ranges, the missing data
-   * will be fetched as a larger fetch as required.
-   */
-  rangeIndex: number;
-  /**
-   * How many total ranges to break the request up into.
-   */
-  numberOfRanges?: number | ((metadata) => number);
 };
 
 /**

@@ -8,10 +8,7 @@ export function getImageQualityStatus(
   done = true
 ) {
   if (!done) {
-    return (
-      retrieveOptions?.progressiveImageQualityStatus ??
-      ImageQualityStatus.SUBRESOLUTION
-    );
+    return ImageQualityStatus.SUBRESOLUTION;
   }
   return (
     retrieveOptions.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION
