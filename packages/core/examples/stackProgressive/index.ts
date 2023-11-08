@@ -1,9 +1,6 @@
 import {
-  RenderingEngine,
-  Types,
   Enums,
   cache,
-  setUseCPURendering,
   ProgressiveRetrieveImages,
   utilities,
 } from '@cornerstonejs/core';
@@ -11,18 +8,18 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 
 const { imageRetrieveMetadataProvider } = utilities;
-const { singleRetrieveStages, sequentialRetrieveStages } =
-  ProgressiveRetrieveImages;
+const { sequentialRetrieveStages } = ProgressiveRetrieveImages;
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType, ImageQualityStatus } = Enums;
+const { ImageQualityStatus } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -263,9 +260,6 @@ const htj2kThumbnailOptions = {
   },
 };
 
-const urlParams = new URLSearchParams(window.location.search);
-const useLocal = urlParams.get('useLocal') === 'true';
-
 /**
  * Runs the demo
  */
@@ -279,15 +273,14 @@ async function run() {
       '1.3.6.1.4.1.9590.100.1.2.19841440611855834937505752510708699165',
     SeriesInstanceUID:
       '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
-    wadoRsRoot: useLocal
-      ? 'http://localhost:5000/dicomweb'
-      : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   const imageIdsCt = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: useLocal
+    wadoRsRoot: localPort
       ? 'http://localhost:5000/dicomweb'
       : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
