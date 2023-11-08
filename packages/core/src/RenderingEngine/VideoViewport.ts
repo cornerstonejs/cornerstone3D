@@ -42,6 +42,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
     parallelScale: 1,
   };
 
+  windowLevelTransform: mat4;
+  colorBalanceTransform: mat4;
+  colorTransform: mat4;
+
+  feFilter: string;
+  averageWhite: [number, number, number];
+  windowLevel: { windowWidth: number; windowCenter: number };
+
   constructor(props: VideoViewportInput) {
     super({
       ...props,
@@ -95,7 +103,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
    */
   public setVideoImageId(
     imageIds: string | string[],
-    frameNumber = 0
+    frameNumber?: number
   ): Promise<unknown> {
     this.imageId = Array.isArray(imageIds) ? imageIds[0] : imageIds;
     const { imageId } = this;
@@ -103,7 +111,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return this.setVideoURL(rendered).then(() => {
       const { cineRate = 30 } = metaData.get(MetadataModules.CINE, imageId);
       this.fps = cineRate;
-      this.setFrame(frameNumber);
+      if (frameNumber !== undefined) {
+        this.pause();
+        this.setFrame(frameNumber);
+      }
+      this.setAverageWhite([180, 255, 255]);
+      this.setWindowLevel(128, 128);
     });
   }
 
@@ -151,10 +164,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public async pause() {
-    if (this.isPlaying) {
-      await this.videoElement.pause();
-      this.isPlaying = false;
-    }
+    await this.videoElement.pause();
+    this.isPlaying = false;
   }
 
   public async scroll(delta = 1) {
@@ -292,6 +303,46 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
   public getImageData() {
     return null;
+  }
+
+  public setWindowLevel(windowWidth = 256, windowCenter = 128) {
+    this.windowLevel = { windowWidth, windowCenter };
+    this.setColorTransform();
+  }
+
+  public setAverageWhite(averageWhite: [number, number, number]) {
+    this.averageWhite = averageWhite;
+    this.setColorTransform();
+  }
+
+  public setColorTransform() {
+    if (!this.windowLevel && !this.averageWhite) {
+      this.feFilter = null;
+    } else {
+      const { windowWidth = 256, windowCenter = 128 } = this.windowLevel || {};
+      const white = this.averageWhite || [255, 255, 255];
+      const maxWhite = Math.max(...white);
+      const scaleWhite = white.map((c) => maxWhite / c);
+      // From the DICOM standard: ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
+      // which is x/(w-1) - (c - 0.5) / (w-1) + 0.5  for this case
+      const wlScale = 255 / (windowWidth - 1);
+      const wlDelta = -(windowCenter - 0.5) / (windowWidth - 1) + 0.5;
+      console.log('scaleWhite=', scaleWhite, wlScale, wlDelta);
+      this.feFilter = `url('data:image/svg+xml,\
+      <svg xmlns="http://www.w3.org/2000/svg">\
+        <filter id="colour" color-interpolation-filters="linearRGB">\
+        <feColorMatrix type="matrix" \
+        values="\
+          ${scaleWhite[0] * wlScale} 0 0 0 ${wlDelta} \
+          0 ${scaleWhite[1] * wlScale} 0 0 ${wlDelta} \
+          0 0 ${scaleWhite[2] * wlScale} 0 ${wlDelta} \
+          0 0 0 1 0" />\
+        </filter>\
+      </svg>#colour')`;
+    }
+    console.log('Setting canvas filter', this.feFilter);
+    this.canvas.style.filter = this.feFilter;
+    console.log('Canvas filter set to', this.canvas.style.filter);
   }
 
   public setCamera(camera: ICamera): void {
