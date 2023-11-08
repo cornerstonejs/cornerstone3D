@@ -397,7 +397,9 @@ export default class BaseStreamingImageVolume
       totalNumFrames,
     });
 
-    this.loadStatus.callbacks = [];
+    if (this.loadStatus.loaded) {
+      this.loadStatus.callbacks = [];
+    }
 
     const eventDetail = {
       error,

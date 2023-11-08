@@ -177,8 +177,8 @@ function loadImage(
           it.add(image, done);
           lastDecodeLevel = decodeLevel;
         } catch (e) {
-          console.warn("Couldn't decode", e);
           if (extractDone) {
+            console.warn("Couldn't decode", e);
             throw e;
           }
         }

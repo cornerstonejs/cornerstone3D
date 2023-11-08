@@ -3,6 +3,7 @@ import {
   cache,
   ProgressiveRetrieveImages,
   utilities,
+  RenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -19,7 +20,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ImageQualityStatus } = Enums;
+const { ViewportType, ImageQualityStatus } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -280,9 +281,8 @@ async function run() {
   const imageIdsCt = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot: localPort
-      ? 'http://localhost:5000/dicomweb'
-      : 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

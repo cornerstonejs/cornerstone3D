@@ -150,7 +150,7 @@ export default class ProgressiveIterator<T> {
         }
       },
       (reason) => {
-        this.rejectReason = reason;
+        this.reject(reason);
         if (errorCallback) {
           errorCallback(reason);
         } else {

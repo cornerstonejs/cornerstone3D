@@ -209,6 +209,9 @@ class ProgressiveRetrieveImagesInstance {
           }
           this.addRequest(next, options.streamingData);
         } else {
+          if (!complete) {
+            this.listener.errorCallback(imageId, true, "Couldn't decode");
+          }
           this.outstandingRequests--;
           for (let skip = next; skip; skip = skip.next) {
             this.updateStageStatus(skip.stage, null, true);

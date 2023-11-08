@@ -1345,10 +1345,10 @@
   resolved "https://registry.npmjs.org/@cornerstonejs/codec-openjpeg/-/codec-openjpeg-1.2.2.tgz#f0b524235b5551426b46db197a37b06f8ac805d7"
   integrity sha512-b1O7lZacKXelgeV9n8XWZ7pTw3i4Bq4qQ26G5ahBjWoOw4QNcCrb5hPxWBxNB/I8AoNbJxAe+lyLtyQGfdrTbw==
 
-"@cornerstonejs/codec-openjph@^2.4.3":
-  version "2.4.3"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.3.tgz#91c5d4bf80d426ebbee781b73bff362dbbb1164f"
-  integrity sha512-/wVqRypJX+CAVqR3pcpkZgoU5SuY07HgIXIRtMXjHwJ9AEmL2DJnVrN9bYVTsVlmnVKBi8dVpgjanh5DDCCt+Q==
+"@cornerstonejs/codec-openjph@^2.4.5":
+  version "2.4.5"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.5.tgz#8690b61a86fa53ef38a70eee9d665a79229517c0"
+  integrity sha512-MZCUy8VG0VG5Nl1l58+g+kH3LujAzLYTfJqkwpWI2gjSrGXnP6lgwyy4GmPRZWVoS40/B1LDNALK905cNWm+sg==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
