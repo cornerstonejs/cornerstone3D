@@ -9,8 +9,7 @@ function drawEllipse(
   svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   ellipseUID: string,
-  corner1: Types.Point2,
-  corner2: Types.Point2,
+  canvasCoordinates: [Types.Point2, Types.Point2, Types.Point2, Types.Point2],
   options = {},
   dataId = ''
 ): void {
@@ -31,12 +30,13 @@ function drawEllipse(
   const svgNodeHash = _getHash(annotationUID, 'ellipse', ellipseUID);
   const existingEllipse = svgDrawingHelper.getSvgNode(svgNodeHash);
 
-  const w = Math.abs(corner1[0] - corner2[0]);
-  const h = Math.abs(corner1[1] - corner2[1]);
-  const xMin = Math.min(corner1[0], corner2[0]);
-  const yMin = Math.min(corner1[1], corner2[1]);
+  const [bottom, top, left, right] = canvasCoordinates;
 
-  const center = [xMin + w / 2, yMin + h / 2];
+  const w = Math.hypot(left[0] - right[0], left[1] - right[1]);
+  const h = Math.hypot(top[0] - bottom[0], top[1] - bottom[1]);
+  const angle = Math.atan2(left[1] - right[1], left[0] - right[0]) * 180 / Math.PI;
+
+  const center = [(left[0] + right[0]) / 2 , ( top[1] + bottom[1] ) / 2];
   const radiusX = w / 2;
   const radiusY = h / 2;
 
@@ -47,6 +47,7 @@ function drawEllipse(
     ry: `${radiusY}`,
     stroke: color,
     fill: 'transparent',
+    'transform': `rotate(${angle} ${center[0]} ${center[1]})`,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };
