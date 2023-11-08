@@ -159,7 +159,8 @@ addDropdownToToolbar({
   },
 });
 
-const useLocal = false;
+const urlParams = new URLSearchParams(window.location.search);
+const useLocal = urlParams.get('useLocal') === 'true';
 
 /**
  * Runs the demo
