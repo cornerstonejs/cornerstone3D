@@ -10,7 +10,6 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addButtonToToolbar,
-  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -181,14 +180,9 @@ addButtonToToolbar({
   },
 });
 
-addSliderToToolbar({
-  title: 'Rotation',
-  range: [0, 360],
-  step: 10,
-  defaultValue: 0,
-  onSelectedValueChange: (value) => {
-    const valueAsNumber = Number(value);
-
+addButtonToToolbar({
+  title: 'Rotate Delta 90',
+  onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -197,7 +191,8 @@ addSliderToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    viewport.setProperties({ rotation: valueAsNumber });
+    const { rotation } = viewport.getProperties();
+    viewport.setProperties({ rotation: rotation + 90 });
 
     viewport.render();
   },
