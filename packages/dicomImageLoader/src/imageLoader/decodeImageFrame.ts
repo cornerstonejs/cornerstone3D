@@ -23,17 +23,21 @@ function processDecodeTask(
     ? [pixelData.buffer]
     : undefined;
 
-  return webWorkerManager.executeTask('dicomImageLoader', 'decodeTask', {
-    priority,
-    args: {
+  return webWorkerManager.executeTask(
+    'dicomImageLoader',
+    'decodeTask',
+    {
       imageFrame,
       transferSyntax,
       pixelData,
       options,
       decodeConfig,
     },
-    requestType: options?.requestType,
-  });
+    {
+      priority,
+      requestType: options?.requestType,
+    }
+  );
 }
 
 function decodeImageFrame(

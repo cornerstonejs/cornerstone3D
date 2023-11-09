@@ -69,7 +69,8 @@ class CentralizedWorkerManager {
   executeTask(
     workerName,
     methodName,
-    { requestType = RequestType.Compute, priority = 0, args = {}, options = {} }
+    args = {},
+    { requestType = RequestType.Compute, priority = 0, options = {} }
   ) {
     return new Promise((resolve, reject) => {
       const requestFn = async () => {
