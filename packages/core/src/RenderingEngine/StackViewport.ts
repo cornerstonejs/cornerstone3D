@@ -1039,6 +1039,33 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
   }
 
+  private getPanCPU(): Point2 {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    return [viewport.translation.x, viewport.translation.y];
+  }
+
+  private setPanCPU(pan: Point2): void {
+    const camera = this.getCameraCPU();
+
+    this.setCameraCPU({
+      ...camera,
+      focalPoint: [...pan.map((p) => -p), 0] as Point3,
+    });
+  }
+
+  private getZoomCPU(): number {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    return viewport.scale;
+  }
+
+  private setZoomCPU(zoom: number): void {
+    const camera = this.getCameraCPU();
+
+    this.setCameraCPU({ ...camera, scale: zoom });
+  }
+
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
     const { viewport } = this._cpuFallbackEnabledElement;
 
@@ -2926,6 +2953,22 @@ class StackViewport extends Viewport implements IStackViewport {
     setCamera: {
       cpu: this.setCameraCPU,
       gpu: super.setCamera,
+    },
+    getPan: {
+      cpu: this.getPanCPU,
+      gpu: super.getPan,
+    },
+    setPan: {
+      cpu: this.setPanCPU,
+      gpu: super.setPan,
+    },
+    getZoom: {
+      cpu: this.getZoomCPU,
+      gpu: super.getZoom,
+    },
+    setZoom: {
+      cpu: this.setZoomCPU,
+      gpu: super.setZoom,
     },
     setVOI: {
       cpu: this.setVOICPU,
