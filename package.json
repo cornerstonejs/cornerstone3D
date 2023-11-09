@@ -1,5 +1,6 @@
 {
-  "name": "root",
+  "name": "@cornerstonejs/root",
+  "version": "1.0.0",
   "description": "Cornerstone.js Monorepo Root",
   "private": true,
   "workspaces": [
