@@ -11,7 +11,6 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
-import { getWebWorkerManager } from '../init';
 
 import {
   triggerEvent,
@@ -174,7 +173,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Camera properties
   private initialViewUp: Point3;
-  workerI = 39;
 
   /**
    * Constructor for the StackViewport class
