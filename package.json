@@ -36,6 +36,7 @@
     "preinstall": "node preinstall.js",
     "prepare": "husky install",
     "start": "yarn run dev",
+    "postinstall": "yarn run build:esm",
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",
     "test:dev": "karma start",
     "test:ci": "karma start --single-run",
