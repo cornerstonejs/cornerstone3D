@@ -1,4 +1,5 @@
 /* eslint import/extensions:0 */
+import { getOptions } from './imageLoader/internal';
 import registerLoaders from './imageLoader/registerLoaders';
 
 let cornerstone;
@@ -17,9 +18,11 @@ const external = {
 
     registerLoaders(cornerstone);
 
+    const options = getOptions();
+
     const workerManager = external.cornerstone.getWebWorkerManager();
     workerManager.registerWorker('dicomImageLoader', workerFn, {
-      maxWorkerInstances: 10,
+      maxWorkerInstances: options.maxWebWorkers || 1,
     });
   },
   get cornerstone() {
