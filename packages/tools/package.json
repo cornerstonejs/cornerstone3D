@@ -13,6 +13,13 @@
   "directories": {
     "test": "test"
   },
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
   "sideEffects": false,
   "scripts": {
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
