@@ -98,9 +98,9 @@ export default class StreamingDynamicImageVolume
   }
 
   private _getTimePointRequests = (timePoint, priority: number) => {
-    const { imageIds, scalarData } = timePoint;
+    const { imageIds } = timePoint;
 
-    return this.getImageIdsRequests(imageIds, scalarData, priority);
+    return this.getImageIdsRequests(imageIds, priority);
   };
 
   private _getTimePointsRequests = (priority: number) => {
@@ -114,6 +114,18 @@ export default class StreamingDynamicImageVolume
 
     return timePointsRequests;
   };
+
+  public getImageIdsToLoad(): string[] {
+    const timePoints = this._getTimePointsToLoad();
+    let imageIds = [];
+
+    timePoints.forEach((timePoint) => {
+      const { imageIds: timePointIds } = timePoint;
+      imageIds = imageIds.concat(timePointIds);
+    });
+
+    return imageIds;
+  }
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
@@ -178,7 +190,7 @@ export default class StreamingDynamicImageVolume
    * It returns the imageLoad requests for the streaming image volume instance.
    * It involves getting all the imageIds of the volume and creating a success callback
    * which would update the texture (when the image has loaded) and the failure callback.
-   * Note that this method does not executes the requests but only returns the requests.
+   * Note that this method does not execute the requests but only returns the requests.
    * It can be used for sorting requests outside of the volume loader itself
    * e.g. loading a single slice of CT, followed by a single slice of PET (interleaved), before
    * moving to the next slice.
@@ -187,8 +199,6 @@ export default class StreamingDynamicImageVolume
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
   public getImageLoadRequests = (priority: number) => {
-    // It returns all requests in reversed order because BaseStreamingImageVolume
-    // reverse all requests again otherwise it would load from last to first time point
-    return this._getTimePointsRequests(priority).reverse();
+    return this._getTimePointsRequests(priority);
   };
 }
