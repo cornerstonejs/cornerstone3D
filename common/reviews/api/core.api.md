@@ -2275,6 +2275,8 @@ function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: 
 // @public (undocumented)
 enum RequestType {
     // (undocumented)
+    Compute = "compute",
+    // (undocumented)
     Interaction = "interaction",
     // (undocumented)
     Prefetch = "prefetch",
@@ -2491,8 +2493,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     updateRenderingPipeline: () => void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
-    // (undocumented)
-    workerI: number;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }

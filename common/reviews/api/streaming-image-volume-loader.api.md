@@ -1525,6 +1525,7 @@ type PublicViewportInput = {
 
 // @public
 enum RequestType {
+    Compute = 'compute',
     Interaction = 'interaction',
     Prefetch = 'prefetch',
     Thumbnail = 'thumbnail',
