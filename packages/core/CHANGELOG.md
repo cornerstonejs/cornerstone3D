@@ -3,6 +3,200 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.28.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.28.1...v1.28.2) (2023-11-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.28.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.28.0...v1.28.1) (2023-11-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.28.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.4...v1.28.0) (2023-11-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.27.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.3...v1.27.4) (2023-11-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.27.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.2...v1.27.3) (2023-11-03)
+
+### Bug Fixes
+
+- **camera:** was not updating the viewUp and making the examples searchable in the prompt ([#865](https://github.com/cornerstonejs/cornerstone3D/issues/865)) ([72a3ed6](https://github.com/cornerstonejs/cornerstone3D/commit/72a3ed6b8b10271b1eefe534b139b8ad4d195dd0))
+
+## [1.27.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.1...v1.27.2) (2023-10-31)
+
+### Bug Fixes
+
+- **invert:** Call setInvertColor after setTransferFunction in StackViewport.\_resetProperties. ([#861](https://github.com/cornerstonejs/cornerstone3D/issues/861)) ([016a14a](https://github.com/cornerstonejs/cornerstone3D/commit/016a14a8a8b9bed530689bba5920ab3b1ac42093))
+
+## [1.27.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.0...v1.27.1) (2023-10-27)
+
+### Bug Fixes
+
+- **crosshairs:** and orientation markers and publish ([#856](https://github.com/cornerstonejs/cornerstone3D/issues/856)) ([9722013](https://github.com/cornerstonejs/cornerstone3D/commit/9722013b8d97a657914af18f5e597151b1ee4e79))
+
+# [1.27.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.26.1...v1.27.0) (2023-10-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.26.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.26.0...v1.26.1) (2023-10-27)
+
+### Bug Fixes
+
+- **scroll:** take into account the slab thickness for scrolling ([#849](https://github.com/cornerstonejs/cornerstone3D/issues/849)) ([8015160](https://github.com/cornerstonejs/cornerstone3D/commit/80151603e6f0d8aba96a6533925c77e559753ee8))
+
+# [1.26.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.25.0...v1.26.0) (2023-10-27)
+
+### Features
+
+- **vide:** Add new Video Viewport with zoom and pan ([#828](https://github.com/cornerstonejs/cornerstone3D/issues/828)) ([5046db9](https://github.com/cornerstonejs/cornerstone3D/commit/5046db97e17e4b54ca003134661885cafaca4651))
+
+# [1.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.24.0...v1.25.0) (2023-10-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.4...v1.24.0) (2023-10-25)
+
+### Features
+
+- **colorbar:** add viewport colorbar ([#825](https://github.com/cornerstonejs/cornerstone3D/issues/825)) ([9f17218](https://github.com/cornerstonejs/cornerstone3D/commit/9f17218682e3e459962770000e983087204a5133))
+
+## [1.23.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.3...v1.23.4) (2023-10-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.23.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.2...v1.23.3) (2023-10-20)
+
+### Bug Fixes
+
+- **multiframe encapsulated:** take slice of array buffer to worker for decoding ([#667](https://github.com/cornerstonejs/cornerstone3D/issues/667)) ([a7f5b96](https://github.com/cornerstonejs/cornerstone3D/commit/a7f5b969dcc4dcf7998a0515e9ce4d03dd2c3951))
+
+## [1.23.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.1...v1.23.2) (2023-10-20)
+
+### Bug Fixes
+
+- **voi:** sigmoid VOI ([#840](https://github.com/cornerstonejs/cornerstone3D/issues/840)) ([6a3cbc5](https://github.com/cornerstonejs/cornerstone3D/commit/6a3cbc58e554575d80a1b7085b13e46f90b4d826))
+
+## [1.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.0...v1.23.1) (2023-10-20)
+
+### Bug Fixes
+
+- **colormap invert:** and dynamic volume new timePoint index event ([#841](https://github.com/cornerstonejs/cornerstone3D/issues/841)) ([c4d9bff](https://github.com/cornerstonejs/cornerstone3D/commit/c4d9bff1ed59b7797df07054c5e596145640a667))
+
+# [1.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.1...v1.23.0) (2023-10-19)
+
+### Features
+
+- **surface rendering:** Add surface rendering as segmentation representation ([#808](https://github.com/cornerstonejs/cornerstone3D/issues/808)) ([f48d729](https://github.com/cornerstonejs/cornerstone3D/commit/f48d72905a61fe0dc0582b96e3c22cc9a4e76ea5))
+
+## [1.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.0...v1.22.1) (2023-10-19)
+
+### Bug Fixes
+
+- **getDataInTime:** to consider different image spacing for reference ([#835](https://github.com/cornerstonejs/cornerstone3D/issues/835)) ([b71966d](https://github.com/cornerstonejs/cornerstone3D/commit/b71966d3f69056a224284be24390f4baab5176b9))
+
+# [1.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.2...v1.22.0) (2023-10-17)
+
+### Features
+
+- **colormap:** add colormap props and default properties ([#834](https://github.com/cornerstonejs/cornerstone3D/issues/834)) ([475914d](https://github.com/cornerstonejs/cornerstone3D/commit/475914d0eaa35f1ae65b989c74efda042dc6d97a))
+
+## [1.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.1...v1.21.2) (2023-10-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.0...v1.21.1) (2023-10-14)
+
+### Bug Fixes
+
+- **rotation:** Only one CAMERA_MODIFIED event per rotation ([#824](https://github.com/cornerstonejs/cornerstone3D/issues/824)) ([fd27c43](https://github.com/cornerstonejs/cornerstone3D/commit/fd27c43b7678e1eed97f75a1b2937c8ca7415a93))
+
+# [1.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.3...v1.21.0) (2023-10-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.20.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.2...v1.20.3) (2023-10-09)
+
+### Bug Fixes
+
+- **voi:** should publish voi change event on reset ([#821](https://github.com/cornerstonejs/cornerstone3D/issues/821)) ([84f9ab9](https://github.com/cornerstonejs/cornerstone3D/commit/84f9ab91b37fa1b898e211b5ec68ea090aba2691))
+
+## [1.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.1...v1.20.2) (2023-10-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.0...v1.20.1) (2023-10-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.4...v1.20.0) (2023-10-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.3...v1.19.4) (2023-10-04)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.2...v1.19.3) (2023-10-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.1...v1.19.2) (2023-10-02)
+
+### Bug Fixes
+
+- Prefetch that is actually position aware and multi-viewport capable ([#726](https://github.com/cornerstonejs/cornerstone3D/issues/726)) ([abbc6f1](https://github.com/cornerstonejs/cornerstone3D/commit/abbc6f156c1162d6eea13fce99651f3891d6dc35))
+
+## [1.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.0...v1.19.1) (2023-09-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.18.0...v1.19.0) (2023-09-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.17.1...v1.18.0) (2023-09-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.17.0...v1.17.1) (2023-09-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.6...v1.17.0) (2023-09-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.4...v1.16.5) (2023-09-19)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.3...v1.16.4) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.2...v1.16.3) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.1...v1.16.2) (2023-09-18)
+
+### Bug Fixes
+
+- **invert:** Resetting the stack viewport properties should revert to the image's original invert setting ([#786](https://github.com/cornerstonejs/cornerstone3D/issues/786)) ([027a737](https://github.com/cornerstonejs/cornerstone3D/commit/027a73778c57e67efea2f99aa12b654f39994d97))
+
+## [1.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.0...v1.16.1) (2023-09-14)
+
+### Bug Fixes
+
+- **config:** confusing initial config on init ([#783](https://github.com/cornerstonejs/cornerstone3D/issues/783)) ([ffa7288](https://github.com/cornerstonejs/cornerstone3D/commit/ffa7288968673b4f776cecffafbedd3551802ce7))
+
 # [1.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.1...v1.16.0) (2023-09-12)
 
 **Note:** Version bump only for package @cornerstonejs/core

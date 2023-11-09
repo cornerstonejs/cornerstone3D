@@ -10,7 +10,10 @@ import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
 import MagnifyTool from './MagnifyTool';
+import AdvancedMagnifyTool from './AdvancedMagnifyTool';
 import ReferenceLinesTool from './ReferenceLinesTool';
+import OverlayGridTool from './OverlayGridTool';
+import SegmentationIntersectionTool from './SegmentationIntersectionTool';
 //
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
@@ -38,6 +41,7 @@ import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool'
 import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
+import OrientationMarkerTool from './OrientationMarkerTool';
 
 export {
   // ~~ BASE
@@ -58,6 +62,8 @@ export {
   // Annotation Tools
   CrosshairsTool,
   ReferenceLinesTool,
+  OverlayGridTool,
+  SegmentationIntersectionTool,
   BidirectionalTool,
   LengthTool,
   ProbeTool,
@@ -79,7 +85,9 @@ export {
   RectangleROIStartEndThresholdTool,
   BrushTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  OrientationMarkerTool,
 };

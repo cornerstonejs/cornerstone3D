@@ -54,15 +54,22 @@ import {
   AngleTool,
   CobbAngleTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceCursors,
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  OrientationMarkerTool,
+  OverlayGridTool,
+  SegmentationIntersectionTool,
 } from './tools';
+
+import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
 
 import * as Enums from './enums';
 
 export {
+  VideoRedactionTool,
   //
   init,
   destroy,
@@ -88,6 +95,8 @@ export {
   LengthTool,
   CrosshairsTool,
   ReferenceLinesTool,
+  OverlayGridTool,
+  SegmentationIntersectionTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -98,6 +107,7 @@ export {
   AngleTool,
   CobbAngleTool,
   MagnifyTool,
+  AdvancedMagnifyTool,
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
@@ -110,6 +120,7 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  OrientationMarkerTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

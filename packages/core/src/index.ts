@@ -12,6 +12,7 @@ import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
+import VideoViewport from './RenderingEngine/VideoViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import {
@@ -82,6 +83,7 @@ export {
   VolumeViewport3D,
   Viewport,
   StackViewport,
+  VideoViewport,
   RenderingEngine,
   ImageVolume,
   // Helpers

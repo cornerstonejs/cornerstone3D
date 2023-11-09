@@ -15,6 +15,7 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes';
+import { surfaceDisplay } from './Surface';
 import { contourDisplay } from './Contour';
 import { labelmapDisplay } from './Labelmap';
 
@@ -143,10 +144,14 @@ class SegmentationDisplayTool extends BaseTool {
         const config = this._getMergedRepresentationsConfig(toolGroupId);
 
         const viewportsRenderList = [];
-        const display =
-          representation.type === Representations.Labelmap
-            ? labelmapDisplay
-            : contourDisplay;
+
+        const renderers = {
+          [Representations.Labelmap]: labelmapDisplay,
+          [Representations.Contour]: contourDisplay,
+          [Representations.Surface]: surfaceDisplay,
+        };
+
+        const display = renderers[representation.type];
 
         for (const viewport of toolGroupViewports) {
           const renderedViewport = display.render(

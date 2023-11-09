@@ -1,3 +1,4 @@
+import * as eventListener from './eventListener';
 import csUtils from './invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
@@ -9,12 +10,14 @@ import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
+import clamp from './clamp';
 import isEqual from './isEqual';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
 import createUint16SharedArray from './createUInt16SharedArray';
 import createInt16SharedArray from './createInt16SharedArray';
+import getViewportModality from './getViewportModality';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
@@ -51,8 +54,10 @@ import getImageLegacy from './getImageLegacy';
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
+import * as transferFunctionUtils from './transferFunctionUtils';
 
 export {
+  eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
@@ -61,6 +66,7 @@ export {
   triggerEvent,
   imageIdToURI,
   calibratedPixelSpacingMetadataProvider,
+  clamp,
   uuidv4,
   planar,
   getMinMax,
@@ -71,6 +77,7 @@ export {
   createUint8SharedArray,
   createUint16SharedArray,
   createInt16SharedArray,
+  getViewportModality,
   windowLevel,
   getClosestImageId,
   getSpacingInNormalDirection,
@@ -105,4 +112,5 @@ export {
   getScalarDataType,
   colormap,
   getImageLegacy,
+  transferFunctionUtils,
 };

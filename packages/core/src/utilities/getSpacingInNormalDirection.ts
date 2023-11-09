@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { mat3, vec3 } from 'gl-matrix';
 import { IImageVolume, Point3 } from '../types';
 
 /**
@@ -13,7 +13,7 @@ import { IImageVolume, Point3 } from '../types';
  * @returns
  */
 export default function getSpacingInNormalDirection(
-  imageVolume: IImageVolume,
+  imageVolume: IImageVolume | { direction: mat3; spacing: Point3 },
   viewPlaneNormal: Point3
 ): number {
   const { direction, spacing } = imageVolume;

@@ -20,6 +20,7 @@ import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnn
 import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
+import mouseDownAnnotationAction from './mouseDownAnnotationAction';
 
 const { Active, Passive } = ToolModes;
 
@@ -39,8 +40,10 @@ const { Active, Passive } = ToolModes;
  * - Next we check any tools are interactable (e.g. moving an entire length annotation rather than one of its handles:
  *   `filterMoveableAnnotationTools`). If interactable tools are found, the first tool found consumes the event and the
  *   event does not propagate further.
- * - Finally, if the `activeTool` has `postMouseDownCallback`, this is called.  If the callback returns `true`,
+ * - If the `activeTool` has `postMouseDownCallback`, this is called.  If the callback returns `true`,
  *   the event does not propagate further.
+ * - Finally, look for annotations actions that could handle the event such as showing a dropdown to allow the user
+ *   change the magnifying glass zoom factor.
  *
  * If the event is not consumed the event will bubble to the `mouseDownActivate` handler.
  *
@@ -133,7 +136,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     );
 
     toggleAnnotationSelection(annotation.annotationUID, isMultiSelect);
-    tool.toolSelectedCallback(evt, annotation, 'Mouse');
+    tool.toolSelectedCallback(evt, annotation, 'Mouse', canvasCoords);
 
     return;
   }
@@ -146,6 +149,12 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
       // If the tool claims it consumed the event, prevent further checks.
       return;
     }
+  }
+
+  const actionExecuted = mouseDownAnnotationAction(evt);
+
+  if (actionExecuted) {
+    return;
   }
 
   // Don't stop propagation so that mouseDownActivate can handle the event

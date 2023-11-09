@@ -1,8 +1,4 @@
-import {
-  enable,
-  disable,
-  setConfiguration,
-  getConfiguration,
-} from './stackPrefetch';
+import stackPrefetch from './stackPrefetch';
+import stackContextPrefetch from './stackContextPrefetch';
 
-export { enable, disable, setConfiguration, getConfiguration };
+export { stackPrefetch, stackContextPrefetch };

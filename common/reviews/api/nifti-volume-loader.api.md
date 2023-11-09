@@ -21,6 +21,7 @@ type ActorEntry = {
     actor: Actor | VolumeActor | ImageActor;
     referenceId?: string;
     slabThickness?: number;
+    clippingFilter?: any;
 };
 
 // @public
@@ -660,7 +661,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet;
+    data: IContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -691,6 +692,8 @@ interface IImage {
     columnPixelSpacing: number;
     columns: number;
     // (undocumented)
+    decodeTimeInMS?: number;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     getPixelData: () => PixelDataTypedArray;
     height: number;
@@ -698,6 +701,8 @@ interface IImage {
     intercept: number;
     invert: boolean;
     isPreScaled?: boolean;
+    // (undocumented)
+    loadTimeInMS?: number;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -830,6 +835,9 @@ interface IImageVolume {
     readonly volumeId: string;
     vtkOpenGLTexture: any;
 }
+
+// @public (undocumented)
+type ImageActor = vtkImageSlice;
 
 // @public
 type ImageCacheImageAddedEvent =
@@ -992,6 +1000,12 @@ type ImageVolumeModifiedEventDetail = {
     FrameOfReferenceUID: string;
 };
 
+// @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
 // @public
 interface IRegisterImageLoader {
     // (undocumented)
@@ -1016,9 +1030,11 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(id: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(id: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -1047,6 +1063,7 @@ interface IRenderingEngine {
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(imageId?: string): void;
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLDivElement;
@@ -1057,6 +1074,7 @@ interface IStackViewport extends IViewport {
     getCornerstoneImage: () => IImage;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (imageId?: string) => StackViewportProperties;
     getFrameOfReferenceUID: () => string;
     getImageData(): IImageData | CPUIImageData;
     getImageIds: () => string[];
@@ -1068,13 +1086,23 @@ interface IStackViewport extends IViewport {
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
+    resetToDefaultProperties(): void;
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
+    setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageId?: string
+    ): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
-        { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+        {
+        voiRange,
+        invert,
+        interpolationType,
+        rotation,
+        colormap,
+    }: StackViewportProperties,
     suppressEvents?: boolean
     ): void;
     setStack(
@@ -1103,6 +1131,21 @@ interface IStreamingVolumeProperties {
         cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
+}
+
+// @public
+interface IVideoViewport extends IViewport {
+    getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    pause: () => void;
+    // (undocumented)
+    play: () => void;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetProperties(): void;
+    resize: () => void;
+    setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideoURL: (url: string) => void;
 }
 
 // @public
@@ -1230,16 +1273,18 @@ interface IVolumeViewport extends IViewport {
     suppressEvents?: boolean
     ): Promise<void>;
     canvasToWorld: (canvasPos: Point2) => Point3;
+    clearDefaultProperties(volumeId?: string): void;
     flip(flipDirection: FlipDirection): void;
     getBounds(): any;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
+    getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     getImageData(volumeId?: string): IImageData | undefined;
     getImageIds: (volumeId?: string) => string[];
     getIntensityFromWorld(point: Point3): number;
-    getProperties: () => VolumeViewportProperties;
+    getProperties: (volumeId?: string) => VolumeViewportProperties;
     getSlabThickness(): number;
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
@@ -1249,11 +1294,15 @@ interface IVolumeViewport extends IViewport {
     resetZoom?: boolean,
     resetToCenter?: boolean
     ): boolean;
-    resetProperties(volumeId?: string): void;
+    resetProperties(volumeId: string): void;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
     immediate?: boolean
+    ): void;
+    setDefaultProperties(
+    ViewportProperties: VolumeViewportProperties,
+    volumeId?: string
     ): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis): void;
@@ -1373,6 +1422,14 @@ type PTScaling = {
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
 
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
 // @public
 type PublicViewportInput = {
     element: HTMLDivElement;
@@ -1441,8 +1498,39 @@ type StackViewportScrollEventDetail = {
     direction: number;
 };
 
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
+
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
+
+// @public
+type VideoViewportProperties = ViewportProperties & {
+    loop?: boolean;
+    muted?: boolean;
+    pan?: Point2;
+    playbackRate?: number;
+    // The zoom factor, naming consistent with vtk cameras for now,
+    // but this isn't necessarily necessary.
+    parallelScale?: number;
+};
 
 // @public
 type ViewportInputOptions = {
@@ -1482,6 +1570,7 @@ type ViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
+    colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
 };
 
@@ -1580,8 +1669,9 @@ type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
 type VolumeViewportProperties = ViewportProperties & {
-    colormap?: ColormapPublic;
     preset?: string;
+
+    slabThickness?: number;
 };
 
 // (No @packageDocumentation comment for this package)

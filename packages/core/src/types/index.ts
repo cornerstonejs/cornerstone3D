@@ -14,7 +14,7 @@ import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
 import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry } from './IActor';
+import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -72,6 +72,7 @@ import type {
   ContourSetData,
   ContourData,
 } from './ContourData';
+import type { PublicSurfaceData, SurfaceData } from './SurfaceData';
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
@@ -82,6 +83,12 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+import type VideoViewportProperties from './VideoViewportProperties';
+import type IVideoViewport from './IVideoViewport';
+import type {
+  InternalVideoCamera,
+  VideoViewportInput,
+} from './VideoViewportTypes';
 
 export type {
   // config
@@ -89,6 +96,7 @@ export type {
   //
   ICamera,
   IStackViewport,
+  IVideoViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
@@ -120,6 +128,7 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ImageActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,
@@ -134,6 +143,7 @@ export type {
   Mat3,
   Plane,
   ViewportInputOptions,
+  VideoViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -166,6 +176,9 @@ export type {
   ContourData,
   IContourSet,
   IContour,
+  // Surface
+  PublicSurfaceData,
+  SurfaceData,
   // Color
   RGB,
   ColormapPublic,
@@ -175,4 +188,7 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  // video
+  InternalVideoCamera,
+  VideoViewportInput,
 };

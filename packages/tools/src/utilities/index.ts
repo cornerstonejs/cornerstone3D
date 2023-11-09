@@ -9,6 +9,8 @@ import throttle from './throttle';
 import isObject from './isObject';
 import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
+import getCalibratedLengthUnits from './getCalibratedUnits';
+import { getCalibratedScale } from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
@@ -17,6 +19,7 @@ import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import scroll from './scroll';
 import roundNumber from './roundNumber';
+import { pointToString } from './pointToString';
 
 // name spaces
 import * as segmentation from './segmentation';
@@ -29,10 +32,12 @@ import * as cine from './cine';
 import * as boundingBox from './boundingBox';
 import * as planarFreehandROITool from './planarFreehandROITool';
 import * as rectangleROITool from './rectangleROITool';
-import * as stackPrefetch from './stackPrefetch';
+import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
 import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
+import * as polyDataUtils from './polyData/utils';
+import * as voi from './voi';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -50,6 +55,8 @@ export {
   touch,
   triggerEvent,
   calibrateImageSpacing,
+  getCalibratedLengthUnits,
+  getCalibratedScale,
   segmentation,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
@@ -65,6 +72,10 @@ export {
   rectangleROITool,
   planarFreehandROITool,
   stackPrefetch,
+  stackContextPrefetch,
   scroll,
   roundNumber,
+  pointToString,
+  polyDataUtils,
+  voi,
 };

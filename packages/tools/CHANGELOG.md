@@ -3,6 +3,220 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.28.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.28.1...v1.28.2) (2023-11-09)
+
+### Bug Fixes
+
+- **Tools:** Tool Styles Check Property ([#874](https://github.com/cornerstonejs/cornerstone3D/issues/874)) ([3a765a1](https://github.com/cornerstonejs/cornerstone3D/commit/3a765a140d76e6ce6a9932a47eedc85d3a633d59))
+
+## [1.28.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.28.0...v1.28.1) (2023-11-09)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [1.28.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.4...v1.28.0) (2023-11-08)
+
+### Features
+
+- **getDataInTime:** to export ijk as well for masks ([#869](https://github.com/cornerstonejs/cornerstone3D/issues/869)) ([6bac1fb](https://github.com/cornerstonejs/cornerstone3D/commit/6bac1fb4a7120b6837b608385060904de4515326))
+
+## [1.27.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.3...v1.27.4) (2023-11-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.27.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.2...v1.27.3) (2023-11-03)
+
+### Bug Fixes
+
+- **camera:** was not updating the viewUp and making the examples searchable in the prompt ([#865](https://github.com/cornerstonejs/cornerstone3D/issues/865)) ([72a3ed6](https://github.com/cornerstonejs/cornerstone3D/commit/72a3ed6b8b10271b1eefe534b139b8ad4d195dd0))
+
+## [1.27.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.1...v1.27.2) (2023-10-31)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.27.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.27.0...v1.27.1) (2023-10-27)
+
+### Bug Fixes
+
+- **crosshairs:** and orientation markers and publish ([#856](https://github.com/cornerstonejs/cornerstone3D/issues/856)) ([9722013](https://github.com/cornerstonejs/cornerstone3D/commit/9722013b8d97a657914af18f5e597151b1ee4e79))
+
+# [1.27.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.26.1...v1.27.0) (2023-10-27)
+
+### Features
+
+- **OrientationMarker:** clean up orientation marker ([#853](https://github.com/cornerstonejs/cornerstone3D/issues/853)) ([fe6bc44](https://github.com/cornerstonejs/cornerstone3D/commit/fe6bc440a345fd35bb60ead915b79fbcdeb8d2dd))
+
+## [1.26.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.26.0...v1.26.1) (2023-10-27)
+
+### Bug Fixes
+
+- **scroll:** take into account the slab thickness for scrolling ([#849](https://github.com/cornerstonejs/cornerstone3D/issues/849)) ([8015160](https://github.com/cornerstonejs/cornerstone3D/commit/80151603e6f0d8aba96a6533925c77e559753ee8))
+
+# [1.26.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.25.0...v1.26.0) (2023-10-27)
+
+### Features
+
+- **vide:** Add new Video Viewport with zoom and pan ([#828](https://github.com/cornerstonejs/cornerstone3D/issues/828)) ([5046db9](https://github.com/cornerstonejs/cornerstone3D/commit/5046db97e17e4b54ca003134661885cafaca4651))
+
+# [1.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.24.0...v1.25.0) (2023-10-27)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [1.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.4...v1.24.0) (2023-10-25)
+
+### Features
+
+- **colorbar:** add viewport colorbar ([#825](https://github.com/cornerstonejs/cornerstone3D/issues/825)) ([9f17218](https://github.com/cornerstonejs/cornerstone3D/commit/9f17218682e3e459962770000e983087204a5133))
+
+## [1.23.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.3...v1.23.4) (2023-10-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.23.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.2...v1.23.3) (2023-10-20)
+
+### Bug Fixes
+
+- **multiframe encapsulated:** take slice of array buffer to worker for decoding ([#667](https://github.com/cornerstonejs/cornerstone3D/issues/667)) ([a7f5b96](https://github.com/cornerstonejs/cornerstone3D/commit/a7f5b969dcc4dcf7998a0515e9ce4d03dd2c3951))
+
+## [1.23.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.1...v1.23.2) (2023-10-20)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.23.0...v1.23.1) (2023-10-20)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [1.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.1...v1.23.0) (2023-10-19)
+
+### Features
+
+- **surface rendering:** Add surface rendering as segmentation representation ([#808](https://github.com/cornerstonejs/cornerstone3D/issues/808)) ([f48d729](https://github.com/cornerstonejs/cornerstone3D/commit/f48d72905a61fe0dc0582b96e3c22cc9a4e76ea5))
+
+## [1.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.22.0...v1.22.1) (2023-10-19)
+
+### Bug Fixes
+
+- **getDataInTime:** to consider different image spacing for reference ([#835](https://github.com/cornerstonejs/cornerstone3D/issues/835)) ([b71966d](https://github.com/cornerstonejs/cornerstone3D/commit/b71966d3f69056a224284be24390f4baab5176b9))
+
+# [1.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.2...v1.22.0) (2023-10-17)
+
+### Features
+
+- **colormap:** add colormap props and default properties ([#834](https://github.com/cornerstonejs/cornerstone3D/issues/834)) ([475914d](https://github.com/cornerstonejs/cornerstone3D/commit/475914d0eaa35f1ae65b989c74efda042dc6d97a))
+
+## [1.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.1...v1.21.2) (2023-10-16)
+
+### Features
+
+- **enhanced cobb angle:** more angles and being able to select each line ([#802](https://github.com/cornerstonejs/cornerstone3D/issues/802)) ([abc3bb8](https://github.com/cornerstonejs/cornerstone3D/commit/abc3bb8a19fab46f8f36c0ae42eae35f639b5973))
+
+## [1.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.21.0...v1.21.1) (2023-10-14)
+
+### Bug Fixes
+
+- **advancedMagnifyTool:** fixed advanced magnify tool example (imageIds) ([#822](https://github.com/cornerstonejs/cornerstone3D/issues/822)) ([f5f0eb0](https://github.com/cornerstonejs/cornerstone3D/commit/f5f0eb006ed343fd8b1d7d9524a63f596b8ee317))
+
+# [1.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.3...v1.21.0) (2023-10-10)
+
+### Features
+
+- **advancedMagnifyTool:** advanced magnfying glass ([#816](https://github.com/cornerstonejs/cornerstone3D/issues/816)) ([a76cba9](https://github.com/cornerstonejs/cornerstone3D/commit/a76cba917fd1f67b4fc53ae19f77a7d9a70ba732))
+
+## [1.20.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.2...v1.20.3) (2023-10-09)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.1...v1.20.2) (2023-10-09)
+
+### Bug Fixes
+
+- **modality unit:** fix the modality unit per target ([#820](https://github.com/cornerstonejs/cornerstone3D/issues/820)) ([41f06a7](https://github.com/cornerstonejs/cornerstone3D/commit/41f06a76376e399b6344caab5a3b7121bf1584f0))
+
+## [1.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.20.0...v1.20.1) (2023-10-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [1.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.4...v1.20.0) (2023-10-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.3...v1.19.4) (2023-10-04)
+
+### Bug Fixes
+
+- **measurements:** Cached stats are now considered non-existent for various null or undefined attributes. ([#810](https://github.com/cornerstonejs/cornerstone3D/issues/810)) ([2d7f7b6](https://github.com/cornerstonejs/cornerstone3D/commit/2d7f7b6ad502cc468d5f1e6da28f11249bb0d8e4))
+
+## [1.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.2...v1.19.3) (2023-10-02)
+
+### Bug Fixes
+
+- **segmentation:** should be able to change color ([#804](https://github.com/cornerstonejs/cornerstone3D/issues/804)) ([9394787](https://github.com/cornerstonejs/cornerstone3D/commit/939478765dc6c24d828689a013314c9bdf2dde7b))
+
+## [1.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.1...v1.19.2) (2023-10-02)
+
+### Bug Fixes
+
+- Prefetch that is actually position aware and multi-viewport capable ([#726](https://github.com/cornerstonejs/cornerstone3D/issues/726)) ([abbc6f1](https://github.com/cornerstonejs/cornerstone3D/commit/abbc6f156c1162d6eea13fce99651f3891d6dc35))
+
+## [1.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.19.0...v1.19.1) (2023-09-27)
+
+### Bug Fixes
+
+- **planarROITool:** Fix incorrect area calculation([#725](https://github.com/cornerstonejs/cornerstone3D/issues/725)) ([db14fa6](https://github.com/cornerstonejs/cornerstone3D/commit/db14fa6c115db22c4d47b854a1e958443cdb02c7))
+
+# [1.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.18.0...v1.19.0) (2023-09-27)
+
+### Features
+
+- **referenceLines:** showFullDimension option to ReferenceLines tool ([#784](https://github.com/cornerstonejs/cornerstone3D/issues/784)) ([f9a498a](https://github.com/cornerstonejs/cornerstone3D/commit/f9a498ac18be171e6e2f89822c88e59f06ce43f2))
+
+# [1.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.17.1...v1.18.0) (2023-09-26)
+
+### Features
+
+- **orientation marker:** New Orientation Marker tool ([#794](https://github.com/cornerstonejs/cornerstone3D/issues/794)) ([392a93b](https://github.com/cornerstonejs/cornerstone3D/commit/392a93b04599f8055050fefacfd53f0d891d7f53))
+
+## [1.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.17.0...v1.17.1) (2023-09-25)
+
+### Bug Fixes
+
+- **stackSync:** Don't throw NPE if options is empty [#795](https://github.com/cornerstonejs/cornerstone3D/issues/795) ([#799](https://github.com/cornerstonejs/cornerstone3D/issues/799)) ([bd3d5c9](https://github.com/cornerstonejs/cornerstone3D/commit/bd3d5c9803a1e2c5030ffe55a6267d58272510b5))
+
+# [1.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.6...v1.17.0) (2023-09-25)
+
+### Features
+
+- **overlayGrid:** New overlay grid tool ([#790](https://github.com/cornerstonejs/cornerstone3D/issues/790)) ([c8c5c91](https://github.com/cornerstonejs/cornerstone3D/commit/c8c5c919d46a2d0ad067028a61f027f2d1ee0c34))
+
+## [1.16.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.5...v1.16.6) (2023-09-21)
+
+### Bug Fixes
+
+- **stackPrefetch:** disable function not working ([#793](https://github.com/cornerstonejs/cornerstone3D/issues/793)) ([7ced76e](https://github.com/cornerstonejs/cornerstone3D/commit/7ced76ed43c523f380e7252790f67afa005c1935))
+
+## [1.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.4...v1.16.5) (2023-09-19)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.3...v1.16.4) (2023-09-18)
+
+### Bug Fixes
+
+- **segmentation:** stack segmentation remove should return ([#789](https://github.com/cornerstonejs/cornerstone3D/issues/789)) ([7bfe3ca](https://github.com/cornerstonejs/cornerstone3D/commit/7bfe3ca3e58bc0d9e1a6d174095c3935763b0c0b))
+
+## [1.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.2...v1.16.3) (2023-09-18)
+
+### Bug Fixes
+
+- **Stack prefetch:** should not remove other requests ([#787](https://github.com/cornerstonejs/cornerstone3D/issues/787)) ([c2d6c2c](https://github.com/cornerstonejs/cornerstone3D/commit/c2d6c2c936bd98a58fea4db58558072563000f2f))
+
+## [1.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.1...v1.16.2) (2023-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.16.0...v1.16.1) (2023-09-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 # [1.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.15.1...v1.16.0) (2023-09-12)
 
 ### Features

@@ -94,7 +94,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   abstract toolSelectedCallback(
     evt: EventTypes.InteractionEventType,
     annotation: Annotation,
-    interactionType: InteractionTypes
+    interactionType: InteractionTypes,
+    canvasCoords?: Types.Point2
   ): void;
 
   /**
@@ -218,7 +219,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
         ) {
           data.handles.activeHandleIndex = null;
-          return textBox;
+          return textBox as ToolHandle;
         }
       }
     }
