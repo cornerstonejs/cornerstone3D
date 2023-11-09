@@ -278,12 +278,13 @@ class RequestPoolManager {
     const hasRemainingPrefetchRequests = this.sendRequests(
       RequestType.Prefetch
     );
+    const hasRemainingComputeRequests = this.sendRequests(RequestType.Compute);
 
     if (
       !hasRemainingInteractionRequests &&
       !hasRemainingThumbnailRequests &&
       !hasRemainingPrefetchRequests &&
-      !this.numRequests.compute
+      !hasRemainingComputeRequests
     ) {
       this.awake = false;
     }
