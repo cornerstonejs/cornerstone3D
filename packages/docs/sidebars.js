@@ -95,6 +95,50 @@ module.exports = {
         },
         {
           type: 'category',
+          label: 'Progressive Loading',
+          collapsed: true,
+          link: { type: 'doc', id: 'concepts/progressive-loading/index' },
+          items: [
+            {
+              type: 'category',
+              label: 'Server Requirements',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/requirements',
+              },
+              items: ['concepts/progressive-loading/encoding'],
+            },
+            {
+              type: 'category',
+              label: 'Retrieve Configuration',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/retrieve-configuration',
+              },
+              items: ['concepts/progressive-loading/advance-retrieve-config'],
+            },
+            'concepts/progressive-loading/usage',
+            {
+              type: 'category',
+              label: 'Examples',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/stackProgressive',
+              },
+              items: [
+                'concepts/progressive-loading/stackProgressive',
+                'concepts/progressive-loading/volumeProgressive',
+              ],
+            },
+            // 'concepts/progressive-loading/static-wado',
+            'concepts/progressive-loading/non-htj2k-progressive',
+          ],
+        },
+        {
+          type: 'category',
           label: 'Tools',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/cornerstone-tools/index' },

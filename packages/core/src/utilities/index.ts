@@ -46,6 +46,9 @@ import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
+import ProgressiveIterator from './ProgressiveIterator';
+import decimate from './decimate';
+import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 
 // name spaces
 import * as planar from './planar';
@@ -105,4 +108,7 @@ export {
   getScalarDataType,
   colormap,
   getImageLegacy,
+  ProgressiveIterator,
+  decimate,
+  imageRetrieveMetadataProvider,
 };

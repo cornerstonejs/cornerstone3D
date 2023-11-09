@@ -85,12 +85,21 @@ enum Events {
    */
   IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
   /**
-   * Triggers on the eventTarget when the image has successfully loaded by imageLoaders
+   * Triggers on the eventTarget when the image has successfully loaded by imageLoaders.
+   * This event may be fired multiple times for different statuses as the image data gets loaded.
    *
    * Make use of {@link EventTypes.ImageLoadedEvent | ImageLoaded Event Type } for typing your event listeners for IMAGE_LOADED event,
    * and see what event detail is included in {@link EventTypes.ImageLoadedEventDetail | ImageLoaded Event Detail }
    */
   IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+  /**
+   * Triggers on the eventTarget when progressive loading stages are completed.
+   * That is, the stage is complete for all images included in that stage (which
+   * can be zero).  If you need individual image load information related to
+   * the stage, see the status attribute on the IMAGE_LOADED event - which has
+   * the status of the image, but not the actual stage that loaded it.
+   */
+  IMAGE_RETRIEVAL_STAGE = 'CORNERSTONE_IMAGE_RETRIEVAL_STAGE',
   /**
    * Triggers on the eventTarget when the image has failed loading by imageLoaders
    *
@@ -176,14 +185,6 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageSpacingCalibratedEventDetail | ImageSpacingCalibrated Event Detail }
    */
   IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
-  /**
-   * Triggers on the eventTarget when there is a progress in the image load process. Note: this event
-   * is being used in the dicom-image-loader repository. See {@link https://github.com/cornerstonejs/cornerstoneDICOMImageLoader/blob/master/src/imageLoader/internal/xhrRequest.js | here}
-   *
-   * Make use of {@link EventTypes.ImageLoadProgress | ImageLoadProgress Event Type } for typing your event listeners for IMAGE_LOAD_PROGRESS event,
-   * and see what event detail is included in {@link EventTypes.ImageLoadProgressEventDetail | ImageLoadProgress Event Detail }
-   */
-  IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
 
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.

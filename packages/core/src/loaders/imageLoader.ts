@@ -239,7 +239,8 @@ export function cancelLoadAll(): void {
 
     Object.keys(requests).forEach((priority) => {
       const requestDetails = requests[priority].pop();
-      const { imageId, volumeId } = requestDetails.additionalDetails;
+      const additionalDetails = requestDetails.additionalDetails as any;
+      const { imageId, volumeId } = additionalDetails;
 
       let loadObject;
 

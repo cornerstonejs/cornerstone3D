@@ -299,6 +299,22 @@
       "dicomImageLoaderWADOURI": {
         "name": "WADO-URI (DICOM P10)",
         "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
+      },
+      "htj2kStackBasic": {
+        "name": "HTJ2K Stack Basic Loading",
+        "description": "Demonstrates basic loading of HTJ2K"
+      },
+      "htj2kVolumeBasic": {
+        "name": "HTJ2K Volume Basic Loading",
+        "description": "Demonstrates basic loading of HTJ2K in MPR views"
+      },
+      "stackProgressive": {
+        "name": "Stack Progressive Loading",
+        "description": "Stack progressive loading using HTJ2K and/or other methods."
+      },
+      "volumeProgressive": {
+        "name": "Volume Progressive Loading",
+        "description": "Volume progressive loading inter and intra image"
       }
     },
     "adapters": {

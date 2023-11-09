@@ -82,6 +82,16 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+export type {
+  RetrieveStage,
+  RetrieveOptions,
+  RangeRetrieveOptions,
+  StreamingRetrieveOptions,
+  NearbyFrames,
+  IRetrieveConfiguration,
+  IImagesLoader,
+} from './IRetrieveConfiguration';
+import type { ImageLoadListener } from './ImageLoadListener';
 
 export type {
   // config
@@ -175,4 +185,5 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  ImageLoadListener,
 };

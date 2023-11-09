@@ -557,6 +557,9 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
+function decimate(list: Array<unknown>, interleave: number, offset?: number): number[];
+
+// @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
@@ -624,7 +627,8 @@ declare namespace Enums {
         ContourType,
         VOILUTFunctionType,
         DynamicOperatorType,
-        ViewportStatus
+        ViewportStatus,
+        ImageQualityStatus
     }
 }
 export { Enums }
@@ -657,11 +661,11 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_LOAD_FAILED = "CORNERSTONE_IMAGE_LOAD_FAILED",
     // (undocumented)
-    IMAGE_LOAD_PROGRESS = "CORNERSTONE_IMAGE_LOAD_PROGRESS",
-    // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
     IMAGE_RENDERED = "CORNERSTONE_IMAGE_RENDERED",
+    // (undocumented)
+    IMAGE_RETRIEVAL_STAGE = "CORNERSTONE_IMAGE_RETRIEVAL_STAGE",
     // (undocumented)
     IMAGE_SPACING_CALIBRATED = "CORNERSTONE_IMAGE_SPACING_CALIBRATED",
     // (undocumented)
@@ -699,6 +703,7 @@ export const eventTarget: CornerstoneEventTarget;
 
 declare namespace EventTypes {
     export {
+        ImageLoadStageEventDetail,
         CameraModifiedEventDetail,
         CameraModifiedEvent,
         VoiModifiedEvent,
@@ -737,8 +742,6 @@ declare namespace EventTypes {
         PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
-        ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
         StackViewportNewStackEvent,
@@ -798,7 +801,7 @@ function getImageLegacy(element: HTMLDivElement): Types.IImage | undefined;
 function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
 
 // @public (undocumented)
-function getMetaData(type: string, query: string): any;
+function getMetaData(type: string, ...queries: any[]): any;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -898,7 +901,7 @@ interface ICache {
     // (undocumented)
     purgeCache: () => void;
     // (undocumented)
-    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject) => Promise<any>;
+    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject, updateCache?: boolean) => Promise<any>;
     // (undocumented)
     putVolumeLoadObject: (volumeId: string, volumeLoadObject: IVolumeLoadObject) => Promise<any>;
     // (undocumented)
@@ -1116,6 +1119,8 @@ interface IImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
+    imageQualityStatus?: ImageQualityStatus;
+    // (undocumented)
     intercept: number;
     // (undocumented)
     invert: boolean;
@@ -1254,6 +1259,12 @@ interface IImageLoadObject {
 }
 
 // @public (undocumented)
+export interface IImagesLoader {
+    // (undocumented)
+    loadImages: (imageIds: string[], listener: ImageLoadListener) => Promise<unknown>;
+}
+
+// @public (undocumented)
 interface IImageVolume {
     // (undocumented)
     cancelLoading?: () => void;
@@ -1380,20 +1391,24 @@ interface ImageLoaderOptions {
 }
 
 // @public (undocumented)
+export type ImageLoadListener = {
+    successCallback: (imageId: any, image: any) => void;
+    errorCallback: (imageId: any, permanent: any, reason: any) => void;
+    getLoaderImageOptions?: (imageId: any) => Record<string, unknown>;
+};
+
+// @public (undocumented)
 const imageLoadPoolManager: RequestPoolManager;
 export { imageLoadPoolManager }
 export { imageLoadPoolManager as requestPoolManager }
 
 // @public (undocumented)
-type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>;
-
-// @public (undocumented)
-type ImageLoadProgressEventDetail = {
-    url: string;
-    imageId: string;
-    loaded: number;
-    total: number;
-    percent: number;
+type ImageLoadStageEventDetail = {
+    stageId: string;
+    numberOfImages: number;
+    numberOfFailures: number;
+    stageDurationInMS: number;
+    startDurationInMS: number;
 };
 
 // @public (undocumented)
@@ -1449,6 +1464,20 @@ interface ImagePlaneModule {
 }
 
 // @public (undocumented)
+enum ImageQualityStatus {
+    // (undocumented)
+    ADJACENT_REPLICATE = 3,
+    // (undocumented)
+    FAR_REPLICATE = 1,
+    // (undocumented)
+    FULL_RESOLUTION = 8,
+    // (undocumented)
+    LOSSY = 7,
+    // (undocumented)
+    SUBRESOLUTION = 6
+}
+
+// @public (undocumented)
 type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public (undocumented)
@@ -1462,6 +1491,14 @@ type ImageRenderedEventDetail = {
 
 // @public (undocumented)
 export const imageRetrievalPoolManager: RequestPoolManager;
+
+// @public (undocumented)
+const imageRetrieveMetadataProvider: {
+    IMAGE_RETRIEVE_CONFIGURATION: string;
+    clear: () => void;
+    add: (key: string, payload: any) => void;
+    get: (type: string, queriesOrQuery: string | string[]) => any;
+};
 
 // @public (undocumented)
 type ImageSliceData = {
@@ -1631,6 +1668,16 @@ interface IRenderingEngine {
 }
 
 // @public (undocumented)
+export interface IRetrieveConfiguration {
+    // (undocumented)
+    create?: (IRetrieveConfiguration: any) => IImagesLoader;
+    // (undocumented)
+    retrieveOptions?: Record<string, RetrieveOptions>;
+    // (undocumented)
+    stages?: RetrieveStage[];
+}
+
+// @public (undocumented)
 export function isCornerstoneInitialized(): boolean;
 
 // @public (undocumented)
@@ -1725,7 +1772,7 @@ interface IStreamingVolumeProperties {
         loaded: boolean;
         loading: boolean;
         cancelled: boolean;
-        cachedFrames: Array<boolean>;
+        cachedFrames: Array<ImageQualityStatus>;
         callbacks: Array<() => void>;
     };
 }
@@ -2007,6 +2054,12 @@ const metadataProvider: {
 const mprCameraValues: any;
 
 // @public (undocumented)
+type NearbyFrames = {
+    offset: number;
+    imageQualityStatus?: ImageQualityStatus;
+};
+
+// @public (undocumented)
 enum OrientationAxis {
     // (undocumented)
     ACQUISITION = "acquisition",
@@ -2069,6 +2122,64 @@ type PreStackNewImageEventDetail = {
 };
 
 // @public (undocumented)
+class ProgressiveIterator<T> {
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncGenerator<any, void, unknown>;
+    constructor(name?: any);
+    // (undocumented)
+    add(x: T, done?: boolean): void;
+    // (undocumented)
+    static as(promise: any): any;
+    // (undocumented)
+    done: any;
+    // (undocumented)
+    donePromise(): Promise<T>;
+    // (undocumented)
+    forEach(callback: any, errorCallback: any): Promise<void>;
+    // (undocumented)
+    generate(processFunction: any, errorCallback?: ErrorCallback_2): Promise<any>;
+    // (undocumented)
+    getDonePromise(): PromiseIterator<T>;
+    // (undocumented)
+    getNextPromise(): PromiseIterator<T>;
+    // (undocumented)
+    getRecent(): T;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    nextPromise(): Promise<T>;
+    // (undocumented)
+    reject(reason: Error): void;
+    // (undocumented)
+    resolve(): void;
+}
+
+// @public (undocumented)
+export class ProgressiveRetrieveImages implements IImagesLoader, IRetrieveConfiguration {
+    constructor(imageRetrieveConfiguration: IRetrieveConfiguration);
+    // (undocumented)
+    static createProgressive: typeof createProgressive;
+    // (undocumented)
+    static interleavedRetrieveStages: {
+        stages: RetrieveStage[];
+    };
+    // (undocumented)
+    loadImages(imageIds: string[], listener: ImageLoadListener): Promise<any>;
+    // (undocumented)
+    retrieveOptions: Record<string, RetrieveOptions>;
+    // (undocumented)
+    static sequentialRetrieveStages: {
+        stages: RetrieveStage[];
+    };
+    // (undocumented)
+    static singleRetrieveStages: {
+        stages: RetrieveStage[];
+    };
+    // (undocumented)
+    stages: RetrieveStage[];
+}
+
+// @public (undocumented)
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
@@ -2086,6 +2197,12 @@ type PublicViewportInput = {
     viewportId: string;
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
+};
+
+// @public (undocumented)
+type RangeRetrieveOptions = BaseRetrieveOptions & {
+    rangeIndex: number;
+    chunkSize?: number | ((metadata: any) => number);
 };
 
 // @public (undocumented)
@@ -2183,6 +2300,29 @@ export function resetUseCPURendering(): void;
 
 // @public (undocumented)
 export function resetUseSharedArrayBuffer(): void;
+
+// @public (undocumented)
+export type RetrieveOptions = BaseRetrieveOptions | StreamingRetrieveOptions | RangeRetrieveOptions;
+
+// @public (undocumented)
+export interface RetrieveStage {
+    // (undocumented)
+    decimate?: number;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    nearbyFrames?: NearbyFrames[];
+    // (undocumented)
+    offset?: number;
+    // (undocumented)
+    positions?: number[];
+    // (undocumented)
+    priority?: number;
+    // (undocumented)
+    requestType?: RequestType;
+    // (undocumented)
+    retrieveType?: string;
+}
 
 // @public (undocumented)
 type RGB = [number, number, number];
@@ -2284,7 +2424,7 @@ type StackNewImageEventDetail = {
 };
 
 // @public (undocumented)
-export class StackViewport extends Viewport implements IStackViewport {
+export class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     constructor(props: ViewportInput);
     // (undocumented)
     addActor: (actorEntry: ActorEntry) => void;
@@ -2302,6 +2442,8 @@ export class StackViewport extends Viewport implements IStackViewport {
         renderingEngineId: string;
         viewportStatus: ViewportStatus;
     };
+    // (undocumented)
+    errorCallback(imageId: any, permanent: any, error: any): void;
     // (undocumented)
     getActor: (actorUID: string) => ActorEntry;
     // (undocumented)
@@ -2323,6 +2465,23 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
+    getLoaderImageOptions(imageId: string): {
+        targetBuffer: {
+            type: string;
+        };
+        preScale: {
+            enabled: boolean;
+        };
+        useRGBA: boolean;
+        transferSyntaxUID: any;
+        priority: number;
+        requestType: RequestType;
+        additionalDetails: {
+            imageId: string;
+            imageIdIndex: number;
+        };
+    };
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer: () => any;
@@ -2334,6 +2493,10 @@ export class StackViewport extends Viewport implements IStackViewport {
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
+    protected imagesLoader: IImagesLoader;
+    // (undocumented)
+    loadImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
     modality: string;
     // (undocumented)
@@ -2364,6 +2527,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
     setUseCPURendering(value: boolean): void;
+    // (undocumented)
+    successCallback(imageId: any, image: any): void;
     // (undocumented)
     unsetColormap: () => void;
     // (undocumented)
@@ -2404,6 +2569,11 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
+type StreamingRetrieveOptions = BaseRetrieveOptions & {
+    streaming: boolean;
+};
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -2429,6 +2599,13 @@ export function triggerEvent(el: EventTarget, type: string, detail?: unknown): b
 
 declare namespace Types {
     export {
+        RetrieveStage,
+        RetrieveOptions,
+        RangeRetrieveOptions,
+        StreamingRetrieveOptions,
+        NearbyFrames,
+        IRetrieveConfiguration,
+        IImagesLoader,
         Cornerstone3DConfig,
         ICamera,
         IStackViewport,
@@ -2510,7 +2687,8 @@ declare namespace Types {
         PixelDataTypedArray,
         ImagePixelModule,
         ImagePlaneModule,
-        AffineMatrix
+        AffineMatrix,
+        ImageLoadListener
     }
 }
 export { Types }
@@ -2571,7 +2749,10 @@ declare namespace utilities {
         getScalingParameters,
         getScalarDataType,
         colormap,
-        getImageLegacy
+        getImageLegacy,
+        ProgressiveIterator,
+        decimate,
+        imageRetrieveMetadataProvider
     }
 }
 export { utilities }
