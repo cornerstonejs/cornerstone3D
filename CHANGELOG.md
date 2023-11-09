@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.4...v2.0.0-beta.5) (2023-11-09)
+
+### Features
+
+- **progressive loading:** Progressive image load/render, subresolution loading via htj2k ([#779](https://github.com/cornerstonejs/cornerstone3D/issues/779)) ([f209e80](https://github.com/cornerstonejs/cornerstone3D/commit/f209e801e8051a775079d9445b1dc198a6e30912))
+
 # [2.0.0-beta.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.3...v2.0.0-beta.4) (2023-10-16)
 
 ### Features
