@@ -69,12 +69,11 @@ class CentralizedWorkerManager {
   executeTask(
     workerName,
     methodName,
-    { type = RequestType.Prefetch, priority = 0, args = {}, options = {} }
+    { requestType = RequestType.Compute, priority = 0, args = {}, options = {} }
   ) {
     return new Promise((resolve, reject) => {
       const requestFn = async () => {
         const { api, index } = this.getNextWorkerAPI(workerName);
-        console.debug('index', index);
         if (!api) {
           const error = new Error(
             `No available worker instance for '${workerName}'`
@@ -85,7 +84,7 @@ class CentralizedWorkerManager {
         }
 
         try {
-          const results = await api[methodName](...args);
+          const results = await api[methodName](args);
           resolve(results);
         } catch (err) {
           console.error(
@@ -94,12 +93,16 @@ class CentralizedWorkerManager {
           );
           reject(err);
         } finally {
-          console.debug('worker number', index, 'has become available');
           this.workerLoadCounters[workerName][index]--;
         }
       };
 
-      this.workerPoolManager.addRequest(requestFn, type, options, priority);
+      this.workerPoolManager.addRequest(
+        requestFn,
+        requestType,
+        options,
+        priority
+      );
     });
   }
 

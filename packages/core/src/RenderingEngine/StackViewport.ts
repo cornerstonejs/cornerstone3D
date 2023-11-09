@@ -114,19 +114,6 @@ type SetVOIOptions = {
   voiUpdatedWithSetProperties?: boolean;
 };
 
-// const workerFn = () => {
-//   const worker = new Worker(new URL('../workers/add.js', import.meta.url), {
-//     name: 'worker',
-//   });
-
-//   return worker;
-// };
-
-// const webWorkerManager = getWebWorkerManager();
-// webWorkerManager.registerWorker('add', workerFn, {
-//   maxWorkerInstances: 3,
-// });
-
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal viewport, and an associated target output `canvas`.
@@ -1930,6 +1917,7 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: true,
+        requestType,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
@@ -2040,6 +2028,7 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: false,
+        requestType,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
@@ -2492,17 +2481,6 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
-    // webWorkerManager
-    //   .executeTask('add', 'fib', {
-    //     type: RequestType.Prefetch,
-    //     priority: 0,
-    //     args: [{ number: this.workerI++ }],
-    //     options: {},
-    //   })
-    //   .then((res) => {
-    //     console.debug('result', res);
-    //   });
-
     this._throwIfDestroyed();
 
     // If we are already on this imageId index, stop here

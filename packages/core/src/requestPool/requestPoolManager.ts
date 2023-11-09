@@ -78,12 +78,14 @@ class RequestPoolManager {
     interaction: 0,
     thumbnail: 0,
     prefetch: 0,
+    compute: 0,
   };
   /* maximum number of requests of each type. */
   public maxNumRequests: {
     interaction: number;
     thumbnail: number;
     prefetch: number;
+    compute: number;
   };
   /* A public property that is used to set the delay between requests. */
   public grabDelay: number;
@@ -101,6 +103,7 @@ class RequestPoolManager {
       interaction: { 0: [] },
       thumbnail: { 0: [] },
       prefetch: { 0: [] },
+      compute: { 0: [] },
     };
 
     this.grabDelay = 5;
@@ -110,12 +113,14 @@ class RequestPoolManager {
       interaction: 0,
       thumbnail: 0,
       prefetch: 0,
+      compute: 0,
     };
 
     this.maxNumRequests = {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
+      compute: 15,
     };
   }
 
@@ -277,7 +282,8 @@ class RequestPoolManager {
     if (
       !hasRemainingInteractionRequests &&
       !hasRemainingThumbnailRequests &&
-      !hasRemainingPrefetchRequests
+      !hasRemainingPrefetchRequests &&
+      !this.numRequests.compute
     ) {
       this.awake = false;
     }
