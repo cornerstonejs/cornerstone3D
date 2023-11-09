@@ -48,8 +48,8 @@
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "^2.0.0-beta.4",
-        "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.4",
-        "@cornerstonejs/tools": "^2.0.0-beta.4"
+        "@cornerstonejs/core": "^2.0.0-beta.5",
+        "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.5",
+        "@cornerstonejs/tools": "^2.0.0-beta.5"
     }
 }
