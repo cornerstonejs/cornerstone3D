@@ -123,13 +123,7 @@ function fillCircle(
       if (segmentsLocked.includes(value)) {
         return;
       }
-      segmentationScalarData[index] = 3;
-
-      // const uniqueValues = new Set<number>();
-      // for (const value of segmentationScalarData) {
-      //   uniqueValues.add(value);
-      // }
-      // console.debug('unique values', uniqueValues); //Todo: I don't think this will always be index 2 in streamingImageVolume?
+      segmentationScalarData[index] = segmentIndex;
       modifiedSlicesToUse.add(pointIJK[2]);
     };
   }
@@ -169,7 +163,7 @@ export function thresholdInsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  if (!isStackSegmentation(operationData.editData)) {
+  if (isVolumeSegmentation(operationData.editData)) {
     const { segmentation, imageVolume } = operationData.editData;
 
     if (
