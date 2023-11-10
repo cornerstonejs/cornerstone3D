@@ -16,6 +16,13 @@
     "access": "public"
   },
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/umd/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
   "scripts": {
     "build:esm": "tsc --project ./tsconfig.esm.json",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
