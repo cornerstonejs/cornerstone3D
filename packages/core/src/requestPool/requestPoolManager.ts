@@ -190,15 +190,7 @@ class RequestPoolManager {
     // Adding the request to the correct priority group of the request type
     this.requestPool[type][priority].push(requestDetails);
 
-    // Wake up
-    if (!this.awake) {
-      this.awake = true;
-      this.startGrabbing();
-    } else if (type === RequestType.Interaction) {
-      // Todo: this is a hack for interaction right now, we should separate
-      // the grabbing from the adding requests
-      this.startGrabbing();
-    }
+    this.startGrabbing();
   }
 
   /**
