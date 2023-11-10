@@ -1,4 +1,5 @@
 import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget';
+import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import vtkAxesActor from '@kitware/vtk.js/Rendering/Core/AxesActor';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -38,7 +39,7 @@ class OrientationMarkerTool extends BaseTool {
       configuration: {
         orientationWidget: {
           enabled: true,
-          viewportCorner: vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT,
+          viewportCorner: Corners.BOTTOM_RIGHT,
           viewportSize: 0.15,
           minPixelSize: 100,
           maxPixelSize: 300,
