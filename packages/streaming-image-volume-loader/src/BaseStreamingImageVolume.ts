@@ -252,7 +252,6 @@ export default class BaseStreamingImageVolume
   }
 
   protected updateTextureAndTriggerEvents(
-    volume: BaseStreamingImageVolume,
     imageIdIndex,
     imageId,
     imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION
@@ -284,7 +283,7 @@ export default class BaseStreamingImageVolume
 
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
-      imageVolume: volume,
+      imageVolume: this,
     };
 
     triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
@@ -341,12 +340,8 @@ export default class BaseStreamingImageVolume
     }
 
     // if it is not a cached image or volume
-    if (
-      !cachedImage?.image &&
-      !(cachedVolume && cachedVolume.volume !== this)
-    ) {
+    if (!cachedImage && !(cachedVolume && cachedVolume.volume !== this)) {
       return this.updateTextureAndTriggerEvents(
-        this,
         imageIdIndex,
         imageId,
         imageQualityStatus
@@ -365,10 +360,8 @@ export default class BaseStreamingImageVolume
       scalarData,
       frameIndex,
       scalarData.buffer,
-      this.updateTextureAndTriggerEvents,
       imageIdIndex,
-      imageId,
-      this.errorCallback
+      imageId
     );
   }
 
@@ -617,14 +610,8 @@ export default class BaseStreamingImageVolume
     scalarData: Types.VolumeScalarData,
     frameIndex: number,
     arrayBuffer: ArrayBufferLike,
-    updateTextureAndTriggerEvents: (
-      volume: BaseStreamingImageVolume,
-      imageIdIndex: number,
-      imageId: string
-    ) => void,
     imageIdIndex: number,
-    imageId: string,
-    errorCallback: (error: any, imageIdIndex: any, imageId: any) => void
+    imageId: string
   ) {
     const imageLoadObject = isFromImageCache
       ? cachedImageOrVolume.imageLoadObject
@@ -655,10 +642,14 @@ export default class BaseStreamingImageVolume
           pixelsPerImage
         );
         volumeBufferView.set(imageScalarData);
-        updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
+        this.updateTextureAndTriggerEvents(
+          imageIdIndex,
+          imageId,
+          cachedImage.imageQualityStatus
+        );
       })
       .catch((err) => {
-        errorCallback.call(this, err, imageIdIndex, imageId);
+        this.errorCallback(imageId, true, err);
       });
   }
 
