@@ -1,18 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 
 import { fillInsideCircle } from './fillCircle';
+import { SegToolsOperationData } from '../../../types';
 
-type OperationData = {
-  segmentationId: string;
-  imageVolume: Types.IImageVolume;
-  points: any; // Todo:fix
-  volume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentsLocked: number[];
-  viewPlaneNormal: number[];
-  viewUp: number[];
-  strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
+type OperationData = SegToolsOperationData & {
+  points: any; // todo fix
 };
 
 export function eraseInsideCircle(

@@ -58,6 +58,12 @@ import { ContourSegmentationData } from './ContourTypes';
 import IAnnotationManager from './IAnnotationManager';
 import AnnotationGroupSelector from './AnnotationGroupSelector';
 import { Statistics } from './CalculatorTypes';
+import {
+  SegToolsOperationData,
+  SegToolsEditData,
+  SegToolsEditDataStack,
+  SegToolsEditDataVolume,
+} from './SegmentationToolsOperationData';
 
 export type {
   // AnnotationState
@@ -124,4 +130,8 @@ export type {
   ContourSegmentationData,
   //Statistics
   Statistics,
+  SegToolsOperationData,
+  SegToolsEditData,
+  SegToolsEditDataStack,
+  SegToolsEditDataVolume,
 };

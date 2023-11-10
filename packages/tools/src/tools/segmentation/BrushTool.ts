@@ -1,4 +1,4 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { cache, getEnabledElement } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
@@ -7,6 +7,7 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  SegToolsEditData,
 } from '../../types';
 import { BaseTool } from '../base';
 import {
@@ -19,7 +20,7 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { Events, ToolModes } from '../../enums';
+import { Events, ToolModes, SegmentationRepresentations } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -34,7 +35,10 @@ import {
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
 
 /**
  * @public
@@ -42,9 +46,9 @@ import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
-    segmentation: Types.IImageVolume;
-    imageVolume: Types.IImageVolume; //
+    data: SegToolsEditData;
     segmentsLocked: number[]; //
+    segmentationRepresentationUID?: string;
   } | null;
   private _hoverData?: {
     brushCursor: any;
@@ -108,10 +112,6 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
-
     const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
@@ -122,30 +122,80 @@ class BrushTool extends BaseTool {
       );
     }
 
-    const { segmentationId, type } = activeSegmentationRepresentation;
+    const { segmentationId, type, segmentationRepresentationUID } =
+      activeSegmentationRepresentation;
+
+    if (type === SegmentationRepresentations.Contour) {
+      throw new Error('Not implemented yet');
+    }
+
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
     const { representationData } =
       segmentationState.getSegmentation(segmentationId);
 
-    // Todo: are we going to support contour editing with this tool?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
-    const segmentation = cache.getVolume(volumeId);
-
-    const actors = viewport.getActors();
-
-    // Note: For tools that need the source data. Assumed to use
-    // First volume actor for now.
-    const firstVolumeActorUID = actors[0].uid;
-    const imageVolume = cache.getVolume(firstVolumeActorUID);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
     const viewportIdsToRender = [viewport.id];
 
-    this._editData = {
-      segmentation,
-      imageVolume,
-      segmentsLocked,
-    };
+    if ('volume' in labelmapData) {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+
+      const actors = viewport.getActors();
+
+      // Note: For tools that need the source data. Assumed to use
+      // First volume actor for now.
+      const firstVolumeActorUID = actors[0].uid;
+      const imageVolume = cache.getVolume(firstVolumeActorUID);
+
+      this._editData = {
+        data: {
+          segmentation,
+          imageVolume,
+        },
+        segmentsLocked,
+        segmentationRepresentationUID,
+      };
+    } else {
+      const { referencedImageIds, imageIds: segmentationImageIds } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      // const { zSpacing, sortedImageIds, origin } =
+      //   sortImageIds(referencedImageIds);
+
+      // const orderedSegmentationImageIds = sortedImageIds.map((imageId) =>
+      //   getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
+      // );
+      const currentImageId = viewport.getCurrentImageId();
+      // const currentSegmentationImageId = getDerivedImageId(
+      //   currentImageId,
+      //   referencedImageIds,
+      //   segmentationImageIds
+      // );
+      const currentSegmentationImageId =
+        segmentationImageIds.indexOf(currentImageId);
+
+      if (!currentSegmentationImageId) {
+        throw new Error('No current segmentation image id');
+      }
+
+      this._editData = {
+        data: {
+          imageIds: viewport.getImageIds(),
+          // origin,
+          // zSpacing,
+          currentImageId,
+          segmentationImageIds,
+        },
+        segmentsLocked,
+        segmentationRepresentationUID,
+      };
+    }
+    // Todo: are we going to support contour editing with this tool?
 
     this._activateDraw(element);
 
@@ -240,7 +290,7 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+    const { segmentsLocked } = this._editData;
 
     this.updateCursor(evt);
 
@@ -262,8 +312,10 @@ class BrushTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      volume: segmentation, // todo: just pass the segmentationId instead
-      imageVolume,
+      editData: {
+        ...(this._editData?.data || {}),
+        segmentationRepresentationUID,
+      },
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,
@@ -340,7 +392,7 @@ class BrushTool extends BaseTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+    const { segmentsLocked } = this._editData;
     const {
       segmentIndex,
       segmentationId,
@@ -356,19 +408,16 @@ class BrushTool extends BaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     this._editData = null;
     this.updateCursor(evt);
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
-
     const operationData = {
       points: data.handles.points,
-      volume: segmentation,
-      imageVolume,
+      editData: {
+        ...(this._editData?.data || {}),
+        segmentationRepresentationUID,
+      },
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,

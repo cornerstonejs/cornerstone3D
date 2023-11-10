@@ -1,23 +1,20 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
+import { SegToolsOperationData } from '../../../types';
 
 const { transformWorldToIndex } = csUtils;
 
-type EraseOperationData = {
-  segmentationId: string;
+type OperationData = SegToolsOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentsLocked: number[];
 };
 
 function eraseRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: EraseOperationData,
+  operationData: OperationData,
   inside = true
 ): void {
   const {

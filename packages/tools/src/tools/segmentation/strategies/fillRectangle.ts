@@ -1,19 +1,15 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { pointInShapeCallback } from '../../../utilities';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { SegToolsOperationData } from '../../../types';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = {
-  segmentationId: string;
+type OperationData = SegToolsOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentIndex: number;
-  segmentsLocked: number[];
 };
 
 /**

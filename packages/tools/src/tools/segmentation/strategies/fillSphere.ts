@@ -4,18 +4,10 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInSurroundingSphereCallback } from '../../../utilities';
 import isWithinThreshold from './utils/isWithinThreshold';
+import { SegToolsOperationData } from '../../../types';
 
-type OperationData = {
+type OperationData = SegToolsOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: Types.IImageVolume;
-  imageVolume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentationId: string;
-  segmentsLocked: number[];
-  viewPlaneNormal: Types.Point3;
-  viewUp: Types.Point3;
-  strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
 };
 
 function fillSphere(
