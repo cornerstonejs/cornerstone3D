@@ -10,30 +10,15 @@ import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
 import isWithinThreshold from './utils/isWithinThreshold';
-import {
-  SegToolsEditData,
-  SegToolsEditDataStack,
-  SegToolsEditDataVolume,
-  SegToolsOperationData,
-} from '../../../types';
+import { SegToolsOperationData } from '../../../types';
+import { getStrategyData } from './utils/getStrategyData';
+import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 
 const { transformWorldToIndex } = csUtils;
 
 type OperationData = SegToolsOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 };
-
-function isStackSegmentation(
-  editData: SegToolsEditData
-): editData is SegToolsEditDataStack {
-  return (editData as SegToolsEditDataStack).imageIds !== undefined;
-}
-
-function isVolumeSegmentation(
-  editData: SegToolsEditData
-): editData is SegToolsEditDataVolume {
-  return (editData as SegToolsEditDataVolume).imageVolume !== undefined;
-}
 
 function fillCircle(
   enabledElement: Types.IEnabledElement,
@@ -49,50 +34,14 @@ function fillCircle(
   } = operationData;
 
   const { viewport } = enabledElement;
-  let segmentationImageData, segmentationScalarData, imageScalarData;
-  if (isVolumeSegmentation(operationData.editData)) {
-    const { segmentation: segmentationVolume, imageVolume } =
-      operationData.editData;
-    ({ imageData: segmentationImageData } = segmentationVolume);
-    segmentationScalarData = segmentationVolume.getScalarData();
-    imageScalarData = imageVolume.getScalarData();
-  } else {
-    const {
-      currentImageId,
-      segmentationRepresentationUID,
-      segmentationImageIds,
-    } = operationData.editData;
+  const data = getStrategyData({ operationData, viewport });
 
-    if (!currentImageId) {
-      return;
-    }
-
-    // we know that the segmentationRepresentationUID is the name of the actor always
-    // and always circle modifies the current imageId which in fact is the imageData
-    // of that actor at that moment so we have the imageData already
-    const actor = viewport.getActor(segmentationRepresentationUID);
-    segmentationImageData = actor.actor.getMapper().getInputData();
-    const colonIndex = currentImageId.indexOf(':');
-    const imageURI = currentImageId.substring(colonIndex + 1);
-    const currentSegmentationImageId = segmentationImageIds.find((imageId) =>
-      imageId.includes(imageURI)
-    );
-
-    const segmentationImage = cache.getImage(currentSegmentationImageId);
-    segmentationScalarData = segmentationImage.getPixelData();
-
-    const uniqueValues = new Set<number>();
-    for (const value of segmentationScalarData) {
-      uniqueValues.add(value);
-    }
-
-    const image = cache.getImage(currentImageId);
-
-    // VERY IMPORTANT
-    // This is the pixel data of the image that is being segmented in the cache
-    // and we need to use this to for the modification
-    imageScalarData = image.getPixelData();
+  if (!data) {
+    return;
   }
+
+  const { imageScalarData, segmentationImageData, segmentationScalarData } =
+    data;
 
   const { ellipseObj, boundsIJK } = getEllipse(
     viewport,

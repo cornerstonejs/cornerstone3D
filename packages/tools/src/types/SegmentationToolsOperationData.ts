@@ -25,7 +25,7 @@ type SegToolsOperationData = {
   viewPlaneNormal: number[];
   viewUp: number[];
   strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
+  constraintFn: (pointIJK: number) => boolean;
 };
 
 export {

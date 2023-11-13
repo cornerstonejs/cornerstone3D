@@ -139,7 +139,7 @@ class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
-    if ('volume' in labelmapData) {
+    if ('volumeId' in labelmapData) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
@@ -314,7 +314,6 @@ class BrushTool extends BaseTool {
       points: data.handles.points,
       editData: {
         ...(this._editData?.data || {}),
-        segmentationRepresentationUID,
       },
       segmentIndex,
       segmentsLocked,
@@ -416,7 +415,6 @@ class BrushTool extends BaseTool {
       points: data.handles.points,
       editData: {
         ...(this._editData?.data || {}),
-        segmentationRepresentationUID,
       },
       segmentIndex,
       segmentsLocked,
