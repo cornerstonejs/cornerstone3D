@@ -19,7 +19,7 @@ export default interface IVideoViewport extends IViewport {
    */
   getProperties: () => VideoViewportProperties;
 
-  setVideoImageId: (
+  setVideo: (
     imageIds: string | string[],
     imageIdIndex?: number
   ) => Promise<unknown>;
@@ -29,10 +29,12 @@ export default interface IVideoViewport extends IViewport {
   play: () => void;
 
   pause: () => void;
+
   /**
    * Reset the viewport properties to the default values
    */
   resetProperties(): void;
+
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */

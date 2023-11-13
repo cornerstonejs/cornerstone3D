@@ -1806,7 +1806,7 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideoImageId: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
+    setVideo: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
     setVideoURL: (url: string) => void;
 }
@@ -2092,6 +2092,8 @@ enum MetadataModules {
     CINE = "cineModule",
     // (undocumented)
     GENERAL_SERIES = "generalSeriesModule",
+    // (undocumented)
+    IMAGE_PIXEL = "imagePixelModule",
     // (undocumented)
     IMAGE_PLANE = "imagePlaneModule",
     // (undocumented)
@@ -2767,7 +2769,11 @@ function uuidv4(): string;
 export class VideoViewport extends Viewport implements IVideoViewport {
     constructor(props: VideoViewportInput);
     // (undocumented)
+    averageWhite: [number, number, number];
+    // (undocumented)
     readonly canvasContext: CanvasRenderingContext2D;
+    // (undocumented)
+    canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
@@ -2775,17 +2781,49 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     end(): Promise<void>;
     // (undocumented)
+    feFilter: string;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getImageData(): any;
+    getImageData(): {
+        dimensions: any;
+        spacing: any;
+        origin: any;
+        direction: any;
+        metadata: {
+            Modality: any;
+        };
+        imageData: {
+            getDirection: () => any;
+            getDimensions: () => any;
+            getScalarData: () => Uint8ClampedArray;
+            getRange: () => number[];
+            getSpacing: () => any;
+            worldToIndex: (point: Point3) => number[];
+            indexToWorld: (point: Point3) => Point3;
+        };
+        hasPixelSpacing: boolean;
+        calibration: IImageCalibration;
+        preScale: {
+            scaled: boolean;
+        };
+    };
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
+    getScalarData(): Uint8ClampedArray;
+    // (undocumented)
     protected imageId: string;
+    // (undocumented)
+    indexToCanvas: (indexPos: Point2) => Point2;
+    // (undocumented)
+    protected metadata: any;
+    // (undocumented)
+    modality: any;
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
@@ -2801,21 +2839,29 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     scroll(delta?: number): Promise<void>;
     // (undocumented)
+    setAverageWhite(averageWhite: [number, number, number]): void;
+    // (undocumented)
     setCamera(camera: ICamera): void;
+    // (undocumented)
+    protected setColorTransform(): void;
     // (undocumented)
     setFrame(frame: number): Promise<void>;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
-    setProperties(videoInterface: VideoViewportProperties): void;
+    setProperties(props: VideoViewportProperties): void;
     // (undocumented)
     setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
-    setVideoImageId(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
+    setVideo(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
+    // (undocumented)
+    setVOI(voiRange: VOIRange): void;
+    // (undocumented)
+    setWindowLevel(windowWidth?: number, windowCenter?: number): void;
     // (undocumented)
     start(): Promise<void>;
     // (undocumented)
@@ -2824,6 +2870,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     readonly uid: any;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    voiRange: VOIRange;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
@@ -2854,7 +2902,6 @@ type VideoViewportProperties = ViewportProperties & {
     muted?: boolean;
     pan?: Point2;
     playbackRate?: number;
-    parallelScale?: number;
 };
 
 // @public (undocumented)

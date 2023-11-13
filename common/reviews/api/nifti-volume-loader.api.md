@@ -1145,7 +1145,7 @@ interface IVideoViewport extends IViewport {
     resize: () => void;
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideoImageId: (
+    setVideo: (
     imageIds: string | string[],
     imageIdIndex?: number
     ) => Promise<unknown>;
@@ -1533,9 +1533,6 @@ type VideoViewportProperties = ViewportProperties & {
     muted?: boolean;
     pan?: Point2;
     playbackRate?: number;
-    // The zoom factor, naming consistent with vtk cameras for now,
-    // but this isn't necessarily necessary.
-    parallelScale?: number;
 };
 
 // @public

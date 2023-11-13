@@ -16,7 +16,7 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  VideoRedactionTool,
+  WindowLevelTool,
   StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
@@ -115,6 +115,39 @@ addButtonToToolbar({
   },
 });
 
+/**
+ * One possible average white function showing how the imageData is used
+ * to get average white information.
+ */
+function getAverageWhite(scalarData) {
+  const maxValues = [0, 0, 0];
+  for (let i = 0; i < scalarData.length; i += 4) {
+    const r = scalarData[i];
+    const g = scalarData[i + 1];
+    const b = scalarData[i + 2];
+    maxValues[0] = Math.max(r, maxValues[0]);
+    maxValues[1] = Math.max(g, maxValues[1]);
+    maxValues[2] = Math.max(b, maxValues[2]);
+  }
+  return maxValues;
+}
+
+addButtonToToolbar({
+  id: 'Avg Colour Correct',
+  title: 'Avg Colour Correct',
+  onClick() {
+    const white = getAverageWhite(
+      viewport.getImageData().imageData.getScalarData()
+    );
+    console.log('White=', white);
+    viewport.setAverageWhite(white);
+    document.getElementById(
+      'Colour Correct'
+    ).innerText = `Avg Color: ${white.join(',')}`;
+    currentWhite = -1;
+  },
+});
+
 const wl = (windowWidth, windowCenter) => ({ windowWidth, windowCenter });
 const windowLevels = [
   wl(256, 128),
@@ -138,23 +171,6 @@ addDropdownToToolbar({
     const index = windowLevelNames.indexOf(newWLText) % windowLevels.length;
     const newWL = windowLevels[index];
     viewport.setWindowLevel(newWL.windowWidth, newWL.windowCenter);
-  },
-});
-
-const scrollSpeeds = ['1 f', '2 f', '4 f', '0.5 s', '1 s', '2 s', '4 s'];
-
-const scrollTitle = document.createElement('div');
-scrollTitle.style.display = 'inline';
-scrollTitle.innerText = 'Scroll Distance:';
-toolbar.appendChild(scrollTitle);
-
-addDropdownToToolbar({
-  options: { values: scrollSpeeds, defaultValue: '1 f' },
-  onSelectedValueChange: (value) => {
-    value = value.toString();
-    const unit = value[value.length - 1];
-    const newScrollSpeed = Number(value.substring(0, value.length - 2));
-    viewport.setScrollSpeed(newScrollSpeed, unit);
   },
 });
 
@@ -184,8 +200,8 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -196,13 +212,13 @@ async function run() {
   // Add tools to the tool group
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  toolGroup.setToolActive(VideoRedactionTool.toolName, {
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Right Click
+        mouseButton: MouseBindings.Primary, // Right Click
       },
     ],
   });
@@ -228,7 +244,7 @@ async function run() {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
@@ -259,7 +275,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideoImageId(videoId, 25);
+  await viewport.setVideo(videoId, 25);
 
   viewport.play();
 

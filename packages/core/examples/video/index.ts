@@ -146,7 +146,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  await viewport.setVideoImageId(videoId);
+  await viewport.setVideo(videoId);
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });
