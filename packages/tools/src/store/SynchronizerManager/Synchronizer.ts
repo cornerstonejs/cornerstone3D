@@ -215,15 +215,19 @@ class Synchronizer {
         if (targetIsSource) {
           continue;
         }
-        promises.push(
-          this._eventHandler(
-            this,
-            sourceViewport,
-            targetViewport,
-            sourceEvent,
-            this._options
-          )
+        const result = this._eventHandler(
+          this,
+          sourceViewport,
+          targetViewport,
+          sourceEvent,
+          this._options
         );
+
+        // if the result is a promise, then add it to the list of promises
+        // to wait for before setting _ignoreFiredEvents to false
+        if (result instanceof Promise) {
+          promises.push(result);
+        }
       }
     } catch (ex) {
       console.warn(`Synchronizer, for: ${this._eventName}`, ex);

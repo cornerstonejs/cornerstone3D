@@ -1571,7 +1571,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
-    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotations;
+    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotation[];
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
@@ -3233,7 +3233,7 @@ function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeV
 // @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
-    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): void;
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): Promise<void> | void;
 }
 
 // @public (undocumented)
