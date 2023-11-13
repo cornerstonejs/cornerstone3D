@@ -1,14 +1,29 @@
 /* eslint import/extensions:0 */
+import { getOptions } from './imageLoader/internal';
 import registerLoaders from './imageLoader/registerLoaders';
 
 let cornerstone;
 let dicomParser;
+
+const workerFn = () => {
+  const instance = new Worker(
+    new URL('./shared/decodeImageFrame.ts', import.meta.url)
+  );
+  return instance;
+};
 
 const external = {
   set cornerstone(cs) {
     cornerstone = cs;
 
     registerLoaders(cornerstone);
+
+    const options = getOptions();
+
+    const workerManager = external.cornerstone.getWebWorkerManager();
+    workerManager.registerWorker('dicomImageLoader', workerFn, {
+      maxWorkerInstances: options.maxWebWorkers || 1,
+    });
   },
   get cornerstone() {
     if (!cornerstone) {

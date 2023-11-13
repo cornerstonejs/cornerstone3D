@@ -99,7 +99,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: true });
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
   toolGroup.addTool(PlanarRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to

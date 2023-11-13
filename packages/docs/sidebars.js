@@ -82,6 +82,7 @@ module.exports = {
             'concepts/cornerstone-core/viewports',
             'concepts/cornerstone-core/renderingEngine',
             'concepts/cornerstone-core/requestPoolManager',
+            'concepts/cornerstone-core/webWorker',
           ],
         },
         {

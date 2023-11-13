@@ -11,6 +11,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
+
 import {
   triggerEvent,
   isEqual,
@@ -1914,6 +1915,7 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: true,
+        requestType,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
@@ -2024,6 +2026,7 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: false,
+        requestType,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {

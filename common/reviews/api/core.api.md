@@ -921,6 +921,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
 };
 
 // @public (undocumented)
+export function getWebWorkerManager(): any;
+
+// @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
 
 // @public (undocumented)
@@ -2271,6 +2274,8 @@ function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: 
 
 // @public (undocumented)
 enum RequestType {
+    // (undocumented)
+    Compute = "compute",
     // (undocumented)
     Interaction = "interaction",
     // (undocumented)
