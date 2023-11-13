@@ -1571,7 +1571,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
-    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotations;
+    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotation[];
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
