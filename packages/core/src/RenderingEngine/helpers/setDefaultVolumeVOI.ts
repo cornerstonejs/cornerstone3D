@@ -24,12 +24,12 @@ const REQUEST_TYPE = RequestType.Prefetch;
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
   imageVolume: IImageVolume,
-  use16BitTexture: boolean
+  useNativeDataType: boolean
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
   if (!voi) {
-    voi = await getVOIFromMinMax(imageVolume, use16BitTexture);
+    voi = await getVOIFromMinMax(imageVolume, useNativeDataType);
   }
 
   if (!voi || voi.lower === undefined || voi.upper === undefined) {
@@ -117,7 +117,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  */
 async function getVOIFromMinMax(
   imageVolume: IImageVolume,
-  use16BitTexture: boolean
+  useNativeDataType: boolean
 ): Promise<VOIRange> {
   const { imageIds } = imageVolume;
   const scalarData = imageVolume.getScalarData();
@@ -157,7 +157,7 @@ async function getVOIFromMinMax(
 
   const options = {
     targetBuffer: {
-      type: use16BitTexture ? undefined : 'Float32Array',
+      type: useNativeDataType ? undefined : 'Float32Array',
     },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,

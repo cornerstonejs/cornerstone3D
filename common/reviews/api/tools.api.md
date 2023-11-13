@@ -6,6 +6,7 @@
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
+import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -252,7 +253,7 @@ type Annotation = {
             textBox?: {
                 hasMoved: boolean;
                 worldPosition: Types_2.Point3;
-                worldBoundingBox: {
+                worldBoundingBox?: {
                     topLeft: Types_2.Point3;
                     topRight: Types_2.Point3;
                     bottomLeft: Types_2.Point3;
@@ -301,7 +302,7 @@ export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
     getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
     // (undocumented)
@@ -1027,6 +1028,110 @@ declare namespace color {
 }
 
 // @public (undocumented)
+class Colorbar extends Widget {
+    constructor(props: ColorbarProps);
+    // (undocumented)
+    get activeColormapName(): string;
+    set activeColormapName(colormapName: string);
+    // (undocumented)
+    protected createRootElement(): HTMLElement;
+    // (undocumented)
+    _createTicksBar(props: ColorbarProps): ColorbarTicks;
+    // (undocumented)
+    destroy(): void;
+    // (undocumented)
+    protected getVOIMultipliers(): [number, number];
+    // (undocumented)
+    protected hideTicks(): void;
+    // (undocumented)
+    get imageRange(): ColorbarVOIRange;
+    set imageRange(imageRange: ColorbarVOIRange);
+    // (undocumented)
+    protected onContainerResize(): void;
+    // (undocumented)
+    protected onVoiChange(voiRange: ColorbarVOIRange): void;
+    // (undocumented)
+    get showFullImageRange(): boolean;
+    set showFullImageRange(value: boolean);
+    // (undocumented)
+    protected showTicks(): void;
+    // (undocumented)
+    get voiRange(): ColorbarVOIRange;
+    set voiRange(voiRange: ColorbarVOIRange);
+}
+
+declare namespace colorbar {
+    export {
+        Types_3 as Types,
+        Enums_2 as Enums,
+        Colorbar,
+        ViewportColorbar
+    }
+}
+
+// @public (undocumented)
+type ColorbarCommonProps = {
+    imageRange?: ColorbarImageRange;
+    voiRange?: ColorbarVOIRange;
+    ticks?: {
+        position?: ColorbarRangeTextPosition;
+        style?: ColorbarTicksStyle;
+    };
+    showFullPixelValueRange?: boolean;
+};
+
+// @public (undocumented)
+type ColorbarImageRange = {
+    lower: number;
+    upper: number;
+};
+
+// @public (undocumented)
+type ColorbarProps = (WidgetProps & ColorbarCommonProps) & {
+    colormaps: IColorMapPreset[];
+    activeColormapName?: string;
+};
+
+// @public (undocumented)
+enum ColorbarRangeTextPosition {
+    // (undocumented)
+    Bottom = "bottom",
+    // (undocumented)
+    Left = "left",
+    // (undocumented)
+    Right = "right",
+    // (undocumented)
+    Top = "top"
+}
+
+// @public (undocumented)
+type ColorbarSize = {
+    width: number;
+    height: number;
+};
+
+// @public (undocumented)
+type ColorbarTicksProps = ColorbarCommonProps & {
+    top?: number;
+    left?: number;
+    size?: ColorbarSize;
+    container?: HTMLElement;
+};
+
+// @public (undocumented)
+type ColorbarTicksStyle = {
+    font?: string;
+    color?: string;
+    tickSize?: number;
+    tickWidth?: number;
+    labelMargin?: number;
+    maxNumTicks?: number;
+};
+
+// @public (undocumented)
+type ColorbarVOIRange = ColorbarImageRange;
+
+// @public (undocumented)
 type ColorLUT = Array<Color>;
 
 // @public (undocumented)
@@ -1466,7 +1571,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
-    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotations;
+    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotation[];
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
@@ -1694,6 +1799,7 @@ declare namespace drawing {
         drawRect,
         drawTextBox,
         drawArrow,
+        drawRedactionRect,
         setAttributesIfNecessary,
         setNewAttributesIfValid
     }
@@ -1725,6 +1831,9 @@ function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string,
 
 // @public (undocumented)
 function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}, dataId?: string): void;
+
+// @public (undocumented)
+function drawRedactionRect(svgDrawingHelper: any, annotationUID: string, rectangleUID: string, start: any, end: any, options?: {}): void;
 
 // @public (undocumented)
 function drawTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
@@ -1874,6 +1983,12 @@ declare namespace Enums {
     }
 }
 export { Enums }
+
+declare namespace Enums_2 {
+    export {
+        ColorbarRangeTextPosition
+    }
+}
 
 // @public (undocumented)
 enum Events {
@@ -2093,13 +2208,13 @@ function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: A
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
 
 // @public (undocumented)
-function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
+function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
 function filterViewportsWithParallelNormals(viewports: any, camera: any, EPS?: number): any;
 
 // @public (undocumented)
-function filterViewportsWithToolEnabled(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
+function filterViewportsWithToolEnabled(viewports: Array<Types_2.IViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
 function findClosestPoint(sourcePoints: Array<Types_2.Point2>, targetPoint: Types_2.Point2): Types_2.Point2;
@@ -2222,6 +2337,12 @@ function getBrushSizeForToolGroup(toolGroupId: string, toolName?: string): void;
 
 // @public (undocumented)
 function getBrushThresholdForToolGroup(toolGroupId: string): any;
+
+// @public (undocumented)
+const getCalibratedLengthUnits: (handles: any, image: any) => string;
+
+// @public (undocumented)
+const getCalibratedScale: (image: any) => any;
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
@@ -2747,6 +2868,9 @@ interface IImageVolume {
     vtkOpenGLTexture: any;
 }
 
+// @public (undocumented)
+type ImageActor = vtkImageSlice;
+
 // @public
 type ImageCacheImageAddedEvent =
 CustomEvent_2<ImageCacheImageAddedEventDetail>;
@@ -2936,6 +3060,12 @@ type InteractionStartType = Types_2.CustomEventType<InteractionStartEventDetail>
 type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
+type InternalVideoCamera = {
+    panWorld?: Point2;
+    parallelScale?: number;
+};
+
+// @public (undocumented)
 function interpolateAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
 
 // @public (undocumented)
@@ -2976,9 +3106,11 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(id: string): IStackViewport | IVolumeViewport;
+    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
-    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    getViewport(id: string): IViewport;
+    // (undocumented)
+    getViewports(): Array<IViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
@@ -3101,7 +3233,7 @@ function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeV
 // @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
-    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): void;
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): Promise<void> | void;
 }
 
 // @public (undocumented)
@@ -3204,6 +3336,21 @@ type ITouchPoints = IPoints & {
         rotationAngle: number;
     };
 };
+
+// @public
+interface IVideoViewport extends IViewport {
+    getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    pause: () => void;
+    // (undocumented)
+    play: () => void;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetProperties(): void;
+    resize: () => void;
+    setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideoURL: (url: string) => void;
+}
 
 // @public
 interface IViewport {
@@ -3860,6 +4007,8 @@ export class OrientationMarkerTool extends BaseTool {
     static CUBE: number;
     // (undocumented)
     onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
@@ -4791,7 +4940,7 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-function scroll_2(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
+function scroll_2(viewport: Types_2.IViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
 type ScrollOptions_2 = {
@@ -5561,7 +5710,8 @@ declare namespace ToolSpecificAnnotationTypes {
         CobbAngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
-        ScaleOverlayAnnotation
+        ScaleOverlayAnnotation,
+        VideoRedactionAnnotation
     }
 }
 
@@ -5770,6 +5920,19 @@ declare namespace Types {
 }
 export { Types }
 
+declare namespace Types_3 {
+    export {
+        ColorbarCommonProps,
+        ColorbarProps,
+        ColorbarImageRange,
+        ColorbarVOIRange,
+        ColorbarSize,
+        ColorbarTicksProps,
+        ColorbarTicksStyle,
+        ViewportColorbarProps
+    }
+}
+
 // @public (undocumented)
 function unlockAllAnnotations(): void;
 
@@ -5787,6 +5950,8 @@ declare namespace utilities {
         touch,
         triggerEvent,
         calibrateImageSpacing,
+        getCalibratedLengthUnits,
+        getCalibratedScale,
         segmentation_2 as segmentation,
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRender,
@@ -5806,7 +5971,8 @@ declare namespace utilities {
         scroll_2 as scroll,
         roundNumber,
         pointToString,
-        polyDataUtils
+        polyDataUtils,
+        voi
     }
 }
 export { utilities }
@@ -5818,6 +5984,122 @@ declare namespace vec2 {
     }
 }
 
+// @public (undocumented)
+interface VideoRedactionAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        invalidated: boolean;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+        cachedStats: {
+            [key: string]: any;
+        };
+        active: boolean;
+    };
+    // (undocumented)
+    metadata: {
+        viewPlaneNormal: Types_2.Point3;
+        viewUp: Types_2.Point3;
+        FrameOfReferenceUID: string;
+        referencedImageId: string;
+        toolName: string;
+    };
+}
+
+// @public (undocumented)
+export class VideoRedactionTool extends AnnotationTool {
+    constructor(toolConfiguration?: {});
+    // (undocumented)
+    _activateDraw: (element: any) => void;
+    // (undocumented)
+    _activateModify: (element: any) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => VideoRedactionAnnotation;
+    // (undocumented)
+    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
+    // (undocumented)
+    cancel(element: any): any;
+    // (undocumented)
+    _configuration: any;
+    // (undocumented)
+    _deactivateDraw: (element: any) => void;
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportUIDsToRender: string[];
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
+    // (undocumented)
+    _getImageVolumeFromTargetUID(targetUID: any, renderingEngine: any): {
+        imageVolume: any;
+        viewport: any;
+    };
+    // (undocumented)
+    _getRectangleImageCoordinates: (points: Array<Types_2.Point2>) => {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+    };
+    // (undocumented)
+    _getTargetStackUID(viewport: any): string;
+    // (undocumented)
+    _getTargetVolumeUID: (scene: any) => any;
+    // (undocumented)
+    handleSelectedCallback: (evt: any, annotation: any, handle: any, interactionType?: string) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
+    // (undocumented)
+    isPointNearTool: (element: any, annotation: any, canvasCoords: any, proximity: any) => boolean;
+    // (undocumented)
+    _mouseDragCallback: (evt: any) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: any) => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: any, annotation: any, interactionType?: string) => void;
+}
+
+// @public (undocumented)
+type VideoViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
+
+// @public
+type VideoViewportProperties = ViewportProperties & {
+    loop?: boolean;
+    muted?: boolean;
+    pan?: Point2;
+    playbackRate?: number;
+    // The zoom factor, naming consistent with vtk cameras for now,
+    // but this isn't necessarily necessary.
+    parallelScale?: number;
+};
+
 declare namespace viewport {
     export {
         isViewportPreScaled,
@@ -5825,6 +6107,25 @@ declare namespace viewport {
         jumpToWorld
     }
 }
+
+// @public (undocumented)
+class ViewportColorbar extends Colorbar {
+    constructor(props: ViewportColorbarProps);
+    // (undocumented)
+    get element(): HTMLDivElement;
+    // (undocumented)
+    get enabledElement(): Types_2.IEnabledElement;
+    // (undocumented)
+    protected getVOIMultipliers(): [number, number];
+    // (undocumented)
+    protected onVoiChange(voiRange: ColorbarVOIRange): void;
+}
+
+// @public (undocumented)
+type ViewportColorbarProps = ColorbarProps & {
+    element: HTMLDivElement;
+    volumeId?: string;
+};
 
 declare namespace viewportFilters {
     export {
@@ -5900,6 +6201,12 @@ type VOI = {
     windowWidth: number;
     windowCenter: number;
 };
+
+declare namespace voi {
+    export {
+        colorbar
+    }
+}
 
 // @public
 type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;

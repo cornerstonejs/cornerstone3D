@@ -302,6 +302,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+    this.viewportProperties.slabThickness = slabThickness;
   }
 
   /**
@@ -385,6 +386,13 @@ class VolumeViewport extends BaseVolumeViewport {
 
     if (!volumeActor) {
       throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+    }
+
+    // if a custom slabThickness was set, we need to reset it
+    if (volumeActor.slabThickness) {
+      volumeActor.slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+      this.viewportProperties.slabThickness = undefined;
+      this.updateClippingPlanesForActors(this.getCamera());
     }
 
     const imageVolume = cache.getVolume(volumeActor.uid);

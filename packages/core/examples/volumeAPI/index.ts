@@ -4,8 +4,6 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,

@@ -2,6 +2,7 @@ import {
   StackViewport,
   utilities,
   BaseVolumeViewport,
+  VideoViewport,
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import { ToolModes } from '../../enums';
@@ -205,6 +206,8 @@ abstract class BaseTool implements IBaseTool {
       return `imageId:${viewport.getCurrentImageId()}`;
     } else if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;
+    } else if (viewport instanceof VideoViewport) {
+      return '';
     } else {
       throw new Error(
         'getTargetId: viewport must be a StackViewport or VolumeViewport'

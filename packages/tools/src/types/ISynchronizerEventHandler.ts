@@ -8,5 +8,5 @@ export default interface ISynchronizerEventHandler {
     targetViewport: Types.IViewportId,
     sourceEvent: any,
     options?: any
-  ): void;
+  ): Promise<void> | void;
 }
