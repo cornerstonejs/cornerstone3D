@@ -24,6 +24,7 @@ const {
   RectangleROITool,
   EllipticalROITool,
   CircleROITool,
+  SplineROITool,
   BidirectionalTool,
   AngleTool,
   CobbAngleTool,
@@ -108,6 +109,13 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
   cancelToolDrawing(evt);
 });
 
+const SplineToolNames = [
+  'CardinalSplineROI',
+  'CatmullRomSplineROI',
+  'LinearSplineROI',
+  'BSplineROI',
+];
+
 const toolsNames = [
   LengthTool.toolName,
   ProbeTool.toolName,
@@ -120,6 +128,7 @@ const toolsNames = [
   ArrowAnnotateTool.toolName,
   PlanarFreehandROITool.toolName,
   KeyImageTool.toolName,
+  ...SplineToolNames,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -213,6 +222,7 @@ async function run() {
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
   cornerstoneTools.addTool(CircleROITool);
+  cornerstoneTools.addTool(SplineROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(AngleTool);
   cornerstoneTools.addTool(CobbAngleTool);
@@ -230,6 +240,31 @@ async function run() {
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
   toolGroup.addTool(CircleROITool.toolName);
+
+  toolGroup.addToolInstance('CardinalSplineROI', SplineROITool.toolName, {
+    spline: {
+      type: 'CARDINAL',
+    },
+  });
+
+  toolGroup.addToolInstance('CatmullRomSplineROI', SplineROITool.toolName, {
+    spline: {
+      type: 'CATMULLROM',
+    },
+  });
+
+  toolGroup.addToolInstance('LinearSplineROI', SplineROITool.toolName, {
+    spline: {
+      type: 'LINEAR',
+    },
+  });
+
+  toolGroup.addToolInstance('BSplineROI', SplineROITool.toolName, {
+    spline: {
+      type: 'BSPLINE',
+    },
+  });
+
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(AngleTool.toolName);
   toolGroup.addTool(CobbAngleTool.toolName);
@@ -239,7 +274,7 @@ async function run() {
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(toolsNames[0], {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -252,6 +287,7 @@ async function run() {
   toolGroup.setToolPassive(RectangleROITool.toolName);
   toolGroup.setToolPassive(EllipticalROITool.toolName);
   toolGroup.setToolPassive(CircleROITool.toolName);
+  // toolGroup.setToolPassive(SplineROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);

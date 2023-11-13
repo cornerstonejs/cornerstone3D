@@ -117,6 +117,32 @@ export interface CircleROIAnnotation extends Annotation {
   };
 }
 
+export interface SplineROIAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox?: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    spline: {
+      type: string;
+      resolution: number;
+      closed: boolean;
+    };
+    label: string;
+    cachedStats?: ROICachedStats;
+  };
+}
+
 export interface EllipticalROIAnnotation extends Annotation {
   data: {
     handles: {
