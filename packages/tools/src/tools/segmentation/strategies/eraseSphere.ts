@@ -1,9 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 
 import { fillInsideSphere } from './fillSphere';
-import { SegToolsOperationData } from '../../../types';
+import { LabelmapToolOperationData } from '../../../types';
 
-type OperationData = SegToolsOperationData & {
+type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 };
 

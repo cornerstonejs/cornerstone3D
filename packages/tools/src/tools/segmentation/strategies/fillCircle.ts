@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import { cache, utilities as csUtils } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
@@ -10,13 +11,13 @@ import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
 import isWithinThreshold from './utils/isWithinThreshold';
-import { SegToolsOperationData } from '../../../types';
+import { LabelmapToolOperationData } from '../../../types';
 import { getStrategyData } from './utils/getStrategyData';
 import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = SegToolsOperationData & {
+type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 };
 
@@ -112,8 +113,11 @@ export function thresholdInsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  if (isVolumeSegmentation(operationData.editData)) {
-    const { segmentation, imageVolume } = operationData.editData;
+  if (isVolumeSegmentation(operationData)) {
+    const { referencedVolumeId, volumeId } = operationData;
+
+    const imageVolume = cache.getVolume(referencedVolumeId);
+    const segmentation = cache.getVolume(volumeId);
 
     if (
       !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||

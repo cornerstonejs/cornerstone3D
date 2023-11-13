@@ -4,11 +4,11 @@ import type { Types } from '@cornerstonejs/core';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
-import { SegToolsOperationData } from '../../../types';
+import { LabelmapToolOperationData } from '../../../types';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = SegToolsOperationData & {
+type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 };
 

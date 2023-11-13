@@ -7,7 +7,6 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-  SegToolsEditData,
 } from '../../types';
 import { BaseTool } from '../base';
 import {
@@ -46,9 +45,12 @@ import {
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
-    data: SegToolsEditData;
     segmentsLocked: number[]; //
     segmentationRepresentationUID?: string;
+    imageIds?: string[];
+    referencedImageIds?: string[];
+    volumeId?: string;
+    referencedVolumeId?: string;
   } | null;
   private _hoverData?: {
     brushCursor: any;
@@ -143,25 +145,20 @@ class BrushTool extends BaseTool {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
-      const segmentation = cache.getVolume(volumeId);
-
       const actors = viewport.getActors();
 
       // Note: For tools that need the source data. Assumed to use
       // First volume actor for now.
       const firstVolumeActorUID = actors[0].uid;
-      const imageVolume = cache.getVolume(firstVolumeActorUID);
 
       this._editData = {
-        data: {
-          segmentation,
-          imageVolume,
-        },
+        volumeId,
+        referencedVolumeId: firstVolumeActorUID,
         segmentsLocked,
         segmentationRepresentationUID,
       };
     } else {
-      const { referencedImageIds, imageIds: segmentationImageIds } =
+      const { imageIds: segmentationImageIds } =
         labelmapData as LabelmapSegmentationDataStack;
 
       // const { zSpacing, sortedImageIds, origin } =
@@ -171,11 +168,6 @@ class BrushTool extends BaseTool {
       //   getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
       // );
       const currentImageId = viewport.getCurrentImageId();
-      // const currentSegmentationImageId = getDerivedImageId(
-      //   currentImageId,
-      //   referencedImageIds,
-      //   segmentationImageIds
-      // );
       const currentSegmentationImageId =
         segmentationImageIds.indexOf(currentImageId);
 
@@ -184,13 +176,11 @@ class BrushTool extends BaseTool {
       }
 
       this._editData = {
-        data: {
-          imageIds: viewport.getImageIds(),
-          // origin,
-          // zSpacing,
-          currentImageId,
-          segmentationImageIds,
-        },
+        imageIds: segmentationImageIds,
+        // origin,
+        // zSpacing,
+        // currentImageId,
+        referencedImageIds: viewport.getImageIds(),
         segmentsLocked,
         segmentationRepresentationUID,
       };
@@ -290,8 +280,6 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    const { segmentsLocked } = this._editData;
-
     this.updateCursor(evt);
 
     const {
@@ -311,12 +299,9 @@ class BrushTool extends BaseTool {
     );
 
     const operationData = {
+      ...this._editData,
       points: data.handles.points,
-      editData: {
-        ...(this._editData?.data || {}),
-      },
       segmentIndex,
-      segmentsLocked,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,
@@ -391,7 +376,6 @@ class BrushTool extends BaseTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { segmentsLocked } = this._editData;
     const {
       segmentIndex,
       segmentationId,
@@ -413,11 +397,8 @@ class BrushTool extends BaseTool {
 
     const operationData = {
       points: data.handles.points,
-      editData: {
-        ...(this._editData?.data || {}),
-      },
+      ...this._editData,
       segmentIndex,
-      segmentsLocked,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,

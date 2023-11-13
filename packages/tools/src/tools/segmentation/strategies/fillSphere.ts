@@ -4,9 +4,9 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInSurroundingSphereCallback } from '../../../utilities';
 import isWithinThreshold from './utils/isWithinThreshold';
-import { SegToolsOperationData } from '../../../types';
+import { LabelmapToolOperationData } from '../../../types';
 
-type OperationData = SegToolsOperationData & {
+type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 };
 

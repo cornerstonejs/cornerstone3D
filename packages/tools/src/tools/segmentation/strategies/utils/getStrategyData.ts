@@ -1,15 +1,15 @@
 import { cache } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from './stackVolumeCheck';
+import { LabelmapToolOperationDataStack } from 'tools/src/types';
 
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
 
-  if (
-    isVolumeSegmentation(operationData.editData) ||
-    Object.keys(operationData?.editData || {}).length === 0
-  ) {
-    const { segmentation: segmentationVolume, imageVolume } =
-      operationData.editData;
+  if (isVolumeSegmentation(operationData)) {
+    const { volumeId, referencedVolumeId } = operationData;
+
+    const segmentationVolume = cache.getVolume(volumeId);
+    const imageVolume = cache.getVolume(referencedVolumeId);
 
     if (!segmentationVolume || !imageVolume) {
       return;
@@ -19,11 +19,19 @@ function getStrategyData({ operationData, viewport }) {
     segmentationScalarData = segmentationVolume.getScalarData();
     imageScalarData = imageVolume.getScalarData();
   } else {
-    const { editData, segmentationRepresentationUID } = operationData;
-    const { currentImageId, segmentationImageIds } = editData;
+    const { imageIds, segmentationRepresentationUID } =
+      operationData as LabelmapToolOperationDataStack;
+
+    if (!imageIds) {
+      return;
+    }
+
+    const currentImageId = viewport.getCurrentImageId();
     if (!currentImageId) {
       return;
     }
+
+    const segmentationImageIds = imageIds;
 
     // we know that the segmentationRepresentationUID is the name of the actor always
     // and always circle modifies the current imageId which in fact is the imageData

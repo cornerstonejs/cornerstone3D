@@ -12,12 +12,16 @@ import { fillInsideRectangle } from './strategies/fillRectangle';
 import { eraseInsideRectangle } from './strategies/eraseRectangle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 
-import { Events } from '../../enums';
+import { Events, SegmentationRepresentations } from '../../enums';
 import { drawRect as drawRectSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -44,6 +48,7 @@ class RectangleScissorsTool extends BaseTool {
     annotation: any;
     segmentationId: string;
     segmentation: any;
+    currentImageId?: string;
     segmentIndex: number;
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -116,10 +121,19 @@ class RectangleScissorsTool extends BaseTool {
     );
 
     const { representationData } = getSegmentation(segmentationId);
+    const labelmapData = representationData[
+      SegmentationRepresentations.Labelmap
+    ] as LabelmapSegmentationData;
 
-    // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
-    const segmentation = cache.getVolume(volumeId);
+    if ('volumeId' in labelmapData) {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+      this.editData.segmentation = segmentation;
+    } else {
+      this.editData.currentImageId = viewport.getCurrentImageId();
+    }
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {

@@ -59,11 +59,10 @@ import IAnnotationManager from './IAnnotationManager';
 import AnnotationGroupSelector from './AnnotationGroupSelector';
 import { Statistics } from './CalculatorTypes';
 import {
-  SegToolsOperationData,
-  SegToolsEditData,
-  SegToolsEditDataStack,
-  SegToolsEditDataVolume,
-} from './SegmentationToolsOperationData';
+  LabelmapToolOperationData,
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
+} from './LabelmapToolOperationData';
 
 export type {
   // AnnotationState
@@ -130,8 +129,7 @@ export type {
   ContourSegmentationData,
   //Statistics
   Statistics,
-  SegToolsOperationData,
-  SegToolsEditData,
-  SegToolsEditDataStack,
-  SegToolsEditDataVolume,
+  LabelmapToolOperationData,
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
 };

@@ -1,19 +1,32 @@
 import {
-  SegToolsEditData,
-  SegToolsEditDataStack,
-  SegToolsEditDataVolume,
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../../../types/LabelmapTypes';
+import {
+  LabelmapToolOperationData,
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
 } from '../../../../types';
 
 function isStackSegmentation(
-  editData: SegToolsEditData
-): editData is SegToolsEditDataStack {
-  return (editData as SegToolsEditDataStack).imageIds !== undefined;
+  operationData: LabelmapToolOperationData | LabelmapSegmentationData
+): operationData is
+  | LabelmapToolOperationDataStack
+  | LabelmapSegmentationDataStack {
+  return (
+    (operationData as LabelmapToolOperationDataStack).imageIds !== undefined
+  );
 }
 
 function isVolumeSegmentation(
-  editData: SegToolsEditData
-): editData is SegToolsEditDataVolume {
-  return (editData as SegToolsEditDataVolume).imageVolume !== undefined;
+  operationData: LabelmapToolOperationData | LabelmapSegmentationData
+): operationData is
+  | LabelmapToolOperationDataVolume
+  | LabelmapSegmentationDataVolume {
+  return (
+    (operationData as LabelmapToolOperationDataVolume).volumeId !== undefined
+  );
 }
 
 export { isStackSegmentation, isVolumeSegmentation };
