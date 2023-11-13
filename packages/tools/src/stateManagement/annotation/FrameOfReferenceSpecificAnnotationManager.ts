@@ -139,7 +139,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
 
     if (toolName) {
-      return annotations[groupKey][toolName];
+      return annotations[groupKey][toolName]
+        ? annotations[groupKey][toolName]
+        : [];
     }
 
     return annotations[groupKey];
