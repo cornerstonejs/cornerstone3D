@@ -2339,6 +2339,12 @@ function getBrushSizeForToolGroup(toolGroupId: string, toolName?: string): void;
 function getBrushThresholdForToolGroup(toolGroupId: string): any;
 
 // @public (undocumented)
+const getCalibratedLengthUnits: (handles: any, image: any) => string;
+
+// @public (undocumented)
+const getCalibratedScale: (image: any) => any;
+
+// @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
@@ -5948,6 +5954,8 @@ declare namespace utilities {
         touch,
         triggerEvent,
         calibrateImageSpacing,
+        getCalibratedLengthUnits,
+        getCalibratedScale,
         segmentation_2 as segmentation,
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRender,
