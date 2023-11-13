@@ -30,10 +30,16 @@ function fillRectangle(
   const { points, segmentsLocked, segmentIndex, segmentationId, constraintFn } =
     operationData;
 
-  const { segmentationImageData, segmentationScalarData } = getStrategyData({
+  const strategyData = getStrategyData({
     operationData,
     viewport: enabledElement.viewport,
   });
+
+  if (!strategyData) {
+    return;
+  }
+
+  const { segmentationImageData, segmentationScalarData } = strategyData;
 
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(segmentationImageData, world);
