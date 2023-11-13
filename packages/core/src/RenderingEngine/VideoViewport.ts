@@ -115,8 +115,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
         this.pause();
         this.setFrame(frameNumber);
       }
-      this.setAverageWhite([180, 255, 255]);
-      this.setWindowLevel(128, 128);
     });
   }
 
@@ -327,7 +325,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
       // which is x/(w-1) - (c - 0.5) / (w-1) + 0.5  for this case
       const wlScale = 255 / (windowWidth - 1);
       const wlDelta = -(windowCenter - 0.5) / (windowWidth - 1) + 0.5;
-      console.log('scaleWhite=', scaleWhite, wlScale, wlDelta);
       this.feFilter = `url('data:image/svg+xml,\
       <svg xmlns="http://www.w3.org/2000/svg">\
         <filter id="colour" color-interpolation-filters="linearRGB">\
@@ -340,9 +337,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
         </filter>\
       </svg>#colour')`;
     }
-    console.log('Setting canvas filter', this.feFilter);
     this.canvas.style.filter = this.feFilter;
-    console.log('Canvas filter set to', this.canvas.style.filter);
   }
 
   public setCamera(camera: ICamera): void {
