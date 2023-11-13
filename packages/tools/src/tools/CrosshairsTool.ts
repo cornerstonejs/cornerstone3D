@@ -1432,7 +1432,8 @@ class CrosshairsTool extends AnnotationTool {
 
   _getAnnotations = (enabledElement: Types.IEnabledElement) => {
     const { viewport } = enabledElement;
-    const annotations = getAnnotations(this.getToolName(), viewport.element);
+    const annotations =
+      getAnnotations(this.getToolName(), viewport.element) || [];
     const viewportIds = this._getViewportsInfo().map(
       ({ viewportId }) => viewportId
     );
