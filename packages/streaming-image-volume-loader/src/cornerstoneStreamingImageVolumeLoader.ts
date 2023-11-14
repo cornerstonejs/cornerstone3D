@@ -10,7 +10,6 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
-import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers';
 import StreamingImageVolume from './StreamingImageVolume';
 
 const {
@@ -95,7 +94,7 @@ function cornerstoneStreamingImageVolumeLoader(
 
     const { imageIds } = options;
 
-    const volumeMetadata = makeVolumeMetadata(imageIds);
+    const volumeMetadata = csUtils.makeVolumeMetadata(imageIds);
 
     // For a streaming volume, the data type cannot rely on cswil to load
     // the proper array buffer type. This is because the target buffer container
@@ -141,10 +140,8 @@ function cornerstoneStreamingImageVolumeLoader(
 
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
-    const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
-      imageIds,
-      scanAxisNormal
-    );
+    const { zSpacing, origin, sortedImageIds } =
+      csUtils.sortImageIdsAndGetSpacing(imageIds, scanAxisNormal);
 
     const numFrames = imageIds.length;
 

@@ -180,18 +180,6 @@ addSliderToToolbar({
 
 // ============================= //
 
-async function getImageIds() {
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-  });
-  return imageIds;
-}
-
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -324,8 +312,21 @@ async function run() {
 
   const toolGroup = setupTools(toolGroupId);
 
-  const imageIds = await getImageIds();
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
 
+  const ptImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -341,14 +342,23 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
   const viewport = renderingEngine.getViewport(viewportId);
 
-  const { imageIds: derivedImageIds } =
-    await imageLoader.createAndCacheDerivedImages(imageIds, getDerivedImageId);
+  // const imageIdsArray = [...imageIds.slice(0, 10), ...ptImageIds.slice(0, 10)];
+  const imageIdsArray = [imageIds[0], imageIds[1], ptImageIds[0]];
 
-  await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
+  const { imageIds: segmentationImageIds } =
+    await imageLoader.createAndCacheDerivedImages(
+      imageIdsArray,
+      getDerivedImageId
+    );
+
+  await viewport.setStack(imageIdsArray, 0);
 
   const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
   const dimensions = [columns, rows, imageIds.length];
-  createMockEllipsoidSegmentation(dimensions, derivedImageIds);
+  createMockEllipsoidSegmentation(
+    [dimensions[0], dimensions[1], segmentationImageIds.length],
+    segmentationImageIds
+  );
 
   segmentation.addSegmentations([
     {
@@ -356,8 +366,8 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIds: derivedImageIds,
-          referencedImageIds: imageIds,
+          imageIds: segmentationImageIds,
+          referencedImageIds: imageIdsArray,
         },
       },
     },

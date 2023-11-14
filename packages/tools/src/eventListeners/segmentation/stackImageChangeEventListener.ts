@@ -6,11 +6,14 @@ import {
   cache,
   utilities,
   metaData,
+  Types,
 } from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationDataStack } from 'tools/src/types/LabelmapTypes';
+import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -60,11 +63,10 @@ const disable = function (element: HTMLDivElement): void {
 function _stackImageChangeEventListener(evt) {
   const eventData = evt.detail;
   const { viewportId, renderingEngineId } = eventData;
-  const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
-
-  if (!(viewport instanceof StackViewport)) {
-    return;
-  }
+  const { viewport } = getEnabledElementByIds(
+    viewportId,
+    renderingEngineId
+  ) as { viewport: Types.IStackViewport };
 
   const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
   let toolGroupSegmentationRepresentations =
@@ -92,7 +94,7 @@ function _stackImageChangeEventListener(evt) {
     const labelmapData =
       segmentation.representationData[Representations.Labelmap];
 
-    if ('volumeId' in labelmapData) {
+    if (isVolumeSegmentation(labelmapData)) {
       return;
     }
 
@@ -107,7 +109,7 @@ function _stackImageChangeEventListener(evt) {
   });
 
   const representationList = Object.keys(segmentationRepresentations);
-  const imageId = viewport.getCurrentImageId();
+  const currentImageId = viewport.getCurrentImageId();
   const actors = viewport.getActors();
 
   actors.forEach((actor) => {
@@ -118,27 +120,69 @@ function _stackImageChangeEventListener(evt) {
         segmentationRepresentations[actor.uid];
 
       const derivedImageId = getDerivedImageId(
-        imageId,
+        currentImageId,
         referencedImageIds,
         segmentationImageIds
       );
 
-      const imageData = segmentationActor.getMapper().getInputData();
+      const segmentationImageData = segmentationActor
+        .getMapper()
+        .getInputData();
+
       const derivedImage = cache.getImage(derivedImageId);
 
-      const { imagePositionPatient } = metaData.get(
-        'imagePlaneModule',
-        derivedImage?.referencedImageId || derivedImage.imageId
-      );
-      let origin = imagePositionPatient;
+      const { origin, direction, spacing } =
+        viewport.getImageDataMetadata(derivedImage);
 
-      if (origin == null) {
-        origin = [0, 0, 0];
+      segmentationImageData.setOrigin(origin);
+      segmentationImageData.modified();
+
+      if (segmentationImageData.getDimensions()[0] !== derivedImage.rows) {
+        segmentationImageData.setDimensions(
+          derivedImage.rows,
+          derivedImage.columns,
+          1
+        );
+        segmentationImageData.setSpacing(spacing);
+        segmentationImageData.setDirection(direction);
+
+        segmentationImageData.modified();
+
+        // reset the scalar data for the imageData since we need to update it
+        // later
+        const scalarData = segmentationImageData
+          .getPointData()
+          .getScalars()
+          .getData();
+
+        const scalarArray = vtkDataArray.newInstance({
+          name: 'Pixels',
+          numberOfComponents: 1,
+          values: new scalarData.constructor(
+            derivedImage.rows * derivedImage.columns
+          ),
+        });
+
+        segmentationImageData.getPointData().setScalars(scalarArray);
+        segmentationImageData.modified();
       }
-      imageData.setOrigin(origin);
 
-      utilities.updateVTKImageDataWithCornerstoneImage(imageData, derivedImage);
+      utilities.updateVTKImageDataWithCornerstoneImage(
+        segmentationImageData,
+        derivedImage
+      );
       viewport.render();
+
+      // This is put here to make sure that the segmentation is rendered
+      // for the initial image as well after that we don't need it since
+      // stack new image is called when changing slices
+      if (evt.type === Enums.Events.IMAGE_RENDERED) {
+        // unsubscribe after the initial render
+        viewport.element.removeEventListener(
+          Enums.Events.IMAGE_RENDERED,
+          _stackImageChangeEventListener as EventListener
+        );
+      }
     }
   });
 }

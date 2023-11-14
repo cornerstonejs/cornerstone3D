@@ -1,4 +1,4 @@
-import { cache, getEnabledElement } from '@cornerstonejs/core';
+import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
@@ -167,6 +167,7 @@ class BrushTool extends BaseTool {
       // const orderedSegmentationImageIds = sortedImageIds.map((imageId) =>
       //   getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
       // );
+
       const currentImageId = viewport.getCurrentImageId();
       const currentSegmentationImageId =
         segmentationImageIds.indexOf(currentImageId);
@@ -175,17 +176,33 @@ class BrushTool extends BaseTool {
         throw new Error('No current segmentation image id');
       }
 
+      // here we should identify if we can perform sphere manipulation
+      // for these stack of images, if the metadata is not present
+      // to create a volume or if there are inconsistencies between
+      // the image metadata we should not allow the sphere manipulation
+      // and should throw an error or maybe simply just allow circle manipulation
+      // and not sphere manipulation
+      if (this.configuration.activeStrategy.includes('SPHERE')) {
+        const segmentationImageIds = labelmapData.imageIds;
+        const referencedImageIds = viewport.getImageIds();
+
+        if (csUtils.isValidVolume(referencedImageIds)) {
+          // we can create a volume and perform sphere manipulation
+          // we should create a volume and use it as a reference
+          // for sphere manipulation
+          const metadata = csUtils.makeVolumeMetadata(referencedImageIds);
+          const { zSpacing } =
+            csUtils.sortImageIdsAndGetSpacing(referencedImageIds);
+        }
+      }
+
       this._editData = {
         imageIds: segmentationImageIds,
-        // origin,
-        // zSpacing,
-        // currentImageId,
         referencedImageIds: viewport.getImageIds(),
         segmentsLocked,
         segmentationRepresentationUID,
       };
     }
-    // Todo: are we going to support contour editing with this tool?
 
     this._activateDraw(element);
 

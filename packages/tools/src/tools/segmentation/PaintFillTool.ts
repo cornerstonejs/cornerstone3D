@@ -7,6 +7,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import { SegmentationRepresentations } from '../../enums';
 
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import {
@@ -18,6 +19,10 @@ import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 

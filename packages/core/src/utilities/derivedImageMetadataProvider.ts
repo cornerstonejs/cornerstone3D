@@ -1,0 +1,43 @@
+import { metaData } from '..';
+import imageIdToURI from './imageIdToURI';
+
+const state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
+window.ali = state;
+/**
+ * Simple metadata provider that stored the derived metadata in memory.
+ */
+const metadataProvider = {
+  /**
+   * Adds metadata for an imageId.
+   * @param imageId - the imageId for the metadata to store
+   * @param payload - the payload composed of new calibrated pixel spacings
+   */
+  add: (imageId: string, payload: any): void => {
+    const type = payload.type;
+
+    if (!state[imageId]) {
+      state[imageId] = {};
+    }
+
+    state[imageId][type] = {
+      ...payload.metadata,
+    };
+  },
+
+  /**
+   * Returns the metadata for an imageId if it exists.
+   * @param type - the type of metadata to enquire about
+   * @param imageId - the imageId to enquire about
+   */
+  get: (type: string, imageId: string): any => {
+    if (!state[imageId] || !state[imageId][type]) {
+      return;
+    }
+
+    return state[imageId][type];
+  },
+};
+
+metaData.addProvider(metadataProvider.get);
+
+export default metadataProvider;

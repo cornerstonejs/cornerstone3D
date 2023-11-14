@@ -100,6 +100,7 @@ export default interface IStackViewport extends IViewport {
     suppressEvents: boolean
   );
 
+  getImageDataMetadata(image: IImage): any;
   /**
    * Custom rendering pipeline for the rendering for the CPU fallback
    */

@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
-import { metaData, getConfiguration } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { metaData, getConfiguration } from '../';
+import { Point3 } from '../types';
 
 type SortedImageIdsItem = {
   zSpacing: number;
-  origin: Types.Point3;
+  origin: Point3;
   sortedImageIds: Array<string>;
 };
 /**
@@ -18,12 +18,28 @@ type SortedImageIdsItem = {
  */
 export default function sortImageIdsAndGetSpacing(
   imageIds: Array<string>,
-  scanAxisNormal: vec3 // Get gl matrix types?
+  scanAxisNormal?: vec3
 ): SortedImageIdsItem {
-  const { imagePositionPatient: referenceImagePositionPatient } = metaData.get(
-    'imagePlaneModule',
-    imageIds[0]
-  );
+  const {
+    imagePositionPatient: referenceImagePositionPatient,
+    imageOrientationPatient,
+  } = metaData.get('imagePlaneModule', imageIds[0]);
+
+  if (!scanAxisNormal) {
+    const rowCosineVec = vec3.fromValues(
+      imageOrientationPatient[0],
+      imageOrientationPatient[1],
+      imageOrientationPatient[2]
+    );
+    const colCosineVec = vec3.fromValues(
+      imageOrientationPatient[3],
+      imageOrientationPatient[4],
+      imageOrientationPatient[5]
+    );
+
+    scanAxisNormal = vec3.create();
+    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+  }
 
   const refIppVec = vec3.create();
 

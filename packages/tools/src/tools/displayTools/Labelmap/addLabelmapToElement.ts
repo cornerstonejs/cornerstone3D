@@ -6,6 +6,7 @@ import {
   Enums,
 } from '@cornerstonejs/core';
 import { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
+import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
  * NOTE: This function should not be called directly.
@@ -32,7 +33,7 @@ async function addLabelmapToElement(
   const immediateRender = false;
   const suppressEvents = true;
 
-  if ('volumeId' in labelMapData) {
+  if (isVolumeSegmentation(labelMapData)) {
     // Todo: Right now we use MIP blend mode for the labelmap, since the
     // composite blend mode has a non linear behavior regarding fill and line
     // opacity. This should be changed to a custom labelmap blendMode which does

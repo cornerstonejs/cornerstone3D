@@ -1,7 +1,7 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
-import { triggerEvent } from '../utilities';
+import { derivedImageMetadataProvider, triggerEvent } from '../utilities';
 import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { metaData } from '../';
@@ -274,6 +274,15 @@ export function createAndCacheDerivedImage(
     promise: Promise.resolve(image),
   };
   cache.putImageLoadObject(image.imageId, imageLoadObject);
+
+  ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
+    (type) => {
+      derivedImageMetadataProvider.add(image.imageId, {
+        type,
+        metadata: metaData.get(type, imageId),
+      });
+    }
+  );
 
   return imageLoadObject.promise;
 }

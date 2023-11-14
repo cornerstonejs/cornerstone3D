@@ -26,6 +26,7 @@ import {
 import addLabelmapToElement from './addLabelmapToElement';
 
 import removeLabelmapFromElement from './removeLabelmapFromElement';
+import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -195,7 +196,7 @@ async function render(
     segmentation.representationData[Representations.Labelmap];
 
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
-  if ('volumeId' in labelmapData) {
+  if (isVolumeSegmentation(labelmapData)) {
     const { volumeId: labelmapUID } = labelmapData;
 
     const labelmap = cache.getVolume(labelmapUID);

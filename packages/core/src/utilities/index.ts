@@ -49,6 +49,10 @@ import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
+import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
+import makeVolumeMetadata from './makeVolumeMetadata';
+import derivedImageMetadataProvider from './derivedImageMetadataProvider';
+import { isValidVolume } from './isValidVolume';
 import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWithCornerstoneImage';
 
 // name spaces
@@ -115,4 +119,8 @@ export {
   getImageLegacy,
   transferFunctionUtils,
   updateVTKImageDataWithCornerstoneImage,
+  sortImageIdsAndGetSpacing,
+  makeVolumeMetadata,
+  isValidVolume,
+  derivedImageMetadataProvider,
 };
