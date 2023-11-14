@@ -13,26 +13,29 @@ type Ellipse = {
  * @param pointLPS - The point in LPS space to test.
  * @returns A boolean value.
  */
-export default function pointInEllipse(
-  ellipse: Ellipse,
-  pointLPS: Types.Point3
-): boolean {
-  const { center: circleCenterWorld, xRadius, yRadius, zRadius } = ellipse;
-  const [x, y, z] = pointLPS;
-  const [x0, y0, z0] = circleCenterWorld;
+export default function pointInEllipse(ellipse, pointLPS) {
+  const { center, xRadius, yRadius, zRadius } = ellipse;
+
+  // Precompute inverses of the radii squared if they are not zero
+  const invXRadiusSq = xRadius !== 0 ? 1 / xRadius ** 2 : 0;
+  const invYRadiusSq = yRadius !== 0 ? 1 / yRadius ** 2 : 0;
+  const invZRadiusSq = zRadius !== 0 ? 1 / zRadius ** 2 : 0;
 
   let inside = 0;
-  if (xRadius !== 0) {
-    inside += ((x - x0) * (x - x0)) / (xRadius * xRadius);
+
+  // Calculate the sum of normalized squared distances
+  inside += (pointLPS[0] - center[0]) ** 2 * invXRadiusSq;
+  if (inside > 1) {
+    return false;
   }
 
-  if (yRadius !== 0) {
-    inside += ((y - y0) * (y - y0)) / (yRadius * yRadius);
+  inside += (pointLPS[1] - center[1]) ** 2 * invYRadiusSq;
+  if (inside > 1) {
+    return false;
   }
 
-  if (zRadius !== 0) {
-    inside += ((z - z0) * (z - z0)) / (zRadius * zRadius);
-  }
+  inside += (pointLPS[2] - center[2]) ** 2 * invZRadiusSq;
 
+  // Check if the point is inside the ellipse
   return inside <= 1;
 }
