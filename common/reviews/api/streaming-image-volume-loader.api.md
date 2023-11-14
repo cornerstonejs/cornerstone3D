@@ -1693,6 +1693,7 @@ type VideoViewportProperties = ViewportProperties & {
     muted?: boolean;
     pan?: Point2;
     playbackRate?: number;
+    scrollSpeed?: number;
 };
 
 // @public

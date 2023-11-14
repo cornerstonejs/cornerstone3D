@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import {
   Events as EVENTS,
   VideoViewport as VideoViewportEnum,
@@ -18,7 +19,6 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
-import { vec3 } from 'gl-matrix';
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -39,12 +39,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private mute = true;
   private isPlaying = false;
   private scrollSpeed = 1;
+  private playbackRate = 1;
 
   protected metadata;
 
   /**
    * The fps, frames per second is used to calculate time/frame mapping values.
-   * It is provided by teh CINE Module in the metadta, defaulting to 30 if not
+   * It is provided by the CINE Module in the metadata, defaulting to 30 if not
    * provided.
    */
   private fps = 30;
@@ -59,18 +60,18 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * CSS filters can reference SVG filters, so for the typical use case here
    * the CSS filter is actually an link link to a SVG filter.
    */
-  feFilter: string;
+  private feFilter: string;
 
   /**
    * An average white point value, used to color balance the image so that
    * the given white is mapped to [255,255,255] via multiplication per channel.
    */
-  averageWhite: [number, number, number];
+  private averageWhite: [number, number, number];
 
   /**
    * The VOI Range is used to apply contrast/brightness adjustments to the image.
    */
-  voiRange: VOIRange = {
+  private voiRange: VOIRange = {
     lower: 0,
     upper: 255,
   };
@@ -127,10 +128,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.imageId
     );
 
-    let rowCosines, columnCosines;
-
-    rowCosines = <Point3>imagePlaneModule.rowCosines;
-    columnCosines = <Point3>imagePlaneModule.columnCosines;
+    let rowCosines = <Point3>imagePlaneModule.rowCosines;
+    let columnCosines = <Point3>imagePlaneModule.columnCosines;
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {
@@ -344,12 +343,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.setPlaybackRate(props.playbackRate);
     }
 
+    if (props.scrollSpeed !== undefined) {
+      this.setScrollSpeed(props.scrollSpeed);
+    }
+
     if (props.voiRange) {
       this.setVOI(props.voiRange);
     }
   }
 
   public setPlaybackRate(rate = 1) {
+    this.playbackRate = rate;
     // Minimum playback speed in chrome is 0.0625 compared to normal
     if (rate < 0.0625) {
       this.pause();
@@ -376,6 +380,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return {
       loop: this.videoElement.loop,
       muted: this.videoElement.muted,
+      playbackRate: this.playbackRate,
+      scrollSpeed: this.scrollSpeed,
       voiRange: { ...this.voiRange },
     };
   };
@@ -387,7 +393,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     });
   }
 
-  public getScalarData() {
+  protected getScalarData() {
     const canvas = document.createElement('canvas');
     canvas.width = this.videoWidth;
     canvas.height = this.videoHeight;
@@ -420,7 +426,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
         getDimensions: () => metadata.dimensions,
         getRange: () => [0, 255],
         getScalarData: () => this.getScalarData(),
-        getSpacing: () => null,
+        getSpacing: () => metadata.spacing,
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvas(point);
           const pixelCoord = this.canvasToIndex(canvasPoint);
@@ -630,14 +636,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return canvasPos;
   };
 
-  public canvasToIndex = (canvasPos: Point2): Point2 => {
+  protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const [x, y] = canvasPos;
     const ratio = this.videoWidth / this.canvas.width;
     const pan = this.getPan();
     return [(x + pan[0]) * ratio, (y + pan[1]) * ratio];
   };
 
-  public indexToCanvas = (indexPos: Point2): Point2 => {
+  protected indexToCanvas = (indexPos: Point2): Point2 => {
     const [x, y] = indexPos;
     const ratio = this.canvas.width / this.videoWidth;
     const pan = this.getPan();

@@ -103,13 +103,13 @@ const whiteValues = [
 let currentWhite = 0;
 
 addButtonToToolbar({
-  id: 'Colour Correct',
-  title: 'Colour: 255,255,255',
+  id: 'Color Correct',
+  title: 'Color: 255,255,255',
   onClick() {
     currentWhite = (1 + currentWhite) % whiteValues.length;
     const white = whiteValues[currentWhite];
     viewport.setAverageWhite(white);
-    document.getElementById('Colour Correct').innerText = `Color: ${white.join(
+    document.getElementById('Color Correct').innerText = `Color: ${white.join(
       ','
     )}`;
   },
@@ -133,8 +133,8 @@ function getAverageWhite(scalarData) {
 }
 
 addButtonToToolbar({
-  id: 'Avg Colour Correct',
-  title: 'Avg Colour Correct',
+  id: 'Avg Color Correct',
+  title: 'Avg Color Correct',
   onClick() {
     const white = getAverageWhite(
       viewport.getImageData().imageData.getScalarData()
@@ -142,7 +142,7 @@ addButtonToToolbar({
     console.log('White=', white);
     viewport.setAverageWhite(white);
     document.getElementById(
-      'Colour Correct'
+      'Color Correct'
     ).innerText = `Avg Color: ${white.join(',')}`;
     currentWhite = -1;
   },

@@ -2769,19 +2769,15 @@ function uuidv4(): string;
 export class VideoViewport extends Viewport implements IVideoViewport {
     constructor(props: VideoViewportInput);
     // (undocumented)
-    averageWhite: [number, number, number];
-    // (undocumented)
     readonly canvasContext: CanvasRenderingContext2D;
     // (undocumented)
-    canvasToIndex: (canvasPos: Point2) => Point2;
+    protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
     customRenderViewportToCanvas: () => void;
     // (undocumented)
     end(): Promise<void>;
-    // (undocumented)
-    feFilter: string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
@@ -2798,8 +2794,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         imageData: {
             getDirection: () => any;
             getDimensions: () => any;
-            getScalarData: () => Uint8ClampedArray;
             getRange: () => number[];
+            getScalarData: () => Uint8ClampedArray;
             getSpacing: () => any;
             worldToIndex: (point: Point3) => number[];
             indexToWorld: (point: Point3) => Point3;
@@ -2815,11 +2811,11 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
-    getScalarData(): Uint8ClampedArray;
+    protected getScalarData(): Uint8ClampedArray;
     // (undocumented)
     protected imageId: string;
     // (undocumented)
-    indexToCanvas: (indexPos: Point2) => Point2;
+    protected indexToCanvas: (indexPos: Point2) => Point2;
     // (undocumented)
     protected metadata: any;
     // (undocumented)
@@ -2871,8 +2867,6 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
-    voiRange: VOIRange;
-    // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -2902,6 +2896,7 @@ type VideoViewportProperties = ViewportProperties & {
     muted?: boolean;
     pan?: Point2;
     playbackRate?: number;
+    scrollSpeed?: number;
 };
 
 // @public (undocumented)
