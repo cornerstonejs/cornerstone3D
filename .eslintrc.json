@@ -52,6 +52,7 @@
     "project": "./tsconfig.json",
     "tsconfigRootDir": "./"
   },
+  "ignorePatterns": ["packages/docs"],
   "rules": {
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",

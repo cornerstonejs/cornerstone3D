@@ -1,6 +1,4 @@
 import {
-  getEnabledElement,
-  StackViewport,
   imageLoader,
   Enums,
   eventTarget,

@@ -3,7 +3,7 @@
   "version": "1.28.3",
   "description": "Cornerstone3D Tools",
   "main": "src/index.ts",
-  "types": "dist/esm/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
