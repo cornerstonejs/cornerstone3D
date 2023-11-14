@@ -8,12 +8,17 @@ import {
   metaData,
   Types,
 } from '@cornerstonejs/core';
-import { getToolGroupForViewport } from '../../store/ToolGroupManager';
+import {
+  getAllToolGroups,
+  getToolGroupForViewport,
+} from '../../store/ToolGroupManager';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationDataStack } from 'tools/src/types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -131,40 +136,82 @@ function _stackImageChangeEventListener(evt) {
 
       const derivedImage = cache.getImage(derivedImageId);
 
-      const { origin, direction, spacing } =
+      const { origin, dimensions, spacing, direction } =
         viewport.getImageDataMetadata(derivedImage);
 
       segmentationImageData.setOrigin(origin);
       segmentationImageData.modified();
 
-      if (segmentationImageData.getDimensions()[0] !== derivedImage.rows) {
-        segmentationImageData.setDimensions(
-          derivedImage.rows,
-          derivedImage.columns,
-          1
+      if (segmentationImageData.getDimensions()[0] !== dimensions[0]) {
+        viewport.removeActors([actor.uid]);
+        viewport.addImages(
+          [
+            {
+              imageId: derivedImageId,
+              actorUID: actor.uid,
+              callback: ({ imageActor }) => {
+                // update the image data
+                //  segmentationImageData.setDimensions(
+                //    dimensions[0],
+                //    dimensions[1],
+                //    1
+                //  );
+                //  segmentationImageData.setSpacing(spacing);
+                //  segmentationImageData.setDirection(direction);
+                //  segmentationImageData.setOrigin(origin);
+
+                const scalarArray = vtkDataArray.newInstance({
+                  name: 'Pixels 2',
+                  numberOfComponents: 1,
+                  values: [...derivedImage.getPixelData()],
+                });
+
+                //  segmentationImageData
+                //    .getPointData()
+                //    .setScalars(scalarArray as any);
+
+                //  segmentationImageData.modified();
+
+                //  segmentationActor.modified();
+                const imageData = vtkImageData.newInstance();
+
+                imageData.setDimensions(dimensions[0], dimensions[1], 1);
+                imageData.setSpacing(spacing);
+                imageData.setDirection(direction);
+                imageData.setOrigin(origin);
+                imageData.getPointData().setScalars(scalarArray as any);
+
+                // imageActor
+                //   .getMapper()
+                //   .getInputData()
+                //   .getPointData()
+                //   .setScalars(scalarArray as any);
+                imageActor.getMapper().setInputData(imageData);
+                imageActor.modified();
+                imageActor.getMapper().modified();
+                imageActor.getMapper().getInputData().modified();
+                imageActor.getMapper().getInputData().getPointData().modified();
+
+                // utilities.updateVTKImageDataWithCornerstoneImage(
+                //   imageData,
+                //   derivedImage
+                // );
+                viewport.render();
+                imageData.modified();
+                viewport.resetCamera();
+                return;
+              },
+            },
+          ],
+          true,
+          false
         );
-        segmentationImageData.setSpacing(spacing);
-        segmentationImageData.setDirection(direction);
 
-        segmentationImageData.modified();
-
-        // reset the scalar data for the imageData since we need to update it
-        // later
-        const scalarData = segmentationImageData
-          .getPointData()
-          .getScalars()
-          .getData();
-
-        const scalarArray = vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          values: new scalarData.constructor(
-            derivedImage.rows * derivedImage.columns
-          ),
+        getAllToolGroups().forEach((toolGroup) => {
+          triggerSegmentationRender(toolGroup.id);
         });
 
-        segmentationImageData.getPointData().setScalars(scalarArray);
-        segmentationImageData.modified();
+        return;
       }
 
       utilities.updateVTKImageDataWithCornerstoneImage(

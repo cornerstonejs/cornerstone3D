@@ -2107,6 +2107,9 @@ class StackViewport extends Viewport implements IStackViewport {
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
         actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        if (stackInput.callback) {
+          stackInput.callback({ imageActor, imageId: stackInput.imageId });
+        }
       }
     });
     this.setActors(actors);
