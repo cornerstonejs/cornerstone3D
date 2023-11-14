@@ -25,7 +25,6 @@
     "build:update-api": "yarn run build && api-extractor run --local",
     "dev": "tsc --project ./tsconfig.esm.json --watch",
     "prepublishOnly": "yarn run build",
-    "prepare": "yarn run build:esm",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
