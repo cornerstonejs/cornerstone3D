@@ -4,6 +4,7 @@ import {
   VideoViewport,
   Types,
   utilities as csUtils,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
@@ -69,6 +70,8 @@ export default function filterAnnotationsForDisplay(
       camera,
       spacingInNormalDirection
     );
+  } else if (viewport instanceof VolumeViewport3D) {
+    return annotations;
   } else {
     throw new Error(`Viewport Type ${viewport.type} not supported`);
   }
