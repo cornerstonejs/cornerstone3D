@@ -78,9 +78,21 @@ function fillCircle(
     };
   }
 
+  const invXRadiusSq =
+    ellipseObj.xRadius !== 0 ? 1 / ellipseObj.xRadius ** 2 : 0;
+  const invYRadiusSq =
+    ellipseObj.yRadius !== 0 ? 1 / ellipseObj.yRadius ** 2 : 0;
+  const invZRadiusSq =
+    ellipseObj.zRadius !== 0 ? 1 / ellipseObj.zRadius ** 2 : 0;
+
   pointInShapeCallback(
     segmentationImageData,
-    (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
+    (pointLPS) =>
+      pointInEllipse(ellipseObj, pointLPS, {
+        invXRadiusSq,
+        invYRadiusSq,
+        invZRadiusSq,
+      }),
     callback,
     boundsIJK
   );

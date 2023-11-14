@@ -183,14 +183,16 @@ class BrushTool extends BaseTool {
       // and should throw an error or maybe simply just allow circle manipulation
       // and not sphere manipulation
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        const segmentationImageIds = labelmapData.imageIds;
         const referencedImageIds = viewport.getImageIds();
 
         if (csUtils.isValidVolume(referencedImageIds)) {
           // we can create a volume and perform sphere manipulation
           // we should create a volume and use it as a reference
           // for sphere manipulation
+          // otherwise we just treat the sphere as a circle
+          //
           const metadata = csUtils.makeVolumeMetadata(referencedImageIds);
+
           const { zSpacing } =
             csUtils.sortImageIdsAndGetSpacing(referencedImageIds);
         }

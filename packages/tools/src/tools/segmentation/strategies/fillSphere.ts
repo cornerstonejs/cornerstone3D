@@ -35,7 +35,6 @@ function fillSphere(
 
   const { imageScalarData, segmentationImageData, segmentationScalarData } =
     strategyData;
-  console.debug('🚀 ~ imageScalarData:', segmentationImageData.getDimensions());
 
   const scalarIndex = [];
 
