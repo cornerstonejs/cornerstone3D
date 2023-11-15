@@ -13,7 +13,12 @@ export interface DICOMLoaderImageOptions {
     arrayBuffer: ArrayBufferLike;
     length: number;
     offset: number;
+    rows?: number;
+    columns?: number;
   };
   isSharedArrayBuffer?: boolean;
   loader?: LoadRequestFunction;
+  decodeLevel?: number;
+  retrieveOptions?: Types.RetrieveOptions;
+  streamingData?: Record<string, unknown>;
 }

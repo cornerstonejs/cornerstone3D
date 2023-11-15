@@ -58,6 +58,9 @@ class WindowLevelTool extends BaseTool {
       const properties = viewport.getProperties();
       ({ lower, upper } = properties.voiRange);
       const volume = cache.getVolume(volumeId);
+      if (!volume) {
+        throw new Error('Volume not found ' + volumeId);
+      }
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (viewport instanceof StackViewport) {

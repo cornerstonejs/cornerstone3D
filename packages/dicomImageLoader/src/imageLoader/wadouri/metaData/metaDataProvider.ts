@@ -23,6 +23,10 @@ import {
 
 function metaDataProvider(type, imageId) {
   const { dicomParser } = external;
+  // Several providers use array queries
+  if (Array.isArray(imageId)) {
+    return;
+  }
   const parsedImageId = parseImageId(imageId);
 
   if (type === 'multiframeModule') {

@@ -1,3 +1,4 @@
+import { Enums } from '@cornerstonejs/core';
 import PixelDataTypedArray from './PixelDataTypedArray';
 
 interface ImageFrame {
@@ -20,7 +21,6 @@ interface ImageFrame {
   // populated later after decoding
   pixelData: PixelDataTypedArray;
   imageData?: ImageData;
-  decodeTimeInMS?: number;
   pixelDataLength?: number;
   preScale?: {
     enabled?: boolean;
@@ -35,6 +35,16 @@ interface ImageFrame {
   minAfterScale?: number;
   maxAfterScale?: number;
   imageId: string;
+
+  // Remaining information is about the general load process
+  decodeTimeInMS?: number;
+  loadTimeInMS?: number;
+  /**
+   * imageQualityStatus is used for differentiating between
+   * higher loss images and full resolution/lossless images so that a higher
+   * loss image can be replaced by a lower loss one.
+   */
+  imageQualityStatus?: Enums.ImageQualityStatus;
 }
 
 export default ImageFrame;

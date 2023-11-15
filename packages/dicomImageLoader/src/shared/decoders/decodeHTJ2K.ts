@@ -14,6 +14,20 @@ const local: {
   decodeConfig: {},
 };
 
+function calculateSizeAtDecompositionLevel(
+  decompositionLevel: number,
+  frameWidth: number,
+  frameHeight: number
+) {
+  const result = { width: frameWidth, height: frameHeight };
+  while (decompositionLevel > 0) {
+    result.width = Math.ceil(result.width / 2);
+    result.height = Math.ceil(result.height / 2);
+    decompositionLevel--;
+  }
+  return result;
+}
+
 export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   local.decodeConfig = decodeConfig;
 
@@ -43,7 +57,8 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
 async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
-  const decoder = local.decoder;
+  // const decoder = local.decoder; // This is much slower for some reason
+  const decoder = new local.codec.HTJ2KDecoder();
 
   // get pointer to the source/encoded bit stream buffer in WASM memory
   // that can hold the encoded bitstream
@@ -55,12 +70,25 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   encodedBufferInWASM.set(compressedImageFrame);
 
   // decode it
-  decoder.decode();
+  // decoder.decode();
+  const decodeLevel = imageInfo.decodeLevel || 0;
+  decoder.decodeSubResolution(decodeLevel);
   // decoder.decodeSubResolution(decodeLevel, decodeLayer);
   // const resolutionAtLevel = decoder.calculateSizeAtDecompositionLevel(decodeLevel);
 
   // get information about the decoded image
   const frameInfo = decoder.getFrameInfo();
+  // Overwrite width/height if subresolution
+  if (imageInfo.decodeLevel > 0) {
+    const { width, height } = calculateSizeAtDecompositionLevel(
+      imageInfo.decodeLevel,
+      frameInfo.width,
+      frameInfo.height
+    );
+    frameInfo.width = width;
+    frameInfo.height = height;
+    // console.log(`Decoded sub-resolution of size: ${width} x ${height}`);
+  }
   // get the decoded pixels
   const decodedBufferInWASM = decoder.getDecodedBuffer();
   const imageFrame = new Uint8Array(decodedBufferInWASM.length);

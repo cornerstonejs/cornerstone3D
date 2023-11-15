@@ -42,6 +42,7 @@ function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
+    progressiveRendering?: boolean | Types.IRetrieveConfiguration;
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -93,7 +94,7 @@ function cornerstoneStreamingImageVolumeLoader(
       ).catch(console.error);
     }
 
-    const { imageIds } = options;
+    const { imageIds, progressiveRendering } = options;
 
     const volumeMetadata = makeVolumeMetadata(imageIds);
 
