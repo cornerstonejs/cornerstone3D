@@ -16,7 +16,6 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
-import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 /**
  * When using typical decompressors to decompress compressed color images,
@@ -112,13 +111,14 @@ function createImage(
         : false,
   };
 
-  if (!pixelData || !pixelData.length) {
-    return Promise.reject(new Error('The file does not contain image data.'));
+  if (!pixelData?.length) {
+    return Promise.reject(new Error('The pixel data is missing'));
   }
 
   const { cornerstone } = external;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
+  imageFrame.decodeLevel = options.decodeLevel;
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {

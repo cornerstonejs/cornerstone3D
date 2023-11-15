@@ -1,9 +1,22 @@
-import type { Types } from '@cornerstonejs/core';
+import { Enums, utilities, metaData } from '@cornerstonejs/core';
+import type { Types, RetrieveOptions } from '@cornerstonejs/core';
 
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
+
+const { ProgressiveIterator } = utilities;
+const { ImageQualityStatus } = Enums;
+const streamableTransferSyntaxes = new Set<string>([
+  // Private HTJ2K
+  '3.2.840.10008.1.2.4.96',
+  // Released HTJ2K - only the RPCL one is definitely streamable.
+  '1.2.840.10008.1.2.4.202',
+  // HTJ2K lossy might be streamable, so try it.  If it fails it is ok as it will
+  // proceed and eventually work.
+  '1.2.840.10008.1.2.4.203',
+]);
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
@@ -12,7 +25,6 @@ import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
  */
 export function getTransferSyntaxForContentType(contentType: string): string {
   const defaultTransferSyntax = '1.2.840.10008.1.2'; // Default is Implicit Little Endian.
-
   if (!contentType) {
     return defaultTransferSyntax;
   }
@@ -72,6 +84,16 @@ function getImageRetrievalPool() {
   return external.cornerstone.imageRetrievalPoolManager;
 }
 
+export interface StreamingData {
+  url: string;
+  encodedData?: Uint8Array;
+  // Some values used by instances of streaming data for range
+  totalBytes?: number;
+  chunkSize?: number;
+  totalRanges?: number;
+  rangesFetched?: number;
+}
+
 export interface CornerstoneWadoRsLoaderOptions
   extends DICOMLoaderImageOptions {
   requestType?: string;
@@ -80,7 +102,21 @@ export interface CornerstoneWadoRsLoaderOptions
   };
   priority?: number;
   addToBeginning?: boolean;
+  retrieveType?: string;
+  transferSyntaxUID?: string;
+  // Retrieve options are stored to provide sub-options for nested calls
+  retrieveOptions?: RetrieveOptions;
+  // Streaming data adds information about already streamed results.
+  streamingData?: StreamingData;
 }
+
+// TODO: load bulk data items that we might need
+
+// Uncomment this on to test jpegls codec in OHIF
+// const mediaType = 'multipart/related; type="image/x-jls"';
+// const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
+const mediaType =
+  'multipart/related; type=application/octet-stream; transfer-syntax=*';
 
 function loadImage(
   imageId: string,
@@ -90,68 +126,111 @@ function loadImage(
 
   const start = new Date().getTime();
 
-  const promise = new Promise<DICOMLoaderIImage>((resolve, reject) => {
-    // TODO: load bulk data items that we might need
-
-    // Uncomment this on to test jpegls codec in OHIF
-    // const mediaType = 'multipart/related; type="image/x-jls"';
-    // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
-    const mediaType =
-      'multipart/related; type=application/octet-stream; transfer-syntax=*';
-    // const mediaType =
-    //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
-
-    function sendXHR(imageURI: string, imageId: string, mediaType: string) {
+  const uncompressedIterator = new ProgressiveIterator<DICOMLoaderIImage>(
+    'decompress'
+  );
+  async function sendXHR(imageURI: string, imageId: string, mediaType: string) {
+    uncompressedIterator.generate(async (it) => {
       // get the pixel data from the server
-      return getPixelData(imageURI, imageId, mediaType)
-        .then((result) => {
-          const transferSyntax = getTransferSyntaxForContentType(
-            result.contentType
-          );
+      const compressedIt = ProgressiveIterator.as(
+        getPixelData(imageURI, imageId, mediaType, options)
+      );
+      let lastDecodeLevel = 10;
+      for await (const result of compressedIt) {
+        const {
+          pixelData,
+          imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION,
+          percentComplete,
+          done = true,
+          extractDone = true,
+        } = result;
+        const transferSyntax = getTransferSyntaxForContentType(
+          result.contentType
+        );
+        if (!extractDone && !streamableTransferSyntaxes.has(transferSyntax)) {
+          continue;
+        }
+        const decodeLevel =
+          result.decodeLevel ??
+          (imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION
+            ? 0
+            : decodeLevelFromComplete(
+                percentComplete,
+                options.retrieveOptions?.decodeLevel
+              ));
+        if (!done && lastDecodeLevel <= decodeLevel) {
+          // No point trying again yet
+          continue;
+        }
 
-          const pixelData = result.imageFrame.pixelData;
-          const imagePromise = createImage(
+        try {
+          const useOptions = {
+            ...options,
+            decodeLevel,
+          };
+          const image = (await createImage(
             imageId,
             pixelData,
             transferSyntax,
-            options
-          );
+            useOptions
+          )) as DICOMLoaderIImage;
 
-          imagePromise.then((image: any) => {
-            // add the loadTimeInMS property
-            const end = new Date().getTime();
+          // add the loadTimeInMS property
+          const end = new Date().getTime();
 
-            image.loadTimeInMS = end - start;
-            resolve(image);
-          }, reject);
-        }, reject)
-        .catch((error) => {
-          reject(error);
-        });
-    }
+          image.loadTimeInMS = end - start;
+          image.transferSyntaxUID = transferSyntax;
+          image.imageQualityStatus = imageQualityStatus;
+          // The iteration is done even if the image itself isn't done yet
+          it.add(image, done);
+          lastDecodeLevel = decodeLevel;
+        } catch (e) {
+          if (extractDone) {
+            console.warn("Couldn't decode", e);
+            throw e;
+          }
+        }
+      }
+    });
+  }
 
-    const requestType = options.requestType || 'interaction';
-    const additionalDetails = options.additionalDetails || { imageId };
-    const priority = options.priority === undefined ? 5 : options.priority;
-    const addToBeginning = options.addToBeginning || false;
-    const uri = imageId.substring(7);
+  const requestType = options.requestType || 'interaction';
+  const additionalDetails = options.additionalDetails || { imageId };
+  const priority = options.priority === undefined ? 5 : options.priority;
+  const addToBeginning = options.addToBeginning || false;
+  const uri = imageId.substring(7);
 
-    /**
-     * @todo check arguments
-     */
-    imageRetrievalPool.addRequest(
-      sendXHR.bind(this, uri, imageId, mediaType),
-      requestType,
-      additionalDetails,
-      priority,
-      addToBeginning
-    );
-  });
+  imageRetrievalPool.addRequest(
+    sendXHR.bind(this, uri, imageId, mediaType),
+    requestType,
+    additionalDetails,
+    priority,
+    addToBeginning
+  );
 
   return {
-    promise,
+    promise: uncompressedIterator.getDonePromise(),
     cancelFn: undefined,
   };
+}
+
+/** The decode level is based on how much of hte data is needed for
+ * each level.  It is a square function, so
+ * level 4 only needs 1/25 of the data (eg (4+1)^2).  Add 2% to ensure
+ * there is enough space
+ */
+function decodeLevelFromComplete(percent: number, retrieveDecodeLevel = 4) {
+  const testSize = percent / 100 - 0.02;
+  if (testSize > 1 / 4) {
+    return Math.min(retrieveDecodeLevel, 0);
+  }
+  if (testSize > 1 / 16) {
+    return Math.min(retrieveDecodeLevel, 1);
+  }
+  if (testSize > 1 / 64) {
+    return Math.min(retrieveDecodeLevel, 2);
+  }
+  return Math.min(retrieveDecodeLevel, 3);
 }
 
 export default loadImage;

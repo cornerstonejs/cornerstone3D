@@ -54,6 +54,10 @@ import makeVolumeMetadata from './makeVolumeMetadata';
 import derivedImageMetadataProvider from './derivedImageMetadataProvider';
 import { isValidVolume } from './isValidVolume';
 import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWithCornerstoneImage';
+import ProgressiveIterator from './ProgressiveIterator';
+import decimate from './decimate';
+import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
+import isVideoTransferSyntax from './isVideoTransferSyntax';
 
 // name spaces
 import * as planar from './planar';
@@ -117,10 +121,14 @@ export {
   getScalarDataType,
   colormap,
   getImageLegacy,
+  ProgressiveIterator,
+  decimate,
+  imageRetrieveMetadataProvider,
   transferFunctionUtils,
   updateVTKImageDataWithCornerstoneImage,
   sortImageIdsAndGetSpacing,
   makeVolumeMetadata,
   isValidVolume,
   derivedImageMetadataProvider,
+  isVideoTransferSyntax,
 };

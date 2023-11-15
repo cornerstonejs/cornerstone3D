@@ -127,6 +127,7 @@ class Viewport implements IViewport {
   resize: () => void;
   getProperties: () => void;
   updateRenderingPipeline: () => void;
+  getNumberOfSlices: () => number;
 
   static get useCustomRenderingPipeline(): boolean {
     return false;

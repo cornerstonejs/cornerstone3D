@@ -6,7 +6,7 @@ import Point2 from './Point2';
 import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
-import IImage from './IImage';
+import type IImage from './IImage';
 import { IStackInput } from './IStackInput';
 /**
  * Interface for Stack Viewport
@@ -142,6 +142,9 @@ export default interface IStackViewport extends IViewport {
    * list of imageIds, the index of the first imageId to be viewed. It is a
    * asynchronous function that returns a promise resolving to imageId being
    * displayed in the stack viewport.
+   *
+   * @param retrieveConfiguration - Set this to a progressive retriever of your
+   *       choice for progressive retrieval, or leave empty for non-progressive.
    */
   setStack(
     imageIds: Array<string>,

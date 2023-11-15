@@ -84,6 +84,16 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+export type {
+  RetrieveStage,
+  RetrieveOptions,
+  RangeRetrieveOptions,
+  StreamingRetrieveOptions,
+  NearbyFrames,
+  IRetrieveConfiguration,
+  IImagesLoader,
+} from './IRetrieveConfiguration';
+import type { ImageLoadListener } from './ImageLoadListener';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type IVideoViewport from './IVideoViewport';
 import type {
@@ -191,6 +201,7 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  ImageLoadListener,
   // video
   InternalVideoCamera,
   VideoViewportInput,
