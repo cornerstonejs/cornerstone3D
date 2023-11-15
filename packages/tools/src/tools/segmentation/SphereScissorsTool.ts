@@ -1,4 +1,4 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -277,9 +277,6 @@ class SphereScissorsTool extends BaseTool {
 
     const enabledElement = getEnabledElement(element);
 
-    this.editData = null;
-    this.isDrawing = false;
-
     const operationData = {
       ...this.editData,
       points: data.handles.points,
@@ -288,6 +285,9 @@ class SphereScissorsTool extends BaseTool {
       viewPlaneNormal,
       viewUp,
     };
+
+    this.editData = null;
+    this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
   };

@@ -10,7 +10,7 @@ import {
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationDataStack } from 'tools/src/types/LabelmapTypes';
+import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';

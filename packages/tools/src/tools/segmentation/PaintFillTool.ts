@@ -7,7 +7,6 @@ import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
-import { SegmentationRepresentations } from '../../enums';
 
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import {
@@ -18,10 +17,9 @@ import {
 import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import {
+  LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
-  LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 
 const { transformWorldToIndex, isEqual } = csUtils;
@@ -88,7 +86,9 @@ class PaintFillTool extends BaseTool {
       segmentLocking.getLockedSegments(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
 
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
+    const { volumeId } = representationData[
+      type
+    ] as LabelmapSegmentationDataVolume;
     const segmentation = cache.getVolume(volumeId);
     const { dimensions, direction } = segmentation;
     const scalarData = segmentation.getScalarData();

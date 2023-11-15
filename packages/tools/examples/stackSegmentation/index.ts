@@ -322,11 +322,12 @@ async function run() {
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
+
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -356,7 +357,7 @@ async function run() {
   const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
   const dimensions = [columns, rows, imageIds.length];
   createMockEllipsoidSegmentation(
-    [dimensions[0], dimensions[1], segmentationImageIds.length],
+    [dimensions[0], dimensions[1], segmentationImageIds.length - 1], // only on CT
     segmentationImageIds
   );
 

@@ -23,7 +23,6 @@ function fillSphere(
     segmentsLocked,
     segmentIndex,
     strategySpecificConfiguration,
-    segmentationId,
     points,
   } = operationData;
 
@@ -41,7 +40,7 @@ function fillSphere(
   let callback;
 
   if (threshold) {
-    callback = ({ value, index, pointIJK }) => {
+    callback = ({ value, index }) => {
       if (segmentsLocked.includes(value)) {
         return;
       }
@@ -86,16 +85,8 @@ function fillSphere(
       { length: maxSlice - minSlice + 1 },
       (v, k) => k + minSlice
     );
-  } else {
-    const minSlice = scalarIndex[0];
-    const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1]);
-    sliceArray = Array.from(
-      { length: maxSlice - minSlice + 1 },
-      (v, k) => k + minSlice
-    );
+    triggerSegmentationDataModified(operationData.volumeId, sliceArray);
   }
-
-  triggerSegmentationDataModified(segmentationId, sliceArray);
 }
 
 /**

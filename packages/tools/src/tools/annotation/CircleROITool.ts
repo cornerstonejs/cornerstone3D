@@ -984,9 +984,21 @@ class CircleROITool extends AnnotationTool {
           modalityUnitOptions
         );
 
+        const invXRadiusSq =
+          ellipseObj.xRadius !== 0 ? 1 / ellipseObj.xRadius ** 2 : 0;
+        const invYRadiusSq =
+          ellipseObj.yRadius !== 0 ? 1 / ellipseObj.yRadius ** 2 : 0;
+        const invZRadiusSq =
+          ellipseObj.zRadius !== 0 ? 1 / ellipseObj.zRadius ** 2 : 0;
+
         const pointsInShape = pointInShapeCallback(
           imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          (pointLPS) =>
+            pointInEllipse(ellipseObj, pointLPS, {
+              invXRadiusSq,
+              invYRadiusSq,
+              invZRadiusSq,
+            }),
           this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );

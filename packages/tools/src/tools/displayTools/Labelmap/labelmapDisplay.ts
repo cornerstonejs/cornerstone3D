@@ -350,15 +350,23 @@ function _setLabelmapColorAndOpacity(
   }
 
   const actor = actorEntry.actor as Types.Actor;
+
+  // @ts-ignore
   actor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
+
+  // @ts-ignore
   actor.getProperty().setScalarOpacity(0, ofun);
+  // @ts-ignore
   actor.getProperty().setInterpolationTypeToNearest();
 
   if (utilities.actorIsA(actorEntry, 'vtkVolume')) {
+    // @ts-ignore
     actor.getProperty().setUseLabelOutline(renderOutline);
+    // @ts-ignore
     actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+    // @ts-ignore
     actor.getProperty().setLabelOutlineThickness(outlineWidth);
   }
 

@@ -275,7 +275,7 @@ async function run() {
   );
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+  toolGroup.setToolActive(brushInstanceNames.SphereBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
