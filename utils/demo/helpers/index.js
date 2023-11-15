@@ -9,9 +9,11 @@ import setPetColorMapTransferFunctionForVolumeActor from './setPetColorMapTransf
 import setTitleAndDescription from './setTitleAndDescription';
 import addButtonToToolbar from './addButtonToToolbar';
 import addCheckboxToToolbar from './addCheckboxToToolbar';
+import addNumberInputToToolbar from './addNumberInputToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
 import addSliderToToolbar from './addSliderToToolbar';
+import addRadioGroupToToolbar from './addRadioGroupToToolbar';
 import camera from './camera';
 import getLocalUrl from './getLocalUrl';
 
@@ -22,8 +24,10 @@ export {
   setTitleAndDescription,
   addButtonToToolbar,
   addCheckboxToToolbar,
+  addNumberInputToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,
+  addRadioGroupToToolbar,
   addToggleButtonToToolbar,
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,

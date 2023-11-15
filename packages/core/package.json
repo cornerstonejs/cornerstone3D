@@ -35,6 +35,10 @@
     "gl-matrix": "^3.4.3",
     "lodash.clonedeep": "4.5.0"
   },
+  "devDependencies": {
+    "@itk-wasm/elastix": "0.2.2",
+    "jsfive": "0.3.14"
+  },
   "contributors": [
     {
       "name": "Cornerstone.js Contributors",

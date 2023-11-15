@@ -1233,6 +1233,13 @@
   dependencies:
     regenerator-runtime "^0.13.11"
 
+"@babel/runtime@^7.15.4":
+  version "7.23.2"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.23.2.tgz#062b0ac103261d68a966c4c7baf2ae3e62ec3885"
+  integrity sha512-mM8eg4yl5D6i3lu2QKPuPH4FArvJ8KhTofbE7jwMUv9KX5mBvwPAqnV3MlyBNqdp9RyRKP6Yck8TrfYrPvX3bg==
+  dependencies:
+    regenerator-runtime "^0.14.0"
+
 "@babel/template@^7.12.7", "@babel/template@^7.18.10", "@babel/template@^7.20.7", "@babel/template@^7.3.3":
   version "7.20.7"
   resolved "https://registry.npmjs.org/@babel/template/-/template-7.20.7.tgz#a15090c2839a83b02aa996c0b4994005841fd5a8"
@@ -2500,6 +2507,13 @@
   version "0.1.3"
   resolved "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.3.tgz#e45e384e4b8ec16bce2fd903af78450f6bf7ec98"
   integrity sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA==
+
+"@itk-wasm/elastix@0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@itk-wasm/elastix/-/elastix-0.2.2.tgz#b12552a017c885297eecd31e95f73d6a507baa3a"
+  integrity sha512-ogpFMIHIC2DvzNhR9XVF1pzac6hTug4yK1lPDMnVcW8QkI2koVRjfiWkJhi/5hlQwQcXgiaWBPaw0Ad/d2uq6g==
+  dependencies:
+    itk-wasm "^1.0.0-b.146"
 
 "@jest/console@^29.5.0":
   version "29.5.0"
@@ -4308,6 +4322,11 @@
   dependencies:
     defer-to-connect "^2.0.1"
 
+"@thewtex/zstddec@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@thewtex/zstddec/-/zstddec-0.1.2.tgz#33abeb1b9c6c1f7dca04aa1761c0471e3f493c85"
+  integrity sha512-Bv50pouFqlmIZDcAA2Nrpk9tjJpAPlqHHeD5h0noK+oNXMimrZ/hMbJK2N09Svr6TI/S6nT63dzkWoim4ZzTuw==
+
 "@tokenizer/token@^0.3.0":
   version "0.3.0"
   resolved "https://registry.npmjs.org/@tokenizer/token/-/token-0.3.0.tgz#fe98a93fe789247e998c75e74e9c7c63217aa276"
@@ -5830,6 +5849,15 @@ axios@^1.0.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/axios/-/axios-1.4.0.tgz#38a7bf1224cd308de271146038b551d725f0be1f"
   integrity sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==
+  dependencies:
+    follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
+axios@^1.4.0:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.5.1.tgz#11fbaa11fc35f431193a9564109c88c1f27b585f"
+  integrity sha512-Q28iYCWzNHjAm+yEAot5QaAMxhMghWLFVf7rRdwhUI+c2jix2DUXjAHXVi+s1ibs3mjPO/cCgbA++3BjD0vP/A==
   dependencies:
     follow-redirects "^1.15.0"
     form-data "^4.0.0"
@@ -10898,7 +10926,7 @@ glob@^7.0.0, glob@^7.0.3, glob@^7.0.5, glob@^7.1.2, glob@^7.1.3, glob@^7.1.4, gl
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
-glob@^8.0.1, glob@^8.0.3:
+glob@^8.0.1, glob@^8.0.3, glob@^8.1.0:
   version "8.1.0"
   resolved "https://registry.npmjs.org/glob/-/glob-8.1.0.tgz#d388f656593ef708ee3e34640fdfb99a9fd1c33e"
   integrity sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==
@@ -12728,6 +12756,23 @@ isurl@^1.0.0-alpha5:
     has-to-string-tag-x "^1.2.0"
     is-object "^1.0.1"
 
+itk-wasm@^1.0.0-b.146:
+  version "1.0.0-b.149"
+  resolved "https://registry.yarnpkg.com/itk-wasm/-/itk-wasm-1.0.0-b.149.tgz#7fcedad26c7a9116c0dce004417ce4aec9a4ad5d"
+  integrity sha512-G1wvURAGMz/0XjHK1TKb4dZLwMV4+zsUZcuEkokH2fVtxWotj93OL3mrJvs7fhQ0Jenusf4COFN4yZ9Xt37SEA==
+  dependencies:
+    "@babel/runtime" "^7.15.4"
+    "@thewtex/zstddec" "^0.1.2"
+    "@types/emscripten" "^1.39.6"
+    axios "^1.4.0"
+    commander "^9.4.0"
+    fs-extra "^10.0.0"
+    glob "^8.1.0"
+    markdown-table "^3.0.3"
+    mime-types "^2.1.35"
+    wasm-feature-detect "^1.5.1"
+    webworker-promise "^0.4.2"
+
 jackspeak@^2.0.3:
   version "2.1.1"
   resolved "https://registry.npmjs.org/jackspeak/-/jackspeak-2.1.1.tgz#2a42db4cfbb7e55433c28b6f75d8b796af9669cd"
@@ -13268,6 +13313,13 @@ jsesc@~0.5.0:
   version "0.5.0"
   resolved "https://registry.npmjs.org/jsesc/-/jsesc-0.5.0.tgz#e7dee66e35d6fc16f710fe91d5cf69f70f08911d"
   integrity sha512-uZz5UnB7u4T9LvwmFqXii7pZSouaRPorGs5who1Ip7VO0wxanFvBL7GkM6dTHlgX+jhBApRetaWpnDabOeTcnA==
+
+jsfive@0.3.14:
+  version "0.3.14"
+  resolved "https://registry.yarnpkg.com/jsfive/-/jsfive-0.3.14.tgz#5738bd6d96f97ec13d9f042880e695ae55476262"
+  integrity sha512-CptUQRZw1JHgQKhuZX6ozL/5PndJWetPz3K/Raeh5U/ise8FO84BIcBwbUBq2WsCl/zrnu3phnwazL+IuvaQ5A==
+  dependencies:
+    pako "^2.0.4"
 
 json-buffer@3.0.0:
   version "3.0.0"
@@ -14412,6 +14464,11 @@ markdown-it@^12.3.2:
     mdurl "^1.0.1"
     uc.micro "^1.0.5"
 
+markdown-table@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/markdown-table/-/markdown-table-3.0.3.tgz#e6331d30e493127e031dd385488b5bd326e4a6bd"
+  integrity sha512-Z1NL3Tb1M9wH4XESsCDEksWoKTdlUafKc4pt0GRwjUyXaCFZ+dc3g2erqB6zm3szA2IUSi7VnPI+o/9jnxh9hw==
+
 marked@^4.0.10, marked@^4.0.16, marked@^4.2.12, marked@^4.2.4, marked@^4.3.0:
   version "4.3.0"
   resolved "https://registry.npmjs.org/marked/-/marked-4.3.0.tgz#796362821b019f734054582038b116481b456cf3"
@@ -14660,7 +14717,7 @@ mime-types@2.1.18:
   dependencies:
     mime-db "~1.33.0"
 
-mime-types@^2.1.12, mime-types@^2.1.27, mime-types@^2.1.31, mime-types@~2.1.17, mime-types@~2.1.19, mime-types@~2.1.24, mime-types@~2.1.34:
+mime-types@^2.1.12, mime-types@^2.1.27, mime-types@^2.1.31, mime-types@^2.1.35, mime-types@~2.1.17, mime-types@~2.1.19, mime-types@~2.1.24, mime-types@~2.1.34:
   version "2.1.35"
   resolved "https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz#381a871b62a734450660ae3deee44813f70d959a"
   integrity sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==
@@ -18489,6 +18546,11 @@ regenerator-runtime@^0.13.11, regenerator-runtime@^0.13.4:
   resolved "https://registry.npmjs.org/regenerator-runtime/-/regenerator-runtime-0.13.11.tgz#f6dca3e7ceec20590d07ada785636a90cdca17f9"
   integrity sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==
 
+regenerator-runtime@^0.14.0:
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.14.0.tgz#5e19d68eb12d486f797e15a3c6a918f7cec5eb45"
+  integrity sha512-srw17NI0TUWHuGa5CFGGmhfNIeja30WMBfbslPNhf6JrqQlLN5gcrvig1oqPxiVaXb0oW0XRKtH6Nngs5lKCIA==
+
 regenerator-transform@^0.15.1:
   version "0.15.1"
   resolved "https://registry.npmjs.org/regenerator-transform/-/regenerator-transform-0.15.1.tgz#f6c4e99fc1b4591f780db2586328e4d9a9d8dc56"
@@ -21563,6 +21625,11 @@ walker@^1.0.8:
   dependencies:
     makeerror "1.0.12"
 
+wasm-feature-detect@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/wasm-feature-detect/-/wasm-feature-detect-1.5.1.tgz#0db57a7d7f8c26b743dde85386215ae2b135e78a"
+  integrity sha512-GHr23qmuehNXHY4902/hJ6EV5sUANIJC3R/yMfQ7hWDg3nfhlcJfnIL96R2ohpIwa62araN6aN4bLzzzq5GXkg==
+
 watchpack@^2.4.0:
   version "2.4.0"
   resolved "https://registry.npmjs.org/watchpack/-/watchpack-2.4.0.tgz#fa33032374962c78113f93c7f2fb4c54c9862a5d"
@@ -21781,6 +21848,11 @@ webworker-promise@0.5.0:
   version "0.5.0"
   resolved "https://registry.npmjs.org/webworker-promise/-/webworker-promise-0.5.0.tgz#eb1aa89f26ca6a49765f332668644d74c2c8e320"
   integrity sha512-14iR79jHAV7ozwvbfif+3wCaApT3I1g8Lo0rJZrwAu6wxZGx/08Y8KXz6as6ZLNUEEufeiEBBYrqyDBClXOsEw==
+
+webworker-promise@^0.4.2:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/webworker-promise/-/webworker-promise-0.4.4.tgz#722b0ccade10ccb4e810325e5ebff00eb0e1b1be"
+  integrity sha512-NfdSlaWqd+0iSrQudB0N0MELfJ9TVTlynhXMpi06piuZhyc9Yy7Hz6BFu2HUkvIb9lCS0pFW42ptd/JnXVnptg==
 
 well-known-symbols@^2.0.0:
   version "2.0.0"

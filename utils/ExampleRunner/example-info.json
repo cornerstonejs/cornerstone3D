@@ -126,6 +126,10 @@
       "volumeSlabScroll": {
         "name": "Volume Slab Scroll",
         "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
+      },
+      "registration": {
+        "name": "Registration",
+        "description": "Demonstrates how to register two volumes using ITK Elastix"
       }
     },
     "tools-basic": {
