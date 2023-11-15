@@ -8,7 +8,15 @@ import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
-const streamableTransferSyntaxes = new Set<string>(['3.2.840.10008.1.2.4.96']);
+const streamableTransferSyntaxes = new Set<string>([
+  // Private HTJ2K
+  '3.2.840.10008.1.2.4.96',
+  // Released HTJ2K - only the RPCL one is definitely streamable.
+  '1.2.840.10008.1.2.4.202',
+  // HTJ2K lossy might be streamable, so try it.  If it fails it is ok as it will
+  // proceed and eventually work.
+  '1.2.840.10008.1.2.4.203',
+]);
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
