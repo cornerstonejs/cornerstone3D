@@ -3922,8 +3922,6 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
-    _getNumberOfSlices(viewport: any): number;
-    // (undocumented)
     _getPixelPerImage(viewport: any): number;
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
@@ -4710,7 +4708,7 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
-    _getImageDynamicRangeFromViewport(viewport: any): number;
+    _getImageDynamicRangeFromViewport(viewport: any): any;
     // (undocumented)
     _getMultiplierFromDynamicRange(viewport: any, volumeId: any): number;
     // (undocumented)

@@ -17,8 +17,6 @@ This interleaving can then be combined with any discrete fetch for a lossy
 version of an image - that is, a non-streamed decoding version of an image
 that returns an entire request at once.
 
-
-
 # Performance
 
 The performance gains on using progressive loading on volume viewports vary quite a bit depending on size of data
@@ -38,8 +36,6 @@ done against any DICOMweb server supporting HTJ2K and byte range requests.
 - 4g speed - 30 mbit/s down, 5 mbit/s up, 10 ms latency
 - Full size images are 512x512x174
 - Reduce resolution images are 128x128 and lossy compressed
-
-
 
 ## HTJ2K Streaming
 

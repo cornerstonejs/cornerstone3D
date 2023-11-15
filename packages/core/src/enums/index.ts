@@ -13,6 +13,7 @@ import CalibrationTypes from './CalibrationTypes';
 import ViewportStatus from './ViewportStatus';
 import ImageQualityStatus from './ImageQualityStatus';
 import * as VideoViewport from './VideoViewport';
+import MetadataModules from './MetadataModules';
 
 export {
   Events,
@@ -29,5 +30,6 @@ export {
   DynamicOperatorType,
   ViewportStatus,
   VideoViewport,
+  MetadataModules,
   ImageQualityStatus,
 };

@@ -17,7 +17,7 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  VideoRedactionTool,
+  WindowLevelTool,
   StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
@@ -31,8 +31,8 @@ const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Video Tools',
-  'Show a video viewport with controls to allow it to be navigated and zoom/panned'
+  'Video Color Manipulation',
+  'Show a video viewport controls for color management, window level, brightness/contrast'
 );
 
 const content = document.getElementById('content');
@@ -92,71 +92,86 @@ addButtonToToolbar({
   },
 });
 
+const whiteValues = [
+  [255, 255, 255],
+  [180, 255, 255],
+  [255, 180, 255],
+  [255, 255, 180],
+  [255, 180, 180],
+  [180, 255, 180],
+  [180, 180, 255],
+];
+let currentWhite = 0;
+
 addButtonToToolbar({
-  id: 'previous',
-  title: 'previous',
+  id: 'Color Correct',
+  title: 'Color: 255,255,255',
   onClick() {
-    viewport.scroll(-1);
+    currentWhite = (1 + currentWhite) % whiteValues.length;
+    const white = whiteValues[currentWhite];
+    viewport.setAverageWhite(white);
+    document.getElementById('Color Correct').innerText = `Color: ${white.join(
+      ','
+    )}`;
   },
 });
 
+/**
+ * One possible average white function showing how the imageData is used
+ * to get average white information.
+ */
+function getAverageWhite(scalarData) {
+  const maxValues = [0, 0, 0];
+  for (let i = 0; i < scalarData.length; i += 4) {
+    const r = scalarData[i];
+    const g = scalarData[i + 1];
+    const b = scalarData[i + 2];
+    maxValues[0] = Math.max(r, maxValues[0]);
+    maxValues[1] = Math.max(g, maxValues[1]);
+    maxValues[2] = Math.max(b, maxValues[2]);
+  }
+  return maxValues;
+}
+
 addButtonToToolbar({
-  id: 'next',
-  title: 'next',
+  id: 'Avg Color Correct',
+  title: 'Avg Color Correct',
   onClick() {
-    viewport.scroll(1);
+    const white = getAverageWhite(
+      viewport.getImageData().imageData.getScalarData()
+    );
+    console.log('White=', white);
+    viewport.setAverageWhite(white);
+    document.getElementById(
+      'Color Correct'
+    ).innerText = `Avg Color: ${white.join(',')}`;
+    currentWhite = -1;
   },
 });
 
-addButtonToToolbar({
-  id: 'jump',
-  title: 'jump to 50',
-  onClick() {
-    viewport.setTime(50);
-  },
-});
-
-const playbackSpeeds = [
-  '0',
-  '0.075',
-  '0.15',
-  '0.25',
-  '0.5',
-  '0.75',
-  '1',
-  '2',
-  '3',
-  '4',
-  '10',
+const wl = (windowWidth, windowCenter) => ({ windowWidth, windowCenter });
+const windowLevels = [
+  wl(256, 128),
+  wl(255, 127.5),
+  wl(192, 96),
+  wl(192, 128),
+  wl(192, 160),
 ];
 
 const toolbar = document.getElementById('demo-toolbar');
-const rateTitle = document.createElement('div');
-rateTitle.style.display = 'inline';
-rateTitle.innerText = 'Playback Rate:';
-toolbar.appendChild(rateTitle);
+const windowLevelNames = windowLevels.map(
+  ({ windowWidth, windowCenter }) => `W:${windowWidth}/C:${windowCenter}`
+);
 addDropdownToToolbar({
-  options: { values: playbackSpeeds, defaultValue: '1', id: 'frameRate' },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newPlaybackSpeed = Number(newSelectedToolNameAsStringOrNumber);
-    viewport.setPlaybackRate(newPlaybackSpeed);
+  options: {
+    values: windowLevelNames,
+    defaultValue: windowLevelNames[0],
+    id: 'windowLevel',
   },
-});
-
-const scrollSpeeds = ['1 f', '2 f', '4 f', '0.5 s', '1 s', '2 s', '4 s'];
-
-const scrollTitle = document.createElement('div');
-scrollTitle.style.display = 'inline';
-scrollTitle.innerText = 'Scroll Distance:';
-toolbar.appendChild(scrollTitle);
-
-addDropdownToToolbar({
-  options: { values: scrollSpeeds, defaultValue: '1 f' },
-  onSelectedValueChange: (value) => {
-    value = value.toString();
-    const unit = value[value.length - 1];
-    const newScrollSpeed = Number(value.substring(0, value.length - 2));
-    viewport.setScrollSpeed(newScrollSpeed, unit);
+  onSelectedValueChange: (newWLText) => {
+    const index = windowLevelNames.indexOf(newWLText) % windowLevels.length;
+    const newWL = windowLevels[index];
+    viewport.setWindowLevel(newWL.windowWidth, newWL.windowCenter);
   },
 });
 
@@ -182,8 +197,8 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -194,13 +209,13 @@ async function run() {
   // Add tools to the tool group
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  toolGroup.setToolActive(VideoRedactionTool.toolName, {
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Right Click
+        mouseButton: MouseBindings.Primary, // Right Click
       },
     ],
   });
@@ -226,7 +241,7 @@ async function run() {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
