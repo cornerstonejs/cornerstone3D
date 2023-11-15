@@ -38,6 +38,7 @@ import {
   LabelmapSegmentationDataVolume,
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
+import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 /**
  * @public
@@ -141,7 +142,7 @@ class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
-    if ('volumeId' in labelmapData) {
+    if (isVolumeSegmentation(labelmapData)) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
@@ -191,10 +192,11 @@ class BrushTool extends BaseTool {
           // for sphere manipulation
           // otherwise we just treat the sphere as a circle
           //
-          const metadata = csUtils.makeVolumeMetadata(referencedImageIds);
-
           const { zSpacing } =
             csUtils.sortImageIdsAndGetSpacing(referencedImageIds);
+
+          // Todo: add the sphere brush logic to pre-compute a volume
+          // based on the current image stack and use it as a reference
         }
       }
 
