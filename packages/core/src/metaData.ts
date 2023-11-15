@@ -66,11 +66,14 @@ export function removeAllProviders(): void {
  *
  * @param type -  The type of metadata requested from the metadata store
  * @param query - The query for the metadata store, often imageId
+ *        Some metadata providers support multi-valued strings, which are interpretted
+ *        as the provider chooses.
  *
  * @returns The metadata retrieved from the metadata store
  * @category MetaData
  */
-function getMetaData(type: string, query: string): any {
+function getMetaData(type: string, ...queries): any {
+  const query = queries.length === 1 ? queries[0] : queries;
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
     const result = providers[i].provider(type, query);

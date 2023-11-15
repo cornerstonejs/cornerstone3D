@@ -1,7 +1,8 @@
-import CPUFallbackLUT from './CPUFallbackLUT';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import { PixelDataTypedArray } from './PixelDataTypedArray';
+import type CPUFallbackLUT from './CPUFallbackLUT';
+import type CPUFallbackColormap from './CPUFallbackColormap';
+import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import { ImageQualityStatus } from '../enums';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -113,6 +114,8 @@ interface IImage {
     modalityLUT?: unknown;
     voiLUT?: CPUFallbackLUT;
   };
+
+  imageQualityStatus?: ImageQualityStatus;
 }
 
 export default IImage;

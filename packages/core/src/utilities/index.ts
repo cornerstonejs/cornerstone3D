@@ -49,6 +49,9 @@ import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
+import ProgressiveIterator from './ProgressiveIterator';
+import decimate from './decimate';
+import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 
 // name spaces
@@ -113,6 +116,9 @@ export {
   getScalarDataType,
   colormap,
   getImageLegacy,
+  ProgressiveIterator,
+  decimate,
+  imageRetrieveMetadataProvider,
   transferFunctionUtils,
   isVideoTransferSyntax,
 };

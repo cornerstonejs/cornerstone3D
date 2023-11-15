@@ -13,6 +13,7 @@ import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
 import addSliderToToolbar from './addSliderToToolbar';
 import camera from './camera';
+import getLocalUrl from './getLocalUrl';
 
 export {
   createImageIdsAndCacheMetaData,
@@ -29,4 +30,5 @@ export {
   setCtTransferFunctionForVolumeActor,
   ctVoiRange,
   camera,
+  getLocalUrl,
 };

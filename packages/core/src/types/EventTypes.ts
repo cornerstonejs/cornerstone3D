@@ -7,8 +7,8 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
-import type ViewportStatus from '../enums/ViewportStatus';
+import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import IImageCalibration from './IImageCalibration';
 
@@ -129,6 +129,16 @@ type ImageLoadedEventDetail = {
   image: IImage;
 };
 
+export type ImageLoadStageEventDetail = {
+  stageId: string;
+  numberOfImages: number;
+  numberOfFailures: number;
+  // The duration of just this stage
+  stageDurationInMS: number;
+  // The overall duration
+  startDurationInMS: number;
+};
+
 /**
  * IMAGE_LOADED_FAILED Event's data
  */
@@ -243,22 +253,6 @@ type ImageSpacingCalibratedEventDetail = {
   calibration: IImageCalibration;
   imageData: vtkImageData;
   worldToIndex: mat4;
-};
-
-/**
- * IMAGE_LOAD_PROGRESS Event's data. Note this is only for one image load and NOT volume load.
- */
-type ImageLoadProgressEventDetail = {
-  /** url we are loading from */
-  url: string;
-  /** loading image image id */
-  imageId: string;
-  /** the bytes browser receive */
-  loaded: number;
-  /** the total bytes settled by the header */
-  total: number;
-  /** loaded divided by total * 100 - shows the percentage of the image loaded */
-  percent: number;
 };
 
 /**
@@ -392,11 +386,6 @@ type ImageSpacingCalibratedEvent =
   CustomEventType<ImageSpacingCalibratedEventDetail>;
 
 /**
- * IMAGE_LOAD_PROGRESS
- */
-type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventDetail>;
-
-/**
  * STACK_VIEWPORT_NEW_STACK
  */
 type StackViewportNewStackEvent =
@@ -443,8 +432,6 @@ export type {
   PreStackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
-  ImageLoadProgressEvent,
-  ImageLoadProgressEventDetail,
   VolumeNewImageEvent,
   VolumeNewImageEventDetail,
   StackViewportNewStackEvent,
