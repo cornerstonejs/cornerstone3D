@@ -31,7 +31,6 @@ jobs:
         with:
           node-version: 18
           registry-url: https://npm.pkg.github.com/
-      - run: node ./publish-version.mjs
-      - run: node ./publish-package.mjs
+      - run: lerna publish --canary --registry "https://npm.pkg.github.com/"
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
