@@ -184,6 +184,31 @@ abstract class BaseTool implements IBaseTool {
       }
 
       return viewports[0].getImageData();
+    } else if (targetId.startsWith('videoId:')) {
+      // Video id can be multi-valued for the frame information
+      const imageId = targetId
+        .split('videoId:')[1]
+        .replace(/\/frames\/[^/?&]*/, '/frames/1');
+      const imageURI = utilities.imageIdToURI(imageId);
+      let viewports = utilities.getViewportsWithImageURI(
+        imageURI,
+        renderingEngine.id
+      );
+
+      if (!viewports || !viewports.length) {
+        console.log('No viewports');
+        return;
+      }
+
+      viewports = viewports.filter((viewport) => {
+        return viewport instanceof VideoViewport;
+      });
+
+      if (!viewports || !viewports.length) {
+        return;
+      }
+
+      return viewports[0].getImageData();
     } else {
       throw new Error(
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'
@@ -207,7 +232,7 @@ abstract class BaseTool implements IBaseTool {
     } else if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;
     } else if (viewport instanceof VideoViewport) {
-      return '';
+      return `videoId:${viewport.getCurrentImageId()}`;
     } else {
       throw new Error(
         'getTargetId: viewport must be a StackViewport or VolumeViewport'

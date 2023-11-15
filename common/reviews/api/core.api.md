@@ -1839,6 +1839,8 @@ function isVideoTransferSyntax(uidOrUids: string | string[]): string | false;
 // @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
     pause: () => void;
@@ -2962,6 +2964,10 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
+    protected getCurrentFrame(): number;
+    // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(): {
@@ -2990,9 +2996,15 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
+    getPan(): Point2;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
+    getRotation: () => 0;
+    // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
+    // (undocumented)
+    hasImageURI(imageURI: string): boolean;
     // (undocumented)
     protected imageId: string;
     // (undocumented)

@@ -15,17 +15,6 @@ console.warn(
 );
 
 const {
-  LengthTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
-  ArrowAnnotateTool,
-  PlanarFreehandROITool,
-
   PanTool,
   ZoomTool,
   VideoRedactionTool,
@@ -103,40 +92,71 @@ addButtonToToolbar({
   },
 });
 
-const toolsNames = [
-  LengthTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-  PlanarFreehandROITool.toolName,
-  VideoRedactionTool.toolName,
+addButtonToToolbar({
+  id: 'previous',
+  title: 'previous',
+  onClick() {
+    viewport.scroll(-1);
+  },
+});
+
+addButtonToToolbar({
+  id: 'next',
+  title: 'next',
+  onClick() {
+    viewport.scroll(1);
+  },
+});
+
+addButtonToToolbar({
+  id: 'jump',
+  title: 'jump to 50',
+  onClick() {
+    viewport.setTime(50);
+  },
+});
+
+const playbackSpeeds = [
+  '0',
+  '0.075',
+  '0.15',
+  '0.25',
+  '0.5',
+  '0.75',
+  '1',
+  '2',
+  '3',
+  '4',
+  '10',
 ];
-let selectedToolName = toolsNames[0];
+
+const toolbar = document.getElementById('demo-toolbar');
+const rateTitle = document.createElement('div');
+rateTitle.style.display = 'inline';
+rateTitle.innerText = 'Playback Rate:';
+toolbar.appendChild(rateTitle);
+addDropdownToToolbar({
+  options: { values: playbackSpeeds, defaultValue: '1', id: 'frameRate' },
+  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
+    const newPlaybackSpeed = Number(newSelectedToolNameAsStringOrNumber);
+    viewport.setPlaybackRate(newPlaybackSpeed);
+  },
+});
+
+const scrollSpeeds = ['1 f', '2 f', '4 f', '0.5 s', '1 s', '2 s', '4 s'];
+
+const scrollTitle = document.createElement('div');
+scrollTitle.style.display = 'inline';
+scrollTitle.innerText = 'Scroll Distance:';
+toolbar.appendChild(scrollTitle);
 
 addDropdownToToolbar({
-  options: { values: toolsNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
-
-    selectedToolName = <string>newSelectedToolName;
+  options: { values: scrollSpeeds, defaultValue: '1 f' },
+  onSelectedValueChange: (value) => {
+    value = value.toString();
+    const unit = value[value.length - 1];
+    const newScrollSpeed = Number(value.substring(0, value.length - 2));
+    viewport.setScrollSpeed(newScrollSpeed, unit);
   },
 });
 
@@ -160,23 +180,11 @@ async function run() {
     (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
   );
 
-  // Add annotation tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
-  cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -184,26 +192,15 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(VideoRedactionTool.toolName);
-
   toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(VideoRedactionTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   });
@@ -229,11 +226,7 @@ async function run() {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary,
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });

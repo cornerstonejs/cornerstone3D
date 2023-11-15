@@ -50,6 +50,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
    */
   private fps = 30;
 
+  /** The number of frames in the video */
+  private numberOfFrames = 0;
+
   private videoCamera: InternalVideoCamera = {
     panWorld: [0, 0],
     parallelScale: 1,
@@ -193,8 +196,20 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.metadata = this._getImageDataMetadata();
 
     return this.setVideoURL(rendered).then(() => {
-      const { cineRate = 30 } = metaData.get(MetadataModules.CINE, imageId);
+      let { cineRate, numberOfFrames } = metaData.get(
+        MetadataModules.CINE,
+        imageId
+      );
+      if (!numberOfFrames) {
+        numberOfFrames = Math.round(
+          this.videoElement.duration * (cineRate || 30)
+        );
+      }
+      if (!cineRate) {
+        cineRate = Math.round(numberOfFrames / this.videoElement.duration);
+      }
       this.fps = cineRate;
+      this.numberOfFrames = numberOfFrames;
       if (frameNumber !== undefined) {
         this.pause();
         this.setFrame(frameNumber);
@@ -445,6 +460,11 @@ class VideoViewport extends Viewport implements IVideoViewport {
     };
   }
 
+  public hasImageURI(imageURI: string) {
+    const testURI = imageURI.replace(/\/frames\/.*/, '');
+    return this.imageId.indexOf(testURI) !== -1;
+  }
+
   public setVOI(voiRange: VOIRange): void {
     this.voiRange = voiRange;
     this.setColorTransform();
@@ -526,6 +546,20 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
+  public getCurrentImageId() {
+    return this.imageId.replace(
+      '/frames/1',
+      this.isPlaying
+        ? `/frames/1-${this.numberOfFrames}`
+        : `/frames/${this.getCurrentFrame()}`
+    );
+  }
+
+  protected getCurrentFrame() {
+    // Need to round this as the fps/time isn't exact
+    return Math.round(this.videoElement.currentTime * this.fps);
+  }
+
   public getCamera(): ICamera {
     const { parallelScale } = this.videoCamera;
 
@@ -543,6 +577,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       parallelProjection: true,
       focalPoint: canvasCenterWorld,
       position: [0, 0, 0],
+      viewUp: [0, -1, 0],
       parallelScale: 1 / parallelScale, // Reverse zoom direction back
       viewPlaneNormal: [0, 0, 1],
     };
@@ -561,7 +596,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   public getNumberOfSlices = (): number => {
-    return (this.videoElement.duration * this.fps) / this.scrollSpeed;
+    return Math.round(
+      (this.videoElement.duration * this.fps) / this.scrollSpeed
+    );
   };
 
   public getFrameOfReferenceUID = (): string => {
@@ -635,6 +672,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     return canvasPos;
   };
+
+  public getPan(): Point2 {
+    const worldPan = this.videoCamera.panWorld;
+    return [worldPan[0], worldPan[1]];
+  }
+
+  public getRotation: () => 0;
 
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const [x, y] = canvasPos;

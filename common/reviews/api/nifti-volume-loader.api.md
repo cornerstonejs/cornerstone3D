@@ -1249,6 +1249,8 @@ interface IStreamingVolumeProperties {
 // @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
     pause: () => void;

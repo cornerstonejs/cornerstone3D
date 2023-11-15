@@ -36,6 +36,11 @@ export default interface IVideoViewport extends IViewport {
   resetProperties(): void;
 
   /**
+   * Gets the current image id, including frame selction or frameless.
+   */
+  getCurrentImageId(): string;
+
+  /**
    * Centers Pan and resets the zoom for stack viewport.
    */
   resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
