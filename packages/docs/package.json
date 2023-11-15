@@ -2,7 +2,11 @@
   "name": "docs",
   "version": "1.27.4",
   "private": true,
-  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RadicalImaging/MCornerstone3D.git",
+    "directory": "packages/docs"
+  },
   "scripts": {
     "preinstall": "node preinstall.js",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 yarn run prep-examples && docusaurus build",

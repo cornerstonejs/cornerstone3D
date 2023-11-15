@@ -11,6 +11,7 @@
     "directories": {
         "build": "dist"
     },
+
     "exports": {
         "import": "./dist/adapters.es.js"
     },
@@ -32,8 +33,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/dcmjs-org/dcmjs.git"
-    },
+        "url": "https://github.com/RadicalImaging/MCornerstone3D.git",
+        "directory": "packages/adapters"
+      },
     "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
     "license": "MIT",
     "bugs": {

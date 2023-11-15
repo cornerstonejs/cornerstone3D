@@ -5,7 +5,11 @@
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
   "module": "dist/esm/index.js",
-  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RadicalImaging/MCornerstone3D.git",
+    "directory": "packages/nifti-volume-loader"
+  },
   "files": [
     "dist/"
   ],
