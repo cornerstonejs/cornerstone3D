@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 18
           registry-url: https://npm.pkg.github.com/
+          scope: radicalimaging
       - run: yarn install --frozen-lockfile
       - run: yarn build
       - run: lerna publish --ignore-scripts --yes --canary --registry "https://npm.pkg.github.com/"
