@@ -9,18 +9,7 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - run: yarn install --frozen-lockfile
-      - run: yarn build
-
   publish-gpr:
-    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,6 +20,8 @@ jobs:
         with:
           node-version: 18
           registry-url: https://npm.pkg.github.com/
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
       - run: lerna publish --ignore-scripts --yes --canary --registry "https://npm.pkg.github.com/"
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
