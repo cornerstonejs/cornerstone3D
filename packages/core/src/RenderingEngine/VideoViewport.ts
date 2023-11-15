@@ -159,14 +159,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
       origin = [0, 0, 0];
     }
 
-    const xSpacing = imagePlaneModule.columnPixelSpacing;
-    const ySpacing = imagePlaneModule.rowPixelSpacing;
+    const xSpacing = imagePlaneModule.columnPixelSpacing || 1;
+    const ySpacing = imagePlaneModule.rowPixelSpacing || 1;
     const xVoxels = imagePlaneModule.columns;
     const yVoxels = imagePlaneModule.rows;
 
     const zSpacing = 1;
     const zVoxels = 1;
 
+    this.hasPixelSpacing = !!imagePlaneModule.columnPixelSpacing;
     return {
       bitsAllocated: 8,
       numComps: 3,
@@ -174,6 +175,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
+      hasPixelSpacing: this.hasPixelSpacing,
       numVoxels: xVoxels * yVoxels * zVoxels,
       imagePlaneModule,
     };
