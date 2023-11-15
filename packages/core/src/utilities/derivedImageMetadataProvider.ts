@@ -1,8 +1,6 @@
 import { metaData } from '..';
-import imageIdToURI from './imageIdToURI';
 
 const state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
-window.ali = state;
 /**
  * Simple metadata provider that stored the derived metadata in memory.
  */
