@@ -9,6 +9,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   createImageIdsAndCacheMetaData,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -101,8 +102,6 @@ addButtonToToolbar({
   },
 });
 
-const useLocal = false;
-
 /**
  * Runs the demo
  */
@@ -114,9 +113,8 @@ async function run() {
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
-    wadoRsRoot: useLocal
-      ? 'http://localhost:5000/dicomweb'
-      : 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it

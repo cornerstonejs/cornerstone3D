@@ -5,6 +5,7 @@ import {
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -159,9 +160,6 @@ addDropdownToToolbar({
   },
 });
 
-const urlParams = new URLSearchParams(window.location.search);
-const useLocal = urlParams.get('useLocal') === 'true';
-
 /**
  * Runs the demo
  */
@@ -173,9 +171,8 @@ async function run() {
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
-    wadoRsRoot: useLocal
-      ? 'http://localhost:5000/dicomweb'
-      : 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
