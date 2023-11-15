@@ -10,6 +10,9 @@
     "url": "https://github.com/RadicalImaging/MCornerstone3D.git",
     "directory": "packages/streaming-image-volume-loader"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist/",
     "src/"

@@ -1,11 +1,13 @@
 {
   "name": "docs",
   "version": "1.27.4",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/RadicalImaging/MCornerstone3D.git",
     "directory": "packages/docs"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "preinstall": "node preinstall.js",

@@ -8,5 +8,11 @@
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader"
   ],
-  "npmClient": "yarn"
+  "npmClient": "yarn",
+  "command": {
+	  "publish": {
+		  "registry": "https://hostname/artifactory/api/npm/npm-repo",
+		  "verifyAccess": false
+	  }
+	}
 }

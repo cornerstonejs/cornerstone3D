@@ -10,6 +10,9 @@
     "url": "https://github.com/RadicalImaging/MCornerstone3D.git",
     "directory": "packages/core"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist/",
     "src/"
