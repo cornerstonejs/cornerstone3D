@@ -1571,7 +1571,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
-    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotations;
+    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotation[];
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
@@ -3233,7 +3233,7 @@ function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeV
 // @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
-    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): void;
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any, options?: any): Promise<void> | void;
 }
 
 // @public (undocumented)
@@ -3349,7 +3349,7 @@ interface IVideoViewport extends IViewport {
     resize: () => void;
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideoImageId: (
+    setVideo: (
     imageIds: string | string[],
     imageIdIndex?: number
     ) => Promise<unknown>;
@@ -6099,9 +6099,7 @@ type VideoViewportProperties = ViewportProperties & {
     muted?: boolean;
     pan?: Point2;
     playbackRate?: number;
-    // The zoom factor, naming consistent with vtk cameras for now,
-    // but this isn't necessarily necessary.
-    parallelScale?: number;
+    scrollSpeed?: number;
 };
 
 declare namespace viewport {
@@ -6339,7 +6337,7 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
-    _getImageDynamicRangeFromViewport(viewport: any): number;
+    _getImageDynamicRangeFromViewport(viewport: any): any;
     // (undocumented)
     _getMultiplierFromDynamicRange(viewport: any, volumeId: any): number;
     // (undocumented)

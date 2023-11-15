@@ -13,6 +13,7 @@ enum MetadataModules {
   PATIENT_STUDY = 'patientStudyModule',
   NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',
   IMAGE_PLANE = 'imagePlaneModule',
+  IMAGE_PIXEL = 'imagePixelModule',
   MULTIFRAME = 'multiframeModule',
 }
 

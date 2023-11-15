@@ -11,6 +11,7 @@ import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
 import CalibrationTypes from './CalibrationTypes';
 import ViewportStatus from './ViewportStatus';
+import ImageQualityStatus from './ImageQualityStatus';
 import * as VideoViewport from './VideoViewport';
 import MetadataModules from './MetadataModules';
 
@@ -30,4 +31,5 @@ export {
   ViewportStatus,
   VideoViewport,
   MetadataModules,
+  ImageQualityStatus,
 };

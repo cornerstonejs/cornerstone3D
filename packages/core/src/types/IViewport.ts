@@ -6,6 +6,7 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
+import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 /**
  * Viewport interface for cornerstone viewports
