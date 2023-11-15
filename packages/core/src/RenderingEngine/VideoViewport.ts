@@ -678,7 +678,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return [worldPan[0], worldPan[1]];
   }
 
-  public getRotation: () => 0;
+  public getRotation = () => 0;
 
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const [x, y] = canvasPos;
