@@ -182,6 +182,9 @@ function decodeImageFrame(
       );
 
     case '3.2.840.10008.1.2.4.96':
+    case '1.2.840.10008.1.2.4.201':
+    case '1.2.840.10008.1.2.4.202':
+    case '1.2.840.10008.1.2.4.203':
       // HTJ2K
       return processDecodeTask(
         imageFrame,
