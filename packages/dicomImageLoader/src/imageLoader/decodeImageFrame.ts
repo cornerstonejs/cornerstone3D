@@ -1,4 +1,5 @@
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+import webWorkerManager from './webWorkerManager';
 
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
@@ -6,7 +7,6 @@ import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 import { ByteArray } from 'dicom-parser';
 import { inflateRaw } from 'pako/lib/inflate';
 import { ImageFrame, LoaderDecodeOptions } from '../types';
-import external from '../externalModules';
 
 (window as any).pako = { inflateRaw };
 
@@ -17,14 +17,12 @@ function processDecodeTask(
   options,
   decodeConfig: LoaderDecodeOptions
 ): Promise<ImageFrame> {
-  const webWorkerManager = external.cornerstone.getWebWorkerManager();
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]
     : undefined;
 
-  return webWorkerManager.executeTask(
-    'dicomImageLoader',
+  return webWorkerManager.addTask(
     'decodeTask',
     {
       imageFrame,
@@ -33,11 +31,9 @@ function processDecodeTask(
       options,
       decodeConfig,
     },
-    {
-      priority,
-      requestType: options?.requestType,
-    }
-  );
+    priority,
+    transferList
+  ).promise;
 }
 
 function decodeImageFrame(

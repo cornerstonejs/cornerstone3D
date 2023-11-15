@@ -16,6 +16,7 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
+import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 /**
  * When using typical decompressors to decompress compressed color images,

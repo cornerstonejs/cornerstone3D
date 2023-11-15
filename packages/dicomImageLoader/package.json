@@ -67,7 +67,6 @@
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.2",
     "@cornerstonejs/core": "^1.28.2",
-    "comlink": "^4.4.1",
     "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"
