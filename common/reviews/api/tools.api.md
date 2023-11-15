@@ -1677,7 +1677,10 @@ function drawArrow(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ar
 function drawCircle(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}, dataId?: string): void;
 
 // @public (undocumented)
-function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, canvasCoordinates: [Types_2.Point2, Types_2.Point2, Types_2.Point2, Types_2.Point2], options?: {}, dataId?: string): void;
+function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}, dataId?: string): void;
+
+// @public (undocumented)
+function drawEllipseByCoordinates(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, canvasCoordinates: [Types_2.Point2, Types_2.Point2, Types_2.Point2, Types_2.Point2], options?: {}, dataId?: string): void;
 
 // @public (undocumented)
 function drawHandles(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
@@ -1687,6 +1690,7 @@ declare namespace drawing {
         draw,
         drawCircle,
         drawEllipse,
+        drawEllipseByCoordinates,
         drawHandles,
         drawLine,
         drawPolyline,

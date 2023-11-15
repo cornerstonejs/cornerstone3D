@@ -24,7 +24,7 @@ import { isAnnotationLocked } from '../../stateManagement/annotation/annotationL
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawCircle as drawCircleSvg,
-  drawEllipse as drawEllipseSvg,
+  drawEllipseByCoordinates as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
