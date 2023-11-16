@@ -14,10 +14,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 
-import {
-  drawArrow as drawArrowSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
+import { drawArrow as drawArrowSvg } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -32,8 +29,8 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { Annotation } from '../../types';
 
 type Point2 = Types.Point2;
 
@@ -75,9 +72,7 @@ class KeyImageTool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): ArrowAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -110,7 +105,7 @@ class KeyImageTool extends AnnotationTool {
       data: {
         text: '',
         handles: {
-          points: [],
+          points: new Array<Types.Point3>(),
           textBox: {
             hasMoved: false,
             worldPosition: <Types.Point3>[0, 0, 0],
@@ -183,7 +178,7 @@ class KeyImageTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: ArrowAnnotation,
+    annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -202,7 +197,7 @@ class KeyImageTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: ArrowAnnotation
+    annotation: Annotation
   ): void => {
     annotation.highlighted = true;
 
@@ -211,7 +206,7 @@ class KeyImageTool extends AnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
-    annotation: ArrowAnnotation,
+    annotation: Annotation,
     handle: ToolHandle
   ): void {
     // Nothing special to do here.
@@ -242,7 +237,7 @@ class KeyImageTool extends AnnotationTool {
     const clickedAnnotation = annotations.find((annotation) =>
       this.isPointNearTool(
         element,
-        annotation as ArrowAnnotation,
+        annotation as Annotation,
         eventDetail.currentPoints.canvas,
         6 // Todo: get from configuration
       )
@@ -252,7 +247,7 @@ class KeyImageTool extends AnnotationTool {
       return;
     }
 
-    const annotation = clickedAnnotation as ArrowAnnotation;
+    const annotation = clickedAnnotation as Annotation;
 
     this.configuration.changeTextCallback(
       clickedAnnotation,

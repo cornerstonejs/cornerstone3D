@@ -249,6 +249,16 @@ addButtonToToolbar({
   },
 });
 
+let toggledAnnotations = true;
+addButtonToToolbar({
+  id: 'ToggleAnnotations',
+  title: 'Toggle Annotations',
+  onClick() {
+    toggledAnnotations = !toggledAnnotations;
+    toggleAnnotations(toggledAnnotations);
+  },
+});
+
 function annotationSelectionListener(evt) {
   const { selection } = evt.detail;
   if (!selection?.length) {
@@ -284,6 +294,25 @@ function formatSelections(selections, chosen) {
       return `<b>${toTime(selection)}</b>`;
     }
     return toTime(selection);
+  });
+}
+
+function toggleAnnotations(toggle) {
+  const toolGroup = ToolGroupManager.getToolGroupForViewport(
+    viewportId,
+    renderingEngineId
+  );
+
+  Object.keys(toolGroup._toolInstances).forEach((toolName) => {
+    if (toggle) {
+      try {
+        toolGroup.setToolActive(toolName);
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      toolGroup.setToolDisabled(toolName);
+    }
   });
 }
 

@@ -2296,6 +2296,84 @@ type KeyDownEventDetail = {
 type KeyDownEventType = Types_2.CustomEventType<KeyDownEventDetail>;
 
 // @public (undocumented)
+export class KeyImageTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => {
+        annotationUID: string;
+        highlighted: boolean;
+        invalidated: boolean;
+        metadata: {
+            toolName: string;
+            viewPlaneNormal: Types_2.Point3;
+            viewUp: Types_2.Point3;
+            FrameOfReferenceUID: string;
+            referencedImageId: string;
+        };
+        data: {
+            text: string;
+            handles: {
+                points: Types_2.Point3[];
+                textBox: {
+                    hasMoved: boolean;
+                    worldPosition: Types_2.Point3;
+                    worldBoundingBox: {
+                        topLeft: Types_2.Point3;
+                        topRight: Types_2.Point3;
+                        bottomLeft: Types_2.Point3;
+                        bottomRight: Types_2.Point3;
+                    };
+                };
+            };
+            label: string;
+        };
+    };
+    // (undocumented)
+    cancel(): void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
+    // (undocumented)
+    doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
