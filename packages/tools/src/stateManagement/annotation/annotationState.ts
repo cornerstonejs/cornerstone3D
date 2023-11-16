@@ -75,7 +75,7 @@ function addAnnotation(
   annotation: Annotation,
   annotationGroupSelector: AnnotationGroupSelector
 ): string {
-  if (annotation.annotationUID === undefined) {
+  if (!annotation.annotationUID) {
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
 

@@ -22,6 +22,7 @@ console.warn(
 
 const {
   LengthTool,
+  KeyImageTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -119,6 +120,7 @@ addButtonToToolbar({
 
 const toolsNames = [
   LengthTool.toolName,
+  KeyImageTool.toolName,
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
@@ -330,6 +332,10 @@ function addAnnotationListeners() {
     toolsEvents.ANNOTATION_MODIFIED,
     annotationModifiedListener
   );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_COMPLETED,
+    annotationModifiedListener
+  );
 }
 
 function toSelection(range) {
@@ -491,6 +497,7 @@ async function run() {
   addAnnotationListeners();
 
   // Add annotation tools to Cornerstone3D
+  cornerstoneTools.addTool(KeyImageTool);
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
@@ -515,6 +522,7 @@ async function run() {
 
   // Add tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(KeyImageTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
@@ -530,10 +538,18 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(KeyImageTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftAlt,
+      },
+    ],
+  });
+  toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Middle Click
       },
     ],
   });
