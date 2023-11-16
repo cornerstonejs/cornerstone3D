@@ -1,5 +1,5 @@
 {
-  "name": "@cornerstonejs/streaming-image-volume-loader",
+  "name": "@radicalimaging/mcornerstone3d-streaming-image-volume-loader",
   "version": "1.27.4",
   "description": "",
   "main": "src/index.ts",
@@ -35,7 +35,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.27.4"
+    "@radicalimaging/mcornerstone3d-core": "^1.27.4"
   },
   "contributors": [
     {

@@ -1,9 +1,9 @@
 {
-    "name": "@radicalimaging/adapters",
+    "name": "@radicalimaging/mcornerstone3d-adapters",
     "version": "1.27.4",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "src": "src/index.ts",
-    "main": "./dist/@cornerstonejs/adapters.es.js",
+    "main": "./dist/adapters.es.js",
     "module": "src/index.ts",
     "files": [
         "dist"
@@ -16,9 +16,6 @@
         "import": "./dist/adapters.es.js"
     },
     "types": "./dist/types/index.d.ts",
-    "publishConfig": {
-        "access": "public"
-    },
     "scripts": {
         "test": "jest --testTimeout 60000",
         "build": "rollup -c rollup.config.mjs",
@@ -51,8 +48,8 @@
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "^1.27.4",
-        "@cornerstonejs/streaming-image-volume-loader": "^1.27.4",
-        "@cornerstonejs/tools": "^1.27.4"
+        "@radicalimaging/mcornerstone3d-core": "^1.27.4",
+        "@radicalimaging/mcornerstone3d-streaming-image-volume-loader": "^1.27.4",
+        "@radicalimaging/mcornerstone3d-tools": "^1.27.4"
     }
 }

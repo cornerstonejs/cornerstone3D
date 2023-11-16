@@ -48,7 +48,13 @@ module.exports = (env, argv, { DIST_DIR }) => {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       alias: {
         '@cornerstonejs/dicom-image-loader':
-          '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
+        '@radicalimaging/mcornerstone3d-dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
+        '@cornerstonejs/adapters': "@radicalimaging/mcornerstone3d-adapters",
+        '@cornerstonejs/core': "@radicalimaging/mcornerstone3d-core",
+        '@cornerstonejs/tools': "@radicalimaging/mcornerstone3d-tools",
+        '@cornerstonejs/streaming-image-volume-loader': "@radicalimaging/mcornerstone3d-streaming-image-volume-loader",
+        '@cornerstonejs/nifti-volume-loader': "@radicalimaging/mcornerstone3d-nifti-volume-loader"
+
       },
       fallback: {
         fs: false,

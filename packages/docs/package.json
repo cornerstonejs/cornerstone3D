@@ -34,12 +34,12 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/adapters": "^1.27.4",
-    "@cornerstonejs/core": "^1.27.4",
-    "@cornerstonejs/dicom-image-loader": "^1.27.4",
-    "@cornerstonejs/nifti-volume-loader": "^1.27.4",
-    "@cornerstonejs/streaming-image-volume-loader": "^1.27.4",
-    "@cornerstonejs/tools": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-adapters": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-core": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-dicom-image-loader": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-nifti-volume-loader": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-streaming-image-volume-loader": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-tools": "^1.27.4",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",
     "@docusaurus/plugin-google-gtag": "2.3.1",

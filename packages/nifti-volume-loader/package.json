@@ -1,5 +1,5 @@
 {
-  "name": "@cornerstonejs/nifti-volume-loader",
+  "name": "@radicalimaging/mcornerstone3d-nifti-volume-loader",
   "version": "1.27.4",
   "description": "",
   "main": "dist/umd/index.js",
@@ -33,7 +33,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.27.4",
+    "@radicalimaging/mcornerstone3d-core": "^1.27.4",
     "nifti-reader-js": "^0.6.6"
   },
   "contributors": [

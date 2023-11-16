@@ -29,7 +29,15 @@
     "strictNullChecks": false,
     "target": "es5", // esnext | es5
     "downlevelIteration": true,
-    "resolveJsonModule": true
+    "traceResolution": true,
+    "paths": {
+      "@cornerstonejs/adapters": ["./packages/adapters/"],
+      "@cornerstonejs/core": ["./packages/core/"],
+      "@cornerstonejs/tools": ["./packages/tools/"],
+      "@cornerstonejs/dicomImageLoader": ["./packages/dicomImageLoader/"],
+      "@cornerstonejs/nifti-volume-loader": ["./packages/nifti-volume-loader/"],
+      "@cornerstonejs/streaming-image-volume-loader": ["./packages/streaming-image-volume-loader/"],
+    }
   },
   "exclude": [
     "node_modules",

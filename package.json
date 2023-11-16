@@ -1,5 +1,5 @@
 {
-  "name": "@cornerstonejs/root",
+  "name": "@radicalimaging/mcornerstone-root",
   "version": "1.0.0",
   "description": "Cornerstone.js Monorepo Root",
   "private": true,
