@@ -3000,7 +3000,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
-    getRotation: () => 0;
+    getRotation: () => number;
     // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
     // (undocumented)

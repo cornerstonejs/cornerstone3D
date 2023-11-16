@@ -55,7 +55,10 @@ export default function filterAnnotationsForDisplay(
     const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
 
     return annotations.filter((toolData) => {
-      return toolData.metadata.FrameOfReferenceUID === frameOfReferenceUID;
+      return (
+        toolData.metadata.FrameOfReferenceUID === frameOfReferenceUID &&
+        viewport.hasImageURI(toolData.metadata.referencedImageId)
+      );
     });
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();

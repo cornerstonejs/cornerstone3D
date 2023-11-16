@@ -464,7 +464,29 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
   public hasImageURI(imageURI: string) {
     const testURI = imageURI.replace(/\/frames\/.*/, '');
-    return this.imageId.indexOf(testURI) !== -1;
+    if (this.imageId.indexOf(testURI) === -1) {
+      return false;
+    }
+    const frames = imageURI.match(/\/frames\/([^/?&]*)/);
+    if (!frames?.[1]) {
+      return true;
+    }
+    const regions = frames?.[1].split(',');
+    const frame = this.getCurrentFrame();
+    for (const region of regions) {
+      const regionSplit = region.split('-');
+      const minRegion = Number(regionSplit[0]);
+      const maxRegion =
+        regionSplit.length > 1 ? Number(regionSplit[1]) : minRegion;
+
+      if (minRegion === maxRegion && Math.abs(frame - minRegion) < 10) {
+        return true;
+      }
+      if (frame >= minRegion && frame <= maxRegion) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public setVOI(voiRange: VOIRange): void {
@@ -492,8 +514,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const white = this.averageWhite || [255, 255, 255];
     const maxWhite = Math.max(...white);
     const scaleWhite = white.map((c) => maxWhite / c);
-    // From the DICOM standard: ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
-    // which is x/(w-1) - (c - 0.5) / (w-1) + 0.5  for this case
     const { lower = 0, upper = 255 } = this.voiRange || {};
     const wlScale = (upper - lower + 1) / 255;
     const wlDelta = lower / 255;
@@ -549,12 +569,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public getCurrentImageId() {
-    return this.imageId.replace(
+    const current = this.imageId.replace(
       '/frames/1',
       this.isPlaying
         ? `/frames/1-${this.numberOfFrames}`
         : `/frames/${this.getCurrentFrame()}`
     );
+    return current;
   }
 
   protected getCurrentFrame() {

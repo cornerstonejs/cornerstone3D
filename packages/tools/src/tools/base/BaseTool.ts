@@ -141,7 +141,10 @@ abstract class BaseTool implements IBaseTool {
 
   /**
    * Get the image that is displayed for the targetId in the cachedStats
-   * which can be either imageId:<imageId> or volumeId:<volumeId>
+   * which can be
+   * * imageId:<imageId>
+   * * volumeId:<volumeId>
+   * * videoId:<basePathForVideo>/frames/<frameSpecifier>
    *
    * @param targetId - annotation targetId stored in the cached stats
    * @param renderingEngine - The rendering engine
@@ -186,25 +189,14 @@ abstract class BaseTool implements IBaseTool {
       return viewports[0].getImageData();
     } else if (targetId.startsWith('videoId:')) {
       // Video id can be multi-valued for the frame information
-      const imageId = targetId
-        .split('videoId:')[1]
-        .replace(/\/frames\/[^/?&]*/, '/frames/1');
-      const imageURI = utilities.imageIdToURI(imageId);
-      let viewports = utilities.getViewportsWithImageURI(
+      const imageURI = utilities.imageIdToURI(targetId);
+      const viewports = utilities.getViewportsWithImageURI(
         imageURI,
         renderingEngine.id
       );
 
       if (!viewports || !viewports.length) {
         console.log('No viewports');
-        return;
-      }
-
-      viewports = viewports.filter((viewport) => {
-        return viewport instanceof VideoViewport;
-      });
-
-      if (!viewports || !viewports.length) {
         return;
       }
 

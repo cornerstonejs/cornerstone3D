@@ -820,11 +820,9 @@ class LengthTool extends AnnotationTool {
 
       const { imageData, dimensions } = image;
       const scale = getCalibratedScale(image);
-      console.log('Calibrated scale', scale);
 
       const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
-      console.log('Calculated length', length);
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
 
