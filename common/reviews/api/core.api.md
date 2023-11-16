@@ -1841,6 +1841,8 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     getCurrentImageId(): string;
     // (undocumented)
+    getFrame(): number;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
     pause: () => void;
@@ -1853,7 +1855,11 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     resize: () => void;
     // (undocumented)
+    setFrame(frameNo: number): any;
+    // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setRange(range?: [number, number]): any;
     // (undocumented)
     setVideo: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
@@ -2964,9 +2970,9 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
-    protected getCurrentFrame(): number;
-    // (undocumented)
     getCurrentImageId(): string;
+    // (undocumented)
+    getFrame(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
@@ -2999,6 +3005,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     getPan(): Point2;
     // (undocumented)
     getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    getRange(): [number, number];
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -3039,6 +3047,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     setPlaybackRate(rate?: number): void;
     // (undocumented)
     setProperties(props: VideoViewportProperties): void;
+    // (undocumented)
+    setRange(range: number[]): void;
     // (undocumented)
     setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
     // (undocumented)

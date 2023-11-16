@@ -1,4 +1,10 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  eventTarget,
+  triggerEvent,
+} from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
@@ -36,7 +42,7 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
 
 const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
@@ -47,8 +53,16 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const element = document.createElement('div');
 
+// Create a selection info element
+const selectionDiv = document.createElement('div');
+selectionDiv.id = 'selection';
+selectionDiv.style.width = '90%';
+selectionDiv.style.height = '3em';
+content.appendChild(selectionDiv);
+
+// ************* Create the cornerstone element.
+const element = document.createElement('div');
 // Disable right click context menu so we can have right click tools
 element.oncontextmenu = (e) => e.preventDefault();
 
@@ -140,6 +154,320 @@ addDropdownToToolbar({
   },
 });
 
+addButtonToToolbar({
+  id: 'Next',
+  title: 'Next',
+  onClick() {
+    navigateRelative(1);
+  },
+});
+
+addButtonToToolbar({
+  id: 'Previous',
+  title: 'Previous',
+  onClick() {
+    navigateRelative(-1);
+  },
+});
+
+addButtonToToolbar({
+  id: 'Clear',
+  title: 'Clear Range',
+  onClick() {
+    viewport.setRange(null);
+    viewport.play();
+  },
+});
+
+addButtonToToolbar({
+  id: 'AddSelection',
+  title: 'Add',
+  onClick() {
+    viewport.pause();
+    if (!selectedAnnotation.annotationUID) {
+      return;
+    }
+    const newSelection = setSelection(
+      selectedAnnotation.annotationUID,
+      null,
+      viewport.getFrame()
+    );
+    updateAnnotationDiv(selectedAnnotation.annotationUID, newSelection);
+    fireUpdateEvent();
+  },
+});
+
+addButtonToToolbar({
+  id: 'SetSelection',
+  title: 'Set',
+  onClick() {
+    viewport.pause();
+    const frame = viewport.getFrame();
+    const { annotationUID, selection } = selectedAnnotation;
+    if (!annotationUID) {
+      return;
+    }
+    const newSelection = setSelection(annotationUID, selection, frame);
+    updateAnnotationDiv(annotationUID, newSelection);
+    fireUpdateEvent();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Start Range',
+  title: 'Start',
+  onClick() {
+    viewport.pause();
+    const { annotationUID, selection } = selectedAnnotation;
+    const range = toRange(selection);
+    range[0] = viewport.getFrame();
+    if (range[1] < range[0]) {
+      range[1] = range[0];
+    }
+    const updated = setSelection(annotationUID, selection, range);
+    updateAnnotationDiv(annotationUID, updated);
+    fireUpdateEvent();
+  },
+});
+
+addButtonToToolbar({
+  id: 'End Range',
+  title: 'End',
+  onClick() {
+    viewport.pause();
+    const { annotationUID, selection } = selectedAnnotation;
+    const range = toRange(selection);
+    range[1] = viewport.getFrame();
+    if (range[1] < range[0]) {
+      range[0] = range[1];
+    }
+    const updated = setSelection(annotationUID, selection, range);
+    updateAnnotationDiv(annotationUID, updated);
+    fireUpdateEvent();
+  },
+});
+
+function annotationSelectionListener(evt) {
+  const { selection } = evt.detail;
+  if (!selection?.length) {
+    selectionDiv.innerHTML = '';
+    return;
+  }
+  const [uid] = selection;
+  updateAnnotationDiv(uid);
+}
+
+function annotationModifiedListener(evt) {
+  updateAnnotationDiv(evt.detail.annotation.annotationUID);
+}
+
+const selectedAnnotation = {
+  annotationUID: '',
+  selection: '',
+};
+
+function toTime(selection) {
+  const range = toRange(selection).map(
+    (it) => Math.round(((it - 1) * 10) / viewport.fps) / 10
+  );
+  if (range[0] === range[1]) {
+    return String(range[0]);
+  }
+  return toSelection(range);
+}
+
+function formatSelections(selections, chosen) {
+  return selections.map((selection) => {
+    if (selection === chosen) {
+      return `<b>${toTime(selection)}</b>`;
+    }
+    return toTime(selection);
+  });
+}
+
+function updateAnnotationDiv(uid, range) {
+  let chosenSelection = toSelection(range);
+  if (!chosenSelection && uid === selectedAnnotation.annotationUID) {
+    // Don't update, probably don't have it.
+    return;
+  }
+  const annotation = cornerstoneTools.annotation.state.getAnnotation(uid);
+  const { metadata, data } = annotation;
+  const { referencedImageId = '', toolName } = metadata;
+  const selectionsString = referencedImageId.substring(
+    referencedImageId.indexOf('/frames/') + 8
+  );
+  const selections = selectionsString.split(',');
+  chosenSelection ||= selections[0];
+  const selectionIndex = selections.indexOf(chosenSelection);
+  selectedAnnotation.annotationUID = uid;
+  selectedAnnotation.selection = selections[selectionIndex];
+  selectionDiv.innerHTML = `
+    <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
+    data.label || data.text
+  }<br />
+    <b>Selection:</b> ${formatSelections(selections, chosenSelection)}<br />
+  `;
+}
+
+function toRange(selection) {
+  if (!selection) {
+    return;
+  }
+  const range = selection.split('-').map((it) => Number(it));
+  if (range.length === 1) {
+    range.push(range[0]);
+  }
+  return range;
+}
+
+function addAnnotationListeners() {
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_SELECTION_CHANGE,
+    annotationSelectionListener
+  );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_MODIFIED,
+    annotationModifiedListener
+  );
+}
+
+function toSelection(range) {
+  if (Array.isArray(range)) {
+    return `${range[0]}-${range[1]}`;
+  } else if (typeof range === 'number') {
+    return String(range);
+  }
+  return range;
+}
+
+function setSelection(uid, current, range) {
+  if (!uid) {
+    return;
+  }
+  const annotation = cornerstoneTools.annotation.state.getAnnotation(uid);
+  const { referencedImageId } = annotation.metadata;
+  const selection = toSelection(range);
+
+  const framesStart = referencedImageId.indexOf('/frames/') + 8;
+  const existingSelection = referencedImageId.substring(framesStart).split(',');
+  const currentIndex = current ? existingSelection.indexOf(current) : -1;
+  const newIndex = existingSelection.indexOf(selection);
+  let returnIndex = existingSelection.length;
+  if (currentIndex !== -1 && (newIndex === -1 || newIndex === currentIndex)) {
+    // Replace the existing index
+    existingSelection[currentIndex] = selection;
+    returnIndex = currentIndex;
+  } else if (currentIndex !== -1) {
+    // Just remove, since we already have the new index
+    existingSelection.splice(currentIndex);
+    returnIndex = currentIndex;
+  } else if (newIndex !== -1) {
+    returnIndex = newIndex;
+    // No-op since it already exists, and we aren't removing anything
+  } else {
+    // Just add to the end
+    existingSelection.push(selection);
+  }
+  annotation.metadata.referencedImageId =
+    referencedImageId.substring(0, framesStart) + existingSelection.join(',');
+  return existingSelection[returnIndex];
+}
+
+/**
+ * Returns the current, next and previous annotation instances.
+ */
+function getRelativeAnnotation(direction = 1) {
+  if (!selectedAnnotation.annotationUID) {
+    return;
+  }
+  const annotation = cornerstoneTools.annotation.state.getAnnotation(
+    selectedAnnotation.annotationUID
+  );
+  const { referencedImageId } = annotation.metadata;
+
+  const framesStart = referencedImageId.indexOf('/frames/') + 8;
+  const existingSelection = getRanges(annotation);
+  const index =
+    existingSelection.indexOf(selectedAnnotation.selection) + direction;
+  if (index >= 0 && index < existingSelection.length) {
+    return {
+      ...selectedAnnotation,
+      selection: existingSelection[index],
+    };
+  }
+  const allAnnotations = cornerstoneTools.annotation.state.getAnnotations(
+    null,
+    viewport.getFrameOfReferenceUID()
+  );
+  const annotationUids = findAnnotationUids(allAnnotations);
+  const newUid =
+    annotationUids[
+      (annotationUids.indexOf(selectedAnnotation.annotationUID) +
+        direction +
+        annotationUids.length * 2) %
+        annotationUids.length
+    ];
+  const newAnnotation = cornerstoneTools.annotation.state.getAnnotation(newUid);
+  const newRanges = getRanges(newAnnotation);
+  return {
+    annotationUID: newUid,
+    selection: newRanges[direction < 0 ? newRanges.length - 1 : 0],
+  };
+}
+
+function getRanges(annotation) {
+  const { referencedImageId } = annotation.metadata;
+  const framesStart = referencedImageId.indexOf('/frames/') + 8;
+  return referencedImageId.substring(framesStart).split(',');
+}
+
+function findAnnotationUids(annotations) {
+  const uids = [];
+  for (const key in annotations) {
+    annotations[key].forEach((annotation) => {
+      uids.push(annotation.annotationUID);
+    });
+  }
+  return uids;
+}
+function navigateRelative(direction = 1) {
+  const next = getRelativeAnnotation(direction);
+  if (!next) {
+    return;
+  }
+  updateAnnotationDiv(next.annotationUID, next.selection);
+  const { selection } = selectedAnnotation;
+  const range = toRange(selection);
+  if (range[0] < range[1]) {
+    viewport.play();
+  } else {
+    viewport.pause();
+  }
+  viewport.setRange(range);
+  const frame = viewport.getFrame();
+  if (frame < range[0] || frame > range[1]) {
+    viewport.setFrame(range[0]);
+  }
+}
+
+function fireUpdateEvent(
+  uid = selectedAnnotation.annotationUID,
+  selection = selectedAnnotation.selection
+) {
+  const range = toRange(selection);
+  viewport.setRange(range);
+  const annotation = cornerstoneTools.annotation.state.getAnnotation(uid);
+
+  const eventDetail = {
+    annotation,
+    viewportId,
+    renderingEngineId,
+  };
+  triggerEvent(eventTarget, toolsEvents.ANNOTATION_MODIFIED, eventDetail);
+  viewport.render();
+}
+
 /**
  * Runs the demo
  */
@@ -159,6 +487,8 @@ async function run() {
   const videoId = imageIds.find(
     (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
   );
+
+  addAnnotationListeners();
 
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);

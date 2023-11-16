@@ -41,6 +41,21 @@ export default interface IVideoViewport extends IViewport {
   getCurrentImageId(): string;
 
   /**
+   * Gets the current frame, 1 based
+   */
+  getFrame(): number;
+
+  /**
+   * Sets the current frame
+   */
+  setFrame(frameNo: number);
+
+  /**
+   * Sets the range of frames for displaying.
+   */
+  setRange(range?: [number, number]);
+
+  /**
    * Centers Pan and resets the zoom for stack viewport.
    */
   resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;

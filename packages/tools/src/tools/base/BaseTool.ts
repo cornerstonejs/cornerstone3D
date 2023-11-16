@@ -196,7 +196,6 @@ abstract class BaseTool implements IBaseTool {
       );
 
       if (!viewports || !viewports.length) {
-        console.log('No viewports');
         return;
       }
 

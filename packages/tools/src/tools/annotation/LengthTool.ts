@@ -814,7 +814,6 @@ class LengthTool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
-        console.log("No image, can't calculate stats");
         continue;
       }
 

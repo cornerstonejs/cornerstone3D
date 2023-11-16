@@ -35,11 +35,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private videoWidth = 0;
   private videoHeight = 0;
 
-  private loop = false;
+  private loop = true;
   private mute = true;
   private isPlaying = false;
   private scrollSpeed = 1;
   private playbackRate = 1;
+  /**
+   * The range is the set of frames to play
+   */
+  private range: [number, number] = [0, 0];
 
   protected metadata;
 
@@ -212,6 +216,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       }
       this.fps = cineRate;
       this.numberOfFrames = numberOfFrames;
+      // 1 based range setting
+      this.setRange([1, numberOfFrames]);
       if (frameNumber !== undefined) {
         this.pause();
         this.setFrame(frameNumber);
@@ -347,6 +353,21 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.setTime((frame - 1) / this.fps);
   }
 
+  public setRange(range: number[]) {
+    if (!range) {
+      this.range = [1, this.numberOfFrames];
+      return;
+    }
+    if (range.length !== 2 || range[0] === range[1]) {
+      return;
+    }
+    this.range = [range[0], range[1]];
+  }
+
+  public getRange(): [number, number] {
+    return this.range;
+  }
+
   public setProperties(props: VideoViewportProperties) {
     if (props.loop !== undefined) {
       this.videoElement.loop = props.loop;
@@ -472,7 +493,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       return true;
     }
     const regions = frames?.[1].split(',');
-    const frame = this.getCurrentFrame();
+    const frame = this.getFrame();
     for (const region of regions) {
       const regionSplit = region.split('-');
       const minRegion = Number(regionSplit[0]);
@@ -573,14 +594,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
       '/frames/1',
       this.isPlaying
         ? `/frames/1-${this.numberOfFrames}`
-        : `/frames/${this.getCurrentFrame()}`
+        : `/frames/${this.getFrame()}`
     );
     return current;
   }
 
-  protected getCurrentFrame() {
+  public getFrame() {
     // Need to round this as the fps/time isn't exact
-    return Math.round(this.videoElement.currentTime * this.fps);
+    return 1 + Math.round(this.videoElement.currentTime * this.fps);
   }
 
   public getCamera(): ICamera {
@@ -816,6 +837,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
       time: this.videoElement.currentTime,
       duration: this.videoElement.duration,
     });
+
+    const frame = this.getFrame();
+    if (this.isPlaying) {
+      if (frame < this.range[0]) {
+        this.setFrame(this.range[0]);
+      } else if (frame > this.range[1]) {
+        if (this.loop) {
+          this.setFrame(this.range[0]);
+        } else {
+          this.pause();
+        }
+      }
+    }
   };
 
   private renderWhilstPlaying = () => {
