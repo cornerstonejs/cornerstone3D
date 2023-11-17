@@ -484,6 +484,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public hasImageURI(imageURI: string) {
+    // TODO - move annotationFrameRange into core so it can be used here.
     const testURI = imageURI.replace(/\/frames\/.*/, '');
     if (this.imageId.indexOf(testURI) === -1) {
       return false;
@@ -492,22 +493,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (!frames?.[1]) {
       return true;
     }
-    const regions = frames?.[1].split(',');
+    const range = frames?.[1].split('-').map((it) => Number(it));
     const frame = this.getFrame();
-    for (const region of regions) {
-      const regionSplit = region.split('-');
-      const minRegion = Number(regionSplit[0]);
-      const maxRegion =
-        regionSplit.length > 1 ? Number(regionSplit[1]) : minRegion;
-
-      if (minRegion === maxRegion && Math.abs(frame - minRegion) < 10) {
-        return true;
-      }
-      if (frame >= minRegion && frame <= maxRegion) {
-        return true;
-      }
+    if (range.length === 1) {
+      return Math.abs(range[0] - frame) < 0.25 * this.fps;
     }
-    return false;
+    return frame >= range[0] && frame <= range[1];
   }
 
   public setVOI(voiRange: VOIRange): void {

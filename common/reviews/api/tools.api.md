@@ -244,7 +244,8 @@ declare namespace annotation {
         selection,
         state_2 as state,
         visibility,
-        FrameOfReferenceSpecificAnnotationManager
+        FrameOfReferenceSpecificAnnotationManager,
+        AnnotationGroup
     }
 }
 export { annotation }
@@ -281,6 +282,64 @@ export abstract class AnnotationDisplayTool extends BaseTool {
     abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
     // (undocumented)
     static toolName: any;
+}
+
+// @public (undocumented)
+class AnnotationFrameRange {
+    // (undocumented)
+    static annotationToFrameRange(annotation: Annotation): FramesRange;
+    // (undocumented)
+    static baseUrl(imageId: string): string;
+    // (undocumented)
+    static baseUrlExtractor: RegExp;
+    // (undocumented)
+    static frameRangeExtractor: RegExp;
+    // (undocumented)
+    static frameRangeToString(range: any): string;
+    // (undocumented)
+    static framesToImageId(imageId: string, range: FramesRange | string): string;
+    // (undocumented)
+    static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static setFrameRange(annotation: Annotation, range: FramesRange | string, eventBase?: {
+        viewportId: any;
+        renderingEngineId: any;
+    }): void;
+}
+
+// @public (undocumented)
+class AnnotationGroup {
+    constructor();
+    // (undocumented)
+    add(annotationUID: string): void;
+    // (undocumented)
+    protected addAnnotationListener: (evt: any) => void;
+    // (undocumented)
+    addListeners(): void;
+    // (undocumented)
+    findNearby(uid: string, direction: 1): string;
+    // (undocumented)
+    has(uid: string): boolean;
+    // (undocumented)
+    get isActive(): boolean;
+    // (undocumented)
+    get isVisible(): boolean;
+    // (undocumented)
+    navigate(viewport: any, direction?: number, currentAnnotationUID?: string): void;
+    // (undocumented)
+    remove(annotationUID: string): void;
+    // (undocumented)
+    removeListeners(): void;
+    // (undocumented)
+    setActive(active?: boolean): void;
+    // (undocumented)
+    setVisible(isVisible: boolean, baseEvent: BaseEventDetail, filter?: (annotationUID: string) => boolean): void;
+    // (undocumented)
+    protected unboundAddAnnotationListener(evt: any): void;
+    // (undocumented)
+    protected unboundVisibleFilter(uid: string): boolean;
+    // (undocumented)
+    visibleFilter: (uid: string) => boolean;
 }
 
 // @public (undocumented)
@@ -4590,7 +4649,8 @@ declare namespace utilities {
         roundNumber,
         pointToString,
         polyDataUtils,
-        voi
+        voi,
+        AnnotationFrameRange as annotationFrameRange
     }
 }
 export { utilities }

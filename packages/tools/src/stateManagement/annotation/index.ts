@@ -4,6 +4,7 @@ import * as selection from './annotationSelection';
 import * as state from './annotationState';
 import * as visibility from './annotationVisibility';
 import FrameOfReferenceSpecificAnnotationManager from './FrameOfReferenceSpecificAnnotationManager';
+import AnnotationGroup from './AnnotationGroup';
 
 export {
   config,
@@ -12,4 +13,5 @@ export {
   state,
   visibility,
   FrameOfReferenceSpecificAnnotationManager,
+  AnnotationGroup,
 };

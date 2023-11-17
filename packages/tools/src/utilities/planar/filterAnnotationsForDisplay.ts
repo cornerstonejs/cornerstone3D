@@ -54,10 +54,13 @@ export default function filterAnnotationsForDisplay(
   } else if (viewport instanceof VideoViewport) {
     const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
 
-    return annotations.filter((toolData) => {
+    return annotations.filter((annotation) => {
+      if (!annotation.isVisible) {
+        return false;
+      }
       return (
-        toolData.metadata.FrameOfReferenceUID === frameOfReferenceUID &&
-        viewport.hasImageURI(toolData.metadata.referencedImageId)
+        annotation.metadata.FrameOfReferenceUID === frameOfReferenceUID &&
+        viewport.hasImageURI(annotation.metadata.referencedImageId)
       );
     });
   } else if (viewport instanceof VolumeViewport) {

@@ -227,6 +227,10 @@
         "name": "Video Navigation",
         "description": "Navigation of video playback"
       },
+      "videoColor": {
+        "name": "Video Color Control",
+        "description": "Video Color Correction and Brightness/Contrast"
+      },
       "videoTools": {
         "name": "Video Tools",
         "description": "Video annotation tools"
