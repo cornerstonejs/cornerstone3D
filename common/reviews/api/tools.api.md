@@ -325,8 +325,6 @@ class AnnotationGroup {
     // (undocumented)
     get isVisible(): boolean;
     // (undocumented)
-    navigate(viewport: any, direction?: number, currentAnnotationUID?: string): void;
-    // (undocumented)
     remove(annotationUID: string): void;
     // (undocumented)
     removeListeners(): void;
