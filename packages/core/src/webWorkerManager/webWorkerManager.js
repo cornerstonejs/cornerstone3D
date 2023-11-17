@@ -4,66 +4,97 @@ import { RequestPoolManager } from '../requestPool/requestPoolManager';
 
 class CentralizedWorkerManager {
   constructor() {
-    this.workerTypes = {};
-    this.currentWorkerIndices = {};
+    this.workerRegistry = {};
     this.workerPoolManager = new RequestPoolManager('webworker');
-    this.workerLoadCounters = {};
-    window.loadCounters = this.workerLoadCounters;
+    this.checkIntervalForIdleWorkers = 1000;
+  }
+
+  setCheckIntervalForIdleWorkers(value) {
+    this.checkIntervalForIdleWorkers = value;
   }
 
   registerWorker(workerName, workerFn, options = {}) {
-    const { maxWorkerInstances = 1, overwrite = false } = options;
+    const {
+      maxWorkerInstances = 1,
+      overwrite = false,
+      autoTerminateOnIdle = false,
+    } = options;
 
-    if (this.workerTypes[workerName] && !overwrite) {
+    if (this.workerRegistry[workerName] && !overwrite) {
       console.warn(`Worker type '${workerName}' is already registered...`);
       return;
     }
 
-    this.workerLoadCounters[workerName] = Array(maxWorkerInstances).fill(0);
-
-    this.workerTypes[workerName] = {
-      maxWorkers: maxWorkerInstances,
+    const workerProperties = {
+      workerFn: null,
+      interValId: null,
       instances: [],
+      loadCounters: [],
+      lastActiveTime: [],
+      // used for termination
+      nativeWorkers: [],
     };
 
-    this.currentWorkerIndices[workerName] = 0;
+    if ((autoTerminateOnIdle && !workerProperties.interValId) || overwrite) {
+      const interValId = setInterval(() => {
+        this.terminateIdleWorkers(workerName, autoTerminateOnIdle);
+      }, this.checkIntervalForIdleWorkers);
+
+      workerProperties.interValId = interValId;
+    }
+
+    workerProperties.loadCounters = Array(maxWorkerInstances).fill(0);
+    workerProperties.lastActiveTime = Array(maxWorkerInstances).fill(null);
 
     for (let i = 0; i < maxWorkerInstances; i++) {
       const worker = workerFn();
-      const workerWrapper = Comlink.wrap(worker);
-      this.workerTypes[workerName].instances.push(workerWrapper);
+      workerProperties.instances.push(Comlink.wrap(worker));
+      workerProperties.nativeWorkers.push(worker);
+      workerProperties.workerFn = workerFn;
     }
+
+    this.workerRegistry[workerName] = workerProperties;
   }
 
   getNextWorkerAPI(workerName) {
-    if (!this.workerTypes[workerName]) {
+    const workerProperties = this.workerRegistry[workerName];
+
+    if (!workerProperties) {
       console.error(`Worker type '${workerName}' is not registered.`);
       return null;
     }
 
-    if (!this.workerLoadCounters[workerName]) {
-      this.workerLoadCounters[workerName] = [];
-    }
-
     // Find the worker with the minimum load.
-    const workerInstances = this.workerTypes[workerName].instances;
+    const workerInstances = workerProperties.instances.filter(
+      (instance) => instance !== null
+    );
 
     let minLoadIndex = 0;
-    let minLoadValue = this.workerLoadCounters[workerName][0] || 0;
+    let minLoadValue = workerProperties.loadCounters[0] || 0;
 
     for (let i = 1; i < workerInstances.length; i++) {
-      const currentLoadValue = this.workerLoadCounters[workerName][i] || 0;
+      const currentLoadValue = workerProperties.loadCounters[i] || 0;
       if (currentLoadValue < minLoadValue) {
         minLoadIndex = i;
         minLoadValue = currentLoadValue;
       }
     }
 
+    // Check and recreate the worker if it was terminated.
+    if (workerProperties.instances[minLoadIndex] === null) {
+      const worker = workerProperties.workerFn();
+      workerProperties.instances[minLoadIndex] = Comlink.wrap(worker);
+      workerProperties.nativeWorkers[minLoadIndex] = worker;
+    }
+
     // Update the load counter.
-    this.workerLoadCounters[workerName][minLoadIndex]++;
+    workerProperties.loadCounters[minLoadIndex]++;
 
     // return the worker that has the minimum load.
-    return { api: workerInstances[minLoadIndex], index: minLoadIndex };
+    return {
+      api: workerProperties.instances[minLoadIndex],
+      index: minLoadIndex,
+    };
   }
 
   executeTask(
@@ -86,6 +117,10 @@ class CentralizedWorkerManager {
 
         try {
           const results = await api[methodName](args);
+
+          const workerProperties = this.workerRegistry[workerName];
+          workerProperties.lastActiveTime[index] = Date.now();
+
           resolve(results);
         } catch (err) {
           console.error(
@@ -94,7 +129,7 @@ class CentralizedWorkerManager {
           );
           reject(err);
         } finally {
-          this.workerLoadCounters[workerName][index]--;
+          this.workerRegistry[workerName].loadCounters[index]--;
         }
       };
 
@@ -107,19 +142,44 @@ class CentralizedWorkerManager {
     });
   }
 
+  terminateIdleWorkers(workerName, idleTimeThreshold) {
+    const workerProperties = this.workerRegistry[workerName];
+
+    const now = Date.now();
+
+    workerProperties.instances.forEach((workerInstance, index) => {
+      // If the worker has not yet executed any task, skip this iteration
+      if (workerProperties.lastActiveTime[index] == null) {
+        return;
+      }
+
+      const idleTime = now - workerProperties.lastActiveTime[index];
+
+      // If the worker has been idle for longer than the threshold and it exists
+      if (idleTime > idleTimeThreshold && workerInstance !== null) {
+        workerInstance[Comlink.releaseProxy]();
+        workerProperties.nativeWorkers[index].terminate();
+
+        workerProperties.instances[index] = null;
+        workerProperties.lastActiveTime[index] = null;
+      }
+    });
+  }
+
   terminate(workerName) {
-    if (!this.workerTypes[workerName]) {
+    const workerProperties = this.workerRegistry[workerName];
+    if (!workerProperties) {
       console.error(`Worker type '${workerName}' is not registered.`);
       return;
     }
 
-    this.workerTypes[workerName].instances.forEach((workerInstance) => {
+    workerProperties.instances.forEach((workerInstance) => {
       workerInstance[Comlink.releaseProxy]();
-      workerInstance.terminate();
     });
 
-    delete this.workerTypes[workerName];
-    delete this.currentWorkerIndices[workerName];
+    workerProperties.nativeWorkers.forEach((worker) => {
+      worker.terminate();
+    });
   }
 }
 

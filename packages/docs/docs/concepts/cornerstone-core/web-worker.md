@@ -67,6 +67,13 @@ Arguments are
   - `maxWorkerInstances(default=1)`: the maximum number of instances of this worker type that can be created. More instance mean if there are multiple calls
     to the same function they can be offloaded to the other instances of the worker type.
   - `overwrite (default=false)`: whether to overwrite an existing worker type if already registered
+  - `autoTerminationOnIdle` (default: false) can be used to terminate a worker after a certain amount of idle time (in milliseconds) has passed. This is useful for workers that are not used frequently, and you want to terminate them after a specific period of time. on the manager.
+
+:::tip
+In case of `autoTerminationOnIdle` the manager checks every 1 seconds to see if a worker is idle. If you want to change this interval you can use the method `setCheckIntervalForIdleWorkers` on the manager. The default is 1 second.
+
+Note that if a worker is terminated it does not mean the worker is destroyed from the manager. In fact any subsequent call to the worker will create a new instance of the worker.
+:::
 
 So to register the worker we created above, we would do the following:
 
@@ -90,6 +97,7 @@ const workerManager = getWebWorkerManager();
 const options = {
   // maxWorkerInstances: 1,
   // overwrite: false
+  // autoTerminationOnIdle: 10000
 };
 
 workerManager.registerWorker('ohif-worker', workerFn, options);
