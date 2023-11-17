@@ -25,9 +25,13 @@ class CentralizedWorkerManager {
       return;
     }
 
+    if (overwrite && this.workerRegistry[workerName]?.idleCheckIntervalId) {
+      clearInterval(this.workerRegistry[workerName].idleCheckIntervalId);
+    }
+
     const workerProperties = {
       workerFn: null,
-      interValId: null,
+      idleCheckIntervalId: null,
       instances: [],
       loadCounters: [],
       lastActiveTime: [],
@@ -35,12 +39,15 @@ class CentralizedWorkerManager {
       nativeWorkers: [],
     };
 
-    if ((autoTerminateOnIdle && !workerProperties.interValId) || overwrite) {
-      const interValId = setInterval(() => {
+    if (
+      (autoTerminateOnIdle && !workerProperties.idleCheckIntervalId) ||
+      overwrite
+    ) {
+      const idleCheckIntervalId = setInterval(() => {
         this.terminateIdleWorkers(workerName, autoTerminateOnIdle);
       }, this.checkIntervalForIdleWorkers);
 
-      workerProperties.interValId = interValId;
+      workerProperties.idleCheckIntervalId = idleCheckIntervalId;
     }
 
     workerProperties.loadCounters = Array(maxWorkerInstances).fill(0);
@@ -88,7 +95,7 @@ class CentralizedWorkerManager {
     }
 
     // Update the load counter.
-    workerProperties.loadCounters[minLoadIndex]++;
+    workerProperties.loadCounters[minLoadIndex] += 1;
 
     // return the worker that has the minimum load.
     return {
