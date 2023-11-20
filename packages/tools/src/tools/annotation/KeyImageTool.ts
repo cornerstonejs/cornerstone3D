@@ -189,7 +189,7 @@ class KeyImageTool extends AnnotationTool {
     const { data } = annotation;
 
     const { canvasPosition, canvasSize } = this.configuration;
-    if (!canvasPosition?.length === 0) {
+    if (!canvasPosition?.length) {
       return false;
     }
     if (

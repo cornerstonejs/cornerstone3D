@@ -2970,6 +2970,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     end(): Promise<void>;
     // (undocumented)
+    static frameRangeExtractor: RegExp;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getCurrentImageId(): string;

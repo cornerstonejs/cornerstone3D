@@ -287,19 +287,15 @@ export abstract class AnnotationDisplayTool extends BaseTool {
 // @public (undocumented)
 class AnnotationFrameRange {
     // (undocumented)
-    static annotationToFrameRange(annotation: Annotation): FramesRange;
+    protected static frameRangeExtractor: RegExp;
     // (undocumented)
-    static baseUrl(imageId: string): string;
+    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
     // (undocumented)
-    static baseUrlExtractor: RegExp;
+    static framesToString(range: any): string;
     // (undocumented)
-    static frameRangeExtractor: RegExp;
+    static getFrameRange(annotation: Annotation): number | [number, number];
     // (undocumented)
-    static frameRangeToString(range: any): string;
-    // (undocumented)
-    static framesToImageId(imageId: string, range: FramesRange | string): string;
-    // (undocumented)
-    static imageIdToFrames(imageId: string): FramesRange;
+    protected static imageIdToFrames(imageId: string): FramesRange;
     // (undocumented)
     static setFrameRange(annotation: Annotation, range: FramesRange | string, eventBase?: {
         viewportId: any;
@@ -311,29 +307,19 @@ class AnnotationFrameRange {
 class AnnotationGroup {
     constructor();
     // (undocumented)
-    add(annotationUID: string): void;
+    add(...annotationUIDs: string[]): void;
     // (undocumented)
-    protected addAnnotationListener: (evt: any) => void;
-    // (undocumented)
-    addListeners(): void;
+    clear(): void;
     // (undocumented)
     findNearby(uid: string, direction: 1): string;
     // (undocumented)
     has(uid: string): boolean;
     // (undocumented)
-    get isActive(): boolean;
-    // (undocumented)
     get isVisible(): boolean;
     // (undocumented)
-    remove(annotationUID: string): void;
-    // (undocumented)
-    removeListeners(): void;
-    // (undocumented)
-    setActive(active?: boolean): void;
+    remove(...annotationUIDs: string[]): void;
     // (undocumented)
     setVisible(isVisible: boolean, baseEvent: BaseEventDetail, filter?: (annotationUID: string) => boolean): void;
-    // (undocumented)
-    protected unboundAddAnnotationListener(evt: any): void;
     // (undocumented)
     protected unboundVisibleFilter(uid: string): boolean;
     // (undocumented)
@@ -2423,7 +2409,7 @@ export class KeyImageTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
     // (undocumented)
