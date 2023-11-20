@@ -43,7 +43,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    * The range is the set of frames to play
    */
-  private range: [number, number] = [0, 0];
+  private frameRange: [number, number] = [0, 0];
 
   protected metadata;
 
@@ -190,12 +190,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * Requirements are to have the imageUrlModule in the metadata
    * with the rendered endpoint being the raw video in video/mp4 format.
    */
-  public setVideo(
-    imageIds: string | string[],
-    frameNumber?: number
-  ): Promise<unknown> {
-    this.imageId = Array.isArray(imageIds) ? imageIds[0] : imageIds;
-    const { imageId } = this;
+  public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
+    this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
     const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
@@ -217,10 +213,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.fps = cineRate;
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
-      this.setRange([1, numberOfFrames]);
+      this.setFrameRange([1, numberOfFrames]);
       if (frameNumber !== undefined) {
         this.pause();
-        this.setFrame(frameNumber);
+        this.setFrameNumber(frameNumber);
       }
     });
   }
@@ -349,23 +345,29 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   // Sets the frame number - note according to DICOM, this is 1 based
-  public async setFrame(frame: number) {
+  public async setFrameNumber(frame: number) {
     this.setTime((frame - 1) / this.fps);
   }
 
-  public setRange(range: number[]) {
-    if (!range) {
-      this.range = [1, this.numberOfFrames];
+  /**
+   * Sets the playback frame range.  The video will play over the given set
+   * of frames (assuming it is playing).
+   * @param frameRange - the minimum to maximum (inclusive) frames to play over
+   * @returns
+   */
+  public setFrameRange(frameRange: number[]) {
+    if (!frameRange) {
+      this.frameRange = [1, this.numberOfFrames];
       return;
     }
-    if (range.length !== 2 || range[0] === range[1]) {
+    if (frameRange.length !== 2 || frameRange[0] === frameRange[1]) {
       return;
     }
-    this.range = [range[0], range[1]];
+    this.frameRange = [frameRange[0], frameRange[1]];
   }
 
-  public getRange(): [number, number] {
-    return this.range;
+  public getFrameRange(): [number, number] {
+    return this.frameRange;
   }
 
   public setProperties(props: VideoViewportProperties) {
@@ -494,7 +496,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       return true;
     }
     const range = frames?.[1].split('-').map((it) => Number(it));
-    const frame = this.getFrame();
+    const frame = this.getFrameNumber();
     if (range.length === 1) {
       return Math.abs(range[0] - frame) < 0.25 * this.fps;
     }
@@ -585,12 +587,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
       '/frames/1',
       this.isPlaying
         ? `/frames/1-${this.numberOfFrames}`
-        : `/frames/${this.getFrame()}`
+        : `/frames/${this.getFrameNumber()}`
     );
     return current;
   }
 
-  public getFrame() {
+  public getFrameNumber() {
     // Need to round this as the fps/time isn't exact
     return 1 + Math.round(this.videoElement.currentTime * this.fps);
   }
@@ -829,13 +831,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
       duration: this.videoElement.duration,
     });
 
-    const frame = this.getFrame();
+    const frame = this.getFrameNumber();
     if (this.isPlaying) {
-      if (frame < this.range[0]) {
-        this.setFrame(this.range[0]);
-      } else if (frame > this.range[1]) {
+      if (frame < this.frameRange[0]) {
+        this.setFrameNumber(this.frameRange[0]);
+      } else if (frame > this.frameRange[1]) {
         if (this.loop) {
-          this.setFrame(this.range[0]);
+          this.setFrameNumber(this.frameRange[0]);
         } else {
           this.pause();
         }

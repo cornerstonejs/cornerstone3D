@@ -1841,7 +1841,9 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     getCurrentImageId(): string;
     // (undocumented)
-    getFrame(): number;
+    getFrameNumber(): number;
+    // (undocumented)
+    getFrameRange(): [number, number];
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
@@ -1855,13 +1857,13 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     resize: () => void;
     // (undocumented)
-    setFrame(frameNo: number): any;
+    setFrameNumber(frameNo: number): any;
+    // (undocumented)
+    setFrameRange(range?: [number, number]): any;
     // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setRange(range?: [number, number]): any;
-    // (undocumented)
-    setVideo: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
+    setVideo: (imageIds: string, imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
     setVideoURL: (url: string) => void;
 }
@@ -2972,9 +2974,11 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCurrentImageId(): string;
     // (undocumented)
-    getFrame(): number;
+    getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getFrameRange(): [number, number];
     // (undocumented)
     getImageData(): {
         dimensions: any;
@@ -3005,8 +3009,6 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     getPan(): Point2;
     // (undocumented)
     getProperties: () => VideoViewportProperties;
-    // (undocumented)
-    getRange(): [number, number];
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -3042,19 +3044,19 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected setColorTransform(): void;
     // (undocumented)
-    setFrame(frame: number): Promise<void>;
+    setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    setFrameRange(frameRange: number[]): void;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
     setProperties(props: VideoViewportProperties): void;
     // (undocumented)
-    setRange(range: number[]): void;
-    // (undocumented)
     setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
-    setVideo(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
+    setVideo(imageId: string, frameNumber?: number): Promise<unknown>;
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)

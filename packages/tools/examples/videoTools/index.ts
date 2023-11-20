@@ -95,13 +95,14 @@ rangeElement.oninput = () => {
 };
 
 const instructions = document.createElement('p');
-instructions.innerText = `Playback speed to change CINE playback speed
-Scroll Distance to change amount scrolled on next/prev button or wheel
-Left Drag: Up/down scroll images
-Middle Click or Ctrl+Left: Pan
-Shift+Left: Zoom
-Right Click: Redaction
-Mouse Wheel: Stack Scroll';
+instructions.innerText = `Play/Pause button will toggle the playing of video
+Clear Frame Range clears and selected from range on playback
+Select annotation drop down chooses the tool to use
+Annotation navigation will choose next/previous annotation in the group
+Clicking on the group button switches the displayed annotation group and the group annotations are added to.
+The single image selector sets the annotation to apply to just the current image (shown on +/- 5 frames)
+The [ and ] indicators beside that add left/right boundaries to the image to choose a range.
+Delete annotation will remove an annotation
 `;
 
 content.append(instructions);
@@ -120,6 +121,15 @@ const playButton = addButtonToToolbar({
   id: 'play',
   title: 'Pause',
   onClick: (evt) => togglePlay(),
+});
+
+addButtonToToolbar({
+  id: 'Clear',
+  title: 'Clear Frame Range',
+  onClick() {
+    viewport.setFrameRange(null);
+    viewport.play();
+  },
 });
 
 const toolsNames = [
@@ -164,7 +174,7 @@ const nextButton = addButtonToToolbar({
   id: 'Next',
   title: '<',
   onClick() {
-    navigateRelative(1);
+    selectNextAnnotation(1);
   },
 });
 
@@ -174,16 +184,7 @@ addButtonToToolbar({
   id: 'Previous',
   title: '>',
   onClick() {
-    navigateRelative(-1);
-  },
-});
-
-addButtonToToolbar({
-  id: 'Clear',
-  title: 'Clear Range',
-  onClick() {
-    viewport.setRange(null);
-    viewport.play();
+    selectNextAnnotation(-1);
   },
 });
 
@@ -221,7 +222,7 @@ addButtonToToolbar({
     if (annotation) {
       const rangeSelection =
         annotationFrameRange.annotationToFrameRange(annotation);
-      const frame = viewport.getFrame();
+      const frame = viewport.getFrameNumber();
       const range = Array.isArray(rangeSelection)
         ? rangeSelection
         : [rangeSelection, viewport.numberOfFrames];
@@ -232,7 +233,7 @@ addButtonToToolbar({
         range as [number, number],
         baseEventDetail
       );
-      viewport.setRange(range);
+      viewport.setFrameRange(range);
       viewport.render();
     }
   },
@@ -247,7 +248,7 @@ addButtonToToolbar({
       togglePlay(false);
       annotationFrameRange.setFrameRange(
         annotation,
-        viewport.getFrame(),
+        viewport.getFrameNumber(),
         baseEventDetail
       );
       viewport.render();
@@ -263,10 +264,10 @@ addButtonToToolbar({
     if (annotation) {
       const rangeSelection =
         annotationFrameRange.annotationToFrameRange(annotation);
-      const frame = viewport.getFrame();
+      const frame = viewport.getFrameNumber();
       const range = Array.isArray(rangeSelection)
         ? rangeSelection
-        : [1, rangeSelection];
+        : [rangeSelection, viewport.getNumberOfSlices()];
       range[1] = frame;
       range[0] = Math.min(frame, range[0]);
       annotationFrameRange.setFrameRange(
@@ -274,7 +275,7 @@ addButtonToToolbar({
         range as [number, number],
         baseEventDetail
       );
-      viewport.setRange(range);
+      viewport.setFrameRange(range);
       viewport.render();
     }
   },
@@ -348,7 +349,7 @@ function addAnnotationListeners() {
   group2.addListeners();
 }
 
-function navigateRelative(direction) {
+function selectNextAnnotation(direction) {
   const uid = selectedAnnotation.annotationUID;
   const nextUid =
     activeGroup.findNearby(uid, direction) ||
@@ -363,13 +364,13 @@ function navigateRelative(direction) {
   }
   const range = annotationFrameRange.annotationToFrameRange(annotation);
   if (Array.isArray(range)) {
-    viewport.setRange(range);
+    viewport.setFrameRange(range);
     togglePlay(true);
-    viewport.setFrame(range[0]);
+    viewport.setFrameNumber(range[0]);
   } else {
-    viewport.setRange(null);
+    viewport.setFrameRange(null);
     togglePlay(false);
-    viewport.setFrame(range);
+    viewport.setFrameNumber(range);
   }
 }
 

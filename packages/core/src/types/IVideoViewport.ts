@@ -19,11 +19,26 @@ export default interface IVideoViewport extends IViewport {
    */
   getProperties: () => VideoViewportProperties;
 
-  setVideo: (
-    imageIds: string | string[],
-    imageIdIndex?: number
-  ) => Promise<unknown>;
+  /**
+   * Sets the video to play.
+   * The video should have at least some metadata in the metadata provider,
+   * including:
+   *   * study/series/sop common module for UIDs
+   *   * `cineModule` for information on number of frames and playback rate
+   *   * `imageUrlModule` - to get the URL for the image under the `rendered` attribute
+   *
+   * Without these, other tools requiring metadata wont work, although basic
+   * playback does work if the setVideoURL is used instead.
+   */
+  setVideo: (imageIds: string, imageIdIndex?: number) => Promise<unknown>;
 
+  /**
+   * Displays a raw video, without any metadata associated with it.  Plays back,
+   * but does not permit tools to apply to the viewport, which requires providing
+   * additional metadata for the study.
+   *
+   * @param url - to display
+   */
   setVideoURL: (url: string) => void;
 
   play: () => void;
@@ -43,17 +58,22 @@ export default interface IVideoViewport extends IViewport {
   /**
    * Gets the current frame, 1 based
    */
-  getFrame(): number;
+  getFrameNumber(): number;
 
   /**
    * Sets the current frame
    */
-  setFrame(frameNo: number);
+  setFrameNumber(frameNo: number);
 
   /**
-   * Sets the range of frames for displaying.
+   * Sets the range of frames for displaying.  This is the range of frames
+   * that are shown/looped over when the video is playing.
+   * Note that ability to playback a frame range depends on the server
+   * implementing byte range requests, OR the video being easily cached in memory.
    */
-  setRange(range?: [number, number]);
+  setFrameRange(range?: [number, number]);
+
+  getFrameRange(): [number, number];
 
   /**
    * Centers Pan and resets the zoom for stack viewport.
