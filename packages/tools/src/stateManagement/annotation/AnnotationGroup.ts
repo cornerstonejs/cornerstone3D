@@ -14,14 +14,11 @@ export type BaseEventDetail = {
 export default class AnnotationGroup {
   private annotationUIDs = new Set<string>();
   private _isVisible = true;
-  private _isActive = true;
 
   public visibleFilter: (uid: string) => boolean;
-  protected addAnnotationListener: (evt) => void;
 
   constructor() {
     this.visibleFilter = this.unboundVisibleFilter.bind(this);
-    this.addAnnotationListener = this.unboundAddAnnotationListener.bind(this);
   }
 
   /**
@@ -30,18 +27,6 @@ export default class AnnotationGroup {
    */
   protected unboundVisibleFilter(uid: string): boolean {
     return !this._isVisible || !this.annotationUIDs.has(uid);
-  }
-
-  /**
-   * Event handler for adding new items to this group
-   * Does NOT add modified entries.
-   */
-  protected unboundAddAnnotationListener(evt) {
-    if (!this._isActive) {
-      return;
-    }
-    const { annotationUID } = evt.detail.annotation || evt.detail;
-    this.annotationUIDs.add(annotationUID);
   }
 
   public has(uid: string): boolean {
@@ -86,10 +71,6 @@ export default class AnnotationGroup {
     return this._isVisible;
   }
 
-  public get isActive() {
-    return this._isActive;
-  }
-
   /** Finds the nearby/next annotation in the given direction */
   public findNearby(uid: string, direction: 1) {
     if (!this._isVisible) {
@@ -114,17 +95,6 @@ export default class AnnotationGroup {
   }
 
   /**
-   * The active group is the group that gets automatically added to when annotations
-   * are added or removed.
-   * It is possible for multiple groups to be active, in which case each one will
-   * get added to on new or modified views.
-   * @param active
-   */
-  public setActive(active = true) {
-    this._isActive = active;
-  }
-
-  /**
    * Adds the annotation to the group
    * Does NOT change the visibility status of the annotation.
    */
@@ -138,26 +108,5 @@ export default class AnnotationGroup {
    */
   public remove(annotationUID: string) {
     this.annotationUIDs.delete(annotationUID);
-  }
-
-  /**
-   * Adds listeners to automatically add/remove from this group when the group
-   * is active.
-   */
-  public addListeners() {
-    eventTarget.addEventListener(
-      Events.ANNOTATION_ADDED,
-      this.addAnnotationListener
-    );
-  }
-
-  /**
-   * Removes listeners that add to this group on creating a new instance.
-   */
-  public removeListeners() {
-    eventTarget.removeEventListener(
-      Events.ANNOTATION_ADDED,
-      this.addAnnotationListener
-    );
   }
 }

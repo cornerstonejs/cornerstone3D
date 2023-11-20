@@ -12,11 +12,10 @@ import { Annotation } from '../types';
 export type FramesRange = [number, number] | number;
 
 export default class AnnotationFrameRange {
-  public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
-  public static baseUrlExtractor =
-    /(videoId:|imageId:|volumeId:)?([a-zA-Z]*:)?/;
+  protected static frameRangeExtractor =
+    /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
-  public static imageIdToFrames(imageId: string): FramesRange {
+  protected static imageIdToFrames(imageId: string): FramesRange {
     const match = imageId.match(this.frameRangeExtractor);
     if (!match || !match[2]) {
       return null;
@@ -28,14 +27,14 @@ export default class AnnotationFrameRange {
     return range as FramesRange;
   }
 
-  public static frameRangeToString(range) {
+  public static framesToString(range) {
     if (Array.isArray(range)) {
       return `${range[0]}-${range[1]}`;
     }
     return String(range);
   }
 
-  public static framesToImageId(
+  protected static framesToImageId(
     imageId: string,
     range: FramesRange | string
   ): string {
@@ -43,13 +42,19 @@ export default class AnnotationFrameRange {
     if (!match || !match[2]) {
       return null;
     }
-    const newRangeString = this.frameRangeToString(range);
+    const newRangeString = this.framesToString(range);
     return imageId.replace(
       this.frameRangeExtractor,
       `${match[1]}${newRangeString}`
     );
   }
 
+  /**
+   * Sets the range of frames to associate with the given annotation.
+   * The range can be a single frame number (1 based according to DICOM),
+   * or a range of values in the format `min-max` where min, max are inclusive
+   * Modifies the referencedImageID to specify the updated URL.
+   */
   public static setFrameRange(
     annotation: Annotation,
     range: FramesRange | string,
@@ -67,18 +72,9 @@ export default class AnnotationFrameRange {
     triggerEvent(eventTarget, Events.ANNOTATION_MODIFIED, eventDetail);
   }
 
-  public static annotationToFrameRange(annotation: Annotation) {
+  public static getFrameRange(
+    annotation: Annotation
+  ): number | [number, number] {
     return this.imageIdToFrames(annotation.metadata.referencedImageId);
-  }
-
-  /**
-   * Returns an imageId without:
-   * * Any prefixes such as imageId, videoId etc.
-   * * The /frames/... part (or anything after it).
-   */
-  public static baseUrl(imageId: string): string {
-    const match = imageId.match(this.frameRangeExtractor);
-    const beforeFrames = imageId.substring(0, match?.index);
-    return beforeFrames.replace(this.baseUrlExtractor, '');
   }
 }

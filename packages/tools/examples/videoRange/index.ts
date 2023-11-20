@@ -21,21 +21,11 @@ console.warn(
 );
 
 const {
-  LengthTool,
   KeyImageTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
-  ArrowAnnotateTool,
-  PlanarFreehandROITool,
+  VideoRedactionTool,
 
   PanTool,
   ZoomTool,
-  VideoRedactionTool,
   StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
@@ -51,8 +41,8 @@ const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Video Tools',
-  'Show a video viewport with controls to allow it to be navigated and zoom/panned'
+  'Video Range and Key Images Examples',
+  'Show a video viewport with controls to allow it to specify ranges and key images'
 );
 
 const content = document.getElementById('content');
@@ -61,7 +51,7 @@ const content = document.getElementById('content');
 const selectionDiv = document.createElement('div');
 selectionDiv.id = 'selection';
 selectionDiv.style.width = '90%';
-selectionDiv.style.height = '1.5em';
+selectionDiv.style.height = '3em';
 content.appendChild(selectionDiv);
 
 // ************* Create the cornerstone element.
@@ -90,12 +80,9 @@ rangeElement.oninput = () => {
 const instructions = document.createElement('p');
 instructions.innerText = `Play/Pause button will toggle the playing of video
 Clear Frame Range clears and selected from range on playback
-Select annotation drop down chooses the tool to use
+Click the viewer to apply a key image (range if playing, frame if still).
 Annotation navigation will choose next/previous annotation in the group
-Clicking on the group button switches the displayed annotation group and the group annotations are added to.
-The single image selector sets the annotation to apply to just the current image (shown on +/- 5 frames)
-The [ and ] indicators beside that add left/right boundaries to the image to choose a range.
-Delete annotation will remove an annotation
+Select start/current/end range to set the start of the range, the current image and the end range
 `;
 
 content.append(instructions);
@@ -116,20 +103,16 @@ const playButton = addButtonToToolbar({
   onClick: (evt) => togglePlay(),
 });
 
-const toolsNames = [
-  LengthTool.toolName,
-  KeyImageTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-  PlanarFreehandROITool.toolName,
-  VideoRedactionTool.toolName,
-];
+addButtonToToolbar({
+  id: 'Clear',
+  title: 'Clear Frame Range',
+  onClick() {
+    viewport.setFrameRange(null);
+    viewport.play();
+  },
+});
+
+const toolsNames = [KeyImageTool.toolName, VideoRedactionTool.toolName];
 let selectedToolName = toolsNames[0];
 
 addDropdownToToolbar({
@@ -154,6 +137,24 @@ addDropdownToToolbar({
   },
 });
 
+const nextButton = addButtonToToolbar({
+  id: 'Next',
+  title: '<',
+  onClick() {
+    selectNextAnnotation(1);
+  },
+});
+
+nextButton.parentElement.appendChild(document.createTextNode('Annotation'));
+
+addButtonToToolbar({
+  id: 'Previous',
+  title: '>',
+  onClick() {
+    selectNextAnnotation(-1);
+  },
+});
+
 function togglePlay(toggle = undefined) {
   if (toggle === undefined) {
     toggle = viewport.togglePlayPause();
@@ -166,14 +167,66 @@ function togglePlay(toggle = undefined) {
 }
 
 addButtonToToolbar({
-  id: 'Delete',
-  title: 'Delete Annotation',
+  id: 'Set Range [',
+  title: 'Start Range',
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      cornerstoneTools.annotation.state.removeAnnotation(
-        annotation.annotationUID
+      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
+      const frame = viewport.getFrameNumber();
+      const range = Array.isArray(rangeSelection)
+        ? rangeSelection
+        : [rangeSelection, viewport.numberOfFrames];
+      range[0] = frame;
+      range[1] = Math.max(frame, range[1]);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        range as [number, number],
+        baseEventDetail
       );
+      viewport.setFrameRange(range);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Set Current',
+  title: 'Current Image',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      togglePlay(false);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        viewport.getFrameNumber(),
+        baseEventDetail
+      );
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'End Range',
+  title: 'End Range',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
+      const frame = viewport.getFrameNumber();
+      const range = Array.isArray(rangeSelection)
+        ? rangeSelection
+        : [rangeSelection, viewport.getNumberOfSlices()];
+      range[1] = frame;
+      range[0] = Math.min(frame, range[0]);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        range as [number, number],
+        baseEventDetail
+      );
+      viewport.setFrameRange(range);
+      viewport.render();
     }
   },
 });
@@ -189,6 +242,8 @@ function annotationModifiedListener(evt) {
 const selectedAnnotation = {
   annotationUID: '',
 };
+
+const activeGroup = new cornerstoneTools.annotation.AnnotationGroup();
 
 function updateAnnotationDiv(uid) {
   const annotation = cornerstoneTools.annotation.state.getAnnotation(uid);
@@ -206,7 +261,10 @@ function updateAnnotationDiv(uid) {
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
     data.label || data.text
-  } ${annotation.isVisible ? 'visible' : 'not visible'}
+  } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
+    <b>Range:</b> Frames: ${rangeArr.join('-')} Times ${rangeArr
+    .map((it) => Math.round((it * 10) / fps) / 10)
+    .join('-')}<br />
   `;
 }
 
@@ -229,6 +287,35 @@ function addAnnotationListeners() {
     toolsEvents.ANNOTATION_COMPLETED,
     annotationModifiedListener
   );
+  eventTarget.addEventListener(toolsEvents.ANNOTATION_ADDED, (evt) => {
+    const { detail } = evt;
+    activeGroup.add(detail.annotation?.annotationUID || detail.annotationUID);
+  });
+}
+
+function selectNextAnnotation(direction) {
+  const uid = selectedAnnotation.annotationUID;
+  const nextUid =
+    activeGroup.findNearby(uid, direction) ||
+    activeGroup.findNearby(null, direction);
+  updateAnnotationDiv(nextUid);
+  if (!nextUid) {
+    return;
+  }
+  const annotation = cornerstoneTools.annotation.state.getAnnotation(nextUid);
+  if (!annotation) {
+    return;
+  }
+  const range = annotationFrameRange.getFrameRange(annotation);
+  if (Array.isArray(range)) {
+    viewport.setFrameRange(range);
+    togglePlay(true);
+    viewport.setFrameNumber(range[0]);
+  } else {
+    viewport.setFrameRange(null);
+    togglePlay(false);
+    viewport.setFrameNumber(range);
+  }
 }
 
 /**
@@ -255,21 +342,11 @@ async function run() {
 
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
-  cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
-  cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -278,24 +355,14 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
 
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  toolGroup.setToolActive(KeyImageTool.toolName, {
+  toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary,
@@ -303,7 +370,7 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(KeyImageTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Middle Click

@@ -234,6 +234,14 @@
       "videoTools": {
         "name": "Video Tools",
         "description": "Video annotation tools"
+      },
+      "videoGroup": {
+        "name": "Video Annotation Grouping",
+        "description": "Annotation grouping tools"
+      },
+      "videoRange": {
+        "name": "Video Range Selection",
+        "description": "Video range selection"
       }
     },
     "tools-segmentation" : {

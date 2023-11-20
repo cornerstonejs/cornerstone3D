@@ -25,6 +25,8 @@ import { getOrCreateCanvas } from './helpers';
  * looking into an internal scene, and an associated target output `canvas`.
  */
 class VideoViewport extends Viewport implements IVideoViewport {
+  public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
+
   public modality;
   // Viewport Data
   protected imageId: string;
@@ -485,22 +487,30 @@ class VideoViewport extends Viewport implements IVideoViewport {
     };
   }
 
+  /**
+   * Checks to see if the imageURI is currently being displayed.  The imageURI
+   * may contain frame numbers according to the DICOM standard format, which
+   * will be stripped to compare the base image URI, and then the values used
+   * to check if that frame is currently being displayed.
+   *
+   * The DICOM standard allows for comma separated values as well, however,
+   * this is not supported here, with only a single range or single value
+   * being tested.
+   *
+   * For a single value, the time range +/- 5 frames is permitted to allow
+   * the detection to actually succeed when nearby without requiring an exact
+   * time frame to be matched.
+   *
+   * @param imageURI - containing frame number or range.
+   * @returns
+   */
   public hasImageURI(imageURI: string) {
     // TODO - move annotationFrameRange into core so it can be used here.
-    const testURI = imageURI.replace(/\/frames\/.*/, '');
-    if (this.imageId.indexOf(testURI) === -1) {
-      return false;
-    }
-    const frames = imageURI.match(/\/frames\/([^/?&]*)/);
-    if (!frames?.[1]) {
-      return true;
-    }
-    const range = frames?.[1].split('-').map((it) => Number(it));
-    const frame = this.getFrameNumber();
-    if (range.length === 1) {
-      return Math.abs(range[0] - frame) < 0.25 * this.fps;
-    }
-    return frame >= range[0] && frame <= range[1];
+    const framesMatch = imageURI.match(VideoViewport.frameRangeExtractor);
+    const testURI = framesMatch
+      ? imageURI.substring(0, framesMatch.index)
+      : imageURI;
+    return this.imageId.indexOf(testURI) !== -1;
   }
 
   public setVOI(voiRange: VOIRange): void {
@@ -582,6 +592,18 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
+  /**
+   * This function returns the imageID associated with either the current
+   * frame being displayed, or the range of frames being played.  This may not
+   * correspond to any particular imageId that has imageId metadata, as the
+   * format is one of:
+   * `<DICOMweb URI>/frames/<Start Frame>(-<End Frame>)?`
+   * or
+   * `<Other URI>[?&]frameNumber=<Start Frame>(-<EndFrame>)?`
+   * for a URL parameter.
+   *
+   * @returns an imageID for video
+   */
   public getCurrentImageId() {
     const current = this.imageId.replace(
       '/frames/1',
