@@ -411,9 +411,12 @@ export default class BaseStreamingImageVolume
    */
   public load = (callback: (...args: unknown[]) => void): void => {
     const { imageIds, loadStatus, numFrames } = this;
+    const { transferSyntaxUID } =
+      metaData.get('transferSyntax', imageIds[0]) || {};
     const imageRetrieveConfiguration = metaData.get(
       imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
       this.volumeId,
+      transferSyntaxUID,
       'volume'
     );
 

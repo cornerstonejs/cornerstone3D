@@ -646,6 +646,7 @@ declare namespace Enums {
         DynamicOperatorType,
         ViewportStatus,
         VideoViewport_2 as VideoViewport,
+        MetadataModules,
         ImageQualityStatus
     }
 }
@@ -1836,6 +1837,9 @@ interface IStreamingVolumeProperties {
 }
 
 // @public (undocumented)
+function isVideoTransferSyntax(uidOrUids: string | string[]): string | false;
+
+// @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
@@ -1851,6 +1855,8 @@ interface IVideoViewport extends IViewport {
     resize: () => void;
     // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setVideo: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
     setVideoURL: (url: string) => void;
 }
@@ -1893,6 +1899,8 @@ interface IViewport {
     getDisplayArea(): DisplayArea | undefined;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getNumberOfSlices(): number;
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
@@ -2127,6 +2135,26 @@ declare namespace metaData {
     }
 }
 export { metaData }
+
+// @public (undocumented)
+enum MetadataModules {
+    // (undocumented)
+    CINE = "cineModule",
+    // (undocumented)
+    GENERAL_SERIES = "generalSeriesModule",
+    // (undocumented)
+    IMAGE_PIXEL = "imagePixelModule",
+    // (undocumented)
+    IMAGE_PLANE = "imagePlaneModule",
+    // (undocumented)
+    IMAGE_URL = "imageUrlModule",
+    // (undocumented)
+    MULTIFRAME = "multiframeModule",
+    // (undocumented)
+    NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
+    // (undocumented)
+    PATIENT_STUDY = "patientStudyModule"
+}
 
 // @public (undocumented)
 const metadataProvider: {
@@ -2603,6 +2631,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
         };
     };
     // (undocumented)
+    getNumberOfSlices: () => number;
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer: () => any;
@@ -2912,7 +2942,8 @@ declare namespace utilities {
         ProgressiveIterator,
         decimate,
         imageRetrieveMetadataProvider,
-        transferFunctionUtils
+        transferFunctionUtils,
+        isVideoTransferSyntax
     }
 }
 export { utilities }
@@ -2926,6 +2957,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     readonly canvasContext: CanvasRenderingContext2D;
     // (undocumented)
+    protected canvasToIndex: (canvasPos: Point2) => Point2;
+    // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
     customRenderViewportToCanvas: () => void;
@@ -2936,9 +2969,43 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getImageData(): any;
+    getImageData(): {
+        dimensions: any;
+        spacing: any;
+        origin: any;
+        direction: any;
+        metadata: {
+            Modality: any;
+        };
+        imageData: {
+            getDirection: () => any;
+            getDimensions: () => any;
+            getRange: () => number[];
+            getScalarData: () => Uint8ClampedArray;
+            getSpacing: () => any;
+            worldToIndex: (point: Point3) => number[];
+            indexToWorld: (point: Point3) => Point3;
+        };
+        hasPixelSpacing: boolean;
+        calibration: IImageCalibration;
+        preScale: {
+            scaled: boolean;
+        };
+    };
+    // (undocumented)
+    getNumberOfSlices: () => number;
     // (undocumented)
     getProperties: () => VideoViewportProperties;
+    // (undocumented)
+    protected getScalarData(): Uint8ClampedArray;
+    // (undocumented)
+    protected imageId: string;
+    // (undocumented)
+    protected indexToCanvas: (indexPos: Point2) => Point2;
+    // (undocumented)
+    protected metadata: any;
+    // (undocumented)
+    modality: any;
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
@@ -2954,19 +3021,29 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     scroll(delta?: number): Promise<void>;
     // (undocumented)
+    setAverageWhite(averageWhite: [number, number, number]): void;
+    // (undocumented)
     setCamera(camera: ICamera): void;
+    // (undocumented)
+    protected setColorTransform(): void;
     // (undocumented)
     setFrame(frame: number): Promise<void>;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
-    setProperties(videoInterface: VideoViewportProperties): void;
+    setProperties(props: VideoViewportProperties): void;
     // (undocumented)
     setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
+    setVideo(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
+    // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
+    // (undocumented)
+    setVOI(voiRange: VOIRange): void;
+    // (undocumented)
+    setWindowLevel(windowWidth?: number, windowCenter?: number): void;
     // (undocumented)
     start(): Promise<void>;
     // (undocumented)
@@ -3005,7 +3082,7 @@ type VideoViewportProperties = ViewportProperties & {
     muted?: boolean;
     pan?: Point2;
     playbackRate?: number;
-    parallelScale?: number;
+    scrollSpeed?: number;
 };
 
 // @public (undocumented)
@@ -3062,6 +3139,8 @@ export class Viewport implements IViewport {
     }): Point3;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getNumberOfSlices: () => number;
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
@@ -3348,6 +3427,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     getCurrentImageId: () => string | undefined;
     // (undocumented)
     getCurrentImageIdIndex: (volumeId?: string) => number;
+    // (undocumented)
+    getNumberOfSlices: () => number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)

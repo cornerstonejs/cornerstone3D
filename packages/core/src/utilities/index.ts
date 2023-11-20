@@ -52,6 +52,7 @@ import getImageLegacy from './getImageLegacy';
 import ProgressiveIterator from './ProgressiveIterator';
 import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
+import isVideoTransferSyntax from './isVideoTransferSyntax';
 
 // name spaces
 import * as planar from './planar';
@@ -119,4 +120,5 @@ export {
   decimate,
   imageRetrieveMetadataProvider,
   transferFunctionUtils,
+  isVideoTransferSyntax,
 };

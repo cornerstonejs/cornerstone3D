@@ -104,6 +104,8 @@ interface IViewport {
   setPan(pan: Point2, storeAsInitialCamera?: boolean);
   /** sets the camera */
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+  /** Gets the number of slices in the current camera orientation */
+  getNumberOfSlices(): number;
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];

@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.30.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.30.0...v1.30.1) (2023-11-15)
+
+### Bug Fixes
+
+- final htj2k transfer syntaxes ([#892](https://github.com/cornerstonejs/cornerstone3D/issues/892)) ([5b57ce6](https://github.com/cornerstonejs/cornerstone3D/commit/5b57ce6b31ffd65f7ec2a5e9dd60ab5829740ced))
+
+# [1.30.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.29.0...v1.30.0) (2023-11-15)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
 # [1.29.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.28.3...v1.29.0) (2023-11-14)
 
 ### Features
