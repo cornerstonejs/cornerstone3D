@@ -12,7 +12,7 @@ const { STACK_NEW_IMAGE } = Enums.Events;
  * @param synchronizerName - The name of the synchronizer.
  * @returns A new `Synchronizer` instance.
  */
-export default function createStackImageSynchronizer(
+export default function createImageSliceSynchronizer(
   synchronizerName: string
 ): Synchronizer {
   const stackImageSynchronizer = createSynchronizer(
