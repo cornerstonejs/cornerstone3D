@@ -4,6 +4,7 @@ import {
   Types,
   metaData,
   utilities,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 import { Synchronizer } from '../../store';
 import { jumpToSlice } from '../../utilities';
@@ -36,7 +37,7 @@ const getSpatialRegistration = (targetId, sourceId) =>
  *   the same as sourceViewport.
  * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
-export default async function ImageSliceSyncCallback(
+export default async function imageSliceSyncCallback(
   synchronizerInstance: Synchronizer,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId
@@ -48,9 +49,9 @@ export default async function ImageSliceSyncCallback(
     );
   }
 
-  const sViewport = renderingEngine.getViewport(
-    sourceViewport.viewportId
-  ) as Types.IStackViewport;
+  const sViewport = renderingEngine.getViewport(sourceViewport.viewportId) as
+    | Types.IVolumeViewport
+    | Types.IStackViewport;
 
   const options = synchronizerInstance.getOptions(targetViewport.viewportId);
 
@@ -58,9 +59,9 @@ export default async function ImageSliceSyncCallback(
     return;
   }
 
-  const tViewport = renderingEngine.getViewport(
-    targetViewport.viewportId
-  ) as Types.IStackViewport;
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportId) as
+    | Types.IVolumeViewport
+    | Types.IStackViewport;
 
   const imageId1 = sViewport.getCurrentImageId();
   const imagePlaneModule1 = metaData.get('imagePlaneModule', imageId1);
@@ -115,12 +116,19 @@ export default async function ImageSliceSyncCallback(
     targetImageIds
   );
 
+  let imageIndexToSet = closestImageIdIndex2.index;
+  if (tViewport instanceof VolumeViewport) {
+    // since in case of volume viewport our stack is reversed, we should
+    // reverse the index as well
+    imageIndexToSet = targetImageIds.length - closestImageIdIndex2.index - 1;
+  }
+
   if (
     closestImageIdIndex2.index !== -1 &&
     tViewport.getCurrentImageIdIndex() !== closestImageIdIndex2.index
   ) {
     await jumpToSlice(tViewport.element, {
-      imageIndex: closestImageIdIndex2.index,
+      imageIndex: imageIndexToSet,
     });
   }
 }
