@@ -36,7 +36,7 @@ const getSpatialRegistration = (targetId, sourceId) =>
  *   the same as sourceViewport.
  * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
-export default async function stackImageSyncCallback(
+export default async function ImageSliceSyncCallback(
   synchronizerInstance: Synchronizer,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId
