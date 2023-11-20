@@ -31,7 +31,7 @@ const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Video Tools',
+  'Video Navigation',
   'Show a video viewport with controls to allow it to be navigated and zoom/panned'
 );
 
@@ -175,7 +175,11 @@ async function run() {
       getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
-  // Only one SOP instances is DICOM, so find it
+  // The default DICOMweb loader splits up the video into one image id per frame,
+  // but the video viewport needs a single combined reference, so find the first
+  // reference and use that one.
+  // Also, the series has more than one object in it, and the video viewport
+  // can only display a single video at a time.
   const videoId = imageIds.find(
     (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
   );

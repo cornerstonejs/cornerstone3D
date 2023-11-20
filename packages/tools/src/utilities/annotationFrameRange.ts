@@ -2,15 +2,13 @@ import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 import Events from '../enums/Events';
 import { Annotation } from '../types';
 
+export type FramesRange = [number, number] | number;
+
 /**
  * This class handles the annotation frame range values for multiframes.
  * Mostly used for the Video viewport, it allows references to
  * a range of frame values.
- *
  */
-
-export type FramesRange = [number, number] | number;
-
 export default class AnnotationFrameRange {
   protected static frameRangeExtractor =
     /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;

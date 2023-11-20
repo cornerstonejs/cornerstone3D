@@ -73,9 +73,6 @@ export default class AnnotationGroup {
 
   /** Finds the nearby/next annotation in the given direction */
   public findNearby(uid: string, direction: 1) {
-    if (!this._isVisible) {
-      return null;
-    }
     const uids = [...this.annotationUIDs];
     if (uids.length === 0) {
       return null;
@@ -87,7 +84,7 @@ export default class AnnotationGroup {
     if (
       index === -1 ||
       index + direction < 0 ||
-      index + direction > uids.length
+      index + direction >= uids.length
     ) {
       return null;
     }
@@ -98,15 +95,26 @@ export default class AnnotationGroup {
    * Adds the annotation to the group
    * Does NOT change the visibility status of the annotation.
    */
-  public add(annotationUID: string) {
-    this.annotationUIDs.add(annotationUID);
+  public add(...annotationUIDs: string[]) {
+    annotationUIDs.forEach((annotationUID) =>
+      this.annotationUIDs.add(annotationUID)
+    );
   }
 
   /**
    * Removes the annotation from the group.
    * Does not affect the visibility status of the annotation.
    */
-  public remove(annotationUID: string) {
-    this.annotationUIDs.delete(annotationUID);
+  public remove(...annotationUIDs: string[]) {
+    annotationUIDs.forEach((annotationUID) =>
+      this.annotationUIDs.delete(annotationUID)
+    );
+  }
+
+  /**
+   * Removes everything from the group.
+   */
+  public clear() {
+    this.annotationUIDs.clear();
   }
 }

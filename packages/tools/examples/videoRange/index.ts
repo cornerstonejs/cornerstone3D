@@ -137,21 +137,19 @@ addDropdownToToolbar({
   },
 });
 
-const nextButton = addButtonToToolbar({
-  id: 'Next',
-  title: '<',
+addButtonToToolbar({
+  id: 'Previous',
+  title: '< Previous Annotation',
   onClick() {
-    selectNextAnnotation(1);
+    selectNextAnnotation(-1);
   },
 });
 
-nextButton.parentElement.appendChild(document.createTextNode('Annotation'));
-
 addButtonToToolbar({
-  id: 'Previous',
-  title: '>',
+  id: 'Next',
+  title: 'Next Annotation >',
   onClick() {
-    selectNextAnnotation(-1);
+    selectNextAnnotation(1);
   },
 });
 

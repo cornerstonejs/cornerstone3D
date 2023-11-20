@@ -35,7 +35,7 @@ import { Annotation } from '../../types';
 type Point2 = Types.Point2;
 
 class KeyImageTool extends AnnotationTool {
-  static toolName = 'KeyImage';
+  static toolName;
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -58,6 +58,8 @@ class KeyImageTool extends AnnotationTool {
       configuration: {
         getTextCallback,
         changeTextCallback,
+        canvasPosition: [10, 10],
+        canvasSize: 10,
       },
     }
   ) {
@@ -186,9 +188,15 @@ class KeyImageTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { data } = annotation;
 
+    const { canvasPosition, canvasSize } = this.configuration;
+    if (!canvasPosition?.length === 0) {
+      return false;
+    }
     if (
-      Math.abs(canvasCoords[0] - 15) <= 5 &&
-      Math.abs(canvasCoords[1] - 15) <= 5
+      Math.abs(canvasCoords[0] - canvasPosition[0] + canvasSize / 2) <=
+        canvasSize / 2 &&
+      Math.abs(canvasCoords[1] - canvasPosition[1] + canvasSize / 2) <=
+        canvasSize / 2
     ) {
       return true;
     }
@@ -378,19 +386,21 @@ class KeyImageTool extends AnnotationTool {
 
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const canvasCoordinates = [[10, 10] as Point2, [20, 20] as Point2];
-      const arrowUID = '1';
-      drawArrowSvg(
-        svgDrawingHelper,
-        annotationUID,
-        arrowUID,
-        canvasCoordinates[1],
-        canvasCoordinates[0],
-        {
-          color,
-          width: 1,
-        }
-      );
+      const { canvasPosition, canvasSize } = this.configuration;
+      if (canvasPosition?.length) {
+        const arrowUID = '1';
+        drawArrowSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arrowUID,
+          canvasPosition.map((it) => it + canvasSize) as Point2,
+          canvasPosition as Point2,
+          {
+            color,
+            width: 1,
+          }
+        );
+      }
 
       renderStatus = true;
 
@@ -419,5 +429,7 @@ function getTextCallback(doneChangingTextCallback) {
 function changeTextCallback(data, eventData, doneChangingTextCallback) {
   return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
+
+KeyImageTool.toolName = 'KeyImage';
 
 export default KeyImageTool;
