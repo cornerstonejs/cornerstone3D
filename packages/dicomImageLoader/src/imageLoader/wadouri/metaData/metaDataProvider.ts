@@ -22,6 +22,9 @@ import {
 } from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
+  if (typeof imageId !== 'string') {
+    return;
+  }
   const { dicomParser } = external;
   // Several providers use array queries
   if (Array.isArray(imageId)) {
