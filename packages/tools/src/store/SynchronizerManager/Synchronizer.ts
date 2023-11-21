@@ -17,6 +17,7 @@ class Synchronizer {
   //
   private _enabled: boolean;
   private _eventName: string;
+  private _auxiliaryEventNames: string[];
   private _eventHandler: ISynchronizerEventHandler;
   private _ignoreFiredEvents: boolean;
   private _sourceViewports: Array<Types.IViewportId>;
@@ -38,6 +39,7 @@ class Synchronizer {
     this._sourceViewports = [];
     this._targetViewports = [];
     this._options = options || {};
+    this._auxiliaryEventNames = this._options.auxiliaryEventNames || [];
 
     //
     this.id = synchronizerId;
@@ -92,8 +94,14 @@ class Synchronizer {
     const { element } =
       getRenderingEngine(renderingEngineId).getViewport(viewportId);
 
-    // @ts-ignore
     element.addEventListener(this._eventName, this._onEvent.bind(this));
+
+    if (this._auxiliaryEventNames.length) {
+      this._auxiliaryEventNames.forEach((eventName) => {
+        element.addEventListener(eventName, this._onEvent.bind(this));
+      });
+    }
+
     this._updateDisableHandlers();
 
     this._sourceViewports.push(viewportInfo);
@@ -157,8 +165,16 @@ class Synchronizer {
     const element = _getViewportElement(viewportInfo);
 
     this._sourceViewports.splice(index, 1);
-    // @ts-ignore
+
+    //@ts-ignore
     element.removeEventListener(this._eventName, this._eventHandler);
+
+    if (this._auxiliaryEventNames) {
+      this._auxiliaryEventNames.forEach((eventName) => {
+        //@ts-ignore
+        element.removeEventListener(eventName, this._eventHandler);
+      });
+    }
     this._updateDisableHandlers();
   }
 
