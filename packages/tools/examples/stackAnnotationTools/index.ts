@@ -31,7 +31,6 @@ const {
   ArrowAnnotateTool,
   PlanarFreehandROITool,
   KeyImageTool,
-  VideoRedactionTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -121,7 +120,6 @@ const toolsNames = [
   ArrowAnnotateTool.toolName,
   PlanarFreehandROITool.toolName,
   KeyImageTool.toolName,
-  VideoRedactionTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -221,7 +219,6 @@ async function run() {
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(KeyImageTool);
-  cornerstoneTools.addTool(VideoRedactionTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -239,7 +236,6 @@ async function run() {
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
-  toolGroup.addTool(VideoRedactionTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.

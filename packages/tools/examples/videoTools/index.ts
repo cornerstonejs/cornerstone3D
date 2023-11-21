@@ -200,9 +200,6 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
-  const range = annotationFrameRange.getFrameRange(annotation);
-  const rangeArr = Array.isArray(range) ? range : [range];
-  const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
     data.label || data.text
@@ -291,6 +288,7 @@ async function run() {
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
@@ -310,6 +308,7 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -329,14 +328,10 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollTool.toolName, {
+  toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary,
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
       },
     ],
   });

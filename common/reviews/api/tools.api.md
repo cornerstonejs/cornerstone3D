@@ -9,6 +9,7 @@ import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
+import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
@@ -3034,7 +3035,7 @@ declare namespace point {
 const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
 
 // @public (undocumented)
-function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
+function pointInEllipse(ellipse: Ellipse, pointLPS: vec3): boolean;
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;

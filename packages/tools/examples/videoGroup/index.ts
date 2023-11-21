@@ -6,7 +6,6 @@ import {
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
-  addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
