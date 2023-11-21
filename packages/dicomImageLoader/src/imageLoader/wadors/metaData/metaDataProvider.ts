@@ -21,9 +21,6 @@ import {
 } from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
-  if (Array.isArray(imageId)) {
-    return;
-  }
   const { MetadataModules } = external.cornerstone.Enums;
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
@@ -312,13 +309,13 @@ export function getCineModule(imageId, metaData) {
 }
 
 export function getTransferSyntax(imageId, metaData) {
-    // Use either the FMI, which is NOT permitted in the DICOMweb data, but
-    // is sometimes found there anyways, or the available transfer syntax, which
-    // is the recommended way of getting it.
-    return {
-      transferSyntaxUID:
-        getValue<string>(metaData['00020010']) ||
-        getValue<string>(metaData['00083002']),
-    };
+  // Use either the FMI, which is NOT permitted in the DICOMweb data, but
+  // is sometimes found there anyways, or the available transfer syntax, which
+  // is the recommended way of getting it.
+  return {
+    transferSyntaxUID:
+      getValue<string>(metaData['00020010']) ||
+      getValue<string>(metaData['00083002']),
+  };
 }
 export default metaDataProvider;

@@ -19,12 +19,10 @@ const spatialRegistrationMetadataProvider = {
     state[entryId] = payload;
   },
 
-  get: (type: string, query: string[]): mat4 => {
+  get: (type: string, viewportId1: string, viewportId2: string): mat4 => {
     if (type !== 'spatialRegistrationModule') {
       return;
     }
-
-    const [viewportId1, viewportId2] = query;
 
     // check both ways
     const entryId = `${viewportId1}_${viewportId2}`;

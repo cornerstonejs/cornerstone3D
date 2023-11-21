@@ -1,8 +1,5 @@
 // Add hardcoded meta data provider for color images
 export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
-  if (typeof imageId !== 'string') {
-    return;
-  }
   const colonIndex = imageId.indexOf(':');
   const scheme = imageId.substring(0, colonIndex);
   if (scheme !== 'web') {
