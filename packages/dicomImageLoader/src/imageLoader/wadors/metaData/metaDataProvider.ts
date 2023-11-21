@@ -21,9 +21,6 @@ import {
 } from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
-  if (Array.isArray(imageId)) {
-    return;
-  }
   const { MetadataModules } = external.cornerstone.Enums;
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence

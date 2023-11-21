@@ -44,7 +44,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addProvider(provider: (type: string, query: any) => any, priority?: number): void;
+function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
 
 // @public (undocumented)
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
@@ -1542,7 +1542,7 @@ const imageRetrieveMetadataProvider: {
     IMAGE_RETRIEVE_CONFIGURATION: string;
     clear: () => void;
     add: (key: string, payload: any) => void;
-    get: (type: string, queriesOrQuery: string | string[]) => any;
+    get: (type: string, ...queries: string[]) => any;
 };
 
 // @public (undocumented)
@@ -2555,7 +2555,7 @@ function snapFocalPointToSlice(focalPoint: Point3, position: Point3, sliceRange:
 // @public (undocumented)
 const spatialRegistrationMetadataProvider: {
     add: (query: string[], payload: mat4) => void;
-    get: (type: string, query: string[]) => mat4;
+    get: (type: string, viewportId1: string, viewportId2: string) => mat4;
 };
 
 // @public (undocumented)
