@@ -200,6 +200,7 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
@@ -234,6 +235,7 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 

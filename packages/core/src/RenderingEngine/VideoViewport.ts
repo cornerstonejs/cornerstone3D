@@ -563,7 +563,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
     // NOTE: the parallel scale should be done first
     // because it affects the focal point later
     if (camera.parallelScale !== undefined) {
-      this.videoCamera.parallelScale = 1 / parallelScale;
+      this.videoCamera.parallelScale =
+        this.element.clientHeight / 2 / parallelScale;
     }
 
     if (focalPoint !== undefined) {
@@ -638,7 +639,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       focalPoint: canvasCenterWorld,
       position: [0, 0, 0],
       viewUp: [0, -1, 0],
-      parallelScale: 1 / parallelScale, // Reverse zoom direction back
+      parallelScale: this.element.clientHeight / 2 / parallelScale, // Reverse zoom direction back
       viewPlaneNormal: [0, 0, 1],
     };
   }
