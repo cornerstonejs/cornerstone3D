@@ -91,8 +91,17 @@ class Synchronizer {
 
     const { renderingEngineId, viewportId } = viewportInfo;
 
-    const { element } =
+    const viewport =
       getRenderingEngine(renderingEngineId).getViewport(viewportId);
+
+    if (!viewport) {
+      console.warn(
+        `Synchronizer.addSource: No viewport for ${renderingEngineId} ${viewportId}`
+      );
+      return;
+    }
+
+    const element = viewport.element;
 
     element.addEventListener(this._eventName, this._onEvent.bind(this));
 
