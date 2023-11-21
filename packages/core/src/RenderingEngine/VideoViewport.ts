@@ -463,6 +463,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       origin: metadata.origin,
       direction: metadata.direction,
       metadata: { Modality: this.modality },
+      getScalarData: () => this.getScalarData(),
       imageData: {
         getDirection: () => metadata.direction,
         getDimensions: () => metadata.dimensions,
@@ -740,17 +741,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public getRotation = () => 0;
 
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
-    const [x, y] = canvasPos;
-    const ratio = this.videoWidth / this.canvas.width;
-    const pan = this.getPan();
-    return [(x + pan[0]) * ratio, (y + pan[1]) * ratio];
+    const transform = this.getTransform();
+    transform.invert();
+
+    return transform.transformPoint(canvasPos);
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
-    const [x, y] = indexPos;
-    const ratio = this.canvas.width / this.videoWidth;
-    const pan = this.getPan();
-    return [x * ratio - pan[0], y * ratio - pan[1]];
+    const transform = this.getTransform();
+    return transform.transformPoint(indexPos);
   };
 
   private refreshRenderValues() {
@@ -795,17 +794,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.renderFrame();
   };
 
-  private renderFrame = () => {
+  protected getTransform() {
     const panWorld: Point2 = this.videoCamera.panWorld;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
     const canvasToWorldRatio: number = this.getCanvasToWorldRatio();
-
     const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
     const halfCanvasWorldCoordinates = [
       halfCanvas[0] * canvasToWorldRatio,
       halfCanvas[1] * canvasToWorldRatio,
     ];
-
     const transform = new Transform();
 
     // Translate to the center of the canvas (move origin of the transform
@@ -823,6 +820,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       -halfCanvasWorldCoordinates[0],
       -halfCanvasWorldCoordinates[1]
     );
+    return transform;
+  }
+  private renderFrame = () => {
+    const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
 
     this.canvasContext.transform(

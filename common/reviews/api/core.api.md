@@ -2990,6 +2990,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         metadata: {
             Modality: any;
         };
+        getScalarData: () => Uint8ClampedArray;
         imageData: {
             getDirection: () => any;
             getDimensions: () => any;
@@ -3015,6 +3016,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     getRotation: () => number;
     // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
+    // (undocumented)
+    protected getTransform(): Transform;
     // (undocumented)
     hasImageURI(imageURI: string): boolean;
     // (undocumented)

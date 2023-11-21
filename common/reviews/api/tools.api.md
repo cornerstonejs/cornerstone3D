@@ -3601,7 +3601,7 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-function roundNumber(value: string | number, precision?: number): string;
+function roundNumber(value: string | number | (string | number)[], precision?: number): string;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -4099,7 +4099,7 @@ declare namespace state_3 {
 // @public (undocumented)
 type Statistics = {
     name: string;
-    value: number;
+    value: number | number[];
     unit: null | string;
 };
 

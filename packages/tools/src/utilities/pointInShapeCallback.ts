@@ -105,8 +105,10 @@ export default function pointInShapeCallback(
     scanAxisNormal[2] * scanAxisSpacing
   );
 
-  const yMultiple = dimensions[0];
-  const zMultiple = dimensions[0] * dimensions[1];
+  const xMultiple =
+    scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
+  const yMultiple = dimensions[0] * xMultiple;
+  const zMultiple = dimensions[1] * yMultiple;
 
   const pointsInShape: Array<PointInShape> = [];
   for (let k = kMin; k <= kMax; k++) {
@@ -135,8 +137,15 @@ export default function pointInShapeCallback(
         ];
 
         if (pointInShapeFn(pointLPS, pointIJK)) {
-          const index = k * zMultiple + j * yMultiple + i;
-          const value = scalarData[index];
+          const index = k * zMultiple + j * yMultiple + i * xMultiple;
+          const value =
+            xMultiple > 2
+              ? [
+                  scalarData[index],
+                  scalarData[index + 1],
+                  scalarData[index + 2],
+                ]
+              : scalarData[index];
 
           pointsInShape.push({ value, index, pointIJK, pointLPS });
           if (callback !== null) {

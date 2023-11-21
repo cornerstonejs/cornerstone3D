@@ -1,6 +1,6 @@
 type Statistics = {
   name: string;
-  value: number;
+  value: number | number[];
   unit: null | string;
 };
 
