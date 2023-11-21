@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
@@ -140,6 +141,21 @@ addButtonToToolbar({
 
     viewport.resetProperties();
     viewport.render();
+  },
+});
+
+addToggleButtonToToolbar({
+  id: 'slabScroll',
+  title: 'Toggle Slab Scroll',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    let scrollSlabs = false;
+    if (toggle) {
+      scrollSlabs = true;
+    }
+    toolGroup.setToolConfiguration(StackScrollMouseWheelTool.toolName, {
+      scrollSlabs,
+    });
   },
 });
 
