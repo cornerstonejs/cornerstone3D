@@ -6,6 +6,8 @@ let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
+import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
+
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -35,6 +37,8 @@ let config: Cornerstone3DConfig = {
   // cache
   // ...
 };
+
+let webWorkerManager = null;
 
 function _getGLContext(): RenderingContext {
   // Create canvas element. The canvas is not added to the
@@ -133,6 +137,11 @@ async function init(configuration = config): Promise<boolean> {
   setUseSharedArrayBuffer(sharedArrayBufferMode);
 
   csRenderInitialized = true;
+
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager();
+  }
+
   return csRenderInitialized;
 }
 
@@ -256,6 +265,14 @@ function _updateRenderingPipelinesForAllViewports(): void {
   );
 }
 
+function getWebWorkerManager() {
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager();
+  }
+
+  return webWorkerManager;
+}
+
 export {
   init,
   getShouldUseCPURendering,
@@ -268,4 +285,5 @@ export {
   resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
 };

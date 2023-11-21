@@ -2,6 +2,8 @@
 
 ## Introduction
 
+We are re-architecting the web workers inside Cornerstone3D, so you might like to take a look into the `webWorkerManager` in the core to see how to run functions in a worker.
+
 Medical Imaging applications often involve CPU intensive computation for tasks
 such as image decompression and image processing. CornerstoneWADOImageLoader
 includes a framework for executing such tasks in a pool of web workers thus
