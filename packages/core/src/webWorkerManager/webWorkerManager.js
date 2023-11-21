@@ -13,6 +13,18 @@ class CentralizedWorkerManager {
     this.checkIntervalForIdleWorkers = value;
   }
 
+  /**
+   * Registers a new worker, it doesn't mean that the function will get executed.
+   *
+   * @param workerName - The name of the worker.
+   * @param workerFn - The function that creates a new instance of the worker.
+   * @param options - Optional parameters.
+   * @param options.maxWorkerInstances - The maximum number of instances of this worker that can be created.
+   * For instance if you create a worker with maxWorkerInstances = 2, then only 2 instances of this worker will be created
+   * and in case there are 10 tasks that need to be executed, each will get assigned 5 tasks.
+   * @param options.overwrite - Whether to overwrite the worker if it's already registered.
+   * @param options.autoTerminateOnIdle - Whether to automatically terminate idle workers.
+   */
   registerWorker(workerName, workerFn, options = {}) {
     const {
       maxWorkerInstances = 1,
@@ -104,6 +116,19 @@ class CentralizedWorkerManager {
     };
   }
 
+  /**
+   * Executes a task on a worker.
+   *
+   * @param workerName - The name of the worker to execute the task on.
+   * @param methodName - The name of the method to execute on the worker.
+   * @param args - The arguments to pass to the method. Default is an empty object.
+   * @param options - An object containing options for the request. Default is an empty object.
+   * @param options.requestType - The type of the request. Default is RequestType.Compute.
+   * @param options.priority - The priority of the request. Default is 0.
+   * @param options.options - Additional options for the request. Default is an empty object.
+   *
+   * @returns A promise that resolves with the result of the task.
+   */
   executeTask(
     workerName,
     methodName,
