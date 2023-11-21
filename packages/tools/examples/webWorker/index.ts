@@ -4,6 +4,7 @@ import {
   Enums,
   getWebWorkerManager,
 } from '@cornerstonejs/core';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -16,7 +17,20 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
+const {
+  PanTool,
+  WindowLevelTool,
+  StackScrollMouseWheelTool,
+  ZoomTool,
+  utilities,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
+
 const { ViewportType } = Enums;
+const { MouseBindings } = csToolsEnums;
+
+const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -33,6 +47,7 @@ const element = document.createElement('div');
 element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
+element.oncontextmenu = (e) => e.preventDefault();
 
 const FibResult = document.createElement('div');
 FibResult.id = 'fib-result';
@@ -107,6 +122,19 @@ addButtonToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(WindowLevelTool);
+  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(ZoomTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add tools to the tool group
+  toolGroup.addTool(WindowLevelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -116,6 +144,29 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
+
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName, {});
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -138,14 +189,17 @@ async function run() {
     renderingEngine.getViewport(viewportId)
   );
 
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
   // Define a stack containing a few images
-  const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
+  await viewport.setStack(imageIds);
 
   // Set the VOI of the stack
   viewport.setProperties({ voiRange: ctVoiRange });
+
+  utilities.stackContextPrefetch.enable(viewport.element);
 
   // Render the image
   viewport.render();
