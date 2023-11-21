@@ -20,6 +20,7 @@ class StackScrollMouseWheelTool extends BaseTool {
         invert: false,
         debounceIfNotLoaded: true,
         loop: false,
+        scrollSlabs: false,
       },
     }
   ) {
@@ -41,6 +42,7 @@ class StackScrollMouseWheelTool extends BaseTool {
       debounceLoading: this.configuration.debounceIfNotLoaded,
       loop: this.configuration.loop,
       volumeId,
+      scrollSlabs: this.configuration.scrollSlabs,
     });
   }
 }

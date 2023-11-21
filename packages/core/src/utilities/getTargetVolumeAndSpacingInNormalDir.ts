@@ -30,6 +30,8 @@ const isPrimaryVolume = (volume): boolean =>
  * @param camera - current camera
  * @param targetVolumeId - If a target volumeId is given that volume
  * is forced to be used.
+ * @param useSlabThickness - If true, the spacing in the normal direction
+ * will be calculated based on the slab thickness instead of the spacing in the
  *
  * @returns An object containing the imageVolume and spacingInNormalDirection.
  *
@@ -37,7 +39,8 @@ const isPrimaryVolume = (volume): boolean =>
 export default function getTargetVolumeAndSpacingInNormalDir(
   viewport: IVolumeViewport,
   camera: ICamera,
-  targetVolumeId?: string
+  targetVolumeId?: string,
+  useSlabThickness = false
 ): {
   imageVolume: IImageVolume;
   spacingInNormalDirection: number;
@@ -75,7 +78,8 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     const spacingInNormalDirection = getSpacingInNormal(
       imageVolume,
       viewPlaneNormal,
-      viewport
+      viewport,
+      useSlabThickness
     );
 
     return { imageVolume, spacingInNormalDirection, actorUID };
@@ -131,11 +135,12 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 function getSpacingInNormal(
   imageVolume: IImageVolume,
   viewPlaneNormal: Point3,
-  viewport: IVolumeViewport
+  viewport: IVolumeViewport,
+  useSlabThickness = false
 ): number {
   const { slabThickness } = viewport.getProperties();
   let spacingInNormalDirection = slabThickness;
-  if (!slabThickness) {
+  if (!slabThickness || useSlabThickness === false) {
     spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
