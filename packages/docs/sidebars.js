@@ -162,6 +162,7 @@ module.exports = {
                 'concepts/cornerstone-tools/annotation/selection',
                 'concepts/cornerstone-tools/annotation/locking',
                 'concepts/cornerstone-tools/annotation/config',
+                'concepts/cornerstone-tools/annotation/annotationGroups',
               ],
             },
             {

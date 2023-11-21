@@ -20,6 +20,7 @@ import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback
 import scroll from './scroll';
 import roundNumber from './roundNumber';
 import { pointToString } from './pointToString';
+import annotationFrameRange from './annotationFrameRange';
 
 // name spaces
 import * as segmentation from './segmentation';
@@ -78,4 +79,5 @@ export {
   pointToString,
   polyDataUtils,
   voi,
+  annotationFrameRange,
 };

@@ -6,8 +6,8 @@ import BoundsIJK from '../types/BoundsIJK';
 export type PointInShape = {
   value: number;
   index: number;
-  pointIJK: Types.Point3;
-  pointLPS: Types.Point3;
+  pointIJK: vec3;
+  pointLPS: vec3;
 };
 
 export type PointInShapeCallback = ({
@@ -18,14 +18,11 @@ export type PointInShapeCallback = ({
 }: {
   value: number;
   index: number;
-  pointIJK: Types.Point3;
-  pointLPS: Types.Point3;
+  pointIJK: vec3;
+  pointLPS: vec3;
 }) => void;
 
-export type ShapeFnCriteria = (
-  pointIJK: Types.Point3,
-  pointLPS: Types.Point3
-) => boolean;
+export type ShapeFnCriteria = (pointIJK: vec3, pointLPS: vec3) => boolean;
 
 /**
  * For each point in the image (If boundsIJK is not provided, otherwise, for each
@@ -105,46 +102,57 @@ export default function pointInShapeCallback(
     scanAxisNormal[2] * scanAxisSpacing
   );
 
-  const yMultiple = dimensions[0];
-  const zMultiple = dimensions[0] * dimensions[1];
+  const xMultiple =
+    scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
+  const yMultiple = dimensions[0] * xMultiple;
+  const zMultiple = dimensions[1] * yMultiple;
 
   const pointsInShape: Array<PointInShape> = [];
+
+  const currentPos = vec3.clone(worldPosStart);
+
   for (let k = kMin; k <= kMax; k++) {
+    const startPosJ = vec3.clone(currentPos);
+
     for (let j = jMin; j <= jMax; j++) {
+      const startPosI = vec3.clone(currentPos);
+
       for (let i = iMin; i <= iMax; i++) {
         const pointIJK: Types.Point3 = [i, j, k];
-        const dI = i - iMin;
-        const dJ = j - jMin;
-        const dK = k - kMin;
 
-        const startWorld = worldPosStart;
+        // The current world position (pointLPS) is now in currentPos
+        if (pointInShapeFn(currentPos as Types.Point3, currentPos)) {
+          const index = k * zMultiple + j * yMultiple + i * xMultiple;
+          let value;
+          if (xMultiple > 2) {
+            value = [
+              scalarData[index],
+              scalarData[index + 1],
+              scalarData[index + 2],
+            ];
+          } else {
+            value = scalarData[index];
+          }
 
-        const pointLPS: Types.Point3 = [
-          startWorld[0] +
-            dI * rowStep[0] +
-            dJ * columnStep[0] +
-            dK * scanAxisStep[0],
-          startWorld[1] +
-            dI * rowStep[1] +
-            dJ * columnStep[1] +
-            dK * scanAxisStep[1],
-          startWorld[2] +
-            dI * rowStep[2] +
-            dJ * columnStep[2] +
-            dK * scanAxisStep[2],
-        ];
-
-        if (pointInShapeFn(pointLPS, pointIJK)) {
-          const index = k * zMultiple + j * yMultiple + i;
-          const value = scalarData[index];
-
-          pointsInShape.push({ value, index, pointIJK, pointLPS });
-          if (callback !== null) {
-            callback({ value, index, pointIJK, pointLPS });
+          pointsInShape.push({ value, index, pointIJK, pointLPS: currentPos });
+          if (callback) {
+            callback({ value, index, pointIJK, pointLPS: currentPos });
           }
         }
+
+        // Increment currentPos by rowStep for the next iteration
+        vec3.add(currentPos, currentPos, rowStep);
       }
+
+      // Reset currentPos to the start of the next J line and increment by columnStep
+      vec3.copy(currentPos, startPosI);
+      vec3.add(currentPos, currentPos, columnStep);
     }
+
+    // Reset currentPos to the start of the next K slice and increment by scanAxisStep
+    vec3.copy(currentPos, startPosJ);
+    vec3.add(currentPos, currentPos, scanAxisStep);
   }
+
   return pointsInShape;
 }

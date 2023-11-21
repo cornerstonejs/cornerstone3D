@@ -308,17 +308,18 @@ export function getCineModule(imageId, metaData) {
   const cineRate = getValue<string>(metaData['00180040']);
   return {
     cineRate,
+    numberOfFrames: getNumberValue(metaData['00280008']),
   };
 }
 
 export function getTransferSyntax(imageId, metaData) {
-    // Use either the FMI, which is NOT permitted in the DICOMweb data, but
-    // is sometimes found there anyways, or the available transfer syntax, which
-    // is the recommended way of getting it.
-    return {
-      transferSyntaxUID:
-        getValue<string>(metaData['00020010']) ||
-        getValue<string>(metaData['00083002']),
-    };
+  // Use either the FMI, which is NOT permitted in the DICOMweb data, but
+  // is sometimes found there anyways, or the available transfer syntax, which
+  // is the recommended way of getting it.
+  return {
+    transferSyntaxUID:
+      getValue<string>(metaData['00020010']) ||
+      getValue<string>(metaData['00083002']),
+  };
 }
 export default metaDataProvider;

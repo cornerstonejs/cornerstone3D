@@ -14,7 +14,11 @@ import AdvancedMagnifyTool from './AdvancedMagnifyTool';
 import ReferenceLinesTool from './ReferenceLinesTool';
 import OverlayGridTool from './OverlayGridTool';
 import SegmentationIntersectionTool from './SegmentationIntersectionTool';
-//
+import ReferenceCursors from './ReferenceCursors';
+import ReferenceLines from './ReferenceLinesTool';
+import ScaleOverlayTool from './ScaleOverlayTool';
+
+// Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
 import ProbeTool from './annotation/ProbeTool';
@@ -26,9 +30,7 @@ import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
-import ReferenceCursors from './ReferenceCursors';
-import ReferenceLines from './ReferenceLinesTool';
-import ScaleOverlayTool from './ScaleOverlayTool';
+import KeyImageTool from './annotation/KeyImageTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -59,6 +61,7 @@ export {
   ZoomTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
+  ReferenceCursors,
   // Annotation Tools
   CrosshairsTool,
   ReferenceLinesTool,
@@ -74,7 +77,7 @@ export {
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
-  ReferenceCursors,
+  KeyImageTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools

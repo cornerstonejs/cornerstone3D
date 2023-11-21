@@ -3,11 +3,9 @@ import {
   Types,
   Enums,
   eventTarget,
-  triggerEvent,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
-  addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
@@ -51,8 +49,8 @@ const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Video Tools',
-  'Show a video viewport with controls to allow it to be navigated and zoom/panned'
+  'Annotation Grouping Tools',
+  'Show a video viewport with controls to allow it to be grouped and ranged'
 );
 
 const content = document.getElementById('content');
@@ -61,8 +59,13 @@ const content = document.getElementById('content');
 const selectionDiv = document.createElement('div');
 selectionDiv.id = 'selection';
 selectionDiv.style.width = '90%';
-selectionDiv.style.height = '1.5em';
+selectionDiv.style.height = '3em';
 content.appendChild(selectionDiv);
+
+// Create two groupings of items
+const group1 = new cornerstoneTools.annotation.AnnotationGroup();
+
+const group2 = new cornerstoneTools.annotation.AnnotationGroup();
 
 // ************* Create the cornerstone element.
 const element = document.createElement('div');
@@ -116,41 +119,41 @@ const playButton = addButtonToToolbar({
   onClick: (evt) => togglePlay(),
 });
 
-const toolsNames = [
-  LengthTool.toolName,
-  KeyImageTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-  PlanarFreehandROITool.toolName,
-  VideoRedactionTool.toolName,
-];
-let selectedToolName = toolsNames[0];
+addButtonToToolbar({
+  id: 'Clear',
+  title: 'Clear Frame Range',
+  onClick() {
+    viewport.setFrameRange(null);
+    viewport.play();
+  },
+});
 
-addDropdownToToolbar({
-  options: { values: toolsNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+addButtonToToolbar({
+  id: 'Previous',
+  title: '< Previous Annotation',
+  onClick() {
+    selectNextAnnotation(-1);
+  },
+});
 
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
+addButtonToToolbar({
+  id: 'Next',
+  title: 'Next Annotation >',
+  onClick() {
+    selectNextAnnotation(1);
+  },
+});
 
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
+let activeGroup = group1;
 
-    selectedToolName = <string>newSelectedToolName;
+const groupButton = addButtonToToolbar({
+  id: 'Group',
+  title: 'Group 1',
+  onClick() {
+    activeGroup.setVisible(false, baseEventDetail);
+    activeGroup = activeGroup === group1 ? group2 : group1;
+    groupButton.innerText = activeGroup === group1 ? 'Group 1' : 'Group 2';
+    activeGroup.setVisible(true, baseEventDetail);
   },
 });
 
@@ -166,14 +169,66 @@ function togglePlay(toggle = undefined) {
 }
 
 addButtonToToolbar({
-  id: 'Delete',
-  title: 'Delete Annotation',
+  id: 'Set Range [',
+  title: 'Start Range',
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      cornerstoneTools.annotation.state.removeAnnotation(
-        annotation.annotationUID
+      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
+      const frame = viewport.getFrameNumber();
+      const range = Array.isArray(rangeSelection)
+        ? rangeSelection
+        : [rangeSelection, viewport.numberOfFrames];
+      range[0] = frame;
+      range[1] = Math.max(frame, range[1]);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        range as [number, number],
+        baseEventDetail
       );
+      viewport.setFrameRange(range);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Set Current',
+  title: 'Current Image',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      togglePlay(false);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        viewport.getFrameNumber(),
+        baseEventDetail
+      );
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'End Range',
+  title: 'End Range',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
+      const frame = viewport.getFrameNumber();
+      const range = Array.isArray(rangeSelection)
+        ? rangeSelection
+        : [rangeSelection, viewport.getNumberOfSlices()];
+      range[1] = frame;
+      range[0] = Math.min(frame, range[0]);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        range as [number, number],
+        baseEventDetail
+      );
+      viewport.setFrameRange(range);
+      viewport.render();
     }
   },
 });
@@ -200,10 +255,18 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
+  const range = annotationFrameRange.getFrameRange(annotation);
+  const rangeArr = Array.isArray(range) ? range : [range];
+  const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
     data.label || data.text
-  } ${annotation.isVisible ? 'visible' : 'not visible'}
+  } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
+    <b>Range:</b> ${rangeArr.join('-')} Time ${rangeArr
+    .map((it) => Math.round((it * 10) / fps) / 10)
+    .join('-')} Groups: ${group1.has(uid) ? '1' : ''} ${
+    group2.has(uid) ? '2' : ''
+  }<br />
   `;
 }
 
@@ -226,6 +289,35 @@ function addAnnotationListeners() {
     toolsEvents.ANNOTATION_COMPLETED,
     annotationModifiedListener
   );
+  eventTarget.addEventListener(toolsEvents.ANNOTATION_ADDED, (evt) => {
+    const { detail } = evt;
+    activeGroup.add(detail.annotation?.annotationUID || detail.annotationUID);
+  });
+}
+
+function selectNextAnnotation(direction) {
+  const uid = selectedAnnotation.annotationUID;
+  const nextUid =
+    activeGroup.findNearby(uid, direction) ||
+    activeGroup.findNearby(null, direction);
+  updateAnnotationDiv(nextUid);
+  if (!nextUid) {
+    return;
+  }
+  const annotation = cornerstoneTools.annotation.state.getAnnotation(nextUid);
+  if (!annotation) {
+    return;
+  }
+  const range = annotationFrameRange.getFrameRange(annotation);
+  if (Array.isArray(range)) {
+    viewport.setFrameRange(range);
+    togglePlay(true);
+    viewport.setFrameNumber(range[0]);
+  } else {
+    viewport.setFrameRange(null);
+    togglePlay(false);
+    viewport.setFrameNumber(range);
+  }
 }
 
 /**
@@ -288,7 +380,6 @@ async function run() {
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
@@ -304,11 +395,18 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+    ],
+  });
+  toolGroup.setToolActive(VideoRedactionTool.toolName, {
+    bindings: [
+      {
         mouseButton: MouseBindings.Primary, // Middle Click
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -328,10 +426,14 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(ZoomTool.toolName, {
+  toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary,
+      },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Alt,
       },
     ],
   });

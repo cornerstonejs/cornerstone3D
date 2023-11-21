@@ -1842,6 +1842,12 @@ function isVideoTransferSyntax(uidOrUids: string | string[]): string | false;
 // @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
+    getFrameRange(): [number, number];
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
     pause: () => void;
@@ -1854,9 +1860,13 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     resize: () => void;
     // (undocumented)
+    setFrameNumber(frameNo: number): any;
+    // (undocumented)
+    setFrameRange(range?: [number, number]): any;
+    // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideo: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
+    setVideo: (imageIds: string, imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
     setVideoURL: (url: string) => void;
 }
@@ -2965,9 +2975,17 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     end(): Promise<void>;
     // (undocumented)
+    static frameRangeExtractor: RegExp;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getFrameRange(): [number, number];
     // (undocumented)
     getImageData(): {
         dimensions: any;
@@ -2977,6 +2995,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         metadata: {
             Modality: any;
         };
+        getScalarData: () => Uint8ClampedArray;
         imageData: {
             getDirection: () => any;
             getDimensions: () => any;
@@ -2995,9 +3014,17 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
+    getPan(): Point2;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
+    // (undocumented)
+    protected getTransform(): Transform;
+    // (undocumented)
+    hasImageURI(imageURI: string): boolean;
     // (undocumented)
     protected imageId: string;
     // (undocumented)
@@ -3027,7 +3054,9 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected setColorTransform(): void;
     // (undocumented)
-    setFrame(frame: number): Promise<void>;
+    setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    setFrameRange(frameRange: number[]): void;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
@@ -3037,7 +3066,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
-    setVideo(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
+    setVideo(imageId: string, frameNumber?: number): Promise<unknown>;
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)
