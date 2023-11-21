@@ -9,7 +9,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -49,8 +48,8 @@ const viewportIds = [
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Synchronization of Volume Viewport Properties',
-  'Here we demonstrate camera and window/level synchronization across viewports.'
+  'Image Slice Synchronization of Stack and  Volume Viewports',
+  'This example demonstrates how to synchronize the image slice of a stack viewport (first two) with the image slice of a volume viewport (right most) or another stack viewport. When you scroll through the stack, the other viewports will scroll to the same image slice. Each viewport can be source or target of the synchronization.'
 );
 
 const size = '500px';
@@ -173,10 +172,6 @@ async function run() {
       viewportId: viewportIds[1],
       type: ViewportType.STACK,
       element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
-      },
     },
     {
       viewportId: viewportIds[2],
@@ -215,21 +210,16 @@ async function run() {
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportIds[2]]);
 
-  setTimeout(() => {
-    const synchronizer = SynchronizerManager.getSynchronizer(imageSliceSync);
-    window.synch = synchronizer;
+  // Render the image
+  renderingEngine.renderViewports(viewportIds);
 
-    if (!synchronizer) {
-      return;
-    }
+  const synchronizer = SynchronizerManager.getSynchronizer(imageSliceSync);
 
+  if (synchronizer) {
     synchronizer.add({ renderingEngineId, viewportId: viewportIds[0] });
     synchronizer.add({ renderingEngineId, viewportId: viewportIds[1] });
     synchronizer.add({ renderingEngineId, viewportId: viewportIds[2] });
-  });
-
-  // Render the image
-  renderingEngine.renderViewports(viewportIds);
+  }
 }
 
 run();
