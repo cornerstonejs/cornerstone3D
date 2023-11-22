@@ -6,7 +6,8 @@ import getBrushToolInstances from './utilities';
 
 export function setBrushThresholdForToolGroup(
   toolGroupId: string,
-  threshold: Types.Point2
+  threshold: Types.Point2,
+  otherArgs: Record<string, unknown> = { isDynamic: false }
 ) {
   const toolGroup = getToolGroup(toolGroupId);
 
@@ -16,9 +17,13 @@ export function setBrushThresholdForToolGroup(
 
   const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
 
+  const configuration = {
+    ...otherArgs,
+    threshold,
+  };
+
   brushBasedToolInstances.forEach((tool) => {
-    tool.configuration.strategySpecificConfiguration.THRESHOLD_INSIDE_CIRCLE.threshold =
-      threshold;
+    tool.configuration.strategySpecificConfiguration.THRESHOLD = configuration;
   });
 
   // Trigger an annotation render for any viewports on the toolgroup

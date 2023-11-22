@@ -7,42 +7,16 @@ import {
   pointInEllipse,
 } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInShapeCallback } from '../../../utilities';
-import isWithinThreshold from './utils/isWithinThreshold';
+import BrushStrategy from './BrushStrategy';
+import type { OperationData, InitializedOperationData } from './BrushStrategy';
+import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = {
-  segmentationId: string;
-  imageVolume: Types.IImageVolume;
-  points: any; // Todo:fix
-  volume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentsLocked: number[];
-  viewPlaneNormal: number[];
-  viewUp: number[];
-  strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
-};
-
-function fillCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  threshold = false
+export function initializeCircle(
+  operationData: InitializedOperationData
 ): void {
-  const {
-    volume: segmentationVolume,
-    imageVolume,
-    points,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    strategySpecificConfiguration,
-  } = operationData;
-  const { imageData, dimensions } = segmentationVolume;
-  const scalarData = segmentationVolume.getScalarData();
-  const { viewport } = enabledElement;
+  const { points, viewport, imageData, dimensions } = operationData;
 
   // Average the points to get the center of the ellipse
   const center = vec3.fromValues(0, 0, 0);
@@ -50,6 +24,8 @@ function fillCircle(
     vec3.add(center, center, point);
   });
   vec3.scale(center, center, 1 / points.length);
+
+  operationData.centerWorld = center as Types.Point3;
 
   const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -67,7 +43,10 @@ function fillCircle(
     <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
   ];
 
-  const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions);
+  operationData.boundsIJK = getBoundingBoxAroundShape(
+    ellipsoidCornersIJK,
+    dimensions
+  );
 
   // using circle as a form of ellipse
   const ellipseObj = {
@@ -77,46 +56,25 @@ function fillCircle(
     zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
   };
 
-  const modifiedSlicesToUse = new Set() as Set<number>;
-
-  let callback;
-
-  if (threshold) {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-
-      if (
-        isWithinThreshold(index, imageVolume, strategySpecificConfiguration)
-      ) {
-        scalarData[index] = segmentIndex;
-        //Todo: I don't think this will always be index 2 in streamingImageVolume?
-        modifiedSlicesToUse.add(pointIJK[2]);
-      }
-    };
-  } else {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-      scalarData[index] = segmentIndex;
-      //Todo: I don't think this will always be index 2 in streamingImageVolume?
-      modifiedSlicesToUse.add(pointIJK[2]);
-    };
-  }
-
-  pointInShapeCallback(
-    imageData,
-    (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
-    callback,
-    boundsIJK
-  );
-
-  const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse);
-
-  triggerSegmentationDataModified(segmentationId, arrayOfSlices);
+  operationData.isInObject = (pointLPS /*, pointIJK */) =>
+    pointInEllipse(ellipseObj, pointLPS);
 }
+
+const CIRCLE_STRATEGY = new BrushStrategy(
+  'Circle',
+  BrushStrategy.initializeRegionFill,
+  BrushStrategy.initializeSetValue,
+  initializeCircle
+);
+
+const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
+  'CircleThreshold',
+  BrushStrategy.initializeRegionFill,
+  BrushStrategy.initializeSetValue,
+  BrushStrategy.initializeThreshold,
+  initializeCircle,
+  dynamicWithinThreshold
+);
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -128,7 +86,7 @@ export function fillInsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillCircle(enabledElement, operationData, false);
+  CIRCLE_STRATEGY.fill(enabledElement, operationData);
 }
 
 /**
@@ -152,7 +110,7 @@ export function thresholdInsideCircle(
     );
   }
 
-  fillCircle(enabledElement, operationData, true);
+  CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
 }
 
 /**

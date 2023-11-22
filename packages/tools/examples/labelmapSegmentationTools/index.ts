@@ -4,6 +4,8 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  ProgressiveRetrieveImages,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,6 +14,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -152,7 +155,11 @@ addDropdownToToolbar({
   },
 });
 
-const thresholdOptions = ['CT Fat: (-150, -70)', 'CT Bone: (200, 1000)'];
+const thresholdOptions = [
+  'CT Fat: (-150, -70)',
+  'CT Bone: (200, 1000)',
+  'Dynamic',
+];
 
 addDropdownToToolbar({
   options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
@@ -160,13 +167,23 @@ addDropdownToToolbar({
     const name = String(nameAsStringOrNumber);
 
     let threshold;
+    const otherArgs = {
+      isDynamic: true,
+    };
     if (name === thresholdOptions[0]) {
       threshold = [-150, -70];
     } else if (name == thresholdOptions[1]) {
       threshold = [100, 1000];
+    } else if (name === thresholdOptions[2]) {
+      threshold = null;
+      otherArgs.isDynamic = true;
     }
 
-    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
+    segmentationUtils.setBrushThresholdForToolGroup(
+      toolGroupId,
+      threshold,
+      otherArgs
+    );
   },
 });
 
@@ -212,6 +229,11 @@ async function addSegmentationsToState() {
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+
+  utilities.imageRetrieveMetadataProvider.add(
+    'volume',
+    ProgressiveRetrieveImages.interleavedRetrieveStages
+  );
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -303,7 +325,8 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
