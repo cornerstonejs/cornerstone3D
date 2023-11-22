@@ -35,11 +35,12 @@ const {
   PaintFillTool,
   PanTool,
   ZoomTool,
+  StackScrollTool,
   StackScrollMouseWheelTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -239,6 +240,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
@@ -260,6 +262,7 @@ async function run() {
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
@@ -288,6 +291,18 @@ async function run() {
       activeStrategy: brushStrategies.SphereEraser,
     }
   );
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Alt,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Meta,
+      },
+    ],
+  });
   toolGroup.addToolInstance(
     brushInstanceNames.ThresholdBrush,
     BrushTool.toolName,
@@ -299,6 +314,15 @@ async function run() {
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift Left Click
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
   });
 
   toolGroup.setToolActive(PanTool.toolName, {
