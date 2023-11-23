@@ -14,6 +14,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import { getBufferConfiguration, uuidv4 } from '../utilities';
 import { Point3, Metadata, EventTypes, Mat3 } from '../types';
 import { getConfiguration } from '../init';
+import { PixelDataTypedArray } from 'core/dist/types/types';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -27,7 +28,7 @@ interface DerivedVolumeOptions {
   };
 }
 interface LocalVolumeOptions {
-  scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+  scalarData: PixelDataTypedArray;
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;

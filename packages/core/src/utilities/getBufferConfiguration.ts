@@ -1,4 +1,4 @@
-import { PixelDataTypedArray } from '../types';
+import { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
 
 /**
  * Creates a target buffer based on the provided options.
@@ -12,11 +12,7 @@ import { PixelDataTypedArray } from '../types';
  * with new TypedArrayConstructor(length).
  */
 function getBufferConfiguration(
-  targetBufferType:
-    | 'Float32Array'
-    | 'Uint8Array'
-    | 'Uint16Array'
-    | 'Int16Array',
+  targetBufferType: PixelDataTypedArrayString,
   length: number,
   options: { use16BitTexture?: boolean; isVolumeBuffer?: boolean } = {}
 ): {

@@ -2,11 +2,21 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import {
-  derivedImageMetadataProvider,
+  genericMetadataProvider,
   getBufferConfiguration,
   triggerEvent,
 } from '../utilities';
-import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
+import {
+  IImage,
+  ImageLoaderFn,
+  IImageLoadObject,
+  EventTypes,
+  Point2,
+  Point3,
+  Mat3,
+  PixelDataTypedArrayString,
+  PixelDataTypedArray,
+} from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { metaData } from '../';
 
@@ -18,15 +28,23 @@ export interface ImageLoaderOptions {
 
 interface DerivedImageOptions {
   imageId: string;
-  targetBuffer?: {
-    type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int16Array';
-  };
+  targetBufferType?: PixelDataTypedArrayString;
 }
 
 interface DerivedImages {
   imageIds: Array<string>;
   promises: Array<Promise<IImage>>;
 }
+
+interface LocalImageOptions {
+  scalarData?: PixelDataTypedArray;
+  targetBufferType?: PixelDataTypedArrayString;
+  dimensions?: Point2;
+  spacing?: Point3;
+  origin?: Point3;
+  direction?: Mat3;
+}
+
 /**
  * This module deals with ImageLoaders, loading images and caching images
  */
@@ -212,63 +230,62 @@ export function loadAndCacheImages(
  */
 export function createAndCacheDerivedImage(
   referencedImageId: string,
-  options: DerivedImageOptions
+  options: DerivedImageOptions,
+  preventCache = false
 ): Promise<IImage> {
   if (referencedImageId === undefined) {
     throw new Error(
       'createAndCacheDerivedImage: parameter imageId must not be undefined'
     );
   }
+
+  if (options.imageId === undefined) {
+    throw new Error(
+      'createAndCacheDerivedImage: parameter imageId must not be undefined'
+    );
+  }
+
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
 
-  const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
-    options.targetBuffer?.type,
+  const { TypedArrayConstructor } = getBufferConfiguration(
+    options.targetBufferType,
     length
   );
 
   const imageScalarData = new TypedArrayConstructor(length);
-
-  const image: IImage = {
-    imageId: options.imageId,
-    referencedImageId: referencedImageId,
-    intercept: 0,
-    windowCenter: 0,
-    windowWidth: 0,
-    color: false,
-    numComps: 1,
-    slope: 1,
-    minPixelValue: 0,
-    maxPixelValue: 255,
-    voiLUTFunction: undefined,
-    rows: imagePlaneModule.rows,
-    columns: imagePlaneModule.columns,
-    sizeInBytes: imageScalarData.byteLength | numBytes,
-    getPixelData: () => imageScalarData,
-    getCanvas: undefined, // todo: which canvas?
-    height: imagePlaneModule.rows,
-    width: imagePlaneModule.columns,
-    rgba: undefined, // todo: how
-    columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
-    rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
-    invert: false,
-  };
-
-  const imageLoadObject = {
-    promise: Promise.resolve(image),
-  };
-  cache.putImageLoadObject(image.imageId, imageLoadObject);
+  const derivedImageId = options.imageId;
 
   ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
     (type) => {
-      derivedImageMetadataProvider.add(image.imageId, {
+      genericMetadataProvider.add(derivedImageId, {
         type,
         metadata: metaData.get(type, referencedImageId),
       });
     }
   );
 
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'referencedImageId',
+    metadata: {
+      referencedImageId,
+    },
+  });
+
+  const localImage = createAndCacheLocalImage(
+    { scalarData: imageScalarData },
+    options.imageId,
+    true
+  );
+
+  const imageLoadObject = {
+    promise: Promise.resolve(localImage),
+  };
+
+  if (!preventCache) {
+    cache.putImageLoadObject(derivedImageId, imageLoadObject);
+  }
   return imageLoadObject.promise;
 }
 
@@ -298,6 +315,78 @@ export function createAndCacheDerivedImages(
   });
 
   return { imageIds: derivedImageIds, promises: allPromises };
+}
+
+export function createAndCacheLocalImage(
+  options: LocalImageOptions,
+  imageId: string,
+  preventCache = false
+): IImage {
+  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+
+  const length = imagePlaneModule.rows * imagePlaneModule.columns;
+
+  const image = {
+    imageId: imageId,
+    intercept: 0,
+    windowCenter: 0,
+    windowWidth: 0,
+    color: false,
+    numComps: 1,
+    slope: 1,
+    minPixelValue: 0,
+    maxPixelValue: 255,
+    voiLUTFunction: undefined,
+    rows: imagePlaneModule.rows,
+    columns: imagePlaneModule.columns,
+    getCanvas: undefined, // todo: which canvas?
+    height: imagePlaneModule.rows,
+    width: imagePlaneModule.columns,
+    rgba: undefined, // todo: how
+    columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
+    rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
+    invert: false,
+  } as IImage;
+
+  if (options.scalarData) {
+    const imageScalarData = options.scalarData;
+
+    if (
+      !(
+        imageScalarData instanceof Uint8Array ||
+        imageScalarData instanceof Float32Array ||
+        imageScalarData instanceof Uint16Array ||
+        imageScalarData instanceof Int16Array
+      )
+    ) {
+      throw new Error(
+        'To use createLocalVolume you should pass scalarData of type Uint8Array, Uint16Array, Int16Array or Float32Array'
+      );
+    }
+
+    image.sizeInBytes = imageScalarData.byteLength;
+    image.getPixelData = () => imageScalarData;
+  } else {
+    const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
+      options.targetBufferType,
+      length
+    );
+
+    const imageScalarData = new TypedArrayConstructor(length);
+
+    image.sizeInBytes = numBytes;
+    image.getPixelData = () => imageScalarData;
+  }
+
+  const imageLoadObject = {
+    promise: Promise.resolve(image),
+  };
+
+  if (!preventCache) {
+    cache.putImageLoadObject(image.imageId, imageLoadObject);
+  }
+
+  return image;
 }
 
 /**

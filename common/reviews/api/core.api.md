@@ -3031,7 +3031,7 @@ declare namespace utilities {
         sortImageIdsAndGetSpacing,
         makeVolumeMetadata,
         isValidVolume,
-        metadataProvider_2 as derivedImageMetadataProvider,
+        metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax
     }
 }

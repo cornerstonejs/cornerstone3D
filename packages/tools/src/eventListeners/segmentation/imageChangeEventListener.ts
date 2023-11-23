@@ -6,6 +6,7 @@ import {
   cache,
   utilities,
   Types,
+  metaData,
 } from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import Representations from '../../enums/SegmentationRepresentations';
@@ -207,6 +208,32 @@ function getDerivedImageId(
   }
 }
 
+/**
+ *
+ * @param imageId - The imageId that we want to get the derived imageId for
+ * @param segmentationImageIds - All the segmentation imageIds
+ * @returns - the segmentation imageIds that are derived from the target imageId
+ */
+function getDerivedImageIds(
+  imageId: string,
+  segmentationImageIds: Array<string>
+) {
+  const derivedImageIds = [];
+
+  for (let i = 0; i < segmentationImageIds.length; i++) {
+    const segmentationImageId = segmentationImageIds[i];
+    const referencedImageId = metaData.get(
+      'referencedImageId',
+      segmentationImageId
+    );
+
+    if (referencedImageId && referencedImageId === imageId) {
+      derivedImageIds.push(segmentationImageId);
+    }
+  }
+
+  return derivedImageIds;
+}
 export default {
   enable,
   disable,

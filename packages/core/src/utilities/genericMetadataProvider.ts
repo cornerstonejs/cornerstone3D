@@ -1,14 +1,14 @@
 import { metaData } from '..';
 
-const state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
+let state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
 /**
- * Simple metadata provider that stored the derived metadata in memory.
+ * Simple metadata provider that stores some sort of meta data for each imageId.
  */
 const metadataProvider = {
   /**
    * Adds metadata for an imageId.
    * @param imageId - the imageId for the metadata to store
-   * @param payload - the payload composed of new calibrated pixel spacings
+   * @param payload - the payload
    */
   add: (imageId: string, payload: any): void => {
     const type = payload.type;
@@ -28,6 +28,13 @@ const metadataProvider = {
    */
   get: (type: string, imageId: string): any => {
     return state[imageId]?.[type];
+  },
+
+  /**
+   * Clears all metadata.
+   */
+  clear: (): void => {
+    state = {};
   },
 };
 

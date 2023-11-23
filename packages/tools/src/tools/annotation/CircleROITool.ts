@@ -55,10 +55,7 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
@@ -995,9 +992,7 @@ class CircleROITool extends AnnotationTool {
           imageData,
           (pointLPS) =>
             pointInEllipse(ellipseObj, pointLPS, {
-              invXRadiusSq,
-              invYRadiusSq,
-              invZRadiusSq,
+              fast: true,
             }),
           this.configuration.statsCalculator.statsCallback,
           boundsIJK

@@ -51,7 +51,7 @@ import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
 import makeVolumeMetadata from './makeVolumeMetadata';
-import derivedImageMetadataProvider from './derivedImageMetadataProvider';
+import genericMetadataProvider from './genericMetadataProvider';
 import { isValidVolume } from './isValidVolume';
 import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWithCornerstoneImage';
 import ProgressiveIterator from './ProgressiveIterator';
@@ -130,7 +130,7 @@ export {
   sortImageIdsAndGetSpacing,
   makeVolumeMetadata,
   isValidVolume,
-  derivedImageMetadataProvider,
+  genericMetadataProvider,
   isVideoTransferSyntax,
   getBufferConfiguration,
 };

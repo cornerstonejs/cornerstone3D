@@ -5,7 +5,10 @@ import {
   Types,
   Enums,
 } from '@cornerstonejs/core';
-import { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
+} from '../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
@@ -58,7 +61,7 @@ async function addLabelmapToElement(
   } else {
     const stackInputs: Types.IStackInput[] = [
       {
-        imageId: viewport.getCurrentImageId(),
+        imageId: (labelMapData as LabelmapSegmentationDataStack).imageIds[0],
         actorUID: segmentationRepresentationUID,
       },
     ];

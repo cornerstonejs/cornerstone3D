@@ -80,7 +80,10 @@ import type { IContour } from './IContour';
 import type RGB from './RGB';
 import { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
-import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
@@ -198,6 +201,7 @@ export type {
   ColormapRegistration,
   // PixelData
   PixelDataTypedArray,
+  PixelDataTypedArrayString,
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,

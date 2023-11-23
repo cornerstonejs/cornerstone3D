@@ -1,16 +1,16 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { IImage } from '../types';
+import { PixelDataTypedArray } from 'core/dist/types/types';
 
 function updateVTKImageDataWithCornerstoneImage(
   sourceImageData: vtkImageData,
   image: IImage
 ) {
   const pixelData = image.getPixelData();
-  const scalarData = sourceImageData.getPointData().getScalars().getData() as
-    | Uint8Array
-    | Float32Array
-    | Uint16Array
-    | Int16Array;
+  const scalarData = sourceImageData
+    .getPointData()
+    .getScalars()
+    .getData() as PixelDataTypedArray;
 
   // if the color image is loaded with CPU previously, it loads it
   // with RGBA, and here we need to remove the A channel from the
