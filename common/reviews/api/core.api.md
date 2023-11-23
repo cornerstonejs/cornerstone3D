@@ -44,10 +44,16 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
+<<<<<<< HEAD
 export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
 function addProvider(provider: (type: string, query: any) => any, priority?: number): void;
+||||||| fd8028a7
+function addProvider(provider: (type: string, query: any) => any, priority?: number): void;
+=======
+function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
+>>>>>>> bb586320e1b8c8d07ae7f695cc838ed529631050
 
 // @public (undocumented)
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
@@ -934,6 +940,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
 };
 
 // @public (undocumented)
+export function getWebWorkerManager(): any;
+
+// @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
 
 // @public (undocumented)
@@ -1552,7 +1561,7 @@ const imageRetrieveMetadataProvider: {
     IMAGE_RETRIEVE_CONFIGURATION: string;
     clear: () => void;
     add: (key: string, payload: any) => void;
-    get: (type: string, queriesOrQuery: string | string[]) => any;
+    get: (type: string, ...queries: string[]) => any;
 };
 
 // @public (undocumented)
@@ -1871,6 +1880,12 @@ function isVideoTransferSyntax(uidOrUids: string | string[]): string | false;
 // @public (undocumented)
 interface IVideoViewport extends IViewport {
     // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
+    getFrameRange(): [number, number];
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
     pause: () => void;
@@ -1883,9 +1898,13 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     resize: () => void;
     // (undocumented)
+    setFrameNumber(frameNo: number): any;
+    // (undocumented)
+    setFrameRange(range?: [number, number]): any;
+    // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setVideo: (imageIds: string | string[], imageIdIndex?: number) => Promise<unknown>;
+    setVideo: (imageIds: string, imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
     setVideoURL: (url: string) => void;
 }
@@ -2458,6 +2477,8 @@ function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: 
 // @public (undocumented)
 enum RequestType {
     // (undocumented)
+    Compute = "compute",
+    // (undocumented)
     Interaction = "interaction",
     // (undocumented)
     Prefetch = "prefetch",
@@ -2584,7 +2605,7 @@ function sortImageIdsAndGetSpacing(imageIds: Array<string>, scanAxisNormal?: vec
 // @public (undocumented)
 const spatialRegistrationMetadataProvider: {
     add: (query: string[], payload: mat4) => void;
-    get: (type: string, query: string[]) => mat4;
+    get: (type: string, viewportId1: string, viewportId2: string) => mat4;
 };
 
 // @public (undocumented)
@@ -3033,9 +3054,17 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     end(): Promise<void>;
     // (undocumented)
+    static frameRangeExtractor: RegExp;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getFrameRange(): [number, number];
     // (undocumented)
     getImageData(): {
         dimensions: any;
@@ -3045,6 +3074,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         metadata: {
             Modality: any;
         };
+        getScalarData: () => Uint8ClampedArray;
         imageData: {
             getDirection: () => any;
             getDimensions: () => any;
@@ -3063,9 +3093,17 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
+    getPan(): Point2;
+    // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
+    // (undocumented)
+    protected getTransform(): Transform;
+    // (undocumented)
+    hasImageURI(imageURI: string): boolean;
     // (undocumented)
     protected imageId: string;
     // (undocumented)
@@ -3095,7 +3133,9 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected setColorTransform(): void;
     // (undocumented)
-    setFrame(frame: number): Promise<void>;
+    setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    setFrameRange(frameRange: number[]): void;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
@@ -3105,7 +3145,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
-    setVideo(imageIds: string | string[], frameNumber?: number): Promise<unknown>;
+    setVideo(imageId: string, frameNumber?: number): Promise<unknown>;
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)

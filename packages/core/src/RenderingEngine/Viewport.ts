@@ -1113,7 +1113,7 @@ class Viewport implements IViewport {
       }
 
       if (viewUp) {
-        viewUpHasChanged = isEqual(currentViewUp, prevViewUp);
+        viewUpHasChanged = !isEqual(currentViewUp, prevViewUp);
       }
 
       // only modify the clipping planes if the camera is modified out of plane

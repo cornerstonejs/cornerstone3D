@@ -11,7 +11,7 @@ const providers = [];
  * @category MetaData
  */
 export function addProvider(
-  provider: (type: string, query: any) => any,
+  provider: (type: string, ...query: string[]) => any,
   priority = 0
 ): void {
   let i;
@@ -73,10 +73,9 @@ export function removeAllProviders(): void {
  * @category MetaData
  */
 function getMetaData(type: string, ...queries): any {
-  const query = queries.length === 1 ? queries[0] : queries;
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, query);
+    const result = providers[i].provider(type, ...queries);
 
     if (result !== undefined) {
       return result;

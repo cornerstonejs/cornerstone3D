@@ -20,10 +20,7 @@ const imageRetrieveMetadataProvider = {
     retrieveConfigurationState.set(key, payload);
   },
 
-  get: (type: string, queriesOrQuery: string | string[]) => {
-    const queries = Array.isArray(queriesOrQuery)
-      ? queriesOrQuery
-      : [queriesOrQuery];
+  get: (type: string, ...queries: string[]) => {
     if (type === IMAGE_RETRIEVE_CONFIGURATION) {
       return queries
         .map((query) => retrieveConfigurationState.get(query))

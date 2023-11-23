@@ -82,6 +82,7 @@ module.exports = {
             'concepts/cornerstone-core/viewports',
             'concepts/cornerstone-core/renderingEngine',
             'concepts/cornerstone-core/requestPoolManager',
+            'concepts/cornerstone-core/webWorker',
           ],
         },
         {
@@ -161,6 +162,7 @@ module.exports = {
                 'concepts/cornerstone-tools/annotation/selection',
                 'concepts/cornerstone-tools/annotation/locking',
                 'concepts/cornerstone-tools/annotation/config',
+                'concepts/cornerstone-tools/annotation/annotationGroups',
               ],
             },
             {

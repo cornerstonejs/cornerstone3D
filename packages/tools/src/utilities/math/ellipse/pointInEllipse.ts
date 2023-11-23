@@ -4,19 +4,13 @@
  * @param pointLPS - The point in LPS space to test.
  * @returns A boolean value.
  */
-export default function pointInEllipse(ellipse, pointLPS, inverts) {
-  const { center, xRadius, yRadius, zRadius } = ellipse;
-
-  let invXRadiusSqToUse, invYRadiusSqToUse, invZRadiusSqToUse;
-  if (inverts !== undefined) {
-    invXRadiusSqToUse = inverts.invXRadiusSq;
-    invYRadiusSqToUse = inverts.invYRadiusSq;
-    invZRadiusSqToUse = inverts.invZRadiusSq;
-  } else {
-    invXRadiusSqToUse = xRadius !== 0 ? 1 / xRadius ** 2 : 0;
-    invYRadiusSqToUse = yRadius !== 0 ? 1 / yRadius ** 2 : 0;
-    invZRadiusSqToUse = zRadius !== 0 ? 1 / zRadius ** 2 : 0;
-  }
+export default function pointInEllipse(
+  ellipse: Ellipse,
+  pointLPS: Types.Point3
+): boolean {
+  const { center: circleCenterWorld, xRadius, yRadius, zRadius } = ellipse;
+  const [x, y, z] = pointLPS;
+  const [x0, y0, z0] = circleCenterWorld;
 
   let inside = 0;
 

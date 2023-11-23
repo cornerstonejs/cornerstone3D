@@ -1924,6 +1924,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           enabled: true,
         },
         useRGBA: true,
+        requestType,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {

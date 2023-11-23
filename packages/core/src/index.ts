@@ -40,6 +40,7 @@ import {
   resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
 } from './init';
 
 // Classes
@@ -86,6 +87,7 @@ export {
   // configs
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
   // enums
   Enums,
   CONSTANTS,
