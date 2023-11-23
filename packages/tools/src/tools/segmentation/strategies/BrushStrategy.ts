@@ -32,6 +32,9 @@ export type InitializedOperationData = OperationData & {
   viewport: Types.IViewport;
   dimensions: Types.Point3;
   centerWorld: Types.Point3;
+  initDown?: () => void;
+  completeUp?: () => void;
+  centerIJK?: Types.Point3;
 };
 
 type Initializer = (operationData: InitializedOperationData) => void;
@@ -128,6 +131,27 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) {
+    const initializedData = this.getInitializedData(
+      enabledElement,
+      operationData
+    );
+
+    initializedData.fill();
+
+    const arrayOfSlices: number[] = Array.from(
+      initializedData.modifiedSlicesToUse
+    );
+
+    triggerSegmentationDataModified(
+      initializedData.segmentationId,
+      arrayOfSlices
+    );
+  }
+
+  protected getInitializedData(
+    enabledElement: Types.IEnabledElement,
+    operationData: OperationData
+  ): InitializedOperationData {
     const modifiedSlicesToUse = new Set() as Set<number>;
     const { volume: segmentationVolume, segmentationId } = operationData;
     const { imageData, dimensions } = segmentationVolume;
@@ -148,11 +172,13 @@ export default class BrushStrategy {
     };
 
     this.initializers.forEach((initializer) => initializer(initializedData));
+    return initializedData;
+  }
 
-    initializedData.fill();
-
-    const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse);
-
-    triggerSegmentationDataModified(segmentationId, arrayOfSlices);
+  public initDown(
+    enabledElement: Types.IEnabledElement,
+    operationData: OperationData
+  ) {
+    this.getInitializedData(enabledElement, operationData).initDown?.();
   }
 }

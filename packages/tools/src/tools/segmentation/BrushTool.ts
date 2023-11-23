@@ -158,6 +158,8 @@ class BrushTool extends BaseTool {
       viewportIdsToRender
     );
 
+    this.applyActiveStrategyDown(enabledElement, this.getOperationData());
+
     return true;
   };
 
@@ -240,26 +242,28 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
-
     this.updateCursor(evt);
 
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-      viewportIdsToRender,
-    } = this._hoverData;
-
-    const { data } = brushCursor;
-    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
+    const { viewportIdsToRender } = this._hoverData;
 
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       viewportIdsToRender
     );
 
+    this.applyActiveStrategy(enabledElement, this.getOperationData());
+  };
+
+  protected getOperationData() {
+    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      brushCursor,
+    } = this._hoverData;
+    const { data } = brushCursor;
+    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
     const operationData = {
       points: data.handles.points,
       volume: segmentation, // todo: just pass the segmentationId instead
@@ -274,9 +278,8 @@ class BrushTool extends BaseTool {
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
     };
-
-    this.applyActiveStrategy(enabledElement, operationData);
-  };
+    return operationData;
+  }
 
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
@@ -486,6 +489,16 @@ class BrushTool extends BaseTool {
       circleUID,
       center as Types.Point2,
       radius,
+      {
+        color,
+      }
+    );
+    drawCircleSvg(
+      svgDrawingHelper,
+      annotationUID,
+      '1',
+      center as Types.Point2,
+      2,
       {
         color,
       }

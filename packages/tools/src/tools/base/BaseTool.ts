@@ -87,6 +87,24 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
+   * It applies the active strategy down initialization, if any.
+   * @param enabledElement - The element that is being operated on.
+   * @param operationData - The data that needs to be passed to the strategy.
+   * @returns The result of the strategy.
+   */
+  public applyActiveStrategyDown(
+    enabledElement: Types.IEnabledElement,
+    operationData: unknown
+  ): any {
+    const { strategies, activeStrategy } = this.configuration;
+    return strategies[activeStrategy].initDown?.call(
+      this,
+      enabledElement,
+      operationData
+    );
+  }
+
+  /**
    * merges the new configuration with the tool configuration
    * @param configuration - toolConfiguration
    */

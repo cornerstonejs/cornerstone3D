@@ -330,6 +330,10 @@ async function run() {
       {
         mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Ctrl,
+      },
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {

@@ -27,7 +27,10 @@ export function initializeCircle(
   vec3.scale(center, center, 1 / points.length);
 
   operationData.centerWorld = center as Types.Point3;
-
+  operationData.centerIJK = transformWorldToIndex(
+    imageData,
+    center as Types.Point3
+  );
   const canvasCoordinates = points.map((p) =>
     viewport.worldToCanvas(p)
   ) as CanvasCoordinates;
@@ -115,6 +118,10 @@ export function thresholdInsideCircle(
 
   CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
 }
+
+thresholdInsideCircle.initDown = (enabledElement, operationData) => {
+  CIRCLE_THRESHOLD_STRATEGY.initDown?.(enabledElement, operationData);
+};
 
 /**
  * Fill outside the circular region segment inside the segmentation defined by the operationData.
