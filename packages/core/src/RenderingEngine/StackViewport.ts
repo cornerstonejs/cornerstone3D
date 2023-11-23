@@ -1613,7 +1613,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
   /**
    * Creates vtkImagedata based on the image object, it creates
-   * and empty scalar data for the image based on the metadata
+   * empty scalar data for the image based on the metadata
    * tags (e.g., bitsAllocated)
    *
    * @param image - cornerstone Image object

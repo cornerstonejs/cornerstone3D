@@ -17,9 +17,8 @@ const metadataProvider = {
       state[imageId] = {};
     }
 
-    state[imageId][type] = {
-      ...payload.metadata,
-    };
+    // Create a deep copy of payload.metadata
+    state[imageId][type] = JSON.parse(JSON.stringify(payload.metadata));
   },
 
   /**
@@ -28,11 +27,7 @@ const metadataProvider = {
    * @param imageId - the imageId to enquire about
    */
   get: (type: string, imageId: string): any => {
-    if (!state[imageId] || !state[imageId][type]) {
-      return;
-    }
-
-    return state[imageId][type];
+    return state[imageId]?.[type];
   },
 };
 

@@ -1,7 +1,11 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
-import { derivedImageMetadataProvider, triggerEvent } from '../utilities';
+import {
+  derivedImageMetadataProvider,
+  getBufferConfiguration,
+  triggerEvent,
+} from '../utilities';
 import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { metaData } from '../';
@@ -201,53 +205,34 @@ export function loadAndCacheImages(
  * which will resolve to the loaded image object or fail if an error occurred.
  * The image is stored in the cache.
  *
- * @param imageId -  A Cornerstone Image Object's imageId
+ * @param referencedImageId -  A Cornerstone Image Object's imageId
  * @param options - Options to be passed to the Image Loader
  *
  * @returns Image Loader Object
  */
 export function createAndCacheDerivedImage(
-  imageId: string,
+  referencedImageId: string,
   options: DerivedImageOptions
 ): Promise<IImage> {
-  if (imageId === undefined) {
+  if (referencedImageId === undefined) {
     throw new Error(
       'createAndCacheDerivedImage: parameter imageId must not be undefined'
     );
   }
-  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+  const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
-  let numBytes, TypedArray;
 
-  const { targetBuffer } = options;
-  if (targetBuffer) {
-    if (targetBuffer.type === 'Float32Array') {
-      numBytes = length * 4;
-      TypedArray = Float32Array;
-    } else if (targetBuffer.type === 'Uint8Array') {
-      numBytes = length;
-      TypedArray = Uint8Array;
-    } else if (targetBuffer.type === 'Uint16Array') {
-      numBytes = length * 2;
-      TypedArray = Uint16Array;
-    } else if (targetBuffer.type === 'Int16Array') {
-      numBytes = length * 2;
-      TypedArray = Uint16Array;
-    } else {
-      throw new Error('TargetBuffer should be Float32Array or Uint8Array');
-    }
-  } else {
-    // Use Uint8 if no targetBuffer is provided
-    numBytes = length;
-    TypedArray = Uint8Array;
-  }
+  const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
+    options.targetBuffer?.type,
+    length
+  );
 
-  const imageScalarData = new TypedArray(length);
+  const imageScalarData = new TypedArrayConstructor(length);
 
   const image: IImage = {
     imageId: options.imageId,
-    referencedImageId: imageId,
+    referencedImageId: referencedImageId,
     intercept: 0,
     windowCenter: 0,
     windowWidth: 0,
@@ -279,7 +264,7 @@ export function createAndCacheDerivedImage(
     (type) => {
       derivedImageMetadataProvider.add(image.imageId, {
         type,
-        metadata: metaData.get(type, imageId),
+        metadata: metaData.get(type, referencedImageId),
       });
     }
   );
@@ -290,27 +275,26 @@ export function createAndCacheDerivedImage(
 /**
  * Load and cache a list of imageIds
  *
- * @param imageIds - list of imageIds
- * @param options - options for loader
- *
+ * @param referencedImageIds - list of imageIds
+ * @param getDerivedImageId - function to generate derived imageId name however you want
  */
 export function createAndCacheDerivedImages(
-  imageIds: Array<string>,
+  referencedImageIds: Array<string>,
   getDerivedImageId: (imageId: string, index?: number) => string
 ): DerivedImages {
-  if (!imageIds || imageIds.length === 0) {
+  if (!referencedImageIds || referencedImageIds.length === 0) {
     throw new Error(
       'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
     );
   }
 
   const derivedImageIds = [];
-  const allPromises = imageIds.map((imageId, index) => {
+  const allPromises = referencedImageIds.map((referencedImageId, index) => {
     const options: DerivedImageOptions = {
-      imageId: getDerivedImageId(imageId, index),
+      imageId: getDerivedImageId(referencedImageId, index),
     };
     derivedImageIds.push(options.imageId);
-    return createAndCacheDerivedImage(imageId, options);
+    return createAndCacheDerivedImage(referencedImageId, options);
   });
 
   return { imageIds: derivedImageIds, promises: allPromises };

@@ -9,7 +9,6 @@ import {
   segmentationDataModifiedEventListener,
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
-  stackImageChangeEventListener,
   segmentationModifiedListener,
   annotationModifiedListener,
 } from './eventListeners';

@@ -1,6 +1,14 @@
 import { metaData } from '..';
 import isEqual from './isEqual';
 
+/**
+ * Checks if the given imageIds form a valid volume. A volume is considered valid if all imageIds
+ * have the same series instance UID, modality, columns, rows, image orientation patient, and pixel
+ * spacing.
+ *
+ * @param imageIds - The imageIds to check.
+ * @returns true if the imageIds form a valid volume, false otherwise.
+ */
 function isValidVolume(imageIds: string[]): boolean {
   const imageId0 = imageIds[0];
 

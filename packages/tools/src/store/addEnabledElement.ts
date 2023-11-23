@@ -4,7 +4,7 @@ import {
   wheelEventListener,
   touchEventListeners,
   keyEventListener,
-  stackImageChangeEventListener,
+  imageChangeEventListener,
 } from '../eventListeners';
 import {
   imageRenderedEventDispatcher,
@@ -42,7 +42,7 @@ export default function addEnabledElement(
   wheelEventListener.enable(element);
   touchEventListeners.enable(element);
   keyEventListener.enable(element);
-  stackImageChangeEventListener.enable(element);
+  imageChangeEventListener.enable(element);
 
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(element);

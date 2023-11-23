@@ -2,12 +2,12 @@ import segmentationRepresentationModifiedEventListener from './segmentationRepre
 import segmentationDataModifiedEventListener from './segmentationDataModifiedEventListener';
 import segmentationRepresentationRemovedEventListener from './segmentationRepresentationRemovedEventListener';
 import segmentationModifiedListener from './segmentationModifiedEventListener';
-import stackImageChangeEventListener from './stackImageChangeEventListener';
+import imageChangeEventListener from './imageChangeEventListener';
 
 export {
   segmentationRepresentationModifiedEventListener,
   segmentationDataModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
-  stackImageChangeEventListener,
+  imageChangeEventListener,
 };

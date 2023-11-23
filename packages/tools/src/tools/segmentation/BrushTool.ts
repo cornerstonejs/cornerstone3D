@@ -162,13 +162,6 @@ class BrushTool extends BaseTool {
       const { imageIds: segmentationImageIds } =
         labelmapData as LabelmapSegmentationDataStack;
 
-      // const { zSpacing, sortedImageIds, origin } =
-      //   sortImageIds(referencedImageIds);
-
-      // const orderedSegmentationImageIds = sortedImageIds.map((imageId) =>
-      //   getDerivedImageId(imageId, referencedImageIds, segmentationImageIds)
-      // );
-
       const currentImageId = viewport.getCurrentImageId();
       const currentSegmentationImageId =
         segmentationImageIds.indexOf(currentImageId);
