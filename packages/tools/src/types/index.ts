@@ -58,11 +58,13 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type { Statistics } from './CalculatorTypes';
+import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
+  CanvasCoordinates,
   IAnnotationManager,
   GroupSpecificAnnotations,
   AnnotationState,

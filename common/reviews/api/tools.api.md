@@ -722,6 +722,14 @@ function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRender
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
 
 // @public (undocumented)
+type CanvasCoordinates = [
+Types_2.Point2,
+Types_2.Point2,
+Types_2.Point2,
+Types_2.Point2
+];
+
+// @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
 
 // @public (undocumented)
@@ -1923,7 +1931,7 @@ const getCalibratedLengthUnits: (handles: any, image: any) => string;
 const getCalibratedScale: (image: any) => any;
 
 // @public (undocumented)
-function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
+function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
 function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
@@ -3899,7 +3907,7 @@ function setAttributesIfNecessary(attributes: any, svgNode: any): void;
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number, toolName?: string): void;
 
 // @public (undocumented)
-function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2, otherArgs?: Record<string, unknown>): void;
 
 // @public (undocumented)
 function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
@@ -4528,6 +4536,7 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
+        CanvasCoordinates,
         IAnnotationManager,
         GroupSpecificAnnotations,
         AnnotationState,

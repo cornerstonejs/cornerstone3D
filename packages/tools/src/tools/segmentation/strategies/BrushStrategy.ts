@@ -144,6 +144,7 @@ export default class BrushStrategy {
       dimensions,
       fill: null,
       setValue: null,
+      centerWorld: null,
     };
 
     this.initializers.forEach((initializer) => initializer(initializedData));

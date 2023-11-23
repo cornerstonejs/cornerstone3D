@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
@@ -10,6 +10,7 @@ import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { OperationData, InitializedOperationData } from './BrushStrategy';
 import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
+import type { CanvasCoordinates } from '../../../types';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -27,7 +28,9 @@ export function initializeCircle(
 
   operationData.centerWorld = center as Types.Point3;
 
-  const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+  const canvasCoordinates = points.map((p) =>
+    viewport.worldToCanvas(p)
+  ) as CanvasCoordinates;
 
   // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
   // corners in canvas coordinates
