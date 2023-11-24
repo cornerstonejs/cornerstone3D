@@ -5,7 +5,7 @@ import {
   VideoViewport,
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
-import { ToolModes } from '../../enums';
+import ToolModes from '../../enums/ToolModes';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
 export interface IBaseTool {
