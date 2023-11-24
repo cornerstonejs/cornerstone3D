@@ -4,15 +4,14 @@ import {
   RenderingEngine,
   metaData,
   imageLoader,
-  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
   initDemo,
   addDropdownToToolbar,
-  addSliderToToolbar,
   setTitleAndDescription,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -44,7 +43,6 @@ const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VIEWPORT';
-const segmentationId = 'STACK_SEGMENTATION';
 const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
@@ -121,6 +119,34 @@ const optionsValues = [
   PaintFillTool.toolName,
 ];
 
+let viewport;
+
+const segmentationIds = ['STACK_SEGMENTATION'];
+const segmentationRepresentationUIDs = [];
+const dropDownId = 'SEGMENTATION_DROPDOWN';
+
+function updateSegmentationDropdownOptions(
+  segmentationIds,
+  activeSegmentationId
+) {
+  const dropdown = document.getElementById(
+    'SEGMENTATION_DROPDOWN'
+  ) as HTMLSelectElement;
+
+  dropdown.innerHTML = '';
+
+  segmentationIds.forEach((segmentationId) => {
+    const option = document.createElement('option');
+    option.value = segmentationId;
+    option.innerText = segmentationId;
+    dropdown.appendChild(option);
+  });
+
+  if (activeSegmentationId) {
+    dropdown.value = activeSegmentationId;
+  }
+}
+
 // ============================= //
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
@@ -167,13 +193,67 @@ addDropdownToToolbar({
   },
 });
 
-addSliderToToolbar({
-  title: 'Brush Size',
-  range: [5, 50],
-  defaultValue: 25,
-  onSelectedValueChange: (valueAsStringOrNumber) => {
-    const value = Number(valueAsStringOrNumber);
-    segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+addButtonToToolbar({
+  title: 'Create New Segmentation on Current Image',
+  onClick: async () => {
+    const currentImageId = viewport.getCurrentImageId();
+
+    const { imageId: newSegImageId } =
+      await imageLoader.createAndCacheDerivedImage(currentImageId);
+
+    const newSegmentationId = `SEGMENTATION_${newSegImageId}`;
+    segmentationIds.push(newSegmentationId);
+
+    segmentation.addSegmentations([
+      {
+        segmentationId: newSegmentationId,
+        representation: {
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          data: {
+            imageIdReferenceMap: new Map([[currentImageId, newSegImageId]]),
+          },
+        },
+      },
+    ]);
+
+    // Add the segmentation representation to the toolgroup
+    const [uid] = await segmentation.addSegmentationRepresentations(
+      toolGroupId,
+      [
+        {
+          segmentationId: newSegmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        },
+      ]
+    );
+
+    segmentationRepresentationUIDs.push(uid);
+
+    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+      toolGroupId,
+      uid
+    );
+
+    // update the dropdown
+    updateSegmentationDropdownOptions(segmentationIds, newSegmentationId);
+  },
+});
+
+addDropdownToToolbar({
+  id: dropDownId,
+  labelText: 'Set Active Segmentation',
+  options: { values: segmentationIds, defaultValue: '' },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
+    const index = segmentationIds.indexOf(name);
+    const uid = segmentationRepresentationUIDs[index];
+    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+      toolGroupId,
+      uid
+    );
+
+    // Update the dropdown
+    updateSegmentationDropdownOptions(segmentationIds, name);
   },
 });
 
@@ -272,13 +352,16 @@ function setupTools(toolGroupId) {
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
-function createMockEllipsoidSegmentation(dimensions, imageIds) {
+function createMockEllipsoidSegmentation(imageIds, segmentationImageIds) {
+  const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
+  const dimensions = [columns, rows, imageIds.length];
+
   const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
   const outerRadius = 64;
   const innerRadius = 32;
   for (let z = 0; z < dimensions[2]; z++) {
     let voxelIndex = 0;
-    const image = cache.getImage(imageIds[z]);
+    const image = cache.getImage(segmentationImageIds[z]);
     const scalarData = image.getPixelData();
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
@@ -336,9 +419,8 @@ async function run() {
   ];
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId);
 
-  // const imageIdsArray = [...imageIds.slice(0, 10), ...ptImageIds.slice(0, 10)];
   const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
 
   const { imageIds: segmentationImageIds } =
@@ -346,10 +428,8 @@ async function run() {
 
   await viewport.setStack(imageIdsArray, 0);
 
-  const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
-  const dimensions = [columns, rows, imageIds.length];
   createMockEllipsoidSegmentation(
-    [dimensions[0], dimensions[1], segmentationImageIds.length - 1], // only on CT
+    imageIdsArray.slice(0, 2),
     segmentationImageIds
   );
 
@@ -357,7 +437,7 @@ async function run() {
 
   segmentation.addSegmentations([
     {
-      segmentationId,
+      segmentationId: segmentationIds[0],
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
@@ -372,12 +452,14 @@ async function run() {
     },
   ]);
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
-      segmentationId,
+      segmentationId: segmentationIds[0],
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
+
+  segmentationRepresentationUIDs.push(uid);
 }
 
 run();

@@ -161,6 +161,14 @@ class BrushTool extends BaseTool {
       const { imageIdReferenceMap } =
         labelmapData as LabelmapSegmentationDataStack;
 
+      const currentImageId = viewport.getCurrentImageId();
+
+      if (!imageIdReferenceMap.get(currentImageId)) {
+        // if there is no stack segmentation slice for the current image
+        // we should not allow the user to perform any operation
+        return;
+      }
+
       // here we should identify if we can perform sphere manipulation
       // for these stack of images, if the metadata is not present
       // to create a volume or if there are inconsistencies between

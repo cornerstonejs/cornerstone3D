@@ -114,79 +114,97 @@ function _imageChangeEventListener(evt) {
   const actors = viewport.getActors();
 
   actors.forEach((actor) => {
-    if (representationList.includes(actor.uid)) {
-      const segmentationActor = actor.actor;
+    if (!representationList.includes(actor.uid)) {
+      return;
+    }
+    const segmentationActor = actor.actor;
 
-      const { imageIdReferenceMap } = segmentationRepresentations[actor.uid];
+    const { imageIdReferenceMap } = segmentationRepresentations[actor.uid];
 
-      const derivedImageId = imageIdReferenceMap.get(currentImageId);
+    const derivedImageId = imageIdReferenceMap.get(currentImageId);
 
-      const segmentationImageData = segmentationActor
-        .getMapper()
-        .getInputData();
+    const segmentationImageData = segmentationActor.getMapper().getInputData();
 
-      const derivedImage = cache.getImage(derivedImageId);
+    if (!derivedImageId) {
+      // this means that this slice doesn't have a segmentation for this representation
+      // this can be a case where the segmentation was added to certain slices only
+      // so we can keep the actor but empty out the imageData
+      const scalarArray = vtkDataArray.newInstance({
+        name: 'Pixels',
+        numberOfComponents: 1,
+        values: new Uint8Array(segmentationImageData.getNumberOfPoints()),
+      });
 
-      const { origin, dimensions, spacing, direction } =
-        viewport.getImageDataMetadata(derivedImage);
+      const imageData = vtkImageData.newInstance();
+      imageData.getPointData().setScalars(scalarArray);
+      segmentationActor.getMapper().setInputData(imageData);
+      return;
+    }
 
-      segmentationImageData.setOrigin(origin);
-      segmentationImageData.modified();
+    const derivedImage = cache.getImage(derivedImageId);
 
-      if (segmentationImageData.getDimensions()[0] !== dimensions[0]) {
-        // IMPORTANT: Not sure why we can't just update the dimensions
-        // and the orientation of the image data and then call modified
-        // I tried calling modified on everything, but seems like we should remove
-        // and add the actor again below
-        viewport.removeActors([actor.uid]);
-        viewport.addImages(
-          [
-            {
-              imageId: derivedImageId,
-              actorUID: actor.uid,
-              callback: ({ imageActor }) => {
-                const scalarArray = vtkDataArray.newInstance({
-                  name: 'Pixels',
-                  numberOfComponents: 1,
-                  values: [...derivedImage.getPixelData()],
-                });
+    const { origin, dimensions, spacing, direction } =
+      viewport.getImageDataMetadata(derivedImage);
 
-                const imageData = vtkImageData.newInstance();
+    segmentationImageData.setOrigin(origin);
+    segmentationImageData.modified();
 
-                imageData.setDimensions(dimensions[0], dimensions[1], 1);
-                imageData.setSpacing(spacing);
-                imageData.setDirection(direction);
-                imageData.setOrigin(origin);
-                imageData.getPointData().setScalars(scalarArray);
+    if (
+      segmentationImageData.getDimensions()[0] !== dimensions[0] ||
+      segmentationImageData.getDimensions()[1] !== dimensions[1]
+    ) {
+      // IMPORTANT: Not sure why we can't just update the dimensions
+      // and the orientation of the image data and then call modified
+      // I tried calling modified on everything, but seems like we should remove
+      // and add the actor again below
+      viewport.removeActors([actor.uid]);
+      viewport.addImages(
+        [
+          {
+            imageId: derivedImageId,
+            actorUID: actor.uid,
+            callback: ({ imageActor }) => {
+              const scalarArray = vtkDataArray.newInstance({
+                name: 'Pixels',
+                numberOfComponents: 1,
+                values: [...derivedImage.getPixelData()],
+              });
 
-                imageActor.getMapper().setInputData(imageData);
-              },
+              const imageData = vtkImageData.newInstance();
+
+              imageData.setDimensions(dimensions[0], dimensions[1], 1);
+              imageData.setSpacing(spacing);
+              imageData.setDirection(direction);
+              imageData.setOrigin(origin);
+              imageData.getPointData().setScalars(scalarArray);
+
+              imageActor.getMapper().setInputData(imageData);
             },
-          ],
-          true,
-          false
-        );
-
-        triggerSegmentationRender(toolGroup.id);
-        return;
-      }
-
-      utilities.updateVTKImageDataWithCornerstoneImage(
-        segmentationImageData,
-        derivedImage
+          },
+        ],
+        true,
+        false
       );
-      viewport.render();
 
-      // This is put here to make sure that the segmentation is rendered
-      // for the initial image as well after that we don't need it since
-      // stack new image is called when changing slices
-      if (evt.type === Enums.Events.IMAGE_RENDERED) {
-        // unsubscribe after the initial render
-        viewport.element.removeEventListener(
-          Enums.Events.IMAGE_RENDERED,
-          _imageChangeEventListener as EventListener
-        );
-      }
+      triggerSegmentationRender(toolGroup.id);
+      return;
+    }
+
+    utilities.updateVTKImageDataWithCornerstoneImage(
+      segmentationImageData,
+      derivedImage
+    );
+    viewport.render();
+
+    // This is put here to make sure that the segmentation is rendered
+    // for the initial image as well after that we don't need it since
+    // stack new image is called when changing slices
+    if (evt.type === Enums.Events.IMAGE_RENDERED) {
+      // unsubscribe after the initial render
+      viewport.element.removeEventListener(
+        Enums.Events.IMAGE_RENDERED,
+        _imageChangeEventListener as EventListener
+      );
     }
   });
 }

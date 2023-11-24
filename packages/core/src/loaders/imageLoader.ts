@@ -28,7 +28,7 @@ export interface ImageLoaderOptions {
 }
 
 interface DerivedImageOptions {
-  imageId: string;
+  imageId?: string;
   targetBufferType?: PixelDataTypedArrayString;
 }
 
@@ -231,7 +231,7 @@ export function loadAndCacheImages(
  */
 export function createAndCacheDerivedImage(
   referencedImageId: string,
-  options: DerivedImageOptions,
+  options: DerivedImageOptions = {},
   preventCache = false
 ): Promise<IImage> {
   if (referencedImageId === undefined) {
@@ -241,9 +241,7 @@ export function createAndCacheDerivedImage(
   }
 
   if (options.imageId === undefined) {
-    throw new Error(
-      'createAndCacheDerivedImage: parameter imageId must not be undefined'
-    );
+    options.imageId = `derived:${uuidv4()}`;
   }
 
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
