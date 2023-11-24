@@ -15,7 +15,8 @@ function isStackSegmentation(
   | LabelmapToolOperationDataStack
   | LabelmapSegmentationDataStack {
   return (
-    (operationData as LabelmapToolOperationDataStack).imageIds !== undefined
+    (operationData as LabelmapToolOperationDataStack).imageIdReferenceMap !==
+    undefined
   );
 }
 

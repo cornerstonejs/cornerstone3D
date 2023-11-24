@@ -1,6 +1,5 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { IImage } from '../types';
-import { PixelDataTypedArray } from 'core/dist/types/types';
+import { IImage, PixelDataTypedArray } from '../types';
 
 function updateVTKImageDataWithCornerstoneImage(
   sourceImageData: vtkImageData,

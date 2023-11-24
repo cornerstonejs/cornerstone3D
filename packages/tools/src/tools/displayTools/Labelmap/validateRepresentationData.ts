@@ -3,7 +3,6 @@ import { cache } from '@cornerstonejs/core';
 import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
-  LabelmapSegmentationDataStack,
 } from '../../../types/LabelmapTypes';
 
 function validate(segmentationInput: SegmentationPublicInput): void {
@@ -30,24 +29,7 @@ function validate(segmentationInput: SegmentationPublicInput): void {
       );
     }
   } else {
-    // stack labelmap
-    if (!(representationData as LabelmapSegmentationDataStack).imageIds) {
-      throw new Error(
-        'The segmentationInput.representationData.imageIds is undefined, please provide a valid representationData.imageIds'
-      );
-    }
-
-    (representationData as LabelmapSegmentationDataStack).imageIds.forEach(
-      (imageId) => {
-        const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-
-        if (!cachedImage) {
-          throw new Error(
-            `Image id ${imageId} not found in cache, you should load and cache images before adding segmentation`
-          );
-        }
-      }
-    );
+    // I don't think we need this check since there is no guarantee that the stack is cached.
   }
 }
 

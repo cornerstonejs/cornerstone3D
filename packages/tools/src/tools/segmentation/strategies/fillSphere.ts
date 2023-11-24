@@ -29,6 +29,7 @@ function fillSphere(
   const strategyData = getStrategyData({ operationData, viewport });
 
   if (!strategyData) {
+    console.warn('No data found for fillSphere');
     return;
   }
 

@@ -44,16 +44,10 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-<<<<<<< HEAD
 export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
-function addProvider(provider: (type: string, query: any) => any, priority?: number): void;
-||||||| fd8028a7
-function addProvider(provider: (type: string, query: any) => any, priority?: number): void;
-=======
 function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
->>>>>>> bb586320e1b8c8d07ae7f695cc838ed529631050
 
 // @public (undocumented)
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
@@ -539,16 +533,19 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedImage(imageId: string, options: DerivedImageOptions): Promise<IImage>;
+function createAndCacheDerivedImage(referencedImageId: string, options: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
 
 // @public (undocumented)
-function createAndCacheDerivedImages(imageIds: Array<string>, getDerivedImageId: (imageId: string, index?: number) => string): DerivedImages;
+function createAndCacheDerivedImages(referencedImageIds: Array<string>, getDerivedImageId: (imageId: string, index?: number) => string): DerivedImages;
 
 // @public (undocumented)
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<ImageVolume>;
 
 // @public (undocumented)
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
+
+// @public (undocumented)
+function createAndCacheLocalImage(options: LocalImageOptions, imageId: string, preventCache?: boolean): IImage;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -795,6 +792,9 @@ declare namespace EventTypes {
 }
 
 // @public (undocumented)
+function findMapKeyByValue(map: any, searchValue: any): any;
+
+// @public (undocumented)
 type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
@@ -814,6 +814,15 @@ enum GeometryType {
     // (undocumented)
     SURFACE = "Surface"
 }
+
+// @public (undocumented)
+function getBufferConfiguration(targetBufferType: PixelDataTypedArrayString, length: number, options?: {
+    use16BitTexture?: boolean;
+    isVolumeBuffer?: boolean;
+}): {
+    numBytes: number;
+    TypedArrayConstructor: new (length: number | SharedArrayBuffer) => PixelDataTypedArray;
+};
 
 // @public (undocumented)
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
@@ -1426,6 +1435,7 @@ declare namespace imageLoader {
         loadAndCacheImages,
         createAndCacheDerivedImage,
         createAndCacheDerivedImages,
+        createAndCacheLocalImage,
         cancelLoadImage,
         cancelLoadImages,
         cancelLoadAll,
@@ -2217,6 +2227,7 @@ const metadataProvider: {
 const metadataProvider_2: {
     add: (imageId: string, payload: any) => void;
     get: (type: string, imageId: string) => any;
+    clear: () => void;
 };
 
 // @public (undocumented)
@@ -2258,6 +2269,9 @@ type OrientationVectors = {
 
 // @public (undocumented)
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
+
+// @public (undocumented)
+type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray';
 
 declare namespace planar {
     export {
@@ -2950,6 +2964,7 @@ declare namespace Types {
         ColormapPublic,
         ColormapRegistration,
         PixelDataTypedArray,
+        PixelDataTypedArrayString,
         ImagePixelModule,
         ImagePlaneModule,
         AffineMatrix,
@@ -3032,7 +3047,9 @@ declare namespace utilities {
         makeVolumeMetadata,
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
-        isVideoTransferSyntax
+        isVideoTransferSyntax,
+        getBufferConfiguration,
+        findMapKeyByValue
     }
 }
 export { utilities }

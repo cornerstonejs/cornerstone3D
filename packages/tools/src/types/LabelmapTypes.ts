@@ -41,8 +41,14 @@ export type LabelmapSegmentationDataVolume = {
 };
 
 export type LabelmapSegmentationDataStack = {
-  imageIds: Array<string>;
-  referencedImageIds: Array<string>;
+  /**
+   * This is a Map from referenced imageId to the segmentation (Derived) imageId that
+   * has been used to create the derived labelmap.
+   * Todo: later I guess we can have it as Record<string, metadata> where metadata
+   * can contain a derived image arbitrary information, for use cases such that the labelmap is
+   * derived from another image that is irrelevant to the current viewport.
+   */
+  imageIdReferenceMap: Map<string, string>;
 };
 
 export type LabelmapSegmentationData =

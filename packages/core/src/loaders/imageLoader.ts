@@ -5,6 +5,7 @@ import {
   genericMetadataProvider,
   getBufferConfiguration,
   triggerEvent,
+  uuidv4,
 } from '../utilities';
 import {
   IImage,
@@ -266,13 +267,6 @@ export function createAndCacheDerivedImage(
     }
   );
 
-  genericMetadataProvider.add(derivedImageId, {
-    type: 'referencedImageId',
-    metadata: {
-      referencedImageId,
-    },
-  });
-
   const localImage = createAndCacheLocalImage(
     { scalarData: imageScalarData },
     options.imageId,
@@ -293,13 +287,13 @@ export function createAndCacheDerivedImage(
  * Load and cache a list of imageIds
  *
  * @param referencedImageIds - list of imageIds
- * @param getDerivedImageId - function to generate derived imageId name however you want
+ * @param getDerivedImageId - optional function to generate derived imageId name however you want
  */
 export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
-  getDerivedImageId: (imageId: string, index?: number) => string
+  getDerivedImageId?: (referencedImageId: string) => string
 ): DerivedImages {
-  if (!referencedImageIds || referencedImageIds.length === 0) {
+  if (referencedImageIds?.length === 0) {
     throw new Error(
       'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
     );
@@ -308,7 +302,9 @@ export function createAndCacheDerivedImages(
   const derivedImageIds = [];
   const allPromises = referencedImageIds.map((referencedImageId, index) => {
     const options: DerivedImageOptions = {
-      imageId: getDerivedImageId(referencedImageId, index),
+      imageId: getDerivedImageId
+        ? getDerivedImageId(referencedImageId)
+        : `derived:${uuidv4()}`,
     };
     derivedImageIds.push(options.imageId);
     return createAndCacheDerivedImage(referencedImageId, options);

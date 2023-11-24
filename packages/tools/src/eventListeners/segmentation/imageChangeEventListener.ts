@@ -100,13 +100,12 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    const { referencedImageIds, imageIds } =
+    const { imageIdReferenceMap } =
       labelmapData as LabelmapSegmentationDataStack;
 
     segmentationRepresentations[representation.segmentationRepresentationUID] =
       {
-        referencedImageIds,
-        segmentationImageIds: imageIds,
+        imageIdReferenceMap,
       };
   });
 
@@ -118,14 +117,9 @@ function _imageChangeEventListener(evt) {
     if (representationList.includes(actor.uid)) {
       const segmentationActor = actor.actor;
 
-      const { referencedImageIds, segmentationImageIds } =
-        segmentationRepresentations[actor.uid];
+      const { imageIdReferenceMap } = segmentationRepresentations[actor.uid];
 
-      const derivedImageId = getDerivedImageId(
-        currentImageId,
-        referencedImageIds,
-        segmentationImageIds
-      );
+      const derivedImageId = imageIdReferenceMap.get(currentImageId);
 
       const segmentationImageData = segmentationActor
         .getMapper()
@@ -197,43 +191,6 @@ function _imageChangeEventListener(evt) {
   });
 }
 
-function getDerivedImageId(
-  imageId: string,
-  imageIds: Array<string>,
-  derivedImageIds: Array<string>
-) {
-  const index = imageIds.indexOf(imageId);
-  if (index > -1) {
-    return derivedImageIds[index];
-  }
-}
-
-/**
- *
- * @param imageId - The imageId that we want to get the derived imageId for
- * @param segmentationImageIds - All the segmentation imageIds
- * @returns - the segmentation imageIds that are derived from the target imageId
- */
-function getDerivedImageIds(
-  imageId: string,
-  segmentationImageIds: Array<string>
-) {
-  const derivedImageIds = [];
-
-  for (let i = 0; i < segmentationImageIds.length; i++) {
-    const segmentationImageId = segmentationImageIds[i];
-    const referencedImageId = metaData.get(
-      'referencedImageId',
-      segmentationImageId
-    );
-
-    if (referencedImageId && referencedImageId === imageId) {
-      derivedImageIds.push(segmentationImageId);
-    }
-  }
-
-  return derivedImageIds;
-}
 export default {
   enable,
   disable,

@@ -48,8 +48,7 @@ class BrushTool extends BaseTool {
   private _editData: {
     segmentsLocked: number[]; //
     segmentationRepresentationUID?: string;
-    imageIds?: string[];
-    referencedImageIds?: string[];
+    imageIdReferenceMap?: Map<string, string>;
     volumeId?: string;
     referencedVolumeId?: string;
   } | null;
@@ -159,16 +158,8 @@ class BrushTool extends BaseTool {
         segmentationRepresentationUID,
       };
     } else {
-      const { imageIds: segmentationImageIds } =
+      const { imageIdReferenceMap } =
         labelmapData as LabelmapSegmentationDataStack;
-
-      const currentImageId = viewport.getCurrentImageId();
-      const currentSegmentationImageId =
-        segmentationImageIds.indexOf(currentImageId);
-
-      if (!currentSegmentationImageId) {
-        throw new Error('No current segmentation image id');
-      }
 
       // here we should identify if we can perform sphere manipulation
       // for these stack of images, if the metadata is not present
@@ -177,25 +168,22 @@ class BrushTool extends BaseTool {
       // and should throw an error or maybe simply just allow circle manipulation
       // and not sphere manipulation
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        const referencedImageIds = viewport.getImageIds();
+        console.warn(
+          'Sphere manipulation is not supported for this stack of images yet'
+        );
+        return;
 
-        if (csUtils.isValidVolume(referencedImageIds)) {
-          // we can create a volume and perform sphere manipulation
-          // we should create a volume and use it as a reference
-          // for sphere manipulation
-          // otherwise we just treat the sphere as a circle
-          //
-          const { zSpacing } =
-            csUtils.sortImageIdsAndGetSpacing(referencedImageIds);
-
-          // Todo: add the sphere brush logic to pre-compute a volume
-          // based on the current image stack and use it as a reference
-        }
+        // Todo: add sphere manipulation support for stacks of images
+        // we should basically check if the stack constructs a valid volume
+        // meaning all the metadata is present and consistent
+        // then we should create a volume and use it as a reference
+        // ideally a tiny volume that does not exceeds the boundary of the
+        // sphere brush size
+        // csUtils.isValidVolume(referencedImageIds
       }
 
       this._editData = {
-        imageIds: segmentationImageIds,
-        referencedImageIds: viewport.getImageIds(),
+        imageIdReferenceMap,
         segmentsLocked,
         segmentationRepresentationUID,
       };
@@ -406,7 +394,6 @@ class BrushTool extends BaseTool {
 
     const enabledElement = getEnabledElement(element);
 
-    this._editData = null;
     this.updateCursor(evt);
 
     const operationData = {
@@ -421,6 +408,8 @@ class BrushTool extends BaseTool {
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
     };
+
+    this._editData = null;
 
     this.applyActiveStrategy(enabledElement, operationData);
   };

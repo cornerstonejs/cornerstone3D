@@ -36,6 +36,7 @@ function fillRectangle(
   });
 
   if (!strategyData) {
+    console.warn('No data found for fillRectangle');
     return;
   }
 

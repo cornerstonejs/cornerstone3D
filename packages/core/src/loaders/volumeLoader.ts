@@ -12,9 +12,14 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { getBufferConfiguration, uuidv4 } from '../utilities';
-import { Point3, Metadata, EventTypes, Mat3 } from '../types';
+import {
+  Point3,
+  Metadata,
+  EventTypes,
+  Mat3,
+  PixelDataTypedArray,
+} from '../types';
 import { getConfiguration } from '../init';
-import { PixelDataTypedArray } from 'core/dist/types/types';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;

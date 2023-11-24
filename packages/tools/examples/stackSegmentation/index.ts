@@ -2,7 +2,6 @@ import {
   cache,
   Enums,
   RenderingEngine,
-  Types,
   metaData,
   imageLoader,
   utilities,
@@ -299,10 +298,6 @@ function createMockEllipsoidSegmentation(dimensions, imageIds) {
   }
 }
 
-function getDerivedImageId(imageId: string): string {
-  return 'stackSeg:derived_' + utilities.imageIdToURI(imageId);
-}
-
 /**
  * Runs the demo
  */
@@ -320,7 +315,7 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  const ptImageIds = await createImageIdsAndCacheMetaData({
+  const mgImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
     SeriesInstanceUID:
@@ -344,13 +339,10 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
 
   // const imageIdsArray = [...imageIds.slice(0, 10), ...ptImageIds.slice(0, 10)];
-  const imageIdsArray = [imageIds[0], imageIds[1], ptImageIds[0]];
+  const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
 
   const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(
-      imageIdsArray,
-      getDerivedImageId
-    );
+    await imageLoader.createAndCacheDerivedImages(imageIdsArray);
 
   await viewport.setStack(imageIdsArray, 0);
 
@@ -361,27 +353,31 @@ async function run() {
     segmentationImageIds
   );
 
+  renderingEngine.renderViewports([viewportId]);
+
   segmentation.addSegmentations([
     {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIds: segmentationImageIds,
-          referencedImageIds: imageIdsArray,
+          imageIdReferenceMap: new Map(
+            imageIdsArray.map((imageId, index) => [
+              imageId,
+              segmentationImageIds[index],
+            ])
+          ),
         },
       },
     },
   ]);
-  // // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-
-  renderingEngine.renderViewports([viewportId]);
 }
 
 run();

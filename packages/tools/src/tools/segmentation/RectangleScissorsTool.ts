@@ -47,8 +47,7 @@ class RectangleScissorsTool extends BaseTool {
   _throttledCalculateCachedStats: any;
   editData: {
     //
-    imageIds: string[];
-    referencedImageIds: string[];
+    imageIdReferenceMap: Map<string, string>;
     volumeId: string;
     referencedVolumeId: string;
     //
@@ -183,21 +182,12 @@ class RectangleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIds: segmentationImageIds } =
+      const { imageIdReferenceMap } =
         labelmapData as LabelmapSegmentationDataStack;
-
-      const currentImageId = viewport.getCurrentImageId();
-      const currentSegmentationImageId =
-        segmentationImageIds.indexOf(currentImageId);
-
-      if (!currentSegmentationImageId) {
-        throw new Error('No current segmentation image id');
-      }
 
       this.editData = {
         ...this.editData,
-        imageIds: segmentationImageIds,
-        referencedImageIds: viewport.getImageIds(),
+        imageIdReferenceMap,
       };
     }
 

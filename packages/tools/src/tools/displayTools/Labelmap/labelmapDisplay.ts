@@ -222,11 +222,11 @@ async function render(
   } else {
     // stack segmentation
     const imageId = viewport.getCurrentImageId();
-    const { referencedImageIds } = labelmapData;
+    const { imageIdReferenceMap } = labelmapData;
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
-    if (!referencedImageIds.includes(imageId)) {
+    if (!imageIdReferenceMap.has(imageId)) {
       return;
     }
 

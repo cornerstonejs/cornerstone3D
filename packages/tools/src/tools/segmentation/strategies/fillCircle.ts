@@ -38,6 +38,7 @@ function fillCircle(
   const data = getStrategyData({ operationData, viewport });
 
   if (!data) {
+    console.warn('No data found for fillCircle');
     return;
   }
 

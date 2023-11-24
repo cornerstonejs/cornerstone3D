@@ -49,8 +49,7 @@ class SphereScissorsTool extends BaseTool {
     //
     volumeId: string;
     referencedVolumeId: string;
-    imageIds: string[];
-    referencedImageIds: string[];
+    imageIdReferenceMap: Map<string, string>;
     //
     toolGroupId: string;
     segmentColor: [number, number, number, number];
@@ -111,7 +110,7 @@ class SphereScissorsTool extends BaseTool {
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
+    const { segmentationRepresentationUID, segmentationId } =
       activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
@@ -151,6 +150,7 @@ class SphereScissorsTool extends BaseTool {
     this.editData = {
       annotation,
       centerCanvas: canvasPos,
+      segmentationRepresentationUID,
       segmentIndex,
       segmentsLocked,
       segmentColor,
@@ -176,21 +176,12 @@ class SphereScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIds: segmentationImageIds } =
+      const { imageIdReferenceMap } =
         labelmapData as LabelmapSegmentationDataStack;
-
-      const currentImageId = viewport.getCurrentImageId();
-      const currentSegmentationImageId =
-        segmentationImageIds.indexOf(currentImageId);
-
-      if (!currentSegmentationImageId) {
-        throw new Error('No current segmentation image id');
-      }
 
       this.editData = {
         ...this.editData,
-        imageIds: segmentationImageIds,
-        referencedImageIds: viewport.getImageIds(),
+        imageIdReferenceMap,
       };
     }
 
@@ -260,6 +251,7 @@ class SphereScissorsTool extends BaseTool {
       newAnnotation,
       hasMoved,
       segmentIndex,
+      segmentationRepresentationUID,
       segmentsLocked,
     } = this.editData;
     const { data } = annotation;
@@ -281,6 +273,7 @@ class SphereScissorsTool extends BaseTool {
       ...this.editData,
       points: data.handles.points,
       segmentIndex,
+      segmentationRepresentationUID,
       segmentsLocked,
       viewPlaneNormal,
       viewUp,

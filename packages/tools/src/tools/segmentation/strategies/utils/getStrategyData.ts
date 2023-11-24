@@ -4,7 +4,6 @@ import { LabelmapToolOperationDataStack } from '../../../../types';
 
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
-
   if (isVolumeSegmentation(operationData)) {
     const { volumeId, referencedVolumeId } = operationData;
 
@@ -19,10 +18,10 @@ function getStrategyData({ operationData, viewport }) {
     segmentationScalarData = segmentationVolume.getScalarData();
     imageScalarData = imageVolume.getScalarData();
   } else {
-    const { imageIds, segmentationRepresentationUID } =
+    const { imageIdReferenceMap, segmentationRepresentationUID } =
       operationData as LabelmapToolOperationDataStack;
 
-    if (!imageIds) {
+    if (!imageIdReferenceMap) {
       return;
     }
 
@@ -31,18 +30,12 @@ function getStrategyData({ operationData, viewport }) {
       return;
     }
 
-    const segmentationImageIds = imageIds;
-
     // we know that the segmentationRepresentationUID is the name of the actor always
     // and always circle modifies the current imageId which in fact is the imageData
     // of that actor at that moment so we have the imageData already
     const actor = viewport.getActor(segmentationRepresentationUID);
     segmentationImageData = actor.actor.getMapper().getInputData();
-    const colonIndex = currentImageId.indexOf(':');
-    const imageURI = currentImageId.substring(colonIndex + 1);
-    const currentSegmentationImageId = segmentationImageIds.find((imageId) =>
-      imageId.includes(imageURI)
-    );
+    const currentSegmentationImageId = imageIdReferenceMap.get(currentImageId);
 
     const segmentationImage = cache.getImage(currentSegmentationImageId);
     segmentationScalarData = segmentationImage.getPixelData();

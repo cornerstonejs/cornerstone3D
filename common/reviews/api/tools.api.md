@@ -2450,8 +2450,7 @@ type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegment
 
 // @public (undocumented)
 type LabelmapSegmentationDataStack = {
-    imageIds: Array<string>;
-    referencedImageIds: Array<string>;
+    imageIdReferenceMap: Map<string, string>;
 };
 
 // @public (undocumented)
@@ -3067,13 +3066,7 @@ declare namespace point {
 const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
 
 // @public (undocumented)
-<<<<<<< HEAD
-function pointInEllipse(ellipse: any, pointLPS: any, inverts: any): boolean;
-||||||| fd8028a7
-function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
-=======
-function pointInEllipse(ellipse: Ellipse, pointLPS: vec3): boolean;
->>>>>>> bb586320e1b8c8d07ae7f695cc838ed529631050
+function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;

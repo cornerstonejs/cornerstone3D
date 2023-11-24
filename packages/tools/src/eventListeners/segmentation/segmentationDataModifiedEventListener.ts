@@ -94,15 +94,12 @@ const onSegmentationDataModified = function (
 
           const segImageData = actorEntry.actor.getMapper().getInputData();
 
-          const segmentationImageIds = (
-            representationData[type] as LabelmapSegmentationDataStack
-          ).imageIds;
+          const { imageIdReferenceMap } = representationData[
+            type
+          ] as LabelmapSegmentationDataStack;
 
-          const colonIndex = currentImageId.indexOf(':');
-          const imageURI = currentImageId.substring(colonIndex + 1);
-          const currentSegmentationImageId = segmentationImageIds.find(
-            (imageId) => imageId.includes(imageURI)
-          );
+          const currentSegmentationImageId =
+            imageIdReferenceMap.get(currentImageId);
 
           const segmentationImage = cache.getImage(currentSegmentationImageId);
           segImageData.modified();
