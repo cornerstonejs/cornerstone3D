@@ -25,5 +25,10 @@ export default function initializeSetValue(
     operationData.segmentIndices.add(useIndex);
     // The k dimension is always the slice selector for IJK
     operationData.modifiedSlicesToUse.add(pointIJK[2]);
+    operationData.strategySpecificConfiguration.TRACKING?.updateValue?.(
+      pointIJK,
+      value,
+      useIndex
+    );
   };
 }

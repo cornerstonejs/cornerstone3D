@@ -70,7 +70,7 @@ export type Segmentation = {
    * Preview segment index, used for drawing previews.  Will be replaced by
    * final segment indices when completed.
    */
-  previewSegmentIndex: number;
+  previewSegmentIndex?: number;
   /**
    * Locked segments in the segmentation, if a segment is locked no tool
    * will be able to modify it

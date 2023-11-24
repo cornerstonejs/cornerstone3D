@@ -7,6 +7,7 @@ import isWithinThreshold from './utils/isWithinThreshold';
 import type BoundsIJK from '../../../types/BoundsIJK';
 import initializeSetValue from './utils/initializeSetValue';
 import initializePreview from './utils/initializePreview';
+import initializeRegionFill from './utils/initializeRegionFill';
 
 export type OperationData = {
   segmentationId: string;
@@ -81,40 +82,7 @@ export default class BrushStrategy {
       );
   };
 
-  public static initializeRegionFill = function (
-    initializerData: InitializedOperationData
-  ) {
-    initializerData.fill = () => {
-      const callback = initializerData.isWithinThreshold
-        ? (data) => {
-            const { value, index } = data;
-            if (initializerData.segmentsLocked.includes(value)) {
-              return;
-            }
-            if (!initializerData.isWithinThreshold(index)) {
-              return;
-            }
-            initializerData.setValue(data);
-          }
-        : initializerData.setValue;
-
-      pointInShapeCallback(
-        initializerData.imageData,
-        initializerData.isInObject,
-        callback,
-        initializerData.boundsIJK
-      );
-
-      const arrayOfSlices: number[] = Array.from(
-        initializerData.modifiedSlicesToUse
-      );
-
-      triggerSegmentationDataModified(
-        initializerData.segmentationId,
-        arrayOfSlices
-      );
-    };
-  };
+  public static initializeRegionFill = initializeRegionFill;
 
   protected configurationName: string;
   protected initializers: Initializer[];
