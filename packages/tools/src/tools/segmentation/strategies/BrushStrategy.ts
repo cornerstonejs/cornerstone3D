@@ -2,15 +2,20 @@ import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInShapeCallback } from '../../../utilities';
+import pointInShapeCallback from '../../../utilities/pointInShapeCallback';
 import isWithinThreshold from './utils/isWithinThreshold';
 import type BoundsIJK from '../../../types/BoundsIJK';
+import initializeSetValue from './utils/initializeSetValue';
+import initializePreview from './utils/initializePreview';
 
 export type OperationData = {
   segmentationId: string;
   imageVolume: Types.IImageVolume;
   points: Types.Point3[];
   volume: Types.IImageVolume;
+  /**
+   * The final segment value to apply for this colour at the end
+   */
   segmentIndex: number;
   segmentsLocked: number[];
   viewPlaneNormal: number[];
@@ -35,6 +40,8 @@ export type InitializedOperationData = OperationData & {
   initDown?: () => void;
   completeUp?: () => void;
   centerIJK?: Types.Point3;
+  getPreviewSegmentIndex?: (previousIndex: number) => number;
+  segmentIndices: Set<number>;
 };
 
 type Initializer = (operationData: InitializedOperationData) => void;
@@ -60,18 +67,8 @@ export default class BrushStrategy {
   /**
    * Creates a basic setValue that applies the segment index to the given index.
    */
-  public static initializeSetValue = function (
-    initializerData: InitializedOperationData
-  ) {
-    initializerData.setValue = ({ value, index, pointIJK }) => {
-      if (initializerData.segmentsLocked.includes(value)) {
-        return;
-      }
-      initializerData.scalarData[index] = initializerData.segmentIndex;
-      //Todo: I don't think this will always be index 2 in streamingImageVolume?
-      initializerData.modifiedSlicesToUse.add(pointIJK[2]);
-    };
-  };
+  public static initializeSetValue = initializeSetValue;
+  public static initializePreview = initializePreview;
 
   public static initializeThreshold = (
     initializerData: InitializedOperationData
@@ -169,16 +166,24 @@ export default class BrushStrategy {
       fill: null,
       setValue: null,
       centerWorld: null,
+      segmentIndices: new Set<number>(),
     };
 
     this.initializers.forEach((initializer) => initializer(initializedData));
     return initializedData;
   }
 
-  public initDown(
+  public initDown = (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) {
+  ) => {
     this.getInitializedData(enabledElement, operationData).initDown?.();
-  }
+  };
+
+  public completeUp = (
+    enabledElement: Types.IEnabledElement,
+    operationData: OperationData
+  ) => {
+    this.getInitializedData(enabledElement, operationData).completeUp?.();
+  };
 }

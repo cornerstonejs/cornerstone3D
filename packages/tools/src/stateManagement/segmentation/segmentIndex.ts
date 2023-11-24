@@ -22,6 +22,27 @@ function setActiveSegmentIndex(
   }
 }
 
+function setPreviewSegmentIndex(segmentationId, segmentIndex: number) {
+  const segmentation = getSegmentation(segmentationId);
+
+  if (segmentation?.activeSegmentIndex !== segmentIndex) {
+    segmentation.previewSegmentIndex = segmentIndex;
+
+    triggerSegmentationModified(segmentationId);
+  }
+}
+
+function getPreviewSegmentIndex(
+  segmentationId,
+  segmentationIndex?: number
+): number | undefined {
+  const segmentation = getSegmentation(segmentationId);
+
+  if (segmentation) {
+    return segmentation.previewSegmentIndex;
+  }
+}
+
 /**
  * Get the active segment index for a segmentation in the global state
  * @param segmentationId - The id of the segmentation to get the active segment index from.
@@ -35,4 +56,9 @@ function getActiveSegmentIndex(segmentationId: string): number | undefined {
   }
 }
 
-export { getActiveSegmentIndex, setActiveSegmentIndex };
+export {
+  getActiveSegmentIndex,
+  setActiveSegmentIndex,
+  getPreviewSegmentIndex,
+  setPreviewSegmentIndex,
+};

@@ -11,6 +11,7 @@ import BrushStrategy from './BrushStrategy';
 import type { OperationData, InitializedOperationData } from './BrushStrategy';
 import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
 import type { CanvasCoordinates } from '../../../types';
+import initializeIslandRemoval from './utils/initializeIslandRemoval';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -70,7 +71,8 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   'Circle',
   BrushStrategy.initializeRegionFill,
   BrushStrategy.initializeSetValue,
-  initializeCircle
+  initializeCircle,
+  BrushStrategy.initializePreview
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
@@ -79,7 +81,9 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   BrushStrategy.initializeSetValue,
   BrushStrategy.initializeThreshold,
   initializeCircle,
-  dynamicWithinThreshold
+  dynamicWithinThreshold,
+  BrushStrategy.initializePreview,
+  initializeIslandRemoval
 );
 
 /**
@@ -94,6 +98,9 @@ export function fillInsideCircle(
 ): void {
   CIRCLE_STRATEGY.fill(enabledElement, operationData);
 }
+
+fillInsideCircle.initDown = CIRCLE_THRESHOLD_STRATEGY.initDown;
+fillInsideCircle.completeUp = CIRCLE_THRESHOLD_STRATEGY.completeUp;
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -119,9 +126,8 @@ export function thresholdInsideCircle(
   CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
 }
 
-thresholdInsideCircle.initDown = (enabledElement, operationData) => {
-  CIRCLE_THRESHOLD_STRATEGY.initDown?.(enabledElement, operationData);
-};
+thresholdInsideCircle.initDown = CIRCLE_THRESHOLD_STRATEGY.initDown;
+thresholdInsideCircle.completeUp = CIRCLE_THRESHOLD_STRATEGY.completeUp;
 
 /**
  * Fill outside the circular region segment inside the segmentation defined by the operationData.

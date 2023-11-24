@@ -92,12 +92,13 @@ abstract class BaseTool implements IBaseTool {
    * @param operationData - The data that needs to be passed to the strategy.
    * @returns The result of the strategy.
    */
-  public applyActiveStrategyDown(
+  public applyActiveStrategyEvent(
     enabledElement: Types.IEnabledElement,
-    operationData: unknown
+    operationData: unknown,
+    eventType: 'initDown' | 'completeUp'
   ): any {
     const { strategies, activeStrategy } = this.configuration;
-    return strategies[activeStrategy].initDown?.call(
+    return strategies[activeStrategy][eventType]?.call(
       this,
       enabledElement,
       operationData

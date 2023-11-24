@@ -158,9 +158,25 @@ class BrushTool extends BaseTool {
       viewportIdsToRender
     );
 
-    this.applyActiveStrategyDown(enabledElement, this.getOperationData());
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(),
+      'initDown'
+    );
 
     return true;
+  };
+
+  mouseUpCallback = (evt): void => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const enabledElement = getEnabledElement(element);
+
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(),
+      'completeUp'
+    );
   };
 
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {

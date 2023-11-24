@@ -156,34 +156,33 @@ addDropdownToToolbar({
   },
 });
 
-const thresholdOptions = [
-  'CT Fat: (-150, -70)',
-  'CT Bone: (200, 1000)',
-  'Dynamic',
-];
+const thresholdOptions = new Map<string, any>();
+thresholdOptions.set('None', { threshold: null, isDynamic: false });
+thresholdOptions.set('CT Fat: (-150, -70)', {
+  threshold: [-150, -70],
+  isDynamic: false,
+});
+thresholdOptions.set('CT Bone: (200, 1000)', {
+  threshold: [200, 1000],
+  isDynamic: false,
+});
+thresholdOptions.set('Dynamic', { isDynamic: true });
+thresholdOptions.set('Dynamic Same Threshold', { isDynamic: false });
 
 addDropdownToToolbar({
-  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
+  options: {
+    values: Array.from(thresholdOptions.keys()),
+    defaultValue: thresholdOptions[0],
+  },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
 
-    let threshold;
-    const otherArgs = {
-      isDynamic: true,
-    };
-    if (name === thresholdOptions[0]) {
-      threshold = [-150, -70];
-    } else if (name == thresholdOptions[1]) {
-      threshold = [100, 1000];
-    } else if (name === thresholdOptions[2]) {
-      threshold = null;
-      otherArgs.isDynamic = true;
-    }
+    const thresholdArgs = thresholdOptions.get(name);
 
     segmentationUtils.setBrushThresholdForToolGroup(
       toolGroupId,
-      threshold,
-      otherArgs
+      thresholdArgs.threshold,
+      thresholdArgs
     );
   },
 });
@@ -427,6 +426,8 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
+
+  segmentation.segmentIndex.setPreviewSegmentIndex(segmentationId, 3);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
