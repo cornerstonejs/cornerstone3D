@@ -6,8 +6,7 @@ import {
   triggerEvent,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-
-import throttle from '../../utilities/throttle';
+import { vec3 } from 'gl-matrix';
 import {
   addAnnotation,
   getAnnotations,
@@ -22,8 +21,6 @@ import {
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { Events, MouseBindings, KeyboardBindings } from '../../enums';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import {
   EventTypes,
@@ -33,9 +30,21 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
+import {
+  math,
+  viewportFilters,
+  drawing,
+  throttle,
+  roundNumber,
+  triggerAnnotationRenderForViewportIds,
+  getCalibratedScale,
+  getCalibratedAreaUnits,
+} from '../../utilities';
 import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { AnnotationCompletedEventDetail } from '../../types/EventTypes';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { ISpline } from './splines/types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
@@ -43,8 +52,20 @@ import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 
+const { getViewportIdsWithToolToRender } = viewportFilters;
+const { getTextBoxCoordsCanvas } = drawing;
+
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
+
+const DEFAULT_SPLINE_CONFIG = {
+  resolution: 20,
+  controlPointAdditionDistance: 6,
+  controlPointDeletionDistance: 6,
+  showControlPointsConnectors: false,
+  controlPointAdditionEnabled: true,
+  controlPointDeletionEnabled: true,
+};
 
 class SplineROITool extends AnnotationTool {
   static toolName;
@@ -62,7 +83,7 @@ class SplineROITool extends AnnotationTool {
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
-  splines: Map<string, ISpline> = new Map();
+  splineInstancesCache: WeakMap<SplineROIAnnotation, ISpline> = new Map();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -70,6 +91,8 @@ class SplineROITool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        calculateStats: true,
+        getTextLines: defaultGetTextLines,
         spline: {
           configuration: {
             CARDINAL: {
@@ -84,24 +107,16 @@ class SplineROITool extends AnnotationTool {
             },
             BSPLINE: {
               Class: BSpline,
-              addControlPointEnabled: false,
-              deleteControlPointEnabled: false,
+              controlPointAdditionEnabled: false,
+              controlPointDeletionEnabled: false,
               showControlPointsConnectors: true,
-            },
-            DEFAULT: {
-              resolution: 20,
-              addControlPointLineDistance: 6,
-              delControlPointDistance: 6,
-              addControlPointEnabled: true,
-              deleteControlPointEnabled: true,
-              showControlPointsConnectors: false,
             },
           },
           type: 'CATMULLROM',
         },
         actions: [
           {
-            method: 'addControlPoint',
+            method: 'addControlPointCallback',
             bindings: [
               {
                 mouseButton: MouseBindings.Primary,
@@ -110,7 +125,7 @@ class SplineROITool extends AnnotationTool {
             ],
           },
           {
-            method: 'deleteControlPoint',
+            method: 'deleteControlPointCallback',
             bindings: [
               {
                 mouseButton: MouseBindings.Primary,
@@ -129,19 +144,6 @@ class SplineROITool extends AnnotationTool {
       100,
       { trailing: true }
     );
-  }
-
-  private _getSplineConfig(type: string) {
-    const { configuration: config } = this;
-    const splineConfigs = config.spline.configuration;
-    const defaultConfig = splineConfigs['DEFAULT'];
-
-    return Object.assign({ type }, defaultConfig, splineConfigs[type]);
-  }
-
-  private _getActiveSplineConfig() {
-    const { type } = this.configuration.spline;
-    return this._getSplineConfig(type);
   }
 
   /**
@@ -166,7 +168,8 @@ class SplineROITool extends AnnotationTool {
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-    const splineConfig = this._getActiveSplineConfig();
+
+    const splineConfig = this._getSplineConfig(this.configuration.spline.type);
 
     const referencedImageId = this.getReferencedImageId(
       viewport,
@@ -188,7 +191,6 @@ class SplineROITool extends AnnotationTool {
         referencedImageId,
       },
       data: {
-        label: '',
         handles: {
           textBox: {
             hasMoved: false,
@@ -207,13 +209,13 @@ class SplineROITool extends AnnotationTool {
           type: splineConfig.type,
           resolution: splineConfig.resolution,
           closed: false,
+          polyline: [],
         },
         cachedStats: {},
       },
     };
 
     addAnnotation(annotation, element);
-    this._createOrUpdateAnnotationSpline(element, annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -223,6 +225,7 @@ class SplineROITool extends AnnotationTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
+      movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -333,8 +336,7 @@ class SplineROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     const { data } = annotation;
 
     data.handles.activeHandleIndex = null;
@@ -372,9 +374,6 @@ class SplineROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element, keyCode } = eventDetail;
     const key = (eventDetail.key ?? '').toLowerCase();
-
-    console.log('>>>>> key:', key);
-    console.log('>>>>> keyCode:', keyCode);
     const deleteLastPoint =
       keyCode === 8 ||
       keyCode === 46 ||
@@ -437,7 +436,6 @@ class SplineROITool extends AnnotationTool {
 
     data.spline.closed = data.spline.closed || closeSpline;
     annotation.invalidated = true;
-    this._createOrUpdateAnnotationSpline(element, annotation);
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (data.spline.closed) {
@@ -493,10 +491,6 @@ class SplineROITool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    if (annotation.invalidated) {
-      this._createOrUpdateAnnotationSpline(element, annotation);
-    }
-
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -528,6 +522,25 @@ class SplineROITool extends AnnotationTool {
 
     this.editData = null;
     return annotation.annotationUID;
+  };
+
+  /**
+   * Triggers an annotation modified event.
+   */
+  triggerAnnotationModified = (
+    annotation: SplineROIAnnotation,
+    enabledElement: Types.IEnabledElement
+  ): void => {
+    const { viewportId, renderingEngineId } = enabledElement;
+    const eventType = Events.ANNOTATION_MODIFIED;
+
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+    };
+
+    triggerEvent(eventTarget, eventType, eventDetail);
   };
 
   private _activateModify = (element) => {
@@ -598,6 +611,12 @@ class SplineROITool extends AnnotationTool {
     const { worldToCanvas } = viewport;
     const { element } = viewport;
 
+    // If rendering engine has been destroyed while rendering
+    if (!viewport.getRenderingEngine()) {
+      console.warn('Rendering Engine has been destroyed');
+      return renderStatus;
+    }
+
     let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
@@ -613,6 +632,7 @@ class SplineROITool extends AnnotationTool {
       return renderStatus;
     }
 
+    const targetId = this.getTargetId(viewport);
     const newAnnotation = this.editData?.newAnnotation;
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
@@ -648,16 +668,30 @@ class SplineROITool extends AnnotationTool {
         worldToCanvas(p)
       ) as Types.Point2[];
 
-      const { configuration: config } = this;
       const splineType = annotation.data.spline.type;
-      const splineConfig = config.spline.configuration[splineType] ?? {};
-      const spline = this._getAnnotationSpline(element, annotation);
+      const splineConfig = this._getSplineConfig(splineType);
+      const spline = this._createOrUpdateAnnotationSpline(element, annotation);
       const splinePolyline = spline.getPolylinePoints();
 
-      // If rendering engine has been destroyed while rendering
-      if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
-        return renderStatus;
+      data.spline.polyline = splinePolyline.map((point) =>
+        viewport.canvasToWorld(point)
+      );
+
+      // If cachedStats does not exist, or the areaUnit is missing (as part of
+      // import/hydration etc.), force to recalculate the stats from the points
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].areaUnit == null
+      ) {
+        data.cachedStats[targetId] = {
+          Modality: null,
+          area: null,
+          areaUnit: null,
+        };
+
+        this._calculateCachedStats(annotation, element);
+      } else if (annotation.invalidated) {
+        this._throttledCalculateCachedStats(annotation, element);
       }
 
       let activeHandleCanvasCoords;
@@ -724,21 +758,85 @@ class SplineROITool extends AnnotationTool {
         }
       );
 
+      this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
+
       renderStatus = true;
+      annotation.invalidated = false;
     }
 
     return renderStatus;
   };
 
-  addControlPoint = (
+  _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
+    const data = annotation.data;
+    const targetId = this.getTargetId(viewport);
+
+    if (!data.spline.closed) {
+      return;
+    }
+
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
+    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!options.visibility) {
+      return;
+    }
+
+    const textLines = this.configuration.getTextLines(data, targetId);
+    if (!textLines || textLines.length === 0) {
+      return;
+    }
+
+    const canvasCoordinates = data.handles.points.map((p) =>
+      viewport.worldToCanvas(p)
+    );
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const textBoxUID = 'textBox';
+    const boundingBox = drawLinkedTextBoxSvg(
+      svgDrawingHelper,
+      annotation.annotationUID ?? '',
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      options
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+  };
+
+  addControlPointCallback = (
     evt: EventTypes.InteractionEventType,
     annotation: SplineROIAnnotation
   ) => {
-    const splineType = annotation.data.spline.type;
+    const { data } = annotation;
+    const splineType = data.spline.type;
     const splineConfig = this._getSplineConfig(splineType);
-    const maxDist = splineConfig.addControlPointLineDistance;
+    const maxDist = splineConfig.controlPointAdditionDistance;
 
-    if (splineConfig.addControlPointEnabled === false) {
+    if (splineConfig.controlPointAdditionEnabled === false) {
       return;
     }
 
@@ -758,26 +856,56 @@ class SplineROITool extends AnnotationTool {
     const canvasPos = evt.detail.currentPoints.canvas;
     const closestPointInfo = spline.getClosestPoint(canvasPos);
 
-    if (closestPointInfo.distance <= maxDist) {
-      spline.addControlPointAt(closestPointInfo.uValue);
-      annotation.data.handles.points = spline
-        .getControlPoints()
-        .map((p) => canvasToWorld(p));
-      annotation.invalidated = true;
+    if (closestPointInfo.distance > maxDist) {
+      return;
     }
+
+    // Add a point at the `u` position from Parameter Space
+    const { index, point: canvasPoint } = spline.addControlPointAt(
+      closestPointInfo.uValue
+    );
+
+    data.handles.points.splice(index, 0, canvasToWorld(canvasPoint));
+    annotation.invalidated = true;
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  deleteControlPoint = (
+  private _deleteControlPointByIndex(
+    element: HTMLDivElement,
+    annotation: SplineROIAnnotation,
+    controlPointIndex: number
+  ) {
+    const enabledElement = getEnabledElement(element);
+    const { points: controlPoints } = annotation.data.handles;
+
+    // There is no curve with only 2 points
+    if (controlPoints.length === 3) {
+      removeAnnotation(annotation.annotationUID);
+    } else {
+      controlPoints.splice(controlPointIndex, 1);
+    }
+
+    const { renderingEngine } = enabledElement;
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    annotation.invalidated = true;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  }
+
+  deleteControlPointCallback = (
     evt: EventTypes.InteractionEventType,
     annotation: SplineROIAnnotation
   ) => {
     const splineType = annotation.data.spline.type;
     const splineConfig = this._getSplineConfig(splineType);
-    const maxDist = splineConfig.delControlPointDistance;
+    const maxDist = splineConfig.controlPointDeletionDistance;
 
-    if (splineConfig.deleteControlPointEnabled === false) {
+    if (splineConfig.controlPointDeletionEnabled === false) {
       return;
     }
 
@@ -801,29 +929,33 @@ class SplineROITool extends AnnotationTool {
     );
   };
 
-  private _deleteControlPointByIndex(
-    element: HTMLDivElement,
-    annotation: SplineROIAnnotation,
-    controlPointIndex: number
-  ) {
-    const enabledElement = getEnabledElement(element);
-    const { points: controlPoints } = annotation.data.handles;
+  /**
+   * Get a spline config merged with the default settings.
+   * @param type - Spline type (CARDINAL, CATMULLROM, LINEAR or BSPLINE)
+   * @returns Spline configuration
+   */
+  private _getSplineConfig(type: string) {
+    const { configuration: config } = this;
+    const splineConfigs = config.spline.configuration;
 
-    // There is no curve with only 2 points
-    if (controlPoints.length === 3) {
-      removeAnnotation(annotation.annotationUID);
-    } else {
-      controlPoints.splice(controlPointIndex, 1);
-      this._createOrUpdateAnnotationSpline(element, annotation);
+    return Object.assign({ type }, DEFAULT_SPLINE_CONFIG, splineConfigs[type]);
+  }
+
+  private _updateSplineScale(spline: ISpline, annotation: SplineROIAnnotation) {
+    const splineType = annotation.data.spline.type;
+    const splineConfig = this._getSplineConfig(splineType);
+
+    if (
+      !(spline instanceof CardinalSpline) ||
+      spline.fixedScale ||
+      splineConfig.scale === undefined ||
+      spline.scale === splineConfig.scale
+    ) {
+      return;
     }
 
-    const { renderingEngine } = enabledElement;
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName()
-    );
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    spline.scale = splineConfig.scale;
+    annotation.invalidated = true;
   }
 
   private _createOrUpdateAnnotationSpline = (
@@ -833,25 +965,13 @@ class SplineROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
-    let spline = this.splines.get(annotation.annotationUID);
+    const splineType = annotation.data.spline.type;
+    const splineConfig = this._getSplineConfig(splineType);
+    let spline = this.splineInstancesCache.get(annotation);
 
     if (!spline) {
-      const splineType = annotation.data.spline.type;
-      const splineConfig = this._getSplineConfig(splineType);
-
-      console.log('>>>> create :: splineConfig :: ', splineConfig);
-
       spline = new splineConfig.Class();
-      spline.resolution = splineConfig.resolution;
-
-      if (
-        splineConfig.scale !== undefined &&
-        (<any>spline).scale !== undefined
-      ) {
-        (<any>spline).scale = splineConfig.scale;
-      }
-
-      this.splines.set(annotation.annotationUID, spline);
+      this.splineInstancesCache.set(annotation, spline);
     }
 
     const { data } = annotation;
@@ -861,14 +981,31 @@ class SplineROITool extends AnnotationTool {
     spline.setControlPoints(canvasPoints);
     spline.closed = !!data.spline?.closed;
 
+    // Update spline resolution in case it has changed
+    if (spline.resolution !== splineConfig.resolution) {
+      spline.resolution = parseInt(splineConfig.resolution);
+      annotation.invalidated = true;
+    }
+
+    // Update Cardinal spline scale in case it has changed
+    if (
+      spline instanceof CardinalSpline &&
+      !spline.fixedScale &&
+      splineConfig.scale !== undefined &&
+      spline.scale !== splineConfig.scale
+    ) {
+      spline.scale = splineConfig.scale;
+      annotation.invalidated = true;
+    }
+
     return spline;
   };
 
   private _getAnnotationSpline = (
     element: HTMLDivElement,
     annotation: SplineROIAnnotation
-  ) => {
-    let spline = this.splines.get(annotation.annotationUID);
+  ): ISpline => {
+    let spline = this.splineInstancesCache.get(annotation);
 
     if (!spline) {
       spline = this._createOrUpdateAnnotationSpline(element, annotation);
@@ -878,17 +1015,92 @@ class SplineROITool extends AnnotationTool {
   };
 
   private _deleteAnnotationSpline = (annotation: SplineROIAnnotation) => {
-    this.splines.delete(annotation.annotationUID);
+    this.splineInstancesCache.delete(annotation);
   };
 
   private _calculateCachedStats = (
-    annotation,
-    viewport,
-    renderingEngine,
-    enabledElement
+    annotation: SplineROIAnnotation,
+    element: HTMLDivElement
   ) => {
-    // TODO
+    if (!this.configuration.calculateStats) {
+      return;
+    }
+    const data = annotation.data;
+
+    if (!data.spline.closed) {
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
+    const { cachedStats } = data;
+    const { polyline: points } = data.spline;
+    const targetIds = Object.keys(cachedStats);
+
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i];
+      const image = this.getTargetIdImage(targetId, renderingEngine);
+
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!image) {
+        continue;
+      }
+
+      const { metadata } = image;
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
+      const scale = getCalibratedScale(image);
+      let area =
+        math.polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
+
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        areaUnit: getCalibratedAreaUnits(null, image),
+      };
+    }
+
+    this.triggerAnnotationModified(annotation, enabledElement);
+
+    return cachedStats;
   };
+}
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, isEmptyArea, areaUnit } = cachedVolumeStats;
+  const textLines: string[] = [];
+
+  if (area) {
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${roundNumber(area)} ${areaUnit}`;
+
+    textLines.push(areaLine);
+  }
+
+  return textLines;
 }
 
 SplineROITool.toolName = 'SplineROI';

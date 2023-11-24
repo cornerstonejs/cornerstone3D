@@ -4,6 +4,17 @@ import * as math from '../../../utilities/math';
 import type { SplineCurveSegment } from './types/SplineCurveSegment';
 import type { SplineLineSegment } from './types/SplineLineSegment';
 
+// The `u` in Parameter Space used when spliting a curve segment into line segments must
+// be greater than or equal to `curveSegmentIndex` and smaller than `curveSegmentIndex + 1`.
+// In this case we are using `curveSegmentIndex + 1 - MAX_U_ERROR`
+const MAX_U_ERROR = 1e-8;
+
+const times = [];
+(window as any).times = times;
+
+/**
+ * Base class for all cubic splines
+ */
 abstract class CubicSpline extends Spline {
   protected getSplineCurves(): SplineCurveSegment[] {
     const numCurveSegments = this.getNumCurveSegments();
@@ -14,10 +25,16 @@ abstract class CubicSpline extends Spline {
     }
 
     const transformMatrix = this.getTransformMatrix();
-    let lengthStart = 0;
+    let previousCurveSegmentsLength = 0;
 
+    const startTime = performance.now();
     for (let i = 0; i < numCurveSegments; i++) {
+      // Cubic spline curves are mainly controlled by P1 and P2 points but
+      // they are also influenced by previous (P0) and next (P3) poins. For
+      // Cardinal, Linear and Catmull-Rom splines P1 and P2 are also known as
+      // knots because they are the connection between two curve segments.
       const { p0, p1, p2, p3 } = this._getCurveSegmentPoints(i);
+
       const lineSegments = this._getLineSegments(i, transformMatrix);
       let curveSegmentLength = 0;
       let minX = Infinity;
@@ -25,26 +42,26 @@ abstract class CubicSpline extends Spline {
       let maxX = -Infinity;
       let maxY = -Infinity;
 
-      lineSegments.forEach((lineSegment) => {
-        const { aabb: lineSegAABB } = lineSegment;
+      lineSegments.forEach(({ aabb: lineSegAABB, length: lineSegLength }) => {
+        minX = Math.min(minX, lineSegAABB.minX);
+        minY = Math.min(minY, lineSegAABB.minY);
+        maxX = Math.max(maxX, lineSegAABB.maxX);
+        maxY = Math.max(maxY, lineSegAABB.maxY);
 
-        minX = minX <= lineSegAABB.minX ? minX : lineSegAABB.minX;
-        minY = minY <= lineSegAABB.minY ? minY : lineSegAABB.minY;
-        maxX = maxX >= lineSegAABB.maxX ? maxX : lineSegAABB.maxX;
-        maxY = maxY >= lineSegAABB.maxY ? maxY : lineSegAABB.maxY;
-        curveSegmentLength += lineSegment.length;
+        curveSegmentLength += lineSegLength;
       });
 
       curveSegments[i] = {
         controlPoints: { p0, p1, p2, p3 },
         aabb: { minX, minY, maxX, maxY },
         length: curveSegmentLength,
-        lengthStart,
+        previousCurveSegmentsLength,
         lineSegments,
       };
 
-      lengthStart += curveSegmentLength;
+      previousCurveSegmentsLength += curveSegmentLength;
     }
+    times.push(performance.now() - startTime);
 
     return curveSegments;
   }
@@ -165,13 +182,13 @@ abstract class CubicSpline extends Spline {
     // otherwise it does not find the spline segment when it is not a closed curve because it is
     // 0-based indexed. In this case `u` needs to get very close to the end point but never touch it
     if (!this.closed && curveSegmentIndex === numCurveSegments - 1) {
-      maxU -= 1e-8;
+      maxU -= MAX_U_ERROR;
     }
 
     const lineSegments: SplineLineSegment[] = [];
     let startPoint: Types.Point2;
     let endPoint: Types.Point2;
-    let lengthStart = 0;
+    let previousLineSegmentsLength = 0;
 
     for (let i = 0, u = minU; i <= numLineSegments; i++, u += inc) {
       // `u` may be greater than maxU in the last FOR loop due to number precision issue
@@ -203,11 +220,11 @@ abstract class CubicSpline extends Spline {
         },
         aabb,
         length,
-        lengthStart,
+        previousLineSegmentsLength,
       });
 
       startPoint = endPoint;
-      lengthStart += length;
+      previousLineSegmentsLength += length;
     }
 
     return lineSegments;

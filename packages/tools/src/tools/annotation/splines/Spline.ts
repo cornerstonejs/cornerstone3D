@@ -2,11 +2,14 @@ import { Types } from '@cornerstonejs/core';
 import type { ISpline } from './types/ISpline';
 import type { SplineProps } from './types/SplineProps';
 import * as math from '../../../utilities/math';
-import type { SplineCurveSegment } from './types/SplineCurveSegment';
-import type { SplineLineSegment } from './types/SplineLineSegment';
-import type { ClosestControlPoint } from './types/ClosestControlPoint';
-import type { ClosestSplinePoint } from './types/ClosestSplinePoint';
-import type { ClosestPoint } from './types/ClosestPoint';
+import type {
+  SplineLineSegment,
+  ClosestControlPoint,
+  ClosestSplinePoint,
+  ClosestPoint,
+  ControlPointInfo,
+  SplineCurveSegment,
+} from './types';
 
 type CurveSegmentDistanceSquared = {
   curveSegmentIndex: number;
@@ -46,14 +49,17 @@ abstract class Spline implements ISpline {
     return this._controlPoints;
   }
 
+  /** Number of control points */
   public get numControlPoints(): number {
     return this._controlPoints.length;
   }
 
+  /** Resolution of the spline curve (greater than or equal to 0) */
   public get resolution(): number {
     return this._resolution;
   }
 
+  /** Set the resolution of the spline curve */
   public set resolution(resolution: number) {
     if (this._resolution === resolution) {
       return;
@@ -63,10 +69,12 @@ abstract class Spline implements ISpline {
     this.invalidated = true;
   }
 
+  /** Flag that is set to true when the curve is already closed */
   public get closed(): boolean {
     return this._closed;
   }
 
+  /** Set the curve as closed which connects the last to the first point */
   public set closed(closed: boolean) {
     if (this._closed === closed) {
       return;
@@ -76,35 +84,32 @@ abstract class Spline implements ISpline {
     this.invalidated = true;
   }
 
-  public get curveSegments(): SplineCurveSegment[] {
-    this._update();
-    return this._curveSegments;
-  }
-
+  /** Axis-aligned bounding box (minX, minY, maxX, maxY) */
   public get aabb(): Types.AABB2 {
     this._update();
     return this._aabb;
   }
 
+  /** Length of the spline curve in pixels */
   public get length(): number {
     this._update();
     return this._length;
   }
 
+  /**
+   * Flag that is set to true when the spline needs to be updated. The update
+   * runs automaticaly when needed (eg: getPolylinePoints).
+   */
   public get invalidated(): boolean {
     return this._invalidated;
   }
 
+  /**
+   * Sets the spline as invalid when curve segments need to be recalculated
+   * or as valid after recomputing the curves
+   */
   protected set invalidated(invalidated: boolean) {
     this._invalidated = invalidated;
-  }
-
-  /**
-   * Lines connecting all control points need to be rendered for B-Splines
-   * @returns True if lines need to be rendered or false otherwise
-   */
-  public shouldRenderControlPointLines(): boolean {
-    return false;
   }
 
   /**
@@ -117,11 +122,10 @@ abstract class Spline implements ISpline {
 
   /**
    * Add a control point to the end of the array
-   * @param x - Control point X coordinate
-   * @param y - Control point Y coordinate
+   * @param point - Control point (2D)
    */
-  public addControlPoint(x: number, y: number): void {
-    this._controlPoints.push([x, y]);
+  public addControlPoint(point: Types.Point2): void {
+    this._controlPoints.push([point[0], point[1]]);
     this.invalidated = true;
   }
 
@@ -130,7 +134,7 @@ abstract class Spline implements ISpline {
    * @param points - Control points to be added
    */
   public addControlPoints(points: Types.Point2[]): void {
-    points.forEach((point) => this.addControlPoint(point[0], point[1]));
+    points.forEach((point) => this.addControlPoint(point));
   }
 
   /**
@@ -139,7 +143,7 @@ abstract class Spline implements ISpline {
    * decimal part is the `t` value on that curve segment.
    * @param u - `u` value in Parameter Space
    */
-  public addControlPointAt(u: number): void {
+  public addControlPointAt(u: number): ControlPointInfo {
     const lineSegment = this._getLineSegmentAt(u);
     const { start: startPoint, end: endPoint } = lineSegment.points;
     const curveSegmentIndex = Math.floor(u);
@@ -155,6 +159,11 @@ abstract class Spline implements ISpline {
 
     this._controlPoints.splice(insertIndex, 0, controlPointPos);
     this.invalidated = true;
+
+    return {
+      index: insertIndex,
+      point: controlPointPos,
+    };
   }
 
   /**
@@ -274,8 +283,8 @@ abstract class Spline implements ISpline {
 
   /**
    * Finds the closest point on the spline curve given 2D point
-   * @param point
-   * @returns
+   * @param point - Reference 2D point
+   * @returns Closest point on the spline curve
    */
   public getClosestPoint(point: Types.Point2): ClosestSplinePoint {
     this._update();
@@ -332,7 +341,7 @@ abstract class Spline implements ISpline {
     }
 
     const curveSegmentLengthToPoint =
-      minDistLineSegment.lengthStart +
+      minDistLineSegment.previousLineSegmentsLength +
       math.point.distanceToPoint(minDistLineSegment.points.start, closestPoint);
 
     const t = curveSegmentLengthToPoint / minDistCurveSegment.length;
@@ -350,7 +359,7 @@ abstract class Spline implements ISpline {
    * @param point - Reference point
    * @returns Closest point on the straight line that connects all control points
    */
-  public getClosestControlPointLinesPoint(point: Types.Point2): ClosestPoint {
+  public getClosestPointOnControlPointLines(point: Types.Point2): ClosestPoint {
     const linePoints = [...this._controlPoints];
 
     if (this._closed) {
@@ -389,8 +398,8 @@ abstract class Spline implements ISpline {
   }
 
   /**
-   * Get all line segments necessary to draw the entire spline curve.
-   * @returns An array of line segments
+   * Get all points necessary to draw a spline curve
+   * @returns Array with all points necessary to draw a spline curve
    */
   public getPolylinePoints(): Types.Point2[] {
     this._update();
@@ -455,13 +464,70 @@ abstract class Spline implements ISpline {
   }
 
   /**
-   * Checks if a 2D is inside the spline curve
+   * Checks if a 2D point is inside the spline curve.
+   *
+   * A point is inside a curve/polygon if the number of intersections between the horizontal
+   * ray emanating from the given point and to the right and the line segments is odd.
+   * https://www.eecs.umich.edu/courses/eecs380/HANDOUTS/PROJ2/InsidePoly.html
+   *
    * @param point - 2D Point
    * @returns True is the point is inside the spline curve or false otherwise
    */
   public containsPoint(point: Types.Point2): boolean {
-    console.warn('TODO: containsPoint');
-    return false;
+    this._update();
+
+    const controlPoints = this._controlPoints;
+
+    if (controlPoints.length < 3) {
+      return false;
+    }
+
+    const curveSegments = [...this._curveSegments];
+    const closingCurveSegment =
+      this._getClosingCurveSegmentWithStraightLineSegment();
+
+    if (closingCurveSegment) {
+      curveSegments.push(closingCurveSegment);
+    }
+
+    let numIntersections = 0;
+
+    for (let i = 0; i < curveSegments.length; i++) {
+      const curveSegment = curveSegments[i];
+      const { aabb: curveSegAABB } = curveSegment;
+      const mayIntersectCurveSegment =
+        point[0] <= curveSegAABB.maxX &&
+        point[1] >= curveSegAABB.minY &&
+        point[1] < curveSegAABB.maxY;
+
+      // Skip all line segments if it is not possible to intersect the curve segment
+      if (!mayIntersectCurveSegment) {
+        continue;
+      }
+
+      const { lineSegments } = curveSegment;
+
+      for (let i = 0; i < lineSegments.length; i++) {
+        const lineSegment = lineSegments[i];
+        const { aabb: lineSegmentAABB } = lineSegment;
+        const mayIntersectLineSegment =
+          point[0] <= lineSegmentAABB.maxX &&
+          point[1] >= lineSegmentAABB.minY &&
+          point[1] < lineSegmentAABB.maxY;
+
+        if (mayIntersectLineSegment) {
+          const { start: p1, end: p2 } = lineSegment.points;
+          const isVerticalLine = p1[0] === p2[0];
+          const xIntersection =
+            ((point[1] - p1[1]) * (p2[0] - p1[0])) / (p2[1] - p1[1]) + p1[0];
+
+          numIntersections +=
+            isVerticalLine || point[0] <= xIntersection ? 1 : 0;
+        }
+      }
+    }
+
+    return numIntersections % 2 === 1;
   }
 
   protected abstract getTransformMatrix(): number[];
@@ -562,12 +628,55 @@ abstract class Spline implements ISpline {
 
     for (let i = 0; i < lineSegments.length; i++) {
       const lineSegment = lineSegments[i];
-      const lengthEnd = lineSegment.lengthStart + lineSegment.length;
+      const lengthEnd =
+        lineSegment.previousLineSegmentsLength + lineSegment.length;
 
-      if (pointLength >= lineSegment.lengthStart && pointLength <= lengthEnd) {
+      if (
+        pointLength >= lineSegment.previousLineSegmentsLength &&
+        pointLength <= lengthEnd
+      ) {
         return lineSegment;
       }
     }
+  }
+
+  /**
+   * Creates a curve segment with a single line segment connecting the start and end control points
+   * @returns A curve segment that closes the spline
+   */
+  private _getClosingCurveSegmentWithStraightLineSegment(): SplineCurveSegment {
+    if (this.closed) {
+      return;
+    }
+
+    const controlPoints = this._controlPoints;
+    const startControlPoint = controlPoints[0];
+    const endControlPoint = controlPoints[controlPoints.length - 1];
+
+    // The only properties needed are `points` and `aabb`. All the other ones may undefined
+    const closingLineSegment: SplineLineSegment = {
+      points: {
+        start: [...startControlPoint],
+        end: [...endControlPoint],
+      },
+      aabb: {
+        minX: Math.min(startControlPoint[0], endControlPoint[0]),
+        minY: Math.min(startControlPoint[1], endControlPoint[1]),
+        maxX: Math.max(startControlPoint[0], endControlPoint[0]),
+        maxY: Math.max(startControlPoint[1], endControlPoint[1]),
+      },
+    } as SplineLineSegment;
+
+    // The only properties needed are `lineSegments` and `aabb`. All the other ones may undefined
+    return {
+      aabb: {
+        minX: closingLineSegment.aabb.minX,
+        minY: closingLineSegment.aabb.minY,
+        maxX: closingLineSegment.aabb.maxX,
+        maxY: closingLineSegment.aabb.maxY,
+      },
+      lineSegments: [closingLineSegment],
+    } as SplineCurveSegment;
   }
 }
 

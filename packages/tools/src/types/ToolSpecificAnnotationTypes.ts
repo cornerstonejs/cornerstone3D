@@ -119,6 +119,7 @@ export interface CircleROIAnnotation extends Annotation {
 
 export interface SplineROIAnnotation extends Annotation {
   data: {
+    label?: string;
     handles: {
       points: Types.Point3[];
       activeHandleIndex: number | null;
@@ -136,10 +137,16 @@ export interface SplineROIAnnotation extends Annotation {
     spline: {
       type: string;
       resolution: number;
+      polyline: Types.Point3[];
       closed: boolean;
     };
-    label: string;
-    cachedStats?: ROICachedStats;
+    cachedStats?: {
+      [targetId: string]: {
+        Modality: string;
+        area: number;
+        areaUnit: string;
+      };
+    };
   };
 }
 

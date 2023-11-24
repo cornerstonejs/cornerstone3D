@@ -110,7 +110,6 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
 });
 
 const SplineToolNames = [
-  'CardinalSplineROI',
   'CatmullRomSplineROI',
   'LinearSplineROI',
   'BSplineROI',
@@ -241,12 +240,6 @@ async function run() {
   toolGroup.addTool(EllipticalROITool.toolName);
   toolGroup.addTool(CircleROITool.toolName);
 
-  toolGroup.addToolInstance('CardinalSplineROI', SplineROITool.toolName, {
-    spline: {
-      type: 'CARDINAL',
-    },
-  });
-
   toolGroup.addToolInstance('CatmullRomSplineROI', SplineROITool.toolName, {
     spline: {
       type: 'CATMULLROM',
@@ -287,7 +280,6 @@ async function run() {
   toolGroup.setToolPassive(RectangleROITool.toolName);
   toolGroup.setToolPassive(EllipticalROITool.toolName);
   toolGroup.setToolPassive(CircleROITool.toolName);
-  // toolGroup.setToolPassive(SplineROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);

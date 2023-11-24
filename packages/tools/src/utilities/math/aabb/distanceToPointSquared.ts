@@ -14,10 +14,12 @@ export default function distanceToPointSquared(
   aabb: Types.AABB2,
   point: Types.Point2
 ): number {
-  const aabbSize = [aabb.maxX - aabb.minX, aabb.maxY - aabb.minY];
+  const aabbWidth = aabb.maxX - aabb.minX;
+  const aabbHeight = aabb.maxY - aabb.minY;
+  const aabbSize = [aabbWidth, aabbHeight];
   const aabbCenter: Types.Point2 = [
-    aabb.minX + (aabb.maxX - aabb.minX) / 2,
-    aabb.minY + (aabb.maxY - aabb.minY) / 2,
+    aabb.minX + aabbWidth / 2,
+    aabb.minY + aabbHeight / 2,
   ];
 
   // Translates the AABB and the point using AABB center as the new origin
@@ -42,7 +44,7 @@ export default function distanceToPointSquared(
   // dx <= 0 && dy >  0: a line parallel to y-axis connecting the point to AABB's top side
   // dx <= 0 && dy <= 0: the point is inside the AABB
   if (dx > 0 && dy > 0) {
-    return dx ** 2 + dy ** 2;
+    return dx * dx + dy * dy;
   }
 
   const dist = Math.max(dx, 0) + Math.max(dy, 0);
