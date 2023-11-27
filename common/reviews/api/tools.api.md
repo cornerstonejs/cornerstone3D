@@ -715,8 +715,6 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    mouseUpCallback: (evt: any) => void;
-    // (undocumented)
     onSetToolDisabled: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
@@ -1847,8 +1845,8 @@ type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
 
 // @public (undocumented)
 type FloodFillOptions = {
-    onFlood?: (x: any, y: any) => void;
-    onBoundary?: (x: any, y: any) => void;
+    onFlood?: (x: number, y: number, z?: number) => void;
+    onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
 };

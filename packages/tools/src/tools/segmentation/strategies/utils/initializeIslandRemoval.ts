@@ -83,6 +83,7 @@ export default function initializeIslandRemoval(
     };
 
     clickedPoints.forEach((clickedPoint) => {
+      // @ts-ignore - need to ignore the spread appication to array params
       if (getter(...clickedPoint) === 1) {
         floodFill(getter, clickedPoints[0], {
           onFlood,
