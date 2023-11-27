@@ -85,9 +85,11 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   'CircleThreshold',
   BrushStrategy.initializeRegionFill,
   BrushStrategy.initializeSetValue,
-  BrushStrategy.initializeThreshold,
   initializeCircle,
+  // dynamicWithinThreshold depends on initialize circle for setup
   dynamicWithinThreshold,
+  // initializeThreshold depends on dynamicWithinThreshold for some setup
+  BrushStrategy.initializeThreshold,
   BrushStrategy.initializePreview,
   initializeTracking,
   initializeIslandRemoval

@@ -25,7 +25,7 @@ export default function initializeIslandRemoval(
   operationData.completeUp = () => {
     completeUp?.();
 
-    const { strategySpecificConfiguration, center } = operationData;
+    const { strategySpecificConfiguration, segmentIndex } = operationData;
     const { TRACKING: tracking } = strategySpecificConfiguration;
     const { boundsIJK, clickedPoints } = tracking;
     if (!tracking?.getter || !clickedPoints?.length) {
@@ -33,11 +33,36 @@ export default function initializeIslandRemoval(
     }
     console.log('completeUp - island removal', boundsIJK);
 
-    // Returns 1 for new colour, and 0 for everything else
+    const previewSegmentationIndex =
+      segmentIndexController.getPreviewSegmentIndex(
+        operationData.segmentationId
+      );
+    if (previewSegmentationIndex === undefined) {
+      return;
+    }
+
+    // Returns true for new colour, and false otherwise
     const getter = (ijk) => {
       const val = getter(ijk);
+      return val === previewSegmentationIndex || val === segmentIndex;
     };
 
+    const onFlood = (ijk) => {
+      // Fill this point with an indicator that this point is connected
+      console.log('onFlood', ijk);
+    };
+
+    const onBoundary = (ijk) => {
+      return !boundsIJK.find(
+        (bounds, idx) => ijk[idx] <= bounds[0] || ijk[idx] >= bounds[1]
+      );
+    };
+
+    floodFill(getter, clickedPoints[0], {
+      onBoundary,
+      onFlood,
+      diagonals: true,
+    });
     // Add a point in value callback to fill data with new data just created,
     // PLUS existing data already present (to fill regions already filled)
 

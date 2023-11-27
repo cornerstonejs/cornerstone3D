@@ -167,8 +167,11 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: [200, 1000],
   isDynamic: false,
 });
-thresholdOptions.set('Dynamic', { isDynamic: true });
+thresholdOptions.set('Dynamic r=0', { isDynamic: true, delta: 0 });
 thresholdOptions.set('Dynamic Same Threshold', { isDynamic: false });
+thresholdOptions.set('Dynamic r=1', { isDynamic: true, delta: 1 });
+thresholdOptions.set('Dynamic r=3', { isDynamic: true, delta: 3 });
+thresholdOptions.set('Dynamic r=5', { isDynamic: true, delta: 5 });
 
 addDropdownToToolbar({
   options: {
@@ -438,6 +441,7 @@ async function run() {
     },
   ]);
 
+  segmentation.segmentIndex.setPreviewSegmentIndex(segmentationId, 4);
   segmentation.segmentIndex.setPreviewSegmentIndex(segmentationId, 3);
 
   // Render the image

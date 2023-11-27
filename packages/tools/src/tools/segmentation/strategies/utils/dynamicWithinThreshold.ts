@@ -15,18 +15,23 @@ export default function dynamicWithinThreshold(
   const { initDown } = operationData;
   // Setup a clear threshold value on mouse/touch down
   operationData.initDown = () => {
+    console.log('Clearing threshold value');
     THRESHOLD.threshold = null;
     initDown?.();
   };
 
-  const { threshold: oldThreshold } = THRESHOLD;
+  const { threshold: oldThreshold, delta = 0 } = THRESHOLD;
+  const useDelta = oldThreshold ? 0 : delta;
   const nestedBounds = boundsIJK.map((ijk, idx) => {
     const [min, max] = ijk;
-    return [Math.max(min, centerIJK[idx]), Math.min(max, centerIJK[idx])];
+    return [
+      Math.max(min, centerIJK[idx] - useDelta),
+      Math.min(max, centerIJK[idx] + useDelta),
+    ];
   }) as BoundsIJK;
 
   const threshold = oldThreshold || [Infinity, -Infinity];
-  const callback = ({ value, pointIJK }) => {
+  const callback = ({ value }) => {
     threshold[0] = Math.min(value, threshold[0]);
     threshold[1] = Math.max(value, threshold[1]);
   };
@@ -36,6 +41,7 @@ export default function dynamicWithinThreshold(
     callback,
     nestedBounds
   );
+  console.log('Calculated threshold is', threshold);
 
   operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
 }

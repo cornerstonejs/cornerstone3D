@@ -136,12 +136,11 @@ class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
-    this._editData = {
+    return {
       segmentation,
       imageVolume,
       segmentsLocked,
     };
-    return { renderingEngine, viewportIdsToRender, enabledElement };
   }
 
   preMouseDownCallback = (
@@ -149,8 +148,9 @@ class BrushTool extends BaseTool {
   ): boolean => {
     const eventData = evt.detail;
     const { element } = eventData;
-    const { renderingEngine, viewportIdsToRender, enabledElement } =
-      this.createEditData(element);
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+    this._editData = this.createEditData(element);
 
     this._activateDraw(element);
 
@@ -158,9 +158,10 @@ class BrushTool extends BaseTool {
 
     evt.preventDefault();
 
+    console.log('preMouseDownCallback');
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
-      viewportIdsToRender
+      this._hoverData.viewportIdsToRender
     );
 
     this.acceptPreview(element);
@@ -175,6 +176,9 @@ class BrushTool extends BaseTool {
   };
 
   mouseUpCallback = (evt): void => {
+    if (!this._hoverData || !this._editData) {
+      return;
+    }
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -192,11 +196,7 @@ class BrushTool extends BaseTool {
     }
   };
 
-  private updateCursor(evt: EventTypes.InteractionEventType) {
-    const eventData = evt.detail;
-    const { element } = eventData;
-    const { currentPoints } = eventData;
-    const centerCanvas = currentPoints.canvas;
+  private createHoverData(element, centerCanvas?) {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
 
@@ -241,7 +241,7 @@ class BrushTool extends BaseTool {
       data: {},
     };
 
-    this._hoverData = {
+    return {
       brushCursor,
       centerCanvas,
       segmentIndex,
@@ -250,6 +250,17 @@ class BrushTool extends BaseTool {
       segmentColor,
       viewportIdsToRender,
     };
+  }
+
+  private updateCursor(evt: EventTypes.InteractionEventType) {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const { currentPoints } = eventData;
+    const centerCanvas = currentPoints.canvas;
+    const enabledElement = getEnabledElement(element);
+    this._hoverData = this.createHoverData(element, centerCanvas);
+    const { renderingEngine } = enabledElement;
+    const { viewportIdsToRender } = this._hoverData;
 
     this._calculateCursor(element, centerCanvas);
 
@@ -277,14 +288,15 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategy(enabledElement, this.getOperationData());
   };
 
-  protected getOperationData() {
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+  protected getOperationData(element?) {
+    const { imageVolume, segmentation, segmentsLocked } =
+      this._editData || this.createEditData(element);
     const {
       segmentIndex,
       segmentationId,
       segmentationRepresentationUID,
       brushCursor,
-    } = this._hoverData;
+    } = this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
     const operationData = {
@@ -449,44 +461,10 @@ class BrushTool extends BaseTool {
    * Cancels any preview view being shown, resetting any segments being shown.
    */
   public cancelPreview(element) {
-    const { enabledElement } = this.createEditData(element);
-
-    if (!this._hoverData) {
-      const activeSegmentationRepresentation =
-        activeSegmentation.getActiveSegmentationRepresentation(
-          this.toolGroupId
-        );
-      if (!activeSegmentationRepresentation) {
-        console.warn(
-          'No active segmentation detected, create one before using the brush tool'
-        );
-        return;
-      }
-
-      const { segmentationRepresentationUID, segmentationId } =
-        activeSegmentationRepresentation;
-      const segmentIndex =
-        segmentIndexController.getActiveSegmentIndex(segmentationId);
-
-      const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-        this.toolGroupId,
-        segmentationRepresentationUID,
-        segmentIndex
-      );
-      this._hoverData = {
-        brushCursor: null,
-        centerCanvas: null,
-        segmentIndex,
-        segmentationId,
-        segmentationRepresentationUID,
-        segmentColor,
-        viewportIdsToRender: null,
-      };
-    }
-
+    const enabledElement = getEnabledElement(element);
     this.applyActiveStrategyEvent(
       enabledElement,
-      this.getOperationData(),
+      this.getOperationData(element),
       'cancelPreview'
     );
   }
@@ -495,14 +473,11 @@ class BrushTool extends BaseTool {
    * Accepts a preview, marking it as the active segment.
    */
   public acceptPreview(element) {
-    if (!this._editData) {
-      this.createEditData(element);
-    }
     const enabledElement = getEnabledElement(element);
 
     this.applyActiveStrategyEvent(
       enabledElement,
-      this.getOperationData(),
+      this.getOperationData(enabledElement),
       'acceptPreview'
     );
   }

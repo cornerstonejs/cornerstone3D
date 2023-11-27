@@ -692,12 +692,12 @@ export class BrushTool extends BaseTool {
     cancelPreview(element: any): void;
     // (undocumented)
     createEditData(element: any): {
-        renderingEngine: Types_2.IRenderingEngine;
-        viewportIdsToRender: string[];
-        enabledElement: Types_2.IEnabledElement;
+        segmentation: Types_2.IImageVolume;
+        imageVolume: Types_2.IImageVolume;
+        segmentsLocked: number[] | [];
     };
     // (undocumented)
-    protected getOperationData(): {
+    protected getOperationData(element?: any): {
         points: any;
         volume: Types_2.IImageVolume;
         imageVolume: Types_2.IImageVolume;
