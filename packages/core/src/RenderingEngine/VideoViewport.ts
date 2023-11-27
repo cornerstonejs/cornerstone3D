@@ -25,6 +25,8 @@ import { getOrCreateCanvas } from './helpers';
  * looking into an internal scene, and an associated target output `canvas`.
  */
 class VideoViewport extends Viewport implements IVideoViewport {
+  public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
+
   public modality;
   // Viewport Data
   protected imageId: string;
@@ -35,11 +37,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private videoWidth = 0;
   private videoHeight = 0;
 
-  private loop = false;
+  private loop = true;
   private mute = true;
   private isPlaying = false;
   private scrollSpeed = 1;
   private playbackRate = 1;
+  /**
+   * The range is the set of frames to play
+   */
+  private frameRange: [number, number] = [0, 0];
 
   protected metadata;
 
@@ -49,6 +55,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * provided.
    */
   private fps = 30;
+
+  /** The number of frames in the video */
+  private numberOfFrames = 0;
 
   private videoCamera: InternalVideoCamera = {
     panWorld: [0, 0],
@@ -156,14 +165,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
       origin = [0, 0, 0];
     }
 
-    const xSpacing = imagePlaneModule.columnPixelSpacing;
-    const ySpacing = imagePlaneModule.rowPixelSpacing;
+    const xSpacing = imagePlaneModule.columnPixelSpacing || 1;
+    const ySpacing = imagePlaneModule.rowPixelSpacing || 1;
     const xVoxels = imagePlaneModule.columns;
     const yVoxels = imagePlaneModule.rows;
 
     const zSpacing = 1;
     const zVoxels = 1;
 
+    this.hasPixelSpacing = !!imagePlaneModule.columnPixelSpacing;
     return {
       bitsAllocated: 8,
       numComps: 3,
@@ -171,6 +181,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
+      hasPixelSpacing: this.hasPixelSpacing,
       numVoxels: xVoxels * yVoxels * zVoxels,
       imagePlaneModule,
     };
@@ -181,23 +192,33 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * Requirements are to have the imageUrlModule in the metadata
    * with the rendered endpoint being the raw video in video/mp4 format.
    */
-  public setVideo(
-    imageIds: string | string[],
-    frameNumber?: number
-  ): Promise<unknown> {
-    this.imageId = Array.isArray(imageIds) ? imageIds[0] : imageIds;
-    const { imageId } = this;
+  public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
+    this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
     const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
     this.metadata = this._getImageDataMetadata();
 
     return this.setVideoURL(rendered).then(() => {
-      const { cineRate = 30 } = metaData.get(MetadataModules.CINE, imageId);
+      let { cineRate, numberOfFrames } = metaData.get(
+        MetadataModules.CINE,
+        imageId
+      );
+      if (!numberOfFrames) {
+        numberOfFrames = Math.round(
+          this.videoElement.duration * (cineRate || 30)
+        );
+      }
+      if (!cineRate) {
+        cineRate = Math.round(numberOfFrames / this.videoElement.duration);
+      }
       this.fps = cineRate;
+      this.numberOfFrames = numberOfFrames;
+      // 1 based range setting
+      this.setFrameRange([1, numberOfFrames]);
       if (frameNumber !== undefined) {
         this.pause();
-        this.setFrame(frameNumber);
+        this.setFrameNumber(frameNumber);
       }
     });
   }
@@ -326,8 +347,29 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   // Sets the frame number - note according to DICOM, this is 1 based
-  public async setFrame(frame: number) {
+  public async setFrameNumber(frame: number) {
     this.setTime((frame - 1) / this.fps);
+  }
+
+  /**
+   * Sets the playback frame range.  The video will play over the given set
+   * of frames (assuming it is playing).
+   * @param frameRange - the minimum to maximum (inclusive) frames to play over
+   * @returns
+   */
+  public setFrameRange(frameRange: number[]) {
+    if (!frameRange) {
+      this.frameRange = [1, this.numberOfFrames];
+      return;
+    }
+    if (frameRange.length !== 2 || frameRange[0] === frameRange[1]) {
+      return;
+    }
+    this.frameRange = [frameRange[0], frameRange[1]];
+  }
+
+  public getFrameRange(): [number, number] {
+    return this.frameRange;
   }
 
   public setProperties(props: VideoViewportProperties) {
@@ -421,6 +463,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       origin: metadata.origin,
       direction: metadata.direction,
       metadata: { Modality: this.modality },
+      getScalarData: () => this.getScalarData(),
       imageData: {
         getDirection: () => metadata.direction,
         getDimensions: () => metadata.dimensions,
@@ -443,6 +486,32 @@ class VideoViewport extends Viewport implements IVideoViewport {
         scaled: false,
       },
     };
+  }
+
+  /**
+   * Checks to see if the imageURI is currently being displayed.  The imageURI
+   * may contain frame numbers according to the DICOM standard format, which
+   * will be stripped to compare the base image URI, and then the values used
+   * to check if that frame is currently being displayed.
+   *
+   * The DICOM standard allows for comma separated values as well, however,
+   * this is not supported here, with only a single range or single value
+   * being tested.
+   *
+   * For a single value, the time range +/- 5 frames is permitted to allow
+   * the detection to actually succeed when nearby without requiring an exact
+   * time frame to be matched.
+   *
+   * @param imageURI - containing frame number or range.
+   * @returns
+   */
+  public hasImageURI(imageURI: string) {
+    // TODO - move annotationFrameRange into core so it can be used here.
+    const framesMatch = imageURI.match(VideoViewport.frameRangeExtractor);
+    const testURI = framesMatch
+      ? imageURI.substring(0, framesMatch.index)
+      : imageURI;
+    return this.imageId.indexOf(testURI) !== -1;
   }
 
   public setVOI(voiRange: VOIRange): void {
@@ -470,8 +539,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const white = this.averageWhite || [255, 255, 255];
     const maxWhite = Math.max(...white);
     const scaleWhite = white.map((c) => maxWhite / c);
-    // From the DICOM standard: ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
-    // which is x/(w-1) - (c - 0.5) / (w-1) + 0.5  for this case
     const { lower = 0, upper = 255 } = this.voiRange || {};
     const wlScale = (upper - lower + 1) / 255;
     const wlDelta = lower / 255;
@@ -496,7 +563,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
     // NOTE: the parallel scale should be done first
     // because it affects the focal point later
     if (camera.parallelScale !== undefined) {
-      this.videoCamera.parallelScale = 1 / parallelScale;
+      this.videoCamera.parallelScale =
+        this.element.clientHeight / 2 / parallelScale;
     }
 
     if (focalPoint !== undefined) {
@@ -526,6 +594,33 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
+  /**
+   * This function returns the imageID associated with either the current
+   * frame being displayed, or the range of frames being played.  This may not
+   * correspond to any particular imageId that has imageId metadata, as the
+   * format is one of:
+   * `<DICOMweb URI>/frames/<Start Frame>(-<End Frame>)?`
+   * or
+   * `<Other URI>[?&]frameNumber=<Start Frame>(-<EndFrame>)?`
+   * for a URL parameter.
+   *
+   * @returns an imageID for video
+   */
+  public getCurrentImageId() {
+    const current = this.imageId.replace(
+      '/frames/1',
+      this.isPlaying
+        ? `/frames/1-${this.numberOfFrames}`
+        : `/frames/${this.getFrameNumber()}`
+    );
+    return current;
+  }
+
+  public getFrameNumber() {
+    // Need to round this as the fps/time isn't exact
+    return 1 + Math.round(this.videoElement.currentTime * this.fps);
+  }
+
   public getCamera(): ICamera {
     const { parallelScale } = this.videoCamera;
 
@@ -543,7 +638,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       parallelProjection: true,
       focalPoint: canvasCenterWorld,
       position: [0, 0, 0],
-      parallelScale: 1 / parallelScale, // Reverse zoom direction back
+      viewUp: [0, -1, 0],
+      parallelScale: this.element.clientHeight / 2 / parallelScale, // Reverse zoom direction back
       viewPlaneNormal: [0, 0, 1],
     };
   }
@@ -561,7 +657,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   public getNumberOfSlices = (): number => {
-    return (this.videoElement.duration * this.fps) / this.scrollSpeed;
+    return Math.round(
+      (this.videoElement.duration * this.fps) / this.scrollSpeed
+    );
   };
 
   public getFrameOfReferenceUID = (): string => {
@@ -636,18 +734,23 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return canvasPos;
   };
 
+  public getPan(): Point2 {
+    const worldPan = this.videoCamera.panWorld;
+    return [worldPan[0], worldPan[1]];
+  }
+
+  public getRotation = () => 0;
+
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
-    const [x, y] = canvasPos;
-    const ratio = this.videoWidth / this.canvas.width;
-    const pan = this.getPan();
-    return [(x + pan[0]) * ratio, (y + pan[1]) * ratio];
+    const transform = this.getTransform();
+    transform.invert();
+
+    return transform.transformPoint(canvasPos);
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
-    const [x, y] = indexPos;
-    const ratio = this.canvas.width / this.videoWidth;
-    const pan = this.getPan();
-    return [x * ratio - pan[0], y * ratio - pan[1]];
+    const transform = this.getTransform();
+    return transform.transformPoint(indexPos);
   };
 
   private refreshRenderValues() {
@@ -692,17 +795,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.renderFrame();
   };
 
-  private renderFrame = () => {
+  protected getTransform() {
     const panWorld: Point2 = this.videoCamera.panWorld;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
     const canvasToWorldRatio: number = this.getCanvasToWorldRatio();
-
     const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
     const halfCanvasWorldCoordinates = [
       halfCanvas[0] * canvasToWorldRatio,
       halfCanvas[1] * canvasToWorldRatio,
     ];
-
     const transform = new Transform();
 
     // Translate to the center of the canvas (move origin of the transform
@@ -720,6 +821,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       -halfCanvasWorldCoordinates[0],
       -halfCanvasWorldCoordinates[1]
     );
+    return transform;
+  }
+  private renderFrame = () => {
+    const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
 
     this.canvasContext.transform(
@@ -749,6 +854,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
       time: this.videoElement.currentTime,
       duration: this.videoElement.duration,
     });
+
+    const frame = this.getFrameNumber();
+    if (this.isPlaying) {
+      if (frame < this.frameRange[0]) {
+        this.setFrameNumber(this.frameRange[0]);
+      } else if (frame > this.frameRange[1]) {
+        if (this.loop) {
+          this.setFrameNumber(this.frameRange[0]);
+        } else {
+          this.pause();
+        }
+      }
+    }
   };
 
   private renderWhilstPlaying = () => {

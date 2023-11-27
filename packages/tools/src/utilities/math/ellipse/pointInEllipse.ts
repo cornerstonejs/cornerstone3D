@@ -1,4 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 type Ellipse = {
   center: Types.Point3;
@@ -15,7 +16,7 @@ type Ellipse = {
  */
 export default function pointInEllipse(
   ellipse: Ellipse,
-  pointLPS: Types.Point3
+  pointLPS: vec3
 ): boolean {
   const { center: circleCenterWorld, xRadius, yRadius, zRadius } = ellipse;
   const [x, y, z] = pointLPS;

@@ -227,9 +227,25 @@
         "name": "Video Display",
         "description": "Basic video display"
       },
+      "videoNavigation": {
+        "name": "Video Navigation",
+        "description": "Navigation of video playback"
+      },
+      "videoColor": {
+        "name": "Video Color Control",
+        "description": "Video Color Correction and Brightness/Contrast"
+      },
       "videoTools": {
         "name": "Video Tools",
-        "description": "Basic video tools/control"
+        "description": "Video annotation tools"
+      },
+      "videoGroup": {
+        "name": "Video Annotation Grouping",
+        "description": "Annotation grouping tools"
+      },
+      "videoRange": {
+        "name": "Video Range Selection",
+        "description": "Video range selection"
       }
     },
     "tools-segmentation" : {

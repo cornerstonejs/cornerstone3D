@@ -19,7 +19,7 @@ function isViewportPreScaled(
     const { preScale } = viewport.getImageData() || {};
     return !!preScale?.scaled;
   } else {
-    throw new Error('Viewport is not a valid type');
+    return false;
   }
 }
 

@@ -9,6 +9,7 @@ import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
+import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
@@ -244,7 +245,8 @@ declare namespace annotation {
         selection,
         state_2 as state,
         visibility,
-        FrameOfReferenceSpecificAnnotationManager
+        FrameOfReferenceSpecificAnnotationManager,
+        AnnotationGroup
     }
 }
 export { annotation }
@@ -281,6 +283,48 @@ export abstract class AnnotationDisplayTool extends BaseTool {
     abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
     // (undocumented)
     static toolName: any;
+}
+
+// @public (undocumented)
+class AnnotationFrameRange {
+    // (undocumented)
+    protected static frameRangeExtractor: RegExp;
+    // (undocumented)
+    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
+    // (undocumented)
+    static framesToString(range: any): string;
+    // (undocumented)
+    static getFrameRange(annotation: Annotation): number | [number, number];
+    // (undocumented)
+    protected static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static setFrameRange(annotation: Annotation, range: FramesRange | string, eventBase?: {
+        viewportId: any;
+        renderingEngineId: any;
+    }): void;
+}
+
+// @public (undocumented)
+class AnnotationGroup {
+    constructor();
+    // (undocumented)
+    add(...annotationUIDs: string[]): void;
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    findNearby(uid: string, direction: 1): string;
+    // (undocumented)
+    has(uid: string): boolean;
+    // (undocumented)
+    get isVisible(): boolean;
+    // (undocumented)
+    remove(...annotationUIDs: string[]): void;
+    // (undocumented)
+    setVisible(isVisible: boolean, baseEvent: BaseEventDetail, filter?: (annotationUID: string) => boolean): void;
+    // (undocumented)
+    protected unboundVisibleFilter(uid: string): boolean;
+    // (undocumented)
+    visibleFilter: (uid: string) => boolean;
 }
 
 // @public (undocumented)
@@ -2299,6 +2343,84 @@ type KeyDownEventDetail = {
 type KeyDownEventType = Types_2.CustomEventType<KeyDownEventDetail>;
 
 // @public (undocumented)
+export class KeyImageTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => {
+        annotationUID: string;
+        highlighted: boolean;
+        invalidated: boolean;
+        metadata: {
+            toolName: string;
+            viewPlaneNormal: Types_2.Point3;
+            viewUp: Types_2.Point3;
+            FrameOfReferenceUID: string;
+            referencedImageId: string;
+        };
+        data: {
+            text: string;
+            handles: {
+                points: Types_2.Point3[];
+                textBox: {
+                    hasMoved: boolean;
+                    worldPosition: Types_2.Point3;
+                    worldBoundingBox: {
+                        topLeft: Types_2.Point3;
+                        topRight: Types_2.Point3;
+                        bottomLeft: Types_2.Point3;
+                        bottomRight: Types_2.Point3;
+                    };
+                };
+            };
+            label: string;
+        };
+    };
+    // (undocumented)
+    cancel(): void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
+    // (undocumented)
+    doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
@@ -2916,7 +3038,7 @@ declare namespace point {
 const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
 
 // @public (undocumented)
-function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
+function pointInEllipse(ellipse: Ellipse, pointLPS: vec3): boolean;
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
@@ -3483,7 +3605,7 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-function roundNumber(value: string | number, precision?: number): string;
+function roundNumber(value: string | number | (string | number)[], precision?: number): string;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -3981,7 +4103,7 @@ declare namespace state_3 {
 // @public (undocumented)
 type Statistics = {
     name: string;
-    value: number;
+    value: number | number[];
     unit: null | string;
 };
 
@@ -4516,7 +4638,8 @@ declare namespace utilities {
         roundNumber,
         pointToString,
         polyDataUtils,
-        voi
+        voi,
+        AnnotationFrameRange as annotationFrameRange
     }
 }
 export { utilities }

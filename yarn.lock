@@ -17393,7 +17393,7 @@ pkg-up@^3.1.0:
   version "1.1.0"
   resolved "https://codeload.github.com/ataft/plugin-image-zoom/tar.gz/8e1b866c79ed6d42cefc4c52f851f1dfd1d0c7de"
   dependencies:
-    medium-zoom "^1.0.4"
+    medium-zoom "^1.0.8"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"

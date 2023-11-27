@@ -13,7 +13,8 @@ import areViewportsCoplanar from './areViewportsCoplanar ';
 const getSpatialRegistration = (targetId, sourceId) =>
   utilities.spatialRegistrationMetadataProvider.get(
     'spatialRegistrationModule',
-    [targetId, sourceId]
+    targetId,
+    sourceId
   );
 
 /**

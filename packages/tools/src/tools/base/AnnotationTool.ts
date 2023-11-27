@@ -305,13 +305,10 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       const volumeId = targetId.split('volumeId:')[1];
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
-    } else if (viewport instanceof StackViewport) {
-      const scalingModule: Types.ScalingParameters | undefined =
-        imageId && metaData.get('scalingModule', imageId);
-      return typeof scalingModule?.suvbw === 'number';
-    } else {
-      throw new Error('Viewport is not a valid type');
     }
+    const scalingModule: Types.ScalingParameters | undefined =
+      imageId && metaData.get('scalingModule', imageId);
+    return typeof scalingModule?.suvbw === 'number';
   }
 
   /**
