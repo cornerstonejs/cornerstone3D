@@ -25,9 +25,18 @@ export default function initializeIslandRemoval(
   operationData.completeUp = () => {
     completeUp?.();
 
-    const { TRACKING: tracking } = operationData.strategySpecificConfiguration;
+    const { strategySpecificConfiguration, center } = operationData;
+    const { TRACKING: tracking } = strategySpecificConfiguration;
     const { boundsIJK, clickedPoints } = tracking;
-    console.log('completeUp - island removal', boundsIJK, clickedPoints);
+    if (!tracking?.getter || !clickedPoints?.length) {
+      return;
+    }
+    console.log('completeUp - island removal', boundsIJK);
+
+    // Returns 1 for new colour, and 0 for everything else
+    const getter = (ijk) => {
+      const val = getter(ijk);
+    };
 
     // Add a point in value callback to fill data with new data just created,
     // PLUS existing data already present (to fill regions already filled)

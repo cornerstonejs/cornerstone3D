@@ -49,17 +49,21 @@ export default function initializePreview(
     const { scalarData, dimensions, strategySpecificConfiguration } =
       operationData;
     const { TRACKING: tracking } = strategySpecificConfiguration;
-    const elementsPerSegment = dimensions[0] * dimensions[1];
+    const frameSize = dimensions[0] * dimensions[1];
     const callback = ({ value, index, pointIJK }) => {
       if (value === previewSegmentationIndex) {
         scalarData[index] = tracking?.getter(pointIJK) ?? 0;
-        const slice = Math.floor(index / elementsPerSegment);
+        const slice = Math.floor(index / frameSize);
         operationData.modifiedSlicesToUse.add(slice);
       }
     };
 
+    const width = dimensions[0];
     scalarData.forEach((value, index) => {
-      callback({ value, index });
+      const i = index % frameSize;
+      const j = Math.floor((index % frameSize) / width);
+      const k = Math.floor(index / frameSize);
+      callback({ value, index, pointIJK: [i, j, k] });
     });
 
     const arrayOfSlices: number[] = Array.from(

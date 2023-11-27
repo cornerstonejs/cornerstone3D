@@ -538,6 +538,8 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
+    applyActiveStrategyEvent(enabledElement: Types_2.IEnabledElement, operationData: unknown, eventType: 'initDown' | 'completeUp' | 'cancelPreview' | 'acceptPreview'): any;
+    // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
@@ -685,9 +687,35 @@ type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    acceptPreview(element: any): void;
+    // (undocumented)
+    cancelPreview(element: any): void;
+    // (undocumented)
+    createEditData(element: any): {
+        renderingEngine: Types_2.IRenderingEngine;
+        viewportIdsToRender: string[];
+        enabledElement: Types_2.IEnabledElement;
+    };
+    // (undocumented)
+    protected getOperationData(): {
+        points: any;
+        volume: Types_2.IImageVolume;
+        imageVolume: Types_2.IImageVolume;
+        segmentIndex: number;
+        segmentsLocked: number[];
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+    };
+    // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    mouseUpCallback: (evt: any) => void;
     // (undocumented)
     onSetToolDisabled: () => void;
     // (undocumented)
@@ -2011,6 +2039,9 @@ function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
 
 // @public (undocumented)
 function getPolyDataPoints(polyData: vtkPolyData): any[];
+
+// @public (undocumented)
+function getPreviewSegmentIndex(segmentationId: any, segmentationIndex?: number): number | undefined;
 
 // @public (undocumented)
 function getSegmentation(segmentationId: string): Segmentation | undefined;
@@ -3695,6 +3726,7 @@ type Segmentation = {
     type: Enums.SegmentationRepresentations;
     label: string;
     activeSegmentIndex: number;
+    previewSegmentIndex?: number;
     segmentsLocked: Set<number>;
     cachedStats: {
         [key: string]: number;
@@ -3859,7 +3891,9 @@ type SegmentationState = {
 declare namespace segmentIndex {
     export {
         getActiveSegmentIndex,
-        setActiveSegmentIndex
+        setActiveSegmentIndex,
+        getPreviewSegmentIndex,
+        setPreviewSegmentIndex
     }
 }
 
@@ -3932,6 +3966,9 @@ function setGlobalRepresentationConfig(representationType: SegmentationRepresent
 
 // @public (undocumented)
 function setNewAttributesIfValid(attributes: any, svgNode: any): void;
+
+// @public (undocumented)
+function setPreviewSegmentIndex(segmentationId: any, segmentIndex: number): void;
 
 // @public (undocumented)
 function setSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
