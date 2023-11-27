@@ -533,10 +533,10 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedImage(referencedImageId: string, options: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
+function createAndCacheDerivedImage(referencedImageId: string, options?: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
 
 // @public (undocumented)
-function createAndCacheDerivedImages(referencedImageIds: Array<string>, getDerivedImageId: (imageId: string, index?: number) => string): DerivedImages;
+function createAndCacheDerivedImages(referencedImageIds: Array<string>, getDerivedImageId?: (referencedImageId: string) => string): DerivedImages;
 
 // @public (undocumented)
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<ImageVolume>;

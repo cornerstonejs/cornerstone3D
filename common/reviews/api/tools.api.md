@@ -856,8 +856,7 @@ export class CircleScissorsTool extends BaseTool {
         segmentIndex: number;
         volumeId: string;
         referencedVolumeId: string;
-        imageIds: string[];
-        referencedImageIds: string[];
+        imageIdReferenceMap: Map<string, string>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -3452,8 +3451,7 @@ export class RectangleScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        imageIds: string[];
-        referencedImageIds: string[];
+        imageIdReferenceMap: Map<string, string>;
         volumeId: string;
         referencedVolumeId: string;
         annotation: any;
@@ -4011,10 +4009,10 @@ export class SphereScissorsTool extends BaseTool {
         annotation: any;
         segmentIndex: number;
         segmentsLocked: number[];
+        segmentationRepresentationUID: string;
         volumeId: string;
         referencedVolumeId: string;
-        imageIds: string[];
-        referencedImageIds: string[];
+        imageIdReferenceMap: Map<string, string>;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];

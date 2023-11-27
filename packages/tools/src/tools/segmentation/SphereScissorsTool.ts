@@ -46,6 +46,7 @@ class SphereScissorsTool extends BaseTool {
     annotation: any;
     segmentIndex: number;
     segmentsLocked: number[];
+    segmentationRepresentationUID: string;
     //
     volumeId: string;
     referencedVolumeId: string;
