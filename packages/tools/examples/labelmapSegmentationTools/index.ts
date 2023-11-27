@@ -44,6 +44,7 @@ const {
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
+const { config: segmentationConfig } = segmentation;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -51,6 +52,8 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const previewSegmentIndex = 3;
+const segmentIndex = 1;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -434,15 +437,33 @@ async function run() {
   );
 
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  const [representationUID] = await segmentation.addSegmentationRepresentations(
+    toolGroupId,
+    [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]
+  );
 
-  segmentation.segmentIndex.setPreviewSegmentIndex(segmentationId, 4);
-  segmentation.segmentIndex.setPreviewSegmentIndex(segmentationId, 3);
+  segmentation.segmentIndex.setPreviewSegmentIndex(
+    segmentationId,
+    previewSegmentIndex
+  );
+
+  // TODO - should this be part of setPreviewSegmentIndex?
+  const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
+    toolGroupId,
+    representationUID,
+    segmentIndex
+  );
+  segmentationConfig.color.setColorForSegmentIndex(
+    toolGroupId,
+    representationUID,
+    previewSegmentIndex,
+    segmentColor
+  );
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

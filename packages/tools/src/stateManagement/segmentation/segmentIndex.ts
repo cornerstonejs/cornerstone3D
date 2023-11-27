@@ -25,7 +25,7 @@ function setActiveSegmentIndex(
 function setPreviewSegmentIndex(segmentationId, segmentIndex: number) {
   const segmentation = getSegmentation(segmentationId);
 
-  if (segmentation?.activeSegmentIndex !== segmentIndex) {
+  if (segmentation?.previewSegmentIndex !== segmentIndex) {
     segmentation.previewSegmentIndex = segmentIndex;
 
     triggerSegmentationModified(segmentationId);
