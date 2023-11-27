@@ -65,7 +65,7 @@ addButtonToToolbar({
 
     const flatPointsWasm = new Float32Array(flatPoints);
     const pointsArrayWasm = new Float32Array(pointsArray);
-    const result = polySeg.convertContourRoiToSurface(
+    const result = polySeg.instance.convertContourRoiToSurface(
       flatPointsWasm,
       pointsArrayWasm
     );
@@ -184,8 +184,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  polySeg = await ICRPolySeg();
-
+  polySeg = await new ICRPolySeg();
+  polySeg.initialize(/*{ updateProgress: updateProgressThrottled }*/);
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
