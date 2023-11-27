@@ -14,14 +14,15 @@ const { isEqual } = utilities;
 export default function initializeTracking(
   operationData: InitializedOperationData
 ) {
-  if (!operationData.strategySpecificConfiguration.THRESHOLD?.threshold) {
-    return;
-  }
+  const { initDown } = operationData;
+  operationData.initDown = () => {
+    operationData.strategySpecificConfiguration.TRACKING = null;
+    initDown?.();
+  };
 
-  const { imageData, scalarData } = operationData;
+  const { imageData } = operationData;
   const dimensions = imageData.getDimensions();
   const width = dimensions[0];
-  const frameSize = width * dimensions[1];
   const floodData = new Map<number, Map<number, Uint8Array>>();
 
   operationData.strategySpecificConfiguration.TRACKING ||= {
@@ -45,7 +46,8 @@ export default function initializeTracking(
         this.clickedPoints.push(centerIJK);
       }
     },
-    updateValue: function (pointIJK) {
+    updateValue: function (pointIJK, oldValue, newValue) {
+      this.setter(pointIJK, oldValue);
       this.modifiedSlices.add(pointIJK[2]);
     },
 
@@ -55,10 +57,7 @@ export default function initializeTracking(
      */
     getter: ([i, j, k]) => {
       const plane = floodData.get(k)?.get(j);
-      if (!plane) {
-        return scalarData[i + j * width + k * frameSize];
-      }
-      return plane[i];
+      return plane?.[i];
     },
 
     /**

@@ -158,7 +158,6 @@ class BrushTool extends BaseTool {
 
     evt.preventDefault();
 
-    console.log('preMouseDownCallback');
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       this._hoverData.viewportIdsToRender
@@ -173,21 +172,6 @@ class BrushTool extends BaseTool {
     );
 
     return true;
-  };
-
-  mouseUpCallback = (evt): void => {
-    if (!this._hoverData || !this._editData) {
-      return;
-    }
-    const eventData = evt.detail;
-    const { element } = eventData;
-    const enabledElement = getEnabledElement(element);
-
-    this.applyActiveStrategyEvent(
-      enabledElement,
-      this.getOperationData(),
-      'completeUp'
-    );
   };
 
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -377,23 +361,16 @@ class BrushTool extends BaseTool {
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
+    const enabledElement = getEnabledElement(element);
 
-    const { imageVolume, segmentation, segmentsLocked } = this._editData;
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-    } = this._hoverData;
-
-    const { data } = brushCursor;
-    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
+    // Fill the mouse up pixel before stopping drawing
+    const operationData = this.getOperationData(element);
+    this.applyActiveStrategy(enabledElement, operationData);
 
     this._deactivateDraw(element);
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
     this._editData = null;
@@ -403,22 +380,7 @@ class BrushTool extends BaseTool {
       throw new Error('Not implemented yet');
     }
 
-    const operationData = {
-      points: data.handles.points,
-      volume: segmentation,
-      imageVolume,
-      segmentIndex,
-      segmentsLocked,
-      viewPlaneNormal,
-      toolGroupId: this.toolGroupId,
-      segmentationId,
-      segmentationRepresentationUID,
-      viewUp,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
-    };
-
-    this.applyActiveStrategy(enabledElement, operationData);
+    this.applyActiveStrategyEvent(enabledElement, operationData, 'completeUp');
   };
 
   /**

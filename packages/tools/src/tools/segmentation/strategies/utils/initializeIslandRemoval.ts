@@ -17,7 +17,7 @@ const { isEqual } = utilities;
 export default function initializeIslandRemoval(
   operationData: InitializedOperationData
 ) {
-  if (!operationData.strategySpecificConfiguration.THRESHOLD?.threshold) {
+  if (!operationData.strategySpecificConfiguration.THRESHOLD) {
     return;
   }
 
@@ -31,57 +31,109 @@ export default function initializeIslandRemoval(
     if (!tracking?.getter || !clickedPoints?.length) {
       return;
     }
-    console.log('completeUp - island removal', boundsIJK);
 
-    const previewSegmentationIndex =
-      segmentIndexController.getPreviewSegmentIndex(
-        operationData.segmentationId
-      );
-    if (previewSegmentationIndex === undefined) {
+    const previewSegmentIndex = segmentIndexController.getPreviewSegmentIndex(
+      operationData.segmentationId
+    );
+    if (previewSegmentIndex === undefined) {
       return;
     }
 
     // Returns true for new colour, and false otherwise
-    const getter = (ijk) => {
-      const val = getter(ijk);
-      return val === previewSegmentationIndex || val === segmentIndex;
+    const getter = (i, j, k) => {
+      if (
+        i < boundsIJK[0][0] ||
+        i > boundsIJK[0][1] ||
+        j < boundsIJK[1][0] ||
+        j > boundsIJK[1][1] ||
+        k < boundsIJK[2][0] ||
+        k > boundsIJK[2][1]
+      ) {
+        return -1;
+      }
+
+      const oldVal = scalarData[i + j * width + k * frameSize];
+      return oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
     };
 
-    const onFlood = (ijk) => {
+    const { dimensions, scalarData } = operationData;
+    const width = dimensions[0];
+    const frameSize = dimensions[1] * width;
+
+    const modifiedSlices = new Set<number>();
+
+    const floodedIndex = 255;
+
+    let floodedCount = 0;
+
+    const onFlood = (i, j, k) => {
       // Fill this point with an indicator that this point is connected
-      console.log('onFlood', ijk);
+      const index = k * frameSize + j * width + i;
+      const value = scalarData[index];
+      if (value === floodedIndex) {
+        // This is already filled
+        return;
+      }
+      if (value === segmentIndex) {
+        tracking.updateValue([i, j, k], value);
+      }
+      scalarData[index] = floodedIndex;
+      floodedCount++;
+      modifiedSlices.add(k);
     };
 
-    const onBoundary = (ijk) => {
-      return !boundsIJK.find(
-        (bounds, idx) => ijk[idx] <= bounds[0] || ijk[idx] >= bounds[1]
-      );
-    };
-
-    floodFill(getter, clickedPoints[0], {
-      onBoundary,
-      onFlood,
-      diagonals: true,
+    clickedPoints.forEach((clickedPoint) => {
+      if (getter(...clickedPoint) === 1) {
+        floodFill(getter, clickedPoints[0], {
+          onFlood,
+          diagonals: true,
+        });
+      }
     });
-    // Add a point in value callback to fill data with new data just created,
-    // PLUS existing data already present (to fill regions already filled)
 
-    // Next, fill from every center point, excluding any point which has already
-    // been filled.
+    const isInObject = () => true;
 
-    // Finally, iterate through all points clearing them for anything not
-    // filled.
+    let clearedCount = 0;
+    let previewCount = 0;
 
-    // TODO - add island removal here based on the full path seen
-    // const arrayOfSlices: number[] = Array.from(
-    //   operationData.modifiedSlicesToUse
-    // );
-    // operationData.modifiedSlicesToUse.clear();
+    const callback = ({ index, pointIJK }) => {
+      const value = scalarData[index];
+      const trackValue = tracking.getter(pointIJK);
+      if (value === floodedIndex) {
+        previewCount++;
+        scalarData[index] =
+          trackValue === segmentIndex ? segmentIndex : previewSegmentIndex;
+      } else if (value === previewSegmentIndex) {
+        clearedCount++;
+        const newValue = trackValue ?? 0;
+        scalarData[index] = newValue;
+        modifiedSlices.add(pointIJK[2]);
+      }
+    };
 
-    // triggerSegmentationDataModified(
-    //   operationData.segmentationId,
-    //   arrayOfSlices
-    // );
+    pointInShapeCallback(
+      operationData.imageData,
+      isInObject,
+      callback,
+      boundsIJK
+    );
+    if (floodedCount - previewCount !== 0) {
+      console.warn(
+        'There were flooded=',
+        floodedCount,
+        'cleared=',
+        clearedCount,
+        'preview count=',
+        previewCount,
+        'not handled',
+        floodedCount - previewCount
+      );
+    }
+
+    triggerSegmentationDataModified(
+      operationData.segmentationId,
+      Array.from(modifiedSlices)
+    );
   };
 
   // initializerData.cancel = () => {

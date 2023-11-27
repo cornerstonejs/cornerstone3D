@@ -1,5 +1,8 @@
 import type { InitializedOperationData } from '../BrushStrategy';
-import { segmentIndex as segmentIndexController } from '../../../../stateManagement/segmentation';
+import {
+  segmentIndex,
+  segmentIndex as segmentIndexController,
+} from '../../../../stateManagement/segmentation';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -10,16 +13,26 @@ import { segmentIndex as segmentIndexController } from '../../../../stateManagem
 export default function initializeSetValue(
   operationData: InitializedOperationData
 ) {
-  const previewSegmentationIndex =
-    segmentIndexController.getPreviewSegmentIndex(operationData.segmentationId);
+  const previewSegmentIndex = segmentIndexController.getPreviewSegmentIndex(
+    operationData.segmentationId
+  );
   operationData.setValue = ({ value, index, pointIJK }) => {
+    if (value === segmentIndex) {
+      // Need to record the existing value for restore on fill
+      operationData.strategySpecificConfiguration.TRACKING?.updateValue?.(
+        pointIJK,
+        value,
+        value
+      );
+      return;
+    }
     if (
       operationData.segmentsLocked.includes(value) ||
-      value === operationData.segmentIndex
+      value === previewSegmentIndex
     ) {
       return;
     }
-    const useIndex = previewSegmentationIndex ?? operationData.segmentIndex;
+    const useIndex = previewSegmentIndex ?? operationData.segmentIndex;
 
     operationData.scalarData[index] = useIndex;
     operationData.segmentIndices.add(useIndex);
