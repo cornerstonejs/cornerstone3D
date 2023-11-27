@@ -47,6 +47,10 @@ export default class ToolGroup implements IToolGroup {
   id: string;
   viewportsInfo = [];
   toolOptions = {};
+  /**
+   * Options used for restoring a tool
+   */
+  restoreToolOptions = {};
   _toolInstances = {};
 
   constructor(id: string) {
@@ -270,7 +274,10 @@ export default class ToolGroup implements IToolGroup {
     }
 
     if (mode === ToolModes.Active) {
-      this.setToolActive(toolName, options);
+      this.setToolActive(
+        toolName,
+        options || this.restoreToolOptions[toolName]
+      );
       return;
     }
 
@@ -509,6 +516,8 @@ export default class ToolGroup implements IToolGroup {
       bindings: [],
       mode: Disabled,
     };
+
+    this.restoreToolOptions[toolName] = this.toolOptions[toolName];
 
     this.toolOptions[toolName] = toolOptions;
     toolInstance.mode = Disabled;

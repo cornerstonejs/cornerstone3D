@@ -1,12 +1,16 @@
 import {
   StackViewport,
   VolumeViewport,
+  VideoViewport,
   Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
-import { Annotations } from '../../types';
+import type { Annotations } from '../../types';
+import annotationFrameRange from '../annotationFrameRange';
+
+const baseUrlExtractor = /(videoId:|imageId:|volumeId:)([a-zA-Z]*:)/;
 
 /**
  * Given the viewport and the annotations, it filters the annotations array and only
@@ -42,13 +46,42 @@ export default function filterAnnotationsForDisplay(
 
       if (imageId === undefined) {
         // This annotation was not drawn on a non-coplanar reformat, and such does
-        // note have a referenced imageId.
+        // not have a referenced imageId.
         return false;
       }
 
       const colonIndex = imageId.indexOf(':');
       const referenceImageURI = imageId.substring(colonIndex + 1);
       return referenceImageURI === imageURI;
+    });
+  } else if (viewport instanceof VideoViewport) {
+    const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
+
+    return annotations.filter((annotation) => {
+      if (!annotation.isVisible) {
+        return false;
+      }
+      if (annotation.metadata.FrameOfReferenceUID !== frameOfReferenceUID) {
+        return false;
+      }
+      const testURI = annotation.metadata.referencedImageId.replace(
+        baseUrlExtractor,
+        ''
+      );
+
+      if (!viewport.hasImageURI(testURI)) {
+        return false;
+      }
+      const range = annotationFrameRange.getFrameRange(annotation);
+      const frameNumber = viewport.getFrameNumber();
+      if (Array.isArray(range)) {
+        return frameNumber >= range[0] && frameNumber <= range[1];
+      }
+      // Arbitrary 5 frames of slop on the video for matching single frame
+      // number to position - this allows the annotation to display  when
+      // the video element is not exactly the same timing as expected or when
+      // playing video back.
+      return Math.abs(frameNumber - range) <= 5;
     });
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();

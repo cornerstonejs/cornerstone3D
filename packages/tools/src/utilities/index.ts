@@ -9,6 +9,8 @@ import throttle from './throttle';
 import isObject from './isObject';
 import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
+import getCalibratedLengthUnits from './getCalibratedUnits';
+import { getCalibratedScale } from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
@@ -18,6 +20,7 @@ import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback
 import scroll from './scroll';
 import roundNumber from './roundNumber';
 import { pointToString } from './pointToString';
+import annotationFrameRange from './annotationFrameRange';
 
 // name spaces
 import * as segmentation from './segmentation';
@@ -35,6 +38,7 @@ import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
+import * as voi from './voi';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -52,6 +56,8 @@ export {
   touch,
   triggerEvent,
   calibrateImageSpacing,
+  getCalibratedLengthUnits,
+  getCalibratedScale,
   segmentation,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
@@ -72,4 +78,6 @@ export {
   roundNumber,
   pointToString,
   polyDataUtils,
+  voi,
+  annotationFrameRange,
 };

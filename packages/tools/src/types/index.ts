@@ -47,17 +47,17 @@ import type {
   SegmentationState,
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
-import ISynchronizerEventHandler from './ISynchronizerEventHandler';
-import {
+import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
+import type {
   FloodFillGetter,
   FloodFillOptions,
   FloodFillResult,
 } from './FloodFillTypes';
-import IToolClassReference from './IToolClassReference';
-import { ContourSegmentationData } from './ContourTypes';
-import IAnnotationManager from './IAnnotationManager';
-import AnnotationGroupSelector from './AnnotationGroupSelector';
-import { Statistics } from './CalculatorTypes';
+import type IToolClassReference from './IToolClassReference';
+import type { ContourSegmentationData } from './ContourTypes';
+import type IAnnotationManager from './IAnnotationManager';
+import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type { Statistics } from './CalculatorTypes';
 
 export type {
   // AnnotationState

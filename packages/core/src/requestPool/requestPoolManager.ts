@@ -78,12 +78,14 @@ class RequestPoolManager {
     interaction: 0,
     thumbnail: 0,
     prefetch: 0,
+    compute: 0,
   };
   /* maximum number of requests of each type. */
   public maxNumRequests: {
     interaction: number;
     thumbnail: number;
     prefetch: number;
+    compute: number;
   };
   /* A public property that is used to set the delay between requests. */
   public grabDelay: number;
@@ -101,6 +103,7 @@ class RequestPoolManager {
       interaction: { 0: [] },
       thumbnail: { 0: [] },
       prefetch: { 0: [] },
+      compute: { 0: [] },
     };
 
     this.grabDelay = 5;
@@ -110,12 +113,14 @@ class RequestPoolManager {
       interaction: 0,
       thumbnail: 0,
       prefetch: 0,
+      compute: 0,
     };
 
     this.maxNumRequests = {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
+      compute: 15,
     };
   }
 
@@ -185,15 +190,7 @@ class RequestPoolManager {
     // Adding the request to the correct priority group of the request type
     this.requestPool[type][priority].push(requestDetails);
 
-    // Wake up
-    if (!this.awake) {
-      this.awake = true;
-      this.startGrabbing();
-    } else if (type === RequestType.Interaction) {
-      // Todo: this is a hack for interaction right now, we should separate
-      // the grabbing from the adding requests
-      this.startGrabbing();
-    }
+    this.startGrabbing();
   }
 
   /**
@@ -273,11 +270,13 @@ class RequestPoolManager {
     const hasRemainingPrefetchRequests = this.sendRequests(
       RequestType.Prefetch
     );
+    const hasRemainingComputeRequests = this.sendRequests(RequestType.Compute);
 
     if (
       !hasRemainingInteractionRequests &&
       !hasRemainingThumbnailRequests &&
-      !hasRemainingPrefetchRequests
+      !hasRemainingPrefetchRequests &&
+      !hasRemainingComputeRequests
     ) {
       this.awake = false;
     }
@@ -323,7 +322,4 @@ class RequestPoolManager {
   }
 }
 
-const requestPoolManager = new RequestPoolManager();
-
 export { RequestPoolManager };
-export default requestPoolManager;

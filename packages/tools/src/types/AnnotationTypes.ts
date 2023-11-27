@@ -65,7 +65,7 @@ type Annotation = {
         /** the world location of the text box */
         worldPosition: Types.Point3;
         /** text box bounding box information */
-        worldBoundingBox: {
+        worldBoundingBox?: {
           /** Top left location of the text box in the world space */
           topLeft: Types.Point3;
           /** Top right location of the text box in the world space */

@@ -42,6 +42,7 @@ import {
   BidirectionalTool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
+  KeyImageTool,
   CrosshairsTool,
   ReferenceLinesTool,
   RectangleScissorsTool,
@@ -64,9 +65,12 @@ import {
   SegmentationIntersectionTool,
 } from './tools';
 
+import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
+
 import * as Enums from './enums';
 
 export {
+  VideoRedactionTool,
   //
   init,
   destroy,
@@ -103,6 +107,7 @@ export {
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
+  KeyImageTool,
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,

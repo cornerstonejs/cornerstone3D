@@ -377,7 +377,10 @@ class Cache implements ICache {
           return;
         }
 
-        if (Number.isNaN(image.sizeInBytes)) {
+        if (
+          image.sizeInBytes === undefined ||
+          Number.isNaN(image.sizeInBytes)
+        ) {
           throw new Error(
             'putImageLoadObject: image.sizeInBytes must not be undefined'
           );

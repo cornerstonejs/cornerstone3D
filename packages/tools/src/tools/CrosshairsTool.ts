@@ -1432,7 +1432,19 @@ class CrosshairsTool extends AnnotationTool {
 
   _getAnnotations = (enabledElement: Types.IEnabledElement) => {
     const { viewport } = enabledElement;
-    return getAnnotations(this.getToolName(), viewport.element);
+    const annotations =
+      getAnnotations(this.getToolName(), viewport.element) || [];
+    const viewportIds = this._getViewportsInfo().map(
+      ({ viewportId }) => viewportId
+    );
+
+    // filter the annotations to only keep that are for this toolGroup
+    const toolGroupAnnotations = annotations.filter((annotation) => {
+      const { data } = annotation;
+      return viewportIds.includes(data.viewportId);
+    });
+
+    return toolGroupAnnotations;
   };
 
   _onNewVolume = (e: any) => {

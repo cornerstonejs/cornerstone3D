@@ -14,6 +14,7 @@ import addDropdownToToolbar from './addDropdownToToolbar';
 import addSliderToToolbar from './addSliderToToolbar';
 import camera from './camera';
 import downloadSurfacesData from './downloadSurfacesData';
+import getLocalUrl from './getLocalUrl';
 
 export {
   createImageIdsAndCacheMetaData,
@@ -31,4 +32,5 @@ export {
   ctVoiRange,
   camera,
   downloadSurfacesData,
+  getLocalUrl,
 };

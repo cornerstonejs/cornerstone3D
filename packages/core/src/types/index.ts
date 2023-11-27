@@ -14,7 +14,7 @@ import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
 import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry } from './IActor';
+import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -83,6 +83,22 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+export type {
+  RetrieveStage,
+  RetrieveOptions,
+  RangeRetrieveOptions,
+  StreamingRetrieveOptions,
+  NearbyFrames,
+  IRetrieveConfiguration,
+  IImagesLoader,
+} from './IRetrieveConfiguration';
+import type { ImageLoadListener } from './ImageLoadListener';
+import type VideoViewportProperties from './VideoViewportProperties';
+import type IVideoViewport from './IVideoViewport';
+import type {
+  InternalVideoCamera,
+  VideoViewportInput,
+} from './VideoViewportTypes';
 
 export type {
   // config
@@ -90,6 +106,7 @@ export type {
   //
   ICamera,
   IStackViewport,
+  IVideoViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
@@ -121,6 +138,7 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ImageActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,
@@ -135,6 +153,7 @@ export type {
   Mat3,
   Plane,
   ViewportInputOptions,
+  VideoViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -179,4 +198,8 @@ export type {
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  ImageLoadListener,
+  // video
+  InternalVideoCamera,
+  VideoViewportInput,
 };

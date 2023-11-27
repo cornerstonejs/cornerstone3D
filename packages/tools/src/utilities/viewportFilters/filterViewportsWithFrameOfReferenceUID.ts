@@ -10,7 +10,7 @@ import type { Types } from '@cornerstonejs/core';
  * @returns A filtered array of viewports.
  */
 export default function filterViewportsWithFrameOfReferenceUID(
-  viewports: Array<Types.IStackViewport | Types.IVolumeViewport>,
+  viewports: Array<Types.IViewport>,
   FrameOfReferenceUID: string
 ): Array<Types.IStackViewport | Types.IVolumeViewport> {
   const numViewports = viewports.length;

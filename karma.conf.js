@@ -97,15 +97,15 @@ module.exports = function (config) {
           },
           // NOTE: For better debugging you can comment out the
           // istanbul-instrumenter-loader below
-          {
-            test: /\.ts$/,
-            exclude: [path.resolve(__dirname, 'test')],
-            enforce: 'post',
-            use: {
-              loader: 'istanbul-instrumenter-loader',
-              options: { esModules: true },
-            },
-          },
+          // {
+          //   test: /\.ts$/,
+          //   exclude: [path.resolve(__dirname, 'test')],
+          //   enforce: 'post',
+          //   use: {
+          //     loader: 'istanbul-instrumenter-loader',
+          //     options: { esModules: true },
+          //   },
+          // },
         ],
       },
       resolve: {

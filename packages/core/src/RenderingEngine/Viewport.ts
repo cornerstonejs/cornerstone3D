@@ -10,7 +10,13 @@ import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
+import {
+  triggerEvent,
+  planar,
+  isImageActor,
+  actorIsA,
+  isEqual,
+} from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
 import { EPSILON, RENDERING_DEFAULTS } from '../constants';
 import type {
@@ -121,6 +127,7 @@ class Viewport implements IViewport {
   resize: () => void;
   getProperties: () => void;
   updateRenderingPipeline: () => void;
+  getNumberOfSlices: () => number;
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
@@ -1085,20 +1092,33 @@ class Viewport implements IViewport {
 
     // update clipping range only if focal point changed of a new actor is added
     const prevFocalPoint = previousCamera.focalPoint;
-    if (prevFocalPoint && focalPoint) {
-      const currentViewPlaneNormal = <Point3>vtkCamera.getViewPlaneNormal();
-      const deltaCamera = <Point3>[
-        focalPoint[0] - prevFocalPoint[0],
-        focalPoint[1] - prevFocalPoint[1],
-        focalPoint[2] - prevFocalPoint[2],
-      ];
+    const prevViewUp = previousCamera.viewUp;
 
-      const cameraModifiedOutOfPlane =
-        Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > EPSILON;
+    if ((prevFocalPoint && focalPoint) || (prevViewUp && viewUp)) {
+      const currentViewPlaneNormal = <Point3>vtkCamera.getViewPlaneNormal();
+      const currentViewUp = <Point3>vtkCamera.getViewUp();
+
+      let cameraModifiedOutOfPlane = false;
+      let viewUpHasChanged = false;
+
+      if (focalPoint) {
+        const deltaCamera = <Point3>[
+          focalPoint[0] - prevFocalPoint[0],
+          focalPoint[1] - prevFocalPoint[1],
+          focalPoint[2] - prevFocalPoint[2],
+        ];
+
+        cameraModifiedOutOfPlane =
+          Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > 0;
+      }
+
+      if (viewUp) {
+        viewUpHasChanged = !isEqual(currentViewUp, prevViewUp);
+      }
 
       // only modify the clipping planes if the camera is modified out of plane
       // or a new actor is added and we need to update the clipping planes
-      if (cameraModifiedOutOfPlane || this.newActorAdded) {
+      if (cameraModifiedOutOfPlane || viewUpHasChanged || this.newActorAdded) {
         const actorEntry = this.getDefaultActor();
         if (!actorEntry?.actor) {
           return;
