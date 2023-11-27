@@ -15,9 +15,9 @@ export default function initializePreview(
   if (previewSegmentationIndex === undefined) {
     return;
   }
-  const { initDown } = operationData;
-  operationData.initDown = () => {
-    initDown?.();
+  const { acceptPreview } = operationData;
+  operationData.acceptPreview = () => {
+    acceptPreview?.();
     const { scalarData, segmentIndex, dimensions } = operationData;
     const elementsPerSegment = dimensions[0] * dimensions[1];
     const callback = ({ value, index }) => {
@@ -43,7 +43,33 @@ export default function initializePreview(
     );
   };
 
-  // initializerData.cancel = () => {
-  //   console.log('Restore original data', previewSegmentationIndex);
-  // };
+  const { cancelPreview } = operationData;
+  operationData.cancelPreview = () => {
+    cancelPreview?.();
+    const { scalarData, dimensions, strategySpecificConfiguration } =
+      operationData;
+    const { TRACKING: tracking } = strategySpecificConfiguration;
+    const elementsPerSegment = dimensions[0] * dimensions[1];
+    const callback = ({ value, index, pointIJK }) => {
+      if (value === previewSegmentationIndex) {
+        scalarData[index] = tracking?.getter(pointIJK) ?? 0;
+        const slice = Math.floor(index / elementsPerSegment);
+        operationData.modifiedSlicesToUse.add(slice);
+      }
+    };
+
+    scalarData.forEach((value, index) => {
+      callback({ value, index });
+    });
+
+    const arrayOfSlices: number[] = Array.from(
+      operationData.modifiedSlicesToUse
+    );
+    operationData.modifiedSlicesToUse.clear();
+
+    triggerSegmentationDataModified(
+      operationData.segmentationId,
+      arrayOfSlices
+    );
+  };
 }

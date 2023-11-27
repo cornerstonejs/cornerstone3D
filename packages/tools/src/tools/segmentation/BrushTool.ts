@@ -99,12 +99,7 @@ class BrushTool extends BaseTool {
     this._hoverData = undefined;
   }
 
-  preMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
-  ): boolean => {
-    const eventData = evt.detail;
-    const { element } = eventData;
-
+  createEditData(element) {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
@@ -146,6 +141,16 @@ class BrushTool extends BaseTool {
       imageVolume,
       segmentsLocked,
     };
+    return { renderingEngine, viewportIdsToRender, enabledElement };
+  }
+
+  preMouseDownCallback = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): boolean => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const { renderingEngine, viewportIdsToRender, enabledElement } =
+      this.createEditData(element);
 
     this._activateDraw(element);
 
@@ -157,6 +162,8 @@ class BrushTool extends BaseTool {
       renderingEngine,
       viewportIdsToRender
     );
+
+    this.acceptPreview(element);
 
     this.applyActiveStrategyEvent(
       enabledElement,
@@ -278,10 +285,10 @@ class BrushTool extends BaseTool {
       segmentationRepresentationUID,
       brushCursor,
     } = this._hoverData;
-    const { data } = brushCursor;
-    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
+    const { data, metadata = {} } = brushCursor || {};
+    const { viewPlaneNormal, viewUp } = metadata;
     const operationData = {
-      points: data.handles.points,
+      points: data?.handles?.points,
       volume: segmentation, // todo: just pass the segmentationId instead
       imageVolume,
       segmentIndex,
@@ -437,6 +444,68 @@ class BrushTool extends BaseTool {
       this._endCallback as EventListener
     );
   };
+
+  /**
+   * Cancels any preview view being shown, resetting any segments being shown.
+   */
+  public cancelPreview(element) {
+    const { enabledElement } = this.createEditData(element);
+
+    if (!this._hoverData) {
+      const activeSegmentationRepresentation =
+        activeSegmentation.getActiveSegmentationRepresentation(
+          this.toolGroupId
+        );
+      if (!activeSegmentationRepresentation) {
+        console.warn(
+          'No active segmentation detected, create one before using the brush tool'
+        );
+        return;
+      }
+
+      const { segmentationRepresentationUID, segmentationId } =
+        activeSegmentationRepresentation;
+      const segmentIndex =
+        segmentIndexController.getActiveSegmentIndex(segmentationId);
+
+      const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
+        this.toolGroupId,
+        segmentationRepresentationUID,
+        segmentIndex
+      );
+      this._hoverData = {
+        brushCursor: null,
+        centerCanvas: null,
+        segmentIndex,
+        segmentationId,
+        segmentationRepresentationUID,
+        segmentColor,
+        viewportIdsToRender: null,
+      };
+    }
+
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(),
+      'cancelPreview'
+    );
+  }
+
+  /**
+   * Accepts a preview, marking it as the active segment.
+   */
+  public acceptPreview(element) {
+    if (!this._editData) {
+      this.createEditData(element);
+    }
+    const enabledElement = getEnabledElement(element);
+
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(),
+      'acceptPreview'
+    );
+  }
 
   public invalidateBrushCursor() {
     if (this._hoverData !== undefined) {

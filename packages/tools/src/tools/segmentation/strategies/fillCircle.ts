@@ -12,6 +12,7 @@ import type { OperationData, InitializedOperationData } from './BrushStrategy';
 import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
 import type { CanvasCoordinates } from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
+import initializeTracking from './utils/initializeTracking';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -20,6 +21,10 @@ export function initializeCircle(
 ): void {
   const { points, viewport, imageData, dimensions } = operationData;
 
+  // Happens on a preview setup
+  if (!points) {
+    return;
+  }
   // Average the points to get the center of the ellipse
   const center = vec3.fromValues(0, 0, 0);
   points.forEach((point) => {
@@ -72,6 +77,7 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   BrushStrategy.initializeRegionFill,
   BrushStrategy.initializeSetValue,
   initializeCircle,
+  initializeTracking,
   BrushStrategy.initializePreview
 );
 
@@ -83,6 +89,7 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   initializeCircle,
   dynamicWithinThreshold,
   BrushStrategy.initializePreview,
+  initializeTracking,
   initializeIslandRemoval
 );
 
@@ -99,8 +106,7 @@ export function fillInsideCircle(
   CIRCLE_STRATEGY.fill(enabledElement, operationData);
 }
 
-fillInsideCircle.initDown = CIRCLE_THRESHOLD_STRATEGY.initDown;
-fillInsideCircle.completeUp = CIRCLE_THRESHOLD_STRATEGY.completeUp;
+CIRCLE_STRATEGY.assignMethods(fillInsideCircle);
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -126,8 +132,7 @@ export function thresholdInsideCircle(
   CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
 }
 
-thresholdInsideCircle.initDown = CIRCLE_THRESHOLD_STRATEGY.initDown;
-thresholdInsideCircle.completeUp = CIRCLE_THRESHOLD_STRATEGY.completeUp;
+CIRCLE_THRESHOLD_STRATEGY.assignMethods(thresholdInsideCircle);
 
 /**
  * Fill outside the circular region segment inside the segmentation defined by the operationData.

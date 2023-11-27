@@ -15,6 +15,7 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -194,6 +195,16 @@ addSliderToToolbar({
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Cancel Preview',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    const brush = toolGroup.getToolInstance(brushInstanceNames.ThresholdBrush);
+    brush.cancelPreview(element1);
   },
 });
 

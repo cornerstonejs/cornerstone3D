@@ -2,7 +2,6 @@ import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import pointInShapeCallback from '../../../utilities/pointInShapeCallback';
 import isWithinThreshold from './utils/isWithinThreshold';
 import type BoundsIJK from '../../../types/BoundsIJK';
 import initializeSetValue from './utils/initializeSetValue';
@@ -43,6 +42,8 @@ export type InitializedOperationData = OperationData & {
   centerIJK?: Types.Point3;
   getPreviewSegmentIndex?: (previousIndex: number) => number;
   segmentIndices: Set<number>;
+  cancelPreview?: () => void;
+  acceptPreview?: () => void;
 };
 
 type Initializer = (operationData: InitializedOperationData) => void;
@@ -154,4 +155,25 @@ export default class BrushStrategy {
   ) => {
     this.getInitializedData(enabledElement, operationData).completeUp?.();
   };
+
+  public cancelPreview = (
+    enabledElement: Types.IEnabledElement,
+    operationData: OperationData
+  ) => {
+    this.getInitializedData(enabledElement, operationData).cancelPreview?.();
+  };
+
+  public acceptPreview = (
+    enabledElement: Types.IEnabledElement,
+    operationData: OperationData
+  ) => {
+    this.getInitializedData(enabledElement, operationData).acceptPreview?.();
+  };
+
+  public assignMethods(strategy) {
+    strategy.initDown = this.initDown;
+    strategy.completeUp = this.completeUp;
+    strategy.cancelPreview = this.cancelPreview;
+    strategy.acceptPreview = this.acceptPreview;
+  }
 }

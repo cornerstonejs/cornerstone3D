@@ -15,7 +15,6 @@ export default function dynamicWithinThreshold(
   const { initDown } = operationData;
   // Setup a clear threshold value on mouse/touch down
   operationData.initDown = () => {
-    console.log('Calling initDown dynamic');
     THRESHOLD.threshold = null;
     initDown?.();
   };

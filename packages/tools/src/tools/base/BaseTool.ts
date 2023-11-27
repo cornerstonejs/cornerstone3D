@@ -95,7 +95,7 @@ abstract class BaseTool implements IBaseTool {
   public applyActiveStrategyEvent(
     enabledElement: Types.IEnabledElement,
     operationData: unknown,
-    eventType: 'initDown' | 'completeUp'
+    eventType: 'initDown' | 'completeUp' | 'cancelPreview' | 'acceptPreview'
   ): any {
     const { strategies, activeStrategy } = this.configuration;
     return strategies[activeStrategy][eventType]?.call(
