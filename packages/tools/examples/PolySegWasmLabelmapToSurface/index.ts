@@ -1,4 +1,4 @@
-import ICRPolySegApp from '../../../../utils/assets/polyseg/ICRPolySeg';
+import ICRPolySeg from '@icr/polyseg-wasm';
 import {
   RenderingEngine,
   Types,
@@ -151,7 +151,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  instance = await ICRPolySegApp();
+  instance = await ICRPolySeg();
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);

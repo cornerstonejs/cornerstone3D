@@ -30,12 +30,14 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "^1.32.2",
+    "@icr/polyseg-wasm": "0.4.0",
     "comlink": "^4.4.1",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
   },
   "peerDependencies": {
     "@kitware/vtk.js": "27.3.1",
+    "@icr/polyseg-wasm": "0.4.0",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",
