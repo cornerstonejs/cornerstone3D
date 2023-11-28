@@ -106,16 +106,16 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
 
 const Splines = {
   CardinalSplineROI: {
-    splineType: 'CARDINAL',
+    splineType: SplineROITool.SplineTypes.CARDINAL,
   },
   CatmullRomSplineROI: {
-    splineType: 'CATMULLROM',
+    splineType: SplineROITool.SplineTypes.CATMULLROM,
   },
   LinearSplineROI: {
-    splineType: 'LINEAR',
+    splineType: SplineROITool.SplineTypes.LINEAR,
   },
   BSplineROI: {
-    splineType: 'BSPLINE',
+    splineType: SplineROITool.SplineTypes.BSPLINE,
   },
 };
 
@@ -237,9 +237,9 @@ async function run() {
 
   toolGroup.addToolInstance('CardinalSplineROI', SplineROITool.toolName, {
     spline: {
-      type: 'CARDINAL',
+      type: SplineROITool.SplineTypes.CARDINAL,
       configuration: {
-        CARDINAL: {
+        [SplineROITool.SplineTypes.CARDINAL]: {
           scale: DEFAULT_CARDINAL_SCALE,
         },
       },
@@ -248,19 +248,19 @@ async function run() {
 
   toolGroup.addToolInstance('CatmullRomSplineROI', SplineROITool.toolName, {
     spline: {
-      type: 'CATMULLROM',
+      type: SplineROITool.SplineTypes.CATMULLROM,
     },
   });
 
   toolGroup.addToolInstance('LinearSplineROI', SplineROITool.toolName, {
     spline: {
-      type: 'LINEAR',
+      type: SplineROITool.SplineTypes.LINEAR,
     },
   });
 
   toolGroup.addToolInstance('BSplineROI', SplineROITool.toolName, {
     spline: {
-      type: 'BSPLINE',
+      type: SplineROITool.SplineTypes.BSPLINE,
     },
   });
 

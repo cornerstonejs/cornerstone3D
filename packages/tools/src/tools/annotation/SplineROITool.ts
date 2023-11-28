@@ -67,8 +67,16 @@ const DEFAULT_SPLINE_CONFIG = {
   controlPointDeletionEnabled: true,
 };
 
+enum SplineTypesEnum {
+  CARDINAL = 'CARDINAL',
+  LINEAR = 'LINEAR',
+  CATMULLROM = 'CATMULLROM',
+  BSPLINE = 'BSPLINE',
+}
+
 class SplineROITool extends AnnotationTool {
   static toolName;
+  static SplineTypes = SplineTypesEnum;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -95,24 +103,24 @@ class SplineROITool extends AnnotationTool {
         getTextLines: defaultGetTextLines,
         spline: {
           configuration: {
-            CARDINAL: {
+            [SplineTypesEnum.CARDINAL]: {
               Class: CardinalSpline,
               scale: 0.5,
             },
-            CATMULLROM: {
+            [SplineTypesEnum.CATMULLROM]: {
               Class: CatmullRomSpline,
             },
-            LINEAR: {
+            [SplineTypesEnum.LINEAR]: {
               Class: LinearSpline,
             },
-            BSPLINE: {
+            [SplineTypesEnum.BSPLINE]: {
               Class: BSpline,
               controlPointAdditionEnabled: false,
               controlPointDeletionEnabled: false,
               showControlPointsConnectors: true,
             },
           },
-          type: 'CATMULLROM',
+          type: SplineTypesEnum.CATMULLROM,
           drawPreviewEnabled: true,
           lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
