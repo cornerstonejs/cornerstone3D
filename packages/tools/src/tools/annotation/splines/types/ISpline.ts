@@ -61,7 +61,7 @@ export interface ISpline {
    * decimal part is the `t` value on that curve segment.
    * @param u - `u` value in Parameter Space
    */
-  addControlPointAt(u: number): ControlPointInfo;
+  addControlPointAtU(u: number): ControlPointInfo;
 
   /**
    * Delete a control point given its index
@@ -84,10 +84,9 @@ export interface ISpline {
   /**
    * Update the coordinate of a control point given its index
    * @param index - Control point index
-   * @param x - Control point X coordinate
-   * @param y - Control point Y coordinate
+   * @param newControlPoint - New control point
    */
-  updateControlPoint(index: number, x: number, y: number): void;
+  updateControlPoint(index: number, newControlPoint: Types.Point2): void;
 
   /**
    * Get a list with all control points. The control points are cloned to prevent
@@ -109,7 +108,7 @@ export interface ISpline {
    * @param maxDist - Maximum distance
    * @returns Closest control point that is within the given range or undefined otherwise
    */
-  getClosestControlPointWithinRange(
+  getClosestControlPointWithinDistance(
     point: Types.Point2,
     range: number
   ): ClosestControlPoint;

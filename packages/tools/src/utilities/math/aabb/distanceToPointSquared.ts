@@ -22,22 +22,16 @@ export default function distanceToPointSquared(
     aabb.minY + aabbHeight / 2,
   ];
 
-  // Translates the AABB and the point using AABB center as the new origin
-  aabb = {
-    minX: aabb.minX - aabbCenter[0],
-    minY: aabb.minY - aabbCenter[1],
-    maxX: aabb.maxX - aabbCenter[0],
-    maxY: aabb.maxY - aabbCenter[1],
-  };
-
-  // The point is not only translated but also mirroed to the first quadrant to simplify the math
-  point = [
+  // Translates the point as the center of the AABB is the new origin.
+  // THe point is also mirroed to the first quadrant to simplify the math.
+  const translatedPoint = [
     Math.abs(point[0] - aabbCenter[0]),
     Math.abs(point[1] - aabbCenter[1]),
   ];
 
-  const dx = point[0] - aabbSize[0] * 0.5;
-  const dy = point[1] - aabbSize[1] * 0.5;
+  // Calculate the distance from the point to the vertical and horizontal AABB borders
+  const dx = translatedPoint[0] - aabbSize[0] * 0.5;
+  const dy = translatedPoint[1] - aabbSize[1] * 0.5;
 
   // dx >  0 && dy >  0: diagonal line connecting the point to AABB's corner
   // dx >  0 && dy <= 0: a line parallel to x-axis connecting the point to AABB's right side

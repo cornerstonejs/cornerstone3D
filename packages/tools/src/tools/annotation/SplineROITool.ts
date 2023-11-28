@@ -84,7 +84,6 @@ class SplineROITool extends AnnotationTool {
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
-  splineInstancesCache: WeakMap<SplineROIAnnotation, ISpline> = new Map();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -115,6 +114,7 @@ class SplineROITool extends AnnotationTool {
           },
           type: 'CATMULLROM',
           drawPreviewEnabled: true,
+          lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
         actions: [
           {
@@ -171,7 +171,9 @@ class SplineROITool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const splineConfig = this._getSplineConfig(this.configuration.spline.type);
+    const { type: splineType } = this.configuration.spline;
+    const splineConfig = this._getSplineConfig(splineType);
+    const spline = new splineConfig.Class();
 
     const referencedImageId = this.getReferencedImageId(
       viewport,
@@ -209,6 +211,7 @@ class SplineROITool extends AnnotationTool {
         },
         spline: {
           type: splineConfig.type,
+          instance: spline,
           resolution: splineConfig.resolution,
           closed: false,
           polyline: [],
@@ -257,7 +260,7 @@ class SplineROITool extends AnnotationTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    const spline = this._getAnnotationSpline(element, annotation);
+    const { instance: spline } = annotation.data.spline;
 
     return spline.isPointNearCurve(canvasCoords, proximity);
   };
@@ -374,13 +377,10 @@ class SplineROITool extends AnnotationTool {
 
   private _keyDownCallback = (evt: EventTypes.KeyDownEventType) => {
     const eventDetail = evt.detail;
-    const { element, keyCode } = eventDetail;
-    const key = (eventDetail.key ?? '').toLowerCase();
-    const deleteLastPoint =
-      keyCode === 8 ||
-      keyCode === 46 ||
-      key === 'backspace' ||
-      key === 'delete';
+    const { element } = eventDetail;
+    const key = eventDetail.key ?? '';
+    const { lastControlPointDeletionKeys } = this.configuration.spline;
+    const deleteLastPoint = lastControlPointDeletionKeys.includes(key);
 
     if (!deleteLastPoint) {
       return;
@@ -441,8 +441,8 @@ class SplineROITool extends AnnotationTool {
 
     // Check if user clicked on the first point to close the curve
     if (data.handles.points.length >= 3) {
-      const spline = this._getAnnotationSpline(element, annotation);
-      const closestControlPoint = spline.getClosestControlPointWithinRange(
+      const { instance: spline } = data.spline;
+      const closestControlPoint = spline.getClosestControlPointWithinDistance(
         canvasPoint,
         SPLINE_CLICK_CLOSE_CURVE_DIST
       );
@@ -534,7 +534,6 @@ class SplineROITool extends AnnotationTool {
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
 
     if (newAnnotation) {
-      this._deleteAnnotationSpline(annotation);
       removeAnnotation(annotation.annotationUID);
     }
 
@@ -595,7 +594,6 @@ class SplineROITool extends AnnotationTool {
 
     element.addEventListener(Events.KEY_DOWN, this._keyDownCallback);
     element.addEventListener(Events.MOUSE_MOVE, this._mouseMoveCallback);
-    element.addEventListener(Events.MOUSE_DOWN, this._mouseDownCallback);
     element.addEventListener(Events.MOUSE_DOWN, this._mouseDownCallback);
     element.addEventListener(
       Events.MOUSE_DOUBLE_CLICK,
@@ -669,7 +667,7 @@ class SplineROITool extends AnnotationTool {
       const annotation = annotations[i] as SplineROIAnnotation;
       const { annotationUID, data, highlighted } = annotation;
       const { handles } = data;
-      const { points, activeHandleIndex } = handles;
+      const { points: controlPoints, activeHandleIndex } = handles;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -689,19 +687,24 @@ class SplineROITool extends AnnotationTool {
         annotation
       ) as string;
 
-      const canvasCoordinates = points.map((p) =>
+      const canvasCoordinates = controlPoints.map((p) =>
         worldToCanvas(p)
       ) as Types.Point2[];
 
       const { drawPreviewEnabled } = this.configuration.spline;
       const splineType = annotation.data.spline.type;
       const splineConfig = this._getSplineConfig(splineType);
-      const spline = this._createOrUpdateAnnotationSpline(element, annotation);
-      const splinePolyline = spline.getPolylinePoints();
+      const spline = this._updateSplineInstance(element, annotation);
+      const splinePolylineCanvas = spline.getPolylinePoints();
+      const splinePolylineWorld = [];
 
-      data.spline.polyline = splinePolyline.map((point) =>
-        viewport.canvasToWorld(point)
-      );
+      for (let i = 0, len = splinePolylineCanvas.length; i < len; i++) {
+        splinePolylineWorld.push(
+          viewport.canvasToWorld(splinePolylineCanvas[i])
+        );
+      }
+
+      data.spline.polyline = splinePolylineWorld;
 
       // If cachedStats does not exist, or the areaUnit is missing (as part of
       // import/hydration etc.), force to recalculate the stats from the points
@@ -801,7 +804,7 @@ class SplineROITool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         'lineSegments',
-        splinePolyline,
+        splinePolylineCanvas,
         {
           color,
           lineDash,
@@ -894,16 +897,11 @@ class SplineROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName()
-    );
-
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
     const { canvasToWorld } = viewport;
 
-    const spline = this._getAnnotationSpline(element, annotation);
+    const { instance: spline } = data.spline;
     const canvasPos = evt.detail.currentPoints.canvas;
     const closestPointInfo = spline.getClosestPoint(canvasPos);
 
@@ -912,12 +910,17 @@ class SplineROITool extends AnnotationTool {
     }
 
     // Add a point at the `u` position from Parameter Space
-    const { index, point: canvasPoint } = spline.addControlPointAt(
+    const { index, point: canvasPoint } = spline.addControlPointAtU(
       closestPointInfo.uValue
     );
 
     data.handles.points.splice(index, 0, canvasToWorld(canvasPoint));
     annotation.invalidated = true;
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
@@ -963,8 +966,8 @@ class SplineROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element, currentPoints } = eventDetail;
     const { canvas: canvasPos } = currentPoints;
-    const spline = this._getAnnotationSpline(element, annotation);
-    const closestControlPoint = spline.getClosestControlPointWithinRange(
+    const { instance: spline } = annotation.data.spline;
+    const closestControlPoint = spline.getClosestControlPointWithinDistance(
       canvasPos,
       maxDist
     );
@@ -1009,23 +1012,16 @@ class SplineROITool extends AnnotationTool {
     annotation.invalidated = true;
   }
 
-  private _createOrUpdateAnnotationSpline = (
+  private _updateSplineInstance(
     element: HTMLDivElement,
     annotation: SplineROIAnnotation
-  ): ISpline => {
+  ): ISpline {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
-    const splineType = annotation.data.spline.type;
-    const splineConfig = this._getSplineConfig(splineType);
-    let spline = this.splineInstancesCache.get(annotation);
-
-    if (!spline) {
-      spline = new splineConfig.Class();
-      this.splineInstancesCache.set(annotation, spline);
-    }
-
     const { data } = annotation;
+    const { type: splineType, instance: spline } = annotation.data.spline;
+    const splineConfig = this._getSplineConfig(splineType);
     const worldPoints = data.handles.points;
     const canvasPoints = worldPoints.map(worldToCanvas);
 
@@ -1050,24 +1046,7 @@ class SplineROITool extends AnnotationTool {
     }
 
     return spline;
-  };
-
-  private _getAnnotationSpline = (
-    element: HTMLDivElement,
-    annotation: SplineROIAnnotation
-  ): ISpline => {
-    let spline = this.splineInstancesCache.get(annotation);
-
-    if (!spline) {
-      spline = this._createOrUpdateAnnotationSpline(element, annotation);
-    }
-
-    return spline;
-  };
-
-  private _deleteAnnotationSpline = (annotation: SplineROIAnnotation) => {
-    this.splineInstancesCache.delete(annotation);
-  };
+  }
 
   private _calculateCachedStats = (
     annotation: SplineROIAnnotation,

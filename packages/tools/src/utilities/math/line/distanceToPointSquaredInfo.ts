@@ -22,31 +22,27 @@ export default function distanceToPointSquaredInfo(
   distanceSquared: number;
 } {
   let closestPoint: Types.Point2;
-  let distanceSquared;
+  const distanceSquared = math.point.distanceToPointSquared(lineStart, lineEnd);
 
   // Check if lineStart is the same as lineEnd which means
-  // the line has length equal to 0.
   if (lineStart[0] === lineEnd[0] && lineStart[1] === lineEnd[1]) {
-    distanceSquared = 0;
     closestPoint = lineStart;
-  } else {
-    distanceSquared = math.point.distanceToPointSquared(lineStart, lineEnd);
   }
 
   if (!closestPoint) {
-    const t =
+    const dotProduct =
       ((point[0] - lineStart[0]) * (lineEnd[0] - lineStart[0]) +
         (point[1] - lineStart[1]) * (lineEnd[1] - lineStart[1])) /
       distanceSquared;
 
-    if (t < 0) {
+    if (dotProduct < 0) {
       closestPoint = lineStart;
-    } else if (t > 1) {
+    } else if (dotProduct > 1) {
       closestPoint = lineEnd;
     } else {
       closestPoint = [
-        lineStart[0] + t * (lineEnd[0] - lineStart[0]),
-        lineStart[1] + t * (lineEnd[1] - lineStart[1]),
+        lineStart[0] + dotProduct * (lineEnd[0] - lineStart[0]),
+        lineStart[1] + dotProduct * (lineEnd[1] - lineStart[1]),
       ];
     }
   }

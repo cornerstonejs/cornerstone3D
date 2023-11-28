@@ -143,7 +143,7 @@ abstract class Spline implements ISpline {
    * decimal part is the `t` value on that curve segment.
    * @param u - `u` value in Parameter Space
    */
-  public addControlPointAt(u: number): ControlPointInfo {
+  public addControlPointAtU(u: number): ControlPointInfo {
     const lineSegment = this._getLineSegmentAt(u);
     const { start: startPoint, end: endPoint } = lineSegment.points;
     const curveSegmentIndex = Math.floor(u);
@@ -208,15 +208,17 @@ abstract class Spline implements ISpline {
   /**
    * Update the coordinate of a control point given its index
    * @param index - Control point index
-   * @param x - Control point X coordinate
-   * @param y - Control point Y coordinate
+   * @param newControlPoint - New control point
    */
-  public updateControlPoint(index: number, x: number, y: number): void {
+  public updateControlPoint(
+    index: number,
+    newControlPoint: Types.Point2
+  ): void {
     if (index < 0 || index >= this._controlPoints.length) {
       throw new Error('Index out of bounds');
     }
 
-    this._controlPoints[index] = [x, y];
+    this._controlPoints[index] = [...newControlPoint];
     this.invalidated = true;
   }
 
@@ -270,7 +272,7 @@ abstract class Spline implements ISpline {
    * @param maxDist - Maximum distance
    * @returns Closest control point that is within the given range or undefined otherwise
    */
-  public getClosestControlPointWithinRange(
+  public getClosestControlPointWithinDistance(
     point: Types.Point2,
     maxDist: number
   ): ClosestControlPoint {
@@ -426,7 +428,7 @@ abstract class Spline implements ISpline {
 
     // Check if the new control point would be close to the first one
     // in order to create a preview of a closed spline
-    const closestControlPoint = this.getClosestControlPointWithinRange(
+    const closestControlPoint = this.getClosestControlPointWithinDistance(
       controlPointPreview,
       closeDistance
     );
@@ -451,7 +453,7 @@ abstract class Spline implements ISpline {
   public isPointNearCurve(point: Types.Point2, maxDist: number): boolean {
     this._update();
 
-    const curveSegments = this._getCurveSegmmentsWithinRange(point, maxDist);
+    const curveSegments = this._getCurveSegmmentsWithinDistance(point, maxDist);
     const maxDistSquared = maxDist * maxDist;
 
     // Check if the point is close to the spline and doest waste time checking each curve/line
@@ -563,15 +565,15 @@ abstract class Spline implements ISpline {
     let maxX = -Infinity;
     let maxY = -Infinity;
 
-    curveSegments.forEach((curveSegment) => {
-      const { aabb: curveSegAABB } = curveSegment;
+    for (let i = 0, len = curveSegments.length; i < len; i++) {
+      const { aabb: curveSegAABB, length: curveSegLength } = curveSegments[i];
 
       minX = minX <= curveSegAABB.minX ? minX : curveSegAABB.minX;
       minY = minY <= curveSegAABB.minY ? minY : curveSegAABB.minY;
       maxX = maxX >= curveSegAABB.maxX ? maxX : curveSegAABB.maxX;
       maxY = maxY >= curveSegAABB.maxY ? maxY : curveSegAABB.maxY;
-      length += curveSegment.length;
-    });
+      length += curveSegLength;
+    }
 
     this._curveSegments = curveSegments;
     this._aabb = { minX, minY, maxX, maxY };
@@ -601,6 +603,11 @@ abstract class Spline implements ISpline {
     return polylinePoints;
   }
 
+  /**
+   * Returns all curve segments and theirs respective squared distance to a given point
+   * @param point - Reference point
+   * @returns Curve segments and theirs respective squared distance to a given point
+   */
   private _getCurveSegmmentsDistanceSquaredInfo(
     point: Types.Point2
   ): CurveSegmentDistanceSquared[] {
@@ -626,7 +633,7 @@ abstract class Spline implements ISpline {
     return curveSegmentsDistanceSquared;
   }
 
-  private _getCurveSegmmentsWithinRange(
+  private _getCurveSegmmentsWithinDistance(
     point: Types.Point2,
     maxDist: number
   ): SplineCurveSegment[] {

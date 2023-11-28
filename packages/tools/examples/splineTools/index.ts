@@ -85,6 +85,9 @@ addInstruction(
   'It is not allowed to add/removed control points from a ' +
     'BSplines once it is closed.'
 );
+addInstruction(
+  'Press Backspace or Delete to delete the last control point when drawing'
+);
 
 // ============================= //
 
@@ -103,16 +106,16 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
 
 const Splines = {
   CardinalSplineROI: {
-    toolConfigKey: 'CARDINAL',
+    splineType: 'CARDINAL',
   },
   CatmullRomSplineROI: {
-    toolConfigKey: 'CATMULLROM',
+    splineType: 'CATMULLROM',
   },
   LinearSplineROI: {
-    toolConfigKey: 'LINEAR',
+    splineType: 'LINEAR',
   },
   BSplineROI: {
-    toolConfigKey: 'BSPLINE',
+    splineType: 'BSPLINE',
   },
 };
 
@@ -126,6 +129,9 @@ addDropdownToToolbar({
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
+    // Set the old tool passive
+    toolGroup.setToolPassive(selectedToolName);
+
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
       bindings: [
@@ -134,9 +140,6 @@ addDropdownToToolbar({
         },
       ],
     });
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
 
     selectedToolName = <string>newSelectedToolName;
 
@@ -180,13 +183,13 @@ addSliderToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     SplineToolNames.forEach((splineToolName) => {
-      const { toolConfigKey } = Splines[selectedToolName];
+      const { splineType } = Splines[selectedToolName];
       const splineConfig = toolGroup.getToolConfiguration(
         splineToolName,
         'spline'
       );
 
-      splineConfig.configuration[toolConfigKey].resolution = value;
+      splineConfig.configuration[splineType].resolution = value;
       toolGroup.setToolConfiguration(splineToolName, { spline: splineConfig });
     });
   },

@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
+import { ISpline } from '../tools/annotation/splines/types';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -136,6 +137,7 @@ export interface SplineROIAnnotation extends Annotation {
     };
     spline: {
       type: string;
+      instance: ISpline;
       resolution: number;
       polyline: Types.Point3[];
       closed: boolean;
