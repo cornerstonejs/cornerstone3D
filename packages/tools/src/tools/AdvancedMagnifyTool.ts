@@ -41,8 +41,13 @@ import { getCanvasCircleRadius } from '../utilities/math/circle';
 import AdvancedMagnifyViewportManager from './AdvancedMagnifyViewportManager';
 import type { AutoPanCallbackData } from './AdvancedMagnifyViewport';
 
+enum AdvancedMagnifyToolActions {
+  ShowZoomFactorsList = 'showZoomFactorsList',
+}
+
 class AdvancedMagnifyTool extends AnnotationTool {
   static toolName;
+  static Actions = AdvancedMagnifyToolActions;
 
   magnifyViewportManager: AdvancedMagnifyViewportManager;
   touchDragCallback: any;
@@ -71,8 +76,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
             padding: 10, // px
           },
         },
-        actions: [
-          {
+        actions: {
+          showZoomFactorsList: {
             method: 'showZoomFactorsList',
             bindings: [
               {
@@ -81,7 +86,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
               },
             ],
           },
-        ],
+        },
       },
     }
   ) {

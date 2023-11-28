@@ -64,6 +64,17 @@ import {
   LabelmapToolOperationDataVolume,
 } from './LabelmapToolOperationData';
 
+// Splines
+import type { CardinalSplineProps } from './CardinalSplineProps';
+import type { ClosestControlPoint } from './ClosestControlPoint';
+import type { ClosestPoint } from './ClosestPoint';
+import type { ClosestSplinePoint } from './ClosestSplinePoint';
+import type { ControlPointInfo } from './ControlPointInfo';
+import type { ISpline } from './ISpline';
+import type { SplineCurveSegment } from './SplineCurveSegment';
+import type { SplineLineSegment } from './SplineLineSegment';
+import type { SplineProps } from './SplineProps';
+
 export type {
   // AnnotationState
   Annotation,
@@ -132,4 +143,14 @@ export type {
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
+  // Splines
+  CardinalSplineProps,
+  ClosestControlPoint,
+  ClosestPoint,
+  ClosestSplinePoint,
+  ControlPointInfo,
+  ISpline,
+  SplineCurveSegment,
+  SplineLineSegment,
+  SplineProps,
 };
