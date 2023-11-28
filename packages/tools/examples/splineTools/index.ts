@@ -5,6 +5,7 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
+  addCheckboxToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -32,7 +33,9 @@ const viewportId = 'CT_STACK';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Spline Tools Stack',
-  'Spline tools for a stack viewport'
+  'Spline tools for a stack viewport with some settings that can be changed such ' +
+    'as resolution, scale (Cardinal Splines only) and it is also possible to ' +
+    'enable/disable the preview when adding a control point to a spline'
 );
 
 const content = document.getElementById('content');
@@ -50,9 +53,38 @@ content.appendChild(element);
 const info = document.createElement('div');
 content.appendChild(info);
 
-const instructions = document.createElement('p');
-instructions.innerText = 'Left Click to use selected tool';
-info.appendChild(instructions);
+function addInstruction(text) {
+  const instructions = document.createElement('p');
+  instructions.innerText = `- ${text}`;
+  info.appendChild(instructions);
+}
+
+addInstruction('Select a Spline ROI.');
+addInstruction('Click to add control points and draw the spline.');
+addInstruction(
+  'A spline can be closed clicking on the first control point or ' +
+    'double clicking when adding the last control point.'
+);
+addInstruction('Click and drag the control points to update the spline.');
+addInstruction(
+  'Shift+click allow adding new control points once the spline is closed.'
+);
+addInstruction(
+  'Ctrl+click allow deleting control points once the spline is closed.'
+);
+addInstruction(
+  'Use the "Resolution" slider to change the spline resolution (number of ' +
+    'line segments). Resolution is not applicable to Linear spline.'
+);
+addInstruction(
+  'User the "Scale" slider to change the Cardinal spline scale. ' +
+    'A Catmull-Rom spline is a Cardinal spline with scale set to 50% and ' +
+    'Linear spline is a Cardinal spline with scale set to 0%.'
+);
+addInstruction(
+  'It is not allowed to add/removed control points from a ' +
+    'BSplines once it is closed.'
+);
 
 // ============================= //
 
@@ -108,11 +140,33 @@ addDropdownToToolbar({
 
     selectedToolName = <string>newSelectedToolName;
 
+    const resolutionSlider = document.getElementById(
+      'splineResolution'
+    ) as HTMLInputElement;
+
     const scaleSlider = document.getElementById(
       'splineScale'
     ) as HTMLInputElement;
 
+    resolutionSlider.disabled = selectedToolName === 'LinearSplineROI';
     scaleSlider.disabled = selectedToolName !== 'CardinalSplineROI';
+  },
+});
+
+addCheckboxToToolbar({
+  title: 'Preview',
+  checked: true,
+  onChange: (drawPreviewEnabled) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    SplineToolNames.forEach((splineToolName) => {
+      const splineConfig = toolGroup.getToolConfiguration(
+        splineToolName,
+        'spline'
+      );
+      splineConfig.drawPreviewEnabled = drawPreviewEnabled;
+      toolGroup.setToolConfiguration(splineToolName, { spline: splineConfig });
+    });
   },
 });
 

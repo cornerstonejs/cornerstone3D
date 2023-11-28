@@ -135,6 +135,15 @@ export interface ISpline {
   getPolylinePoints(): Types.Point2[];
 
   /**
+   * Get all points necessary to draw the preview curve for a new possible control point
+   * @returns Array with all points necessary to draw the preview curve
+   */
+  getPreviewPolylinePoints(
+    controlPointPreview: Types.Point2,
+    closeDistance: number
+  ): Types.Point2[];
+
+  /**
    * Checks if a point is near to the spline curve
    * @param point - Reference point
    * @param maxDist - Maximum allowed distance

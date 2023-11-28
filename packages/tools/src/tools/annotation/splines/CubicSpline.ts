@@ -9,15 +9,43 @@ import type { SplineLineSegment } from './types/SplineLineSegment';
 // In this case we are using `curveSegmentIndex + 1 - MAX_U_ERROR`
 const MAX_U_ERROR = 1e-8;
 
-const times = [];
-(window as any).times = times;
-
 /**
  * Base class for all cubic splines
  */
 abstract class CubicSpline extends Spline {
+  protected getPreviewCurveSegments(
+    controlPointPreview: Types.Point2,
+    closeSpline: boolean
+  ): SplineCurveSegment[] {
+    const previewNumCurveSegments = this._getNumCurveSegments() + 1;
+    const startCurveSegIndex = Math.max(0, previewNumCurveSegments - 2);
+    const endCurveSegIndex = closeSpline
+      ? previewNumCurveSegments
+      : previewNumCurveSegments - 1;
+    const transformMatrix = this.getTransformMatrix();
+    const controlPoints = [...this.controlPoints];
+    const curveSegments: SplineCurveSegment[] = [];
+
+    if (!closeSpline) {
+      controlPoints.push(controlPointPreview);
+    }
+
+    for (let i = startCurveSegIndex; i <= endCurveSegIndex; i++) {
+      const curveSegment = this._getCurveSegment(
+        i,
+        transformMatrix,
+        controlPoints,
+        closeSpline
+      );
+
+      curveSegments.push(curveSegment);
+    }
+
+    return curveSegments;
+  }
+
   protected getSplineCurves(): SplineCurveSegment[] {
-    const numCurveSegments = this.getNumCurveSegments();
+    const numCurveSegments = this._getNumCurveSegments();
     const curveSegments: SplineCurveSegment[] = new Array(numCurveSegments);
 
     if (numCurveSegments <= 0) {
@@ -27,49 +55,25 @@ abstract class CubicSpline extends Spline {
     const transformMatrix = this.getTransformMatrix();
     let previousCurveSegmentsLength = 0;
 
-    const startTime = performance.now();
     for (let i = 0; i < numCurveSegments; i++) {
-      // Cubic spline curves are mainly controlled by P1 and P2 points but
-      // they are also influenced by previous (P0) and next (P3) poins. For
-      // Cardinal, Linear and Catmull-Rom splines P1 and P2 are also known as
-      // knots because they are the connection between two curve segments.
-      const { p0, p1, p2, p3 } = this._getCurveSegmentPoints(i);
+      const curveSegment = this._getCurveSegment(i, transformMatrix);
 
-      const lineSegments = this._getLineSegments(i, transformMatrix);
-      let curveSegmentLength = 0;
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
+      curveSegment.previousCurveSegmentsLength = previousCurveSegmentsLength;
+      curveSegments[i] = curveSegment;
 
-      lineSegments.forEach(({ aabb: lineSegAABB, length: lineSegLength }) => {
-        minX = Math.min(minX, lineSegAABB.minX);
-        minY = Math.min(minY, lineSegAABB.minY);
-        maxX = Math.max(maxX, lineSegAABB.maxX);
-        maxY = Math.max(maxY, lineSegAABB.maxY);
-
-        curveSegmentLength += lineSegLength;
-      });
-
-      curveSegments[i] = {
-        controlPoints: { p0, p1, p2, p3 },
-        aabb: { minX, minY, maxX, maxY },
-        length: curveSegmentLength,
-        previousCurveSegmentsLength,
-        lineSegments,
-      };
-
-      previousCurveSegmentsLength += curveSegmentLength;
+      previousCurveSegmentsLength += curveSegment.length;
     }
-    times.push(performance.now() - startTime);
 
     return curveSegments;
   }
 
-  private getNumCurveSegments(): number {
-    return this.closed
-      ? this.controlPoints.length
-      : Math.max(0, this.controlPoints.length - 1);
+  private _getNumCurveSegments(
+    controlPoints: Types.Point2[] = this.controlPoints,
+    closed: boolean = this.closed
+  ): number {
+    return closed
+      ? controlPoints.length
+      : Math.max(0, controlPoints.length - 1);
   }
 
   /**
@@ -80,8 +84,13 @@ abstract class CubicSpline extends Spline {
    * @returns - Point (x, y) on the spline. It may return `undefined` when `u` is smaller than 0
    *   or greater than N for opened splines
    */
-  private getPoint(u: number, transformMatrix: number[]): Types.Point2 {
-    const numCurveSegments = this.getNumCurveSegments();
+  private _getPoint(
+    u: number,
+    transformMatrix: number[],
+    controlPoints: Types.Point2[] = this.controlPoints,
+    closed: boolean = this.closed
+  ): Types.Point2 {
+    const numCurveSegments = this._getNumCurveSegments(controlPoints, closed);
     const uInt = Math.floor(u);
     let curveSegmentIndex = uInt % numCurveSegments;
 
@@ -102,7 +111,11 @@ abstract class CubicSpline extends Spline {
       }
     }
 
-    const { p0, p1, p2, p3 } = this._getCurveSegmentPoints(curveSegmentIndex);
+    const { p0, p1, p2, p3 } = this._getCurveSegmentPoints(
+      curveSegmentIndex,
+      controlPoints,
+      closed
+    );
 
     // Formula to find any point on a cubic spline curve given a `t` value
     //
@@ -135,14 +148,15 @@ abstract class CubicSpline extends Spline {
     return [tx, ty];
   }
 
-  private _getCurveSegmentPoints(curveSegmentIndex: number) {
-    const numCurveSegments = this.getNumCurveSegments();
-    const { controlPoints } = this;
+  private _getCurveSegmentPoints(
+    curveSegmentIndex: number,
+    controlPoints: Types.Point2[] = this.controlPoints,
+    closed: boolean = this.closed
+  ) {
+    const numCurveSegments = this._getNumCurveSegments(controlPoints, closed);
     const p1Index = curveSegmentIndex;
     const p0Index = p1Index - 1;
-    const p2Index = this.closed
-      ? (p1Index + 1) % numCurveSegments
-      : p1Index + 1;
+    const p2Index = closed ? (p1Index + 1) % numCurveSegments : p1Index + 1;
     const p3Index = p2Index + 1;
     const p1 = controlPoints[p1Index];
     const p2 = controlPoints[p2Index];
@@ -153,7 +167,7 @@ abstract class CubicSpline extends Spline {
     if (p0Index >= 0) {
       p0 = controlPoints[p0Index];
     } else {
-      p0 = this.closed
+      p0 = closed
         ? controlPoints[controlPoints.length - 1]
         : math.point.mirror(p2, p1);
     }
@@ -162,7 +176,7 @@ abstract class CubicSpline extends Spline {
     if (p3Index < controlPoints.length) {
       p3 = controlPoints[p3Index];
     } else {
-      p3 = this.closed ? controlPoints[0] : math.point.mirror(p1, p2);
+      p3 = closed ? controlPoints[0] : math.point.mirror(p1, p2);
     }
 
     return { p0, p1, p2, p3 };
@@ -170,9 +184,11 @@ abstract class CubicSpline extends Spline {
 
   private _getLineSegments(
     curveSegmentIndex: number,
-    transformMatrix: number[]
+    transformMatrix: number[],
+    controlPoints: Types.Point2[] = this.controlPoints,
+    closed: boolean = this.closed
   ): SplineLineSegment[] {
-    const numCurveSegments = this.getNumCurveSegments();
+    const numCurveSegments = this._getNumCurveSegments(controlPoints, closed);
     const numLineSegments = this.resolution + 1;
     const inc = 1 / numLineSegments;
     const minU = curveSegmentIndex;
@@ -181,7 +197,7 @@ abstract class CubicSpline extends Spline {
     // 'u' must be greater than or equal to 0 and smaller than N where N is the number of segments
     // otherwise it does not find the spline segment when it is not a closed curve because it is
     // 0-based indexed. In this case `u` needs to get very close to the end point but never touch it
-    if (!this.closed && curveSegmentIndex === numCurveSegments - 1) {
+    if (!closed && curveSegmentIndex === numCurveSegments - 1) {
       maxU -= MAX_U_ERROR;
     }
 
@@ -194,7 +210,7 @@ abstract class CubicSpline extends Spline {
       // `u` may be greater than maxU in the last FOR loop due to number precision issue
       u = u > maxU ? maxU : u;
 
-      const point = this.getPoint(u, transformMatrix);
+      const point = this._getPoint(u, transformMatrix, controlPoints, closed);
 
       if (!i) {
         startPoint = point;
@@ -228,6 +244,50 @@ abstract class CubicSpline extends Spline {
     }
 
     return lineSegments;
+  }
+
+  private _getCurveSegment(
+    curveSegmentIndex: number,
+    transformMatrix: number[] = this.getTransformMatrix(),
+    controlPoints: Types.Point2[] = this.controlPoints,
+    closed: boolean = this.closed
+  ): SplineCurveSegment {
+    // Cubic spline curves are mainly controlled by P1 and P2 points but
+    // they are also influenced by previous (P0) and next (P3) poins. For
+    // Cardinal, Linear and Catmull-Rom splines P1 and P2 are also known as
+    // knots because they are the connection between two curve segments.
+    const { p0, p1, p2, p3 } = this._getCurveSegmentPoints(
+      curveSegmentIndex,
+      controlPoints,
+      closed
+    );
+    const lineSegments = this._getLineSegments(
+      curveSegmentIndex,
+      transformMatrix,
+      controlPoints,
+      closed
+    );
+    let curveSegmentLength = 0;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    lineSegments.forEach(({ aabb: lineSegAABB, length: lineSegLength }) => {
+      minX = Math.min(minX, lineSegAABB.minX);
+      minY = Math.min(minY, lineSegAABB.minY);
+      maxX = Math.max(maxX, lineSegAABB.maxX);
+      maxY = Math.max(maxY, lineSegAABB.maxY);
+      curveSegmentLength += lineSegLength;
+    });
+
+    return {
+      controlPoints: { p0, p1, p2, p3 },
+      aabb: { minX, minY, maxX, maxY },
+      length: curveSegmentLength,
+      previousCurveSegmentsLength: 0,
+      lineSegments,
+    };
   }
 }
 

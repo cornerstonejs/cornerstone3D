@@ -12,6 +12,14 @@ abstract class QuadraticSpline extends Spline {
   protected getLineSegments(): SplineLineSegment[] {
     return [];
   }
+
+  // TODO: QuadraticSpline :: getPreviewCurveSegments
+  public getPreviewCurveSegments(
+    controlPointPreview: Point2,
+    closeSpline: boolean
+  ): SplineCurveSegment[] {
+    return [];
+  }
 }
 
 export { QuadraticSpline as default, QuadraticSpline };

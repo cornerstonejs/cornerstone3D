@@ -80,6 +80,7 @@ class SplineROITool extends AnnotationTool {
     movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    lastCanvasPoint?: Types.Point2;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -113,6 +114,7 @@ class SplineROITool extends AnnotationTool {
             },
           },
           type: 'CATMULLROM',
+          drawPreviewEnabled: true,
         },
         actions: [
           {
@@ -159,7 +161,7 @@ class SplineROITool extends AnnotationTool {
   ): SplineROIAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+    const { world: worldPos, canvas: canvasPos } = currentPoints;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -228,10 +230,10 @@ class SplineROITool extends AnnotationTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
+      lastCanvasPoint: canvasPos,
     };
 
     this._activateDraw(element);
-    // hideElementCursor(element);
     evt.preventDefault();
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
@@ -395,6 +397,27 @@ class SplineROITool extends AnnotationTool {
       this._deleteControlPointByIndex(element, annotation, controlPointIndex);
     }
 
+    evt.preventDefault();
+  };
+
+  private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    const { drawPreviewEnabled } = this.configuration.spline;
+
+    // Does not force a re-render if preview is not enabled
+    if (!drawPreviewEnabled) {
+      return;
+    }
+
+    const { element } = evt.detail;
+    const { renderingEngine } = getEnabledElement(element);
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    this.editData.lastCanvasPoint = evt.detail.currentPoints.canvas;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -571,6 +594,7 @@ class SplineROITool extends AnnotationTool {
     state.isInteractingWithTool = true;
 
     element.addEventListener(Events.KEY_DOWN, this._keyDownCallback);
+    element.addEventListener(Events.MOUSE_MOVE, this._mouseMoveCallback);
     element.addEventListener(Events.MOUSE_DOWN, this._mouseDownCallback);
     element.addEventListener(Events.MOUSE_DOWN, this._mouseDownCallback);
     element.addEventListener(
@@ -585,6 +609,7 @@ class SplineROITool extends AnnotationTool {
     state.isInteractingWithTool = false;
 
     element.removeEventListener(Events.KEY_DOWN, this._keyDownCallback);
+    element.removeEventListener(Events.MOUSE_MOVE, this._mouseMoveCallback);
     element.removeEventListener(Events.MOUSE_DOWN, this._mouseDownCallback);
     element.removeEventListener(
       Events.MOUSE_DOUBLE_CLICK,
@@ -668,6 +693,7 @@ class SplineROITool extends AnnotationTool {
         worldToCanvas(p)
       ) as Types.Point2[];
 
+      const { drawPreviewEnabled } = this.configuration.spline;
       const splineType = annotation.data.spline.type;
       const splineConfig = this._getSplineConfig(splineType);
       const spline = this._createOrUpdateAnnotationSpline(element, annotation);
@@ -721,6 +747,31 @@ class SplineROITool extends AnnotationTool {
             lineDash,
             lineWidth,
             handleRadius: '3',
+          }
+        );
+      }
+
+      if (
+        drawPreviewEnabled &&
+        spline.numControlPoints > 1 &&
+        this.editData?.lastCanvasPoint &&
+        !spline.closed
+      ) {
+        const { lastCanvasPoint } = this.editData;
+        const previewPolylinePoints = spline.getPreviewPolylinePoints(
+          lastCanvasPoint,
+          SPLINE_CLICK_CLOSE_CURVE_DIST
+        );
+
+        drawPolylineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'previewSplineChange',
+          previewPolylinePoints,
+          {
+            color: 'rgba(180, 180, 180, 0.5)',
+            lineDash,
+            lineWidth,
           }
         );
       }

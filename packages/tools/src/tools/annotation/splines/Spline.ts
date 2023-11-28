@@ -404,30 +404,42 @@ abstract class Spline implements ISpline {
   public getPolylinePoints(): Types.Point2[] {
     this._update();
 
-    const { _curveSegments: curveSegments } = this;
-    const polylinePoints2: Types.Point2[] = [];
+    return this._convertCurveSegmentsToPolyline(this._curveSegments);
+  }
 
-    for (
-      let i = 0, numCurveSegs = curveSegments.length;
-      i < numCurveSegs;
-      i++
-    ) {
-      const { lineSegments } = curveSegments[i];
-
-      for (let j = 0, numLineSegs = lineSegments.length; j < numLineSegs; j++) {
-        const lineSegment = lineSegments[j];
-
-        // Add the start point before adding all end points
-        if (i === 0 && j === 0) {
-          polylinePoints2.push([...lineSegment.points.start]);
-        }
-
-        // Always add 1 because the first segment stored its start point at the first position
-        polylinePoints2.push([...lineSegment.points.end]);
-      }
+  /**
+   * Get all points necessary to draw the preview of the changes that shall be
+   * made to the spline if a new control point is added to it
+   * @param controlPointPreview - New control point preview
+   * @param closeDistance - Distance to the first control point to consider it a closed spline
+   * @returns Array with all points necessary to draw a spline curve preview
+   */
+  public getPreviewPolylinePoints(
+    controlPointPreview: Types.Point2,
+    closeDistance: number
+  ): Types.Point2[] {
+    if (this._closed) {
+      return [];
     }
 
-    return polylinePoints2;
+    this._update();
+
+    // Check if the new control point would be close to the first one
+    // in order to create a preview of a closed spline
+    const closestControlPoint = this.getClosestControlPointWithinRange(
+      controlPointPreview,
+      closeDistance
+    );
+
+    const closeSpline = closestControlPoint?.index === 0;
+    const previewCurveSegments = this.getPreviewCurveSegments(
+      controlPointPreview,
+      closeSpline
+    );
+
+    return previewCurveSegments?.length
+      ? this._convertCurveSegmentsToPolyline(previewCurveSegments)
+      : [];
   }
 
   /**
@@ -534,6 +546,11 @@ abstract class Spline implements ISpline {
 
   protected abstract getSplineCurves(): SplineCurveSegment[];
 
+  protected abstract getPreviewCurveSegments(
+    controlPointPreview: Types.Point2,
+    closeSpline: boolean
+  ): SplineCurveSegment[];
+
   private _update() {
     if (!this._invalidated) {
       return;
@@ -560,6 +577,28 @@ abstract class Spline implements ISpline {
     this._aabb = { minX, minY, maxX, maxY };
     this._length = length;
     this._invalidated = false;
+  }
+
+  private _convertCurveSegmentsToPolyline(
+    curveSegments: SplineCurveSegment[]
+  ): Types.Point2[] {
+    this._update();
+
+    const polylinePoints: Types.Point2[] = [];
+
+    curveSegments.forEach(({ lineSegments }, curveSegIndex) => {
+      lineSegments.forEach((lineSegment, lineSegIndex) => {
+        // Add the start point before adding all end points
+        if (curveSegIndex === 0 && lineSegIndex === 0) {
+          polylinePoints.push([...lineSegment.points.start]);
+        }
+
+        // Always add 1 because the first segment stored its start point at the first position
+        polylinePoints.push([...lineSegment.points.end]);
+      });
+    });
+
+    return polylinePoints;
   }
 
   private _getCurveSegmmentsDistanceSquaredInfo(
