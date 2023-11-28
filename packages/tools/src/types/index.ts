@@ -58,6 +58,11 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type { Statistics } from './CalculatorTypes';
+import {
+  LabelmapToolOperationData,
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
+} from './LabelmapToolOperationData';
 
 export type {
   // AnnotationState
@@ -124,4 +129,7 @@ export type {
   ContourSegmentationData,
   //Statistics
   Statistics,
+  LabelmapToolOperationData,
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
 };

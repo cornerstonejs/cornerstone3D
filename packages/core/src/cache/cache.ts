@@ -656,6 +656,28 @@ class Cache implements ICache {
   };
 
   /**
+   * Returns the image associated with the imageId
+   *
+   * @param imageId - image ID
+   * @returns Image
+   */
+  public getImage = (imageId: string): IImage => {
+    if (imageId === undefined) {
+      throw new Error('getImage: imageId must not be undefined');
+    }
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (cachedImage === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached volume (not used for anything for now)
+    cachedImage.timeStamp = Date.now();
+
+    return cachedImage.image;
+  };
+
+  /**
    * Returns the volume associated with the volumeId
    *
    * @param volumeId - Volume ID

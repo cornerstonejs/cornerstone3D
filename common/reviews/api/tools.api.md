@@ -853,9 +853,10 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     editData: {
         annotation: any;
-        segmentation: any;
         segmentIndex: number;
-        segmentationId: string;
+        volumeId: string;
+        referencedVolumeId: string;
+        imageIdReferenceMap: Map<string, string>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -864,6 +865,7 @@ export class CircleScissorsTool extends BaseTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
         centerCanvas?: Array<number>;
+        segmentationRepresentationUID?: string;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -2443,15 +2445,43 @@ type LabelmapRenderingConfig = {
 };
 
 // @public (undocumented)
-type LabelmapSegmentationData = {
+type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack;
+
+// @public (undocumented)
+type LabelmapSegmentationDataStack = {
+    imageIdReferenceMap: Map<string, string>;
+};
+
+// @public (undocumented)
+type LabelmapSegmentationDataVolume = {
     volumeId: string;
     referencedVolumeId?: string;
 };
+
+// @public (undocumented)
+type LabelmapToolOperationData = {
+    segmentationId: string;
+    segmentIndex: number;
+    segmentsLocked: number[];
+    viewPlaneNormal: number[];
+    viewUp: number[];
+    strategySpecificConfiguration: any;
+    constraintFn: (pointIJK: number) => boolean;
+    segmentationRepresentationUID: string;
+};
+
+// @public (undocumented)
+type LabelmapToolOperationDataStack = LabelmapToolOperationData & LabelmapSegmentationDataStack;
+
+// @public (undocumented)
+type LabelmapToolOperationDataVolume = LabelmapToolOperationData & LabelmapSegmentationDataVolume;
 
 declare namespace LabelmapTypes {
     export {
         LabelmapConfig,
         LabelmapRenderingConfig,
+        LabelmapSegmentationDataVolume,
+        LabelmapSegmentationDataStack,
         LabelmapSegmentationData
     }
 }
@@ -3035,7 +3065,7 @@ declare namespace point {
 const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
 
 // @public (undocumented)
-function pointInEllipse(ellipse: Ellipse, pointLPS: vec3): boolean;
+function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
@@ -3421,9 +3451,11 @@ export class RectangleScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
+        imageIdReferenceMap: Map<string, string>;
+        volumeId: string;
+        referencedVolumeId: string;
         annotation: any;
         segmentationId: string;
-        segmentation: any;
         segmentIndex: number;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
@@ -3976,10 +4008,12 @@ export class SphereScissorsTool extends BaseTool {
     // (undocumented)
     editData: {
         annotation: any;
-        segmentation: any;
         segmentIndex: number;
         segmentsLocked: number[];
-        segmentationId: string;
+        segmentationRepresentationUID: string;
+        volumeId: string;
+        referencedVolumeId: string;
+        imageIdReferenceMap: Map<string, string>;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -4579,7 +4613,10 @@ declare namespace Types {
         FloodFillGetter,
         FloodFillOptions,
         ContourSegmentationData,
-        Statistics
+        Statistics,
+        LabelmapToolOperationData,
+        LabelmapToolOperationDataStack,
+        LabelmapToolOperationDataVolume
     }
 }
 export { Types }

@@ -12,7 +12,7 @@ import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
@@ -42,6 +42,9 @@ type ActorSliceRange = {
     max: number;
     current: number;
 };
+
+// @public (undocumented)
+export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
 function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
@@ -530,10 +533,19 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
+function createAndCacheDerivedImage(referencedImageId: string, options?: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
+
+// @public (undocumented)
+function createAndCacheDerivedImages(referencedImageIds: Array<string>, getDerivedImageId?: (referencedImageId: string) => string): DerivedImages;
+
+// @public (undocumented)
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<ImageVolume>;
 
 // @public (undocumented)
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
+
+// @public (undocumented)
+function createAndCacheLocalImage(options: LocalImageOptions, imageId: string, preventCache?: boolean): IImage;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -799,6 +811,15 @@ enum GeometryType {
     // (undocumented)
     SURFACE = "Surface"
 }
+
+// @public (undocumented)
+function getBufferConfiguration(targetBufferType: PixelDataTypedArrayString, length: number, options?: {
+    use16BitTexture?: boolean;
+    isVolumeBuffer?: boolean;
+}): {
+    numBytes: number;
+    TypedArrayConstructor: new (length: number | SharedArrayBuffer) => PixelDataTypedArray;
+};
 
 // @public (undocumented)
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
@@ -1191,6 +1212,8 @@ interface IImage {
         };
     };
     // (undocumented)
+    referencedImageId?: string;
+    // (undocumented)
     render?: (enabledElement: CPUFallbackEnabledElement, invalidated: boolean) => unknown;
     // (undocumented)
     rgba: boolean;
@@ -1407,6 +1430,9 @@ declare namespace imageLoader {
         loadImage,
         loadAndCacheImage,
         loadAndCacheImages,
+        createAndCacheDerivedImage,
+        createAndCacheDerivedImages,
+        createAndCacheLocalImage,
         cancelLoadImage,
         cancelLoadImages,
         cancelLoadAll,
@@ -1746,7 +1772,21 @@ function isOpposite(v1: Point3, v2: Point3, tolerance?: number): boolean;
 const isPTPrescaledWithSUV: (image: IImage) => number;
 
 // @public (undocumented)
+interface IStackInput {
+    // (undocumented)
+    actorUID?: string;
+    // (undocumented)
+    callback?: StackInputCallback;
+    // (undocumented)
+    imageId: string;
+    // (undocumented)
+    visibility?: boolean;
+}
+
+// @public (undocumented)
 interface IStackViewport extends IViewport {
+    // (undocumented)
+    addImages(stackInputs: Array<IStackInput>, immediateRender: boolean, suppressEvents: boolean): any;
     // (undocumented)
     calibrateSpacing(imageId: string): void;
     // (undocumented)
@@ -1774,6 +1814,8 @@ interface IStackViewport extends IViewport {
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(): IImageData | CPUIImageData;
+    // (undocumented)
+    getImageDataMetadata(image: IImage): any;
     // (undocumented)
     getImageIds: () => string[];
     // (undocumented)
@@ -1835,6 +1877,9 @@ interface IStreamingVolumeProperties {
         callbacks: Array<() => void>;
     };
 }
+
+// @public (undocumented)
+function isValidVolume(imageIds: string[]): boolean;
 
 // @public (undocumented)
 function isVideoTransferSyntax(uidOrUids: string | string[]): string | false;
@@ -2115,6 +2160,9 @@ function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
+function makeVolumeMetadata(imageIds: Array<string>): Metadata;
+
+// @public (undocumented)
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
@@ -2173,6 +2221,13 @@ const metadataProvider: {
 };
 
 // @public (undocumented)
+const metadataProvider_2: {
+    add: (imageId: string, payload: any) => void;
+    get: (type: string, imageId: string) => any;
+    clear: () => void;
+};
+
+// @public (undocumented)
 const mprCameraValues: any;
 
 // @public (undocumented)
@@ -2211,6 +2266,9 @@ type OrientationVectors = {
 
 // @public (undocumented)
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
+
+// @public (undocumented)
+type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray';
 
 declare namespace planar {
     export {
@@ -2553,6 +2611,9 @@ function snapFocalPointToSlice(focalPoint: Point3, position: Point3, sliceRange:
 };
 
 // @public (undocumented)
+function sortImageIdsAndGetSpacing(imageIds: Array<string>, scanAxisNormal?: vec3): SortedImageIdsItem;
+
+// @public (undocumented)
 const spatialRegistrationMetadataProvider: {
     add: (query: string[], payload: mat4) => void;
     get: (type: string, viewportId1: string, viewportId2: string) => mat4;
@@ -2565,6 +2626,12 @@ enum SpeedUnit {
     // (undocumented)
     SECOND = "s"
 }
+
+// @public (undocumented)
+type StackInputCallback = (params: {
+    imageActor: ImageActor;
+    imageId: string;
+}) => unknown;
 
 // @public (undocumented)
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
@@ -2586,11 +2653,22 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     addActors: (actors: Array<ActorEntry>) => void;
     // (undocumented)
+    addImages(stackInputs: Array<IStackInput>): Promise<void>;
+    // (undocumented)
     calibrateSpacing(imageId: string): void;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
     clearDefaultProperties(imageId?: string): void;
+    // (undocumented)
+    createVTKImageData({ origin, direction, dimensions, spacing, numComps, pixelArray, }: {
+        origin: any;
+        direction: any;
+        dimensions: any;
+        spacing: any;
+        numComps: any;
+        pixelArray: any;
+    }): vtkImageData;
     // (undocumented)
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
@@ -2621,6 +2699,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     getFrameOfReferenceUID: () => string | undefined;
     // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
+    // (undocumented)
+    getImageDataMetadata(image: IImage): ImageDataMetaData;
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
@@ -2835,6 +2915,8 @@ declare namespace Types {
         IVolumeLoadObject,
         IVolumeInput,
         VolumeInputCallback,
+        IStackInput,
+        StackInputCallback,
         ViewportPreset,
         Metadata,
         OrientationVectors,
@@ -2879,6 +2961,7 @@ declare namespace Types {
         ColormapPublic,
         ColormapRegistration,
         PixelDataTypedArray,
+        PixelDataTypedArrayString,
         ImagePixelModule,
         ImagePlaneModule,
         AffineMatrix,
@@ -2891,6 +2974,9 @@ export { Types }
 
 // @public (undocumented)
 function unregisterAllImageLoaders(): void;
+
+// @public (undocumented)
+function updateVTKImageDataWithCornerstoneImage(sourceImageData: vtkImageData, image: IImage): void;
 
 declare namespace utilities {
     export {
@@ -2953,7 +3039,13 @@ declare namespace utilities {
         decimate,
         imageRetrieveMetadataProvider,
         transferFunctionUtils,
-        isVideoTransferSyntax
+        updateVTKImageDataWithCornerstoneImage,
+        sortImageIdsAndGetSpacing,
+        makeVolumeMetadata,
+        isValidVolume,
+        metadataProvider_2 as genericMetadataProvider,
+        isVideoTransferSyntax,
+        getBufferConfiguration
     }
 }
 export { utilities }

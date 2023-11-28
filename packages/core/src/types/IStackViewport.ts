@@ -1,4 +1,3 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData';
 import CPUIImageData from './CPUIImageData';
 import ICamera from './ICamera';
 import IImageData from './IImageData';
@@ -7,9 +6,8 @@ import Point2 from './Point2';
 import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
-import { ColormapPublic } from './Colormap';
 import type IImage from './IImage';
-
+import { IStackInput } from './IStackInput';
 /**
  * Interface for Stack Viewport
  */
@@ -93,7 +91,16 @@ export default interface IStackViewport extends IViewport {
    * Returns the currently rendered imageId
    */
   getCurrentImageId: () => string;
+  /**
+   * Add Image Slices actors to the viewport
+   */
+  addImages(
+    stackInputs: Array<IStackInput>,
+    immediateRender: boolean,
+    suppressEvents: boolean
+  );
 
+  getImageDataMetadata(image: IImage): any;
   /**
    * Custom rendering pipeline for the rendering for the CPU fallback
    */

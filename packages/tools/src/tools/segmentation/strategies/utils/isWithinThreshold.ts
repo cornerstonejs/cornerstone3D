@@ -1,13 +1,14 @@
 import { Types } from '@cornerstonejs/core';
+import { TypedArray } from '@kitware/vtk.js/types';
 
 function isWithinThreshold(
   index: number,
-  imageVolume: Types.IImageVolume,
+  imageScalarData: TypedArray,
   strategySpecificConfiguration: any
 ) {
   const { THRESHOLD_INSIDE_CIRCLE } = strategySpecificConfiguration;
 
-  const voxelValue = imageVolume.getScalarData()[index];
+  const voxelValue = imageScalarData[index];
   const { threshold } = THRESHOLD_INSIDE_CIRCLE;
 
   return threshold[0] <= voxelValue && voxelValue <= threshold[1];
