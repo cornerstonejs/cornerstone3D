@@ -1,15 +1,15 @@
 import { Types } from '@cornerstonejs/core';
-import type { ISpline } from './types/ISpline';
-import type { SplineProps } from './types/SplineProps';
 import * as math from '../../../utilities/math';
 import type {
+  ISpline,
+  SplineProps,
   SplineLineSegment,
   ClosestControlPoint,
   ClosestSplinePoint,
   ClosestPoint,
   ControlPointInfo,
   SplineCurveSegment,
-} from './types';
+} from '../../../types';
 
 type CurveSegmentDistanceSquared = {
   curveSegmentIndex: number;

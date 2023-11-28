@@ -4,7 +4,7 @@ import type {
   ClosestControlPoint,
   ClosestSplinePoint,
   ControlPointInfo,
-} from './';
+} from '../tools/annotation/splines/types';
 
 /**
  * Spline curve interface

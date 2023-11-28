@@ -1,6 +1,6 @@
+import { Types } from '@cornerstonejs/core';
 import { Spline } from './Spline';
-import type { SplineLineSegment } from './types/SplineLineSegment';
-import type { SplineCurveSegment } from './types/SplineCurveSegment';
+import type { SplineLineSegment, SplineCurveSegment } from '../../../types/';
 
 abstract class QuadraticSpline extends Spline {
   // TODO: QuadraticSpline :: getSplineCurves
@@ -15,7 +15,7 @@ abstract class QuadraticSpline extends Spline {
 
   // TODO: QuadraticSpline :: getPreviewCurveSegments
   public getPreviewCurveSegments(
-    controlPointPreview: Point2,
+    controlPointPreview: Types.Point2,
     closeSpline: boolean
   ): SplineCurveSegment[] {
     return [];

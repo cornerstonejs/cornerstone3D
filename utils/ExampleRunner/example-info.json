@@ -304,6 +304,10 @@
       "stackSegmentation": {
         "name": "Segmentation Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
+      },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
       }
     },
     "tools-advanced": {

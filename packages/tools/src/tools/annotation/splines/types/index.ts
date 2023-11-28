@@ -1,9 +1,0 @@
-export type { CardinalSplineProps } from './CardinalSplineProps';
-export type { ClosestControlPoint } from './ClosestControlPoint';
-export type { ClosestPoint } from './ClosestPoint';
-export type { ClosestSplinePoint } from './ClosestSplinePoint';
-export type { ControlPointInfo } from './ControlPointInfo';
-export type { ISpline } from './ISpline';
-export type { SplineCurveSegment } from './SplineCurveSegment';
-export type { SplineLineSegment } from './SplineLineSegment';
-export type { SplineProps } from './SplineProps';

@@ -82,8 +82,8 @@ addInstruction(
     'Linear spline is a Cardinal spline with scale set to 0%.'
 );
 addInstruction(
-  'It is not allowed to add/removed control points from a ' +
-    'BSplines once it is closed.'
+  'It is not allowed to add/removed control points to/from ' +
+    'BSpline once it is closed.'
 );
 addInstruction(
   'Press Backspace or Delete to delete the last control point when drawing'

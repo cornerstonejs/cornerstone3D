@@ -1,8 +1,7 @@
 import { Types } from '@cornerstonejs/core';
 import { Spline } from './Spline';
 import * as math from '../../../utilities/math';
-import type { SplineCurveSegment } from './types/SplineCurveSegment';
-import type { SplineLineSegment } from './types/SplineLineSegment';
+import type { SplineCurveSegment, SplineLineSegment } from '../../../types';
 
 // The `u` in Parameter Space used when spliting a curve segment into line segments must
 // be greater than or equal to `curveSegmentIndex` and smaller than `curveSegmentIndex + 1`.

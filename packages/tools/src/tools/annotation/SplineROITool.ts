@@ -46,7 +46,7 @@ import {
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { ISpline } from './splines/types/ISpline';
+import { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
