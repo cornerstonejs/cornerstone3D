@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
-import { ISpline } from '../tools/annotation/splines/types';
+import { ISpline } from './';
 
 interface ROICachedStats {
   [targetId: string]: {
