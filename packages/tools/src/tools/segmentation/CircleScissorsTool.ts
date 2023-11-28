@@ -261,6 +261,7 @@ class CircleScissorsTool extends BaseTool {
       viewPlaneNormal,
       segmentationId,
       viewUp,
+      strategySpecificConfiguration: {},
     };
 
     this.applyActiveStrategy(enabledElement, operationData);
