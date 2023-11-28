@@ -161,7 +161,6 @@ addDropdownToToolbar({
 });
 
 const thresholdOptions = new Map<string, any>();
-thresholdOptions.set('None', { threshold: null, isDynamic: false });
 thresholdOptions.set('CT Fat: (-150, -70)', {
   threshold: [-150, -70],
   isDynamic: false,
@@ -445,6 +444,11 @@ async function run() {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]
+  );
+
+  segmentation.segmentIndex.setPreviewSegmentIndex(
+    segmentationId,
+    previewSegmentIndex + 1
   );
 
   segmentation.segmentIndex.setPreviewSegmentIndex(

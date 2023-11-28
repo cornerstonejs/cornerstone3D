@@ -39,6 +39,14 @@ export default function initializeIslandRemoval(
       return;
     }
 
+    const boundaryMap = new Map<number, any>();
+    const onBoundary = (i, j, k) => {
+      const index = k * frameSize + j * width + i;
+      const value = scalarData[index];
+      const pointIJK = [i, j, k];
+      boundaryMap.set(index, { index, value, pointIJK });
+    };
+
     // Returns true for new colour, and false otherwise
     const getter = (i, j, k) => {
       if (
@@ -53,7 +61,12 @@ export default function initializeIslandRemoval(
       }
 
       const oldVal = scalarData[i + j * width + k * frameSize];
-      return oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
+      const isIn =
+        oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
+      if (!isIn) {
+        onBoundary(i, j, k);
+      }
+      return isIn;
     };
 
     const { dimensions, scalarData } = operationData;
@@ -62,7 +75,7 @@ export default function initializeIslandRemoval(
 
     const modifiedSlices = new Set<number>();
 
-    const floodedIndex = 255;
+    let floodedIndex = 255;
 
     let floodedCount = 0;
 
@@ -129,6 +142,55 @@ export default function initializeIslandRemoval(
         'not handled',
         floodedCount - previewCount
       );
+    }
+
+    const islandMap = new Map(boundaryMap);
+    const handledSet = new Set<number>();
+
+    // Flood now with the final value
+    floodedIndex = previewSegmentIndex;
+
+    for (const [index, value] of islandMap.entries()) {
+      if (handledSet.has(index)) {
+        continue;
+      }
+      const { pointIJK } = value;
+      handledSet.add(index);
+      const floodMap = new Map<number, any>();
+      let isInternal = true;
+      const onFloodInternal = (i, j, k) => {
+        const index = k * frameSize + j * width + i;
+        const value = scalarData[index];
+        const pointIJK = [i, j, k];
+        const mapValue = { index, value, pointIJK };
+        floodMap.set(index, mapValue);
+        if (
+          (boundsIJK[0][0] !== boundsIJK[0][1] &&
+            (i === boundsIJK[0][0] || i === boundsIJK[0][1])) ||
+          (boundsIJK[1][0] !== boundsIJK[1][1] &&
+            (j === boundsIJK[1][0] || j === boundsIJK[1][1])) ||
+          (boundsIJK[2][0] !== boundsIJK[2][1] &&
+            (k === boundsIJK[2][0] || k === boundsIJK[2][1]))
+        ) {
+          isInternal = false;
+        }
+        // Skip duplicating fills
+        if (islandMap.has(index)) {
+          handledSet.add(index);
+        }
+      };
+      boundaryMap.clear();
+      floodFill(getter, pointIJK, {
+        onFlood: onFloodInternal,
+        diagonals: false,
+      });
+      if (isInternal) {
+        for (const [index, value] of floodMap.entries()) {
+          const { pointIJK } = value;
+          // @ts-ignore
+          onFlood(...pointIJK);
+        }
+      }
     }
 
     triggerSegmentationDataModified(
