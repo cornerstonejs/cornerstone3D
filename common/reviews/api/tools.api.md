@@ -3679,6 +3679,7 @@ type ScrollOptions_2 = {
     volumeId?: string;
     debounceLoading?: boolean;
     loop?: boolean;
+    scrollSlabs?: boolean;
 };
 
 // @public (undocumented)
@@ -4026,6 +4027,7 @@ export class StackScrollMouseWheelTool extends BaseTool {
             invert: boolean;
             debounceIfNotLoaded: boolean;
             loop: boolean;
+            scrollSlabs: boolean;
         };
     });
     // (undocumented)

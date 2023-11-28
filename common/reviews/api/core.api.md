@@ -873,7 +873,7 @@ function getSpacingInNormalDirection(imageVolume: IImageVolume | {
 }, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string, useSlabThickness?: boolean): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
     actorUID: string;
@@ -904,7 +904,7 @@ function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 function getVolumeLoaderSchemes(): string[];
 
 // @public (undocumented)
-function getVolumeSliceRangeInfo(viewport: IVolumeViewport, volumeId: string): {
+function getVolumeSliceRangeInfo(viewport: IVolumeViewport, volumeId: string, useSlabThickness?: boolean): {
     sliceRange: ActorSliceRange;
     spacingInNormalDirection: number;
     camera: ICamera;
@@ -914,7 +914,7 @@ function getVolumeSliceRangeInfo(viewport: IVolumeViewport, volumeId: string): {
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
-function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string): {
+function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string, useSlabThickness?: boolean): {
     numScrollSteps: number;
     currentStepIndex: number;
     sliceRangeInfo: {
