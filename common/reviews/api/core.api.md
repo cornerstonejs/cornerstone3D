@@ -172,7 +172,7 @@ enum BlendModes {
 export const cache: Cache_2;
 
 // @public (undocumented)
-function calculateViewportsSpatialRegistration(viewport1: IStackViewport, viewport2: IStackViewport): void;
+function calculateViewportsSpatialRegistration(viewport1: IStackViewport | IVolumeViewport, viewport2: IStackViewport | IVolumeViewport): void;
 
 // @public (undocumented)
 enum CalibrationTypes {

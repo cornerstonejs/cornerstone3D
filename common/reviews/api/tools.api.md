@@ -1187,6 +1187,9 @@ const CORNERSTONE_COLOR_LUT: number[][];
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
+function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 function createLabelmapVolumeForViewport(input: {
     viewportId: string;
     renderingEngineId: string;
@@ -1209,7 +1212,7 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
-function createStackImageSynchronizer(synchronizerName: string): Synchronizer;
+const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 
 // @public (undocumented)
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any): Synchronizer;
@@ -4261,6 +4264,7 @@ declare namespace synchronizers {
         createCameraPositionSynchronizer,
         createVOISynchronizer,
         createZoomPanSynchronizer,
+        createImageSliceSynchronizer,
         createStackImageSynchronizer
     }
 }
