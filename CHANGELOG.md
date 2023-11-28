@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.32.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.32.1...v1.32.2) (2023-11-24)
+
+### Bug Fixes
+
+- Inclusion of this build in OHIF was causing an import loop ([#911](https://github.com/cornerstonejs/cornerstone3D/issues/911)) ([997f5da](https://github.com/cornerstonejs/cornerstone3D/commit/997f5dab3bfb745d023525d90fc539c815ae4aa1))
+
 ## [1.32.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.32.0...v1.32.1) (2023-11-21)
 
 ### Bug Fixes

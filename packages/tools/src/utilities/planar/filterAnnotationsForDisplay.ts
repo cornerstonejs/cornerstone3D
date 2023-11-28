@@ -7,8 +7,8 @@ import {
 } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
-import { Annotations } from '../../types';
-import { annotationFrameRange } from '..';
+import type { Annotations } from '../../types';
+import annotationFrameRange from '../annotationFrameRange';
 
 const baseUrlExtractor = /(videoId:|imageId:|volumeId:)([a-zA-Z]*:)/;
 
