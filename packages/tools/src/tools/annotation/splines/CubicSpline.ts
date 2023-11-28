@@ -1,3 +1,4 @@
+import { vec4, mat4 } from 'gl-matrix';
 import { Types } from '@cornerstonejs/core';
 import { Spline } from './Spline';
 import * as math from '../../../utilities/math';
@@ -123,28 +124,22 @@ abstract class CubicSpline extends Spline {
     //                       | m20 m21 m22 m23 |  | P2 |
     //                       | m30 m31 m32 m33 |  | P3 |
 
-    // prettier-ignore
-    const [
-      m00, m01, m02, m03,
-      m10, m11, m12, m13,
-      m20, m21, m22, m23,
-      m30, m31, m32, m33,
-    ] = transformMatrix;
-
     const tt = t * t;
     const ttt = tt * t;
+    const tValues = vec4.fromValues(1, t, tt, ttt);
 
-    // Influential field values which tell us how much P0, P1, P2 and P3 influences
+    // Influential field values which tell us how much P0, P1, P2 and P3 influence
     // each point of the curve
-    const q1 = m00 * 1 + m10 * t + m20 * tt + m30 * ttt;
-    const q2 = m01 * 1 + m11 * t + m21 * tt + m31 * ttt;
-    const q3 = m02 * 1 + m12 * t + m22 * tt + m32 * ttt;
-    const q4 = m03 * 1 + m13 * t + m23 * tt + m33 * ttt;
+    const qValues = vec4.transformMat4(
+      vec4.create(),
+      tValues,
+      transformMatrix as mat4
+    );
 
-    const tx = p0[0] * q1 + p1[0] * q2 + p2[0] * q3 + p3[0] * q4;
-    const ty = p0[1] * q1 + p1[1] * q2 + p2[1] * q3 + p3[1] * q4;
-
-    return [tx, ty];
+    return [
+      vec4.dot(qValues, vec4.fromValues(p0[0], p1[0], p2[0], p3[0])),
+      vec4.dot(qValues, vec4.fromValues(p0[1], p1[1], p2[1], p3[1])),
+    ] as Types.Point2;
   }
 
   private _getCurveSegmentPoints(
