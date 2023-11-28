@@ -149,10 +149,7 @@ addToggleButtonToToolbar({
   title: 'Toggle Slab Scroll',
   defaultToggle: false,
   onClick: (toggle) => {
-    let scrollSlabs = false;
-    if (toggle) {
-      scrollSlabs = true;
-    }
+    const scrollSlabs = !!toggle;
     toolGroup.setToolConfiguration(StackScrollMouseWheelTool.toolName, {
       scrollSlabs,
     });

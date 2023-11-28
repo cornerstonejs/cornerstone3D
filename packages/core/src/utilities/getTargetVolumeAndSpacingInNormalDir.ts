@@ -30,9 +30,8 @@ const isPrimaryVolume = (volume): boolean =>
  * @param camera - current camera
  * @param targetVolumeId - If a target volumeId is given that volume
  * is forced to be used.
- * @param useSlabThickness - If true, the spacing in the normal direction
- * will be calculated based on the slab thickness instead of the spacing in the
- *
+ * @param useSlabThickness - If true, the number of steps will be calculated
+ * based on the slab thickness instead of the spacing in the normal direction
  * @returns An object containing the imageVolume and spacingInNormalDirection.
  *
  */
