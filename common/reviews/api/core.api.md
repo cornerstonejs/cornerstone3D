@@ -792,9 +792,6 @@ declare namespace EventTypes {
 }
 
 // @public (undocumented)
-function findMapKeyByValue(map: any, searchValue: any): any;
-
-// @public (undocumented)
 type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
@@ -3048,8 +3045,7 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        getBufferConfiguration,
-        findMapKeyByValue
+        getBufferConfiguration
     }
 }
 export { utilities }
