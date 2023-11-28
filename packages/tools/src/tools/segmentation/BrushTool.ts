@@ -1,4 +1,4 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
@@ -19,7 +19,7 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { Events, ToolModes } from '../../enums';
+import { Events, ToolModes, SegmentationRepresentations } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -34,7 +34,11 @@ import {
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
+import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 /**
  * @public
@@ -42,9 +46,11 @@ import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
-    segmentation: Types.IImageVolume;
-    imageVolume: Types.IImageVolume; //
     segmentsLocked: number[]; //
+    segmentationRepresentationUID?: string;
+    imageIdReferenceMap?: Map<string, string>;
+    volumeId?: string;
+    referencedVolumeId?: string;
   } | null;
   private _hoverData?: {
     brushCursor: any;
@@ -99,13 +105,14 @@ class BrushTool extends BaseTool {
     this._hoverData = undefined;
   }
 
-  createEditData(element) {
+  preMouseDownCallback = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): boolean => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
-
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
 
     const toolGroupId = this.toolGroupId;
 
@@ -117,40 +124,78 @@ class BrushTool extends BaseTool {
       );
     }
 
-    const { segmentationId, type } = activeSegmentationRepresentation;
+    const { segmentationId, type, segmentationRepresentationUID } =
+      activeSegmentationRepresentation;
+
+    if (type === SegmentationRepresentations.Contour) {
+      throw new Error('Not implemented yet');
+    }
+
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
     const { representationData } =
       segmentationState.getSegmentation(segmentationId);
 
-    // Todo: are we going to support contour editing with this tool?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
-    const segmentation = cache.getVolume(volumeId);
-
-    const actors = viewport.getActors();
-
-    // Note: For tools that need the source data. Assumed to use
-    // First volume actor for now.
-    const firstVolumeActorUID = actors[0].uid;
-    const imageVolume = cache.getVolume(firstVolumeActorUID);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
     const viewportIdsToRender = [viewport.id];
 
-    return {
-      segmentation,
-      imageVolume,
-      segmentsLocked,
-    };
-  }
+    if (isVolumeSegmentation(labelmapData)) {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+      const actors = viewport.getActors();
 
-  preMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
-  ): boolean => {
-    const eventData = evt.detail;
-    const { element } = eventData;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-    this._editData = this.createEditData(element);
+      // Note: For tools that need the source data. Assumed to use
+      // First volume actor for now.
+      const firstVolumeActorUID = actors[0].uid;
+
+      this._editData = {
+        volumeId,
+        referencedVolumeId: firstVolumeActorUID,
+        segmentsLocked,
+        segmentationRepresentationUID,
+      };
+    } else {
+      const { imageIdReferenceMap } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      const currentImageId = viewport.getCurrentImageId();
+
+      if (!imageIdReferenceMap.get(currentImageId)) {
+        // if there is no stack segmentation slice for the current image
+        // we should not allow the user to perform any operation
+        return;
+      }
+
+      // here we should identify if we can perform sphere manipulation
+      // for these stack of images, if the metadata is not present
+      // to create a volume or if there are inconsistencies between
+      // the image metadata we should not allow the sphere manipulation
+      // and should throw an error or maybe simply just allow circle manipulation
+      // and not sphere manipulation
+      if (this.configuration.activeStrategy.includes('SPHERE')) {
+        console.warn(
+          'Sphere manipulation is not supported for this stack of images yet'
+        );
+        return;
+
+        // Todo: add sphere manipulation support for stacks of images
+        // we should basically check if the stack constructs a valid volume
+        // meaning all the metadata is present and consistent
+        // then we should create a volume and use it as a reference
+        // ideally a tiny volume that does not exceeds the boundary of the
+        // sphere brush size
+        // csUtils.isValidVolume(referencedImageIds
+      }
+
+      this._editData = {
+        imageIdReferenceMap,
+        segmentsLocked,
+        segmentationRepresentationUID,
+      };
+    }
 
     this._activateDraw(element);
 
@@ -160,15 +205,7 @@ class BrushTool extends BaseTool {
 
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
-      this._hoverData.viewportIdsToRender
-    );
-
-    this.acceptPreview(element);
-
-    this.applyActiveStrategyEvent(
-      enabledElement,
-      this.getOperationData(),
-      'initDown'
+      viewportIdsToRender
     );
 
     return true;
@@ -180,7 +217,11 @@ class BrushTool extends BaseTool {
     }
   };
 
-  private createHoverData(element, centerCanvas?) {
+  private updateCursor(evt: EventTypes.InteractionEventType) {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const { currentPoints } = eventData;
+    const centerCanvas = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
 
@@ -225,7 +266,7 @@ class BrushTool extends BaseTool {
       data: {},
     };
 
-    return {
+    this._hoverData = {
       brushCursor,
       centerCanvas,
       segmentIndex,
@@ -234,17 +275,6 @@ class BrushTool extends BaseTool {
       segmentColor,
       viewportIdsToRender,
     };
-  }
-
-  private updateCursor(evt: EventTypes.InteractionEventType) {
-    const eventData = evt.detail;
-    const { element } = eventData;
-    const { currentPoints } = eventData;
-    const centerCanvas = currentPoints.canvas;
-    const enabledElement = getEnabledElement(element);
-    this._hoverData = this.createHoverData(element, centerCanvas);
-    const { renderingEngine } = enabledElement;
-    const { viewportIdsToRender } = this._hoverData;
 
     this._calculateCursor(element, centerCanvas);
 
@@ -262,33 +292,26 @@ class BrushTool extends BaseTool {
 
     this.updateCursor(evt);
 
-    const { viewportIdsToRender } = this._hoverData;
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      brushCursor,
+      viewportIdsToRender,
+    } = this._hoverData;
+
+    const { data } = brushCursor;
+    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
 
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       viewportIdsToRender
     );
 
-    this.applyActiveStrategy(enabledElement, this.getOperationData());
-  };
-
-  protected getOperationData(element?) {
-    const { imageVolume, segmentation, segmentsLocked } =
-      this._editData || this.createEditData(element);
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-    } = this._hoverData || this.createHoverData(element);
-    const { data, metadata = {} } = brushCursor || {};
-    const { viewPlaneNormal, viewUp } = metadata;
     const operationData = {
-      points: data?.handles?.points,
-      volume: segmentation, // todo: just pass the segmentationId instead
-      imageVolume,
+      ...this._editData,
+      points: data.handles.points,
       segmentIndex,
-      segmentsLocked,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,
@@ -297,8 +320,9 @@ class BrushTool extends BaseTool {
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
     };
-    return operationData;
-  }
+
+    this.applyActiveStrategy(enabledElement, operationData);
+  };
 
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
@@ -361,26 +385,41 @@ class BrushTool extends BaseTool {
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
-    const enabledElement = getEnabledElement(element);
 
-    // Fill the mouse up pixel before stopping drawing
-    const operationData = this.getOperationData(element);
-    this.applyActiveStrategy(enabledElement, operationData);
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      brushCursor,
+    } = this._hoverData;
+
+    const { data } = brushCursor;
+    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
 
     this._deactivateDraw(element);
 
     resetElementCursor(element);
 
-    const { viewport } = enabledElement;
+    const enabledElement = getEnabledElement(element);
 
-    this._editData = null;
     this.updateCursor(evt);
 
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
+    const operationData = {
+      points: data.handles.points,
+      ...this._editData,
+      segmentIndex,
+      viewPlaneNormal,
+      toolGroupId: this.toolGroupId,
+      segmentationId,
+      segmentationRepresentationUID,
+      viewUp,
+      strategySpecificConfiguration:
+        this.configuration.strategySpecificConfiguration,
+    };
 
-    this.applyActiveStrategyEvent(enabledElement, operationData, 'completeUp');
+    this._editData = null;
+
+    this.applyActiveStrategy(enabledElement, operationData);
   };
 
   /**
@@ -418,31 +457,6 @@ class BrushTool extends BaseTool {
       this._endCallback as EventListener
     );
   };
-
-  /**
-   * Cancels any preview view being shown, resetting any segments being shown.
-   */
-  public cancelPreview(element) {
-    const enabledElement = getEnabledElement(element);
-    this.applyActiveStrategyEvent(
-      enabledElement,
-      this.getOperationData(element),
-      'cancelPreview'
-    );
-  }
-
-  /**
-   * Accepts a preview, marking it as the active segment.
-   */
-  public acceptPreview(element) {
-    const enabledElement = getEnabledElement(element);
-
-    this.applyActiveStrategyEvent(
-      enabledElement,
-      this.getOperationData(enabledElement),
-      'acceptPreview'
-    );
-  }
 
   public invalidateBrushCursor() {
     if (this._hoverData !== undefined) {
@@ -511,16 +525,6 @@ class BrushTool extends BaseTool {
       circleUID,
       center as Types.Point2,
       radius,
-      {
-        color,
-      }
-    );
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      '1',
-      center as Types.Point2,
-      2,
       {
         color,
       }

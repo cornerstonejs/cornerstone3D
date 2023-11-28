@@ -67,6 +67,7 @@ import triggerEvent from './utilities/triggerEvent';
 import {
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
 } from './RenderingEngine/helpers';
 
 // Add new types here so that they can be imported singly as required.
@@ -127,6 +128,7 @@ export {
   utilities,
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

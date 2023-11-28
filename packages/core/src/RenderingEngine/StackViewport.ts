@@ -21,6 +21,7 @@ import {
   isImageActor,
   actorIsA,
   colormap as colormapUtils,
+  updateVTKImageDataWithCornerstoneImage,
   imageRetrieveMetadataProvider,
 } from '../utilities';
 import type {
@@ -44,6 +45,7 @@ import type {
   Mat3,
   ColormapPublic,
   IImageCalibration,
+  IStackInput,
   IImagesLoader,
   ImageLoadListener,
 } from '../types';
@@ -1489,7 +1491,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns image metadata: bitsAllocated, number of components, origin,
    *  direction, dimensions, spacing, number of voxels.
    */
-  private _getImageDataMetadata(image: IImage): ImageDataMetaData {
+  public getImageDataMetadata(image: IImage): ImageDataMetaData {
     // TODO: Creating a single image should probably not require a metadata provider.
     // We should define the minimum we need to display an image and it should live on
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
@@ -1582,9 +1584,36 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
   }
 
+  createVTKImageData({
+    origin,
+    direction,
+    dimensions,
+    spacing,
+    numComps,
+    pixelArray,
+  }) {
+    const values = new pixelArray.constructor(pixelArray.length);
+
+    // Todo: I guess nothing should be done for use16bit?
+    const scalarArray = vtkDataArray.newInstance({
+      name: 'Pixels',
+      numberOfComponents: numComps,
+      values: values,
+    });
+
+    const imageData = vtkImageData.newInstance();
+
+    imageData.setDimensions(dimensions);
+    imageData.setSpacing(spacing);
+    imageData.setDirection(direction);
+    imageData.setOrigin(origin);
+    imageData.getPointData().setScalars(scalarArray);
+
+    return imageData;
+  }
   /**
    * Creates vtkImagedata based on the image object, it creates
-   * and empty scalar data for the image based on the metadata
+   * empty scalar data for the image based on the metadata
    * tags (e.g., bitsAllocated)
    *
    * @param image - cornerstone Image object
@@ -1597,22 +1626,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     numComps,
     pixelArray,
   }): void {
-    const values = new pixelArray.constructor(pixelArray.length);
-
-    // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numComps,
-      values: values,
+    this._imageData = this.createVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numComps,
+      pixelArray,
     });
-
-    this._imageData = vtkImageData.newInstance();
-
-    this._imageData.setDimensions(dimensions);
-    this._imageData.setSpacing(spacing);
-    this._imageData.setDirection(direction);
-    this._imageData.setOrigin(origin);
-    this._imageData.getPointData().setScalars(scalarArray);
   }
 
   /**
@@ -1750,40 +1771,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Update the pixel data in the vtkImageData object with the pixelData
     // from the loaded Cornerstone image
-    this._updatePixelData(image);
-  }
-
-  private _updatePixelData(image: IImage) {
-    const pixelData = image.getPixelData();
-    const scalars = this._imageData.getPointData().getScalars();
-    const scalarData = scalars.getData() as
-      | Uint8Array
-      | Float32Array
-      | Uint16Array
-      | Int16Array;
-
-    // if the color image is loaded with CPU previously, it loads it
-    // with RGBA, and here we need to remove the A channel from the
-    // pixel data.
-    if (image.color && image.rgba) {
-      const newPixelData = new Uint8Array(image.columns * image.rows * 3);
-      for (let i = 0; i < image.columns * image.rows; i++) {
-        newPixelData[i * 3] = pixelData[i * 4];
-        newPixelData[i * 3 + 1] = pixelData[i * 4 + 1];
-        newPixelData[i * 3 + 2] = pixelData[i * 4 + 2];
-      }
-      // modify the image object to have the correct pixel data for later
-      // use.
-      image.rgba = false;
-      image.getPixelData = () => newPixelData;
-      scalarData.set(newPixelData);
-    } else {
-      scalarData.set(pixelData);
-    }
-
-    // Trigger modified on the VTK Object so the texture is updated
-    // TODO: evaluate directly changing things with texSubImage3D later
-    this._imageData.modified();
+    updateVTKImageDataWithCornerstoneImage(this._imageData, image);
   }
 
   /**
@@ -2117,7 +2105,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   };
 
   private _updateToDisplayImageCPU(image: IImage) {
-    const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
+    const metadata = this.getImageDataMetadata(image) as ImageDataMetaData;
 
     const viewport = getDefaultViewport(
       this.canvas,
@@ -2157,6 +2145,43 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._cpuFallbackEnabledElement.transform = calculateTransform(
       this._cpuFallbackEnabledElement
     );
+  }
+
+  /**
+   * This method is used to add images to the stack viewport.
+   * It takes an array of stack inputs, each containing an imageId and an actor UID.
+   * For each stack input, it retrieves the image from the cache and creates a VTK image data object.
+   * It then creates an actor mapper for the image data and adds it to the list of actors.
+   * Finally, it sets the actors for the stack viewport.
+   *
+   * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
+   */
+  public async addImages(stackInputs: Array<IStackInput>): Promise<void> {
+    const actors = this.getActors();
+    stackInputs.forEach((stackInput) => {
+      const image = cache.getImage(stackInput.imageId);
+
+      const { origin, dimensions, direction, spacing, numComps } =
+        this.getImageDataMetadata(image);
+
+      const imagedata = this.createVTKImageData({
+        origin,
+        dimensions,
+        direction,
+        spacing,
+        numComps,
+        pixelArray: image.getPixelData(),
+      });
+
+      const imageActor = this.createActorMapper(imagedata);
+      if (imageActor) {
+        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        if (stackInput.callback) {
+          stackInput.callback({ imageActor, imageId: stackInput.imageId });
+        }
+      }
+    });
+    this.setActors(actors);
   }
 
   /**
@@ -2245,7 +2270,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       spacing,
       numComps,
       imagePixelModule,
-    } = this._getImageDataMetadata(image);
+    } = this.getImageDataMetadata(image);
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one

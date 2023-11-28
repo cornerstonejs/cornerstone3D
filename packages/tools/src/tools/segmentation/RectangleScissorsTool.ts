@@ -12,12 +12,16 @@ import { fillInsideRectangle } from './strategies/fillRectangle';
 import { eraseInsideRectangle } from './strategies/eraseRectangle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 
-import { Events } from '../../enums';
+import { Events, SegmentationRepresentations } from '../../enums';
 import { drawRect as drawRectSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -29,6 +33,7 @@ import {
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -41,9 +46,13 @@ class RectangleScissorsTool extends BaseTool {
   static toolName;
   _throttledCalculateCachedStats: any;
   editData: {
+    //
+    imageIdReferenceMap: Map<string, string>;
+    volumeId: string;
+    referencedVolumeId: string;
+    //
     annotation: any;
     segmentationId: string;
-    segmentation: any;
     segmentIndex: number;
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -116,10 +125,9 @@ class RectangleScissorsTool extends BaseTool {
     );
 
     const { representationData } = getSegmentation(segmentationId);
-
-    // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
-    const segmentation = cache.getVolume(volumeId);
+    const labelmapData = representationData[
+      SegmentationRepresentations.Labelmap
+    ] as LabelmapSegmentationData;
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -150,20 +158,38 @@ class RectangleScissorsTool extends BaseTool {
       element,
       this.getToolName()
     );
-
     this.editData = {
       annotation,
-      segmentation,
       segmentIndex,
+      segmentationId,
       segmentsLocked,
       segmentColor,
-      segmentationId,
       viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-    };
+      segmentationRepresentationUID,
+    } as any;
+
+    if (isVolumeSegmentation(labelmapData as LabelmapSegmentationData)) {
+      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+
+      this.editData = {
+        ...this.editData,
+        volumeId,
+        referencedVolumeId: segmentation.referencedVolumeId,
+      };
+    } else {
+      const { imageIdReferenceMap } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      this.editData = {
+        ...this.editData,
+        imageIdReferenceMap,
+      };
+    }
 
     this._activateDraw(element);
 
@@ -257,15 +283,7 @@ class RectangleScissorsTool extends BaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const {
-      annotation,
-      newAnnotation,
-      hasMoved,
-      segmentation,
-      segmentationId,
-      segmentIndex,
-      segmentsLocked,
-    } = this.editData;
+    const { annotation, newAnnotation, hasMoved } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
@@ -279,22 +297,14 @@ class RectangleScissorsTool extends BaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+
+    const operationData = {
+      ...this.editData,
+      points: data.handles.points,
+    };
 
     this.editData = null;
     this.isDrawing = false;
-
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
-
-    const operationData = {
-      points: data.handles.points,
-      volume: segmentation,
-      segmentationId,
-      segmentIndex,
-      segmentsLocked,
-    };
 
     this.applyActiveStrategy(enabledElement, operationData);
   };

@@ -11,8 +11,14 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
-import { uuidv4 } from '../utilities';
-import { Point3, Metadata, EventTypes, Mat3 } from '../types';
+import { getBufferConfiguration, uuidv4 } from '../utilities';
+import {
+  Point3,
+  Metadata,
+  EventTypes,
+  Mat3,
+  PixelDataTypedArray,
+} from '../types';
 import { getConfiguration } from '../init';
 
 interface VolumeLoaderOptions {
@@ -27,7 +33,7 @@ interface DerivedVolumeOptions {
   };
 }
 interface LocalVolumeOptions {
-  scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+  scalarData: PixelDataTypedArray;
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;
@@ -272,32 +278,17 @@ export async function createAndCacheDerivedVolume(
   const scalarData = referencedVolume.getScalarData();
   const scalarLength = scalarData.length;
 
-  let numBytes, TypedArray;
-
   const { useNorm16Texture } = getConfiguration().rendering;
 
   // If target buffer is provided
-  if (targetBuffer) {
-    if (targetBuffer.type === 'Float32Array') {
-      numBytes = scalarLength * 4;
-      TypedArray = Float32Array;
-    } else if (targetBuffer.type === 'Uint8Array') {
-      numBytes = scalarLength;
-      TypedArray = Uint8Array;
-    } else if (useNorm16Texture && targetBuffer.type === 'Uint16Array') {
-      numBytes = scalarLength * 2;
-      TypedArray = Uint16Array;
-    } else if (useNorm16Texture && targetBuffer.type === 'Int16Array') {
-      numBytes = scalarLength * 2;
-      TypedArray = Uint16Array;
-    } else {
-      throw new Error('TargetBuffer should be Float32Array or Uint8Array');
+  const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
+    targetBuffer?.type,
+    scalarLength,
+    {
+      use16BitTexture: useNorm16Texture,
+      isVolumeBuffer: true,
     }
-  } else {
-    // Use float32 if no targetBuffer is provided
-    numBytes = scalarLength * 4;
-    TypedArray = Float32Array;
-  }
+  );
 
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes);
@@ -308,9 +299,9 @@ export async function createAndCacheDerivedVolume(
   let volumeScalarData;
   if (targetBuffer?.sharedArrayBuffer) {
     const buffer = new SharedArrayBuffer(numBytes);
-    volumeScalarData = new TypedArray(buffer);
+    volumeScalarData = new TypedArrayConstructor(buffer);
   } else {
-    volumeScalarData = new TypedArray(scalarLength);
+    volumeScalarData = new TypedArrayConstructor(scalarLength);
   }
 
   // Todo: handle more than one component for segmentation (RGB)

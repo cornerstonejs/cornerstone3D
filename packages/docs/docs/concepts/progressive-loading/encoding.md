@@ -1,8 +1,6 @@
 ---
-
 id: encoding
 title: Encoding
-
 ---
 
 ## Types of Partial Resolution
