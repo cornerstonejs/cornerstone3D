@@ -41,14 +41,15 @@ export default function getToolsWithActionsForMouseEvent(
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];
     const tool = toolGroup.getToolInstance(toolName);
-    const actions = tool.configuration?.actions;
+    const actionsConfig = tool.configuration?.actions ?? {};
+    const actions = Object.values(actionsConfig);
 
     if (!actions?.length || !toolModes.includes(tool.mode)) {
       continue;
     }
 
     const action = actions.find(
-      (action) =>
+      (action: any) =>
         action.bindings.length &&
         action.bindings.some(
           (binding) =>

@@ -68,15 +68,21 @@ const DEFAULT_SPLINE_CONFIG = {
 };
 
 enum SplineTypesEnum {
-  CARDINAL = 'CARDINAL',
-  LINEAR = 'LINEAR',
-  CATMULLROM = 'CATMULLROM',
-  BSPLINE = 'BSPLINE',
+  Cardinal = 'CARDINAL',
+  Linear = 'LINEAR',
+  CatmullRom = 'CATMULLROM',
+  BSpline = 'BSPLINE',
+}
+
+enum SplineToolActions {
+  AddControlPoint = 'addControlPoint',
+  DeleteControlPoint = 'deleteControlPoint',
 }
 
 class SplineROITool extends AnnotationTool {
   static toolName;
   static SplineTypes = SplineTypesEnum;
+  static Actions = SplineToolActions;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -103,29 +109,29 @@ class SplineROITool extends AnnotationTool {
         getTextLines: defaultGetTextLines,
         spline: {
           configuration: {
-            [SplineTypesEnum.CARDINAL]: {
+            [SplineTypesEnum.Cardinal]: {
               Class: CardinalSpline,
               scale: 0.5,
             },
-            [SplineTypesEnum.CATMULLROM]: {
+            [SplineTypesEnum.CatmullRom]: {
               Class: CatmullRomSpline,
             },
-            [SplineTypesEnum.LINEAR]: {
+            [SplineTypesEnum.Linear]: {
               Class: LinearSpline,
             },
-            [SplineTypesEnum.BSPLINE]: {
+            [SplineTypesEnum.BSpline]: {
               Class: BSpline,
               controlPointAdditionEnabled: false,
               controlPointDeletionEnabled: false,
               showControlPointsConnectors: true,
             },
           },
-          type: SplineTypesEnum.CATMULLROM,
+          type: SplineTypesEnum.CatmullRom,
           drawPreviewEnabled: true,
           lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
-        actions: [
-          {
+        actions: {
+          [SplineToolActions.AddControlPoint]: {
             method: 'addControlPointCallback',
             bindings: [
               {
@@ -134,7 +140,7 @@ class SplineROITool extends AnnotationTool {
               },
             ],
           },
-          {
+          [SplineToolActions.DeleteControlPoint]: {
             method: 'deleteControlPointCallback',
             bindings: [
               {
@@ -143,7 +149,7 @@ class SplineROITool extends AnnotationTool {
               },
             ],
           },
-        ],
+        },
       },
     }
   ) {
@@ -780,7 +786,7 @@ class SplineROITool extends AnnotationTool {
           'previewSplineChange',
           previewPolylinePoints,
           {
-            color: 'rgba(180, 180, 180, 0.5)',
+            color: '#9EA0CA',
             lineDash,
             lineWidth,
           }
@@ -801,7 +807,7 @@ class SplineROITool extends AnnotationTool {
           'controlPointsConnectors',
           controlPointsConnectors,
           {
-            color: 'rgba(255, 255,, 255, 0.5)',
+            color: 'rgba(255, 255, 255, 0.5)',
             lineDash,
             lineWidth,
           }
