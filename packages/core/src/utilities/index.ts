@@ -59,7 +59,6 @@ import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
-import { findMapKeyByValue } from './findMapKeyByValue';
 
 // name spaces
 import * as planar from './planar';
@@ -134,5 +133,4 @@ export {
   genericMetadataProvider,
   isVideoTransferSyntax,
   getBufferConfiguration,
-  findMapKeyByValue,
 };
