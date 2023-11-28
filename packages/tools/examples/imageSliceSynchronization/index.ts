@@ -87,8 +87,6 @@ const instructions = document.createElement('p');
 instructions.innerText = `
 Left Click to change window/level
 Use the mouse wheel to scroll through the stack.
-
-Toggle the controls to add viewports to the synchronization groups.
 `;
 
 content.append(instructions);
