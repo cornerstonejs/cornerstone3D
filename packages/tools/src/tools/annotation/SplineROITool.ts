@@ -786,7 +786,7 @@ class SplineROITool extends AnnotationTool {
           'previewSplineChange',
           previewPolylinePoints,
           {
-            color: '#9EA0CA',
+            color: '#f00',
             lineDash,
             lineWidth,
           }

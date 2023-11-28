@@ -81,6 +81,8 @@ interface AdvancedMagnifyAnnotation extends Annotation {
 export class AdvancedMagnifyTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    static Actions: typeof AdvancedMagnifyToolActions;
+    // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => AdvancedMagnifyAnnotation;
@@ -4223,6 +4225,8 @@ interface SplineROIAnnotation extends Annotation {
 export class SplineROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    static Actions: typeof SplineToolActions;
+    // (undocumented)
     addControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => SplineROIAnnotation;
@@ -4256,6 +4260,8 @@ export class SplineROITool extends AnnotationTool {
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _renderStats: (annotation: any, viewport: any, enabledElement: any, svgDrawingHelper: any) => void;
+    // (undocumented)
+    static SplineTypes: typeof SplineTypesEnum;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
