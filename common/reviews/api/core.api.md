@@ -19,6 +19,14 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
+type AABB2 = {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+};
+
+// @public (undocumented)
 type Actor = vtkActor;
 
 // @public (undocumented)
@@ -2920,6 +2928,7 @@ declare namespace Types {
         ViewportPreset,
         Metadata,
         OrientationVectors,
+        AABB2,
         Point2,
         Point3,
         Point4,
