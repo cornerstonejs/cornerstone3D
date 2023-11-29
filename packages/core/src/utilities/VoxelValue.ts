@@ -12,6 +12,11 @@ export default class VoxelValue<T> {
     [Infinity, -Infinity],
     [Infinity, -Infinity],
   ] as BoundsIJK;
+
+  // Provide direct access to the underlying data, if any
+  public scalarData: Types.VolumeScalarData;
+  public map: Map<number, T>;
+
   points: Set<number>;
   dimensions: Types.Point3;
   width: number;
@@ -101,11 +106,13 @@ export default class VoxelValue<T> {
     dimensions: Types.Point3,
     scalarData
   ): VoxelValue<number> {
-    return new VoxelValue(
+    const voxels = new VoxelValue(
       dimensions,
       (index) => scalarData[index],
       (index, v) => (scalarData[index] = v)
     );
+    voxels.scalarData = scalarData;
+    return voxels;
   }
 
   /**
@@ -118,6 +125,7 @@ export default class VoxelValue<T> {
       map.get.bind(map),
       (index, v) => map.set(index, v) && true
     );
+    voxelValue.map = map;
     return voxelValue;
   }
 
@@ -129,12 +137,12 @@ export default class VoxelValue<T> {
    * if it is different.
    */
   public static historyVoxelValue<T>(
-    dimension: Types.Point3,
     sourceVoxelValue: VoxelValue<T>
   ): VoxelValue<T> {
     const map = new Map<number, T>();
+    const { dimensions } = sourceVoxelValue;
     const voxelValue = new VoxelValue(
-      dimension,
+      dimensions,
       (index) => map.get(index),
       (index, v) => {
         if (!map.has(index)) {

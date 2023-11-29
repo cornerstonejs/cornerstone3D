@@ -1,12 +1,14 @@
 import type { Types } from '@cornerstonejs/core';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { utilities } from '@cornerstonejs/core';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import isWithinThreshold from './utils/isWithinThreshold';
-import type BoundsIJK from '../../../types/BoundsIJK';
 import initializeSetValue from './utils/initializeSetValue';
 import initializePreview from './utils/initializePreview';
 import initializeRegionFill from './utils/initializeRegionFill';
+import initializeThreshold from './utils/initializeThreshold';
+import { getStrategyData } from './utils/getStrategyData';
+
+const { VoxelValue } = utilities;
 
 export type OperationData = {
   segmentationId: string;
@@ -17,6 +19,10 @@ export type OperationData = {
    * The final segment value to apply for this colour at the end
    */
   segmentIndex: number;
+  /**
+   * The colour to apply as an intermediate value
+   */
+  previewSegmentIndex: number;
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
@@ -25,25 +31,25 @@ export type OperationData = {
 };
 
 export type InitializedOperationData = OperationData & {
-  fill?: () => void;
-  modifiedSlicesToUse: Set<number>;
+  // Additional data for performing the strategy
   enabledElement: Types.IEnabledElement;
-  imageData: vtkImageData;
-  scalarData: Float32Array | Uint16Array | Int16Array | Uint8Array | Int8Array;
+  centerIJK?: Types.Point3;
+  centerWorld: Types.Point3;
+  viewport: Types.IViewport;
+  imageVoxelValue: utilities.VoxelValue<number>;
+  segmentationVoxelValue: utilities.VoxelValue<number>;
+  segmentationImageData: ImageData;
+  previewVoxelValue: utilities.VoxelValue<number>;
+
+  // TODO - move this into a separate object and just hold a reference here
+  fill?: () => void;
   isInObject?: (pointLPS, pointIJK) => boolean;
   isWithinThreshold?: (data) => boolean;
-  boundsIJK?: BoundsIJK;
-  setValue: (data) => void;
-  viewport: Types.IViewport;
-  dimensions: Types.Point3;
-  centerWorld: Types.Point3;
   initDown?: () => void;
   completeUp?: () => void;
-  centerIJK?: Types.Point3;
-  getPreviewSegmentIndex?: (previousIndex: number) => number;
-  segmentIndices: Set<number>;
   cancelPreview?: () => void;
   acceptPreview?: () => void;
+  setValue: (data) => void;
 };
 
 type Initializer = (operationData: InitializedOperationData) => void;
@@ -66,24 +72,22 @@ type Initializer = (operationData: InitializedOperationData) => void;
  */
 
 export default class BrushStrategy {
-  /**
-   * Creates a basic setValue that applies the segment index to the given index.
-   */
+  // @deprecated
   public static initializeSetValue = initializeSetValue;
   public static initializePreview = initializePreview;
-
-  public static initializeThreshold = (
-    initializerData: InitializedOperationData
-  ) => {
-    initializerData.isWithinThreshold = (data) =>
-      isWithinThreshold(
-        data,
-        initializerData.imageVolume,
-        initializerData.strategySpecificConfiguration
-      );
-  };
-
+  public static initializeThreshold = initializeThreshold;
   public static initializeRegionFill = initializeRegionFill;
+
+  /**
+   * Provide some default initializers for various situations, mostly for
+   * external use to allow defining new brushes
+   */
+  public static initializers = {
+    initializePreview,
+    initializeSetValue,
+    initializeThreshold,
+    initializeRegionFill,
+  };
 
   protected configurationName: string;
   protected initializers: Initializer[];
@@ -104,8 +108,10 @@ export default class BrushStrategy {
 
     initializedData.fill();
 
+    const { previewVoxelValue } = initializedData;
+
     const arrayOfSlices: number[] = Array.from(
-      initializedData.modifiedSlicesToUse
+      previewVoxelValue.modifiedSlices
     );
 
     triggerSegmentationDataModified(
@@ -118,24 +124,32 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ): InitializedOperationData {
-    const modifiedSlicesToUse = new Set() as Set<number>;
-    const { volume: segmentationVolume, segmentationId } = operationData;
-    const { imageData, dimensions } = segmentationVolume;
-    const scalarData = segmentationVolume.getScalarData();
     const { viewport } = enabledElement;
+    const data = getStrategyData({ operationData, viewport });
+
+    if (!data) {
+      console.warn('No data found for BrushStrategy');
+      return;
+    }
+
+    const { imageVoxelValue, segmentationVoxelValue, segmentationImageData } =
+      data;
+    const previewVoxelValue = VoxelValue.historyVoxelValue(
+      segmentationVoxelValue
+    );
 
     const initializedData: InitializedOperationData = {
       ...operationData,
-      modifiedSlicesToUse,
       enabledElement,
-      imageData,
-      scalarData,
+      imageVoxelValue,
+      segmentationVoxelValue,
+      segmentationImageData,
+      previewVoxelValue,
       viewport,
-      dimensions,
+
       fill: null,
       setValue: null,
       centerWorld: null,
-      segmentIndices: new Set<number>(),
     };
 
     this.initializers.forEach((initializer) => initializer(initializedData));

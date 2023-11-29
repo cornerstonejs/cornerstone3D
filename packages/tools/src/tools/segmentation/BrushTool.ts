@@ -104,13 +104,7 @@ class BrushTool extends BaseTool {
   private disableCursor() {
     this._hoverData = undefined;
   }
-
-  preMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
-  ): boolean => {
-    const eventData = evt.detail;
-    const { element } = eventData;
-
+  createEditData(element) {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
@@ -151,7 +145,7 @@ class BrushTool extends BaseTool {
       // First volume actor for now.
       const firstVolumeActorUID = actors[0].uid;
 
-      this._editData = {
+      return {
         volumeId,
         referencedVolumeId: firstVolumeActorUID,
         segmentsLocked,
@@ -181,22 +175,31 @@ class BrushTool extends BaseTool {
         );
         return;
 
-        // Todo: add sphere manipulation support for stacks of images
+        // Todo: add sphere (volumetric) manipulation support for stacks of images
         // we should basically check if the stack constructs a valid volume
         // meaning all the metadata is present and consistent
-        // then we should create a volume and use it as a reference
-        // ideally a tiny volume that does not exceeds the boundary of the
-        // sphere brush size
+        // then we use a VoxelValue mapping to map a volume like appearance
+        // for the stack data.
         // csUtils.isValidVolume(referencedImageIds
       }
 
-      this._editData = {
+      return {
         imageIdReferenceMap,
         segmentsLocked,
         segmentationRepresentationUID,
       };
     }
+  }
 
+  preMouseDownCallback = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): boolean => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    this._editData = this.createEditData(element);
     this._activateDraw(element);
 
     hideElementCursor(element);
@@ -205,7 +208,16 @@ class BrushTool extends BaseTool {
 
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
-      viewportIdsToRender
+      this._hoverData.viewportIdsToRender
+    );
+
+    // TODO - this should move to click event
+    this.acceptPreview(element);
+
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(),
+      'initDown'
     );
 
     return true;
@@ -217,13 +229,9 @@ class BrushTool extends BaseTool {
     }
   };
 
-  private updateCursor(evt: EventTypes.InteractionEventType) {
-    const eventData = evt.detail;
-    const { element } = eventData;
-    const { currentPoints } = eventData;
-    const centerCanvas = currentPoints.canvas;
+  private createHoverData(element, centerCanvas?) {
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
@@ -266,7 +274,7 @@ class BrushTool extends BaseTool {
       data: {},
     };
 
-    this._hoverData = {
+    return {
       brushCursor,
       centerCanvas,
       segmentIndex,
@@ -275,12 +283,24 @@ class BrushTool extends BaseTool {
       segmentColor,
       viewportIdsToRender,
     };
+  }
+
+  /**
+   * Updates the cursor position and whether it is showing or not.
+   * Can be over-ridden to add more cursor details or a preview.
+   */
+  protected updateCursor(evt: EventTypes.InteractionEventType) {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const { currentPoints } = eventData;
+    const centerCanvas = currentPoints.canvas;
+    this._hoverData = this.createHoverData(element, centerCanvas);
 
     this._calculateCursor(element, centerCanvas);
 
     triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportIdsToRender
+      getEnabledElement(element).renderingEngine,
+      this._hoverData.viewportIdsToRender
     );
   }
 
@@ -292,26 +312,34 @@ class BrushTool extends BaseTool {
 
     this.updateCursor(evt);
 
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-      viewportIdsToRender,
-    } = this._hoverData;
-
-    const { data } = brushCursor;
-    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
+    const { viewportIdsToRender } = this._hoverData;
 
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       viewportIdsToRender
     );
 
-    const operationData = {
-      ...this._editData,
-      points: data.handles.points,
+    this.applyActiveStrategy(enabledElement, this.getOperationData());
+  };
+
+  protected getOperationData(element?) {
+    const editData = this._editData || this.createEditData(element);
+
+    const {
       segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      brushCursor,
+    } = this._hoverData || this.createHoverData(element);
+    const previewSegmentIndex =
+      segmentIndexController.getPreviewSegmentIndex(segmentationId);
+    const { data, metadata = {} } = brushCursor || {};
+    const { viewPlaneNormal, viewUp } = metadata;
+    const operationData = {
+      ...editData,
+      points: data?.handles?.points,
+      segmentIndex,
+      previewSegmentIndex,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,
@@ -320,9 +348,8 @@ class BrushTool extends BaseTool {
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
     };
-
-    this.applyActiveStrategy(enabledElement, operationData);
-  };
+    return operationData;
+  }
 
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
@@ -385,42 +412,46 @@ class BrushTool extends BaseTool {
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
+    const enabledElement = getEnabledElement(element);
 
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-    } = this._hoverData;
-
-    const { data } = brushCursor;
-    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
+    const operationData = this.getOperationData(element);
+    this.applyActiveStrategy(enabledElement, operationData);
 
     this._deactivateDraw(element);
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-
     this.updateCursor(evt);
-
-    const operationData = {
-      points: data.handles.points,
-      ...this._editData,
-      segmentIndex,
-      viewPlaneNormal,
-      toolGroupId: this.toolGroupId,
-      segmentationId,
-      segmentationRepresentationUID,
-      viewUp,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
-    };
 
     this._editData = null;
 
-    this.applyActiveStrategy(enabledElement, operationData);
+    this.applyActiveStrategyEvent(enabledElement, operationData, 'completeUp');
   };
+
+  /**
+   * Cancels any preview view being shown, resetting any segments being shown.
+   */
+  public cancelPreview(element) {
+    const enabledElement = getEnabledElement(element);
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(element),
+      'cancelPreview'
+    );
+  }
+
+  /**
+   * Accepts a preview, marking it as the active segment.
+   */
+  public acceptPreview(element) {
+    const enabledElement = getEnabledElement(element);
+
+    this.applyActiveStrategyEvent(
+      enabledElement,
+      this.getOperationData(enabledElement),
+      'acceptPreview'
+    );
+  }
 
   /**
    * Add event handlers for the modify event loop, and prevent default event propagation.
@@ -525,6 +556,17 @@ class BrushTool extends BaseTool {
       circleUID,
       center as Types.Point2,
       radius,
+      {
+        color,
+      }
+    );
+    const circleUID1 = '1';
+    drawCircleSvg(
+      svgDrawingHelper,
+      annotationUID,
+      circleUID1,
+      center as Types.Point2,
+      2,
       {
         color,
       }

@@ -19,7 +19,8 @@ const { transformWorldToIndex } = csUtils;
 export function initializeCircle(
   operationData: InitializedOperationData
 ): void {
-  const { points, viewport, imageData, dimensions } = operationData;
+  const { points, viewport, segmentationImageData, segmentationVoxelValue } =
+    operationData;
 
   // Happens on a preview setup
   if (!points) {
@@ -34,7 +35,7 @@ export function initializeCircle(
 
   operationData.centerWorld = center as Types.Point3;
   operationData.centerIJK = transformWorldToIndex(
-    imageData,
+    segmentationImageData,
     center as Types.Point3
   );
   const canvasCoordinates = points.map((p) =>
@@ -51,13 +52,15 @@ export function initializeCircle(
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
 
   const ellipsoidCornersIJK = [
-    <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
-    <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
+    <Types.Point3>transformWorldToIndex(segmentationImageData, topLeftWorld),
+    <Types.Point3>(
+      transformWorldToIndex(segmentationImageData, bottomRightWorld)
+    ),
   ];
 
-  operationData.boundsIJK = getBoundingBoxAroundShape(
+  segmentationVoxelValue.boundsIJK = getBoundingBoxAroundShape(
     ellipsoidCornersIJK,
-    dimensions
+    segmentationVoxelValue.dimensions
   );
 
   // using circle as a form of ellipse

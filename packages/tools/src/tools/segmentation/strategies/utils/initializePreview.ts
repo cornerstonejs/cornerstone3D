@@ -19,6 +19,9 @@ export default function initializePreview(
   operationData.acceptPreview = () => {
     acceptPreview?.();
     const { scalarData, segmentIndex, dimensions } = operationData;
+    if (!dimensions) {
+      return;
+    }
     const elementsPerSegment = dimensions[0] * dimensions[1];
     const callback = ({ value, index }) => {
       if (value === previewSegmentationIndex) {

@@ -13,35 +13,14 @@ import {
 export default function initializeSetValue(
   operationData: InitializedOperationData
 ) {
-  const previewSegmentIndex = segmentIndexController.getPreviewSegmentIndex(
-    operationData.segmentationId
-  );
-  operationData.setValue = ({ value, index, pointIJK }) => {
-    if (value === segmentIndex) {
-      // Need to record the existing value for restore on fill
-      operationData.strategySpecificConfiguration.TRACKING?.updateValue?.(
-        pointIJK,
-        value,
-        value
-      );
-      return;
-    }
-    if (
-      operationData.segmentsLocked.includes(value) ||
-      value === previewSegmentIndex
-    ) {
-      return;
-    }
-    const useIndex = previewSegmentIndex ?? operationData.segmentIndex;
+  const { previewVoxelValue, previewSegmentIndex } = operationData;
 
-    operationData.scalarData[index] = useIndex;
-    operationData.segmentIndices.add(useIndex);
-    // The k dimension is always the slice selector for IJK
-    operationData.modifiedSlicesToUse.add(pointIJK[2]);
-    operationData.strategySpecificConfiguration.TRACKING?.updateValue?.(
-      pointIJK,
-      value,
-      useIndex
-    );
+  operationData.setValue = ({ value, index }) => {
+    if (operationData.segmentsLocked.includes(value)) {
+      return;
+    }
+    const useSegmentIndex = previewSegmentIndex ?? operationData.segmentIndex;
+
+    previewVoxelValue.setIndex(index, useSegmentIndex);
   };
 }

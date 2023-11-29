@@ -3,28 +3,33 @@ import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
 
 export default function (operationData: InitializedOperationData) {
   operationData.fill = () => {
-    const callback = operationData.isWithinThreshold
+    const {
+      segmentsLocked,
+      segmentationImageData,
+      setValue,
+      isWithinThreshold,
+      segmentationVoxelValue,
+    } = operationData;
+    const callback = isWithinThreshold
       ? (data) => {
           const { value, index } = data;
-          if (operationData.segmentsLocked.includes(value)) {
+          if (segmentsLocked.includes(value)) {
             return;
           }
-          if (!operationData.isWithinThreshold(index)) {
+          if (!isWithinThreshold(index)) {
             return;
           }
-          operationData.setValue(data);
+          setValue(data);
         }
       : operationData.setValue;
 
+    console.log('About to fill', segmentationVoxelValue.boundsIJK);
     pointInShapeCallback(
-      operationData.imageData,
+      segmentationImageData as unknown,
       operationData.isInObject,
       callback,
-      operationData.boundsIJK
+      segmentationVoxelValue.boundsIJK
     );
-    operationData.strategySpecificConfiguration.TRACKING?.updateCenter(
-      operationData.centerIJK,
-      operationData.boundsIJK
-    );
+    operationData.previewVoxelValue.addPoint(operationData.centerIJK);
   };
 }
