@@ -1,14 +1,18 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
-import { pointInShapeCallback } from '../../../../utilities';
 
 export default function dynamicWithinThreshold(
   operationData: InitializedOperationData
 ) {
-  const { boundsIJK, centerIJK, strategySpecificConfiguration } = operationData;
+  const {
+    centerIJK,
+    strategySpecificConfiguration,
+    segmentationVoxelValue,
+    imageVoxelValue,
+  } = operationData;
   const { THRESHOLD } = strategySpecificConfiguration;
 
-  if (!THRESHOLD?.isDynamic || !boundsIJK) {
+  if (!THRESHOLD?.isDynamic) {
     return;
   }
 
@@ -19,6 +23,7 @@ export default function dynamicWithinThreshold(
     initDown?.();
   };
 
+  const { boundsIJK } = segmentationVoxelValue;
   const { threshold: oldThreshold, delta = 0 } = THRESHOLD;
   const useDelta = oldThreshold ? 0 : delta;
   const nestedBounds = boundsIJK.map((ijk, idx) => {
@@ -34,12 +39,8 @@ export default function dynamicWithinThreshold(
     threshold[0] = Math.min(value, threshold[0]);
     threshold[1] = Math.max(value, threshold[1]);
   };
-  pointInShapeCallback(
-    operationData.imageVolume.imageData,
-    () => true,
-    callback,
-    nestedBounds
-  );
+  imageVoxelValue.forEach(callback, { boundsIJK: nestedBounds });
 
+  console.log('Computed threshold', threshold);
   operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
 }

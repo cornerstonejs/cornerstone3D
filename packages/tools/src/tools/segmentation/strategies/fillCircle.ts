@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils, cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
@@ -13,6 +13,7 @@ import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
 import type { CanvasCoordinates } from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
 import initializeTracking from './utils/initializeTracking';
+import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -94,8 +95,8 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   // initializeThreshold depends on dynamicWithinThreshold for some setup
   BrushStrategy.initializeThreshold,
   BrushStrategy.initializePreview,
-  initializeTracking,
-  initializeIslandRemoval
+  initializeTracking
+  //initializeIslandRemoval
 );
 
 /**
@@ -123,15 +124,20 @@ export function thresholdInsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  const { volume, imageVolume } = operationData;
+  if (isVolumeSegmentation(operationData)) {
+    const { referencedVolumeId, volumeId } = operationData;
 
-  if (
-    !csUtils.isEqual(volume.dimensions, imageVolume.dimensions) ||
-    !csUtils.isEqual(volume.direction, imageVolume.direction)
-  ) {
-    throw new Error(
-      'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-    );
+    const imageVolume = cache.getVolume(referencedVolumeId);
+    const segmentation = cache.getVolume(volumeId);
+
+    if (
+      !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
+      !csUtils.isEqual(segmentation.direction, imageVolume.direction)
+    ) {
+      throw new Error(
+        'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
+      );
+    }
   }
 
   CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);

@@ -18,65 +18,50 @@ export default function initializePreview(
   const { acceptPreview } = operationData;
   operationData.acceptPreview = () => {
     acceptPreview?.();
-    const { scalarData, segmentIndex, dimensions } = operationData;
-    if (!dimensions) {
+    const {
+      segmentIndex,
+      strategySpecificConfiguration,
+      segmentationVoxelValue,
+    } = operationData;
+    const tracking = strategySpecificConfiguration?.TRACKING;
+    if (!tracking || tracking.modifiedSlices.size === 0) {
       return;
     }
-    const elementsPerSegment = dimensions[0] * dimensions[1];
-    const callback = ({ value, index }) => {
-      if (value === previewSegmentationIndex) {
-        scalarData[index] = segmentIndex;
-        const slice = Math.floor(index / elementsPerSegment);
-        operationData.modifiedSlicesToUse.add(slice);
+
+    const callback = ({ index }) => {
+      const oldValue = segmentationVoxelValue.getIndex(index);
+      if (oldValue === previewSegmentationIndex) {
+        segmentationVoxelValue.setIndex(index, segmentIndex);
       }
     };
-
-    scalarData.forEach((value, index) => {
-      callback({ value, index });
-    });
-
-    const arrayOfSlices: number[] = Array.from(
-      operationData.modifiedSlicesToUse
-    );
-    operationData.modifiedSlicesToUse.clear();
+    tracking.forEach(callback);
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      arrayOfSlices
+      tracking.getArrayOfSlices()
     );
+    tracking.clear();
   };
 
   const { cancelPreview } = operationData;
   operationData.cancelPreview = () => {
     cancelPreview?.();
-    const { scalarData, dimensions, strategySpecificConfiguration } =
+    const { strategySpecificConfiguration, segmentationVoxelValue } =
       operationData;
-    const { TRACKING: tracking } = strategySpecificConfiguration;
-    const frameSize = dimensions[0] * dimensions[1];
-    const callback = ({ value, index, pointIJK }) => {
-      if (value === previewSegmentationIndex) {
-        scalarData[index] = tracking?.getter(pointIJK) ?? 0;
-        const slice = Math.floor(index / frameSize);
-        operationData.modifiedSlicesToUse.add(slice);
-      }
+    const tracking = strategySpecificConfiguration?.TRACKING;
+    if (!tracking || tracking.modifiedSlices.size === 0) {
+      return;
+    }
+
+    const callback = ({ index, value }) => {
+      segmentationVoxelValue.setIndex(index, value);
     };
-
-    const width = dimensions[0];
-    scalarData.forEach((value, index) => {
-      const i = index % frameSize;
-      const j = Math.floor((index % frameSize) / width);
-      const k = Math.floor(index / frameSize);
-      callback({ value, index, pointIJK: [i, j, k] });
-    });
-
-    const arrayOfSlices: number[] = Array.from(
-      operationData.modifiedSlicesToUse
-    );
-    operationData.modifiedSlicesToUse.clear();
+    tracking.forEach(callback);
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      arrayOfSlices
+      tracking.getArrayOfSlices()
     );
+    tracking.clear();
   };
 }

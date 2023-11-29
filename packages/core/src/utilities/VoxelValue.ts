@@ -92,6 +92,49 @@ export default class VoxelValue<T> {
     ];
   }
 
+  public getBoundsIJK(): BoundsIJK {
+    if (this.boundsIJK[0][0] < this.dimensions[0]) {
+      return this.boundsIJK;
+    }
+    return this.dimensions.map((dimension) => [0, dimension - 1]) as BoundsIJK;
+  }
+
+  public forEach = (callback, options) => {
+    const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
+    const { isWithinObject } = options || {};
+    if (this.map) {
+      // Optimize this for only values in the map
+      for (const index of this.map.keys()) {
+        const pointIJK = this.toIJK(index);
+        const value = this._get(index);
+        const callbackArguments = { value, index, pointIJK };
+        if (isWithinObject?.(callbackArguments) === false) {
+          continue;
+        }
+        callback(callbackArguments);
+      }
+    } else {
+      for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+        const kIndex = k * this.frameSize;
+        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+          const jIndex = kIndex + j * this.width;
+          for (
+            let i = boundsIJK[0][0], index = jIndex + i;
+            i <= boundsIJK[0][1];
+            i++, index++
+          ) {
+            const value = this.getIndex(index);
+            const callbackArguments = { value, index, pointIJK: [i, j, k] };
+            if (isWithinObject?.(callbackArguments) === false) {
+              continue;
+            }
+            callback(callbackArguments);
+          }
+        }
+      }
+    }
+  };
+
   public static addBounds(bounds: BoundsIJK, point: Types.Point3) {
     bounds.forEach((bound, index) => {
       bound[0] = Math.min(point[index], bound[0]);
@@ -129,6 +172,22 @@ export default class VoxelValue<T> {
     return voxelValue;
   }
 
+  public clear() {
+    if (this.map) {
+      this.map.clear();
+    }
+    this.boundsIJK.map((bound) => {
+      bound[0] = Infinity;
+      bound[1] = -Infinity;
+    });
+    this.modifiedSlices.clear();
+    this.points?.clear();
+  }
+
+  public getArrayOfSlices(): number[] {
+    return Array.from(this.modifiedSlices);
+  }
+
   /**
    * Creates an update remembering mapper
    * Note the get/set are NOT symmetrical, the get returns the original value at
@@ -156,6 +215,8 @@ export default class VoxelValue<T> {
         sourceVoxelValue.setIndex(index, v);
       }
     );
+    voxelValue.map = map;
+    voxelValue.scalarData = sourceVoxelValue.scalarData;
     return voxelValue;
   }
 }

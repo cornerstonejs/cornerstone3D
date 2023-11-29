@@ -108,10 +108,10 @@ export default class BrushStrategy {
 
     initializedData.fill();
 
-    const { previewVoxelValue } = initializedData;
+    const { segmentationVoxelValue } = initializedData;
 
     const arrayOfSlices: number[] = Array.from(
-      previewVoxelValue.modifiedSlices
+      segmentationVoxelValue.modifiedSlices
     );
 
     triggerSegmentationDataModified(

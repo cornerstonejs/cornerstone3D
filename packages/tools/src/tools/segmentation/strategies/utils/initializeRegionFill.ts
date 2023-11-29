@@ -23,7 +23,6 @@ export default function (operationData: InitializedOperationData) {
         }
       : operationData.setValue;
 
-    console.log('About to fill', segmentationVoxelValue.boundsIJK);
     pointInShapeCallback(
       segmentationImageData as unknown,
       operationData.isInObject,

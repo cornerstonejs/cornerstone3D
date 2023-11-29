@@ -13,13 +13,20 @@ import {
 export default function initializeSetValue(
   operationData: InitializedOperationData
 ) {
-  const { previewVoxelValue, previewSegmentIndex } = operationData;
+  const {
+    segmentsLocked,
+    segmentIndex,
+    previewVoxelValue,
+    previewSegmentIndex,
+    segmentationVoxelValue,
+  } = operationData;
 
   operationData.setValue = ({ value, index }) => {
-    if (operationData.segmentsLocked.includes(value)) {
+    const existingValue = segmentationVoxelValue.getIndex(index);
+    if (existingValue === segmentIndex || segmentsLocked.includes(value)) {
       return;
     }
-    const useSegmentIndex = previewSegmentIndex ?? operationData.segmentIndex;
+    const useSegmentIndex = previewSegmentIndex ?? segmentIndex;
 
     previewVoxelValue.setIndex(index, useSegmentIndex);
   };
