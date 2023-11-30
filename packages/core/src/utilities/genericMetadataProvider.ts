@@ -1,4 +1,4 @@
-import { metaData } from '..';
+import * as metaData from '../metaData';
 
 let state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
 /**
