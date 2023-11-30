@@ -681,7 +681,7 @@ declare namespace boundingBox {
 }
 
 // @public (undocumented)
-type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
 export class BrushTool extends BaseTool {
@@ -692,23 +692,33 @@ export class BrushTool extends BaseTool {
     cancelPreview(element: any): void;
     // (undocumented)
     createEditData(element: any): {
-        segmentation: Types_2.IImageVolume;
-        imageVolume: Types_2.IImageVolume;
+        volumeId: string;
+        referencedVolumeId: string;
         segmentsLocked: number[] | [];
+        segmentationRepresentationUID: string;
+        imageIdReferenceMap?: undefined;
+    } | {
+        imageIdReferenceMap: Map<string, string>;
+        segmentsLocked: number[] | [];
+        segmentationRepresentationUID: string;
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
     };
     // (undocumented)
     protected getOperationData(element?: any): {
         points: any;
-        volume: Types_2.IImageVolume;
-        imageVolume: Types_2.IImageVolume;
         segmentIndex: number;
-        segmentsLocked: number[];
+        previewSegmentIndex: number;
         viewPlaneNormal: any;
         toolGroupId: string;
         segmentationId: string;
         segmentationRepresentationUID: string;
         viewUp: any;
         strategySpecificConfiguration: any;
+        segmentsLocked: number[];
+        imageIdReferenceMap?: Map<string, string>;
+        volumeId?: string;
+        referencedVolumeId?: string;
     };
     // (undocumented)
     invalidateBrushCursor(): void;
@@ -726,6 +736,8 @@ export class BrushTool extends BaseTool {
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    protected updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
 
 // @public (undocumented)
@@ -3108,7 +3120,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -4655,7 +4667,7 @@ declare namespace Types {
         SVGPoint_2 as SVGPoint,
         ScrollOptions_2 as ScrollOptions,
         CINETypes,
-        BoundsIJK,
+        BoundsIJK_2 as BoundsIJK,
         SVGDrawingHelper,
         FloodFillResult,
         FloodFillGetter,

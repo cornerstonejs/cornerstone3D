@@ -1,4 +1,4 @@
-import type { OperationData } from '../BrushStrategy';
+import type { OperationData, InitializedOperationData } from '../BrushStrategy';
 
 /**
  * Sets up tracking for use by preview and other services.

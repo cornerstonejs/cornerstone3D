@@ -92,7 +92,7 @@ export default class VoxelValue<T> {
     ];
   }
 
-  public toIndex(ijk: Types.Point3) {
+  public toIndex(ijk: Point3) {
     return ijk[0] + ijk[1] * this.width + ijk[2] * this.frameSize;
   }
 

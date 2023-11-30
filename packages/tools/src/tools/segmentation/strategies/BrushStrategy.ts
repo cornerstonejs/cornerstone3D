@@ -43,8 +43,6 @@ export type InitializedOperationData = OperationData & {
   previewVoxelValue: utilities.VoxelValue<number>;
 
   brushStrategy: BrushStrategy;
-  // And functions for applying changes, created during initialization
-  setValue: (index) => void;
 };
 
 export type StrategyFunction = (

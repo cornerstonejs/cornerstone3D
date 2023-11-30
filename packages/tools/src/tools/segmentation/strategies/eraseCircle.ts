@@ -1,11 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
+import type { OperationData } from './BrushStrategy';
 import { fillInsideCircle } from './fillCircle';
-import { LabelmapToolOperationData } from '../../../types';
-
-type OperationData = LabelmapToolOperationData & {
-  points: any; // todo fix
-};
 
 export function eraseInsideCircle(
   enabledElement: Types.IEnabledElement,

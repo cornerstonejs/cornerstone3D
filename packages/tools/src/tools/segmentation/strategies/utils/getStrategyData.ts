@@ -56,6 +56,7 @@ function getStrategyData({ operationData, viewport }) {
 
   return {
     segmentationImageData,
+    segmentationScalarData,
     segmentationVoxelValue: VoxelValue.volumeVoxelValue(
       dimensions,
       segmentationScalarData

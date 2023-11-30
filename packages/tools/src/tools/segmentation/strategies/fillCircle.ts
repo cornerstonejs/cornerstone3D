@@ -167,3 +167,5 @@ export function fillOutsideCircle(
 ): void {
   throw new Error('Not yet implemented');
 }
+
+export { CIRCLE_STRATEGY, CIRCLE_THRESHOLD_STRATEGY };

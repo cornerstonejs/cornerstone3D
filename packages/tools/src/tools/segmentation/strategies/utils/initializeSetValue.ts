@@ -1,4 +1,7 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type {
+  InitializedOperationData,
+  InitializerInstance,
+} from '../BrushStrategy';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -28,4 +31,4 @@ export default {
 
     previewVoxelValue.setIndex(index, useSegmentIndex);
   },
-};
+} as InitializerInstance;
