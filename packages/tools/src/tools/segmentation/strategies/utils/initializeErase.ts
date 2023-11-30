@@ -13,6 +13,6 @@ export default {
       operationData.segmentIndex
     );
     operationData.segmentIndex = 0;
-    operationData.previewSegmentIndex = null;
+    // operationData.previewSegmentIndex = null;
   },
 };
