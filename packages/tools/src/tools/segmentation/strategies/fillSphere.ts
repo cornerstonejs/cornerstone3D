@@ -95,7 +95,6 @@ const initializeSphere = {
       yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
       zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
     };
-    console.log('ellipseObj', ellipseObj);
 
     imageVoxelValue.isInObject = (pointLPS /*, pointIJK */) =>
       pointInEllipse(ellipseObj, pointLPS);
@@ -107,8 +106,7 @@ const SPHERE_STRATEGY = new BrushStrategy(
   initializeRegionFill,
   initializeSetValue,
   initializeSphere,
-  initializeTracking,
-  initializePreview
+  initializeTracking
 );
 
 /**
@@ -181,3 +179,5 @@ export function fillOutsideSphere(
 ): void {
   throw new Error('fill outside sphere not implemented');
 }
+
+export { SPHERE_STRATEGY, SPHERE_THRESHOLD_STRATEGY };

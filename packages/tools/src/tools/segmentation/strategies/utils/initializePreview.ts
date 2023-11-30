@@ -1,6 +1,6 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-
+import { segmentIndex as segmentIndexController } from '../../../../stateManagement/segmentation';
 /**
  * Sets up a preview to use an alternate set of colours.  First fills the
  * preview segment index with the final one for all pixels, then resets
@@ -8,14 +8,24 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {
-    if (operationData.previewSegmentIndex === operationData.segmentIndex) {
-      operationData.previewSegmentIndex = null;
+    if (!operationData.strategySpecificConfiguration) {
+      delete operationData.previewSegmentIndex;
+      return;
     }
-    if (operationData.previewSegmentIndex !== undefined) {
+    const { segmentationId } = operationData;
+    const previewSegmentIndex =
+      segmentIndexController.getPreviewSegmentIndex(segmentationId);
+
+    if (
+      previewSegmentIndex !== undefined &&
+      operationData.previewSegmentIndex === undefined
+    ) {
       console.log(
         'TODO - setup colours for the preview based on',
-        operationData.segmentIndex
+        operationData.segmentIndex,
+        previewSegmentIndex
       );
+      operationData.previewSegmentIndex = previewSegmentIndex;
     }
   },
 

@@ -10,6 +10,7 @@ import {
 } from '../../types';
 
 import { fillInsideCircle } from './strategies/fillCircle';
+import { eraseInsideCircle } from './strategies/eraseCircle';
 import { Events } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
@@ -69,10 +70,10 @@ class CircleScissorsTool extends BaseTool {
       configuration: {
         strategies: {
           FILL_INSIDE: fillInsideCircle,
-          // ERASE_INSIDE: eraseInsideCircle,
+          ERASE_INSIDE: eraseInsideCircle,
         },
-        defaultStrategy: 'FILL_INSIDE',
-        activeStrategy: 'FILL_INSIDE',
+        defaultStrategy: 'ERASE_INSIDE',
+        activeStrategy: 'ERASE_INSIDE',
       },
     }
   ) {

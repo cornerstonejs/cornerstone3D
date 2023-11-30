@@ -106,6 +106,7 @@ const brushInstanceNames = {
   SphereBrush: 'SphereBrush',
   SphereEraser: 'SphereEraser',
   ThresholdBrush: 'ThresholdBrush',
+  ScissorsEraser: 'ScissorsEraser',
 };
 
 const brushStrategies = {
@@ -114,6 +115,7 @@ const brushStrategies = {
   [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
   [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE_SPHERE',
 };
 
 const brushValues = [
@@ -129,6 +131,7 @@ const optionsValues = [
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
   SphereScissorsTool.toolName,
+  brushInstanceNames.ScissorsEraser,
   PaintFillTool.toolName,
 ];
 
@@ -276,6 +279,13 @@ async function run() {
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
+  toolGroup.addToolInstance(
+    brushInstanceNames.ScissorsEraser,
+    SphereScissorsTool.toolName,
+    {
+      activeStrategy: brushStrategies.ScissorsEraser,
+    }
+  );
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addToolInstance(

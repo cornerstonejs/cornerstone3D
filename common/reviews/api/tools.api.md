@@ -708,7 +708,6 @@ export class BrushTool extends BaseTool {
     protected getOperationData(element?: any): {
         points: any;
         segmentIndex: number;
-        previewSegmentIndex: number;
         viewPlaneNormal: any;
         toolGroupId: string;
         segmentationId: string;

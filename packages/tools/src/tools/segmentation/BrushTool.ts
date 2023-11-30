@@ -331,15 +331,12 @@ class BrushTool extends BaseTool {
       segmentationRepresentationUID,
       brushCursor,
     } = this._hoverData || this.createHoverData(element);
-    const previewSegmentIndex =
-      segmentIndexController.getPreviewSegmentIndex(segmentationId);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
     const operationData = {
       ...editData,
       points: data?.handles?.points,
       segmentIndex,
-      previewSegmentIndex,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,

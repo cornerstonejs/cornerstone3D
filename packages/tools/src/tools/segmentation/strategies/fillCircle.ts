@@ -93,8 +93,7 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   initializeRegionFill,
   initializeSetValue,
   initializeCircle,
-  initializeTracking,
-  initializePreview
+  initializeTracking
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(

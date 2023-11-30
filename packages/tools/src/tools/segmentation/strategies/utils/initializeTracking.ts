@@ -8,6 +8,9 @@ import type { OperationData, InitializedOperationData } from '../BrushStrategy';
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {
+    if (!operationData.strategySpecificConfiguration) {
+      return;
+    }
     // It always generates preview data, so use that for tracking
     operationData.strategySpecificConfiguration.TRACKING ||=
       operationData.previewVoxelValue;
