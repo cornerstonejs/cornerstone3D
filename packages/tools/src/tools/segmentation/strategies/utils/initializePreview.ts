@@ -8,7 +8,15 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {
-    operationData.previewSegmentIndex ??= 3;
+    if (operationData.previewSegmentIndex === operationData.segmentIndex) {
+      operationData.previewSegmentIndex = null;
+    }
+    if (operationData.previewSegmentIndex !== undefined) {
+      console.log(
+        'TODO - setup colours for the preview based on',
+        operationData.segmentIndex
+      );
+    }
   },
 
   acceptPreview: (enabledElement, operationData: InitializedOperationData) => {

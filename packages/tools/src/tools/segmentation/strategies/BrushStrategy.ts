@@ -103,7 +103,7 @@ export default class BrushStrategy {
   };
 
   protected configurationName: string;
-  protected initializers: Initializer[];
+  public initializers: Initializer[];
   protected _createInitialized = [];
   protected _fill = [];
   protected _acceptPreview: [];
