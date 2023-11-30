@@ -103,6 +103,7 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import type BoundsIJK from './BoundsIJK';
 
 export type {
   // config
@@ -209,4 +210,5 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
+  BoundsIJK,
 };

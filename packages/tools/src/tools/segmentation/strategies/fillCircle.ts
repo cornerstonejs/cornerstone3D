@@ -13,90 +13,100 @@ import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
 import type { CanvasCoordinates } from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
 import initializeTracking from './utils/initializeTracking';
+import initializeRegionFill from './utils/initializeRegionFill';
+import initializeSetValue from './utils/initializeSetValue';
+import initializePreview from './utils/initializePreview';
+import initializeThreshold from './utils/initializeThreshold';
 import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 
 const { transformWorldToIndex } = csUtils;
 
-export function initializeCircle(
-  operationData: InitializedOperationData
-): void {
-  const { points, viewport, segmentationImageData, segmentationVoxelValue } =
-    operationData;
+const initializeCircle = {
+  createInitialized: function initializeCircle(
+    enabled,
+    operationData: InitializedOperationData
+  ): void {
+    const {
+      points,
+      imageVoxelValue,
+      viewport,
+      segmentationImageData,
+      segmentationVoxelValue,
+    } = operationData;
 
-  // Happens on a preview setup
-  if (!points) {
-    return;
-  }
-  // Average the points to get the center of the ellipse
-  const center = vec3.fromValues(0, 0, 0);
-  points.forEach((point) => {
-    vec3.add(center, center, point);
-  });
-  vec3.scale(center, center, 1 / points.length);
+    // Happens on a preview setup
+    if (!points) {
+      return;
+    }
+    // Average the points to get the center of the ellipse
+    const center = vec3.fromValues(0, 0, 0);
+    points.forEach((point) => {
+      vec3.add(center, center, point);
+    });
+    vec3.scale(center, center, 1 / points.length);
 
-  operationData.centerWorld = center as Types.Point3;
-  operationData.centerIJK = transformWorldToIndex(
-    segmentationImageData,
-    center as Types.Point3
-  );
-  const canvasCoordinates = points.map((p) =>
-    viewport.worldToCanvas(p)
-  ) as CanvasCoordinates;
+    operationData.centerWorld = center as Types.Point3;
+    operationData.centerIJK = transformWorldToIndex(
+      segmentationImageData,
+      center as Types.Point3
+    );
+    const canvasCoordinates = points.map((p) =>
+      viewport.worldToCanvas(p)
+    ) as CanvasCoordinates;
 
-  // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
-  // corners in canvas coordinates
-  const [topLeftCanvas, bottomRightCanvas] =
-    getCanvasEllipseCorners(canvasCoordinates);
+    // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
+    // corners in canvas coordinates
+    const [topLeftCanvas, bottomRightCanvas] =
+      getCanvasEllipseCorners(canvasCoordinates);
 
-  // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-  const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
-  const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
+    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
 
-  const ellipsoidCornersIJK = [
-    <Types.Point3>transformWorldToIndex(segmentationImageData, topLeftWorld),
-    <Types.Point3>(
-      transformWorldToIndex(segmentationImageData, bottomRightWorld)
-    ),
-  ];
+    const ellipsoidCornersIJK = [
+      <Types.Point3>transformWorldToIndex(segmentationImageData, topLeftWorld),
+      <Types.Point3>(
+        transformWorldToIndex(segmentationImageData, bottomRightWorld)
+      ),
+    ];
 
-  segmentationVoxelValue.boundsIJK = getBoundingBoxAroundShape(
-    ellipsoidCornersIJK,
-    segmentationVoxelValue.dimensions
-  );
+    segmentationVoxelValue.boundsIJK = getBoundingBoxAroundShape(
+      ellipsoidCornersIJK,
+      segmentationVoxelValue.dimensions
+    );
 
-  // using circle as a form of ellipse
-  const ellipseObj = {
-    center: center as Types.Point3,
-    xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-    yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-    zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-  };
+    // using circle as a form of ellipse
+    const ellipseObj = {
+      center: center as Types.Point3,
+      xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+      yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+      zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+    };
 
-  operationData.isInObject = (pointLPS /*, pointIJK */) =>
-    pointInEllipse(ellipseObj, pointLPS);
-}
+    imageVoxelValue.isInObject = (pointLPS /*, pointIJK */) =>
+      pointInEllipse(ellipseObj, pointLPS);
+  },
+};
 
 const CIRCLE_STRATEGY = new BrushStrategy(
   'Circle',
-  BrushStrategy.initializeRegionFill,
-  BrushStrategy.initializeSetValue,
+  initializeRegionFill,
+  initializeSetValue,
   initializeCircle,
   initializeTracking,
-  BrushStrategy.initializePreview
+  initializePreview
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   'CircleThreshold',
-  BrushStrategy.initializeRegionFill,
-  BrushStrategy.initializeSetValue,
+  initializeRegionFill,
+  initializeSetValue,
   initializeCircle,
-  // dynamicWithinThreshold depends on initialize circle for setup
   dynamicWithinThreshold,
-  // initializeThreshold depends on dynamicWithinThreshold for some setup
-  BrushStrategy.initializeThreshold,
-  BrushStrategy.initializePreview,
-  initializeTracking
-  //initializeIslandRemoval
+  initializeThreshold,
+  initializePreview,
+  initializeTracking,
+  initializeIslandRemoval
 );
 
 /**

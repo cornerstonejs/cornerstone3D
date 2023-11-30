@@ -1,6 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
-
-import type BoundsIJK from '../../../tools/src/types/BoundsIJK';
+import type { BoundsIJK, Point3, VolumeScalarData } from '../types';
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
@@ -14,11 +12,13 @@ export default class VoxelValue<T> {
   ] as BoundsIJK;
 
   // Provide direct access to the underlying data, if any
-  public scalarData: Types.VolumeScalarData;
+  public scalarData: VolumeScalarData;
   public map: Map<number, T>;
+  public sourceVoxelValue: VoxelValue<T>;
+  public isInObject: (pointIPS, pointIJK) => boolean;
 
   points: Set<number>;
-  dimensions: Types.Point3;
+  dimensions: Point3;
   width: number;
   frameSize: number;
   _get: (index: number) => T;
@@ -49,7 +49,7 @@ export default class VoxelValue<T> {
     }
   };
 
-  public addPoint(point: Types.Point3 | number) {
+  public addPoint(point: Point3 | number) {
     const index = Array.isArray(point)
       ? point[0] + this.width * point[1] + this.frameSize * point[2]
       : point;
@@ -60,7 +60,7 @@ export default class VoxelValue<T> {
   }
 
   /** Gets the points as Point3 values */
-  public getPoints(): Types.Point3[] {
+  public getPoints(): Point3[] {
     return this.points
       ? [...this.points].map((index) => this.toIJK(index))
       : [];
@@ -84,12 +84,16 @@ export default class VoxelValue<T> {
     }
   };
 
-  public toIJK(index: number): Types.Point3 {
+  public toIJK(index: number): Point3 {
     return [
       index % this.width,
       Math.floor((index % this.frameSize) / this.width),
       Math.floor(index / this.frameSize),
     ];
+  }
+
+  public toIndex(ijk: Types.Point3) {
+    return ijk[0] + ijk[1] * this.width + ijk[2] * this.frameSize;
   }
 
   public getBoundsIJK(): BoundsIJK {
@@ -135,7 +139,7 @@ export default class VoxelValue<T> {
     }
   };
 
-  public static addBounds(bounds: BoundsIJK, point: Types.Point3) {
+  public static addBounds(bounds: BoundsIJK, point: Point3) {
     bounds.forEach((bound, index) => {
       bound[0] = Math.min(point[index], bound[0]);
       bound[1] = Math.max(point[index], bound[1]);
@@ -146,13 +150,17 @@ export default class VoxelValue<T> {
    *  Creates a volume value accessor
    */
   public static volumeVoxelValue(
-    dimensions: Types.Point3,
+    dimensions: Point3,
     scalarData
   ): VoxelValue<number> {
     const voxels = new VoxelValue(
       dimensions,
       (index) => scalarData[index],
-      (index, v) => (scalarData[index] = v)
+      (index, v) => {
+        const isChanged = scalarData[index] !== v;
+        scalarData[index] = v;
+        return isChanged;
+      }
     );
     voxels.scalarData = scalarData;
     return voxels;
@@ -161,7 +169,7 @@ export default class VoxelValue<T> {
   /**
    * Creates a volume map value accessor
    */
-  public static mapVoxelValue<T>(dimension: Types.Point3): VoxelValue<T> {
+  public static mapVoxelValue<T>(dimension: Point3): VoxelValue<T> {
     const map = new Map<number, T>();
     const voxelValue = new VoxelValue(
       dimension,
@@ -203,20 +211,25 @@ export default class VoxelValue<T> {
     const voxelValue = new VoxelValue(
       dimensions,
       (index) => map.get(index),
-      (index, v) => {
+      function (index, v) {
         if (!map.has(index)) {
-          const oldV = map.get(index) ?? sourceVoxelValue.getIndex(index);
+          const oldV = this.sourceVoxelValue.getIndex(index);
           if (oldV === v) {
             // No-op
             return false;
           }
           map.set(index, oldV);
+        } else if (v === map.get(index)) {
+          map.delete(index);
         }
-        sourceVoxelValue.setIndex(index, v);
+        this.sourceVoxelValue.setIndex(index, v);
       }
     );
     voxelValue.map = map;
     voxelValue.scalarData = sourceVoxelValue.scalarData;
+    voxelValue.sourceVoxelValue = sourceVoxelValue;
     return voxelValue;
   }
 }
+
+export type { VoxelValue };

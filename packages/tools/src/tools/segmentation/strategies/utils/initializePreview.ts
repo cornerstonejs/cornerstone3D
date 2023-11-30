@@ -1,5 +1,4 @@
 import type { InitializedOperationData } from '../BrushStrategy';
-import { segmentIndex as segmentIndexController } from '../../../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 
 /**
@@ -7,45 +6,42 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
  * preview segment index with the final one for all pixels, then resets
  * the preview colours.
  */
-export default function initializePreview(
-  operationData: InitializedOperationData
-) {
-  const previewSegmentationIndex =
-    segmentIndexController.getPreviewSegmentIndex(operationData.segmentationId);
-  if (previewSegmentationIndex === undefined) {
-    return;
-  }
-  const { acceptPreview } = operationData;
-  operationData.acceptPreview = () => {
-    acceptPreview?.();
+export default {
+  createInitialized: (enabled, operationData: InitializedOperationData) => {
+    operationData.previewSegmentIndex ??= 3;
+  },
+
+  acceptPreview: (enabledElement, operationData: InitializedOperationData) => {
     const {
       segmentIndex,
-      strategySpecificConfiguration,
       segmentationVoxelValue,
+      previewVoxelValue,
+      previewSegmentIndex,
     } = operationData;
-    const tracking = strategySpecificConfiguration?.TRACKING;
+    if (previewSegmentIndex === undefined) {
+      return;
+    }
+    const tracking = previewVoxelValue;
     if (!tracking || tracking.modifiedSlices.size === 0) {
       return;
     }
 
     const callback = ({ index }) => {
       const oldValue = segmentationVoxelValue.getIndex(index);
-      if (oldValue === previewSegmentationIndex) {
+      if (oldValue === previewSegmentIndex) {
         segmentationVoxelValue.setIndex(index, segmentIndex);
       }
     };
-    tracking.forEach(callback);
+    tracking.forEach(callback, {});
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
       tracking.getArrayOfSlices()
     );
     tracking.clear();
-  };
+  },
 
-  const { cancelPreview } = operationData;
-  operationData.cancelPreview = () => {
-    cancelPreview?.();
+  rejectPreview: (enabled, operationData: InitializedOperationData) => {
     const { strategySpecificConfiguration, segmentationVoxelValue } =
       operationData;
     const tracking = strategySpecificConfiguration?.TRACKING;
@@ -63,5 +59,5 @@ export default function initializePreview(
       tracking.getArrayOfSlices()
     );
     tracking.clear();
-  };
-}
+  },
+};

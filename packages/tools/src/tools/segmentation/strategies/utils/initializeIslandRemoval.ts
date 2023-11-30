@@ -1,51 +1,38 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities } from '@cornerstonejs/core';
 
 import type { InitializedOperationData } from '../BrushStrategy';
 import floodFill from '../../../../utilities/segmentation/floodFill';
-import { segmentIndex as segmentIndexController } from '../../../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
-
-const { isEqual } = utilities;
 
 /**
  * Sets up a preview to use an alternate set of colours.  First fills the
  * preview segment index with the final one for all pixels, then resets
  * the preview colours.
  */
-export default function initializeIslandRemoval(
-  operationData: InitializedOperationData
-) {
-  if (!operationData.strategySpecificConfiguration.THRESHOLD) {
-    return;
-  }
+export default {
+  completeUp: (enabled, operationData: InitializedOperationData) => {
+    const {
+      previewVoxelValue,
+      segmentationVoxelValue,
+      strategySpecificConfiguration,
+      previewSegmentIndex,
+      segmentIndex,
+    } = operationData;
 
-  const { completeUp } = operationData;
-  operationData.completeUp = () => {
-    completeUp?.();
-
-    const { strategySpecificConfiguration, segmentIndex } = operationData;
-    const { TRACKING: tracking } = strategySpecificConfiguration;
-    const { boundsIJK, clickedPoints } = tracking;
-    if (!tracking?.getter || !clickedPoints?.length) {
+    if (!strategySpecificConfiguration.THRESHOLD) {
       return;
     }
 
-    const previewSegmentIndex = segmentIndexController.getPreviewSegmentIndex(
-      operationData.segmentationId
-    );
+    const clickedPoints = previewVoxelValue.getPoints();
+    if (!clickedPoints?.length) {
+      return;
+    }
+
     if (previewSegmentIndex === undefined) {
       return;
     }
 
-    const boundaryMap = new Map<number, any>();
-    const onBoundary = (i, j, k) => {
-      const index = k * frameSize + j * width + i;
-      const value = scalarData[index];
-      const pointIJK = [i, j, k];
-      boundaryMap.set(index, { index, value, pointIJK });
-    };
+    const boundsIJK = previewVoxelValue.getBoundsIJK();
 
     // Returns true for new colour, and false otherwise
     const getter = (i, j, k) => {
@@ -60,20 +47,18 @@ export default function initializeIslandRemoval(
         return -1;
       }
 
-      const oldVal = scalarData[i + j * width + k * frameSize];
+      const index = segmentationVoxelValue.toIndex([i, j, k]);
+      if (segmentationVoxelValue.points?.has(index)) {
+        return -2;
+      }
+      const oldVal = segmentationVoxelValue.getIndex(index);
       const isIn =
         oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
       if (!isIn) {
-        onBoundary(i, j, k);
+        segmentationVoxelValue.addPoint(index);
       }
       return isIn;
     };
-
-    const { dimensions, scalarData } = operationData;
-    const width = dimensions[0];
-    const frameSize = dimensions[1] * width;
-
-    const modifiedSlices = new Set<number>();
 
     let floodedIndex = 255;
 
@@ -81,18 +66,13 @@ export default function initializeIslandRemoval(
 
     const onFlood = (i, j, k) => {
       // Fill this point with an indicator that this point is connected
-      const index = k * frameSize + j * width + i;
-      const value = scalarData[index];
+      const value = segmentationVoxelValue.getIJK(i, j, k);
       if (value === floodedIndex) {
         // This is already filled
         return;
       }
-      if (value === segmentIndex) {
-        tracking.updateValue([i, j, k], value);
-      }
-      scalarData[index] = floodedIndex;
+      previewVoxelValue.setIJK(i, j, k, floodedIndex);
       floodedCount++;
-      modifiedSlices.add(k);
     };
 
     clickedPoints.forEach((clickedPoint) => {
@@ -105,32 +85,25 @@ export default function initializeIslandRemoval(
       }
     });
 
-    const isInObject = () => true;
-
     let clearedCount = 0;
     let previewCount = 0;
 
-    const callback = ({ index, pointIJK }) => {
-      const value = scalarData[index];
-      const trackValue = tracking.getter(pointIJK);
+    const callback = ({ index, pointIJK, value: trackValue }) => {
+      const value = segmentationVoxelValue.getIndex(index);
       if (value === floodedIndex) {
         previewCount++;
-        scalarData[index] =
+        const newValue =
           trackValue === segmentIndex ? segmentIndex : previewSegmentIndex;
+        previewVoxelValue.set(pointIJK, newValue);
       } else if (value === previewSegmentIndex) {
         clearedCount++;
         const newValue = trackValue ?? 0;
-        scalarData[index] = newValue;
-        modifiedSlices.add(pointIJK[2]);
+        previewVoxelValue.set(pointIJK, newValue);
       }
     };
 
-    pointInShapeCallback(
-      operationData.imageData,
-      isInObject,
-      callback,
-      boundsIJK
-    );
+    previewVoxelValue.forEach(callback, {});
+
     if (floodedCount - previewCount !== 0) {
       console.warn(
         'There were flooded=',
@@ -143,27 +116,22 @@ export default function initializeIslandRemoval(
         floodedCount - previewCount
       );
     }
-
-    const islandMap = new Map(boundaryMap);
+    const islandMap = new Set(segmentationVoxelValue.points || []);
     const handledSet = new Set<number>();
 
     // Flood now with the final value
     floodedIndex = previewSegmentIndex;
 
-    for (const [index, value] of islandMap.entries()) {
+    for (const index of islandMap.keys()) {
       if (handledSet.has(index)) {
         continue;
       }
-      const { pointIJK } = value;
       handledSet.add(index);
-      const floodMap = new Map<number, any>();
+      const floodMap = new Set<number>();
       let isInternal = true;
       const onFloodInternal = (i, j, k) => {
-        const index = k * frameSize + j * width + i;
-        const value = scalarData[index];
-        const pointIJK = [i, j, k];
-        const mapValue = { index, value, pointIJK };
-        floodMap.set(index, mapValue);
+        const floodIndex = previewVoxelValue.toIndex([i, j, k]);
+        floodMap.add(floodIndex);
         if (
           (boundsIJK[0][0] !== boundsIJK[0][1] &&
             (i === boundsIJK[0][0] || i === boundsIJK[0][1])) ||
@@ -175,31 +143,24 @@ export default function initializeIslandRemoval(
           isInternal = false;
         }
         // Skip duplicating fills
-        if (islandMap.has(index)) {
-          handledSet.add(index);
+        if (islandMap.has(floodIndex)) {
+          handledSet.add(floodIndex);
         }
       };
-      boundaryMap.clear();
+      const pointIJK = previewVoxelValue.toIJK(index);
       floodFill(getter, pointIJK, {
         onFlood: onFloodInternal,
         diagonals: false,
       });
       if (isInternal) {
-        for (const [index, value] of floodMap.entries()) {
-          const { pointIJK } = value;
-          // @ts-ignore
-          onFlood(...pointIJK);
+        for (const index of floodMap) {
+          previewVoxelValue.setIndex(index, previewSegmentIndex);
         }
       }
     }
-
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      Array.from(modifiedSlices)
+      previewVoxelValue.getArrayOfSlices()
     );
-  };
-
-  // initializerData.cancel = () => {
-  //   console.log('Restore original data', previewSegmentationIndex);
-  // };
-}
+  },
+};

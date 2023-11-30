@@ -22,12 +22,13 @@ export type OperationData = {
   /**
    * The colour to apply as an intermediate value
    */
-  previewSegmentIndex: number;
+  previewSegmentIndex?: number;
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
   strategySpecificConfiguration: any;
-  // constraintFn: () => boolean;
+  constraintFn: () => boolean;
+  segmentationRepresentationUID: string;
 };
 
 export type InitializedOperationData = OperationData & {
@@ -41,18 +42,27 @@ export type InitializedOperationData = OperationData & {
   segmentationImageData: ImageData;
   previewVoxelValue: utilities.VoxelValue<number>;
 
-  // TODO - move this into a separate object and just hold a reference here
-  fill?: () => void;
-  isInObject?: (pointLPS, pointIJK) => boolean;
-  isWithinThreshold?: (data) => boolean;
-  initDown?: () => void;
-  completeUp?: () => void;
-  cancelPreview?: () => void;
-  acceptPreview?: () => void;
-  setValue: (data) => void;
+  brushStrategy: BrushStrategy;
+  // And functions for applying changes, created during initialization
+  setValue: (index) => void;
 };
 
-type Initializer = (operationData: InitializedOperationData) => void;
+export type StrategyFunction = (
+  enabled,
+  operationData: InitializedOperationData
+) => unknown;
+
+export type InitializerInstance = {
+  initDown?: StrategyFunction;
+  completeUp?: StrategyFunction;
+  fill?: StrategyFunction;
+  createInitialized?: StrategyFunction;
+  createIsInThreshold?: StrategyFunction;
+};
+
+export type InitializerFunction = () => InitializerInstance;
+
+export type Initializer = InitializerFunction | InitializerInstance;
 
 /**
  * Parts to a strategy:
@@ -72,12 +82,6 @@ type Initializer = (operationData: InitializedOperationData) => void;
  */
 
 export default class BrushStrategy {
-  // @deprecated
-  public static initializeSetValue = initializeSetValue;
-  public static initializePreview = initializePreview;
-  public static initializeThreshold = initializeThreshold;
-  public static initializeRegionFill = initializeRegionFill;
-
   /**
    * Provide some default initializers for various situations, mostly for
    * external use to allow defining new brushes
@@ -89,38 +93,68 @@ export default class BrushStrategy {
     initializeRegionFill,
   };
 
+  protected static childFunctions = {
+    initDown: addListMethod('initDown'),
+    completeUp: addListMethod('completeUp', 'createInitialized'),
+    fill: addListMethod('fill'),
+    createInitialized: addListMethod('createInitialized'),
+    createIsInThreshold: addSingletonMethod('createIsInThreshold'),
+    acceptPreview: addListMethod('acceptPreview', 'createInitialized'),
+    rejectPreview: addListMethod('rejectPreview', 'createInitialized'),
+    setValue: addSingletonMethod('setValue'),
+  };
+
   protected configurationName: string;
   protected initializers: Initializer[];
+  protected _createInitialized = [];
+  protected _fill = [];
+  protected _acceptPreview: [];
 
   constructor(name, ...initializers: Initializer[]) {
     this.configurationName = name;
     this.initializers = initializers;
+    initializers.forEach((initializer) => {
+      const result =
+        typeof initializer === 'function' ? initializer() : initializer;
+      if (!result) {
+        return;
+      }
+      for (const key in result) {
+        if (!BrushStrategy.childFunctions[key]) {
+          throw new Error(`Didn't find ${key} as a brush strategy`);
+        }
+        BrushStrategy.childFunctions[key](this, result[key]);
+      }
+    });
   }
 
-  public fill(
+  public fill = (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) {
-    const initializedData = this.getInitializedData(
+  ) => {
+    const initializedData = this.createInitialized(
       enabledElement,
       operationData
     );
 
-    initializedData.fill();
+    const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
+    if (utilities.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
+      return;
+    } else {
+      strategySpecificConfiguration.centerIJK = centerIJK;
+    }
+
+    this._fill.forEach((func) => func(enabledElement, initializedData));
 
     const { segmentationVoxelValue } = initializedData;
 
-    const arrayOfSlices: number[] = Array.from(
-      segmentationVoxelValue.modifiedSlices
-    );
-
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      arrayOfSlices
+      segmentationVoxelValue.getArrayOfSlices()
     );
-  }
+  };
 
-  protected getInitializedData(
+  protected createInitialized(
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ): InitializedOperationData {
@@ -147,42 +181,43 @@ export default class BrushStrategy {
       previewVoxelValue,
       viewport,
 
-      fill: null,
-      setValue: null,
       centerWorld: null,
+      brushStrategy: this,
     };
 
-    this.initializers.forEach((initializer) => initializer(initializedData));
+    this._createInitialized.forEach((func) =>
+      func(enabledElement, initializedData)
+    );
+
     return initializedData;
   }
 
-  public initDown = (
+  public initDown: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) => {
-    this.getInitializedData(enabledElement, operationData).initDown?.();
-  };
+  ) => void;
 
-  public completeUp = (
+  public completeUp: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) => {
-    this.getInitializedData(enabledElement, operationData).completeUp?.();
-  };
+  ) => void;
 
-  public cancelPreview = (
+  public cancelPreview: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) => {
-    this.getInitializedData(enabledElement, operationData).cancelPreview?.();
-  };
+  ) => void;
 
-  public acceptPreview = (
+  public acceptPreview: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) => {
-    this.getInitializedData(enabledElement, operationData).acceptPreview?.();
-  };
+  ) => void;
+
+  public setValue: (data, operationData: InitializedOperationData) => void;
+
+  public createIsInThreshold: (
+    enabled,
+    operationData: InitializedOperationData
+  ) => any;
 
   public assignMethods(strategy) {
     strategy.initDown = this.initDown;
@@ -190,4 +225,35 @@ export default class BrushStrategy {
     strategy.cancelPreview = this.cancelPreview;
     strategy.acceptPreview = this.acceptPreview;
   }
+}
+
+/**
+ * Adds a list method to the set of defined methods.
+ */
+function addListMethod(name: string, createInitialized?: string) {
+  const listName = `_${name}`;
+  return (brushStrategy, func) => {
+    brushStrategy[listName] ||= [];
+    brushStrategy[listName].push(func);
+    brushStrategy[name] ||= function (enabledElement, operationData) {
+      const initializedData = createInitialized
+        ? brushStrategy[createInitialized](enabledElement, operationData)
+        : operationData;
+      brushStrategy[listName].forEach((func) =>
+        func.call(brushStrategy, enabledElement, initializedData)
+      );
+    };
+  };
+}
+
+/**
+ * Adds a singleton method, throwing an exception if it is already defined
+ */
+function addSingletonMethod(name: string) {
+  return (brushStrategy, func) => {
+    if (brushStrategy[name]) {
+      throw new Error(`The singleton method ${name} already exists`);
+    }
+    brushStrategy[name] = func;
+  };
 }

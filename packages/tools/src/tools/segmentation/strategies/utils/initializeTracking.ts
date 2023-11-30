@@ -1,4 +1,4 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type { OperationData } from '../BrushStrategy';
 
 /**
  * Sets up tracking for use by preview and other services.
@@ -6,19 +6,17 @@ import type { InitializedOperationData } from '../BrushStrategy';
  * stores the original value for updated pixels, and allows the changes to be
  * applied (eg for a preview), reverted, or acted on in other ways.
  */
-export default function initializeTracking(
-  operationData: InitializedOperationData
-) {
-  const { initDown } = operationData;
-  operationData.initDown = () => {
+export default {
+  createInitialized: (enabled, operationData: InitializedOperationData) => {
+    // It always generates preview data, so use that for tracking
+    operationData.strategySpecificConfiguration.TRACKING ||=
+      operationData.previewVoxelValue;
+    const tracking = operationData.strategySpecificConfiguration.TRACKING;
+    tracking.sourceVoxelValue = operationData.segmentationVoxelValue;
+    // And use the preview data associated with this tracking object as needed
+    operationData.previewVoxelValue = tracking;
+  },
+  initDown: (enabled, operationData: OperationData) => {
     operationData.strategySpecificConfiguration.TRACKING = null;
-    initDown?.();
-  };
-
-  // It always generates preview data, so use that for tracking
-  operationData.strategySpecificConfiguration.TRACKING ||=
-    operationData.previewVoxelValue;
-  // And use the preview data associated with this tracking object as needed
-  operationData.previewVoxelValue =
-    operationData.strategySpecificConfiguration.TRACKING;
-}
+  },
+};

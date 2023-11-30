@@ -1,15 +1,26 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type {
+  InitializedOperationData,
+  InitializerInstance,
+} from '../BrushStrategy';
 import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
 
-export default function (operationData: InitializedOperationData) {
-  operationData.fill = () => {
+export default {
+  fill: (enabled, operationData: InitializedOperationData) => {
     const {
       segmentsLocked,
       segmentationImageData,
-      setValue,
-      isWithinThreshold,
       segmentationVoxelValue,
+      previewVoxelValue,
+      imageVoxelValue,
+      brushStrategy,
+      centerIJK,
     } = operationData;
+    const isWithinThreshold = brushStrategy.createIsInThreshold?.(
+      enabled,
+      operationData
+    );
+    const { setValue } = brushStrategy;
+
     const callback = isWithinThreshold
       ? (data) => {
           const { value, index } = data;
@@ -19,16 +30,17 @@ export default function (operationData: InitializedOperationData) {
           if (!isWithinThreshold(index)) {
             return;
           }
-          setValue(data);
+          setValue(data, operationData);
         }
-      : operationData.setValue;
+      : (data) => setValue(data, operationData);
 
     pointInShapeCallback(
       segmentationImageData as unknown,
-      operationData.isInObject,
+      imageVoxelValue.isInObject,
       callback,
       segmentationVoxelValue.boundsIJK
     );
-    operationData.previewVoxelValue.addPoint(operationData.centerIJK);
-  };
-}
+
+    previewVoxelValue.addPoint(centerIJK);
+  },
+} as InitializerInstance;
