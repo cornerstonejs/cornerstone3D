@@ -155,6 +155,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       model.colorTextureString = toString;
     }
 
+    publicAPI.updateLabelOutlineThicknessTexture(actor);
+
     // rebuild the scalarTexture if the data has changed
     toString = `${image.getMTime()}`;
 
@@ -284,6 +286,71 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       model._openGLRenderer.getTiledSizeAndOrigin();
 
     return [lowerLeftU, lowerLeftV];
+  };
+
+  publicAPI.updateLabelOutlineThicknessTexture = (volume) => {
+    const labelOutlineThicknessArray = volume
+      .getProperty()
+      .getLabelOutlineThickness();
+
+    const lTex = model._openGLRenderWindow.getGraphicsResourceForObject(
+      labelOutlineThicknessArray
+    );
+
+    // compute the join of the labelOutlineThicknessArray so that
+    // we can use it to decide whether to rebuild the labelOutlineThicknessTexture
+    // or not
+    const toString = `${labelOutlineThicknessArray.join('-')}`;
+
+    const reBuildL =
+      !lTex?.vtkObj ||
+      lTex?.hash !== toString ||
+      model.labelOutlineThicknessTextureString !== toString;
+
+    if (reBuildL) {
+      const lWidth = 1024;
+      const lHeight = 1;
+      const lSize = lWidth * lHeight;
+      const lTable = new Uint8Array(lSize);
+
+      // Assuming labelOutlineThicknessArray contains the thickness for each segment
+      for (let i = 0; i < lWidth; ++i) {
+        // Retrieve the thickness value for the current segment index.
+        // If the value is undefined, null, or 0, use the first element's value as a default.
+        const thickness =
+          labelOutlineThicknessArray[i] || labelOutlineThicknessArray[0];
+        lTable[i] = thickness;
+      }
+
+      model.labelOutlineThicknessTexture.releaseGraphicsResources(
+        model._openGLRenderWindow
+      );
+
+      model.labelOutlineThicknessTexture.resetFormatAndType();
+      model.labelOutlineThicknessTexture.setMinificationFilter(Filter.NEAREST);
+      model.labelOutlineThicknessTexture.setMagnificationFilter(Filter.NEAREST);
+
+      // Create a 2D texture (acting as 1D) from the raw data
+      model.labelOutlineThicknessTexture.create2DFromRaw(
+        lWidth,
+        lHeight,
+        1,
+        VtkDataTypes.UNSIGNED_CHAR,
+        lTable
+      );
+
+      model.labelOutlineThicknessTextureString = toString;
+      if (labelOutlineThicknessArray) {
+        model._openGLRenderWindow.setGraphicsResourceForObject(
+          labelOutlineThicknessArray,
+          model.labelOutlineThicknessTexture,
+          model.labelOutlineThicknessTextureString
+        );
+      }
+    } else {
+      model.labelOutlineThicknessTexture = lTex.vtkObj;
+      model.labelOutlineThicknessTextureString = lTex.hash;
+    }
   };
 
   // TODO: it seems like this may be needed to reset the GPU memory associated
