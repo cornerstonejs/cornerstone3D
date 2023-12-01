@@ -3,7 +3,6 @@ import * as SegmentationState from '../../../stateManagement/segmentation/segmen
 import { Color } from '../../../types/SegmentationStateTypes';
 import { ColorLUT } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
-import { SegmentationRepresentations } from '../../../enums';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.

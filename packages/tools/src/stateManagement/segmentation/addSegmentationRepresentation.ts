@@ -3,37 +3,54 @@ import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
   ToolGroupSpecificRepresentation,
+  ColorLUT,
 } from '../../types/SegmentationStateTypes';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from './config/segmentationConfig';
-import { addSegmentationRepresentation as addSegmentationRepresentationToState } from './segmentationState';
+import {
+  addSegmentationRepresentation as addSegmentationRepresentationToState,
+  getNextColorLUTIndex,
+  addColorLUT,
+} from './segmentationState';
 import { getRepresentationSpecificConfig } from './helpers/getRepresentationSpecificConfig';
+import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 
 async function addSegmentationRepresentation(
   toolGroupId: string,
   representationInput: RepresentationPublicInput,
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
-  const { segmentationId } = representationInput;
+  const { segmentationId, options = {} } = representationInput;
   const segmentationRepresentationUID = utilities.uuidv4();
 
-  // Todo: make these configurable during representation input by user
+  // Todo: make segmentsHidden also an option that can get passed by
+  // the user
   const segmentsHidden = new Set() as Set<number>;
-  const colorLUTIndex = 0;
-  const active = true;
 
-  const config = getRepresentationSpecificConfig(representationInput);
+  const colorLUTOrIndexInput = options.colorLUTOrIndex;
+  let colorLUTIndexToUse;
+
+  if (typeof colorLUTOrIndexInput === 'number') {
+    colorLUTIndexToUse = colorLUTOrIndexInput;
+  } else {
+    const nextIndex = getNextColorLUTIndex();
+    const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
+      ? colorLUTOrIndexInput
+      : CORNERSTONE_COLOR_LUT;
+    addColorLUT(colorLUTToAdd as ColorLUT, nextIndex);
+    colorLUTIndexToUse = nextIndex;
+  }
 
   const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
     type: Representations.Labelmap,
     segmentsHidden,
-    colorLUTIndex,
-    active,
+    colorLUTIndex: colorLUTIndexToUse,
+    active: true,
     segmentationRepresentationSpecificConfig: {},
     segmentSpecificConfig: {},
-    config,
+    config: getRepresentationSpecificConfig(representationInput),
   };
 
   // Update the toolGroup specific configuration

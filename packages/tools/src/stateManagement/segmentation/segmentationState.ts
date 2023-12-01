@@ -388,6 +388,11 @@ function getColorLUT(index: number): ColorLUT | undefined {
   return segmentationStateManager.getColorLUT(index);
 }
 
+function getNextColorLUTIndex(): number {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getNextColorLUTIndex();
+}
+
 /**
  * Add a color LUT to the segmentation state manager
  * @param colorLUT - The color LUT array to add.
@@ -426,5 +431,6 @@ export {
   // color
   addColorLUT,
   getColorLUT,
+  getNextColorLUTIndex,
   removeColorLUT,
 };

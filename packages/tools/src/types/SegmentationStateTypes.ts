@@ -276,4 +276,9 @@ export type SegmentationPublicInput = {
 export type RepresentationPublicInput = {
   segmentationId: string;
   type: Enums.SegmentationRepresentations;
+  options?: {
+    // color lut to use for this representation (optional), it can
+    // be either a colorLUT array or the index of the colorLUT in the state
+    colorLUTOrIndex?: ColorLUT | number;
+  };
 };
