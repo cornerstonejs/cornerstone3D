@@ -3612,7 +3612,7 @@ class VoxelValue<T> {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    forEach: (callback: any, options: any) => void;
+    forEach: (callback: any, options?: any) => void;
     // (undocumented)
     frameSize: number;
     // (undocumented)

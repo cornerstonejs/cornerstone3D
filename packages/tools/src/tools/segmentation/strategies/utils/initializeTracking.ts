@@ -8,18 +8,12 @@ import type { OperationData, InitializedOperationData } from '../BrushStrategy';
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {
-    if (!operationData.strategySpecificConfiguration) {
+    const { preview } = operationData;
+    if (!preview) {
       return;
     }
-    // It always generates preview data, so use that for tracking
-    operationData.strategySpecificConfiguration.TRACKING ||=
-      operationData.previewVoxelValue;
-    const tracking = operationData.strategySpecificConfiguration.TRACKING;
-    tracking.sourceVoxelValue = operationData.segmentationVoxelValue;
+    preview.sourceVoxelValue = operationData.segmentationVoxelValue;
     // And use the preview data associated with this tracking object as needed
-    operationData.previewVoxelValue = tracking;
-  },
-  initDown: (enabled, operationData: OperationData) => {
-    operationData.strategySpecificConfiguration.TRACKING = null;
+    operationData.previewVoxelValue = preview;
   },
 };

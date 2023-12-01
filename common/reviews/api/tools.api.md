@@ -538,7 +538,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyEvent(enabledElement: Types_2.IEnabledElement, operationData: unknown, eventType: 'initDown' | 'completeUp' | 'cancelPreview' | 'acceptPreview'): any;
+    applyActiveStrategyEvent(enabledElement: Types_2.IEnabledElement, operationData: unknown, eventType: 'initDown' | 'completeUp' | 'cancelPreview' | 'acceptPreview' | 'preview'): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -714,6 +714,7 @@ export class BrushTool extends BaseTool {
         segmentationRepresentationUID: string;
         viewUp: any;
         strategySpecificConfiguration: any;
+        preview: unknown;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -731,6 +732,8 @@ export class BrushTool extends BaseTool {
     onSetToolPassive: () => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    previewCallback: () => void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)

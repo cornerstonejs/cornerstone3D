@@ -29,6 +29,7 @@ export type OperationData = {
   strategySpecificConfiguration: any;
   constraintFn: () => boolean;
   segmentationRepresentationUID: string;
+  preview: any;
 };
 
 export type InitializedOperationData = OperationData & {
@@ -98,8 +99,9 @@ export default class BrushStrategy {
     createInitialized: addListMethod('createInitialized'),
     createIsInThreshold: addSingletonMethod('createIsInThreshold'),
     acceptPreview: addListMethod('acceptPreview', 'createInitialized'),
-    rejectPreview: addListMethod('rejectPreview', 'createInitialized'),
+    cancelPreview: addListMethod('cancelPreview', 'createInitialized'),
     setValue: addSingletonMethod('setValue'),
+    preview: addSingletonMethod('preview'),
   };
 
   protected configurationName: string;
@@ -126,6 +128,11 @@ export default class BrushStrategy {
     });
   }
 
+  /**
+   * Performs a fill of the given region.
+   * Returns the preview data if the fill performs a preview, and otherwise
+   * returns null.
+   */
   public fill = (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
@@ -137,19 +144,25 @@ export default class BrushStrategy {
 
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     if (utilities.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
-      return;
+      return operationData.preview;
     } else {
       strategySpecificConfiguration.centerIJK = centerIJK;
     }
 
     this._fill.forEach((func) => func(enabledElement, initializedData));
 
-    const { segmentationVoxelValue } = initializedData;
+    const { segmentationVoxelValue, previewVoxelValue } = initializedData;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
       segmentationVoxelValue.getArrayOfSlices()
     );
+
+    const preview = previewVoxelValue.modifiedSlices.size
+      ? previewVoxelValue
+      : null;
+
+    return preview;
   };
 
   protected createInitialized(
@@ -161,14 +174,18 @@ export default class BrushStrategy {
 
     if (!data) {
       console.warn('No data found for BrushStrategy');
-      return;
+      return operationData.preview;
     }
 
     const { imageVoxelValue, segmentationVoxelValue, segmentationImageData } =
       data;
-    const previewVoxelValue = VoxelValue.historyVoxelValue(
-      segmentationVoxelValue
-    );
+    const previewVoxelValue =
+      operationData.preview ||
+      VoxelValue.historyVoxelValue(segmentationVoxelValue);
+    if (operationData.preview) {
+      // TODO - move this
+      operationData.previewSegmentIndex ??= 4;
+    }
 
     const initializedData: InitializedOperationData = {
       ...operationData,
@@ -210,6 +227,11 @@ export default class BrushStrategy {
     operationData: OperationData
   ) => void;
 
+  public preview: (
+    enabledElement: Types.IEnabledElement,
+    operationData: OperationData
+  ) => unknown;
+
   public setValue: (data, operationData: InitializedOperationData) => void;
 
   public createIsInThreshold: (
@@ -217,11 +239,14 @@ export default class BrushStrategy {
     operationData: InitializedOperationData
   ) => any;
 
+  /**
+   * This creates the old method functions for the strategies.  The newer
+   * method is intended to directly use this object.
+   */
   public assignMethods(strategy) {
-    strategy.initDown = this.initDown;
-    strategy.completeUp = this.completeUp;
-    strategy.cancelPreview = this.cancelPreview;
-    strategy.acceptPreview = this.acceptPreview;
+    for (const key of Object.keys(BrushStrategy.childFunctions)) {
+      strategy[key] = this[key];
+    }
   }
 }
 
@@ -252,6 +277,6 @@ function addSingletonMethod(name: string) {
     if (brushStrategy[name]) {
       throw new Error(`The singleton method ${name} already exists`);
     }
-    brushStrategy[name] = func;
+    brushStrategy[name] = func.bind(brushStrategy);
   };
 }

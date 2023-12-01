@@ -7,11 +7,16 @@ import { segmentIndex as segmentIndexController } from '../../../../stateManagem
  * the preview colours.
  */
 export default {
+  preview: function (enabled, operationData: InitializedOperationData) {
+    operationData.previewSegmentIndex ??= 4;
+    this.initDown?.(enabled, operationData);
+    const preview = this.fill(enabled, operationData);
+    operationData.preview = preview;
+    this.completeUp?.(enabled, operationData);
+    return preview;
+  },
+
   createInitialized: (enabled, operationData: InitializedOperationData) => {
-    if (!operationData.strategySpecificConfiguration) {
-      delete operationData.previewSegmentIndex;
-      return;
-    }
     const { segmentationId } = operationData;
     const previewSegmentIndex =
       segmentIndexController.getPreviewSegmentIndex(segmentationId);
@@ -20,11 +25,6 @@ export default {
       previewSegmentIndex !== undefined &&
       operationData.previewSegmentIndex === undefined
     ) {
-      console.log(
-        'TODO - setup colours for the preview based on',
-        operationData.segmentIndex,
-        previewSegmentIndex
-      );
       operationData.previewSegmentIndex = previewSegmentIndex;
     }
   },
@@ -59,23 +59,21 @@ export default {
     tracking.clear();
   },
 
-  rejectPreview: (enabled, operationData: InitializedOperationData) => {
-    const { strategySpecificConfiguration, segmentationVoxelValue } =
-      operationData;
-    const tracking = strategySpecificConfiguration?.TRACKING;
-    if (!tracking || tracking.modifiedSlices.size === 0) {
+  cancelPreview: (enabled, operationData: InitializedOperationData) => {
+    const { previewVoxelValue, segmentationVoxelValue } = operationData;
+    if (previewVoxelValue.modifiedSlices.size === 0) {
       return;
     }
 
     const callback = ({ index, value }) => {
       segmentationVoxelValue.setIndex(index, value);
     };
-    tracking.forEach(callback);
+    previewVoxelValue.forEach(callback);
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfSlices()
+      previewVoxelValue.getArrayOfSlices()
     );
-    tracking.clear();
+    previewVoxelValue.clear();
   },
 };

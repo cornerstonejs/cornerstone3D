@@ -1,5 +1,5 @@
 import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
+import { vec3, vec2 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
 import type {
@@ -41,6 +41,22 @@ import {
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 /**
+ * A type for preview data/information, used to setup previews on hover, or
+ * maintain the preview information.
+ */
+export type PreviewData = {
+  /**
+   *  The preview data returned from the strategy
+   */
+  preview: unknown;
+  timer?: number;
+  timerStart: number;
+  startPoint: Types.Point2;
+  element: HTMLDivElement;
+  isDrag: boolean;
+};
+
+/**
  * @public
  */
 class BrushTool extends BaseTool {
@@ -60,6 +76,15 @@ class BrushTool extends BaseTool {
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
+  };
+
+  private _previewData?: PreviewData = {
+    preview: null,
+    element: null,
+    timerStart: 0,
+    timer: null,
+    startPoint: [NaN, NaN],
+    isDrag: false,
   };
 
   constructor(
@@ -206,13 +231,14 @@ class BrushTool extends BaseTool {
 
     evt.preventDefault();
 
+    // This might be a mouse down
+    this._previewData.isDrag = false;
+    this._previewData.timerStart = Date.now();
+
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       this._hoverData.viewportIdsToRender
     );
-
-    // TODO - this should move to click event
-    this.acceptPreview(element);
 
     this.applyActiveStrategyEvent(
       enabledElement,
@@ -223,10 +249,67 @@ class BrushTool extends BaseTool {
     return true;
   };
 
+  /**
+   * This call will be made when the mouse moves and the tool is active, but
+   * not actually drawing at the moment.
+   * The behavior is:
+   *    1. Update the cursor
+   *    2. Call the active strategy event 'preview' and 'rejectPreview'
+   *       on the mouse cursor position on a periodic basis to create a preview
+   *       when configured to do so.
+   *
+   * The preview will be shown after the mouse has been stationary for 250 ms.
+   * Any preview will be cancelled (immediately) after moving outside the center
+   * distance.
+   * As well, if the mouse moves but stays inside the center area for 250 ms,
+   * then the cancel will happen with a new preview being added.
+   *
+   * See mouse up details for how the preview gets accepted.
+   *
+   * The preview also needs to be cancelled on changing tools.
+   */
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
+
+      const { currentPoints, element } = evt.detail;
+      const { canvas } = currentPoints;
+
+      const { preview, startPoint, timer, timerStart, isDrag } =
+        this._previewData;
+      const delta = vec2.distance(canvas, startPoint);
+      const time = Date.now() - timerStart;
+      if (delta > 8 || (time > 250 && delta > 1)) {
+        if (timer) {
+          window.clearTimeout(timer);
+          this._previewData.timer = null;
+        }
+        if (preview && !isDrag) {
+          this.cancelPreview(element);
+        }
+      }
+      if (!this._previewData.timer) {
+        const timer = window.setTimeout(this.previewCallback, 250);
+        Object.assign(this._previewData, {
+          timerStart: Date.now(),
+          timer,
+          startPoint: canvas,
+          element,
+        });
+      }
     }
+  };
+
+  previewCallback = () => {
+    if (this._previewData.preview) {
+      return;
+    }
+    this._previewData.timer = null;
+    this._previewData.preview = this.applyActiveStrategyEvent(
+      getEnabledElement(this._previewData.element),
+      this.getOperationData(this._previewData.element),
+      'preview'
+    );
   };
 
   private createHoverData(element, centerCanvas?) {
@@ -306,7 +389,7 @@ class BrushTool extends BaseTool {
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
-    const { element } = eventData;
+    const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -319,7 +402,28 @@ class BrushTool extends BaseTool {
       viewportIdsToRender
     );
 
-    this.applyActiveStrategy(enabledElement, this.getOperationData());
+    const delta = vec2.distance(
+      currentPoints.canvas,
+      this._previewData.startPoint
+    );
+    if (
+      !this._previewData.isDrag &&
+      Date.now() - this._previewData.timerStart < 500 &&
+      delta < 4
+    ) {
+      return;
+    }
+
+    this._previewData.preview = this.applyActiveStrategy(
+      enabledElement,
+      this.getOperationData()
+    );
+    this._previewData.element = element;
+    // Add a bit of time to the timer start so small accidental movements done
+    // cause issues
+    this._previewData.timerStart = Date.now() + 200;
+    this._previewData.isDrag = true;
+    this._previewData.startPoint = currentPoints.canvas;
   };
 
   protected getOperationData(element?) {
@@ -344,6 +448,8 @@ class BrushTool extends BaseTool {
       viewUp,
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
+      // Provide the preview information so that data can be used directly
+      preview: this._previewData?.preview,
     };
     return operationData;
   }
@@ -406,6 +512,11 @@ class BrushTool extends BaseTool {
     data.invalidated = false;
   }
 
+  /**
+   * The end callback call is made when the mouse is released.  This will
+   * perform another active strategy render event to render the final position.
+   * As well, the completeUp callback will be made during this time.
+   */
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
@@ -423,6 +534,10 @@ class BrushTool extends BaseTool {
     this._editData = null;
 
     this.applyActiveStrategyEvent(enabledElement, operationData, 'completeUp');
+
+    if (!this._previewData.isDrag) {
+      this.acceptPreview(element);
+    }
   };
 
   /**
@@ -435,6 +550,8 @@ class BrushTool extends BaseTool {
       this.getOperationData(element),
       'cancelPreview'
     );
+    this._previewData.preview = null;
+    this._previewData.isDrag = false;
   }
 
   /**
@@ -445,9 +562,11 @@ class BrushTool extends BaseTool {
 
     this.applyActiveStrategyEvent(
       enabledElement,
-      this.getOperationData(enabledElement),
+      this.getOperationData(element),
       'acceptPreview'
     );
+    this._previewData.isDrag = false;
+    this._previewData.preview = null;
   }
 
   /**

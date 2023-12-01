@@ -207,11 +207,21 @@ addSliderToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Accept Preview',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+    brush.acceptPreview(element1);
+  },
+});
+
+addButtonToToolbar({
   title: 'Cancel Preview',
   onClick: () => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    const brush = toolGroup.getToolInstance(brushInstanceNames.ThresholdBrush);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
     brush.cancelPreview(element1);
   },
 });

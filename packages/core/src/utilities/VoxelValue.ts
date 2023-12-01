@@ -103,7 +103,7 @@ export default class VoxelValue<T> {
     return this.dimensions.map((dimension) => [0, dimension - 1]) as BoundsIJK;
   }
 
-  public forEach = (callback, options) => {
+  public forEach = (callback, options?) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const { isWithinObject } = options || {};
     if (this.map) {

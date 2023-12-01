@@ -93,7 +93,8 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   initializeRegionFill,
   initializeSetValue,
   initializeCircle,
-  initializeTracking
+  initializeTracking,
+  initializePreview
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
@@ -117,8 +118,8 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
 export function fillInsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
-): void {
-  CIRCLE_STRATEGY.fill(enabledElement, operationData);
+): unknown {
+  return CIRCLE_STRATEGY.fill(enabledElement, operationData);
 }
 
 CIRCLE_STRATEGY.assignMethods(fillInsideCircle);
@@ -149,7 +150,7 @@ export function thresholdInsideCircle(
     }
   }
 
-  CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
+  return CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
 }
 
 CIRCLE_THRESHOLD_STRATEGY.assignMethods(thresholdInsideCircle);
