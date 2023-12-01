@@ -2047,6 +2047,9 @@ function getMeanPoints(points: IPoints[]): IPoints;
 function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
+function getNextColorLUTIndex(): number;
+
+// @public (undocumented)
 function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
 
 // @public (undocumented)
@@ -3742,6 +3745,9 @@ type RepresentationConfig = {
 type RepresentationPublicInput = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
+    options?: {
+        colorLUTOrIndex?: ColorLUT | number;
+    };
 };
 
 // @public (undocumented)
@@ -4366,6 +4372,7 @@ declare namespace state_3 {
         getSegmentationRepresentationByUID,
         addColorLUT,
         getColorLUT,
+        getNextColorLUTIndex,
         removeColorLUT
     }
 }
