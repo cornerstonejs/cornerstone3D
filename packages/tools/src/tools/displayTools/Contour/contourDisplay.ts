@@ -1,79 +1,19 @@
 import {
   getEnabledElementByIds,
   Types,
-  utilities as csUtils,
   StackViewport,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
-  RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 import { addOrUpdateContourSets } from './addOrUpdateContourSets';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './contourConfigCache';
-
-/**
- * It adds a new segmentation representation to the segmentation state
- * @param toolGroupId - The id of the toolGroup that the segmentation
- * belongs to
- * @param representationInput - RepresentationPublicInput
- * @param toolGroupSpecificConfig - The configuration that is specific to the toolGroup.
- * @returns The segmentationRepresentationUID
- */
-async function addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  const { segmentationId } = representationInput;
-  const segmentationRepresentationUID = csUtils.uuidv4();
-  // Todo: make these configurable during representation input by user
-  const segmentsHidden = new Set() as Set<number>;
-  const visibility = true;
-  const colorLUTIndex = 0;
-  const active = true;
-  const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
-    segmentationId,
-    segmentationRepresentationUID,
-    type: Representations.Contour,
-    segmentsHidden,
-    colorLUTIndex,
-    active,
-    segmentationRepresentationSpecificConfig: {},
-    segmentSpecificConfig: {},
-    config: {},
-  };
-  // Update the toolGroup specific configuration
-  if (toolGroupSpecificConfig) {
-    // Since setting configuration on toolGroup will trigger a segmentationRepresentation
-    // update event, we don't want to trigger the event twice, so we suppress
-    // the first one
-    const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-    const mergedConfig = csUtils.deepMerge(
-      currentToolGroupConfig,
-      toolGroupSpecificConfig
-    );
-    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations:
-        mergedConfig.renderInactiveSegmentations || true,
-      representations: {
-        ...mergedConfig.representations,
-      },
-    });
-  }
-  SegmentationState.addSegmentationRepresentation(
-    toolGroupId,
-    toolGroupSpecificRepresentation
-  );
-  return segmentationRepresentationUID;
-}
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -177,6 +117,5 @@ function _removeContourFromToolGroupViewports(
 
 export default {
   render,
-  addSegmentationRepresentation,
   removeSegmentationRepresentation,
 };
