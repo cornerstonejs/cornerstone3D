@@ -32,8 +32,6 @@ import {
 } from '../../types';
 import {
   math,
-  viewportFilters,
-  drawing,
   throttle,
   roundNumber,
   triggerAnnotationRenderForViewportIds,
@@ -51,6 +49,8 @@ import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
+import * as viewportFilters from '../../utilities/viewportFilters';
+import * as drawing from '../../utilities/drawing';
 
 const { getViewportIdsWithToolToRender } = viewportFilters;
 const { getTextBoxCoordsCanvas } = drawing;
