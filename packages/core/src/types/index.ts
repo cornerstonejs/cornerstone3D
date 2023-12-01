@@ -99,6 +99,7 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import { ISurface } from './ISurface';
 
 export type {
   // config
@@ -189,6 +190,7 @@ export type {
   // Surface
   PublicSurfaceData,
   SurfaceData,
+  ISurface,
   // Color
   RGB,
   ColormapPublic,

@@ -3,6 +3,7 @@ import {
   Enums,
   VolumeViewport3D,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
@@ -12,9 +13,9 @@ import { pointToString } from '../../../utilities/pointToString';
 
 const polyDataCache = new Map();
 
-function addSurfaceToElement(
+function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
-  surface: any,
+  surface: Types.ISurface,
   actorUID: string
 ): void {
   const enabledElement = getEnabledElement(element);
@@ -72,7 +73,6 @@ function addSurfaceToElement(
 
 /**
  * Updates the clipping planes of a surface and caches the resulting poly data
- * @param evt
  */
 function updateSurfacePlanes(evt) {
   const { actorEntry, vtkPlanes, viewport } = evt.detail;
@@ -112,4 +112,4 @@ function updateSurfacePlanes(evt) {
   mapper.setInputData(polyData);
 }
 
-export default addSurfaceToElement;
+export default addOrUpdateSurfaceToElement;

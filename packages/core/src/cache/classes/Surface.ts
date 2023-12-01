@@ -43,6 +43,18 @@ export class Surface {
     return this.polys;
   }
 
+  public setColor(color: Point3): void {
+    this.color = color;
+  }
+
+  public setPoints(points: number[]): void {
+    this.points = points;
+  }
+
+  public setPolys(polys: number[]): void {
+    this.polys = polys;
+  }
+
   public getSizeInBytes(): number {
     return this.sizeInBytes;
   }

@@ -1,4 +1,3 @@
-import _cloneDeep from 'lodash.clonedeep';
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
@@ -9,6 +8,12 @@ import { getToolGroup } from '../../store/ToolGroupManager';
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
 import { contourDisplay } from '../../tools/displayTools/Contour';
 import { surfaceDisplay } from '../../tools/displayTools/Surface';
+
+const displayFunctions = {
+  [Representations.Labelmap]: labelmapDisplay,
+  [Representations.Contour]: contourDisplay,
+  [Representations.Surface]: surfaceDisplay,
+};
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -50,36 +55,19 @@ async function _addSegmentationRepresentation(
   representationInput: RepresentationPublicInput,
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
-  let segmentationRepresentationUID;
+  const displayFunction = displayFunctions[representationInput.type];
 
-  if (representationInput.type === Representations.Labelmap) {
-    segmentationRepresentationUID =
-      await labelmapDisplay.addSegmentationRepresentation(
-        toolGroupId,
-        representationInput,
-        toolGroupSpecificRepresentationConfig
-      );
-  } else if (representationInput.type === Representations.Contour) {
-    segmentationRepresentationUID =
-      await contourDisplay.addSegmentationRepresentation(
-        toolGroupId,
-        representationInput,
-        toolGroupSpecificRepresentationConfig
-      );
-  } else if (representationInput.type === Representations.Surface) {
-    segmentationRepresentationUID =
-      await surfaceDisplay.addSegmentationRepresentation(
-        toolGroupId,
-        representationInput,
-        toolGroupSpecificRepresentationConfig
-      );
-  } else {
+  if (!displayFunction) {
     throw new Error(
-      `The representation type ${representationInput.type} is not supported`
+      `Unsupported representation type: ${representationInput.type}`
     );
   }
 
-  return segmentationRepresentationUID;
+  return displayFunction.addSegmentationRepresentation(
+    toolGroupId,
+    representationInput,
+    toolGroupSpecificRepresentationConfig
+  );
 }
 
 export default addSegmentationRepresentations;

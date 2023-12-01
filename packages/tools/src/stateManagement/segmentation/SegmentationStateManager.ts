@@ -6,6 +6,7 @@ import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { SegmentationRepresentations } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
 import type {
   ColorLUT,
   RepresentationConfig,
@@ -21,12 +22,14 @@ import type {
 // Note: when we get other representations, we should set their default representations too.
 const defaultLabelmapConfig = getDefaultLabelmapConfig();
 const defaultContourConfig = getDefaultContourConfig();
+const defaultSurfaceConfig = getDefaultSurfaceConfig();
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveSegmentations: true,
   representations: {
     [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
     [SegmentationRepresentations.Contour]: defaultContourConfig,
+    [SegmentationRepresentations.Surface]: defaultSurfaceConfig,
   },
 };
 

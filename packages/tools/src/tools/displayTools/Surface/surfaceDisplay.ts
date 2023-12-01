@@ -17,7 +17,7 @@ import {
 } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
-import addSurfaceToElement from './addSurfaceToElement';
+import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 
 /**
  * It adds a new segmentation representation to the segmentation state
@@ -174,13 +174,7 @@ function _renderSurface(
   surfaceUID: string
 ): void {
   const actorUID = surfaceUID;
-  const actorEntry = viewport.getActor(actorUID);
-
-  if (!actorEntry) {
-    addSurfaceToElement(viewport.element, surface, actorUID);
-  } else {
-    throw new Error('Not implemented yet. (Update surface)');
-  }
+  addOrUpdateSurfaceToElement(viewport.element, surface, actorUID);
 }
 
 function _removeSurfaceFromToolGroupViewports(

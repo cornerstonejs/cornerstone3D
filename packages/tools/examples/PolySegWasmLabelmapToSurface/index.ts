@@ -6,17 +6,17 @@ import {
   setVolumesForViewports,
   volumeLoader,
   utilities,
-  geometryLoader,
   CONSTANTS,
+  geometryLoader,
+  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
-
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -24,97 +24,35 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-let instance = undefined;
-
-addButtonToToolbar({
-  title: 'Convert labelmap to surface',
-  onClick: async () => {
-    if (!instance) {
-      return;
-    }
-
-    const labelmap = await fetch(assetsURL.Labelmap).then((res) => res.json());
-
-    const int32Array = new Int32Array(labelmap.data);
-    const result = instance.convertLabelmapToSurface(
-      int32Array,
-      labelmap.dimensions,
-      labelmap.spacing,
-      labelmap.direction,
-      labelmap.origin,
-      [1]
-    );
-
-    const closedSurface = {
-      id: 'closedSurface',
-      color: [200, 232, 20],
-      frameOfReferenceUID: 'test-frameOfReferenceUID',
-      data: {
-        points: result.points,
-        polys: result.polys,
-      },
-    };
-    const geometryId = closedSurface.id;
-    const segmentationId = geometryId;
-    geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.SURFACE,
-      geometryData: closedSurface as Types.PublicSurfaceData,
-    });
-
-    // Add the segmentations to state
-    await segmentation.addSegmentations([
-      {
-        segmentationId,
-        representation: {
-          // The type of segmentation
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-          // The actual segmentation data, in the case of contour geometry
-          // this is a reference to the geometry data
-          data: {
-            geometryId,
-          },
-        },
-      },
-    ]);
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-    await segmentation.addSegmentationRepresentations(toolGroupId3d, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-  },
-});
-
 const {
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  ZoomTool,
+  RectangleScissorsTool,
+  SphereScissorsTool,
+  CircleScissorsTool,
+  BrushTool,
+  PaintFillTool,
   PanTool,
+  ZoomTool,
   StackScrollMouseWheelTool,
   TrackballRotateTool,
 } = cornerstoneTools;
+
 const { MouseBindings } = csToolsEnums;
-const { ViewportType, GeometryType } = Enums;
+const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const toolGroupId = 'MY_TOOLGROUP_ID';
-const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
+const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Surface Segmentation Representation for Volume Viewports',
-  'In this demonstration, we will show you how to render surfaces. On the left side, you will find a volume viewport, and on the right side, there is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
+  'Basic manual labelmap Segmentation tools',
+  'Here we demonstrate manual segmentation tools'
 );
 
 const size = '500px';
@@ -127,22 +65,120 @@ viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
-element1.oncontextmenu = () => false;
-element2.oncontextmenu = () => false;
-
+const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
 element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
+
+// Disable right click context menu so we can have right click tools
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+element3.oncontextmenu = (e) => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
+instructions.innerText = `
+  Left Click: Use selected Segmentation Tool.
+  Middle Click: Pan
+  Right Click: Zoom
+  Mouse wheel: Scroll Stack
+  `;
+
 content.append(instructions);
+
 // ============================= //
+let polySeg = undefined;
+const toolGroupId = '1';
+const toolGroupId2 = '2';
+
+addButtonToToolbar({
+  title: 'Convert labelmap to surface',
+  onClick: async () => {
+    if (!polySeg.instance) {
+      return;
+    }
+
+    const labelmap = cache.getVolume(segmentationId);
+
+    const int32Array = new Int32Array(labelmap.scalarData);
+    // const int32Array = new Int32Array(labelmap.data);
+    const result = polySeg.instance.convertLabelmapToSurface(
+      int32Array,
+      labelmap.dimensions,
+      labelmap.spacing,
+      labelmap.direction,
+      labelmap.origin,
+      [1]
+    );
+
+    result.points = result.points || [];
+    result.polys = result.polys || [];
+
+    const closedSurface = {
+      id: 'closedSurface',
+      color: [200, 232, 20],
+      frameOfReferenceUID: 'test-frameOfReferenceUID',
+      data: {
+        points: result.points,
+        polys: result.polys,
+      },
+    };
+    const geometryId = closedSurface.id;
+    geometryLoader.createAndCacheGeometry(geometryId, {
+      type: Enums.GeometryType.SURFACE,
+      geometryData: closedSurface as Types.PublicSurfaceData,
+    });
+
+    // Add the segmentations to state
+    segmentation.addRepresentationData({
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+      data: {
+        geometryId,
+      },
+    });
+
+    // add the 3d representation to the 3d toolgroup
+    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+      },
+    ]);
+  },
+});
+
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  // using volumeLoader.createAndCacheDerivedVolume.
+  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+}
 
 /**
  * Runs the demo
@@ -151,59 +187,73 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  instance = await ICRPolySeg();
+  polySeg = await new ICRPolySeg();
+  polySeg.initialize();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(SegmentationDisplayTool);
+  cornerstoneTools.addTool(RectangleScissorsTool);
+  cornerstoneTools.addTool(CircleScissorsTool);
+  cornerstoneTools.addTool(SphereScissorsTool);
+  cornerstoneTools.addTool(PaintFillTool);
+  cornerstoneTools.addTool(BrushTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
+  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId);
+  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  // Manipulation Tools
+  toolGroup1.addTool(PanTool.toolName);
+  toolGroup1.addTool(ZoomTool.toolName);
+  toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
 
-  toolGroup3d.addTool(SegmentationDisplayTool.toolName);
-  toolGroup3d.addTool(ZoomTool.toolName);
-  toolGroup3d.addTool(TrackballRotateTool.toolName, {
-    configuration: { volumeId },
+  // Segmentation Tools
+  toolGroup1.addTool(SegmentationDisplayTool.toolName);
+  toolGroup1.addTool(RectangleScissorsTool.toolName);
+  toolGroup1.addTool(CircleScissorsTool.toolName);
+  toolGroup1.addTool(SphereScissorsTool.toolName);
+  toolGroup1.addTool(PaintFillTool.toolName);
+  toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
+    activeStrategy: 'FILL_INSIDE_SPHERE',
   });
 
-  toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup2.addTool(TrackballRotateTool.toolName);
+  toolGroup2.addTool(SegmentationDisplayTool.toolName);
+  toolGroup2.addTool(ZoomTool.toolName);
 
-  toolGroup.setToolActive(PanTool.toolName, {
+  // activations
+  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
+
+  toolGroup1.setToolActive('SphereBrush', {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
+        mouseButton: MouseBindings.Primary, // Middle Click
       },
     ],
   });
-  toolGroup.setToolActive(ZoomTool.toolName, {
+  toolGroup1.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   });
-
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-
-  toolGroup3d.setToolActive(TrackballRotateTool.toolName, {
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup2.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
-
-  toolGroup3d.setToolActive(ZoomTool.toolName, {
+  toolGroup2.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary, // Right Click
@@ -217,7 +267,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -226,6 +276,7 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -233,60 +284,76 @@ async function run() {
 
   // Create the viewports
   const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_3D';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_3D';
 
   const viewportInputArray = [
     {
-      viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D,
+      viewportId: viewportId1,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        background: <Types.Point3>[0.2, 0, 0.2],
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
-      viewportId: viewportId1,
+      viewportId: viewportId2,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.VOLUME_3D,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0, 0, 0],
       },
     },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup3d.addViewport(viewportId2, renderingEngineId);
+  toolGroup1.addViewport(viewportId1, renderingEngineId);
+  toolGroup1.addViewport(viewportId2, renderingEngineId);
+  toolGroup2.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2]
-  ).then(() => {
-    const viewport3d = renderingEngine.getViewport(viewportId2);
-    const volumeActor = viewport3d.getDefaultActor().actor as Types.VolumeActor;
-    utilities.applyPreset(
-      volumeActor,
-      CONSTANTS.VIEWPORT_PRESETS.find(
-        (preset) => preset.name === 'CT-Chest-Contrast-Enhanced'
-      )
-    );
+    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [viewportId1, viewportId2, viewportId3]
+  );
 
-    const renderer = viewport3d.getRenderer();
-    renderer.getActiveCamera().elevation(-70);
-    viewport3d.setCamera({ parallelScale: 600 });
+  const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
+    .actor as Types.VolumeActor;
 
-    viewport3d.render();
-  });
+  utilities.applyPreset(
+    volumeActor,
+    CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+  );
+
+  const viewport = renderingEngine.getViewport(viewportId3);
+  viewport.render();
+
+  // // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
-  renderingEngine.render();
+  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
 }
 
 run();

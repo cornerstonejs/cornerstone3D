@@ -75,41 +75,6 @@ const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
 
-async function addSegmentationsToState() {
-  const contour = await fetch(assetsURL.SampleContour).then((res) =>
-    res.json()
-  );
-
-  // load the contour data
-  const geometryIds = [];
-  const promises = contour.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-        // The actual segmentation data, in the case of contour geometry
-        // this is a reference to the geometry data
-        data: {
-          geometryIds,
-        },
-      },
-    },
-  ]);
-}
-
 /**
  * Runs the demo
  */
@@ -201,8 +166,38 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  const contour = await fetch(assetsURL.SampleContour).then((res) =>
+    res.json()
+  );
 
+  // load the contour data
+  const geometryIds = [];
+  const promises = contour.contourSets.map((contourSet) => {
+    const geometryId = contourSet.id;
+    geometryIds.push(geometryId);
+    return geometryLoader.createAndCacheGeometry(geometryId, {
+      type: GeometryType.CONTOUR,
+      geometryData: contourSet as Types.PublicContourSetData,
+    });
+  });
+
+  await Promise.all(promises);
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          geometryIds,
+        },
+      },
+    },
+  ]);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
