@@ -19,6 +19,13 @@ import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/Piec
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
+declare namespace aabb {
+    export {
+        distanceToPoint,
+        distanceToPointSquared
+    }
+}
+
 declare namespace activeSegmentation {
     export {
         getActiveSegmentationRepresentation,
@@ -73,6 +80,8 @@ interface AdvancedMagnifyAnnotation extends Annotation {
 // @public (undocumented)
 export class AdvancedMagnifyTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    static Actions: typeof AdvancedMagnifyToolActions;
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
@@ -722,6 +731,12 @@ function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRender
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
 
 // @public (undocumented)
+type CardinalSplineProps = SplineProps & {
+    scale?: number;
+    fixedScale?: boolean;
+};
+
+// @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
 
 // @public (undocumented)
@@ -853,9 +868,10 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     editData: {
         annotation: any;
-        segmentation: any;
         segmentIndex: number;
-        segmentationId: string;
+        volumeId: string;
+        referencedVolumeId: string;
+        imageIdReferenceMap: Map<string, string>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -864,6 +880,7 @@ export class CircleScissorsTool extends BaseTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
         centerCanvas?: Array<number>;
+        segmentationRepresentationUID?: string;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -884,6 +901,22 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
+
+// @public (undocumented)
+type ClosestControlPoint = ClosestPoint & {
+    index: number;
+};
+
+// @public (undocumented)
+type ClosestPoint = {
+    point: Types_2.Point2;
+    distance: number;
+};
+
+// @public (undocumented)
+type ClosestSplinePoint = ClosestPoint & {
+    uValue: number;
+};
 
 // @public (undocumented)
 interface CobbAngleAnnotation extends Annotation {
@@ -1173,6 +1206,12 @@ type ContourSegmentationData = {
 };
 
 // @public (undocumented)
+type ControlPointInfo = {
+    index: number;
+    point: Types_2.Point2;
+};
+
+// @public (undocumented)
 function copyPoints(points: ITouchPoints): ITouchPoints;
 
 // @public (undocumented)
@@ -1183,6 +1222,9 @@ const CORNERSTONE_COLOR_LUT: number[][];
 
 // @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
 function createLabelmapVolumeForViewport(input: {
@@ -1207,7 +1249,7 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
-function createStackImageSynchronizer(synchronizerName: string): Synchronizer;
+const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 
 // @public (undocumented)
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any): Synchronizer;
@@ -1384,16 +1426,31 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
-function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
+function distanceToPoint(aabb: Types_2.AABB2, point: Types_2.Point2): number;
 
 // @public (undocumented)
-function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
+function distanceToPoint_2(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
 function distanceToPoint_3(p1: Point, p2: Point): number;
 
 // @public (undocumented)
-function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
+function distanceToPoint_4(rect: number[], point: Types_2.Point2): number;
+
+// @public (undocumented)
+function distanceToPointSquared(aabb: Types_2.AABB2, point: Types_2.Point2): number;
+
+// @public (undocumented)
+function distanceToPointSquared_2(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
+
+// @public (undocumented)
+function distanceToPointSquared_3(p1: Point_2, p2: Point_2): number;
+
+// @public (undocumented)
+function distanceToPointSquaredInfo(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): {
+    point: Types_2.Point2;
+    distanceSquared: number;
+};
 
 // @public (undocumented)
 export class DragProbeTool extends ProbeTool {
@@ -1440,6 +1497,9 @@ function drawCircle(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, c
 function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}, dataId?: string): void;
 
 // @public (undocumented)
+function drawEllipseByCoordinates(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, canvasCoordinates: [Types_2.Point2, Types_2.Point2, Types_2.Point2, Types_2.Point2], options?: {}, dataId?: string): void;
+
+// @public (undocumented)
 function drawHandles(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
 
 declare namespace drawing {
@@ -1447,6 +1507,7 @@ declare namespace drawing {
         draw,
         drawCircle,
         drawEllipse,
+        drawEllipseByCoordinates,
         drawHandles,
         drawLine,
         drawPolyline,
@@ -1917,6 +1978,9 @@ function getBrushSizeForToolGroup(toolGroupId: string, toolName?: string): void;
 function getBrushThresholdForToolGroup(toolGroupId: string): any;
 
 // @public (undocumented)
+const getCalibratedAreaUnits: (handles: any, image: any) => string;
+
+// @public (undocumented)
 const getCalibratedLengthUnits: (handles: any, image: any) => string;
 
 // @public (undocumented)
@@ -2173,6 +2237,58 @@ function isAnnotationVisible(annotationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
+
+// @public (undocumented)
+interface ISpline {
+    // (undocumented)
+    get aabb(): Types_2.AABB2;
+    // (undocumented)
+    addControlPoint(point: Types_2.Point2): void;
+    // (undocumented)
+    addControlPointAtU(u: number): ControlPointInfo;
+    // (undocumented)
+    addControlPoints(points: Types_2.Point2[]): void;
+    // (undocumented)
+    clearControlPoints(): void;
+    // (undocumented)
+    get closed(): boolean;
+    set closed(closed: boolean);
+    // (undocumented)
+    containsPoint(point: Types_2.Point2): boolean;
+    // (undocumented)
+    deleteControlPointByIndex(index: number): boolean;
+    // (undocumented)
+    getClosestControlPoint(point: Types_2.Point2): ClosestControlPoint;
+    // (undocumented)
+    getClosestControlPointWithinDistance(point: Types_2.Point2, range: number): ClosestControlPoint;
+    // (undocumented)
+    getClosestPoint(point: Types_2.Point2): ClosestSplinePoint;
+    // (undocumented)
+    getClosestPointOnControlPointLines(point: Types_2.Point2): ClosestPoint;
+    // (undocumented)
+    getControlPoints(): Types_2.Point2[];
+    // (undocumented)
+    getPolylinePoints(): Types_2.Point2[];
+    // (undocumented)
+    getPreviewPolylinePoints(controlPointPreview: Types_2.Point2, closeDistance: number): Types_2.Point2[];
+    // (undocumented)
+    hasTangentPoints(): boolean;
+    // (undocumented)
+    get invalidated(): boolean;
+    // (undocumented)
+    isPointNearCurve(point: Types_2.Point2, maxDist: number): boolean;
+    // (undocumented)
+    get length(): number;
+    // (undocumented)
+    get numControlPoints(): number;
+    // (undocumented)
+    get resolution(): number;
+    set resolution(resolution: number);
+    // (undocumented)
+    setControlPoints(points: Types_2.Point2[]): void;
+    // (undocumented)
+    updateControlPoint(index: number, newControlPoint: Types_2.Point2): void;
+}
 
 // @public (undocumented)
 function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
@@ -2443,15 +2559,43 @@ type LabelmapRenderingConfig = {
 };
 
 // @public (undocumented)
-type LabelmapSegmentationData = {
+type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack;
+
+// @public (undocumented)
+type LabelmapSegmentationDataStack = {
+    imageIdReferenceMap: Map<string, string>;
+};
+
+// @public (undocumented)
+type LabelmapSegmentationDataVolume = {
     volumeId: string;
     referencedVolumeId?: string;
 };
+
+// @public (undocumented)
+type LabelmapToolOperationData = {
+    segmentationId: string;
+    segmentIndex: number;
+    segmentsLocked: number[];
+    viewPlaneNormal: number[];
+    viewUp: number[];
+    strategySpecificConfiguration: any;
+    constraintFn: (pointIJK: number) => boolean;
+    segmentationRepresentationUID: string;
+};
+
+// @public (undocumented)
+type LabelmapToolOperationDataStack = LabelmapToolOperationData & LabelmapSegmentationDataStack;
+
+// @public (undocumented)
+type LabelmapToolOperationDataVolume = LabelmapToolOperationData & LabelmapSegmentationDataVolume;
 
 declare namespace LabelmapTypes {
     export {
         LabelmapConfig,
         LabelmapRenderingConfig,
+        LabelmapSegmentationDataVolume,
+        LabelmapSegmentationDataStack,
         LabelmapSegmentationData
     }
 }
@@ -2542,8 +2686,9 @@ export class LengthTool extends AnnotationTool {
 
 declare namespace lineSegment {
     export {
-        distanceToPoint,
-        distanceToPointSquared,
+        distanceToPoint_2 as distanceToPoint,
+        distanceToPointSquared_2 as distanceToPointSquared,
+        distanceToPointSquaredInfo,
         intersectLine
     }
 }
@@ -2594,13 +2739,14 @@ export class MagnifyTool extends BaseTool {
 
 declare namespace math {
     export {
-        vec2,
+        aabb,
+        BasicStatsCalculator,
         ellipse,
         lineSegment,
-        rectangle,
-        polyline,
         point,
-        BasicStatsCalculator
+        polyline,
+        rectangle,
+        vec2
     }
 }
 
@@ -2614,6 +2760,9 @@ export class MIPJumpToClickTool extends BaseTool {
     // (undocumented)
     static toolName: any;
 }
+
+// @public (undocumented)
+function mirror(mirrorPoint: Types_2.Point2, staticPoint: Types_2.Point2): Types_2.Point2;
 
 // @public (undocumented)
 enum MouseBindings {
@@ -3027,7 +3176,9 @@ type PlayClipOptions = {
 
 declare namespace point {
     export {
-        distanceToPoint_3 as distanceToPoint
+        distanceToPoint_3 as distanceToPoint,
+        distanceToPointSquared_3 as distanceToPointSquared,
+        mirror
     }
 }
 
@@ -3035,7 +3186,7 @@ declare namespace point {
 const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
 
 // @public (undocumented)
-function pointInEllipse(ellipse: Ellipse, pointLPS: vec3): boolean;
+function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
@@ -3144,7 +3295,7 @@ type PublicToolProps = SharedToolProp & {
 
 declare namespace rectangle {
     export {
-        distanceToPoint_2 as distanceToPoint
+        distanceToPoint_4 as distanceToPoint
     }
 }
 
@@ -3421,9 +3572,11 @@ export class RectangleScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
+        imageIdReferenceMap: Map<string, string>;
+        volumeId: string;
+        referencedVolumeId: string;
         annotation: any;
         segmentationId: string;
-        segmentation: any;
         segmentIndex: number;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
@@ -3679,6 +3832,7 @@ type ScrollOptions_2 = {
     volumeId?: string;
     debounceLoading?: boolean;
     loop?: boolean;
+    scrollSlabs?: boolean;
 };
 
 // @public (undocumented)
@@ -3975,10 +4129,12 @@ export class SphereScissorsTool extends BaseTool {
     // (undocumented)
     editData: {
         annotation: any;
-        segmentation: any;
         segmentIndex: number;
         segmentsLocked: number[];
-        segmentationId: string;
+        segmentationRepresentationUID: string;
+        volumeId: string;
+        referencedVolumeId: string;
+        imageIdReferenceMap: Map<string, string>;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -4000,6 +4156,126 @@ export class SphereScissorsTool extends BaseTool {
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     static toolName: any;
+}
+
+// @public (undocumented)
+type SplineCurveSegment = {
+    controlPoints: {
+        p0: Types_2.Point2;
+        p1: Types_2.Point2;
+        p2: Types_2.Point2;
+        p3: Types_2.Point2;
+    };
+    aabb: Types_2.AABB2;
+    length: number;
+    previousCurveSegmentsLength: number;
+    lineSegments: SplineLineSegment[];
+};
+
+// @public (undocumented)
+type SplineLineSegment = {
+    points: {
+        start: Types_2.Point2;
+        end: Types_2.Point2;
+    };
+    aabb: Types_2.AABB2;
+    length: number;
+    previousLineSegmentsLength: number;
+};
+
+// @public (undocumented)
+type SplineProps = {
+    resolution?: number;
+    closed?: boolean;
+};
+
+// @public (undocumented)
+interface SplineROIAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        label?: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox?: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        spline: {
+            type: string;
+            instance: ISpline;
+            resolution: number;
+            polyline: Types_2.Point3[];
+            closed: boolean;
+        };
+        cachedStats?: {
+            [targetId: string]: {
+                Modality: string;
+                area: number;
+                areaUnit: string;
+            };
+        };
+    };
+}
+
+// @public (undocumented)
+export class SplineROITool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    static Actions: typeof SplineToolActions;
+    // (undocumented)
+    addControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => SplineROIAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => string;
+    // (undocumented)
+    deleteControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
+    // (undocumented)
+    editData: {
+        annotation: SplineROIAnnotation;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+        lastCanvasPoint?: Types_2.Point2;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: SplineROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _renderStats: (annotation: any, viewport: any, enabledElement: any, svgDrawingHelper: any) => void;
+    // (undocumented)
+    static SplineTypes: typeof SplineTypesEnum;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+    // (undocumented)
+    triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
 
 // @public (undocumented)
@@ -4026,6 +4302,7 @@ export class StackScrollMouseWheelTool extends BaseTool {
             invert: boolean;
             debounceIfNotLoaded: boolean;
             loop: boolean;
+            scrollSlabs: boolean;
         };
     });
     // (undocumented)
@@ -4225,6 +4502,7 @@ declare namespace synchronizers {
         createCameraPositionSynchronizer,
         createVOISynchronizer,
         createZoomPanSynchronizer,
+        createImageSliceSynchronizer,
         createStackImageSynchronizer
     }
 }
@@ -4381,6 +4659,7 @@ declare namespace ToolSpecificAnnotationTypes {
         LengthAnnotation,
         AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
+        SplineROIAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,
@@ -4577,7 +4856,19 @@ declare namespace Types {
         FloodFillGetter,
         FloodFillOptions,
         ContourSegmentationData,
-        Statistics
+        Statistics,
+        LabelmapToolOperationData,
+        LabelmapToolOperationDataStack,
+        LabelmapToolOperationDataVolume,
+        CardinalSplineProps,
+        ClosestControlPoint,
+        ClosestPoint,
+        ClosestSplinePoint,
+        ControlPointInfo,
+        ISpline,
+        SplineCurveSegment,
+        SplineLineSegment,
+        SplineProps
     }
 }
 export { Types }
@@ -4613,6 +4904,7 @@ declare namespace utilities {
         triggerEvent,
         calibrateImageSpacing,
         getCalibratedLengthUnits,
+        getCalibratedAreaUnits,
         getCalibratedScale,
         segmentation_2 as segmentation,
         triggerAnnotationRenderForViewportIds,

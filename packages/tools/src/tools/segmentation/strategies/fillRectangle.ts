@@ -1,19 +1,16 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { pointInShapeCallback } from '../../../utilities';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { LabelmapToolOperationData } from '../../../types';
+import { getStrategyData } from './utils/getStrategyData';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = {
-  segmentationId: string;
+type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentIndex: number;
-  segmentsLocked: number[];
 };
 
 /**
@@ -30,19 +27,23 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
-  const {
-    volume: segmentation,
-    points,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    constraintFn,
-  } = operationData;
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
+  const { points, segmentsLocked, segmentIndex, segmentationId, constraintFn } =
+    operationData;
+
+  const strategyData = getStrategyData({
+    operationData,
+    viewport: enabledElement.viewport,
+  });
+
+  if (!strategyData) {
+    console.warn('No data found for fillRectangle');
+    return;
+  }
+
+  const { segmentationImageData, segmentationScalarData } = strategyData;
 
   let rectangleCornersIJK = points.map((world) => {
-    return transformWorldToIndex(imageData, world);
+    return transformWorldToIndex(segmentationImageData, world);
   });
 
   // math round
@@ -52,7 +53,10 @@ function fillRectangle(
     });
   });
 
-  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
+  const boundsIJK = getBoundingBoxAroundShape(
+    rectangleCornersIJK,
+    segmentationImageData.getDimensions()
+  );
 
   // Since always all points inside the boundsIJK is inside the rectangle...
   const pointInRectangle = () => true;
@@ -63,16 +67,21 @@ function fillRectangle(
     }
 
     if (!constraintFn) {
-      scalarData[index] = segmentIndex;
+      segmentationScalarData[index] = segmentIndex;
       return;
     }
 
     if (constraintFn(pointIJK)) {
-      scalarData[index] = segmentIndex;
+      segmentationScalarData[index] = segmentIndex;
     }
   };
 
-  pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK);
+  pointInShapeCallback(
+    segmentationImageData,
+    pointInRectangle,
+    callback,
+    boundsIJK
+  );
 
   triggerSegmentationDataModified(segmentationId);
 }

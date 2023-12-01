@@ -13,13 +13,13 @@
       "description": "Advanced Tools library"
     },
     "dicom-image-loader": {
-      "description": "Cornerstone dicom image loader"
+      "description": "DICOM image loader"
     },
     "adapters": {
-      "description": "Cornerstone adapters"
+      "description": "Adapters"
     },
     "video": {
-      "description": "Cornerstone Video Viewport"
+      "description": "Video Viewport"
     },
     "nifti": {
       "description": "Nifti Volume loader"
@@ -300,6 +300,14 @@
       "rectangleROIThreshold": {
         "name": "Rectangle ROI Threshold Segmentation",
         "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
+      },
+      "stackSegmentation": {
+        "name": "Segmentation Labelmap creation/edit for stack viewports",
+        "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
+      },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
       }
     },
     "tools-advanced": {
