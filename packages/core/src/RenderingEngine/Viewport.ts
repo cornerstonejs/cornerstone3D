@@ -78,7 +78,6 @@ class Viewport implements IViewport {
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
   /** informs if a new actor was added before a resetCameraClippingRange phase */
-  protected newActorAdded = false;
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
@@ -490,7 +489,19 @@ class Viewport implements IViewport {
     const renderer = this.getRenderer();
     renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
-    this.newActorAdded = true;
+
+    // We should reset the camera clipping range when an actor is getting added
+    // to the viewport
+    const camera = this.getCamera();
+    this.updateClippingPlanesForActors(camera);
+    renderer.resetCameraClippingRange();
+    this.render();
+
+    // not sure why this is needed really
+    setTimeout(() => {
+      renderer.resetCameraClippingRange();
+      this.render();
+    }, 0);
   }
 
   /**
@@ -1118,7 +1129,7 @@ class Viewport implements IViewport {
 
       // only modify the clipping planes if the camera is modified out of plane
       // or a new actor is added and we need to update the clipping planes
-      if (cameraModifiedOutOfPlane || viewUpHasChanged || this.newActorAdded) {
+      if (cameraModifiedOutOfPlane || viewUpHasChanged) {
         const actorEntry = this.getDefaultActor();
         if (!actorEntry?.actor) {
           return;
@@ -1215,11 +1226,6 @@ class Viewport implements IViewport {
     });
 
     await Promise.all(allPromises);
-    this.posProcessNewActors();
-  }
-
-  protected posProcessNewActors(): void {
-    this.newActorAdded = false;
   }
 
   public setOrientationOfClippingPlanes(

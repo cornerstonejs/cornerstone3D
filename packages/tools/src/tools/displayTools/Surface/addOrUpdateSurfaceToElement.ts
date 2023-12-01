@@ -59,16 +59,17 @@ function addOrUpdateSurfaceToElement(
 
   // sets the color of the surface actor
   actor.getProperty().setColor(color[0] / 255, color[1] / 255, color[2] / 255);
-  viewport.addActor({
-    actor,
-    uid: actorUID,
-    clippingFilter,
-  });
 
   element.addEventListener(
     Enums.Events.CLIPPING_PLANES_UPDATED,
     updateSurfacePlanes
   );
+
+  viewport.addActor({
+    actor,
+    uid: actorUID,
+    clippingFilter,
+  });
 }
 
 /**
