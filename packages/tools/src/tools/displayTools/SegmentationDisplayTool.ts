@@ -149,10 +149,9 @@ class SegmentationDisplayTool extends BaseTool {
           [Representations.Labelmap]: labelmapDisplay,
           [Representations.Contour]: contourDisplay,
           [Representations.Surface]: surfaceDisplay,
-        }
+        };
 
         const display = renderers[representation.type];
-
 
         for (const viewport of toolGroupViewports) {
           const renderedViewport = display.render(

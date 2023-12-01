@@ -9,6 +9,7 @@ import drawLinkedTextBox from './drawLinkedTextBox';
 import drawRect from './drawRect';
 import drawTextBox from './drawTextBox';
 import drawArrow from './drawArrow';
+import drawRedactionRect from './drawRedactionRect';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 
@@ -24,6 +25,7 @@ export {
   drawRect,
   drawTextBox,
   drawArrow,
+  drawRedactionRect,
   setAttributesIfNecessary,
   setNewAttributesIfValid,
 };

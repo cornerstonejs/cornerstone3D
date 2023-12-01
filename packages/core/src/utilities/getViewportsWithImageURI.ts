@@ -26,20 +26,13 @@ export default function getViewportsWithImageURI(
 
   const viewports = [];
   renderingEngines.forEach((renderingEngine) => {
-    const stackViewports = renderingEngine.getStackViewports();
+    const viewportsForRenderingEngine = renderingEngine.getViewports();
 
-    const filteredStackViewports = stackViewports.filter((viewport) =>
-      viewport.hasImageURI(imageURI)
-    );
-
-    // If no stack viewport found but a volumeViewport is rendering the same data
-    const volumeViewports = renderingEngine.getVolumeViewports();
-
-    const filteredVolumeViewports = volumeViewports.filter((viewport) =>
-      viewport.hasImageURI(imageURI)
-    );
-
-    viewports.push(...filteredStackViewports, ...filteredVolumeViewports);
+    viewportsForRenderingEngine.forEach((viewport) => {
+      if (viewport.hasImageURI(imageURI)) {
+        viewports.push(viewport);
+      }
+    });
   });
 
   return viewports;

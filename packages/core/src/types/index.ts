@@ -14,7 +14,7 @@ import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
 import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry } from './IActor';
+import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -22,6 +22,7 @@ import type {
 } from './ILoadObject';
 import type Metadata from './Metadata';
 import type OrientationVectors from './OrientationVectors';
+import type AABB2 from './AABB2';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
@@ -62,6 +63,7 @@ import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
 import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
 import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
+import type { IStackInput, StackInputCallback } from './IStackInput';
 import type * as EventTypes from './EventTypes';
 import type IRenderingEngine from './IRenderingEngine';
 import type ActorSliceRange from './ActorSliceRange';
@@ -79,10 +81,29 @@ import type { IContour } from './IContour';
 import type RGB from './RGB';
 import { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
-import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+export type {
+  RetrieveStage,
+  RetrieveOptions,
+  RangeRetrieveOptions,
+  StreamingRetrieveOptions,
+  NearbyFrames,
+  IRetrieveConfiguration,
+  IImagesLoader,
+} from './IRetrieveConfiguration';
+import type { ImageLoadListener } from './ImageLoadListener';
+import type VideoViewportProperties from './VideoViewportProperties';
+import type IVideoViewport from './IVideoViewport';
+import type {
+  InternalVideoCamera,
+  VideoViewportInput,
+} from './VideoViewportTypes';
 
 export type {
   // config
@@ -90,6 +111,7 @@ export type {
   //
   ICamera,
   IStackViewport,
+  IVideoViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
@@ -121,20 +143,25 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ImageActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,
   VolumeInputCallback,
+  IStackInput,
+  StackInputCallback,
   ViewportPreset,
   //
   Metadata,
   OrientationVectors,
+  AABB2,
   Point2,
   Point3,
   Point4,
   Mat3,
   Plane,
   ViewportInputOptions,
+  VideoViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -176,7 +203,12 @@ export type {
   ColormapRegistration,
   // PixelData
   PixelDataTypedArray,
+  PixelDataTypedArrayString,
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  ImageLoadListener,
+  // video
+  InternalVideoCamera,
+  VideoViewportInput,
 };

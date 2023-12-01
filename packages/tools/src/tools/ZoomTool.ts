@@ -145,10 +145,10 @@ class ZoomTool extends BaseTool {
     const size = [element.clientWidth, element.clientHeight];
     const { parallelScale, focalPoint, position } = camera;
 
-    const zoomScale = 1.5 / size[1];
+    const zoomScale = 5 / size[1];
     const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
 
-    let parallelScaleToSet = (1.0 - k) * parallelScale;
+    const parallelScaleToSet = (1.0 - k) * parallelScale;
 
     let focalPointToSet = focalPoint;
     let positionToSet = position;
@@ -163,14 +163,6 @@ class ZoomTool extends BaseTool {
         focalPoint,
         this.initialMousePosWorld
       );
-      // const initialYDistanceBetweenInitialAndFocalPoint;
-
-      // we need to move in the direction of the vector between the focal point
-      // and the initial mouse position by some amount until ultimately we
-      // reach the mouse position at the focal point
-      const zoomScale = 5 / size[1];
-      const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
-      parallelScaleToSet = (1.0 - k) * parallelScale;
 
       positionToSet = vec3.scaleAndAdd(
         vec3.create(),

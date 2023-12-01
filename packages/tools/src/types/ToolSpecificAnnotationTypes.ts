@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
+import { ISpline } from './';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -112,6 +113,40 @@ export interface CircleROIAnnotation extends Annotation {
         radius: number;
         radiusUnit: string;
         perimeter: number;
+      };
+    };
+  };
+}
+
+export interface SplineROIAnnotation extends Annotation {
+  data: {
+    label?: string;
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox?: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    spline: {
+      type: string;
+      instance: ISpline;
+      resolution: number;
+      polyline: Types.Point3[];
+      closed: boolean;
+    };
+    cachedStats?: {
+      [targetId: string]: {
+        Modality: string;
+        area: number;
+        areaUnit: string;
       };
     };
   };
@@ -366,5 +401,26 @@ export interface ScaleOverlayAnnotation extends Annotation {
       points: Types.Point3[];
     };
     viewportId: string;
+  };
+}
+
+export interface VideoRedactionAnnotation extends Annotation {
+  metadata: {
+    viewPlaneNormal: Types.Point3;
+    viewUp: Types.Point3;
+    FrameOfReferenceUID: string;
+    referencedImageId: string;
+    toolName: string;
+  };
+  data: {
+    invalidated: boolean;
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+    };
+    cachedStats: {
+      [key: string]: any; // Can be more specific if the structure is known
+    };
+    active: boolean;
   };
 }

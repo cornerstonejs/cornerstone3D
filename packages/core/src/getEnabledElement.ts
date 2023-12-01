@@ -1,7 +1,7 @@
 import getRenderingEngine, {
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import { IEnabledElement } from './types';
+import { IEnabledElement, IStackViewport, IVolumeViewport } from './types';
 
 /**
  * A convenience method to find an EnabledElement given a reference to its
@@ -67,7 +67,9 @@ export function getEnabledElementByIds(
     return;
   }
 
-  const viewport = renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport(viewportId) as
+    | IStackViewport
+    | IVolumeViewport;
 
   if (!viewport) {
     return;

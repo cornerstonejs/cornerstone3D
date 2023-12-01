@@ -80,6 +80,9 @@ const fakeImageLoader = (imageId) => {
  * @returns metadata based on the imageId and type
  */
 function fakeMetaDataProvider(type, imageId) {
+  if (Array.isArray(imageId)) {
+    return;
+  }
   if (typeof imageId !== 'string') {
     throw new Error(
       `Expected imageId to be of type string, but received ${imageId}`

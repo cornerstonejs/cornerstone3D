@@ -1,5 +1,6 @@
 import { Types } from '@cornerstonejs/core';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
+import ImageLoadRequests from './types/ImageLoadRequests';
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -33,10 +34,15 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests = (priority: number) => {
+  public getImageLoadRequests(priority: number): ImageLoadRequests[] {
     const { imageIds } = this;
-    const scalarData = <Types.VolumeScalarData>this.scalarData;
 
-    return this.getImageIdsRequests(imageIds, scalarData, priority);
+    return this.getImageIdsRequests(imageIds, priority);
+  }
+
+  public getImageIdsToLoad = () => {
+    const { imageIds } = this;
+    this.numFrames = imageIds.length;
+    return imageIds;
   };
 }

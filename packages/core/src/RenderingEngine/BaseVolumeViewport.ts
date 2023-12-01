@@ -31,7 +31,6 @@ import type {
   Point2,
   Point3,
   VOIRange,
-  ViewportProperties,
   VolumeViewportProperties,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
@@ -68,7 +67,7 @@ import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
  */
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
-  use16BitTexture = false;
+  useNativeDataType = false;
   private _FrameOfReferenceUID: string;
 
   protected initialTransferFunctionNodes: any;
@@ -79,13 +78,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     VolumeViewportProperties
   >();
 
-  private viewportProperties: VolumeViewportProperties = {};
+  protected viewportProperties: VolumeViewportProperties = {};
 
   constructor(props: ViewportInput) {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
-    this.use16BitTexture = this._shouldUseNativeDataType();
+    this.useNativeDataType = this._shouldUseNativeDataType();
 
     if (this.useCPURendering) {
       throw new Error(
@@ -606,9 +605,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (properties.slabThickness !== undefined) {
       this.setSlabThickness(properties.slabThickness);
-      //We need to set the current slabthickness here since setSlabThickness is define in VolumeViewport
-      // this.currentViewportProperties.get(volumeId).slabThickness =
-      //   properties.slabThickness;
+      //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
     }
 
@@ -756,7 +753,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.element,
         this.id,
         suppressEvents,
-        this.use16BitTexture
+        this.useNativeDataType
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -822,7 +819,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.element,
         this.id,
         suppressEvents,
-        this.use16BitTexture
+        this.useNativeDataType
       );
 
       if (visibility === false) {

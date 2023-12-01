@@ -1104,7 +1104,7 @@ class EllipticalROITool extends AnnotationTool {
 
         const pointsInShape = pointInShapeCallback(
           imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          (pointLPS) => pointInEllipse(ellipseObj, pointLPS, { fast: true }),
           this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );

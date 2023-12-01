@@ -6,6 +6,7 @@ import {
   EVENTS,
   utilities as csUtils,
   getEnabledElement,
+  VideoViewport,
 } from '@cornerstonejs/core';
 import { ScrollOptions, EventTypes } from '../types';
 
@@ -19,7 +20,7 @@ import { ScrollOptions, EventTypes } from '../types';
  * @returns
  */
 export default function scroll(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   options: ScrollOptions
 ): void {
   // check if viewport is disabled then throw error
@@ -37,12 +38,14 @@ export default function scroll(
   }
 
   const { type: viewportType } = viewport;
-  const { volumeId, delta } = options;
+  const { volumeId, delta, scrollSlabs } = options;
 
   if (viewport instanceof StackViewport) {
     viewport.scroll(delta, options.debounceLoading, options.loop);
   } else if (viewport instanceof VolumeViewport) {
-    scrollVolume(viewport, volumeId, delta);
+    scrollVolume(viewport, volumeId, delta, scrollSlabs);
+  } else if (viewport instanceof VideoViewport) {
+    viewport.scroll(delta);
   } else {
     throw new Error(`Not implemented for Viewport Type: ${viewportType}`);
   }
@@ -51,10 +54,13 @@ export default function scroll(
 export function scrollVolume(
   viewport: VolumeViewport,
   volumeId: string,
-  delta: number
+  delta: number,
+  scrollSlabs = false
 ) {
+  const useSlabThickness = scrollSlabs;
+
   const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
-    csUtils.getVolumeViewportScrollInfo(viewport, volumeId);
+    csUtils.getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
 
   if (!sliceRangeInfo) {
     return;

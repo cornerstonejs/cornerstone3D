@@ -1,18 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 
 import { fillInsideCircle } from './fillCircle';
+import { LabelmapToolOperationData } from '../../../types';
 
-type OperationData = {
-  segmentationId: string;
-  imageVolume: Types.IImageVolume;
-  points: any; // Todo:fix
-  volume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentsLocked: number[];
-  viewPlaneNormal: number[];
-  viewUp: number[];
-  strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
+type OperationData = LabelmapToolOperationData & {
+  points: any; // todo fix
 };
 
 export function eraseInsideCircle(

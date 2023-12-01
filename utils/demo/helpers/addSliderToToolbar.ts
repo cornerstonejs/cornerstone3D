@@ -29,14 +29,17 @@ export default function addSliderToToolbar({
   label.innerText = title;
 
   input.type = 'range';
+  input.name = title;
   input.min = String(range[0]);
   input.max = String(range[1]);
-  input.value = String(defaultValue);
-  input.name = title;
-  // add step
+
+  // add step before setting its value to make sure it works for step different than 1.
+  // Example: range (0-1), step (0.1) and value (0.5)
   if (step) {
     input.step = String(step);
   }
+
+  input.value = String(defaultValue);
 
   input.oninput = (evt) => {
     const selectElement = <HTMLSelectElement>evt.target;

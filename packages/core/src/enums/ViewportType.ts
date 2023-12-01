@@ -16,6 +16,7 @@ enum ViewportType {
   /** Perspective Viewport: Not Implemented yet */
   PERSPECTIVE = 'perspective',
   VOLUME_3D = 'volume3d',
+  VIDEO = 'video',
 }
 
 export default ViewportType;

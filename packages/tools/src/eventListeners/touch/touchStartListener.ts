@@ -28,7 +28,7 @@ const {
   TOUCH_SWIPE,
 } = Events;
 
-interface ITouchTapListnenerState {
+interface ITouchTapListenerState {
   element: HTMLDivElement;
   renderingEngineId: string;
   viewportId: string;
@@ -110,7 +110,7 @@ const defaultState: ITouchStartListenerState = {
 // as pen, left/right handed, index finger vs thumb, etc. These current values
 // assume thumb usage for single finger and index/middle finger for two finger
 // gestures in an attempt to cover the 90% use case.
-const defaultTapState: ITouchTapListnenerState = {
+const defaultTapState: ITouchTapListenerState = {
   renderingEngineId: undefined,
   viewportId: undefined,
   element: null,
@@ -127,18 +127,11 @@ const defaultTapState: ITouchTapListnenerState = {
 };
 
 let state: ITouchStartListenerState = JSON.parse(JSON.stringify(defaultState));
-let tapState: ITouchTapListnenerState = JSON.parse(
+let tapState: ITouchTapListenerState = JSON.parse(
   JSON.stringify(defaultTapState)
 );
 
 function triggerEventCallback(ele, name, eventDetail) {
-  if (runtimeSettings.get('debug')) {
-    if (name === 'CORNERSTONE_TOOLS_TOUCH_DRAG') {
-      console.debug(name);
-    } else {
-      console.debug(name, eventDetail);
-    }
-  }
   return triggerEvent(ele, name, eventDetail);
 }
 

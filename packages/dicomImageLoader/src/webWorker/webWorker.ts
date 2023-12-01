@@ -133,7 +133,7 @@ self.onmessage = async function (msg: MessageEvent<WebWorkerData>) {
   if (taskHandlers[msg.data.taskType]) {
     try {
       // @ts-ignore
-      taskHandlers[msg.data.taskType].handler(
+      await taskHandlers[msg.data.taskType].handler(
         msg.data,
         function (result, transferList) {
           self.postMessage(
