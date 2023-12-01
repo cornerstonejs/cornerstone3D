@@ -1,4 +1,4 @@
-import * as metaData from '../metaData';
+import { addProvider } from '../metaData';
 
 let state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
 /**
@@ -38,6 +38,6 @@ const metadataProvider = {
   },
 };
 
-metaData.addProvider(metadataProvider.get);
+addProvider(metadataProvider.get);
 
 export default metadataProvider;
