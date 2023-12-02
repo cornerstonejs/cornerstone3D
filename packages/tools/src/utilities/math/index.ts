@@ -3,6 +3,7 @@ import * as ellipse from './ellipse';
 import * as lineSegment from './line';
 import * as rectangle from './rectangle';
 import * as polyline from './polyline';
+import * as circle from './circle';
 import * as point from './point';
 import * as BasicStatsCalculator from './basic';
 
@@ -12,6 +13,7 @@ export {
   lineSegment,
   rectangle,
   polyline,
+  circle,
   point,
   BasicStatsCalculator,
 };

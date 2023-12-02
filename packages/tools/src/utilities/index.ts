@@ -8,9 +8,14 @@ import debounce from './debounce';
 import throttle from './throttle';
 import isObject from './isObject';
 import clip from './clip';
+import { getModalityUnit } from './getModalityUnit';
 import calibrateImageSpacing from './calibrateImageSpacing';
-import getCalibratedLengthUnits from './getCalibratedUnits';
-import { getCalibratedScale } from './getCalibratedUnits';
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+  getCalibratedLengthUnits,
+  getCalibratedAspect,
+} from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
@@ -56,7 +61,10 @@ export {
   triggerEvent,
   calibrateImageSpacing,
   getCalibratedLengthUnits,
+  getCalibratedAreaUnits,
+  getCalibratedAspect,
   getCalibratedScale,
+  getModalityUnit,
   segmentation,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
