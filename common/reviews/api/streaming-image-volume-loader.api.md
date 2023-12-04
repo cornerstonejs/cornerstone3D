@@ -7,153 +7,10 @@
 import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
-import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-
-// @public (undocumented)
-type Actor = vtkActor;
-
-// @public
-type ActorEntry = {
-    uid: string;
-    actor: Actor | VolumeActor | ImageActor;
-    referenceId?: string;
-    slabThickness?: number;
-    clippingFilter?: any;
-};
-
-// @public
-type ActorSliceRange = {
-    actor: VolumeActor;
-    viewPlaneNormal: Point3;
-    focalPoint: Point3;
-    min: number;
-    max: number;
-    current: number;
-};
-
-// @public (undocumented)
-type AffineMatrix = [
-[number, number, number, number],
-[number, number, number, number],
-[number, number, number, number],
-[number, number, number, number]
-];
-
-// @public
-enum BlendModes {
-    AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
-    COMPOSITE = BlendMode.COMPOSITE_BLEND,
-    MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
-    MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
-}
-
-// @public
-enum CalibrationTypes {
-    ERMF = 'ERMF',
-    ERROR = 'Error',
-    NOT_APPLICABLE = '',
-    PROJECTION = 'Proj',
-    REGION = 'Region',
-    UNCALIBRATED = 'Uncalibrated',
-    USER = 'User',
-}
-
-// @public
-type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
-
-// @public
-type CameraModifiedEventDetail = {
-    previousCamera: ICamera;
-    camera: ICamera;
-    element: HTMLDivElement;
-    viewportId: string;
-    renderingEngineId: string;
-    rotation?: number;
-};
-
-// @public (undocumented)
-type ColormapPublic = {
-    name?: string;
-    opacity?: OpacityMapping[] | number;
-    /** midpoint mapping between values to opacity if the colormap
-    * is getting used for fusion, this is an array of arrays which
-    * each array containing 2 values, the first value is the value
-    * to map to opacity and the second value is the opacity value.
-    * By default, the minimum value is mapped to 0 opacity and the
-    * maximum value is mapped to 1 opacity, but you can configure
-    * the points in the middle to be mapped to different opacities
-    * instead of a linear mapping from 0 to 1.
-    */
-};
-
-// @public (undocumented)
-type ColormapRegistration = {
-    ColorSpace: string;
-    Name: string;
-    RGBPoints: RGB[];
-};
-
-// @public (undocumented)
-type ContourData = {
-    points: Point3[];
-    type: ContourType;
-    color: Point3;
-    segmentIndex: number;
-};
-
-// @public (undocumented)
-type ContourSetData = {
-    id: string;
-    data: ContourData[];
-    frameOfReferenceUID: string;
-    color?: Point3;
-    segmentIndex?: number;
-};
-
-// @public (undocumented)
-enum ContourType {
-    // (undocumented)
-    CLOSED_PLANAR = 'CLOSED_PLANAR',
-    // (undocumented)
-    OPEN_PLANAR = 'OPEN_PLANAR',
-}
-
-// @public (undocumented)
-type Cornerstone3DConfig = {
-    gpuTier?: TierResult;
-    detectGPUConfig: GetGPUTier;
-    rendering: {
-        // vtk.js supports 8bit integer textures and 32bit float textures.
-        // However, if the client has norm16 textures (it can be seen by visiting
-        // the webGl report at https://webglreport.com/?v=2), vtk will be default
-        // to use it to improve memory usage. However, if the client don't have
-        // it still another level of optimization can happen by setting the
-        // preferSizeOverAccuracy since it will reduce the size of the texture to half
-        // float at the cost of accuracy in rendering. This is a tradeoff that the
-        // client can decide.
-        //
-        // Read more in the following Pull Request:
-        // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
-        // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
-        preferSizeOverAccuracy: boolean;
-        // Whether the EXT_texture_norm16 extension is supported by the browser.
-        // WebGL 2 report (link: https://webglreport.com/?v=2) can be used to check
-        // if the browser supports this extension.
-        // In case the browser supports this extension, instead of using 32bit float
-        // textures, 16bit float textures will be used to reduce the memory usage where
-        // possible.
-        // Norm16 may not work currently due to the two active bugs in chrome + safari
-        // https://bugs.chromium.org/p/chromium/issues/detail?id=1408247
-        // https://bugs.webkit.org/show_bug.cgi?id=252039
-        useNorm16Texture: boolean;
-        useCPURendering: boolean;
-        strictZSpacingForVolumeViewport: boolean;
-    };
-};
 
 // @public (undocumented)
 export function cornerstoneStreamingDynamicImageVolumeLoader(volumeId: string, options: {
@@ -163,308 +20,8 @@ export function cornerstoneStreamingDynamicImageVolumeLoader(volumeId: string, o
 // @public (undocumented)
 export function cornerstoneStreamingImageVolumeLoader(volumeId: string, options: {
     imageIds: string[];
+    progressiveRendering?: boolean | Types.IRetrieveConfiguration;
 }): IVolumeLoader;
-
-// @public (undocumented)
-interface CPUFallbackColormap {
-    // (undocumented)
-    addColor: (rgba: Point4) => void;
-    // (undocumented)
-    buildLookupTable: (lut: CPUFallbackLookupTable) => void;
-    // (undocumented)
-    clearColors: () => void;
-    // (undocumented)
-    createLookupTable: () => CPUFallbackLookupTable;
-    // (undocumented)
-    getColor: (index: number) => Point4;
-    // (undocumented)
-    getColorRepeating: (index: number) => Point4;
-    // (undocumented)
-    getColorSchemeName: () => string;
-    getId: () => string;
-    // (undocumented)
-    getNumberOfColors: () => number;
-    // (undocumented)
-    insertColor: (index: number, rgba: Point4) => void;
-    // (undocumented)
-    isValidIndex: (index: number) => boolean;
-    // (undocumented)
-    removeColor: (index: number) => void;
-    // (undocumented)
-    setColor: (index: number, rgba: Point4) => void;
-    // (undocumented)
-    setColorSchemeName: (name: string) => void;
-    // (undocumented)
-    setNumberOfColors: (numColors: number) => void;
-}
-
-// @public (undocumented)
-type CPUFallbackColormapData = {
-    name: string;
-    numOfColors?: number;
-    colors?: Point4[];
-    segmentedData?: unknown;
-    numColors?: number;
-    gamma?: number;
-};
-
-// @public (undocumented)
-type CPUFallbackColormapsData = {
-    [key: string]: CPUFallbackColormapData;
-};
-
-// @public (undocumented)
-interface CPUFallbackEnabledElement {
-    // (undocumented)
-    canvas?: HTMLCanvasElement;
-    // (undocumented)
-    colormap?: CPUFallbackColormap;
-    // (undocumented)
-    image?: IImage;
-    // (undocumented)
-    invalid?: boolean;
-    // (undocumented)
-    metadata?: {
-        direction?: Mat3;
-        dimensions?: Point3;
-        spacing?: Point3;
-        origin?: Point3;
-        imagePlaneModule?: ImagePlaneModule;
-        imagePixelModule?: ImagePixelModule;
-    };
-    // (undocumented)
-    needsRedraw?: boolean;
-    // (undocumented)
-    options?: {
-        [key: string]: unknown;
-        colormap?: CPUFallbackColormap;
-    };
-    // (undocumented)
-    pan?: Point2;
-    // (undocumented)
-    renderingTools?: CPUFallbackRenderingTools;
-    // (undocumented)
-    rotation?: number;
-    // (undocumented)
-    scale?: number;
-    // (undocumented)
-    transform?: CPUFallbackTransform;
-    // (undocumented)
-    viewport?: CPUFallbackViewport;
-    // (undocumented)
-    zoom?: number;
-}
-
-// @public (undocumented)
-interface CPUFallbackLookupTable {
-    // (undocumented)
-    build: (force: boolean) => void;
-    // (undocumented)
-    getColor: (scalar: number) => Point4;
-    // (undocumented)
-    setAlphaRange: (start: number, end: number) => void;
-    // (undocumented)
-    setHueRange: (start: number, end: number) => void;
-    // (undocumented)
-    setNumberOfTableValues: (number: number) => void;
-    // (undocumented)
-    setRamp: (ramp: string) => void;
-    // (undocumented)
-    setRange: (start: number, end: number) => void;
-    // (undocumented)
-    setSaturationRange: (start: number, end: number) => void;
-    // (undocumented)
-    setTableRange: (start: number, end: number) => void;
-    // (undocumented)
-    setTableValue(index: number, rgba: Point4);
-    // (undocumented)
-    setValueRange: (start: number, end: number) => void;
-}
-
-// @public (undocumented)
-type CPUFallbackLUT = {
-    lut: number[];
-};
-
-// @public (undocumented)
-type CPUFallbackRenderingTools = {
-    renderCanvas?: HTMLCanvasElement;
-    lastRenderedIsColor?: boolean;
-    lastRenderedImageId?: string;
-    lastRenderedViewport?: {
-        windowWidth: number | number[];
-        windowCenter: number | number[];
-        invert: boolean;
-        rotation: number;
-        hflip: boolean;
-        vflip: boolean;
-        modalityLUT: CPUFallbackLUT;
-        voiLUT: CPUFallbackLUT;
-        colormap: unknown;
-    };
-    renderCanvasContext?: CanvasRenderingContext2D;
-    colormapId?: string;
-    colorLUT?: CPUFallbackLookupTable;
-    renderCanvasData?: ImageData;
-};
-
-// @public (undocumented)
-interface CPUFallbackTransform {
-    // (undocumented)
-    clone: () => CPUFallbackTransform;
-    // (undocumented)
-    getMatrix: () => TransformMatrix2D;
-    // (undocumented)
-    invert: () => void;
-    // (undocumented)
-    multiply: (matrix: TransformMatrix2D) => void;
-    // (undocumented)
-    reset: () => void;
-    // (undocumented)
-    rotate: (rad: number) => void;
-    // (undocumented)
-    scale: (sx: number, sy: number) => void;
-    // (undocumented)
-    transformPoint: (point: Point2) => Point2;
-    // (undocumented)
-    translate: (x: number, y: number) => void;
-}
-
-// @public (undocumented)
-type CPUFallbackViewport = {
-    scale?: number;
-    parallelScale?: number;
-    focalPoint?: number[];
-    translation?: {
-        x: number;
-        y: number;
-    };
-    voi?: {
-        windowWidth: number;
-        windowCenter: number;
-    };
-    invert?: boolean;
-    pixelReplication?: boolean;
-    rotation?: number;
-    hflip?: boolean;
-    vflip?: boolean;
-    modalityLUT?: CPUFallbackLUT;
-    voiLUT?: CPUFallbackLUT;
-    colormap?: CPUFallbackColormap;
-    displayedArea?: CPUFallbackViewportDisplayedArea;
-    modality?: string;
-};
-
-// @public (undocumented)
-type CPUFallbackViewportDisplayedArea = {
-    tlhc: {
-        x: number;
-        y: number;
-    };
-    brhc: {
-        x: number;
-        y: number;
-    };
-    rowPixelSpacing: number;
-    columnPixelSpacing: number;
-    presentationSizeMode: string;
-};
-
-// @public (undocumented)
-type CPUIImageData = {
-    dimensions: Point3;
-    direction: Mat3;
-    spacing: Point3;
-    origin: Point3;
-    imageData: CPUImageData;
-    metadata: { Modality: string };
-    scalarData: PixelDataTypedArray;
-    scaling: Scaling;
-    hasPixelSpacing?: boolean;
-    calibration?: IImageCalibration;
-
-    preScale?: {
-        scaled?: boolean;
-        scalingParameters?: {
-            modality?: string;
-            rescaleSlope?: number;
-            rescaleIntercept?: number;
-            suvbw?: number;
-        };
-    };
-};
-
-// @public (undocumented)
-type CPUImageData = {
-    worldToIndex?: (point: Point3) => Point3;
-    indexToWorld?: (point: Point3) => Point3;
-    getWorldToIndex?: () => Point3;
-    getIndexToWorld?: () => Point3;
-    getSpacing?: () => Point3;
-    getDirection?: () => Mat3;
-    getScalarData?: () => PixelDataTypedArray;
-    getDimensions?: () => Point3;
-};
-
-// @public (undocumented)
-interface CustomEvent_2<T = any> extends Event {
-    readonly detail: T;
-    // (undocumented)
-    initCustomEvent(
-    typeArg: string,
-    canBubbleArg: boolean,
-    cancelableArg: boolean,
-    detailArg: T
-    ): void;
-}
-
-// @public (undocumented)
-type DisplayArea = {
-    imageArea: [number, number]; // areaX, areaY
-    imageCanvasPoint: {
-        imagePoint: [number, number]; // imageX, imageY
-        canvasPoint: [number, number]; // canvasX, canvasY
-    };
-    storeAsInitialCamera: boolean;
-};
-
-// @public
-type DisplayAreaModifiedEvent = CustomEvent_2<DisplayAreaModifiedEventDetail>;
-
-// @public
-type DisplayAreaModifiedEventDetail = {
-    viewportId: string;
-    displayArea: DisplayArea;
-    volumeId?: string;
-    storeAsInitialCamera?: boolean;
-};
-
-// @public
-enum DynamicOperatorType {
-    AVERAGE = 'AVERAGE',
-    SUBTRACT = 'SUBTRACT',
-    SUM = 'SUM',
-}
-
-// @public
-type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
-
-// @public
-type ElementDisabledEventDetail = {
-    element: HTMLDivElement;
-    viewportId: string;
-    renderingEngineId: string;
-};
-
-// @public
-type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
-
-// @public
-type ElementEnabledEventDetail = {
-    element: HTMLDivElement;
-    viewportId: string;
-    renderingEngineId: string;
-};
 
 declare namespace Enums {
     export {
@@ -473,126 +30,16 @@ declare namespace Enums {
 }
 export { Enums }
 
-// @public
-enum Events {
-    CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
-    CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
-
-    CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
-    CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
-    DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
-    ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
-    ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
-    GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
-    IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
-    IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
-    IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
-    IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
-    IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
-    IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
-
-    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
-    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
-    IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
-    IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
-    PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
-    STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
-    STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
-
-    STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
-
-    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
-    VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
-    VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
-
-    VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
-
-    VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
-
-    VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
-
-    VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
-
-    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
-    // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
-    // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
-    // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
-}
-
 // @public (undocumented)
 enum Events_2 {
     // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED"
 }
 
-declare namespace EventTypes {
-    export {
-        CameraModifiedEventDetail,
-        CameraModifiedEvent,
-        VoiModifiedEvent,
-        VoiModifiedEventDetail,
-        DisplayAreaModifiedEvent,
-        DisplayAreaModifiedEventDetail,
-        ElementDisabledEvent,
-        ElementDisabledEventDetail,
-        ElementEnabledEvent,
-        ElementEnabledEventDetail,
-        ImageRenderedEventDetail,
-        ImageRenderedEvent,
-        ImageVolumeModifiedEvent,
-        ImageVolumeModifiedEventDetail,
-        ImageVolumeLoadingCompletedEvent,
-        ImageVolumeLoadingCompletedEventDetail,
-        ImageLoadedEvent,
-        ImageLoadedEventDetail,
-        ImageLoadedFailedEventDetail,
-        ImageLoadedFailedEvent,
-        VolumeLoadedEvent,
-        VolumeLoadedEventDetail,
-        VolumeLoadedFailedEvent,
-        VolumeLoadedFailedEventDetail,
-        ImageCacheImageAddedEvent,
-        ImageCacheImageAddedEventDetail,
-        ImageCacheImageRemovedEvent,
-        ImageCacheImageRemovedEventDetail,
-        VolumeCacheVolumeAddedEvent,
-        VolumeCacheVolumeAddedEventDetail,
-        VolumeCacheVolumeRemovedEvent,
-        VolumeCacheVolumeRemovedEventDetail,
-        StackNewImageEvent,
-        StackNewImageEventDetail,
-        PreStackNewImageEvent,
-        PreStackNewImageEventDetail,
-        ImageSpacingCalibratedEvent,
-        ImageSpacingCalibratedEventDetail,
-        ImageLoadProgressEvent,
-        ImageLoadProgressEventDetail,
-        VolumeNewImageEvent,
-        VolumeNewImageEventDetail,
-        StackViewportNewStackEvent,
-        StackViewportNewStackEventDetail,
-        StackViewportScrollEvent,
-        StackViewportScrollEventDetail
-    }
-}
-
-// @public
-type FlipDirection = {
-    flipHorizontal?: boolean;
-    flipVertical?: boolean;
-};
-
-// @public (undocumented)
-enum GeometryType {
-    // (undocumented)
-    CONTOUR = 'contour',
-    // (undocumented)
-    SURFACE = 'Surface',
-}
-
 // @public (undocumented)
 export const helpers: {
     getDynamicVolumeInfo: typeof getDynamicVolumeInfo;
+<<<<<<< HEAD
     sortImageIdsAndGetSpacing: typeof sortImageIdsAndGetSpacing;
 };
 
@@ -1605,11 +1052,15 @@ type StackViewportScrollEventDetail = {
     newImageIdIndex: number;
     imageId: string;
     direction: number;
+=======
+>>>>>>> 8c78a01f328ad05b05c4664fce746281ed381829
 };
 
 // @public (undocumented)
 export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
+    // (undocumented)
+    getImageIdsToLoad(): string[];
     // (undocumented)
     getImageLoadRequests: (priority: number) => any[];
     // (undocumented)
@@ -1627,11 +1078,14 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
 export class StreamingImageVolume extends BaseStreamingImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
+    getImageIdsToLoad: () => string[];
+    // (undocumented)
     getImageLoadRequests(priority: number): ImageLoadRequests[];
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
 }
 
+<<<<<<< HEAD
 // @public (undocumented)
 type SurfaceData = {
     points: number[];
@@ -1846,6 +1300,8 @@ type VolumeViewportProperties = ViewportProperties & {
     orientation?: OrientationAxis;
 };
 
+=======
+>>>>>>> 8c78a01f328ad05b05c4664fce746281ed381829
 // (No @packageDocumentation comment for this package)
 
 ```

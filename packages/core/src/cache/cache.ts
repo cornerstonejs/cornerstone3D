@@ -377,7 +377,10 @@ class Cache implements ICache {
           return;
         }
 
-        if (Number.isNaN(image.sizeInBytes)) {
+        if (
+          image.sizeInBytes === undefined ||
+          Number.isNaN(image.sizeInBytes)
+        ) {
           throw new Error(
             'putImageLoadObject: image.sizeInBytes must not be undefined'
           );
@@ -650,6 +653,28 @@ class Cache implements ICache {
     cachedGeometry.timeStamp = Date.now();
 
     return cachedGeometry.geometry;
+  };
+
+  /**
+   * Returns the image associated with the imageId
+   *
+   * @param imageId - image ID
+   * @returns Image
+   */
+  public getImage = (imageId: string): IImage => {
+    if (imageId === undefined) {
+      throw new Error('getImage: imageId must not be undefined');
+    }
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (cachedImage === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached volume (not used for anything for now)
+    cachedImage.timeStamp = Date.now();
+
+    return cachedImage.image;
   };
 
   /**

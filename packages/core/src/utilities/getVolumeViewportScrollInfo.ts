@@ -5,14 +5,17 @@ import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
  * Calculates the number os steps the volume can scroll based on its orientation
  * @param viewport - Volume viewport
  * @param volumeId - Id of one of the volumes loaded on the given viewport
+ * @param useSlabThickness - If true, the number of steps will be calculated
+ * based on the slab thickness instead of the spacing in the normal direction
  * @returns number of steps the volume can scroll and its current position
  */
 function getVolumeViewportScrollInfo(
   viewport: IVolumeViewport,
-  volumeId: string
+  volumeId: string,
+  useSlabThickness = false
 ) {
   const { sliceRange, spacingInNormalDirection, camera } =
-    getVolumeSliceRangeInfo(viewport, volumeId);
+    getVolumeSliceRangeInfo(viewport, volumeId, useSlabThickness);
 
   const { min, max, current } = sliceRange;
 

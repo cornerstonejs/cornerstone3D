@@ -49,6 +49,16 @@ import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
+import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
+import makeVolumeMetadata from './makeVolumeMetadata';
+import genericMetadataProvider from './genericMetadataProvider';
+import { isValidVolume } from './isValidVolume';
+import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWithCornerstoneImage';
+import ProgressiveIterator from './ProgressiveIterator';
+import decimate from './decimate';
+import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
+import isVideoTransferSyntax from './isVideoTransferSyntax';
+import { getBufferConfiguration } from './getBufferConfiguration';
 
 // name spaces
 import * as planar from './planar';
@@ -112,5 +122,15 @@ export {
   getScalarDataType,
   colormap,
   getImageLegacy,
+  ProgressiveIterator,
+  decimate,
+  imageRetrieveMetadataProvider,
   transferFunctionUtils,
+  updateVTKImageDataWithCornerstoneImage,
+  sortImageIdsAndGetSpacing,
+  makeVolumeMetadata,
+  isValidVolume,
+  genericMetadataProvider,
+  isVideoTransferSyntax,
+  getBufferConfiguration,
 };

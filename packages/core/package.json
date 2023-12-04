@@ -1,9 +1,9 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "1.27.1",
+  "version": "1.35.3",
   "description": "",
   "main": "src/index.ts",
-  "types": "dist/esm/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@kitware/vtk.js": "27.3.1",
+    "comlink": "^4.4.1",
     "detect-gpu": "^5.0.22",
     "gl-matrix": "^3.4.3",
     "lodash.clonedeep": "4.5.0"

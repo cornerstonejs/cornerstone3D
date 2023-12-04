@@ -1,11 +1,16 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { sortImageIds } from './utils';
 
 // This is for debugging purposes
 console.warn(
@@ -24,48 +29,12 @@ const {
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
-async function getImageStacks() {
-  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const wadoRsRoot = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';
-  const studyInstanceUID =
-    '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1';
-  const seriesInstanceUIDs = [
-    '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.7',
-    '1.3.6.1.4.1.25403.345050719074.3824.20170125095319.5',
-    '1.3.6.1.4.1.25403.345050719074.3824.20170125095312.3',
-  ];
-  const axialImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: studyInstanceUID,
-    SeriesInstanceUID: seriesInstanceUIDs[0],
-    wadoRsRoot,
-  });
-
-  const sagittalImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: studyInstanceUID,
-    SeriesInstanceUID: seriesInstanceUIDs[1],
-    wadoRsRoot,
-  });
-
-  const coronalImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: studyInstanceUID,
-    SeriesInstanceUID: seriesInstanceUIDs[2],
-    wadoRsRoot,
-  });
-
-  const imageStacks = [
-    sortImageIds(axialImageIds),
-    sortImageIds(sagittalImageIds),
-    sortImageIds(coronalImageIds),
-  ];
-  return imageStacks;
-}
-
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'OverlayGrid',
-  'Here we demonstrate overlay grid tool working. The reference lines for all the images in axial series is displayed in the sagittal and coronal series.'
+  'Here we demonstrate overlay grid tool working. The two viewports on the left are from the same CT series while the right viewport is from a PET series. '
 );
 
 const size = '500px';
@@ -120,59 +89,105 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
-  const orientations = [
-    Enums.OrientationAxis.AXIAL,
-    Enums.OrientationAxis.SAGITTAL,
-    Enums.OrientationAxis.CORONAL,
+
+  const viewportInputArray: Types.PublicViewportInput[] = [
+    {
+      viewportId: viewportIds[0],
+      type: ViewportType.STACK,
+      element: elements[0],
+      defaultOptions: {},
+    },
+    {
+      viewportId: viewportIds[1],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: elements[1],
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
+    },
+    {
+      viewportId: viewportIds[2],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: elements[2],
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
   ];
 
-  // Create the viewports
-  const viewportInputArray = [];
-  for (let i = 0; i < elements.length; i++) {
-    viewportInputArray[i] = {
-      viewportId: viewportIds[i],
-      type: ViewportType.STACK,
-      element: elements[i],
-      defaultOptions: {
-        orientation: orientations[i],
-        background: <Types.Point3>[0, 0, 0],
-      },
-    };
-  }
   renderingEngine.setViewports(viewportInputArray);
 
-  const imageStacks = await getImageStacks();
-
+  const ctStacks = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
+  const ptStacks = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  const viewports = [];
-  for (let i = 0; i < viewportIds.length; i++) {
-    toolGroup.addViewport(viewportIds[i], renderingEngineId);
-    viewports[i] = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportIds[i])
-    );
+  const stackViewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportIds[0])
+  );
 
-    await viewports[i].setStack(
-      imageStacks[i],
-      Math.floor(imageStacks[i].length / 2)
-    );
-  }
+  stackViewport.setStack(ctStacks);
+
+  const ptVolumeId = 'myVolume-pt';
+  const ctVolumeId = 'myVolume-ct';
+
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+    imageIds: ptStacks,
+  });
+
+  ptVolume.load();
+
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+    imageIds: ctStacks,
+  });
+
+  ctVolume.load();
+
+  // set on the other two viewports
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId: ctVolumeId }],
+    [viewportIds[1]]
+  );
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId: ptVolumeId }],
+    [viewportIds[2]]
+  );
+
+  toolGroup.addViewport(viewportIds[0], renderingEngine.id);
+  toolGroup.addViewport(viewportIds[1], renderingEngine.id);
+  toolGroup.addViewport(viewportIds[2], renderingEngine.id);
 
   // Manipulation Tools
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(OverlayGridTool.toolName, {
-    sourceImageIds: imageStacks[0],
-  });
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
 
+  toolGroup.addTool(OverlayGridTool.toolName, {
+    sourceImageIds: ctStacks,
+  });
+
   toolGroup.setToolEnabled(OverlayGridTool.toolName);
+
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Auxiliary, // Left Click
       },
     ],
   });

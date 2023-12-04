@@ -1,17 +1,19 @@
-import * as vec2 from './vec2';
+import * as aabb from './aabb';
+import * as BasicStatsCalculator from './basic';
 import * as ellipse from './ellipse';
 import * as lineSegment from './line';
-import * as rectangle from './rectangle';
-import * as polyline from './polyline';
 import * as point from './point';
-import * as BasicStatsCalculator from './basic';
+import * as polyline from './polyline';
+import * as rectangle from './rectangle';
+import * as vec2 from './vec2';
 
 export {
-  vec2,
+  aabb,
+  BasicStatsCalculator,
   ellipse,
   lineSegment,
-  rectangle,
-  polyline,
   point,
-  BasicStatsCalculator,
+  polyline,
+  rectangle,
+  vec2,
 };

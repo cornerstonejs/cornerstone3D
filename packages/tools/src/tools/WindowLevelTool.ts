@@ -48,6 +48,7 @@ class WindowLevelTool extends BaseTool {
       viewportsContainingVolumeUID;
     let isPreScaled = false;
 
+    const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
       volumeId = targetId.split('volumeId:')[1];
@@ -55,16 +56,17 @@ class WindowLevelTool extends BaseTool {
         volumeId,
         renderingEngine.id
       );
-      const properties = viewport.getProperties();
       ({ lower, upper } = properties.voiRange);
       const volume = cache.getVolume(volumeId);
+      if (!volume) {
+        throw new Error('Volume not found ' + volumeId);
+      }
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
-    } else if (viewport instanceof StackViewport) {
-      const properties = viewport.getProperties();
-      modality = viewport.modality;
+    } else if (properties.voiRange) {
+      modality = (viewport as any).modality;
       ({ lower, upper } = properties.voiRange);
-      const { preScale } = viewport.getImageData();
+      const { preScale = { scaled: false } } = viewport.getImageData?.() || {};
       isPreScaled =
         preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
     } else {
@@ -95,22 +97,17 @@ class WindowLevelTool extends BaseTool {
       });
     }
 
-    if (viewport instanceof StackViewport) {
-      viewport.setProperties({
-        voiRange: newRange,
-      });
+    viewport.setProperties({
+      voiRange: newRange,
+    });
 
-      viewport.render();
-      return;
-    }
+    viewport.render();
 
     if (viewport instanceof VolumeViewport) {
-      viewport.setProperties({
-        voiRange: newRange,
-      });
-
       viewportsContainingVolumeUID.forEach((vp) => {
-        vp.render();
+        if (viewport !== vp) {
+          vp.render();
+        }
       });
       return;
     }
@@ -205,6 +202,9 @@ class WindowLevelTool extends BaseTool {
     const { imageData } = viewport.getImageData();
     const dimensions = imageData.getDimensions();
 
+    if (imageData.getRange) {
+      return imageData.getRange();
+    }
     let scalarData;
     // if getScalarData is a method on imageData
     if (imageData.getScalarData) {

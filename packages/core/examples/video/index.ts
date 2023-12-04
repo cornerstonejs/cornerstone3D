@@ -8,6 +8,8 @@ import {
   initDemo,
   setTitleAndDescription,
   addButtonToToolbar,
+  createImageIdsAndCacheMetaData,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -107,6 +109,19 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
+    SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+
+  // Only one SOP instances is DICOM, so find it
+  const videoId = imageIds.find(
+    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
+  );
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -129,9 +144,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  await viewport.setVideoURL(
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
-  );
+  await viewport.setVideo(videoId);
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });

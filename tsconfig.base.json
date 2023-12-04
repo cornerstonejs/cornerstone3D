@@ -38,6 +38,7 @@
     "packages/**/lib",
     "packages/**/lib-esm",
     "packages/docs",
+    "packages/docs/**/*",
     "snippets",
     "examples"
   ]

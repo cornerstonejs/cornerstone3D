@@ -492,11 +492,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     let annotationsToDisplay;
 
-    if (viewport instanceof StackViewport) {
-      // Use the default `filterAnnotationsForDisplay` utility, as the stack
-      // path doesn't require handles.
-      annotationsToDisplay = filterAnnotationsForDisplay(viewport, annotations);
-    } else if (viewport instanceof VolumeViewport) {
+    if (viewport instanceof VolumeViewport) {
       const camera = viewport.getCamera();
 
       const { spacingInNormalDirection } =
@@ -509,7 +505,9 @@ class PlanarFreehandROITool extends AnnotationTool {
         spacingInNormalDirection
       );
     } else {
-      throw new Error(`Viewport Type ${viewport.type} not supported`);
+      // Use the default `filterAnnotationsForDisplay` utility, as the stack
+      // path doesn't require handles.
+      annotationsToDisplay = filterAnnotationsForDisplay(viewport, annotations);
     }
 
     return annotationsToDisplay;

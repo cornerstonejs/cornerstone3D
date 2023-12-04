@@ -1,5 +1,5 @@
 const path = require('path');
-const merge = require('./merge');
+const { merge } = require('webpack-merge');
 const rootPath = process.cwd();
 const baseConfig = require('./webpack-base');
 const outputPath = path.join(rootPath, 'dist', 'dynamic-import');

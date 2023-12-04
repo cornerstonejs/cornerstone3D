@@ -10,7 +10,13 @@
  * @param value - to return a fixed measurement value from
  * @param precision - defining how many digits after 1..9 are desired
  */
-function roundNumber(value: string | number, precision = 2): string {
+function roundNumber(
+  value: string | number | (string | number)[],
+  precision = 2
+): string {
+  if (Array.isArray(value)) {
+    return value.map((v) => roundNumber(v, precision)).join(', ');
+  }
   if (value === undefined || value === null || value === '') {
     return 'NaN';
   }

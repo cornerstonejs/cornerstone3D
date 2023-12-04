@@ -5,7 +5,7 @@ import {
   VideoViewport,
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
-import { ToolModes } from '../../enums';
+import ToolModes from '../../enums/ToolModes';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
 export interface IBaseTool {
@@ -141,7 +141,10 @@ abstract class BaseTool implements IBaseTool {
 
   /**
    * Get the image that is displayed for the targetId in the cachedStats
-   * which can be either imageId:<imageId> or volumeId:<volumeId>
+   * which can be
+   * * imageId:<imageId>
+   * * volumeId:<volumeId>
+   * * videoId:<basePathForVideo>/frames/<frameSpecifier>
    *
    * @param targetId - annotation targetId stored in the cached stats
    * @param renderingEngine - The rendering engine
@@ -184,6 +187,19 @@ abstract class BaseTool implements IBaseTool {
       }
 
       return viewports[0].getImageData();
+    } else if (targetId.startsWith('videoId:')) {
+      // Video id can be multi-valued for the frame information
+      const imageURI = utilities.imageIdToURI(targetId);
+      const viewports = utilities.getViewportsWithImageURI(
+        imageURI,
+        renderingEngine.id
+      );
+
+      if (!viewports || !viewports.length) {
+        return;
+      }
+
+      return viewports[0].getImageData();
     } else {
       throw new Error(
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'
@@ -207,7 +223,7 @@ abstract class BaseTool implements IBaseTool {
     } else if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;
     } else if (viewport instanceof VideoViewport) {
-      return '';
+      return `videoId:${viewport.getCurrentImageId()}`;
     } else {
       throw new Error(
         'getTargetId: viewport must be a StackViewport or VolumeViewport'

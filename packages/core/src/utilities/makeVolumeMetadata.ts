@@ -1,5 +1,5 @@
-import { metaData } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { metaData } from '../';
+import { Metadata } from '../types';
 
 /**
  * It creates a metadata object for a volume given the imageIds that compose it.
@@ -8,9 +8,7 @@ import type { Types } from '@cornerstonejs/core';
  * @param imageIds - array of imageIds
  * @returns The volume metadata
  */
-export default function makeVolumeMetadata(
-  imageIds: Array<string>
-): Types.Metadata {
+export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
   const imageId0 = imageIds[0];
 
   const {

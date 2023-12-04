@@ -1,99 +1,67 @@
 import { xhrRequest } from '../internal/index';
-import findIndexOfString from './findIndexOfString';
-
-function findBoundary(header: string[]): string {
-  for (let i = 0; i < header.length; i++) {
-    if (header[i].substr(0, 2) === '--') {
-      return header[i];
-    }
-  }
-}
-
-function findContentType(header: string[]): string {
-  for (let i = 0; i < header.length; i++) {
-    if (header[i].substr(0, 13) === 'Content-Type:') {
-      return header[i].substr(13).trim();
-    }
-  }
-}
-
-function uint8ArrayToString(data, offset, length) {
-  offset = offset || 0;
-  length = length || data.length - offset;
-  let str = '';
-
-  for (let i = offset; i < offset + length; i++) {
-    str += String.fromCharCode(data[i]);
-  }
-
-  return str;
-}
+// import rangeRequest from '../internal/rangeRequest';
+import streamRequest from '../internal/streamRequest';
+import rangeRequest from '../internal/rangeRequest';
+import extractMultipart from './extractMultipart';
+import { getImageQualityStatus } from './getImageQualityStatus';
+import { CornerstoneWadoRsLoaderOptions } from './loadImage';
+import { RangeRetrieveOptions } from 'core/dist/types/types';
 
 function getPixelData(
   uri: string,
   imageId: string,
-  mediaType = 'application/octet-stream'
-): Promise<any> {
+  mediaType = 'application/octet-stream',
+  options?: CornerstoneWadoRsLoaderOptions
+) {
+  const { streamingData, retrieveOptions = {} } = options || {};
   const headers = {
     Accept: mediaType,
   };
 
-  return new Promise((resolve, reject) => {
-    const loadPromise = xhrRequest(uri, imageId, headers);
-    const { xhr } = loadPromise;
+  // Add urlArguments to the url for retrieving - allows accept and other
+  // parameters to be added.
+  let url = retrieveOptions.urlArguments
+    ? `${uri}${uri.indexOf('?') === -1 ? '?' : '&'}${
+        retrieveOptions.urlArguments
+      }`
+    : uri;
 
-    loadPromise.then(function (imageFrameAsArrayBuffer /* , xhr*/) {
-      // request succeeded, Parse the multi-part mime response
-      const response = new Uint8Array(imageFrameAsArrayBuffer);
+  // Replace the /frames/ part of the path with another path to choose
+  // a different resource type.
+  if (retrieveOptions.framesPath) {
+    url = url.replace('/frames/', retrieveOptions.framesPath);
+  }
 
-      const contentType =
-        xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
+  // Swap the streaming data out if a new instance starts.
+  if (streamingData?.url !== url) {
+    options.streamingData = { url };
+  }
 
-      if (contentType.indexOf('multipart') === -1) {
-        resolve({
-          contentType,
-          imageFrame: {
-            pixelData: response,
-          },
-        });
+  if ((retrieveOptions as RangeRetrieveOptions).rangeIndex !== undefined) {
+    return rangeRequest(url, imageId, headers, options);
+  }
 
-        return;
-      }
+  // Default to streaming the response data so that it can be decoding in
+  // a streaming parser.
+  if (retrieveOptions.streaming !== false) {
+    return streamRequest(url, imageId, headers, options);
+  }
 
-      // First look for the multipart mime header
-      const tokenIndex = findIndexOfString(response, '\r\n\r\n');
+  /**
+   * Not progressively rendering, use regular xhr request.
+   */
+  const loadPromise = xhrRequest(url, imageId, headers);
+  const { xhr } = loadPromise;
 
-      if (tokenIndex === -1) {
-        reject(new Error('invalid response - no multipart mime header'));
-      }
-      const header = uint8ArrayToString(response, 0, tokenIndex);
-      // Now find the boundary  marker
-      const split = header.split('\r\n');
-      const boundary = findBoundary(split);
-
-      if (!boundary) {
-        reject(new Error('invalid response - no boundary marker'));
-      }
-      const offset = tokenIndex + 4; // skip over the \r\n\r\n
-
-      // find the terminal boundary marker
-      const endIndex = findIndexOfString(response, boundary, offset);
-
-      if (endIndex === -1) {
-        reject(new Error('invalid response - terminating boundary not found'));
-      }
-
-      // Remove \r\n from the length
-      const length = endIndex - offset - 2;
-
-      // return the info for this pixel data
-      resolve({
-        contentType: findContentType(split),
-        imageFrame: {
-          pixelData: new Uint8Array(imageFrameAsArrayBuffer, offset, length),
-        },
-      });
-    }, reject);
+  return loadPromise.then(function (imageFrameAsArrayBuffer /* , xhr*/) {
+    const contentType =
+      xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
+    const extracted = extractMultipart(
+      contentType,
+      new Uint8Array(imageFrameAsArrayBuffer)
+    );
+    extracted.imageQualityStatus = getImageQualityStatus(retrieveOptions, true);
+    return extracted;
   });
 }
 

@@ -16,16 +16,13 @@ type Sphere = {
  * @param pointLPS - the point to check in world coordinates
  * @returns boolean
  */
-export default function pointInSphere(
-  sphere: Sphere,
-  pointLPS: Types.Point3
-): boolean {
+export default function pointInSphere(sphere: Sphere, pointLPS: vec3): boolean {
   const { center, radius } = sphere;
 
   return (
-    (pointLPS[0] - center[0]) ** 2 +
-      (pointLPS[1] - center[1]) ** 2 +
-      (pointLPS[2] - center[2]) ** 2 <=
+    (pointLPS[0] - center[0]) * (pointLPS[0] - center[0]) +
+      (pointLPS[1] - center[1]) * (pointLPS[1] - center[1]) +
+      (pointLPS[2] - center[2]) * (pointLPS[2] - center[2]) <=
     radius ** 2
   );
 }
