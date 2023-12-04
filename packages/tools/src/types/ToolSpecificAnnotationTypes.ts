@@ -152,31 +152,6 @@ export interface SplineROIAnnotation extends Annotation {
   };
 }
 
-export interface AngleAnnotation extends Annotation {
-  data: {
-    handles: {
-      points: Types.Point3[];
-      activeHandleIndex: number | null;
-      textBox: {
-        hasMoved: boolean;
-        worldPosition: Types.Point3;
-        worldBoundingBox: {
-          topLeft: Types.Point3;
-          topRight: Types.Point3;
-          bottomLeft: Types.Point3;
-          bottomRight: Types.Point3;
-        };
-      };
-    };
-    label: string;
-    cachedStats: {
-      [targetId: string]: {
-        angle: number;
-      };
-    };
-  };
-}
-
 export interface EllipticalROIAnnotation extends Annotation {
   data: {
     handles: {
@@ -329,6 +304,31 @@ export interface ArrowAnnotation extends Annotation {
           bottomLeft: Types.Point3;
           bottomRight: Types.Point3;
         };
+      };
+    };
+  };
+}
+
+export interface AngleAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    label: string;
+    cachedStats: {
+      [targetId: string]: {
+        angle: number;
       };
     };
   };

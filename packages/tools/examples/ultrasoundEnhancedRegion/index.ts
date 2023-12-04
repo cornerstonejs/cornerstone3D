@@ -30,8 +30,8 @@ const viewportId2 = 'CT_STACK2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Ultrasound Enhanced Regions Length and Probe Tool',
-  'In this example, we demonstrate how to use the length and probe tools with ultrasound enhanced regions.'
+  'Ultrasound Enhanced Regions Length and Probe Tool and a new Ultrasound Directional Tool',
+  'In this example, we demonstrate how to use the length and probe tools with ultrasound enhanced regions. You can use the dropdown to switch between different tools. The length tool examines the Ultrasound enhanced regions and accurately calculates the length in each region. If the annotation spans multiple regions, it identifies them and measures at the pixel level. The image on the right-hand side contains a combination of two regions, one on top and one at the bottom, which helps display the second and mm units correctly. By using the probe tool on the bottom region, you can accurately view the seconds and mm units. Additionally, the ultrasound differential tool, located at the bottom of the right-hand side image, displays the difference between two horizontal or vertical points.'
 );
 
 const content = document.getElementById('content');
