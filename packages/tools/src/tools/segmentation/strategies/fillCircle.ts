@@ -21,6 +21,7 @@ import initializeSetValue from './utils/initializeSetValue';
 import initializePreview from './utils/initializePreview';
 import initializeThreshold from './utils/initializeThreshold';
 import { isVolumeSegmentation } from './utils/stackVolumeCheck';
+import initializeDetermineSegmentIndex from './utils/initializeDetermineSegmentIndex';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -96,6 +97,7 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   initializeRegionFill,
   initializeSetValue,
   initializeCircle,
+  initializeDetermineSegmentIndex,
   initializeTracking,
   initializePreview
 );
@@ -105,10 +107,11 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   initializeRegionFill,
   initializeSetValue,
   initializeCircle,
+  initializeDetermineSegmentIndex,
   dynamicWithinThreshold,
   initializeThreshold,
-  initializePreview,
   initializeTracking,
+  initializePreview,
   initializeIslandRemoval
 );
 

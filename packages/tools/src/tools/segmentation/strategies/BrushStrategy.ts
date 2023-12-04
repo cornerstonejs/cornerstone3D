@@ -128,6 +128,8 @@ export default class BrushStrategy {
     );
 
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
+    // Store the center IJK location so that we can skip an immediate same-point update
+    // TODO - move this to the BrushTool
     if (utilities.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
       return operationData.preview;
     } else {
@@ -149,7 +151,7 @@ export default class BrushStrategy {
     if (!previewSegmentIndex || !previewVoxelValue.modifiedSlices.size) {
       return null;
     }
-    return previewVoxelValue;
+    return initializedData;
   };
 
   protected createInitialized(
@@ -167,7 +169,7 @@ export default class BrushStrategy {
     const { imageVoxelValue, segmentationVoxelValue, segmentationImageData } =
       data;
     const previewVoxelValue =
-      operationData.preview ||
+      operationData.preview?.previewVoxelValue ||
       VoxelValue.historyVoxelValue(segmentationVoxelValue);
 
     const initializedData: InitializedOperationData = {

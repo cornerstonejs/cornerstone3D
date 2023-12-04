@@ -1,11 +1,11 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData, Initializer } from '../BrushStrategy';
 
 /**
  * Adds an isWithinThreshold to the operation data that checks that the
  * image value is within threshold[0]...threshold[1]
  * No-op if threshold not defined.
  */
-const initializeThreshold = {
+export default {
   createIsInThreshold: (enabled, operationData: InitializedOperationData) => {
     const { imageVoxelValue, strategySpecificConfiguration } = operationData;
     if (!strategySpecificConfiguration) {
@@ -25,6 +25,4 @@ const initializeThreshold = {
       return threshold[0] <= voxelValue && voxelValue <= threshold[1];
     };
   },
-};
-
-export default initializeThreshold;
+} as Initializer;

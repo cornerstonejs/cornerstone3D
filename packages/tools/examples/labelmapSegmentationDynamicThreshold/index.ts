@@ -51,11 +51,11 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const previewSegmentIndex = 3;
+const previewSegmentIndex = 8;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Dynamtic Threshold',
+  'Labelmap Segmentation Dynamic Threshold',
   'Here we demonstrate dynamic threshold with preview'
 );
 
@@ -136,7 +136,6 @@ const optionsValues = [
 const previewColors = {
   0: [255, 255, 255, 128],
   1: [0, 255, 0, 255],
-  2: [0, 0, 255, 64],
 };
 
 // ============================= //
@@ -209,6 +208,17 @@ addSliderToToolbar({
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+  },
+});
+
+// ============================= //
+addDropdownToToolbar({
+  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  onSelectedValueChange: (segmentIndex) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      Number(segmentIndex)
+    );
   },
 });
 
@@ -301,6 +311,9 @@ async function run() {
       activeStrategy: brushStrategies.CircularBrush,
       previewSegmentIndex,
       previewColors,
+      strategySpecificConfiguration: {
+        useCenterSegmentIndex: true,
+      },
     }
   );
   toolGroup.addToolInstance(
@@ -352,7 +365,7 @@ async function run() {
       activeStrategy: brushStrategies.ThresholdCircle,
       previewSegmentIndex,
       previewColors,
-      strategySpecificCofiguration: {
+      strategySpecificConfiguration: {
         useCenterSegmentIndex: true,
         THRESHOLD: { ...thresholdArgs },
       },

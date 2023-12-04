@@ -12,8 +12,10 @@ export default {
     if (!preview) {
       return;
     }
-    preview.sourceVoxelValue = operationData.segmentationVoxelValue;
+    preview.previewVoxelValue.sourceVoxelValue =
+      operationData.segmentationVoxelValue;
     // And use the preview data associated with this tracking object as needed
-    operationData.previewVoxelValue = preview;
+    operationData.previewVoxelValue = preview.previewVoxelValue;
+    operationData.segmentIndex = preview.segmentIndex;
   },
 };

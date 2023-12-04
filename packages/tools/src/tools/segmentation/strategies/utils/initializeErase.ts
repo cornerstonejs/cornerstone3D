@@ -7,12 +7,6 @@ import type { InitializedOperationData } from '../BrushStrategy';
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {
-    console.log(
-      'initializeErase',
-      operationData.previewSegmentIndex,
-      operationData.segmentIndex
-    );
     operationData.segmentIndex = 0;
-    // operationData.previewSegmentIndex = null;
   },
 };
