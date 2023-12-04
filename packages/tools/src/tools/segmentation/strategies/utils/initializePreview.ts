@@ -25,9 +25,6 @@ export default {
   },
 
   createInitialized: (enabled, operationData: InitializedOperationData) => {
-    if (operationData.previewSegmentIndex === undefined) {
-      return;
-    }
     const {
       toolGroupId,
       segmentIndex,
@@ -35,6 +32,9 @@ export default {
       previewSegmentIndex,
       previewColors,
     } = operationData;
+    if (previewSegmentIndex === undefined) {
+      return;
+    }
 
     const configColor = previewColors?.[segmentIndex];
     const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
@@ -42,6 +42,9 @@ export default {
       segmentationRepresentationUID,
       segmentIndex
     );
+    if (!configColor && !segmentColor) {
+      return;
+    }
     const previewColor = configColor || segmentColor.map((it) => it * 0.9);
     segmentationConfig.color.setColorForSegmentIndex(
       toolGroupId,
@@ -81,7 +84,7 @@ export default {
     tracking.clear();
   },
 
-  cancelPreview: (enabled, operationData: InitializedOperationData) => {
+  rejectPreview: (enabled, operationData: InitializedOperationData) => {
     const { previewVoxelValue, segmentationVoxelValue } = operationData;
     if (previewVoxelValue.modifiedSlices.size === 0) {
       return;

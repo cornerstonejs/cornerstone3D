@@ -102,7 +102,7 @@ abstract class BaseTool implements IBaseTool {
     eventType:
       | 'initDown'
       | 'completeUp'
-      | 'cancelPreview'
+      | 'rejectPreview'
       | 'acceptPreview'
       | 'preview'
   ): any {

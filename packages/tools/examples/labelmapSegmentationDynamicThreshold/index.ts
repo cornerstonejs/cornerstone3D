@@ -51,7 +51,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const previewSegmentIndex = 4;
+const previewSegmentIndex = 3;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -213,22 +213,12 @@ addSliderToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Accept Preview',
+  title: 'Reject Preview',
   onClick: () => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
     const activeName = toolGroup.getActivePrimaryMouseButtonTool();
     const brush = toolGroup.getToolInstance(activeName);
-    brush.acceptPreview(element1);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Cancel Preview',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.cancelPreview(element1);
+    brush.rejectPreview?.(element1);
   },
 });
 
@@ -310,6 +300,7 @@ async function run() {
     {
       activeStrategy: brushStrategies.CircularBrush,
       previewSegmentIndex,
+      previewColors,
     }
   );
   toolGroup.addToolInstance(
@@ -317,6 +308,8 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularEraser,
+      previewSegmentIndex,
+      previewColors,
     }
   );
   toolGroup.addToolInstance(
@@ -334,6 +327,7 @@ async function run() {
     {
       activeStrategy: brushStrategies.SphereEraser,
       previewSegmentIndex,
+      previewColors,
     }
   );
   toolGroup.setToolActive(StackScrollTool.toolName, {
@@ -350,6 +344,7 @@ async function run() {
   });
 
   // Setup threshold and the default strategy arguments
+  const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
   toolGroup.addToolInstance(
     brushInstanceNames.ThresholdCircle,
     BrushTool.toolName,
@@ -357,13 +352,11 @@ async function run() {
       activeStrategy: brushStrategies.ThresholdCircle,
       previewSegmentIndex,
       previewColors,
+      strategySpecificCofiguration: {
+        useCenterSegmentIndex: true,
+        THRESHOLD: { ...thresholdArgs },
+      },
     }
-  );
-  const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
-  segmentationUtils.setBrushThresholdForToolGroup(
-    toolGroupId,
-    thresholdArgs.threshold,
-    thresholdArgs
   );
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);

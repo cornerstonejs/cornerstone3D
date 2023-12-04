@@ -20,13 +20,20 @@ export default {
     } = operationData;
 
     const existingValue = segmentationVoxelValue.getIndex(index);
-    if (
-      existingValue === segmentIndex ||
-      existingValue === previewSegmentIndex ||
-      segmentsLocked.includes(value)
-    ) {
+    if (existingValue === segmentIndex || segmentsLocked.includes(value)) {
       return;
     }
+    // Correct for preview data getting into the image area and not accepted/rejected
+    if (existingValue === previewSegmentIndex) {
+      if (previewVoxelValue.getIndex(index) === undefined) {
+        // Reset the value to ensure preview gets added to the indices
+        segmentationVoxelValue.setIndex(index, segmentIndex);
+      } else {
+        return;
+      }
+    }
+
+    // Now, just update the displayed value
     const useSegmentIndex = previewSegmentIndex ?? segmentIndex;
 
     previewVoxelValue.setIndex(index, useSegmentIndex);

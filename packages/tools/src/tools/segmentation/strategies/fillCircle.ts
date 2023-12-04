@@ -10,7 +10,10 @@ import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { OperationData, InitializedOperationData } from './BrushStrategy';
 import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
-import type { CanvasCoordinates } from '../../../types';
+import type {
+  CanvasCoordinates,
+  LabelmapToolOperationDataVolume,
+} from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
 import initializeTracking from './utils/initializeTracking';
 import initializeRegionFill from './utils/initializeRegionFill';
@@ -115,14 +118,7 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-export function fillInsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): unknown {
-  return CIRCLE_STRATEGY.fill(enabledElement, operationData);
-}
-
-CIRCLE_STRATEGY.assignMethods(fillInsideCircle);
+const fillInsideCircle = CIRCLE_STRATEGY.assignMethods();
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -135,7 +131,8 @@ export function thresholdInsideCircle(
   operationData: OperationData
 ): void {
   if (isVolumeSegmentation(operationData)) {
-    const { referencedVolumeId, volumeId } = operationData;
+    const { referencedVolumeId, volumeId } =
+      operationData as LabelmapToolOperationDataVolume;
 
     const imageVolume = cache.getVolume(referencedVolumeId);
     const segmentation = cache.getVolume(volumeId);
@@ -168,4 +165,4 @@ export function fillOutsideCircle(
   throw new Error('Not yet implemented');
 }
 
-export { CIRCLE_STRATEGY, CIRCLE_THRESHOLD_STRATEGY };
+export { CIRCLE_STRATEGY, CIRCLE_THRESHOLD_STRATEGY, fillInsideCircle };

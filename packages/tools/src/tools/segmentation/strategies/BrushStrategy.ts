@@ -84,7 +84,7 @@ export default class BrushStrategy {
     createInitialized: addListMethod('createInitialized'),
     createIsInThreshold: addSingletonMethod('createIsInThreshold'),
     acceptPreview: addListMethod('acceptPreview', 'createInitialized'),
-    cancelPreview: addListMethod('cancelPreview', 'createInitialized'),
+    rejectPreview: addListMethod('rejectPreview', 'createInitialized'),
     setValue: addSingletonMethod('setValue'),
     preview: addSingletonMethod('preview'),
   };
@@ -200,7 +200,7 @@ export default class BrushStrategy {
     operationData: OperationData
   ) => void;
 
-  public cancelPreview: (
+  public rejectPreview: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => void;
@@ -226,10 +226,15 @@ export default class BrushStrategy {
    * This creates the old method functions for the strategies.  The newer
    * method is intended to directly use this object.
    */
-  public assignMethods(strategy) {
-    for (const key of Object.keys(BrushStrategy.childFunctions)) {
-      strategy[key] = this[key];
+  public assignMethods(strategyFunction?: (enabled, operationData) => unknown) {
+    if (!strategyFunction) {
+      strategyFunction = (enabled, operationData) =>
+        this.fill(enabled, operationData);
     }
+    for (const key of Object.keys(BrushStrategy.childFunctions)) {
+      strategyFunction[key] = this[key];
+    }
+    return strategyFunction;
   }
 }
 

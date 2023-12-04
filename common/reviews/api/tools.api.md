@@ -547,7 +547,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyEvent(enabledElement: Types_2.IEnabledElement, operationData: unknown, eventType: 'initDown' | 'completeUp' | 'cancelPreview' | 'acceptPreview' | 'preview'): any;
+    applyActiveStrategyEvent(enabledElement: Types_2.IEnabledElement, operationData: unknown, eventType: 'initDown' | 'completeUp' | 'rejectPreview' | 'acceptPreview' | 'preview'): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -698,8 +698,6 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     acceptPreview(element: any): void;
     // (undocumented)
-    cancelPreview(element: any): void;
-    // (undocumented)
     createEditData(element: any): {
         volumeId: string;
         referencedVolumeId: string;
@@ -745,6 +743,8 @@ export class BrushTool extends BaseTool {
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     previewCallback: () => void;
+    // (undocumented)
+    rejectPreview(element: any): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)

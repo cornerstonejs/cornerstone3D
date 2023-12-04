@@ -101,7 +101,7 @@ class BrushTool extends BaseTool {
           THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
         },
         strategySpecificConfiguration: {
-          THRESHOLD_INSIDE_CIRCLE: {
+          THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
           },
         },
@@ -109,8 +109,8 @@ class BrushTool extends BaseTool {
         activeStrategy: 'FILL_INSIDE_CIRCLE',
         brushSize: 25,
         // No preview by default
-        previewSegmentIndex: null,
-        previewColors: null,
+        previewSegmentIndex: undefined,
+        previewColors: undefined,
       },
     }
   ) {
@@ -288,7 +288,7 @@ class BrushTool extends BaseTool {
           this._previewData.timer = null;
         }
         if (preview && !isDrag) {
-          this.cancelPreview(element);
+          this.rejectPreview(element);
         }
       }
       if (!this._previewData.timer) {
@@ -548,12 +548,12 @@ class BrushTool extends BaseTool {
   /**
    * Cancels any preview view being shown, resetting any segments being shown.
    */
-  public cancelPreview(element) {
+  public rejectPreview(element) {
     const enabledElement = getEnabledElement(element);
     this.applyActiveStrategyEvent(
       enabledElement,
       this.getOperationData(element),
-      'cancelPreview'
+      'rejectPreview'
     );
     this._previewData.preview = null;
     this._previewData.isDrag = false;
