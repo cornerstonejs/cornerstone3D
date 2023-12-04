@@ -207,8 +207,6 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
         UNIT_MAPPING[region.physicalUnitYDirection],
       ];
     }
-  } else if (calibration.scale) {
-    value = calibration.scale;
   }
 
   return {

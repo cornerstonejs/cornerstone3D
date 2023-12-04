@@ -309,7 +309,7 @@ export interface ArrowAnnotation extends Annotation {
   };
 }
 
-export interface AngleAnnotation extends Annotation {
+export interface UltrasoundDirectionalAnnotation extends Annotation {
   data: {
     handles: {
       points: Types.Point3[];
@@ -328,7 +328,9 @@ export interface AngleAnnotation extends Annotation {
     label: string;
     cachedStats: {
       [targetId: string]: {
-        angle: number;
+        projectedPointCanvas: Types.Point2;
+        value: number;
+        unit: string;
       };
     };
   };

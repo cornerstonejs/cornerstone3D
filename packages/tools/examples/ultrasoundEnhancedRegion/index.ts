@@ -1,9 +1,4 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  getRenderingEngine,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -22,8 +17,8 @@ const {
   ProbeTool,
   ZoomTool,
   PanTool,
+  UltrasoundDirectionalTool,
   ToolGroupManager,
-  PlanarFreehandROITool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -60,7 +55,11 @@ content.appendChild(element2);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
-const toolsNames = [LengthTool.toolName, ProbeTool.toolName];
+const toolsNames = [
+  LengthTool.toolName,
+  ProbeTool.toolName,
+  UltrasoundDirectionalTool.toolName,
+];
 let selectedToolName = toolsNames[0];
 
 addDropdownToToolbar({
@@ -97,6 +96,7 @@ async function run() {
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(UltrasoundDirectionalTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -107,10 +107,11 @@ async function run() {
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(UltrasoundDirectionalTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(ProbeTool.toolName, {
+  toolGroup.setToolActive(UltrasoundDirectionalTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -133,11 +134,7 @@ async function run() {
   });
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
-  // toolGroup.setToolPassive(ProbeTool.toolName);
-
-  toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-    calculateStats: true,
-  });
+  toolGroup.setToolPassive(ProbeTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

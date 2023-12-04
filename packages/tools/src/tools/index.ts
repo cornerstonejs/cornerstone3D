@@ -31,6 +31,7 @@ import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
+import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
 
 // Segmentation DisplayTool
@@ -79,6 +80,7 @@ export {
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
+  UltrasoundDirectionalTool,
   KeyImageTool,
   // Segmentations Display
   SegmentationDisplayTool,
