@@ -328,7 +328,6 @@ export interface UltrasoundDirectionalAnnotation extends Annotation {
     label: string;
     cachedStats: {
       [targetId: string]: {
-        projectedPointCanvas: Types.Point2;
         value: number;
         unit: string;
       };

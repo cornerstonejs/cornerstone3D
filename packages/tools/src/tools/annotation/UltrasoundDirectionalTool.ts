@@ -591,7 +591,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         data.cachedStats[targetId].value == null
       ) {
         data.cachedStats[targetId] = {
-          projectedPointCanvas: null,
           value: null,
           unit: null,
         };
@@ -642,10 +641,36 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         1
       );
 
-      const projectedPointCanvas =
-        data.cachedStats[targetId].projectedPointCanvas;
+      const unit = data.cachedStats[targetId].unit;
+      if (unit !== 'px') {
+        const canvasPoint1 = canvasCoordinates[0];
+        const canvasPoint2 = canvasCoordinates[1];
 
-      if (projectedPointCanvas) {
+        const canvasDeltaY = canvasPoint2[1] - canvasPoint1[1];
+        const canvasDeltaX = canvasPoint2[0] - canvasPoint1[0];
+
+        const orientation =
+          Math.abs(canvasDeltaX) > Math.abs(canvasDeltaY)
+            ? 'HORIZONTAL'
+            : 'VERTICAL';
+
+        // then for the third point we need to go from first point towards
+        // the second point (it can be left or right in the horizontal orientation)
+        // or up or down in the vertical orientation, and only add
+        // the delta y to the x or y coordinate of the first point
+        let projectedPointCanvas = [0, 0] as Types.Point2;
+        if (orientation === 'HORIZONTAL') {
+          projectedPointCanvas = [
+            canvasPoint1[0] + canvasDeltaX,
+            canvasPoint1[1],
+          ];
+        } else if (orientation === 'VERTICAL') {
+          projectedPointCanvas = [
+            canvasPoint1[0],
+            canvasPoint1[1] + canvasDeltaY,
+          ];
+        }
+
         // create a line from the first point to the third point
         let dataId = `${annotationUID}-line-1`;
         let lineUID = '1';
@@ -792,13 +817,16 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         getCalibratedProbeUnitsAndValue(image, [imageIndex1]);
       const { values: values2, units: units2 } =
         getCalibratedProbeUnitsAndValue(image, [imageIndex2]);
-      debugger;
-      let projectedPointCanvas, value;
+
+      let value;
       let unit = 'px';
-      if (units1[0] !== units2[0] || units1[1] !== units2[1]) {
+      if (
+        units1[0] !== units2[0] ||
+        units1[1] !== units2[1] ||
+        (units1[0] === 'raw' && units2[0] === 'raw')
+      ) {
         // if units are not the same, we cannot calculate the diff
         // so we just report the px distance
-        projectedPointCanvas = null;
         value = distanceToPoint(worldPos1, worldPos2);
       } else {
         const canvasPoint1 = enabledElement.viewport.worldToCanvas(worldPos1);
@@ -816,18 +844,13 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         // the second point (it can be left or right in the horizontal orientation)
         // or up or down in the vertical orientation, and only add
         // the delta y to the x or y coordinate of the first point
-        projectedPointCanvas = [0, 0];
         const xValues = [values1[0], values2[0]];
         const yValues = [values1[1], values2[1]];
 
         if (orientation === 'HORIZONTAL') {
-          projectedPointCanvas[1] = canvasPoint1[1];
-          projectedPointCanvas[0] = canvasPoint1[0] + canvasDeltaX;
           value = Math.abs(xValues[1] - xValues[0]);
           unit = units1[0];
         } else if (orientation === 'VERTICAL') {
-          projectedPointCanvas[1] = canvasPoint1[1] + canvasDeltaY;
-          projectedPointCanvas[0] = canvasPoint1[0];
           value = Math.abs(yValues[1] - yValues[0]);
           unit = units1[1];
         } else {
@@ -836,7 +859,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       }
 
       cachedStats[targetId] = {
-        projectedPointCanvas,
         value,
         unit,
       };
