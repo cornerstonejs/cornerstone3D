@@ -76,9 +76,9 @@ const getCalibratedAreaUnits = (handles, image): string => {
  * image spacing for calibrated images.
  */
 const getCalibratedScale = (image, handles = []) => {
-  if (image.calibration.sequenceOfUltrasoundRegions) {
+  if (image.calibration?.sequenceOfUltrasoundRegions) {
     // image.spacing / image.us.space
-  } else if (image.calibration.scale) {
+  } else if (image.calibration?.scale) {
     return image.calibration.scale;
   } else {
     return 1;
