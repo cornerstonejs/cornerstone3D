@@ -16,6 +16,7 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
+import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
@@ -590,7 +591,7 @@ class ProbeTool extends AnnotationTool {
           index[2] * zMultiple +
           index[1] * yMultiple +
           index[0] * samplesPerPixel;
-        const value =
+        let value =
           samplesPerPixel > 2
             ? [
                 scalarData[baseIndex],
@@ -614,11 +615,24 @@ class ProbeTool extends AnnotationTool {
           index[2] = viewport.getCurrentImageIdIndex();
         }
 
-        const modalityUnit = getModalityUnit(
-          modality,
-          annotation.metadata.referencedImageId,
-          modalityUnitOptions
-        );
+        let modalityUnit;
+
+        if (modality === 'US') {
+          const handles = [index];
+          const calibratedResults = getCalibratedProbeUnitsAndValue(
+            image,
+            handles
+          );
+
+          value = calibratedResults.value || value;
+          modalityUnit = calibratedResults.units;
+        } else {
+          modalityUnit = getModalityUnit(
+            modality,
+            annotation.metadata.referencedImageId,
+            modalityUnitOptions
+          );
+        }
 
         cachedStats[targetId] = {
           index,

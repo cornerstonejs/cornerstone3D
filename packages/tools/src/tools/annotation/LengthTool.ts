@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getCalibratedUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import roundNumber from '../../utilities/roundNumber';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
@@ -819,7 +819,7 @@ class LengthTool extends AnnotationTool {
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const handles = [index1, index2];
-      const { scale, units } = getCalibratedUnitsAndScale(image, handles);
+      const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
 
       const length = this._calculateLength(worldPos1, worldPos2) / scale;
 

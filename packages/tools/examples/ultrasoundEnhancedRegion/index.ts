@@ -20,84 +20,45 @@ console.warn(
 const {
   LengthTool,
   ProbeTool,
+  ZoomTool,
+  PanTool,
   ToolGroupManager,
   PlanarFreehandROITool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { ViewportType, Events } = Enums;
+const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
+const viewportId2 = 'CT_STACK2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Annotation Tools Stack',
-  'Annotation tools for a stack viewport'
+  'Ultrasound Enhanced Regions Length and Probe Tool',
+  'In this example, we demonstrate how to use the length and probe tools with ultrasound enhanced regions.'
 );
 
 const content = document.getElementById('content');
 const element = document.createElement('div');
+const element2 = document.createElement('div');
 
 // Disable right click context menu so we can have right click tools
 element.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 
+element2.id = 'cornerstone-element2';
+element2.style.width = '500px';
+element2.style.height = '500px';
+
 content.appendChild(element);
-
-const info = document.createElement('div');
-content.appendChild(info);
-
-const instructions = document.createElement('p');
-instructions.innerText = 'Left Click to use selected tool';
-info.appendChild(instructions);
-
-const rotationInfo = document.createElement('div');
-info.appendChild(rotationInfo);
-
-const flipHorizontalInfo = document.createElement('div');
-info.appendChild(flipHorizontalInfo);
-
-const flipVerticalInfo = document.createElement('div');
-info.appendChild(flipVerticalInfo);
-
-element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-
-  if (!viewport) {
-    return;
-  }
-
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
-
-  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
-  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
-  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
-});
-// ============================= //
+content.appendChild(element2);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-
-const cancelToolDrawing = (evt) => {
-  const { element, key } = evt.detail;
-  if (key === 'Escape') {
-    cornerstoneTools.cancelActiveManipulations(element);
-  }
-};
-
-element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-  cancelToolDrawing(evt);
-});
 
 const toolsNames = [LengthTool.toolName, ProbeTool.toolName];
 let selectedToolName = toolsNames[0];
@@ -134,6 +95,8 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(ProbeTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(PanTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -142,44 +105,55 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(toolsNames[0], {
+  toolGroup.setToolActive(ProbeTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Left Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Left Click
+      },
+    ],
+  });
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
-  toolGroup.setToolPassive(ProbeTool.toolName);
+  // toolGroup.setToolPassive(ProbeTool.toolName);
 
   toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
     calculateStats: true,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-
-  // good doppler
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
-  //   SOPInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.316743601559830357915606581954',
-  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-  // });
-
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
     SOPInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.189194415048094834107102061558',
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+  const imageIds2 = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
+    SeriesInstanceUID:
+      '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
+    SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
     wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
@@ -187,33 +161,49 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-    defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+  const viewportInputs = [
+    // {
+    //   viewportId,
+    //   type: ViewportType.STACK,
+    //   element,
+    //   defaultOptions: {
+    //     background: <Types.Point3>[0.2, 0, 0.2],
+    //   },
+    // },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.STACK,
+      element: element,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
     },
-  };
+  ];
 
-  renderingEngine.enableElement(viewportInput);
+  renderingEngine.setViewports(viewportInputs);
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineId);
+  // toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
+    renderingEngine.getViewport(viewportId2)
   );
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0]];
-
-  // Set the stack on the viewport
+  const stack = [imageIds2[0]];
   viewport.setStack(stack);
 
-  // Render the image
+  // const viewport2 = <Types.IStackViewport>(
+  //   renderingEngine.getViewport('CT_STACK2')
+  // );
+
+  // const stack2 = [imageIds2[0]];
+  // viewport2.setStack(stack2);
+
+  // // Render the image
   viewport.render();
+  // viewport2.render();
 }
 
 run();

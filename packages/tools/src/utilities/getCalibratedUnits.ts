@@ -7,6 +7,19 @@ const SUPPORTED_REGION_DATA_TYPES = [
   1, // Tissue
 ];
 
+const SUPPORTED_LENGTH_UNITS = [
+  3, // cm
+];
+
+const SUPPORTED_OTHER_UNITS = [
+  4, // seconds
+];
+
+const UNIT_MAPPING = {
+  3: 'cm',
+  4: 'seconds',
+};
+
 /**
  * Extracts the length units and the type of calibration for those units
  * into the response.  The length units will typically be either mm or px
@@ -80,7 +93,7 @@ const getCalibratedScale = (image, handles) => {
  * @param image - to extract the calibration from
  * @returns Object containing the units, area units, and scale
  */
-const getCalibratedUnitsAndScale = (image, handles) => {
+const getCalibratedLengthUnitsAndScale = (image, handles) => {
   const [imageIndex1, imageIndex2] = handles;
   const { calibration, hasPixelSpacing } = image;
   let units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
@@ -101,8 +114,11 @@ const getCalibratedUnitsAndScale = (image, handles) => {
 
   if (calibration.sequenceOfUltrasoundRegions) {
     const supportedRegionsMetadata =
-      calibration.sequenceOfUltrasoundRegions.filter((region) =>
-        SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType)
+      calibration.sequenceOfUltrasoundRegions.filter(
+        (region) =>
+          SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
+          SUPPORTED_LENGTH_UNITS.includes(region.physicalUnitXDirection) &&
+          SUPPORTED_LENGTH_UNITS.includes(region.physicalUnitYDirection)
       );
 
     if (!supportedRegionsMetadata.length) {
@@ -122,7 +138,7 @@ const getCalibratedUnitsAndScale = (image, handles) => {
     );
 
     if (region) {
-      scale = 1 / (region.physicalDeltaX * region.physicalDeltaY);
+      scale = 1 / (region.physicalDeltaX * region.physicalDeltaY * 100);
       calibrationType = 'US Region';
       units = 'mm';
     }
@@ -134,6 +150,70 @@ const getCalibratedUnitsAndScale = (image, handles) => {
     units: units + (calibrationType ? ` ${calibrationType}` : ''),
     areaUnits: areaUnits + (calibrationType ? ` ${calibrationType}` : ''),
     scale,
+  };
+};
+
+const getCalibratedProbeUnitsAndValue = (image, handles) => {
+  const [imageIndex] = handles;
+  const { calibration } = image;
+  let units = ['raw'];
+  let value = null;
+  let calibrationType = '';
+
+  if (
+    !calibration ||
+    (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
+  ) {
+    return { units, value };
+  }
+
+  if (calibration.sequenceOfUltrasoundRegions) {
+    const supportedRegionsMetadata =
+      calibration.sequenceOfUltrasoundRegions.filter(
+        (region) =>
+          SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
+          SUPPORTED_OTHER_UNITS.includes(region.physicalUnitXDirection) &&
+          SUPPORTED_LENGTH_UNITS.includes(region.physicalUnitYDirection)
+      );
+
+    if (!supportedRegionsMetadata.length) {
+      return { units, value };
+    }
+
+    const region = supportedRegionsMetadata.find(
+      (region) =>
+        imageIndex[0] >= region.regionLocationMinX0 &&
+        imageIndex[0] <= region.regionLocationMaxX1 &&
+        imageIndex[1] >= region.regionLocationMinY0 &&
+        imageIndex[1] <= region.regionLocationMaxY1
+    );
+
+    if (region) {
+      const { referencePixelX0 = 0, referencePixelY0 = 0 } = region;
+      const { physicalDeltaX, physicalDeltaY } = region;
+
+      const yValue =
+        (imageIndex[1] - region.regionLocationMinY0 - referencePixelY0) *
+        physicalDeltaY;
+
+      const xValue =
+        (imageIndex[0] - region.regionLocationMinX0 - referencePixelX0) *
+        physicalDeltaX;
+
+      value = [xValue, yValue];
+      calibrationType = 'US Region';
+      units = [
+        UNIT_MAPPING[region.physicalUnitXDirection],
+        UNIT_MAPPING[region.physicalUnitYDirection],
+      ];
+    }
+  } else if (calibration.scale) {
+    value = calibration.scale;
+  }
+
+  return {
+    units: units + (calibrationType ? ` ${calibrationType}` : ''),
+    value,
   };
 };
 
@@ -150,7 +230,8 @@ export default getCalibratedLengthUnits;
 export {
   getCalibratedAreaUnits,
   getCalibratedLengthUnits,
-  getCalibratedUnitsAndScale,
+  getCalibratedLengthUnitsAndScale,
   getCalibratedScale,
   getCalibratedAspect,
+  getCalibratedProbeUnitsAndValue,
 };
