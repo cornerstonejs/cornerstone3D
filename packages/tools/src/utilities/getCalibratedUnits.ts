@@ -7,12 +7,12 @@ const SUPPORTED_REGION_DATA_TYPES = [
   1, // Tissue
 ];
 
-const SUPPORTED_LENGTH_UNITS = [
-  3, // cm
+const SUPPORTED_LENGTH_VARIANT = [
+  '3,3', // x: cm  &  y:cm
 ];
 
-const SUPPORTED_OTHER_UNITS = [
-  4, // seconds
+const SUPPORTED_PROBE_VARIANT = [
+  '4,3', // x: seconds  &  y : cm
 ];
 
 const UNIT_MAPPING = {
@@ -117,8 +117,9 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       calibration.sequenceOfUltrasoundRegions.filter(
         (region) =>
           SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
-          SUPPORTED_LENGTH_UNITS.includes(region.physicalUnitXDirection) &&
-          SUPPORTED_LENGTH_UNITS.includes(region.physicalUnitYDirection)
+          SUPPORTED_LENGTH_VARIANT.includes(
+            `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+          )
       );
 
     if (!supportedRegionsMetadata.length) {
@@ -157,27 +158,30 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
   const [imageIndex] = handles;
   const { calibration } = image;
   let units = ['raw'];
-  let value = null;
+  let values = [null];
   let calibrationType = '';
 
   if (
     !calibration ||
     (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
   ) {
-    return { units, value };
+    return { units, values };
+    // Todo: add support for other scenarios
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
+    // for Probe tool
     const supportedRegionsMetadata =
       calibration.sequenceOfUltrasoundRegions.filter(
         (region) =>
           SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
-          SUPPORTED_OTHER_UNITS.includes(region.physicalUnitXDirection) &&
-          SUPPORTED_LENGTH_UNITS.includes(region.physicalUnitYDirection)
+          SUPPORTED_PROBE_VARIANT.includes(
+            `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+          )
       );
 
-    if (!supportedRegionsMetadata.length) {
-      return { units, value };
+    if (!supportedRegionsMetadata?.length) {
+      return { units, values };
     }
 
     const region = supportedRegionsMetadata.find(
@@ -188,30 +192,35 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
         imageIndex[1] <= region.regionLocationMaxY1
     );
 
-    if (region) {
-      const { referencePixelX0 = 0, referencePixelY0 = 0 } = region;
-      const { physicalDeltaX, physicalDeltaY } = region;
-
-      const yValue =
-        (imageIndex[1] - region.regionLocationMinY0 - referencePixelY0) *
-        physicalDeltaY;
-
-      const xValue =
-        (imageIndex[0] - region.regionLocationMinX0 - referencePixelX0) *
-        physicalDeltaX;
-
-      value = [xValue, yValue];
-      calibrationType = 'US Region';
-      units = [
-        UNIT_MAPPING[region.physicalUnitXDirection],
-        UNIT_MAPPING[region.physicalUnitYDirection],
-      ];
+    if (!region) {
+      return { units, values };
     }
+
+    // Todo: I think this is a ok assumption for now that if the referencePixelX0 and referencePixelY0
+    // are not defined, then we can assume 0 for them
+    const { referencePixelX0 = 0, referencePixelY0 = 0 } = region;
+    const { physicalDeltaX, physicalDeltaY } = region;
+
+    const yValue =
+      (imageIndex[1] - region.regionLocationMinY0 - referencePixelY0) *
+      physicalDeltaY;
+
+    const xValue =
+      (imageIndex[0] - region.regionLocationMinX0 - referencePixelX0) *
+      physicalDeltaX;
+
+    calibrationType = 'US Region';
+    values = [xValue, yValue];
+    units = [
+      UNIT_MAPPING[region.physicalUnitXDirection],
+      UNIT_MAPPING[region.physicalUnitYDirection],
+    ];
   }
 
   return {
-    units: units + (calibrationType ? ` ${calibrationType}` : ''),
-    value,
+    units,
+    values,
+    calibrationType,
   };
 };
 

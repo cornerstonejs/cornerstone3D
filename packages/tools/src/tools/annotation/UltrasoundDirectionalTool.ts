@@ -588,10 +588,12 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].angle == null
+        data.cachedStats[targetId].value == null
       ) {
         data.cachedStats[targetId] = {
-          angle: null,
+          projectedPointCanvas: null,
+          value: null,
+          unit: null,
         };
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);
@@ -786,19 +788,14 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       const imageIndex1 = transformWorldToIndex(imageData, worldPos1);
       const imageIndex2 = transformWorldToIndex(imageData, worldPos2);
 
-      const { value: value1, units: units1 } = getCalibratedProbeUnitsAndValue(
-        image,
-        [imageIndex1]
-      );
-      const { value: value2, units: units2 } = getCalibratedProbeUnitsAndValue(
-        image,
-        [imageIndex2]
-      );
-
+      const { values: values1, units: units1 } =
+        getCalibratedProbeUnitsAndValue(image, [imageIndex1]);
+      const { values: values2, units: units2 } =
+        getCalibratedProbeUnitsAndValue(image, [imageIndex2]);
+      debugger;
       let projectedPointCanvas, value;
       let unit = 'px';
-
-      if (units1 !== units2) {
+      if (units1[0] !== units2[0] || units1[1] !== units2[1]) {
         // if units are not the same, we cannot calculate the diff
         // so we just report the px distance
         projectedPointCanvas = null;
@@ -820,19 +817,22 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         // or up or down in the vertical orientation, and only add
         // the delta y to the x or y coordinate of the first point
         projectedPointCanvas = [0, 0];
+        const xValues = [values1[0], values2[0]];
+        const yValues = [values1[1], values2[1]];
+
         if (orientation === 'HORIZONTAL') {
           projectedPointCanvas[1] = canvasPoint1[1];
           projectedPointCanvas[0] = canvasPoint1[0] + canvasDeltaX;
-          value = Math.abs(value1[0] - value2[0]);
+          value = Math.abs(xValues[1] - xValues[0]);
+          unit = units1[0];
         } else if (orientation === 'VERTICAL') {
           projectedPointCanvas[1] = canvasPoint1[1] + canvasDeltaY;
           projectedPointCanvas[0] = canvasPoint1[0];
-          value = Math.abs(value1[1] - value2[1]);
+          value = Math.abs(yValues[1] - yValues[0]);
+          unit = units1[1];
         } else {
           throw new Error('Invalid orientation');
         }
-
-        unit = units1;
       }
 
       cachedStats[targetId] = {
