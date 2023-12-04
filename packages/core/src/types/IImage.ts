@@ -3,6 +3,7 @@ import type CPUFallbackColormap from './CPUFallbackColormap';
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import { ImageQualityStatus } from '../enums';
+import IImageCalibration from './IImageCalibration';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -118,6 +119,7 @@ interface IImage {
   };
 
   imageQualityStatus?: ImageQualityStatus;
+  calibration: IImageCalibration;
 }
 
 export default IImage;

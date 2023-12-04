@@ -6,7 +6,7 @@ const PIXEL_UNITS = 'px';
 /**
  * Extracts the length units and the type of calibration for those units
  * into the response.  The length units will typically be either mm or px
- * while the calibration type can be any of a number of different calibraiton types.
+ * while the calibration type can be any of a number of different calibration types.
  *
  * Volumetric images have no calibration type, so are just the raw mm.
  *
@@ -30,7 +30,7 @@ const getCalibratedLengthUnits = (handles, image): string => {
     return PIXEL_UNITS;
   }
   // TODO - handle US regions properly
-  if (calibration.SequenceOfUltrasoundRegions) {
+  if (calibration.sequenceOfUltrasoundRegions) {
     return 'US Region';
   }
   return `${units} ${calibration.type}`;
@@ -46,7 +46,7 @@ const getCalibratedAreaUnits = (handles, image): string => {
   if (!calibration || !calibration.type) {
     return units;
   }
-  if (calibration.SequenceOfUltrasoundRegions) {
+  if (calibration.sequenceOfUltrasoundRegions) {
     return 'US Region';
   }
   return `${units} ${calibration.type}`;
@@ -56,7 +56,17 @@ const getCalibratedAreaUnits = (handles, image): string => {
  * Gets the scale divisor for converting from internal spacing to
  * image spacing for calibrated images.
  */
-const getCalibratedScale = (image) => image.calibration?.scale || 1;
+const getCalibratedScale = (image) => {
+  if (image.calibration.sequenceOfUltrasoundRegions) {
+    debugger;
+    // return the correct scale for US Regions
+    // image.spacing / image.us.space
+  } else if (image.calibration.scale) {
+    return image.calibration.scale;
+  } else {
+    return 1;
+  }
+};
 
 /** Gets the aspect ratio of the screen display relative to the image
  * display in order to square up measurement values.

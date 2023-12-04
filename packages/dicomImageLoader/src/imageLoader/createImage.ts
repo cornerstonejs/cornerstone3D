@@ -116,6 +116,7 @@ function createImage(
   }
 
   const { cornerstone } = external;
+  const { MetadataModules } = cornerstone.Enums;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
   imageFrame.decodeLevel = options.decodeLevel;
@@ -221,13 +222,16 @@ function createImage(
       }
 
       const imagePlaneModule: MetadataImagePlaneModule =
-        cornerstone.metaData.get('imagePlaneModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.IMAGE_PLANE, imageId) || {};
       const voiLutModule =
-        cornerstone.metaData.get('voiLutModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.VOI_LUT, imageId) || {};
       const modalityLutModule =
-        cornerstone.metaData.get('modalityLutModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
-        cornerstone.metaData.get('sopCommonModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.SOP_COMMON, imageId) || {};
+      const calibrationModule =
+        cornerstone.metaData.get(MetadataModules.CALIBRATION, imageId) || {};
+
       if (isColorImage) {
         const { rows, columns } = imageFrame;
         if (TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax]) {
@@ -279,6 +283,7 @@ function createImage(
       const image: DICOMLoaderIImage = {
         imageId,
         color: isColorImage,
+        calibration: calibrationModule,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
         columns: imageFrame.columns,
         height: imageFrame.rows,
@@ -316,7 +321,6 @@ function createImage(
         numComps: undefined,
       };
 
-      window.image = image;
       if (image.color) {
         image.getCanvas = function () {
           // the getCanvas function is used in the CPU rendering path
