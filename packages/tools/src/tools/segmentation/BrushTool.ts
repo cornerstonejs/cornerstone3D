@@ -108,6 +108,9 @@ class BrushTool extends BaseTool {
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
         brushSize: 25,
+        // No preview by default
+        previewSegmentIndex: null,
+        previewColors: null,
       },
     }
   ) {
@@ -242,7 +245,7 @@ class BrushTool extends BaseTool {
 
     this.applyActiveStrategyEvent(
       enabledElement,
-      this.getOperationData(),
+      this.getOperationData(element),
       'initDown'
     );
 
@@ -441,6 +444,8 @@ class BrushTool extends BaseTool {
       ...editData,
       points: data?.handles?.points,
       segmentIndex,
+      previewSegmentIndex: this.configuration.previewSegmentIndex,
+      previewColors: this.configuration.previewColors,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,

@@ -9,8 +9,11 @@ import throttle from './throttle';
 import isObject from './isObject';
 import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
-import getCalibratedLengthUnits from './getCalibratedUnits';
-import { getCalibratedScale } from './getCalibratedUnits';
+import {
+  getCalibratedLengthUnits,
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+} from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
@@ -57,6 +60,7 @@ export {
   triggerEvent,
   calibrateImageSpacing,
   getCalibratedLengthUnits,
+  getCalibratedAreaUnits,
   getCalibratedScale,
   segmentation,
   triggerAnnotationRenderForViewportIds,

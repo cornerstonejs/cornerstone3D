@@ -15,7 +15,6 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -52,8 +51,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const previewSegmentIndex = 3;
-const segmentIndex = 1;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -105,7 +102,7 @@ const brushInstanceNames = {
   CircularEraser: 'CircularEraser',
   SphereBrush: 'SphereBrush',
   SphereEraser: 'SphereEraser',
-  ThresholdBrush: 'ThresholdBrush',
+  ThresholdCircle: 'ThresholdCircle',
   ScissorsEraser: 'ScissorsEraser',
 };
 
@@ -114,7 +111,7 @@ const brushStrategies = {
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
   [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
-  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ThresholdCircle]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE_SPHERE',
 };
 
@@ -123,7 +120,7 @@ const brushValues = [
   brushInstanceNames.CircularEraser,
   brushInstanceNames.SphereBrush,
   brushInstanceNames.SphereEraser,
-  brushInstanceNames.ThresholdBrush,
+  brushInstanceNames.ThresholdCircle,
 ];
 
 const optionsValues = [
@@ -172,11 +169,6 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: [200, 1000],
   isDynamic: false,
 });
-thresholdOptions.set('Dynamic r=0', { isDynamic: true, delta: 0 });
-thresholdOptions.set('Dynamic Same Threshold', { isDynamic: false });
-thresholdOptions.set('Dynamic r=1', { isDynamic: true, delta: 1 });
-thresholdOptions.set('Dynamic r=3', { isDynamic: true, delta: 3 });
-thresholdOptions.set('Dynamic r=5', { isDynamic: true, delta: 5 });
 
 addDropdownToToolbar({
   options: {
@@ -203,26 +195,6 @@ addSliderToToolbar({
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Accept Preview',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.acceptPreview(element1);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Cancel Preview',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.cancelPreview(element1);
   },
 });
 
@@ -339,10 +311,10 @@ async function run() {
     ],
   });
   toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdBrush,
+    brushInstanceNames.ThresholdCircle,
     BrushTool.toolName,
     {
-      activeStrategy: brushStrategies.ThresholdBrush,
+      activeStrategy: brushStrategies.ThresholdCircle,
     }
   );
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
@@ -464,29 +436,6 @@ async function run() {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]
-  );
-
-  segmentation.segmentIndex.setPreviewSegmentIndex(
-    segmentationId,
-    previewSegmentIndex + 1
-  );
-
-  segmentation.segmentIndex.setPreviewSegmentIndex(
-    segmentationId,
-    previewSegmentIndex
-  );
-
-  // TODO - should this be part of setPreviewSegmentIndex?
-  const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-    toolGroupId,
-    representationUID,
-    segmentIndex
-  );
-  segmentationConfig.color.setColorForSegmentIndex(
-    toolGroupId,
-    representationUID,
-    previewSegmentIndex,
-    segmentColor
   );
 
   // Render the image

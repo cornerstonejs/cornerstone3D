@@ -22,6 +22,7 @@ import type {
 } from './ILoadObject';
 import type Metadata from './Metadata';
 import type OrientationVectors from './OrientationVectors';
+import type AABB2 from './AABB2';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
@@ -154,6 +155,7 @@ export type {
   //
   Metadata,
   OrientationVectors,
+  AABB2,
   Point2,
   Point3,
   Point4,

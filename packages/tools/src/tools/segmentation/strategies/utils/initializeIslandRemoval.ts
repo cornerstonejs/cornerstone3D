@@ -1,5 +1,3 @@
-import type { Types } from '@cornerstonejs/core';
-
 import type { InitializedOperationData } from '../BrushStrategy';
 import floodFill from '../../../../utilities/segmentation/floodFill';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';

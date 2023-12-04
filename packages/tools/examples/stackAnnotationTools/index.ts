@@ -239,7 +239,7 @@ async function run() {
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(toolsNames[0], {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click

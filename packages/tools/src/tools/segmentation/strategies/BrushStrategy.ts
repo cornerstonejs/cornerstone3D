@@ -7,30 +7,15 @@ import initializePreview from './utils/initializePreview';
 import initializeRegionFill from './utils/initializeRegionFill';
 import initializeThreshold from './utils/initializeThreshold';
 import { getStrategyData } from './utils/getStrategyData';
+import type {
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
+} from '../../../types/LabelmapToolOperationData';
 
 const { VoxelValue } = utilities;
-
-export type OperationData = {
-  segmentationId: string;
-  imageVolume: Types.IImageVolume;
-  points: Types.Point3[];
-  volume: Types.IImageVolume;
-  /**
-   * The final segment value to apply for this colour at the end
-   */
-  segmentIndex: number;
-  /**
-   * The colour to apply as an intermediate value
-   */
-  previewSegmentIndex?: number;
-  segmentsLocked: number[];
-  viewPlaneNormal: number[];
-  viewUp: number[];
-  strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
-  segmentationRepresentationUID: string;
-  preview: any;
-};
+export type OperationData =
+  | LabelmapToolOperationDataVolume
+  | LabelmapToolOperationDataStack;
 
 export type InitializedOperationData = OperationData & {
   // Additional data for performing the strategy
@@ -151,18 +136,20 @@ export default class BrushStrategy {
 
     this._fill.forEach((func) => func(enabledElement, initializedData));
 
-    const { segmentationVoxelValue, previewVoxelValue } = initializedData;
+    const { segmentationVoxelValue, previewVoxelValue, previewSegmentIndex } =
+      initializedData;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
       segmentationVoxelValue.getArrayOfSlices()
     );
 
-    const preview = previewVoxelValue.modifiedSlices.size
-      ? previewVoxelValue
-      : null;
-
-    return preview;
+    // We are only previewing if there is a preview index, and there is at
+    // least one slice modified
+    if (!previewSegmentIndex || !previewVoxelValue.modifiedSlices.size) {
+      return null;
+    }
+    return previewVoxelValue;
   };
 
   protected createInitialized(
@@ -182,10 +169,6 @@ export default class BrushStrategy {
     const previewVoxelValue =
       operationData.preview ||
       VoxelValue.historyVoxelValue(segmentationVoxelValue);
-    if (operationData.preview) {
-      // TODO - move this
-      operationData.previewSegmentIndex ??= 4;
-    }
 
     const initializedData: InitializedOperationData = {
       ...operationData,
