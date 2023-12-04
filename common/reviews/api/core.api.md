@@ -114,6 +114,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
+    getRotation: (camera?: ICamera) => number;
+    // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
@@ -136,7 +138,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -1850,7 +1852,7 @@ interface IViewport {
     // (undocumented)
     getRenderingEngine(): any;
     // (undocumented)
-    getRotation: () => number;
+    getRotation: (camera?: ICamera) => number;
     // (undocumented)
     getZoom(): number;
     // (undocumented)
@@ -2885,7 +2887,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
-    getRotation: () => number;
+    getRotation: (camera?: ICamera) => number;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
@@ -3014,6 +3016,7 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -3163,8 +3166,6 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageIdIndex: (volumeId?: string) => number;
     // (undocumented)
-    getRotation: () => number;
-    // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
@@ -3172,8 +3173,6 @@ export class VolumeViewport extends BaseVolumeViewport {
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
-    // (undocumented)
-    setRotation(rotation: number): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
@@ -3205,6 +3204,7 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
     slabThickness?: number;
+    orientation?: OrientationAxis;
 };
 
 declare namespace windowLevel {

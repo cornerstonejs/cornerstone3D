@@ -1172,7 +1172,7 @@ interface IViewport {
     getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
-    getRotation: () => number;
+    getRotation: (camera? : ICamera) => number;
     getZoom(): number;
     id: string;
     isDisabled: boolean;
@@ -1572,6 +1572,7 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -1672,6 +1673,8 @@ type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
 
     slabThickness?: number;
+
+    orientation?: OrientationAxis;
 };
 
 // (No @packageDocumentation comment for this package)

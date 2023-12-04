@@ -1,4 +1,5 @@
 import { ViewportProperties } from './ViewportProperties';
+import { OrientationAxis } from '../enums';
 
 /**
  * Stack Viewport Properties
@@ -9,7 +10,7 @@ type VolumeViewportProperties = ViewportProperties & {
 
   slabThickness?: number;
 
-  rotation?: number;
+  orientation?: OrientationAxis;
 };
 
 export default VolumeViewportProperties;

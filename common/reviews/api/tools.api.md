@@ -3370,7 +3370,7 @@ interface IViewport {
     getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
-    getRotation: () => number;
+    getRotation: (camera? : ICamera) => number;
     getZoom(): number;
     id: string;
     isDisabled: boolean;
@@ -6168,6 +6168,7 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
+    rotation?: number;
 };
 
 declare namespace visibility {
@@ -6317,6 +6318,8 @@ type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
 
     slabThickness?: number;
+
+    orientation?: OrientationAxis;
 };
 
 // @public (undocumented)

@@ -119,7 +119,7 @@ class Viewport implements IViewport {
     this.isDisabled = false;
   }
 
-  getRotation: () => number;
+  getRotation: (camera?: ICamera) => number;
   getFrameOfReferenceUID: () => string;
   canvasToWorld: (canvasPos: Point2) => Point3;
   worldToCanvas: (worldPos: Point3) => Point2;
@@ -725,7 +725,7 @@ class Viewport implements IViewport {
       radius = (heightWorld * scaleFactor) / 2;
     }
 
-    //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
+    // const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
     const parallelScale = 1.1 * radius;
 
     let w1 = bounds[1] - bounds[0];

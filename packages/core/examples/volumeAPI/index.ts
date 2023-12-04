@@ -153,6 +153,38 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Apply rotation',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Apply the colormap to the viewport
+    viewport.setProperties({ rotation: 75 });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'log rotation',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    console.debug(viewport.getRotation());
+  },
+});
+
+addButtonToToolbar({
   title: 'Apply colormap',
   onClick: () => {
     // Get the rendering engine
@@ -181,8 +213,6 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // Resets the viewport's camera
-    viewport.resetCamera();
     // TODO reset the viewport properties, we don't have API for this.
     viewport.resetProperties(volumeId);
     viewport.render();
