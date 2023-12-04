@@ -174,9 +174,7 @@ function metaDataProvider(type, imageId) {
 
     if (modality === 'US') {
       return {
-        sequenceOfUltrasoundRegions: {
-          ...getUSEnhancedRegions(metaData),
-        },
+        sequenceOfUltrasoundRegions: [...getUSEnhancedRegions(metaData)],
       };
     }
   }
