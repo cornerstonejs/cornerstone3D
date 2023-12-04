@@ -56,6 +56,7 @@ import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import {
   Events,
   InterpolationType,
+  MetadataModules,
   RequestType,
   VOILUTFunctionType,
   ViewportStatus,
@@ -442,11 +443,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: Object.assign(
+        {},
+        this.csImage.calibration,
+        this.calibration
+      ),
       preScale: {
         ...this.csImage.preScale,
       },
-      calibration: this.csImage.calibration,
     };
   }
 
@@ -485,7 +489,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: Object.assign(
+        {},
+        this.csImage.calibration,
+        this.calibration
+      ),
       preScale: {
         ...this.csImage.preScale,
       },
@@ -588,6 +596,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     const { modality } = metaData.get('generalSeriesModule', imageId);
     const imageIdScalingFactor = metaData.get('scalingModule', imageId);
+    const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
     if (modality === 'PT' && imageIdScalingFactor) {
       this._addScalingToViewport(imageIdScalingFactor);
@@ -597,7 +606,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
-    this.calibration = null;
+    this.calibration = calibration;
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     if (!this.useCPURendering) {
@@ -2961,15 +2970,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   // create default values for imagePlaneModule if values are undefined
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
     this.calibration ||= imagePlaneModule.calibration;
-
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };

@@ -43,7 +43,6 @@ import {
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';

@@ -18,7 +18,7 @@ import {
   isEqual,
 } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
-import { EPSILON, RENDERING_DEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
   ActorEntry,

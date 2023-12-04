@@ -75,7 +75,7 @@ const getCalibratedAreaUnits = (handles, image): string => {
  * Gets the scale divisor for converting from internal spacing to
  * image spacing for calibrated images.
  */
-const getCalibratedScale = (image, handles) => {
+const getCalibratedScale = (image, handles = []) => {
   if (image.calibration.sequenceOfUltrasoundRegions) {
     // image.spacing / image.us.space
   } else if (image.calibration.scale) {

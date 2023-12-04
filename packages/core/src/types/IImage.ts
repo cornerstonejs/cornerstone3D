@@ -119,7 +119,7 @@ interface IImage {
   };
 
   imageQualityStatus?: ImageQualityStatus;
-  calibration: IImageCalibration;
+  calibration?: IImageCalibration;
 }
 
 export default IImage;
