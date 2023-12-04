@@ -173,8 +173,9 @@ function metaDataProvider(type, imageId) {
     const modality = getValue(metaData['00080060']);
 
     if (modality === 'US') {
+      const enhancedRegion = getUSEnhancedRegions(metaData);
       return {
-        sequenceOfUltrasoundRegions: [...getUSEnhancedRegions(metaData)],
+        sequenceOfUltrasoundRegions: enhancedRegion,
       };
     }
   }

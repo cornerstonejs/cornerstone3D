@@ -9,7 +9,6 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -21,16 +20,8 @@ console.warn(
 const {
   LengthTool,
   ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
   ToolGroupManager,
-  ArrowAnnotateTool,
   PlanarFreehandROITool,
-  KeyImageTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -108,19 +99,7 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
   cancelToolDrawing(evt);
 });
 
-const toolsNames = [
-  LengthTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-  PlanarFreehandROITool.toolName,
-  KeyImageTool.toolName,
-];
+const toolsNames = [LengthTool.toolName, ProbeTool.toolName];
 let selectedToolName = toolsNames[0];
 
 addDropdownToToolbar({
@@ -145,61 +124,6 @@ addDropdownToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Flip H',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Flip V',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { flipVertical } = viewport.getCamera();
-
-    viewport.setCamera({ flipVertical: !flipVertical });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Rotate Delta 90',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 90 });
-
-    viewport.render();
-  },
-});
-
 /**
  * Runs the demo
  */
@@ -210,15 +134,6 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
-  cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(KeyImageTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -227,15 +142,6 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
-  toolGroup.addTool(KeyImageTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -249,25 +155,32 @@ async function run() {
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolPassive(ProbeTool.toolName);
-  toolGroup.setToolPassive(RectangleROITool.toolName);
-  toolGroup.setToolPassive(EllipticalROITool.toolName);
-  toolGroup.setToolPassive(CircleROITool.toolName);
-  toolGroup.setToolPassive(BidirectionalTool.toolName);
-  toolGroup.setToolPassive(AngleTool.toolName);
-  toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
-  toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
 
   toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
     calculateStats: true,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
+
+  // good doppler
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+  //   SOPInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.316743601559830357915606581954',
+  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  // });
+
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+    SOPInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.189194415048094834107102061558',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
