@@ -24,7 +24,6 @@ const SUPPORTED_REGION_DATA_TYPES = [
  * @returns String containing the units and type of calibration
  */
 const getCalibratedLengthUnits = (handles, image): string => {
-  const [imageIndex1, imageIndex2] = handles;
   const { calibration, hasPixelSpacing } = image;
   // Anachronistic - moving to using calibration consistently, but not completed yet
   const units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
@@ -38,39 +37,7 @@ const getCalibratedLengthUnits = (handles, image): string => {
     return PIXEL_UNITS;
   }
   if (calibration.sequenceOfUltrasoundRegions) {
-    // here we need to check if both imageIndex1 and imageIndex2 are in the same region
-    // we can use the extent of the region to determine this, if they are
-    // across regions, we need to return units which was the default behavior
-
-    // check see if we have supported region data types
-    const supportedRegionsMetadata =
-      calibration.sequenceOfUltrasoundRegions.filter(
-        (region) =>
-          SUPPORTED_REGION_DATA_TYPES.indexOf(region.regionDataType) > -1
-      );
-
-    if (!supportedRegionsMetadata.length) {
-      return units;
-    }
-
-    // check to see if the imageIndex1 and imageIndex2 are in the same region
-    const region = supportedRegionsMetadata.find(
-      (region) =>
-        imageIndex1[0] >= region.regionLocationMinX0 &&
-        imageIndex1[0] <= region.regionLocationMaxX1 &&
-        imageIndex1[1] >= region.regionLocationMinY0 &&
-        imageIndex1[1] <= region.regionLocationMaxY1 &&
-        imageIndex2[0] >= region.regionLocationMinX0 &&
-        imageIndex2[0] <= region.regionLocationMaxX1 &&
-        imageIndex2[1] >= region.regionLocationMinY0 &&
-        imageIndex2[1] <= region.regionLocationMaxY1
-    );
-
-    if (!region) {
-      return units;
-    }
-
-    return 'mm:US Region';
+    return 'US Region';
   }
   return `${units} ${calibration.type}`;
 };
@@ -97,14 +64,77 @@ const getCalibratedAreaUnits = (handles, image): string => {
  */
 const getCalibratedScale = (image, handles) => {
   if (image.calibration.sequenceOfUltrasoundRegions) {
-    // return the correct scale for US Regions
     // image.spacing / image.us.space
-    return 1;
   } else if (image.calibration.scale) {
     return image.calibration.scale;
   } else {
     return 1;
   }
+};
+
+/**
+ * Extracts the calibrated length units, area units, and the scale
+ * for converting from internal spacing to image spacing.
+ *
+ * @param handles - to detect if spacing information is different between points
+ * @param image - to extract the calibration from
+ * @returns Object containing the units, area units, and scale
+ */
+const getCalibratedUnitsAndScale = (image, handles) => {
+  const [imageIndex1, imageIndex2] = handles;
+  const { calibration, hasPixelSpacing } = image;
+  let units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
+  const areaUnits = units + SQUARE;
+  let scale = 1;
+  let calibrationType = '';
+
+  if (
+    !calibration ||
+    (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
+  ) {
+    return { units, areaUnits, scale };
+  }
+
+  if (calibration.type === CalibrationTypes.UNCALIBRATED) {
+    return { units: PIXEL_UNITS, areaUnits: PIXEL_UNITS + SQUARE, scale };
+  }
+
+  if (calibration.sequenceOfUltrasoundRegions) {
+    const supportedRegionsMetadata =
+      calibration.sequenceOfUltrasoundRegions.filter((region) =>
+        SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType)
+      );
+
+    if (!supportedRegionsMetadata.length) {
+      return { units, areaUnits, scale };
+    }
+
+    const region = supportedRegionsMetadata.find(
+      (region) =>
+        imageIndex1[0] >= region.regionLocationMinX0 &&
+        imageIndex1[0] <= region.regionLocationMaxX1 &&
+        imageIndex1[1] >= region.regionLocationMinY0 &&
+        imageIndex1[1] <= region.regionLocationMaxY1 &&
+        imageIndex2[0] >= region.regionLocationMinX0 &&
+        imageIndex2[0] <= region.regionLocationMaxX1 &&
+        imageIndex2[1] >= region.regionLocationMinY0 &&
+        imageIndex2[1] <= region.regionLocationMaxY1
+    );
+
+    if (region) {
+      scale = 1 / (region.physicalDeltaX * region.physicalDeltaY);
+      calibrationType = 'US Region';
+      units = 'mm';
+    }
+  } else if (calibration.scale) {
+    scale = calibration.scale;
+  }
+
+  return {
+    units: units + (calibrationType ? ` ${calibrationType}` : ''),
+    areaUnits: areaUnits + (calibrationType ? ` ${calibrationType}` : ''),
+    scale,
+  };
 };
 
 /** Gets the aspect ratio of the screen display relative to the image
@@ -120,6 +150,7 @@ export default getCalibratedLengthUnits;
 export {
   getCalibratedAreaUnits,
   getCalibratedLengthUnits,
+  getCalibratedUnitsAndScale,
   getCalibratedScale,
   getCalibratedAspect,
 };
