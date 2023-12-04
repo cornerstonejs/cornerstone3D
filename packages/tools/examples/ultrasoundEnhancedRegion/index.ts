@@ -35,22 +35,21 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const element = document.createElement('div');
-const element2 = document.createElement('div');
+content.style.display = 'flex';
 
-// Disable right click context menu so we can have right click tools
-element.oncontextmenu = (e) => e.preventDefault();
-element2.oncontextmenu = (e) => e.preventDefault();
+const createCornerstoneElement = (id) => {
+  const element = document.createElement('div');
+  element.oncontextmenu = (e) => e.preventDefault(); // Disable right click context menu
+  element.id = id;
+  element.style.width = '500px';
+  element.style.height = '500px';
+  return element;
+};
 
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+const element1 = createCornerstoneElement('cornerstone-element');
+const element2 = createCornerstoneElement('cornerstone-element2');
 
-element2.id = 'cornerstone-element2';
-element2.style.width = '500px';
-element2.style.height = '500px';
-
-content.appendChild(element);
+content.appendChild(element1);
 content.appendChild(element2);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -111,7 +110,7 @@ async function run() {
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(UltrasoundDirectionalTool.toolName, {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -159,18 +158,18 @@ async function run() {
 
   // Create a stack viewport
   const viewportInputs = [
-    // {
-    //   viewportId,
-    //   type: ViewportType.STACK,
-    //   element,
-    //   defaultOptions: {
-    //     background: <Types.Point3>[0.2, 0, 0.2],
-    //   },
-    // },
+    {
+      viewportId,
+      type: ViewportType.STACK,
+      element: element1,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
     {
       viewportId: viewportId2,
       type: ViewportType.STACK,
-      element: element,
+      element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
@@ -180,27 +179,27 @@ async function run() {
   renderingEngine.setViewports(viewportInputs);
 
   // Set the tool group on the viewport
-  // toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportId)
+  );
+
+  const stack = [imageIds[0]];
+  viewport.setStack(stack);
+
+  const viewport2 = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId2)
   );
 
-  const stack = [imageIds2[0]];
-  viewport.setStack(stack);
-
-  // const viewport2 = <Types.IStackViewport>(
-  //   renderingEngine.getViewport('CT_STACK2')
-  // );
-
-  // const stack2 = [imageIds2[0]];
-  // viewport2.setStack(stack2);
+  const stack2 = [imageIds2[0]];
+  viewport2.setStack(stack2);
 
   // // Render the image
   viewport.render();
-  // viewport2.render();
+  viewport2.render();
 }
 
 run();

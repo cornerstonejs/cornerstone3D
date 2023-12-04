@@ -618,14 +618,18 @@ class ProbeTool extends AnnotationTool {
         let modalityUnit;
 
         if (modality === 'US') {
-          const handles = [index];
-          const calibratedResults = getCalibratedProbeUnitsAndValue(
-            image,
-            handles
+          const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
+            index,
+          ]);
+
+          const hasEnhancedRegionValues = calibratedResults.values.every(
+            (value) => value !== null
           );
 
-          value = calibratedResults.value || value;
-          modalityUnit = calibratedResults.units;
+          value = hasEnhancedRegionValues ? calibratedResults.values : value;
+          modalityUnit = hasEnhancedRegionValues
+            ? calibratedResults.units
+            : 'raw';
         } else {
           modalityUnit = getModalityUnit(
             modality,
@@ -678,7 +682,13 @@ function defaultGetTextLines(data, targetId): string[] {
 
   textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-  textLines.push(`${roundNumber(value)} ${modalityUnit}`);
+  if (value instanceof Array && modalityUnit instanceof Array) {
+    for (let i = 0; i < value.length; i++) {
+      textLines.push(`${roundNumber(value[i])} ${modalityUnit[i]}`);
+    }
+  } else {
+    textLines.push(`${roundNumber(value)} ${modalityUnit}`);
+  }
 
   return textLines;
 }
