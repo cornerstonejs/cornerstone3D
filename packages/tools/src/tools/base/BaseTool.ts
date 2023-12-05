@@ -100,10 +100,10 @@ abstract class BaseTool implements IBaseTool {
    * @param operationData - The data that needs to be passed to the strategy.
    * @returns The result of the strategy.
    */
-  public applyActiveStrategyEvent(
+  public applyActiveStrategyCallback(
     enabledElement: Types.IEnabledElement,
     operationData: unknown,
-    eventType:
+    callbackType:
       | 'initDown'
       | 'completeUp'
       | 'rejectPreview'
@@ -111,7 +111,7 @@ abstract class BaseTool implements IBaseTool {
       | 'preview'
   ): any {
     const { strategies, activeStrategy } = this.configuration;
-    return strategies[activeStrategy][eventType]?.call(
+    return strategies[activeStrategy][callbackType]?.call(
       this,
       enabledElement,
       operationData

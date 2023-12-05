@@ -117,7 +117,7 @@ class BrushTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  onSetToolPassive = () => {
+  onSetToolPassive = (evt) => {
     this.disableCursor();
   };
 
@@ -125,13 +125,15 @@ class BrushTool extends BaseTool {
     this.disableCursor();
   };
 
-  onSetToolDisabled = () => {
+  onSetToolDisabled = (evt) => {
     this.disableCursor();
   };
 
   private disableCursor() {
     this._hoverData = undefined;
+    this.rejectPreview();
   }
+
   createEditData(element) {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -243,7 +245,7 @@ class BrushTool extends BaseTool {
       this._hoverData.viewportIdsToRender
     );
 
-    this.applyActiveStrategyEvent(
+    this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       'initDown'
@@ -308,7 +310,7 @@ class BrushTool extends BaseTool {
       return;
     }
     this._previewData.timer = null;
-    this._previewData.preview = this.applyActiveStrategyEvent(
+    this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
       'preview'
@@ -542,7 +544,11 @@ class BrushTool extends BaseTool {
 
     this._editData = null;
 
-    this.applyActiveStrategyEvent(enabledElement, operationData, 'completeUp');
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      operationData,
+      'completeUp'
+    );
 
     if (!this._previewData.isDrag) {
       this.acceptPreview(element);
@@ -552,9 +558,12 @@ class BrushTool extends BaseTool {
   /**
    * Cancels any preview view being shown, resetting any segments being shown.
    */
-  public rejectPreview(element) {
+  public rejectPreview(element = this._previewData.element) {
+    if (!element || !this._previewData.preview) {
+      return;
+    }
     const enabledElement = getEnabledElement(element);
-    this.applyActiveStrategyEvent(
+    this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       'rejectPreview'
@@ -566,10 +575,13 @@ class BrushTool extends BaseTool {
   /**
    * Accepts a preview, marking it as the active segment.
    */
-  public acceptPreview(element) {
+  public acceptPreview(element = this._previewData.element) {
+    if (!element) {
+      return;
+    }
     const enabledElement = getEnabledElement(element);
 
-    this.applyActiveStrategyEvent(
+    this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       'acceptPreview'

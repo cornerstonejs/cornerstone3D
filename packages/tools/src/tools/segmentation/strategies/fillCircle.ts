@@ -20,7 +20,6 @@ import initializeRegionFill from './utils/initializeRegionFill';
 import initializeSetValue from './utils/initializeSetValue';
 import initializePreview from './utils/initializePreview';
 import initializeThreshold from './utils/initializeThreshold';
-import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 import initializeDetermineSegmentIndex from './utils/initializeDetermineSegmentIndex';
 
 const { transformWorldToIndex } = csUtils;
@@ -121,7 +120,7 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-const fillInsideCircle = CIRCLE_STRATEGY.assignMethods();
+const fillInsideCircle = CIRCLE_STRATEGY.strategyFunction;
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -129,31 +128,7 @@ const fillInsideCircle = CIRCLE_STRATEGY.assignMethods();
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-export function thresholdInsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  if (isVolumeSegmentation(operationData)) {
-    const { referencedVolumeId, volumeId } =
-      operationData as LabelmapToolOperationDataVolume;
-
-    const imageVolume = cache.getVolume(referencedVolumeId);
-    const segmentation = cache.getVolume(volumeId);
-
-    if (
-      !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-      !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-    ) {
-      throw new Error(
-        'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-      );
-    }
-  }
-
-  return CIRCLE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
-}
-
-CIRCLE_THRESHOLD_STRATEGY.assignMethods(thresholdInsideCircle);
+const thresholdInsideCircle = CIRCLE_THRESHOLD_STRATEGY.strategyFunction;
 
 /**
  * Fill outside the circular region segment inside the segmentation defined by the operationData.
@@ -168,4 +143,9 @@ export function fillOutsideCircle(
   throw new Error('Not yet implemented');
 }
 
-export { CIRCLE_STRATEGY, CIRCLE_THRESHOLD_STRATEGY, fillInsideCircle };
+export {
+  CIRCLE_STRATEGY,
+  CIRCLE_THRESHOLD_STRATEGY,
+  fillInsideCircle,
+  thresholdInsideCircle,
+};

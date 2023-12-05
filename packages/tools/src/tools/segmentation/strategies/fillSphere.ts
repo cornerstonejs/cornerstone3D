@@ -115,14 +115,7 @@ const SPHERE_STRATEGY = new BrushStrategy(
  * @param enabledElement - The element that is enabled and selected.
  * @param operationData - OperationData
  */
-export function fillInsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  SPHERE_STRATEGY.fill(enabledElement, operationData);
-}
-
-SPHERE_STRATEGY.assignMethods(fillInsideSphere);
+const fillInsideSphere = SPHERE_STRATEGY.strategyFunction;
 
 const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   'SphereThreshold',
@@ -142,30 +135,8 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
  * @param enabledElement - The element for which the segment is being filled.
  * @param operationData - EraseOperationData
  */
-export function thresholdInsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  if (isVolumeSegmentation(operationData)) {
-    const { referencedVolumeId, volumeId } = operationData;
 
-    const imageVolume = cache.getVolume(referencedVolumeId);
-    const segmentation = cache.getVolume(volumeId);
-
-    if (
-      !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-      !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-    ) {
-      throw new Error(
-        'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-      );
-    }
-  }
-
-  SPHERE_THRESHOLD_STRATEGY.fill(enabledElement, operationData);
-}
-
-SPHERE_THRESHOLD_STRATEGY.assignMethods(thresholdInsideSphere);
+const thresholdInsideSphere = SPHERE_THRESHOLD_STRATEGY.strategyFunction;
 
 /**
  * Fill outside a sphere with the given segment index in the given operation data. The
@@ -180,4 +151,9 @@ export function fillOutsideSphere(
   throw new Error('fill outside sphere not implemented');
 }
 
-export { SPHERE_STRATEGY, SPHERE_THRESHOLD_STRATEGY };
+export {
+  SPHERE_STRATEGY,
+  SPHERE_THRESHOLD_STRATEGY,
+  fillInsideSphere,
+  thresholdInsideSphere,
+};

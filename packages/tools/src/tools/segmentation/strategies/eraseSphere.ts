@@ -11,11 +11,6 @@ const ERASE_CIRCLE_STRATEGY = new BrushStrategy(
   ...SPHERE_STRATEGY.initializers
 );
 
-export function eraseInsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  ERASE_CIRCLE_STRATEGY.fill(enabledElement, operationData);
-}
+const eraseInsideSphere = ERASE_CIRCLE_STRATEGY.strategyFunction;
 
-ERASE_CIRCLE_STRATEGY.assignMethods(eraseInsideSphere);
+export { eraseInsideSphere, ERASE_CIRCLE_STRATEGY };

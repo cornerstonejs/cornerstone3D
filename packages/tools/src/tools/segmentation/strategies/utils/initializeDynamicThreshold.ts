@@ -19,7 +19,7 @@ export default {
     } = operationData;
     const { THRESHOLD } = strategySpecificConfiguration;
 
-    if (!THRESHOLD?.isDynamic) {
+    if (!THRESHOLD?.isDynamic || !centerIJK) {
       return;
     }
 

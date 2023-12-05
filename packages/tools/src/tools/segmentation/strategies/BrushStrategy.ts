@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities } from '@cornerstonejs/core';
+import { utilities, cache, utilities as csUtils } from '@cornerstonejs/core';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import initializeSetValue from './utils/initializeSetValue';
@@ -7,6 +7,7 @@ import initializePreview from './utils/initializePreview';
 import initializeRegionFill from './utils/initializeRegionFill';
 import initializeThreshold from './utils/initializeThreshold';
 import { getStrategyData } from './utils/getStrategyData';
+import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 import type {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
@@ -89,8 +90,10 @@ export default class BrushStrategy {
     preview: addSingletonMethod('preview'),
   };
 
-  protected configurationName: string;
   public initializers: Initializer[];
+  public strategyFunction: (enabledElement, operationData) => unknown;
+
+  protected configurationName: string;
   protected _createInitialized = [];
   protected _fill = [];
   protected _acceptPreview: [];
@@ -111,6 +114,12 @@ export default class BrushStrategy {
         BrushStrategy.childFunctions[key](this, result[key]);
       }
     });
+    this.strategyFunction = (enabledElement, operationData) =>
+      this.fill(enabledElement, operationData);
+
+    for (const key of Object.keys(BrushStrategy.childFunctions)) {
+      this.strategyFunction[key] = this[key];
+    }
   }
 
   /**
@@ -164,6 +173,23 @@ export default class BrushStrategy {
     if (!data) {
       console.warn('No data found for BrushStrategy');
       return operationData.preview;
+    }
+
+    if (isVolumeSegmentation(operationData)) {
+      const { referencedVolumeId, volumeId } =
+        operationData as LabelmapToolOperationDataVolume;
+
+      const imageVolume = cache.getVolume(referencedVolumeId);
+      const segmentation = cache.getVolume(volumeId);
+
+      if (
+        !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
+        !csUtils.isEqual(segmentation.direction, imageVolume.direction)
+      ) {
+        throw new Error(
+          'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
+        );
+      }
     }
 
     const { imageVoxelValue, segmentationVoxelValue, segmentationImageData } =
@@ -223,21 +249,6 @@ export default class BrushStrategy {
     enabled,
     operationData: InitializedOperationData
   ) => any;
-
-  /**
-   * This creates the old method functions for the strategies.  The newer
-   * method is intended to directly use this object.
-   */
-  public assignMethods(strategyFunction?: (enabled, operationData) => unknown) {
-    if (!strategyFunction) {
-      strategyFunction = (enabled, operationData) =>
-        this.fill(enabled, operationData);
-    }
-    for (const key of Object.keys(BrushStrategy.childFunctions)) {
-      strategyFunction[key] = this[key];
-    }
-    return strategyFunction;
-  }
 }
 
 /**
