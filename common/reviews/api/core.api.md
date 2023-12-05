@@ -225,6 +225,12 @@ function cancelLoadImages(imageIds: Array<string>): void;
 // @public (undocumented)
 function clamp(value: number, min: number, max: number): number;
 
+// @public (undocumented)
+type Color = [number, number, number, number];
+
+// @public (undocumented)
+type ColorLUT = Array<Color>;
+
 declare namespace colormap {
     export {
         getColormap,
@@ -2976,7 +2982,9 @@ declare namespace Types {
         AffineMatrix,
         ImageLoadListener,
         InternalVideoCamera,
-        VideoViewportInput
+        VideoViewportInput,
+        Color,
+        ColorLUT
     }
 }
 export { Types }

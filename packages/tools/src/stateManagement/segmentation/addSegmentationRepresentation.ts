@@ -1,9 +1,9 @@
 import { utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
   ToolGroupSpecificRepresentation,
-  ColorLUT,
 } from '../../types/SegmentationStateTypes';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from './config/segmentationConfig';
@@ -37,7 +37,7 @@ async function addSegmentationRepresentation(
     const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
       ? colorLUTOrIndexInput
       : CORNERSTONE_COLOR_LUT;
-    addColorLUT(colorLUTToAdd as ColorLUT, nextIndex);
+    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
     colorLUTIndexToUse = nextIndex;
   }
 

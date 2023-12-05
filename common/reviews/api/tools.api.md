@@ -40,10 +40,10 @@ function addAnnotation(annotation: Annotation, annotationGroupSelector: Annotati
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
 
 // @public (undocumented)
-function addColorLUT(colorLUT: ColorLUT, index: number): void;
+function addColorLUT(colorLUT: Types_2.ColorLUT, index: number): void;
 
 // @public (undocumented)
-function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
+function addColorLUT_2(colorLUT: Types_2.ColorLUT, colorLUTIndex: number): void;
 
 // @public (undocumented)
 function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEvents?: boolean): void;
@@ -1049,9 +1049,6 @@ export class CobbAngleTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// @public (undocumented)
-type Color = [number, number, number, number];
-
 declare namespace color {
     export {
         getColorForSegmentIndex,
@@ -1164,9 +1161,6 @@ type ColorbarTicksStyle = {
 
 // @public (undocumented)
 type ColorbarVOIRange = ColorbarImageRange;
-
-// @public (undocumented)
-type ColorLUT = Array<Color>;
 
 declare namespace config {
     export {
@@ -1996,10 +1990,10 @@ function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_
 } | undefined;
 
 // @public (undocumented)
-function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Color;
+function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Types_2.Color;
 
 // @public (undocumented)
-function getColorLUT(index: number): ColorLUT | undefined;
+function getColorLUT(index: number): Types_2.ColorLUT | undefined;
 
 // @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
@@ -3750,7 +3744,7 @@ type RepresentationPublicInput = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
     options?: {
-        colorLUTOrIndex?: ColorLUT | number;
+        colorLUTOrIndex?: Types_2.ColorLUT | number;
     };
 };
 
@@ -3997,7 +3991,7 @@ enum SegmentationRepresentations {
 
 // @public (undocumented)
 type SegmentationState = {
-    colorLUT: ColorLUT[];
+    colorLUT: Types_2.ColorLUT[];
     segmentations: Segmentation[];
     globalConfig: SegmentationRepresentationConfig;
     toolGroups: {
@@ -4062,7 +4056,7 @@ function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number, toolNa
 function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
 
 // @public (undocumented)
-function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
+function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Types_2.Color): void;
 
 // @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
@@ -4850,8 +4844,6 @@ declare namespace Types {
         ToolGroupSpecificLabelmapRepresentation,
         ToolGroupSpecificRepresentation,
         RepresentationPublicInput,
-        Color,
-        ColorLUT,
         LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,

@@ -1,11 +1,11 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
 import cloneDeep from 'lodash.clonedeep';
+import type { Types } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { SegmentationRepresentations } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
 import type {
-  ColorLUT,
   RepresentationConfig,
   Segmentation,
   SegmentationRepresentationConfig,
@@ -75,7 +75,7 @@ export default class SegmentationStateManager {
    * @param lutIndex - The index of the color LUT to retrieve.
    * @returns A ColorLUT object.
    */
-  getColorLUT(lutIndex: number): ColorLUT | undefined {
+  getColorLUT(lutIndex: number): Types.ColorLUT | undefined {
     return this.state.colorLUT[lutIndex];
   }
 
@@ -433,7 +433,7 @@ export default class SegmentationStateManager {
    * @param colorLUT - ColorLUT
    * @param lutIndex - The index of the color LUT table to add.
    */
-  addColorLUT(colorLUT: ColorLUT, lutIndex: number): void {
+  addColorLUT(colorLUT: Types.ColorLUT, lutIndex: number): void {
     if (this.state.colorLUT[lutIndex]) {
       console.warn('Color LUT table already exists, overwriting');
     }
