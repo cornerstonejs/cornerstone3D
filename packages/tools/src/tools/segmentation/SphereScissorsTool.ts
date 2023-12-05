@@ -72,7 +72,7 @@ class SphereScissorsTool extends BaseTool {
       configuration: {
         strategies: {
           FILL_INSIDE: fillInsideSphere,
-          ERASE_INSIDE_SPHERE: eraseInsideSphere,
+          ERASE_INSIDE: eraseInsideSphere,
         },
         defaultStrategy: 'FILL_INSIDE',
         activeStrategy: 'FILL_INSIDE',

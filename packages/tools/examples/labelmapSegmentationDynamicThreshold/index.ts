@@ -117,7 +117,7 @@ const brushStrategies = {
   [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
   [brushInstanceNames.ThresholdCircle]: 'THRESHOLD_INSIDE_CIRCLE',
-  [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE_SPHERE',
+  [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE',
 };
 
 const brushValues = [
