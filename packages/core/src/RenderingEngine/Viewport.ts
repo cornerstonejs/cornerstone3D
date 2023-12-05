@@ -119,7 +119,7 @@ class Viewport implements IViewport {
     this.isDisabled = false;
   }
 
-  getRotation: (camera?: ICamera) => number;
+  getRotation: () => number;
   getFrameOfReferenceUID: () => string;
   canvasToWorld: (canvasPos: Point2) => Point3;
   worldToCanvas: (worldPos: Point3) => Point2;

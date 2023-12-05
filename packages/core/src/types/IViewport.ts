@@ -43,7 +43,7 @@ interface IViewport {
   /** The rendering state of this viewport */
   viewportStatus: ViewportStatus;
   /** get the rotation either from the camera provided or the viewport if not provided */
-  getRotation: (camera?: ICamera) => number;
+  getRotation: () => number;
   /** frameOfReferenceUID the viewport's default actor is rendering */
   getFrameOfReferenceUID: () => string;
   /** method to convert canvas to world coordinates */

@@ -508,9 +508,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   private rotateCamera(rotation: number): void {
-    console.log(this.getRotation());
     const rotationToApply = rotation - this.getRotation();
-    console.log(rotationToApply);
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotationToApply);
   }
@@ -1000,18 +998,12 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns the rotation resulting from the value set in setRotation AND taking into
    * account any flips that occurred subsequently.
    */
-  public getRotation = (camera?: ICamera): number => {
-    let cameraToUse: ICamera;
-    if (camera) {
-      cameraToUse = camera;
-    } else {
-      cameraToUse = this.getCamera();
-    }
+  public getRotation = (): number => {
     const {
       viewUp: currentViewUp,
       viewPlaneNormal,
       flipVertical,
-    } = cameraToUse;
+    } = this.getCamera();
 
     // The initial view up vector without any rotation, but incorporating vertical flip.
     const initialViewUp = flipVertical

@@ -231,7 +231,8 @@ class VolumeViewport extends BaseVolumeViewport {
   public resetCamera(
     resetPan = true,
     resetZoom = true,
-    resetToCenter = true
+    resetToCenter = true,
+    resetRotation = false
   ): boolean {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
 
@@ -276,7 +277,10 @@ class VolumeViewport extends BaseVolumeViewport {
     });
 
     let viewToReset;
-    if (MPR_CAMERA_VALUES[this.viewportProperties.orientation]) {
+    if (
+      resetRotation &&
+      MPR_CAMERA_VALUES[this.viewportProperties.orientation] !== undefined
+    ) {
       viewToReset = MPR_CAMERA_VALUES[this.viewportProperties.orientation];
       if (
         viewToReset.viewUp != viewUp &&
@@ -446,7 +450,7 @@ class VolumeViewport extends BaseVolumeViewport {
       volumeId: volumeActor.uid,
     };
 
-    this.resetCamera(true, true, true);
+    this.resetCamera(true, true, true, true);
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
 }

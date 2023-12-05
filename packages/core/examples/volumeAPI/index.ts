@@ -161,24 +161,9 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // Apply the colormap to the viewport
+    // Apply the rotation to the camera of the viewport
     viewport.setProperties({ rotation: 75 });
     viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'log rotation',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    console.debug(viewport.getRotation());
   },
 });
 
