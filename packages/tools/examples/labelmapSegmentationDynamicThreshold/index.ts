@@ -51,7 +51,9 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const previewSegmentIndex = 8;
+// Using index 255 means we won't overlap with any other indices since 255 isn't
+// actually a permitted index value
+const previewSegmentIndex = 255;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -90,10 +92,12 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
-  Middle Click: Pan
-  Right Click: Zoom
-  Mouse wheel: Scroll Stack
+  Hover - show preview of segmentation tool
+  Left drag to extend preview
+  Left Click (or enter) to accept preview
+  Reject preview by button (or esc)
+  Hover outside of region to reset to hovered over segment index
+  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
   `;
 
 content.append(instructions);
