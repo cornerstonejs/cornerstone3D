@@ -32,7 +32,14 @@ export default {
       return;
     }
 
-    const boundsIJK = previewVoxelValue.getBoundsIJK();
+    // Ensure the bounds includes the clicked points, otherwise the fill
+    // fails.
+    const boundsIJK = previewVoxelValue
+      .getBoundsIJK()
+      .map((bound, i) => [
+        Math.min(bound[0], ...clickedPoints.map((point) => point[i])),
+        Math.max(bound[1], ...clickedPoints.map((point) => point[i])),
+      ]);
 
     if (boundsIJK.find((it) => it[0] < 0 || it[1] > 512)) {
       throw new Error('BoundsIJK not set');
