@@ -11,7 +11,7 @@ import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
  * with the new segment by calling the setValue function.
  */
 export default {
-  fill: (enabled, operationData: InitializedOperationData) => {
+  fill: (enabledElement, operationData: InitializedOperationData) => {
     const {
       segmentsLocked,
       segmentationImageData,
@@ -22,7 +22,7 @@ export default {
       centerIJK,
     } = operationData;
     const isWithinThreshold = brushStrategy.createIsInThreshold?.(
-      enabled,
+      enabledElement,
       operationData
     );
     const { setValue } = brushStrategy;

@@ -10,19 +10,22 @@ import { config as segmentationConfig } from '../../../../stateManagement/segmen
  * from the initial state or from the global state.
  */
 export default {
-  preview: function (enabled, operationData: InitializedOperationData) {
-    const { previewSegmentIndex } = operationData;
-    if (!previewSegmentIndex) {
+  preview: function (enabledElement, operationData: InitializedOperationData) {
+    const { previewColors } = operationData;
+    if (!previewColors) {
       return;
     }
-    this.initDown?.(enabled, operationData);
-    const preview = this.fill(enabled, operationData);
+    this.initDown?.(enabledElement, operationData);
+    const preview = this.fill(enabledElement, operationData);
     operationData.preview = preview;
-    this.completeUp?.(enabled, operationData);
+    this.completeUp?.(enabledElement, operationData);
     return preview;
   },
 
-  createInitialized: (enabled, operationData: InitializedOperationData) => {
+  createInitialized: (
+    enabledElement,
+    operationData: InitializedOperationData
+  ) => {
     const {
       toolGroupId,
       segmentIndex,
@@ -82,7 +85,7 @@ export default {
     tracking.clear();
   },
 
-  rejectPreview: (enabled, operationData: InitializedOperationData) => {
+  rejectPreview: (enabledElement, operationData: InitializedOperationData) => {
     const { previewVoxelValue, segmentationVoxelValue } = operationData;
     if (previewVoxelValue.modifiedSlices.size === 0) {
       return;

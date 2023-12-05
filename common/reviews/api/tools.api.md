@@ -547,7 +547,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyEvent(enabledElement: Types_2.IEnabledElement, operationData: unknown, eventType: 'initDown' | 'completeUp' | 'rejectPreview' | 'acceptPreview' | 'preview'): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: 'initDown' | 'completeUp' | 'rejectPreview' | 'acceptPreview' | 'preview'): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -696,7 +696,7 @@ type BoundsIJK_2 = Types_2.BoundsIJK;
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    acceptPreview(element: any): void;
+    acceptPreview(element?: HTMLDivElement): void;
     // (undocumented)
     createEditData(element: any): {
         volumeId: string;
@@ -734,17 +734,17 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: () => void;
+    onSetToolDisabled: (evt: any) => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
-    onSetToolPassive: () => void;
+    onSetToolPassive: (evt: any) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     previewCallback: () => void;
     // (undocumented)
-    rejectPreview(element: any): void;
+    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
@@ -2626,7 +2626,6 @@ type LabelmapSegmentationDataVolume = {
 type LabelmapToolOperationData = {
     segmentationId: string;
     segmentIndex: number;
-    previewSegmentIndex?: number;
     previewColors?: Record<number, [number, number, number, number]>;
     segmentsLocked: number[];
     viewPlaneNormal: number[];

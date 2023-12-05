@@ -51,9 +51,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-// Using index 255 means we won't overlap with any other indices since 255 isn't
-// actually a permitted index value
-const previewSegmentIndex = 255;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -314,7 +311,6 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
-      previewSegmentIndex,
       previewColors,
       strategySpecificConfiguration: {
         useCenterSegmentIndex: true,
@@ -326,7 +322,6 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularEraser,
-      previewSegmentIndex,
       previewColors,
     }
   );
@@ -335,7 +330,6 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereBrush,
-      previewSegmentIndex,
       previewColors,
     }
   );
@@ -344,7 +338,6 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereEraser,
-      previewSegmentIndex,
       previewColors,
     }
   );
@@ -382,7 +375,6 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdCircle,
-      previewSegmentIndex,
       previewColors,
       strategySpecificConfiguration: {
         useCenterSegmentIndex: true,

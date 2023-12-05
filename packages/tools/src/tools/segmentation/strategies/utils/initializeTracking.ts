@@ -7,7 +7,10 @@ import type { InitializedOperationData } from '../BrushStrategy';
  * tracked values can be extended.
  */
 export default {
-  createInitialized: (enabled, operationData: InitializedOperationData) => {
+  createInitialized: (
+    enabledElement,
+    operationData: InitializedOperationData
+  ) => {
     const { preview } = operationData;
     if (!preview) {
       return;

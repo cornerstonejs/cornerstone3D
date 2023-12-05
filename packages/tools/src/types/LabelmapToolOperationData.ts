@@ -9,13 +9,6 @@ type LabelmapToolOperationData = {
   segmentationId: string;
   segmentIndex: number;
   /**
-   * The segment index to use for a preview.  If undefined, then previews are
-   * not shown, which will prevent island handling and will prevent esc to rollback.
-   * Suggested value is 255 since that is not currently a permitted segmentation index,
-   * but works fine for the preview index.
-   */
-  previewSegmentIndex?: number;
-  /**
    * The colours to use for previewing
    */
   previewColors?: Record<number, [number, number, number, number]>;

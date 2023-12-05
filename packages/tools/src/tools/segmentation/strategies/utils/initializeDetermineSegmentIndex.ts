@@ -16,7 +16,10 @@ import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
  * inside the segment to extend it.
  */
 export default {
-  createInitialized: (enabled, operationData: InitializedOperationData) => {
+  createInitialized: (
+    enabledElement,
+    operationData: InitializedOperationData
+  ) => {
     const {
       segmentIndex,
       previewSegmentIndex,

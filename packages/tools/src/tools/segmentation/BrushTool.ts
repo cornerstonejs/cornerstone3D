@@ -108,8 +108,7 @@ class BrushTool extends BaseTool {
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
         brushSize: 25,
-        // No preview by default
-        previewSegmentIndex: undefined,
+        // No preview by default - define an empty map to use default colors
         previewColors: undefined,
       },
     }

@@ -41,8 +41,9 @@ export default {
         Math.max(bound[1], ...clickedPoints.map((point) => point[i])),
       ]);
 
-    if (boundsIJK.find((it) => it[0] < 0 || it[1] > 512)) {
-      throw new Error('BoundsIJK not set');
+    if (boundsIJK.find((it) => it[0] < 0 || it[1] > 65535)) {
+      // Nothing done, so just skip this
+      return;
     }
 
     const floodedSet = new Set<number>();

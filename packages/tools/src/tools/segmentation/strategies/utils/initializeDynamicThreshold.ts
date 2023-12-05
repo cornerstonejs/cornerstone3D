@@ -10,7 +10,10 @@ import type BoundsIJK from '../../../../types/BoundsIJK';
  * center voxel at centerIJK.
  */
 export default {
-  createInitialized: (enabled, operationData: InitializedOperationData) => {
+  createInitialized: (
+    enabledElement,
+    operationData: InitializedOperationData
+  ) => {
     const {
       centerIJK,
       strategySpecificConfiguration,

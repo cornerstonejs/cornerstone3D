@@ -28,6 +28,9 @@ export type InitializedOperationData = OperationData & {
   segmentationVoxelValue: utilities.VoxelValue<number>;
   segmentationImageData: ImageData;
   previewVoxelValue: utilities.VoxelValue<number>;
+  // The index to use for the preview segment.  Currently always undefined or 255
+  // but define it here for future expansion of LUT tables
+  previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
 };
@@ -198,8 +201,11 @@ export default class BrushStrategy {
       operationData.preview?.previewVoxelValue ||
       VoxelValue.historyVoxelValue(segmentationVoxelValue);
 
+    const previewSegmentIndex = operationData.previewColors ? 255 : undefined;
+    console.log('Using previewSegmentIndex', previewSegmentIndex);
     const initializedData: InitializedOperationData = {
       ...operationData,
+      previewSegmentIndex,
       enabledElement,
       imageVoxelValue,
       segmentationVoxelValue,
