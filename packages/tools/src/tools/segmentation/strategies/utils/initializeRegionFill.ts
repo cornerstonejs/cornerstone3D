@@ -14,6 +14,7 @@ export default {
       imageVoxelValue,
       brushStrategy,
       centerIJK,
+      segmentIndex,
     } = operationData;
     const isWithinThreshold = brushStrategy.createIsInThreshold?.(
       enabled,

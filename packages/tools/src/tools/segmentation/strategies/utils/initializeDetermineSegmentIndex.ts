@@ -18,24 +18,24 @@ export default {
       segmentationVoxelValue,
       centerIJK,
       strategySpecificConfiguration,
-      previewVoxelValue,
       preview,
     } = operationData;
     if (!strategySpecificConfiguration.useCenterSegmentIndex || preview) {
       return;
     }
     let hasSegmentIndex = false;
+    let hasPreviewIndex = false;
     segmentationVoxelValue.forEach(({ index, value }) => {
-      hasSegmentIndex ||=
-        segmentIndex === value || previewSegmentIndex === value;
+      hasSegmentIndex ||= value === segmentIndex;
+      hasPreviewIndex ||= value === previewSegmentIndex;
     });
-    if (!hasSegmentIndex) {
+    if (!hasSegmentIndex && !hasPreviewIndex) {
       return;
     }
 
-    let existingValue = segmentationVoxelValue.get(centerIJK);
+    const existingValue = segmentationVoxelValue.get(centerIJK);
     if (existingValue === previewSegmentIndex) {
-      existingValue = previewVoxelValue.get(centerIJK) === 0 ? segmentIndex : 0;
+      return;
     }
     operationData.segmentIndex = existingValue;
   },

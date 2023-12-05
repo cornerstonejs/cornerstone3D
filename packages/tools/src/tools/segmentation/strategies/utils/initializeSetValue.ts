@@ -18,8 +18,15 @@ export default {
       previewSegmentIndex,
       segmentationVoxelValue,
     } = operationData;
-
     const existingValue = segmentationVoxelValue.getIndex(index);
+    if (segmentIndex === null) {
+      const oldValue = previewVoxelValue.getIndex(index);
+      if (oldValue !== undefined) {
+        previewVoxelValue.setIndex(index, oldValue);
+      }
+      return;
+    }
+
     if (existingValue === segmentIndex || segmentsLocked.includes(value)) {
       return;
     }

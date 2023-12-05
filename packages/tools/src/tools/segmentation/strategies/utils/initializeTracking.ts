@@ -16,6 +16,9 @@ export default {
       operationData.segmentationVoxelValue;
     // And use the preview data associated with this tracking object as needed
     operationData.previewVoxelValue = preview.previewVoxelValue;
-    operationData.segmentIndex = preview.segmentIndex;
+    // Use the same segment index unless we are clearing the segment index values
+    if (operationData.segmentIndex !== null) {
+      operationData.segmentIndex = preview.segmentIndex;
+    }
   },
 };

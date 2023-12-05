@@ -17,7 +17,7 @@ export default {
       segmentIndex,
     } = operationData;
 
-    if (!strategySpecificConfiguration.THRESHOLD) {
+    if (!strategySpecificConfiguration.THRESHOLD || segmentIndex === null) {
       return;
     }
 
@@ -32,8 +32,12 @@ export default {
 
     const boundsIJK = previewVoxelValue.getBoundsIJK();
 
+    if (boundsIJK.find((it) => it[0] < 0 || it[1] > 512)) {
+      throw new Error('BoundsIJK not set');
+    }
+
     // Returns true for new colour, and false otherwise
-    const getter = (i, j, k) => {
+    const getter = (i, j, k, initialTest = false) => {
       if (
         i < boundsIJK[0][0] ||
         i > boundsIJK[0][1] ||
@@ -44,7 +48,6 @@ export default {
       ) {
         return -1;
       }
-
       const index = segmentationVoxelValue.toIndex([i, j, k]);
       if (segmentationVoxelValue.points?.has(index)) {
         return -2;
@@ -52,7 +55,7 @@ export default {
       const oldVal = segmentationVoxelValue.getIndex(index);
       const isIn =
         oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
-      if (!isIn) {
+      if (!isIn && !initialTest) {
         segmentationVoxelValue.addPoint(index);
       }
       return isIn;
@@ -73,10 +76,10 @@ export default {
       floodedCount++;
     };
 
-    clickedPoints.forEach((clickedPoint) => {
+    clickedPoints.forEach((clickedPoint, index) => {
       // @ts-ignore - need to ignore the spread appication to array params
-      if (getter(...clickedPoint) === 1) {
-        floodFill(getter, clickedPoints[0], {
+      if (getter(...clickedPoint, true) === 1) {
+        floodFill(getter, clickedPoint, {
           onFlood,
           diagonals: true,
         });

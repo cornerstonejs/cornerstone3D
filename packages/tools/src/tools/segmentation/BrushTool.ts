@@ -528,7 +528,11 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
 
     const operationData = this.getOperationData(element);
-    this.applyActiveStrategy(enabledElement, operationData);
+    // Don't re-fill when the preview is showing and the user clicks again
+    // otherwise the new area of hover may get filled, which is unexpected
+    if (!this._previewData.preview && !this._previewData.isDrag) {
+      this.applyActiveStrategy(enabledElement, operationData);
+    }
 
     this._deactivateDraw(element);
 

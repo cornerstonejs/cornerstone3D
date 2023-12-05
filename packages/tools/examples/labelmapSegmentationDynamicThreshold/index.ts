@@ -356,6 +356,20 @@ async function run() {
     ],
   });
 
+  const cancelFn = {
+    fn: (evt) => {
+      const { element, key } = evt.detail;
+      const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+      const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+      const brush = toolGroup.getToolInstance(activeName);
+      if (key === 'Escape') {
+        brush.rejectPreview?.(element);
+      } else if (key === 'Enter') {
+        brush.acceptPreview?.(element);
+      }
+    },
+  };
+
   // Setup threshold and the default strategy arguments
   const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
   toolGroup.addToolInstance(
@@ -471,6 +485,16 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
+
+  element1.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+    cancelFn.fn(evt);
+  });
+  element2.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+    cancelFn.fn(evt);
+  });
+  element3.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+    cancelFn.fn(evt);
+  });
 
   // Set the volume to load
   volume.load();
