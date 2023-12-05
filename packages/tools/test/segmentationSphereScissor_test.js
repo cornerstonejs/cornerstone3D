@@ -231,21 +231,18 @@ describe('Segmentation Tools --', () => {
         const image3 = canvas3.toDataURL('image/png');
 
         try {
-          console.warn('Testing axial compare');
           await compareImages(
             image1,
             volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX,
             'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX'
           );
 
-          console.warn('Testing sagital compare');
           await compareImages(
             image2,
             volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG,
             'volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG'
           );
 
-          console.warn('Testing cor compare');
           await compareImages(
             image3,
             volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR,

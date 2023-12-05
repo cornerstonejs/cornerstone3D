@@ -135,7 +135,7 @@ const optionsValues = [
 
 const previewColors = {
   0: [255, 255, 255, 128],
-  1: [0, 255, 0, 255],
+  1: [0, 255, 255, 255],
 };
 
 // ============================= //
@@ -214,6 +214,7 @@ addSliderToToolbar({
 // ============================= //
 addDropdownToToolbar({
   options: { values: ['1', '2', '3'], defaultValue: '1' },
+  labelText: 'Segment',
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,

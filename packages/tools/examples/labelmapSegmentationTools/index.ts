@@ -163,11 +163,9 @@ addDropdownToToolbar({
 const thresholdOptions = new Map<string, any>();
 thresholdOptions.set('CT Fat: (-150, -70)', {
   threshold: [-150, -70],
-  isDynamic: false,
 });
 thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: [200, 1000],
-  isDynamic: false,
 });
 
 addDropdownToToolbar({

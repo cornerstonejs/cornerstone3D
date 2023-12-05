@@ -3,9 +3,11 @@ import floodFill from '../../../../utilities/segmentation/floodFill';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 
 /**
- * Sets up a preview to use an alternate set of colours.  First fills the
- * preview segment index with the final one for all pixels, then resets
- * the preview colours.
+ * Removes external islands and fills internal islands.
+ * External islands are areas of preview which are not connected via fill or
+ * preview colours to the clicked/dragged over points.
+ * Internal islands are areas of non-preview which are entirely surrounded by
+ * colours connected to the clicked/dragged over points.
  */
 export default {
   completeUp: (enabled, operationData: InitializedOperationData) => {
@@ -36,8 +38,9 @@ export default {
       throw new Error('BoundsIJK not set');
     }
 
+    const floodedSet = new Set<number>();
     // Returns true for new colour, and false otherwise
-    const getter = (i, j, k, initialTest = false) => {
+    const getter = (i, j, k) => {
       if (
         i < boundsIJK[0][0] ||
         i > boundsIJK[0][1] ||
@@ -49,36 +52,36 @@ export default {
         return -1;
       }
       const index = segmentationVoxelValue.toIndex([i, j, k]);
-      if (segmentationVoxelValue.points?.has(index)) {
+      if (floodedSet.has(index)) {
+        // Values already flooded
         return -2;
       }
       const oldVal = segmentationVoxelValue.getIndex(index);
       const isIn =
         oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
-      if (!isIn && !initialTest) {
+      if (!isIn) {
         segmentationVoxelValue.addPoint(index);
       }
+      // 1 is values that are preview/segment index, 0 is everything else
       return isIn;
     };
-
-    let floodedIndex = 255;
 
     let floodedCount = 0;
 
     const onFlood = (i, j, k) => {
-      // Fill this point with an indicator that this point is connected
-      const value = segmentationVoxelValue.getIJK(i, j, k);
-      if (value === floodedIndex) {
-        // This is already filled
+      const index = segmentationVoxelValue.toIndex([i, j, k]);
+      if (floodedSet.has(index)) {
         return;
       }
-      previewVoxelValue.setIJK(i, j, k, floodedIndex);
+      // Fill this point with an indicator that this point is connected
+      previewVoxelValue.setIJK(i, j, k, previewSegmentIndex);
+      floodedSet.add(index);
       floodedCount++;
     };
 
     clickedPoints.forEach((clickedPoint, index) => {
       // @ts-ignore - need to ignore the spread appication to array params
-      if (getter(...clickedPoint, true) === 1) {
+      if (getter(...clickedPoint) === 1) {
         floodFill(getter, clickedPoint, {
           onFlood,
           diagonals: true,
@@ -91,7 +94,7 @@ export default {
 
     const callback = ({ index, pointIJK, value: trackValue }) => {
       const value = segmentationVoxelValue.getIndex(index);
-      if (value === floodedIndex) {
+      if (floodedSet.has(index)) {
         previewCount++;
         const newValue =
           trackValue === segmentIndex ? segmentIndex : previewSegmentIndex;
@@ -118,21 +121,17 @@ export default {
       );
     }
     const islandMap = new Set(segmentationVoxelValue.points || []);
-    const handledSet = new Set<number>();
-
-    // Flood now with the final value
-    floodedIndex = previewSegmentIndex;
+    floodedSet.clear();
 
     for (const index of islandMap.keys()) {
-      if (handledSet.has(index)) {
+      if (floodedSet.has(index)) {
         continue;
       }
-      handledSet.add(index);
-      const floodMap = new Set<number>();
       let isInternal = true;
+      const internalSet = new Set<number>();
       const onFloodInternal = (i, j, k) => {
         const floodIndex = previewVoxelValue.toIndex([i, j, k]);
-        floodMap.add(floodIndex);
+        floodedSet.add(floodIndex);
         if (
           (boundsIJK[0][0] !== boundsIJK[0][1] &&
             (i === boundsIJK[0][0] || i === boundsIJK[0][1])) ||
@@ -143,18 +142,20 @@ export default {
         ) {
           isInternal = false;
         }
-        // Skip duplicating fills
-        if (islandMap.has(floodIndex)) {
-          handledSet.add(floodIndex);
+        if (isInternal) {
+          internalSet.add(floodIndex);
         }
       };
       const pointIJK = previewVoxelValue.toIJK(index);
+      if (getter(...pointIJK) !== 0) {
+        continue;
+      }
       floodFill(getter, pointIJK, {
         onFlood: onFloodInternal,
         diagonals: false,
       });
       if (isInternal) {
-        for (const index of floodMap) {
+        for (const index of internalSet) {
           previewVoxelValue.setIndex(index, previewSegmentIndex);
         }
       }

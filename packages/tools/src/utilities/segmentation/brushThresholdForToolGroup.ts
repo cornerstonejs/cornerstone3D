@@ -16,14 +16,10 @@ export function setBrushThresholdForToolGroup(
   }
 
   const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
-
   const configuration = {
     ...otherArgs,
-    threshold,
+    ...(threshold !== undefined && { threshold }),
   };
-  if (threshold === undefined) {
-    delete configuration.threshold;
-  }
 
   brushBasedToolInstances.forEach((tool) => {
     tool.configuration.strategySpecificConfiguration.THRESHOLD = {

@@ -1,6 +1,14 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
 
+/**
+ * Initializes the threshold values for the dynamic threshold.
+ * If the threshold is undefined/null, the threshold will be set
+ * by looking at the area centered on the centerIJK, with a delta radius,
+ * and taking the range of those pixel values.
+ * If the threshold is already set, then the range will be extended by just the
+ * center voxel at centerIJK.
+ */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {
     const {

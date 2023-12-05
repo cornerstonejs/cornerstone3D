@@ -73,7 +73,8 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * It applies the active strategy to the enabled element.
+   * Applies the active strategy function to the enabled element with the specified
+   * operation data.
    * @param enabledElement - The element that is being operated on.
    * @param operationData - The data that needs to be passed to the strategy.
    * @returns The result of the strategy.
@@ -91,7 +92,10 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * It applies the active strategy down initialization, if any.
+   * Applies the active strategy, with a given event type being applied.
+   * The event type function is found by indexing it on the active strategy
+   * function.
+   *
    * @param enabledElement - The element that is being operated on.
    * @param operationData - The data that needs to be passed to the strategy.
    * @returns The result of the strategy.

@@ -1,4 +1,3 @@
-2;
 import type { Types } from '@cornerstonejs/core';
 import { SVGDrawingHelper } from '../types';
 

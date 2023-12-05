@@ -4,6 +4,7 @@ import {
   segmentIndex as segmentIndexController,
   config as segmentationConfig,
 } from '../../../../stateManagement/segmentation';
+
 /**
  * Sets up a preview to use an alternate set of colours.  First fills the
  * preview segment index with the final one for all pixels, then resets

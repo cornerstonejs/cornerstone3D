@@ -2634,7 +2634,6 @@ type LabelmapToolOperationData = {
     strategySpecificConfiguration: any;
     segmentationRepresentationUID: string;
     points: Types_2.Point3[];
-    representationUID: string;
     preview: any;
     toolGroupId: string;
 };

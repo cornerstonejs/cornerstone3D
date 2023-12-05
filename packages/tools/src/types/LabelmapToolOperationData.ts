@@ -23,7 +23,6 @@ type LabelmapToolOperationData = {
   // constraintFn: (pointIJK: number) => boolean;
   segmentationRepresentationUID: string;
   points: Types.Point3[];
-  representationUID: string;
   /**
    * preview is used for sharing preview data between views/interactions with
    * a tool, and needs to be maintained by the tool side in order to be able

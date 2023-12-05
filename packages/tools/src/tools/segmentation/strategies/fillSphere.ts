@@ -9,7 +9,7 @@ import {
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { OperationData, InitializedOperationData } from './BrushStrategy';
-import dynamicWithinThreshold from './utils/dynamicWithinThreshold';
+import dynamicWithinThreshold from './utils/initializeDynamicThreshold';
 import type { CanvasCoordinates } from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
 import initializeTracking from './utils/initializeTracking';

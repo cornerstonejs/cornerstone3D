@@ -72,8 +72,8 @@ class CircleScissorsTool extends BaseTool {
           FILL_INSIDE: fillInsideCircle,
           ERASE_INSIDE: eraseInsideCircle,
         },
-        defaultStrategy: 'ERASE_INSIDE',
-        activeStrategy: 'ERASE_INSIDE',
+        defaultStrategy: 'FILL_INSIDE',
+        activeStrategy: 'FILL_INSIDE',
       },
     }
   ) {

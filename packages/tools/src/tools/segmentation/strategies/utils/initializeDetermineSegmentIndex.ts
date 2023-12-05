@@ -9,6 +9,10 @@ import type {
  *    being applied.  When that happens, use the default segment index (no-op)
  * 2. Segment index of clicked on point - extends this segment index (which
  *    erases if the segment index clicked is `0`)
+ *
+ * The impact on user behaviour is that when there isn't an active drag preview,
+ * the user can click nearby but outside the segment to remove it, and can click
+ * inside the segment to extend it.
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {

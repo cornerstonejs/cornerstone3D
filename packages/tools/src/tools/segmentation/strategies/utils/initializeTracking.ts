@@ -1,10 +1,10 @@
-import type { OperationData, InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
 
 /**
  * Sets up tracking for use by preview and other services.
- * This sets up a  TRACKING value in the strategy specific configuration which
- * stores the original value for updated pixels, and allows the changes to be
- * applied (eg for a preview), reverted, or acted on in other ways.
+ * The tracking is either the preview object, or the previewVoxelValue.
+ * Re-using this existing preview means that the same segment colour and already
+ * tracked values can be extended.
  */
 export default {
   createInitialized: (enabled, operationData: InitializedOperationData) => {

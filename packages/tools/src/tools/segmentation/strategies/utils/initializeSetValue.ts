@@ -6,8 +6,9 @@ import type {
 /**
  * Creates a set value function which will apply the specified segmentIndex
  * to the given location.
- * Uses a strategy pattern getPreviewSegmentIndex call to choose an alternate
- * segment index to use for preview colouring.
+ * If segmentIndex is null, it will clear the given segment index instead
+ * This is all done through the previewVoxelValue so that values can be recorded
+ * as changed, and the original values remembered.
  */
 export default {
   setValue: ({ value, index }, operationData: InitializedOperationData) => {
