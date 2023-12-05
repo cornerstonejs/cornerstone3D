@@ -2,6 +2,7 @@ import type {
   InitializedOperationData,
   InitializerInstance,
 } from '../BrushStrategy';
+import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
 
 /**
  * This setup function will dynamically determine the segment index to use based on:
@@ -23,16 +24,26 @@ export default {
       centerIJK,
       strategySpecificConfiguration,
       preview,
+      imageVoxelValue,
+      segmentationImageData,
     } = operationData;
     if (!strategySpecificConfiguration.useCenterSegmentIndex || preview) {
       return;
     }
     let hasSegmentIndex = false;
     let hasPreviewIndex = false;
-    segmentationVoxelValue.forEach(({ index, value }) => {
+    const callback = ({ value }) => {
       hasSegmentIndex ||= value === segmentIndex;
       hasPreviewIndex ||= value === previewSegmentIndex;
-    });
+    };
+
+    pointInShapeCallback(
+      segmentationImageData as unknown,
+      imageVoxelValue.isInObject,
+      callback,
+      segmentationVoxelValue.boundsIJK
+    );
+
     if (!hasSegmentIndex && !hasPreviewIndex) {
       return;
     }

@@ -1,9 +1,6 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import {
-  segmentIndex as segmentIndexController,
-  config as segmentationConfig,
-} from '../../../../stateManagement/segmentation';
+import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
 
 /**
  * Sets up a preview to use an alternate set of colours.  First fills the
