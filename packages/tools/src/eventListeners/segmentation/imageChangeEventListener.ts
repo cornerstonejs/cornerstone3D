@@ -71,6 +71,11 @@ function _imageChangeEventListener(evt) {
   ) as { viewport: Types.IStackViewport };
 
   const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
+
+  if (!toolGroup) {
+    return;
+  }
+
   let toolGroupSegmentationRepresentations =
     SegmentationState.getSegmentationRepresentations(toolGroup.id) || [];
 

@@ -98,6 +98,7 @@ export type {
   IImagesLoader,
 } from './IRetrieveConfiguration';
 import type { ImageLoadListener } from './ImageLoadListener';
+import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type IVideoViewport from './IVideoViewport';
 import type {
@@ -211,4 +212,6 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
+  Color,
+  ColorLUT,
 };
