@@ -125,7 +125,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
-    getRotation: (camera?: ICamera) => number;
+    getRotation: () => number;
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
@@ -1973,7 +1973,7 @@ interface IViewport {
     // (undocumented)
     getRenderingEngine(): any;
     // (undocumented)
-    getRotation: (camera?: ICamera) => number;
+    getRotation: () => number;
     // (undocumented)
     getZoom(): number;
     // (undocumented)
@@ -2130,7 +2130,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId: string): void;
     // (undocumented)
@@ -3282,7 +3282,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
-    getRotation: (camera?: ICamera) => number;
+    getRotation: () => number;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
@@ -3563,7 +3563,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
