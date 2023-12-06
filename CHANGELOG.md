@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.36.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.1...v1.36.2) (2023-12-06)
+
+### Bug Fixes
+
+- **dicomImageLoader:** Restore accidentally deleted options ([#916](https://github.com/cornerstonejs/cornerstone3D/issues/916)) ([#929](https://github.com/cornerstonejs/cornerstone3D/issues/929)) ([4cca3e4](https://github.com/cornerstonejs/cornerstone3D/commit/4cca3e4dc491139ea4b55fdf98a3b0b61ab42c4f))
+
 ## [1.36.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.0...v1.36.1) (2023-12-06)
 
 ### Bug Fixes
