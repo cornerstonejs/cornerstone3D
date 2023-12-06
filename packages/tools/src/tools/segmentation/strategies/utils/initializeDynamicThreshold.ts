@@ -19,10 +19,11 @@ export default {
       strategySpecificConfiguration,
       segmentationVoxelValue,
       imageVoxelValue,
+      segmentIndex,
     } = operationData;
     const { THRESHOLD } = strategySpecificConfiguration;
 
-    if (!THRESHOLD?.isDynamic || !centerIJK) {
+    if (!THRESHOLD?.isDynamic || !centerIJK || segmentIndex === null) {
       return;
     }
 

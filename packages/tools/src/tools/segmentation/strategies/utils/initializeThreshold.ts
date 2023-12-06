@@ -7,8 +7,9 @@ import type { InitializedOperationData, Initializer } from '../BrushStrategy';
  */
 export default {
   createIsInThreshold: (enabled, operationData: InitializedOperationData) => {
-    const { imageVoxelValue, strategySpecificConfiguration } = operationData;
-    if (!strategySpecificConfiguration) {
+    const { imageVoxelValue, strategySpecificConfiguration, segmentIndex } =
+      operationData;
+    if (!strategySpecificConfiguration || segmentIndex === null) {
       return;
     }
     return (index) => {
