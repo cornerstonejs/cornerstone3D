@@ -26,6 +26,9 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const { strategySpecificConfiguration } = operationData;
+    if (!strategySpecificConfiguration) {
+      return;
+    }
     const { centerSegmentIndex } = strategySpecificConfiguration;
     if (centerSegmentIndex) {
       operationData.segmentIndex = centerSegmentIndex.segmentIndex;
