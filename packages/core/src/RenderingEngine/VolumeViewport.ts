@@ -276,7 +276,7 @@ class VolumeViewport extends BaseVolumeViewport {
       }
     });
 
-    //Only reset the rotation of the camera if wanted and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
+    //Only reset the rotation of the camera if wanted (so we don't reset everytime resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
     if (
       resetRotation &&
       MPR_CAMERA_VALUES[this.viewportProperties.orientation] !== undefined
