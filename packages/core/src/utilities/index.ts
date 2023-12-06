@@ -26,6 +26,7 @@ import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
+import transformIndexToWorld from './transformIndexToWorld';
 import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
@@ -98,6 +99,7 @@ export {
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,
+  transformIndexToWorld,
   loadImageToCanvas,
   renderToCanvasCPU,
   renderToCanvasGPU,
