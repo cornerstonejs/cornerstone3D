@@ -35,6 +35,10 @@
         "name": "Stack Viewport API",
         "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
       },
+      "stackPosition": {
+        "name": "Stack Viewport Positioning",
+        "description": "Demonstrates basic positioning of the viewport image using display area and flip/rotation"
+      },
       "stackVoiSigmoid": {
         "name": "Stack Sigmoid LUT",
         "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
