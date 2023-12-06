@@ -276,21 +276,17 @@ class VolumeViewport extends BaseVolumeViewport {
       }
     });
 
-    let viewToReset;
+    //Only reset the rotation of the camera if wanted and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
     if (
       resetRotation &&
       MPR_CAMERA_VALUES[this.viewportProperties.orientation] !== undefined
     ) {
-      viewToReset = MPR_CAMERA_VALUES[this.viewportProperties.orientation];
-      if (
-        viewToReset.viewUp != viewUp &&
-        viewToReset.viewPlaneNormal != viewPlaneNormal
-      ) {
-        this.setCameraNoEvent({
-          viewUp: viewToReset.viewUp,
-          viewPlaneNormal: viewToReset.viewPlaneNormal,
-        });
-      }
+      const viewToReset =
+        MPR_CAMERA_VALUES[this.viewportProperties.orientation];
+      this.setCameraNoEvent({
+        viewUp: viewToReset.viewUp,
+        viewPlaneNormal: viewToReset.viewPlaneNormal,
+      });
     }
 
     return true;
@@ -450,7 +446,12 @@ class VolumeViewport extends BaseVolumeViewport {
       volumeId: volumeActor.uid,
     };
 
-    this.resetCamera(true, true, true, true);
+    const resetPan = true;
+    const resetZoom = true;
+    const resetToCenter = true;
+    const resetCameraRotation = true;
+    this.resetCamera(resetPan, resetZoom, resetToCenter, resetCameraRotation);
+
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
 }

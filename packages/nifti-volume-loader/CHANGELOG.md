@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Change Log
 
 All notable changes to this project will be documented in this file.
@@ -262,4 +260,3 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 ### Features
 
 - **nifti:** Add nifti volume loader to cornerstone 3D repo ([#696](https://github.com/cornerstonejs/cornerstone3D/issues/696)) ([c9c2e83](https://github.com/cornerstonejs/cornerstone3D/commit/c9c2e83b2e0614c90c88bd89634f1bcb325d0a00))
->>>>>>> 8c78a01f328ad05b05c4664fce746281ed381829
