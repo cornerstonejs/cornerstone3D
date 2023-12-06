@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from './stackVolumeCheck';
 import { LabelmapToolOperationDataStack } from '../../../../types';
 
-const { VoxelValue } = utilities;
+const { VoxelManager } = utilities;
 
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
@@ -57,12 +57,12 @@ function getStrategyData({ operationData, viewport }) {
   return {
     segmentationImageData,
     segmentationScalarData,
-    segmentationVoxelValue: VoxelValue.volumeVoxelValue(
+    segmentationVoxelValue: VoxelManager.volumeVoxelValue(
       dimensions,
       segmentationScalarData
     ),
     imageScalarData,
-    imageVoxelValue: VoxelValue.volumeVoxelValue(dimensions, imageScalarData),
+    imageVoxelValue: VoxelManager.volumeVoxelValue(dimensions, imageScalarData),
   };
 }
 

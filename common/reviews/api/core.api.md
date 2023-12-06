@@ -3067,7 +3067,7 @@ declare namespace utilities {
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
         getBufferConfiguration,
-        VoxelValue
+        VoxelManager
     }
 }
 export { utilities }
@@ -3616,7 +3616,7 @@ type VolumeViewportProperties = ViewportProperties & {
 };
 
 // @public (undocumented)
-class VoxelValue<T> {
+class VoxelManager<T> {
     constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean | void);
     // (undocumented)
     static addBounds(bounds: BoundsIJK, point: Point3): void;
@@ -3627,35 +3627,35 @@ class VoxelValue<T> {
     // (undocumented)
     clear(): void;
     // (undocumented)
-    dimensions: Point3;
+    readonly dimensions: Point3;
     // (undocumented)
     forEach: (callback: any, options?: any) => void;
     // (undocumented)
     frameSize: number;
     // (undocumented)
-    get: ([i, j, k]: [any, any, any]) => T;
-    // (undocumented)
     _get: (index: number) => T;
     // (undocumented)
     getArrayOfSlices(): number[];
     // (undocumented)
+    getAt: ([i, j, k]: [any, any, any]) => T;
+    // (undocumented)
+    getAtIJK: (i: any, j: any, k: any) => T;
+    // (undocumented)
+    getAtIndex: (index: any) => T;
+    // (undocumented)
     getBoundsIJK(): BoundsIJK;
-    // (undocumented)
-    getIJK: (i: any, j: any, k: any) => T;
-    // (undocumented)
-    getIndex: (index: any) => T;
     // (undocumented)
     getPointIndices(): number[];
     // (undocumented)
     getPoints(): Point3[];
     // (undocumented)
-    static historyVoxelValue<T>(sourceVoxelValue: VoxelValue<T>): VoxelValue<T>;
+    static historyVoxelValue<T>(sourceVoxelValue: VoxelManager<T>): VoxelManager<T>;
     // (undocumented)
     isInObject: (pointIPS: any, pointIJK: any) => boolean;
     // (undocumented)
     map: Map<number, T>;
     // (undocumented)
-    static mapVoxelValue<T>(dimension: Point3): VoxelValue<T>;
+    static mapVoxelValue<T>(dimension: Point3): VoxelManager<T>;
     // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
@@ -3663,21 +3663,21 @@ class VoxelValue<T> {
     // (undocumented)
     scalarData: VolumeScalarData;
     // (undocumented)
-    set: ([i, j, k]: [any, any, any], v: any) => void;
-    // (undocumented)
     _set: (index: number, v: T) => boolean | void;
     // (undocumented)
-    setIJK: (i: number, j: number, k: number, v: any) => void;
+    setAt: ([i, j, k]: [any, any, any], v: any) => void;
     // (undocumented)
-    setIndex: (index: any, v: any) => void;
+    setAtIJK: (i: number, j: number, k: number, v: any) => void;
     // (undocumented)
-    sourceVoxelValue: VoxelValue<T>;
+    setAtIndex: (index: any, v: any) => void;
+    // (undocumented)
+    sourceVoxelValue: VoxelManager<T>;
     // (undocumented)
     toIJK(index: number): Point3;
     // (undocumented)
     toIndex(ijk: Point3): number;
     // (undocumented)
-    static volumeVoxelValue(dimensions: Point3, scalarData: any): VoxelValue<number>;
+    static volumeVoxelValue(dimensions: Point3, scalarData: any): VoxelManager<number>;
     // (undocumented)
     width: number;
 }

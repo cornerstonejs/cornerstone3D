@@ -41,6 +41,7 @@ export default {
       strategySpecificConfiguration,
       imageVoxelValue,
       segmentationImageData,
+      preview,
     } = operationData;
     if (!strategySpecificConfiguration?.useCenterSegmentIndex) {
       return;
@@ -63,25 +64,19 @@ export default {
     );
 
     if (!hasSegmentIndex && !hasPreviewIndex) {
-      console.log('Neither segment index nor preview index', segmentIndex);
       return;
     }
 
-    let existingValue = segmentationVoxelValue.get(centerIJK);
+    let existingValue = segmentationVoxelValue.getAt(centerIJK);
     if (existingValue === previewSegmentIndex) {
-      console.log('Over preview index', segmentIndex);
-      return;
-    }
-    if (hasPreviewIndex && existingValue !== segmentIndex) {
+      if (preview) {
+        existingValue = preview.segmentIndex;
+      } else {
+        return;
+      }
+    } else if (hasPreviewIndex) {
       // Clear the preview area
-      console.log('Region has preview index', existingValue, segmentIndex);
       existingValue = null;
-    } else {
-      console.log(
-        'Region does not have preview index, using',
-        existingValue,
-        segmentIndex
-      );
     }
     operationData.segmentIndex = existingValue;
     strategySpecificConfiguration.centerSegmentIndex = {

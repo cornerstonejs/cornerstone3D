@@ -48,8 +48,8 @@ export default {
   },
   // Setup a clear threshold value on mouse/touch down
   initDown: (enabled, operationData: InitializedOperationData) => {
-    const { strategySpecificConfiguration } = operationData;
-    if (!strategySpecificConfiguration?.THRESHOLD?.isDynamic) {
+    const { strategySpecificConfiguration, preview } = operationData;
+    if (!strategySpecificConfiguration?.THRESHOLD?.isDynamic && !preview) {
       return;
     }
     strategySpecificConfiguration.THRESHOLD.threshold = null;

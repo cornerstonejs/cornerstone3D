@@ -13,7 +13,7 @@ import type {
   LabelmapToolOperationDataVolume,
 } from '../../../types/LabelmapToolOperationData';
 
-const { VoxelValue } = csUtils;
+const { VoxelManager } = csUtils;
 export type OperationData =
   | LabelmapToolOperationDataVolume
   | LabelmapToolOperationDataStack;
@@ -24,10 +24,10 @@ export type InitializedOperationData = OperationData & {
   centerIJK?: Types.Point3;
   centerWorld: Types.Point3;
   viewport: Types.IViewport;
-  imageVoxelValue: csUtils.VoxelValue<number>;
-  segmentationVoxelValue: csUtils.VoxelValue<number>;
+  imageVoxelValue: csUtils.VoxelManager<number>;
+  segmentationVoxelValue: csUtils.VoxelManager<number>;
   segmentationImageData: ImageData;
-  previewVoxelValue: csUtils.VoxelValue<number>;
+  previewVoxelValue: csUtils.VoxelManager<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
@@ -111,6 +111,7 @@ export default class BrushStrategy {
   protected _createInitialized = [];
   protected _fill = [];
   protected _acceptPreview: [];
+  protected _initDown = [];
 
   constructor(name, ...initializers: Initializer[]) {
     this.configurationName = name;
@@ -174,7 +175,8 @@ export default class BrushStrategy {
     if (!previewSegmentIndex || !previewVoxelValue.modifiedSlices.size) {
       return null;
     }
-    return initializedData;
+    // Use the original initialized data set to preserve preview info
+    return initializedData.preview || initializedData;
   };
 
   protected createInitialized(
@@ -210,7 +212,7 @@ export default class BrushStrategy {
       data;
     const previewVoxelValue =
       operationData.preview?.previewVoxelValue ||
-      VoxelValue.historyVoxelValue(segmentationVoxelValue);
+      VoxelManager.historyVoxelValue(segmentationVoxelValue);
 
     const previewSegmentIndex = operationData.previewColors ? 255 : undefined;
     const initializedData: InitializedOperationData = {
@@ -239,10 +241,25 @@ export default class BrushStrategy {
    * on mouse down, so calling this initDown.
    * Over-written by the strategy composition.
    */
-  public initDown: (
+  public initDown = (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
-  ) => void;
+  ) => {
+    const { preview } = operationData;
+    // Need to skip the init down if it has already occurred in teh preview
+    // That prevents resetting values which were used to determine the preview
+    if (preview?.isPreviewFromHover) {
+      preview.isPreviewFromHover = false;
+      return;
+    }
+    const initializedData = this.createInitialized(
+      enabledElement,
+      operationData
+    );
+    this._initDown.forEach((func) =>
+      func.call(this, enabledElement, initializedData)
+    );
+  };
 
   /**
    * Function called when a strategy is complete in some way.

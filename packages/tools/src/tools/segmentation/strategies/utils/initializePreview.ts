@@ -18,8 +18,11 @@ export default {
     }
     this.initDown?.(enabledElement, operationData);
     const preview = this.fill(enabledElement, operationData);
-    operationData.preview = preview;
-    this.completeUp?.(enabledElement, operationData);
+    if (preview) {
+      preview.isPreviewFromHover = true;
+      operationData.preview = preview;
+      this.completeUp?.(enabledElement, operationData);
+    }
     return preview;
   },
 
@@ -70,10 +73,10 @@ export default {
 
   acceptPreview: (enabledElement, operationData: InitializedOperationData) => {
     const {
-      segmentIndex,
       segmentationVoxelValue,
       previewVoxelValue,
       previewSegmentIndex,
+      segmentIndex,
     } = operationData;
     if (previewSegmentIndex === undefined) {
       return;
@@ -84,9 +87,9 @@ export default {
     }
 
     const callback = ({ index }) => {
-      const oldValue = segmentationVoxelValue.getIndex(index);
+      const oldValue = segmentationVoxelValue.getAtIndex(index);
       if (oldValue === previewSegmentIndex) {
-        segmentationVoxelValue.setIndex(index, segmentIndex);
+        segmentationVoxelValue.setAtIndex(index, segmentIndex);
       }
     };
     tracking.forEach(callback, {});
@@ -105,7 +108,7 @@ export default {
     }
 
     const callback = ({ index, value }) => {
-      segmentationVoxelValue.setIndex(index, value);
+      segmentationVoxelValue.setAtIndex(index, value);
     };
     previewVoxelValue.forEach(callback);
 

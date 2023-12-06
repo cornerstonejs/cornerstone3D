@@ -19,11 +19,11 @@ export default {
       previewSegmentIndex,
       segmentationVoxelValue,
     } = operationData;
-    const existingValue = segmentationVoxelValue.getIndex(index);
+    const existingValue = segmentationVoxelValue.getAtIndex(index);
     if (segmentIndex === null) {
-      const oldValue = previewVoxelValue.getIndex(index);
+      const oldValue = previewVoxelValue.getAtIndex(index);
       if (oldValue !== undefined) {
-        previewVoxelValue.setIndex(index, oldValue);
+        previewVoxelValue.setAtIndex(index, oldValue);
       }
       return;
     }
@@ -33,9 +33,9 @@ export default {
     }
     // Correct for preview data getting into the image area and not accepted/rejected
     if (existingValue === previewSegmentIndex) {
-      if (previewVoxelValue.getIndex(index) === undefined) {
+      if (previewVoxelValue.getAtIndex(index) === undefined) {
         // Reset the value to ensure preview gets added to the indices
-        segmentationVoxelValue.setIndex(index, segmentIndex);
+        segmentationVoxelValue.setAtIndex(index, segmentIndex);
       } else {
         return;
       }
@@ -44,6 +44,6 @@ export default {
     // Now, just update the displayed value
     const useSegmentIndex = previewSegmentIndex ?? segmentIndex;
 
-    previewVoxelValue.setIndex(index, useSegmentIndex);
+    previewVoxelValue.setAtIndex(index, useSegmentIndex);
   },
 } as InitializerInstance;

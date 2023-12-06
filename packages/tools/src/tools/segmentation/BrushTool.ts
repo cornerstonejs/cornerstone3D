@@ -217,7 +217,7 @@ class BrushTool extends BaseTool {
         // Todo: add sphere (volumetric) manipulation support for stacks of images
         // we should basically check if the stack constructs a valid volume
         // meaning all the metadata is present and consistent
-        // then we use a VoxelValue mapping to map a volume like appearance
+        // then we use a VoxelManager mapping to map a volume like appearance
         // for the stack data.
         // csUtils.isValidVolume(referencedImageIds
       }

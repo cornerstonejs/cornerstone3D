@@ -3,7 +3,7 @@ import type { BoundsIJK, Point3, VolumeScalarData } from '../types';
 /**
  * This is a simple, standard interface to values associated with a voxel.
  */
-export default class VoxelValue<T> {
+export default class VoxelManager<T> {
   public modifiedSlices = new Set<number>();
   public boundsIJK = [
     [Infinity, -Infinity],
@@ -14,16 +14,23 @@ export default class VoxelValue<T> {
   // Provide direct access to the underlying data, if any
   public scalarData: VolumeScalarData;
   public map: Map<number, T>;
-  public sourceVoxelValue: VoxelValue<T>;
+  public sourceVoxelValue: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;
+  public readonly dimensions: Point3;
 
   points: Set<number>;
-  dimensions: Point3;
   width: number;
   frameSize: number;
   _get: (index: number) => T;
   _set: (index: number, v: T) => boolean | void;
 
+  /**
+   * Creates a generic voxel value accessor, with access to the values
+   * provided by the _get and optionally _set values.
+   * @param dimensions - for the voxel volume
+   * @param _get - called to get a value by index
+   * @param _set  - called when setting a value
+   */
   constructor(
     dimensions,
     _get: (index: number) => T,
@@ -36,19 +43,31 @@ export default class VoxelValue<T> {
     this._set = _set;
   }
 
-  public getIJK = (i, j, k) => {
+  /**
+   * Gets the voxel value at position i,j,k.
+   */
+  public getAtIJK = (i, j, k) => {
     const index = i + j * this.width + k * this.frameSize;
     return this._get(index);
   };
 
-  public setIJK = (i: number, j: number, k: number, v) => {
+  /**
+   * Sets the voxel value at position i,j,k and records the slice
+   * that was modified.
+   */
+  public setAtIJK = (i: number, j: number, k: number, v) => {
     const index = i + j * this.width + k * this.frameSize;
     if (this._set(index, v) !== false) {
       this.modifiedSlices.add(k);
-      VoxelValue.addBounds(this.boundsIJK, [i, j, k]);
+      VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
     }
   };
 
+  /**
+   * Adds a point as an array or an index value to the set of points
+   * associated with this voxel value.
+   * Can be used for tracking clicked points or other modified values.
+   */
   public addPoint(point: Point3 | number) {
     const index = Array.isArray(point)
       ? point[0] + this.width * point[1] + this.frameSize * point[2]
@@ -59,31 +78,53 @@ export default class VoxelValue<T> {
     this.points.add(index);
   }
 
-  /** Gets the points as Point3 values */
+  /**
+   * Gets the list of added points as an array of Point3 values
+   */
   public getPoints(): Point3[] {
     return this.points
       ? [...this.points].map((index) => this.toIJK(index))
       : [];
   }
 
+  /**
+   * Gets the points added using addPoint as an array of indices.
+   */
   public getPointIndices(): number[] {
     return this.points ? [...this.points] : [];
   }
 
-  public get = ([i, j, k]) => this.getIJK(i, j, k);
+  /**
+   * Gets the voxel value at the given Point3 location.
+   */
+  public getAt = ([i, j, k]) => this.getAtIJK(i, j, k);
 
-  public set = ([i, j, k], v) => this.setIJK(i, j, k, v);
+  /**
+   * Sets the voxel value at the given point3 location to the specified value.
+   * Records the z index modified.
+   * Will record the index value if the VoxelManager is backed by a map.
+   */
+  public setAt = ([i, j, k], v) => this.setAtIJK(i, j, k, v);
 
-  public getIndex = (index) => this._get(index);
+  /**
+   * Gets the value at the given index.
+   */
+  public getAtIndex = (index) => this._get(index);
 
-  public setIndex = (index, v) => {
+  /**
+   * Sets the value at the given index
+   */
+  public setAtIndex = (index, v) => {
     if (this._set(index, v) !== false) {
       const pointIJK = this.toIJK(index);
       this.modifiedSlices.add(pointIJK[2]);
-      VoxelValue.addBounds(this.boundsIJK, pointIJK);
+      VoxelManager.addBounds(this.boundsIJK, pointIJK);
     }
   };
 
+  /**
+   * Converts an index value to a Point3 IJK value
+   */
   public toIJK(index: number): Point3 {
     return [
       index % this.width,
@@ -92,10 +133,16 @@ export default class VoxelValue<T> {
     ];
   }
 
+  /**
+   * Converts an IJK Point3 value to an index value
+   */
   public toIndex(ijk: Point3) {
     return ijk[0] + ijk[1] * this.width + ijk[2] * this.frameSize;
   }
 
+  /**
+   * Gets the bounds for the modified set of values.
+   */
   public getBoundsIJK(): BoundsIJK {
     if (this.boundsIJK[0][0] < this.dimensions[0]) {
       return this.boundsIJK;
@@ -103,6 +150,9 @@ export default class VoxelValue<T> {
     return this.dimensions.map((dimension) => [0, dimension - 1]) as BoundsIJK;
   }
 
+  /**
+   * Iterate over the points within the bounds, or the modified points if recorded.
+   */
   public forEach = (callback, options?) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const { isWithinObject } = options || {};
@@ -127,7 +177,7 @@ export default class VoxelValue<T> {
             i <= boundsIJK[0][1];
             i++, index++
           ) {
-            const value = this.getIndex(index);
+            const value = this.getAtIndex(index);
             const callbackArguments = { value, index, pointIJK: [i, j, k] };
             if (isWithinObject?.(callbackArguments) === false) {
               continue;
@@ -139,6 +189,9 @@ export default class VoxelValue<T> {
     }
   };
 
+  /**
+   * Extends the bounds of this object to include the specified point
+   */
   public static addBounds(bounds: BoundsIJK, point: Point3) {
     bounds.forEach((bound, index) => {
       bound[0] = Math.min(point[index], bound[0]);
@@ -147,13 +200,14 @@ export default class VoxelValue<T> {
   }
 
   /**
-   *  Creates a volume value accessor
+   *  Creates a volume value accessor, based on a volume scalar data instance.
+   * This also works for image value accessors for single plane (k=0) accessors.
    */
   public static volumeVoxelValue(
     dimensions: Point3,
     scalarData
-  ): VoxelValue<number> {
-    const voxels = new VoxelValue(
+  ): VoxelManager<number> {
+    const voxels = new VoxelManager(
       dimensions,
       (index) => scalarData[index],
       (index, v) => {
@@ -167,11 +221,12 @@ export default class VoxelValue<T> {
   }
 
   /**
-   * Creates a volume map value accessor
+   * Creates a volume map value accessor.  This is initially empty and
+   * the map stores the index to value instances.
    */
-  public static mapVoxelValue<T>(dimension: Point3): VoxelValue<T> {
+  public static mapVoxelValue<T>(dimension: Point3): VoxelManager<T> {
     const map = new Map<number, T>();
-    const voxelValue = new VoxelValue(
+    const voxelValue = new VoxelManager(
       dimension,
       map.get.bind(map),
       (index, v) => map.set(index, v) && true
@@ -180,6 +235,10 @@ export default class VoxelValue<T> {
     return voxelValue;
   }
 
+  /**
+   * Clears any map specific data, as wellas the modified slices, points and
+   * bounds.
+   */
   public clear() {
     if (this.map) {
       this.map.clear();
@@ -192,6 +251,9 @@ export default class VoxelValue<T> {
     this.points?.clear();
   }
 
+  /**
+   * @returns The array of modified k indices
+   */
   public getArrayOfSlices(): number[] {
     return Array.from(this.modifiedSlices);
   }
@@ -204,16 +266,16 @@ export default class VoxelValue<T> {
    * if it is different.
    */
   public static historyVoxelValue<T>(
-    sourceVoxelValue: VoxelValue<T>
-  ): VoxelValue<T> {
+    sourceVoxelValue: VoxelManager<T>
+  ): VoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelValue;
-    const voxelValue = new VoxelValue(
+    const voxelValue = new VoxelManager(
       dimensions,
       (index) => map.get(index),
       function (index, v) {
         if (!map.has(index)) {
-          const oldV = this.sourceVoxelValue.getIndex(index);
+          const oldV = this.sourceVoxelValue.getAtIndex(index);
           if (oldV === v) {
             // No-op
             return false;
@@ -222,7 +284,7 @@ export default class VoxelValue<T> {
         } else if (v === map.get(index)) {
           map.delete(index);
         }
-        this.sourceVoxelValue.setIndex(index, v);
+        this.sourceVoxelValue.setAtIndex(index, v);
       }
     );
     voxelValue.map = map;
@@ -232,4 +294,4 @@ export default class VoxelValue<T> {
   }
 }
 
-export type { VoxelValue };
+export type { VoxelManager };

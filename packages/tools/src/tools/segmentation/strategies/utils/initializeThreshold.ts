@@ -15,7 +15,7 @@ export default {
       const { THRESHOLD, THRESHOLD_INSIDE_CIRCLE } =
         strategySpecificConfiguration;
 
-      const voxelValue = imageVoxelValue.getIndex(index);
+      const voxelValue = imageVoxelValue.getAtIndex(index);
       // Prefer the generic version of the THRESHOLD configuration, but fallback
       // to the older THRESHOLD_INSIDE_CIRCLE version.
       const { threshold } = THRESHOLD || THRESHOLD_INSIDE_CIRCLE || {};

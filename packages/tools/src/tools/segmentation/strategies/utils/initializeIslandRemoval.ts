@@ -64,7 +64,7 @@ export default {
         // Values already flooded
         return -2;
       }
-      const oldVal = segmentationVoxelValue.getIndex(index);
+      const oldVal = segmentationVoxelValue.getAtIndex(index);
       const isIn =
         oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
       if (!isIn) {
@@ -82,7 +82,7 @@ export default {
         return;
       }
       // Fill this point with an indicator that this point is connected
-      previewVoxelValue.setIJK(i, j, k, previewSegmentIndex);
+      previewVoxelValue.setAtIJK(i, j, k, previewSegmentIndex);
       floodedSet.add(index);
       floodedCount++;
     };
@@ -101,16 +101,16 @@ export default {
     let previewCount = 0;
 
     const callback = ({ index, pointIJK, value: trackValue }) => {
-      const value = segmentationVoxelValue.getIndex(index);
+      const value = segmentationVoxelValue.getAtIndex(index);
       if (floodedSet.has(index)) {
         previewCount++;
         const newValue =
           trackValue === segmentIndex ? segmentIndex : previewSegmentIndex;
-        previewVoxelValue.set(pointIJK, newValue);
+        previewVoxelValue.setAt(pointIJK, newValue);
       } else if (value === previewSegmentIndex) {
         clearedCount++;
         const newValue = trackValue ?? 0;
-        previewVoxelValue.set(pointIJK, newValue);
+        previewVoxelValue.setAt(pointIJK, newValue);
       }
     };
 
@@ -164,7 +164,7 @@ export default {
       });
       if (isInternal) {
         for (const index of internalSet) {
-          previewVoxelValue.setIndex(index, previewSegmentIndex);
+          previewVoxelValue.setAtIndex(index, previewSegmentIndex);
         }
       }
     }
