@@ -34,8 +34,6 @@ import type BoundsIJK from './BoundsIJK';
 import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
-  Color,
-  ColorLUT,
   RepresentationConfig,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
@@ -120,8 +118,6 @@ export type {
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   RepresentationPublicInput,
-  Color,
-  ColorLUT,
   LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,

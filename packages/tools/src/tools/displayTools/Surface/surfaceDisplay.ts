@@ -2,78 +2,19 @@ import {
   cache,
   getEnabledElementByIds,
   Types,
-  utilities,
   Enums,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import Representations from '../../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
-  RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addSurfaceToElement from './addSurfaceToElement';
-
-/**
- * It adds a new segmentation representation to the segmentation state
- * @param toolGroupId - The id of the toolGroup that the segmentation
- * belongs to
- * @param representationInput - RepresentationPublicInput
- * @param toolGroupSpecificConfig - The configuration that is specific to the toolGroup.
- * @returns The segmentationRepresentationUID
- */
-async function addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  const { segmentationId } = representationInput;
-  const segmentationRepresentationUID = utilities.uuidv4();
-  // Todo: make these configurable during representation input by user
-  const segmentsHidden = new Set() as Set<number>;
-  const colorLUTIndex = 0;
-  const active = true;
-  const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
-    segmentationId,
-    segmentationRepresentationUID,
-    type: Representations.Surface,
-    segmentsHidden,
-    colorLUTIndex,
-    active,
-    segmentationRepresentationSpecificConfig: {},
-    segmentSpecificConfig: {},
-    config: {},
-  };
-  // Update the toolGroup specific configuration
-  if (toolGroupSpecificConfig) {
-    // Since setting configuration on toolGroup will trigger a segmentationRepresentation
-    // update event, we don't want to trigger the event twice, so we suppress
-    // the first one
-    const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-    const mergedConfig = utilities.deepMerge(
-      currentToolGroupConfig,
-      toolGroupSpecificConfig
-    );
-    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations:
-        mergedConfig.renderInactiveSegmentations || true,
-      representations: {
-        ...mergedConfig.representations,
-      },
-    });
-  }
-  SegmentationState.addSegmentationRepresentation(
-    toolGroupId,
-    toolGroupSpecificRepresentation
-  );
-  return segmentationRepresentationUID;
-}
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -210,6 +151,5 @@ function _removeSurfaceFromToolGroupViewports(
 
 export default {
   render,
-  addSegmentationRepresentation,
   removeSegmentationRepresentation,
 };

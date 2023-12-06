@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.36.1](https://github.com/dcmjs-org/dcmjs/compare/v1.36.0...v1.36.1) (2023-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.36.0](https://github.com/dcmjs-org/dcmjs/compare/v1.35.3...v1.36.0) (2023-12-05)
+
+### Features
+
+-   **segmentation:** segmentation color change and fix seg import([#920](https://github.com/dcmjs-org/dcmjs/issues/920)) ([3af4437](https://github.com/dcmjs-org/dcmjs/commit/3af4437c4b20f7cc2556de4d655fc8f118e310a4))
+
+## [1.35.3](https://github.com/dcmjs-org/dcmjs/compare/v1.35.2...v1.35.3) (2023-12-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.35.2](https://github.com/dcmjs-org/dcmjs/compare/v1.35.1...v1.35.2) (2023-12-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.35.1](https://github.com/dcmjs-org/dcmjs/compare/v1.35.0...v1.35.1) (2023-11-30)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 # [1.35.0](https://github.com/dcmjs-org/dcmjs/compare/v1.34.0...v1.35.0) (2023-11-28)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
