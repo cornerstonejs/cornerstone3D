@@ -24,17 +24,12 @@ console.warn(
 
 const {
   LengthTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
+  PanTool,
+  ZoomTool,
   ToolGroupManager,
-  ArrowAnnotateTool,
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
+  utilities,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -66,17 +61,7 @@ content.append(instructions);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
-const toolsNames = [
-  LengthTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-];
+const toolsNames = [LengthTool.toolName];
 let selectedToolName = toolsNames[0];
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_VIEWPORT';
@@ -138,15 +123,9 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -154,15 +133,9 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -173,17 +146,23 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolPassive(ProbeTool.toolName);
-  toolGroup.setToolPassive(RectangleROITool.toolName);
-  toolGroup.setToolPassive(EllipticalROITool.toolName);
-  toolGroup.setToolPassive(CircleROITool.toolName);
-  toolGroup.setToolPassive(BidirectionalTool.toolName);
-  toolGroup.setToolPassive(AngleTool.toolName);
-  toolGroup.setToolPassive(CobbAngleTool.toolName);
-  toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -222,6 +201,8 @@ async function run() {
 
   // Set the stack on the viewport
   viewport.setStack(stack, 0);
+
+  utilities.stackContextPrefetch.enable(viewport.element);
 
   // Render the image
   viewport.render();
