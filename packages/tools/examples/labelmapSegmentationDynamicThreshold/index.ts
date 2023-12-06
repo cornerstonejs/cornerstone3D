@@ -354,7 +354,7 @@ async function run() {
     ],
   });
 
-  const cancelFn = {
+  const keyMappingFn = {
     fn: (evt) => {
       const { element, key } = evt.detail;
       const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -484,13 +484,13 @@ async function run() {
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
   element1.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    cancelFn.fn(evt);
+    keyMappingFn.fn(evt);
   });
   element2.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    cancelFn.fn(evt);
+    keyMappingFn.fn(evt);
   });
   element3.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    cancelFn.fn(evt);
+    keyMappingFn.fn(evt);
   });
 
   // Set the volume to load

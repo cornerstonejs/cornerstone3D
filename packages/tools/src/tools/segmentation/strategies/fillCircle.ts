@@ -10,12 +10,8 @@ import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { OperationData, InitializedOperationData } from './BrushStrategy';
 import dynamicWithinThreshold from './utils/initializeDynamicThreshold';
-import type {
-  CanvasCoordinates,
-  LabelmapToolOperationDataVolume,
-} from '../../../types';
+import type { CanvasCoordinates } from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
-import initializeTracking from './utils/initializeTracking';
 import initializeRegionFill from './utils/initializeRegionFill';
 import initializeSetValue from './utils/initializeSetValue';
 import initializePreview from './utils/initializePreview';
@@ -97,7 +93,6 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   initializeSetValue,
   initializeCircle,
   initializeDetermineSegmentIndex,
-  initializeTracking,
   initializePreview
 );
 
@@ -109,7 +104,6 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   initializeDetermineSegmentIndex,
   dynamicWithinThreshold,
   initializeThreshold,
-  initializeTracking,
   initializePreview,
   initializeIslandRemoval
 );

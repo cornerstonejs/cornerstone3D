@@ -110,6 +110,16 @@ class BrushTool extends BaseTool {
         brushSize: 25,
         // No preview by default - define an empty map to use default colors
         previewColors: undefined,
+        // The time before showing a preview
+        previewTimeMs: 250,
+        // The distance to move to show a preview before preview time expired
+        previewMoveDistance: 8,
+        // The distance to drag before being considered a drag rather than click
+        dragMoveDistance: 4,
+        // The time to consider a mouse click a drag when moved less than dragMoveDistance
+        dragTimeMs: 500,
+        // Whether to show a center circle/position.  Set to null to not show
+        centerRadius: 2,
       },
     }
   ) {
@@ -275,7 +285,12 @@ class BrushTool extends BaseTool {
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
-
+      const { previewColors } = this.configuration;
+      if (!previewColors) {
+        return;
+      }
+      const { previewTimeMs, previewMoveDistance, dragMoveDistance } =
+        this.configuration;
       const { currentPoints, element } = evt.detail;
       const { canvas } = currentPoints;
 
@@ -283,7 +298,10 @@ class BrushTool extends BaseTool {
         this._previewData;
       const delta = vec2.distance(canvas, startPoint);
       const time = Date.now() - timerStart;
-      if (delta > 8 || (time > 250 && delta > 1)) {
+      if (
+        delta > previewMoveDistance ||
+        (time > previewTimeMs && delta > dragMoveDistance)
+      ) {
         if (timer) {
           window.clearTimeout(timer);
           this._previewData.timer = null;
@@ -410,10 +428,11 @@ class BrushTool extends BaseTool {
       currentPoints.canvas,
       this._previewData.startPoint
     );
+    const { dragTimeMs, dragMoveDistance } = this.configuration;
     if (
       !this._previewData.isDrag &&
-      Date.now() - this._previewData.timerStart < 500 &&
-      delta < 4
+      Date.now() - this._previewData.timerStart < dragTimeMs &&
+      delta < dragMoveDistance
     ) {
       return;
     }
@@ -423,9 +442,9 @@ class BrushTool extends BaseTool {
       this.getOperationData()
     );
     this._previewData.element = element;
-    // Add a bit of time to the timer start so small accidental movements done
-    // cause issues
-    this._previewData.timerStart = Date.now() + 200;
+    // Add a bit of time to the timer start so small accidental movements dont
+    // cause issues on clicking
+    this._previewData.timerStart = Date.now() + dragTimeMs;
     this._previewData.isDrag = true;
     this._previewData.startPoint = currentPoints.canvas;
   };
@@ -696,17 +715,21 @@ class BrushTool extends BaseTool {
         color,
       }
     );
-    const circleUID1 = '1';
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      circleUID1,
-      center as Types.Point2,
-      2,
-      {
-        color,
-      }
-    );
+
+    const { centerRadius } = this.configuration;
+    if (centerRadius >= 0) {
+      const circleUID1 = '1';
+      drawCircleSvg(
+        svgDrawingHelper,
+        annotationUID,
+        circleUID1,
+        center as Types.Point2,
+        2,
+        {
+          color,
+        }
+      );
+    }
   }
 }
 

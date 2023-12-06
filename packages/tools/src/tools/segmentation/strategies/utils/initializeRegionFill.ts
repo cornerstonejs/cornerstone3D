@@ -30,10 +30,7 @@ export default {
     const callback = isWithinThreshold
       ? (data) => {
           const { value, index } = data;
-          if (segmentsLocked.includes(value)) {
-            return;
-          }
-          if (!isWithinThreshold(index)) {
+          if (segmentsLocked.includes(value) || !isWithinThreshold(index)) {
             return;
           }
           setValue(data, operationData);

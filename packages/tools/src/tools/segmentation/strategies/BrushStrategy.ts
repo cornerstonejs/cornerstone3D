@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities, cache, utilities as csUtils } from '@cornerstonejs/core';
+import { cache, utilities as csUtils } from '@cornerstonejs/core';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import initializeSetValue from './utils/initializeSetValue';
@@ -13,7 +13,7 @@ import type {
   LabelmapToolOperationDataVolume,
 } from '../../../types/LabelmapToolOperationData';
 
-const { VoxelValue } = utilities;
+const { VoxelValue } = csUtils;
 export type OperationData =
   | LabelmapToolOperationDataVolume
   | LabelmapToolOperationDataStack;
@@ -24,10 +24,10 @@ export type InitializedOperationData = OperationData & {
   centerIJK?: Types.Point3;
   centerWorld: Types.Point3;
   viewport: Types.IViewport;
-  imageVoxelValue: utilities.VoxelValue<number>;
-  segmentationVoxelValue: utilities.VoxelValue<number>;
+  imageVoxelValue: csUtils.VoxelValue<number>;
+  segmentationVoxelValue: csUtils.VoxelValue<number>;
   segmentationImageData: ImageData;
-  previewVoxelValue: utilities.VoxelValue<number>;
+  previewVoxelValue: csUtils.VoxelValue<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
@@ -53,12 +53,17 @@ export type InitializerFunction = () => InitializerInstance;
 export type Initializer = InitializerFunction | InitializerInstance;
 
 /**
- * Parts to a strategy:
+ * A brush strategy is a composition of individual parts which together form
+ * the strategy for a brush tool.
+ *
+ * Parts of a strategy:
  * 1. Fill strategy - how the fill gets done (left/right, 3d, paint fill etc)
  * 2. Set value strategy - can clear values or set them, or something else?
  * 3. In object strategy - how to tell if a point is contained in the object
  *    * Bounding box getter for the object strategy
- * 4. thresholdStrategy - how to determine if a point is within a threshold value
+ * 4. threshold - how to determine if a point is within a threshold value
+ * 5. preview - how to display preview information
+ * 6. Various strategy customizations such as erase
  *
  * These combine to form an actual brush:
  *
@@ -66,7 +71,10 @@ export type Initializer = InitializerFunction | InitializerInstance;
  * Rectangle - - convexFill, defaultSetValue, inRectangle/boundingbox rectangle, empty threshold
  * might also get parameter values from input,  init for setup of convexFill
  *
- * Generate a callback, and a call to pointInShape calling the various callbacks/settings.
+ * The pieces are combined to generate a strategyFunction, which performs
+ * the actual strategy operation, as well as various callbacks for the strategy
+ * to allow more control over behaviour in the specific strategy (such as displaying
+ * preview)
  */
 
 export default class BrushStrategy {
@@ -82,7 +90,7 @@ export default class BrushStrategy {
   };
 
   protected static childFunctions = {
-    initDown: addListMethod('initDown'),
+    initDown: addListMethod('initDown', 'createInitialized'),
     completeUp: addListMethod('completeUp', 'createInitialized'),
     fill: addListMethod('fill'),
     createInitialized: addListMethod('createInitialized'),
@@ -91,6 +99,9 @@ export default class BrushStrategy {
     rejectPreview: addListMethod('rejectPreview', 'createInitialized'),
     setValue: addSingletonMethod('setValue'),
     preview: addSingletonMethod('preview'),
+    // Add other exposed fields below
+    // initializers is exposed on the function to allow extension of the composition object
+    initializers: null,
   };
 
   public initializers: Initializer[];
@@ -142,7 +153,7 @@ export default class BrushStrategy {
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
-    if (utilities.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
+    if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
       return operationData.preview;
     } else {
       strategySpecificConfiguration.centerIJK = centerIJK;
@@ -202,7 +213,6 @@ export default class BrushStrategy {
       VoxelValue.historyVoxelValue(segmentationVoxelValue);
 
     const previewSegmentIndex = operationData.previewColors ? 255 : undefined;
-    console.log('Using previewSegmentIndex', previewSegmentIndex);
     const initializedData: InitializedOperationData = {
       ...operationData,
       previewSegmentIndex,
@@ -224,33 +234,67 @@ export default class BrushStrategy {
     return initializedData;
   }
 
+  /**
+   * Function called to initialize the start of the strategy.  Often this is
+   * on mouse down, so calling this initDown.
+   * Over-written by the strategy composition.
+   */
   public initDown: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => void;
 
+  /**
+   * Function called when a strategy is complete in some way.
+   * Often called on mouse up, hence the name.
+   *
+   * Over-written by the strategy composition.
+   */
   public completeUp: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => void;
 
+  /**
+   * Reject the preview.
+   * Over-written by the strategy composition.
+   */
   public rejectPreview: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => void;
 
+  /**
+   * Accept the preview, making it part of the overall segmentation
+   *
+   * Over-written by the strategy composition.
+   */
   public acceptPreview: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => void;
 
+  /**
+   * Display a preview at the current position.  This will typically
+   * using the initDown, fill and completeUp methods, plus settings to
+   * specify use of a preview.
+   *
+   * Over-written by the strategy composition.
+   * @returns preview data if a preview is displayed.
+   */
   public preview: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => unknown;
 
+  /**
+   * Over-written by the strategy composition.
+   */
   public setValue: (data, operationData: InitializedOperationData) => void;
 
+  /**
+   * Over-written by the strategy composition.
+   */
   public createIsInThreshold: (
     enabled,
     operationData: InitializedOperationData

@@ -5,34 +5,49 @@ import type {
 import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
 
 /**
- * This setup function will dynamically determine the segment index to use based on:
- * 1. Surrounding region in active viewport not having any default segment index
- *    being applied.  When that happens, use the default segment index (no-op)
- * 2. Segment index of clicked on point - extends this segment index (which
- *    erases if the segment index clicked is `0`)
+ * This function determines whether to fill or erase based on what the user
+ * initially clicks on.  The behaviour is:
+ * 1. If the user clicks on an area that has no active segment index in it,
+ *    then assume the user using the active segment index for filling
+ * 2. Find the segment index of the pixel the user clicked on, and assume they
+ *    want to fill with that segment index.  Use the given segment index for
+ *    the fill colour.
+ *    a. If the user clicks on the active segment index, then they will fill
+ *       with the active segment
+ *    b. If the user clicks on the 0 segment index, they will clear the segment
+ *       index, erasing the segment.
+ *    c. If the user clicks on another segment index, they will "restore" that
+ *       segment index, so that they can push back the segment area.
  *
- * The impact on user behaviour is that when there isn't an active drag preview,
- * the user can click nearby but outside the segment to remove it, and can click
- * inside the segment to extend it.
  */
 export default {
   createInitialized: (
     enabledElement,
     operationData: InitializedOperationData
   ) => {
+    const { strategySpecificConfiguration } = operationData;
+    const { centerSegmentIndex } = strategySpecificConfiguration;
+    if (centerSegmentIndex) {
+      operationData.segmentIndex = centerSegmentIndex.segmentIndex;
+    }
+  },
+
+  initDown: (enabledElement, operationData: InitializedOperationData) => {
     const {
       segmentIndex,
       previewSegmentIndex,
       segmentationVoxelValue,
       centerIJK,
       strategySpecificConfiguration,
-      preview,
       imageVoxelValue,
       segmentationImageData,
     } = operationData;
-    if (!strategySpecificConfiguration.useCenterSegmentIndex || preview) {
+    if (!strategySpecificConfiguration?.useCenterSegmentIndex) {
       return;
     }
+    // Get rid of the previous data
+    delete strategySpecificConfiguration.centerSegmentIndex;
+
     let hasSegmentIndex = false;
     let hasPreviewIndex = false;
     const callback = ({ value }) => {
@@ -48,13 +63,29 @@ export default {
     );
 
     if (!hasSegmentIndex && !hasPreviewIndex) {
+      console.log('Neither segment index nor preview index', segmentIndex);
       return;
     }
 
-    const existingValue = segmentationVoxelValue.get(centerIJK);
+    let existingValue = segmentationVoxelValue.get(centerIJK);
     if (existingValue === previewSegmentIndex) {
+      console.log('Over preview index', segmentIndex);
       return;
     }
+    if (hasPreviewIndex && existingValue !== segmentIndex) {
+      // Clear the preview area
+      console.log('Region has preview index', existingValue, segmentIndex);
+      existingValue = null;
+    } else {
+      console.log(
+        'Region does not have preview index, using',
+        existingValue,
+        segmentIndex
+      );
+    }
     operationData.segmentIndex = existingValue;
+    strategySpecificConfiguration.centerSegmentIndex = {
+      segmentIndex: existingValue,
+    };
   },
 } as InitializerInstance;

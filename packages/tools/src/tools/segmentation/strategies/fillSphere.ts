@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import {
@@ -12,12 +12,10 @@ import type { OperationData, InitializedOperationData } from './BrushStrategy';
 import dynamicWithinThreshold from './utils/initializeDynamicThreshold';
 import type { CanvasCoordinates } from '../../../types';
 import initializeIslandRemoval from './utils/initializeIslandRemoval';
-import initializeTracking from './utils/initializeTracking';
 import initializeRegionFill from './utils/initializeRegionFill';
 import initializeSetValue from './utils/initializeSetValue';
 import initializePreview from './utils/initializePreview';
 import initializeThreshold from './utils/initializeThreshold';
-import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -105,8 +103,7 @@ const SPHERE_STRATEGY = new BrushStrategy(
   'Sphere',
   initializeRegionFill,
   initializeSetValue,
-  initializeSphere,
-  initializeTracking
+  initializeSphere
 );
 
 /**
@@ -125,7 +122,6 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   dynamicWithinThreshold,
   initializeThreshold,
   initializePreview,
-  initializeTracking,
   initializeIslandRemoval
 );
 

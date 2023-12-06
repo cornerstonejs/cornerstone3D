@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
@@ -32,8 +33,20 @@ export default {
       segmentationRepresentationUID,
       previewSegmentIndex,
       previewColors,
+      preview,
     } = operationData;
-    if (previewSegmentIndex === undefined) {
+    if (previewColors === undefined) {
+      return;
+    }
+    if (preview) {
+      preview.previewVoxelValue.sourceVoxelValue =
+        operationData.segmentationVoxelValue;
+      // And use the preview data associated with this tracking object as needed
+      operationData.previewVoxelValue = preview.previewVoxelValue;
+    }
+
+    if (segmentIndex === null) {
+      // Null means to reset the value, so we don't change the preview colour
       return;
     }
 
@@ -51,7 +64,7 @@ export default {
       toolGroupId,
       segmentationRepresentationUID,
       previewSegmentIndex,
-      previewColor as [number, number, number, number]
+      previewColor as Types.Color
     );
   },
 

@@ -10,4 +10,4 @@ const ERASE_CIRCLE_STRATEGY = new BrushStrategy(
 
 const eraseInsideCircle = ERASE_CIRCLE_STRATEGY.strategyFunction;
 
-export { ERASE_CIRCLE_STRATEGY, eraseInsideCircle };
+export { eraseInsideCircle };
