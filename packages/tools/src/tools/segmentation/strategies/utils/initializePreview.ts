@@ -16,6 +16,14 @@ export default {
     if (!previewColors) {
       return;
     }
+
+    // Clean up old preview data
+    if (operationData.preview) {
+      delete operationData.preview;
+    }
+    delete operationData.strategySpecificConfiguration.centerSegmentIndex;
+
+    // Now generate a normal preview as though the user had clicked, filled, released
     this.initDown?.(enabledElement, operationData);
     const preview = this.fill(enabledElement, operationData);
     if (preview) {
@@ -76,11 +84,12 @@ export default {
       segmentationVoxelValue,
       previewVoxelValue,
       previewSegmentIndex,
-      segmentIndex,
+      preview,
     } = operationData;
     if (previewSegmentIndex === undefined) {
       return;
     }
+    const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
     const tracking = previewVoxelValue;
     if (!tracking || tracking.modifiedSlices.size === 0) {
       return;
