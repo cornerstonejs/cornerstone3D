@@ -352,6 +352,7 @@ export default class MeasurementReport {
         const REPORT = "Imaging Measurements";
         const GROUP = "Measurement Group";
         const TRACKING_IDENTIFIER = "Tracking Identifier";
+        const TRACKING_UNIQUE_IDENTIFIER = "Tracking Unique Identifier";
 
         // Identify the Imaging Measurements
         const imagingMeasurementContent = toArray(dataset.ContentSequence).find(
@@ -392,6 +393,16 @@ export default class MeasurementReport {
                 const TrackingIdentifierValue =
                     TrackingIdentifierGroup.TextValue;
 
+                const TrackingUniqueIdentifierGroup =
+                    measurementGroupContentSequence.find(
+                        contentItem =>
+                            contentItem.ConceptNameCodeSequence.CodeMeaning ===
+                            TRACKING_UNIQUE_IDENTIFIER
+                    );
+
+                const TrackingUniqueIdentifierValue =
+                    TrackingUniqueIdentifierGroup.UID;
+
                 const toolClass =
                     hooks?.getToolClass?.(
                         measurementGroup,
@@ -411,6 +422,9 @@ export default class MeasurementReport {
                         imageToWorldCoords,
                         metadata
                     );
+
+                    measurement.TrackingUniqueIdentifier =
+                        TrackingUniqueIdentifierValue;
 
                     console.log(`=== ${toolClass.toolType} ===`);
                     console.log(measurement);
