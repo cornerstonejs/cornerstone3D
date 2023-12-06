@@ -50,10 +50,10 @@ export default {
       return;
     }
     if (preview) {
-      preview.previewVoxelValue.sourceVoxelValue =
-        operationData.segmentationVoxelValue;
+      preview.previewVoxelManager.sourceVoxelManager =
+        operationData.segmentationVoxelManager;
       // And use the preview data associated with this tracking object as needed
-      operationData.previewVoxelValue = preview.previewVoxelValue;
+      operationData.previewVoxelManager = preview.previewVoxelManager;
     }
 
     if (segmentIndex === null) {
@@ -81,8 +81,8 @@ export default {
 
   acceptPreview: (enabledElement, operationData: InitializedOperationData) => {
     const {
-      segmentationVoxelValue,
-      previewVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
+      previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
       preview,
     } = operationData;
@@ -90,15 +90,15 @@ export default {
       return;
     }
     const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
-    const tracking = previewVoxelValue;
+    const tracking = previewVoxelManager;
     if (!tracking || tracking.modifiedSlices.size === 0) {
       return;
     }
 
     const callback = ({ index }) => {
-      const oldValue = segmentationVoxelValue.getAtIndex(index);
+      const oldValue = segmentationVoxelManager.getAtIndex(index);
       if (oldValue === previewSegmentIndex) {
-        segmentationVoxelValue.setAtIndex(index, segmentIndex);
+        segmentationVoxelManager.setAtIndex(index, segmentIndex);
       }
     };
     tracking.forEach(callback, {});
@@ -111,20 +111,23 @@ export default {
   },
 
   rejectPreview: (enabledElement, operationData: InitializedOperationData) => {
-    const { previewVoxelValue, segmentationVoxelValue } = operationData;
-    if (previewVoxelValue.modifiedSlices.size === 0) {
+    const {
+      previewVoxelManager: previewVoxelManager,
+      segmentationVoxelManager: segmentationVoxelManager,
+    } = operationData;
+    if (previewVoxelManager.modifiedSlices.size === 0) {
       return;
     }
 
     const callback = ({ index, value }) => {
-      segmentationVoxelValue.setAtIndex(index, value);
+      segmentationVoxelManager.setAtIndex(index, value);
     };
-    previewVoxelValue.forEach(callback);
+    previewVoxelManager.forEach(callback);
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelValue.getArrayOfSlices()
+      previewVoxelManager.getArrayOfSlices()
     );
-    previewVoxelValue.clear();
+    previewVoxelManager.clear();
   },
 };

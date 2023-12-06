@@ -57,12 +57,15 @@ function getStrategyData({ operationData, viewport }) {
   return {
     segmentationImageData,
     segmentationScalarData,
-    segmentationVoxelValue: VoxelManager.volumeVoxelValue(
+    segmentationVoxelManager: VoxelManager.createVolumeVoxelManager(
       dimensions,
       segmentationScalarData
     ),
     imageScalarData,
-    imageVoxelValue: VoxelManager.volumeVoxelValue(dimensions, imageScalarData),
+    imageVoxelManager: VoxelManager.createVolumeVoxelManager(
+      dimensions,
+      imageScalarData
+    ),
   };
 }
 

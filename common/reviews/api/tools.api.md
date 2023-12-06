@@ -715,7 +715,6 @@ export class BrushTool extends BaseTool {
     protected getOperationData(element?: any): {
         points: any;
         segmentIndex: number;
-        previewSegmentIndex: any;
         previewColors: any;
         viewPlaneNormal: any;
         toolGroupId: string;
@@ -3894,7 +3893,6 @@ type Segmentation = {
     type: Enums.SegmentationRepresentations;
     label: string;
     activeSegmentIndex: number;
-    previewSegmentIndex?: number;
     segmentsLocked: Set<number>;
     cachedStats: {
         [key: string]: number;

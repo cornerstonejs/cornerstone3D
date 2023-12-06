@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { utilities as csUtils, cache } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
@@ -8,15 +8,9 @@ import {
 } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
-import type { OperationData, InitializedOperationData } from './BrushStrategy';
-import dynamicWithinThreshold from './utils/initializeDynamicThreshold';
+import type { InitializedOperationData } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
-import initializeIslandRemoval from './utils/initializeIslandRemoval';
-import initializeRegionFill from './utils/initializeRegionFill';
-import initializeSetValue from './utils/initializeSetValue';
-import initializePreview from './utils/initializePreview';
-import initializeThreshold from './utils/initializeThreshold';
-import initializeDetermineSegmentIndex from './utils/initializeDetermineSegmentIndex';
+import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -27,10 +21,10 @@ const initializeCircle = {
   ): void {
     const {
       points,
-      imageVoxelValue,
+      imageVoxelManager: imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -69,9 +63,9 @@ const initializeCircle = {
       ),
     ];
 
-    segmentationVoxelValue.boundsIJK = getBoundingBoxAroundShape(
+    segmentationVoxelManager.boundsIJK = getBoundingBoxAroundShape(
       ellipsoidCornersIJK,
-      segmentationVoxelValue.dimensions
+      segmentationVoxelManager.dimensions
     );
 
     // using circle as a form of ellipse
@@ -82,30 +76,30 @@ const initializeCircle = {
       zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
     };
 
-    imageVoxelValue.isInObject = (pointLPS /*, pointIJK */) =>
+    imageVoxelManager.isInObject = (pointLPS /*, pointIJK */) =>
       pointInEllipse(ellipseObj, pointLPS);
   },
 };
 
 const CIRCLE_STRATEGY = new BrushStrategy(
   'Circle',
-  initializeRegionFill,
-  initializeSetValue,
+  compositions.regionFill,
+  compositions.setValue,
   initializeCircle,
-  initializeDetermineSegmentIndex,
-  initializePreview
+  compositions.determineSegmentIndex,
+  compositions.preview
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   'CircleThreshold',
-  initializeRegionFill,
-  initializeSetValue,
+  compositions.regionFill,
+  compositions.setValue,
   initializeCircle,
-  initializeDetermineSegmentIndex,
-  dynamicWithinThreshold,
-  initializeThreshold,
-  initializePreview,
-  initializeIslandRemoval
+  compositions.determineSegmentIndex,
+  compositions.dynamicThreshold,
+  compositions.threshold,
+  compositions.preview,
+  compositions.islandRemoval
 );
 
 /**
@@ -130,10 +124,7 @@ const thresholdInsideCircle = CIRCLE_THRESHOLD_STRATEGY.strategyFunction;
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-export function fillOutsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
+export function fillOutsideCircle(): void {
   throw new Error('Not yet implemented');
 }
 

@@ -14,7 +14,7 @@ export default class VoxelManager<T> {
   // Provide direct access to the underlying data, if any
   public scalarData: VolumeScalarData;
   public map: Map<number, T>;
-  public sourceVoxelValue: VoxelManager<T>;
+  public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
 
@@ -97,14 +97,14 @@ export default class VoxelManager<T> {
   /**
    * Gets the voxel value at the given Point3 location.
    */
-  public getAt = ([i, j, k]) => this.getAtIJK(i, j, k);
+  public getAtIJKPoint = ([i, j, k]) => this.getAtIJK(i, j, k);
 
   /**
    * Sets the voxel value at the given point3 location to the specified value.
    * Records the z index modified.
    * Will record the index value if the VoxelManager is backed by a map.
    */
-  public setAt = ([i, j, k], v) => this.setAtIJK(i, j, k, v);
+  public setAtIJKPoint = ([i, j, k], v) => this.setAtIJK(i, j, k, v);
 
   /**
    * Gets the value at the given index.
@@ -190,52 +190,6 @@ export default class VoxelManager<T> {
   };
 
   /**
-   * Extends the bounds of this object to include the specified point
-   */
-  public static addBounds(bounds: BoundsIJK, point: Point3) {
-    bounds.forEach((bound, index) => {
-      bound[0] = Math.min(point[index], bound[0]);
-      bound[1] = Math.max(point[index], bound[1]);
-    });
-  }
-
-  /**
-   *  Creates a volume value accessor, based on a volume scalar data instance.
-   * This also works for image value accessors for single plane (k=0) accessors.
-   */
-  public static volumeVoxelValue(
-    dimensions: Point3,
-    scalarData
-  ): VoxelManager<number> {
-    const voxels = new VoxelManager(
-      dimensions,
-      (index) => scalarData[index],
-      (index, v) => {
-        const isChanged = scalarData[index] !== v;
-        scalarData[index] = v;
-        return isChanged;
-      }
-    );
-    voxels.scalarData = scalarData;
-    return voxels;
-  }
-
-  /**
-   * Creates a volume map value accessor.  This is initially empty and
-   * the map stores the index to value instances.
-   */
-  public static mapVoxelValue<T>(dimension: Point3): VoxelManager<T> {
-    const map = new Map<number, T>();
-    const voxelValue = new VoxelManager(
-      dimension,
-      map.get.bind(map),
-      (index, v) => map.set(index, v) && true
-    );
-    voxelValue.map = map;
-    return voxelValue;
-  }
-
-  /**
    * Clears any map specific data, as wellas the modified slices, points and
    * bounds.
    */
@@ -259,23 +213,68 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Creates an update remembering mapper
-   * Note the get/set are NOT symmetrical, the get returns the original value at
-   * the given position, or undefined, wherase the set applies the new value to
-   * the underlying sourceVoxelValue, setting the remember value to the old one
-   * if it is different.
+   * Extends the bounds of this object to include the specified point
    */
-  public static historyVoxelValue<T>(
-    sourceVoxelValue: VoxelManager<T>
+  public static addBounds(bounds: BoundsIJK, point: Point3) {
+    bounds.forEach((bound, index) => {
+      bound[0] = Math.min(point[index], bound[0]);
+      bound[1] = Math.max(point[index], bound[1]);
+    });
+  }
+
+  /**
+   *  Creates a volume value accessor, based on a volume scalar data instance.
+   * This also works for image value accessors for single plane (k=0) accessors.
+   */
+  public static createVolumeVoxelManager(
+    dimensions: Point3,
+    scalarData
+  ): VoxelManager<number> {
+    const voxels = new VoxelManager(
+      dimensions,
+      (index) => scalarData[index],
+      (index, v) => {
+        const isChanged = scalarData[index] !== v;
+        scalarData[index] = v;
+        return isChanged;
+      }
+    );
+    voxels.scalarData = scalarData;
+    return voxels;
+  }
+
+  /**
+   * Creates a volume map value accessor.  This is initially empty and
+   * the map stores the index to value instances.
+   * This is useful for sparse matrices containing pixel data.
+   */
+  public static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T> {
+    const map = new Map<number, T>();
+    const voxelManager = new VoxelManager(
+      dimension,
+      map.get.bind(map),
+      (index, v) => map.set(index, v) && true
+    );
+    voxelManager.map = map;
+    return voxelManager;
+  }
+
+  /**
+   * Creates a history remembering voxel manager.
+   * This will remember the original values in the voxels, and will apply the
+   * update to the underlying source voxel manager.
+   */
+  public static createHistoryVoxelManager<T>(
+    sourceVoxelManager: VoxelManager<T>
   ): VoxelManager<T> {
     const map = new Map<number, T>();
-    const { dimensions } = sourceVoxelValue;
-    const voxelValue = new VoxelManager(
+    const { dimensions } = sourceVoxelManager;
+    const voxelManager = new VoxelManager(
       dimensions,
       (index) => map.get(index),
       function (index, v) {
         if (!map.has(index)) {
-          const oldV = this.sourceVoxelValue.getAtIndex(index);
+          const oldV = this.sourceVoxelManager.getAtIndex(index);
           if (oldV === v) {
             // No-op
             return false;
@@ -284,13 +283,13 @@ export default class VoxelManager<T> {
         } else if (v === map.get(index)) {
           map.delete(index);
         }
-        this.sourceVoxelValue.setAtIndex(index, v);
+        this.sourceVoxelManager.setAtIndex(index, v);
       }
     );
-    voxelValue.map = map;
-    voxelValue.scalarData = sourceVoxelValue.scalarData;
-    voxelValue.sourceVoxelValue = sourceVoxelValue;
-    return voxelValue;
+    voxelManager.map = map;
+    voxelManager.scalarData = sourceVoxelManager.scalarData;
+    voxelManager.sourceVoxelManager = sourceVoxelManager;
+    return voxelManager;
   }
 }
 

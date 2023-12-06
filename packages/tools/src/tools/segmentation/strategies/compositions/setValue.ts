@@ -7,7 +7,7 @@ import type {
  * Creates a set value function which will apply the specified segmentIndex
  * to the given location.
  * If segmentIndex is null, it will clear the given segment index instead
- * This is all done through the previewVoxelValue so that values can be recorded
+ * This is all done through the previewVoxelManager so that values can be recorded
  * as changed, and the original values remembered.
  */
 export default {
@@ -15,15 +15,15 @@ export default {
     const {
       segmentsLocked,
       segmentIndex,
-      previewVoxelValue,
+      previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
-      segmentationVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
     } = operationData;
-    const existingValue = segmentationVoxelValue.getAtIndex(index);
+    const existingValue = segmentationVoxelManager.getAtIndex(index);
     if (segmentIndex === null) {
-      const oldValue = previewVoxelValue.getAtIndex(index);
+      const oldValue = previewVoxelManager.getAtIndex(index);
       if (oldValue !== undefined) {
-        previewVoxelValue.setAtIndex(index, oldValue);
+        previewVoxelManager.setAtIndex(index, oldValue);
       }
       return;
     }
@@ -33,9 +33,9 @@ export default {
     }
     // Correct for preview data getting into the image area and not accepted/rejected
     if (existingValue === previewSegmentIndex) {
-      if (previewVoxelValue.getAtIndex(index) === undefined) {
+      if (previewVoxelManager.getAtIndex(index) === undefined) {
         // Reset the value to ensure preview gets added to the indices
-        segmentationVoxelValue.setAtIndex(index, segmentIndex);
+        segmentationVoxelManager.setAtIndex(index, segmentIndex);
       } else {
         return;
       }
@@ -44,6 +44,6 @@ export default {
     // Now, just update the displayed value
     const useSegmentIndex = previewSegmentIndex ?? segmentIndex;
 
-    previewVoxelValue.setAtIndex(index, useSegmentIndex);
+    previewVoxelManager.setAtIndex(index, useSegmentIndex);
   },
 } as InitializerInstance;

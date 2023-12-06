@@ -1,11 +1,11 @@
 import BrushStrategy from './BrushStrategy';
 import { CIRCLE_STRATEGY } from './fillCircle';
-import initializeErase from './utils/initializeErase';
+import compositions from './compositions';
 
 const ERASE_CIRCLE_STRATEGY = new BrushStrategy(
   'EraseCircle',
-  initializeErase,
-  ...CIRCLE_STRATEGY.initializers
+  compositions.erase,
+  ...CIRCLE_STRATEGY.compositions
 );
 
 const eraseInsideCircle = ERASE_CIRCLE_STRATEGY.strategyFunction;

@@ -1,4 +1,4 @@
-import type { InitializedOperationData, Initializer } from '../BrushStrategy';
+import type { InitializedOperationData, Composition } from '../BrushStrategy';
 
 /**
  * Adds an isWithinThreshold to the operation data that checks that the
@@ -7,8 +7,11 @@ import type { InitializedOperationData, Initializer } from '../BrushStrategy';
  */
 export default {
   createIsInThreshold: (enabled, operationData: InitializedOperationData) => {
-    const { imageVoxelValue, strategySpecificConfiguration, segmentIndex } =
-      operationData;
+    const {
+      imageVoxelManager: imageVoxelManager,
+      strategySpecificConfiguration,
+      segmentIndex,
+    } = operationData;
     if (!strategySpecificConfiguration || segmentIndex === null) {
       return;
     }
@@ -16,7 +19,7 @@ export default {
       const { THRESHOLD, THRESHOLD_INSIDE_CIRCLE } =
         strategySpecificConfiguration;
 
-      const voxelValue = imageVoxelValue.getAtIndex(index);
+      const voxelValue = imageVoxelManager.getAtIndex(index);
       // Prefer the generic version of the THRESHOLD configuration, but fallback
       // to the older THRESHOLD_INSIDE_CIRCLE version.
       const { threshold } = THRESHOLD || THRESHOLD_INSIDE_CIRCLE || {};
@@ -26,4 +29,4 @@ export default {
       return threshold[0] <= voxelValue && voxelValue <= threshold[1];
     };
   },
-} as Initializer;
+} as Composition;

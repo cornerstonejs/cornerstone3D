@@ -138,6 +138,10 @@ const previewColors = {
   0: [255, 255, 255, 128],
   1: [0, 255, 255, 255],
 };
+const preview = {
+  enabled: true,
+  previewColors,
+};
 
 // ============================= //
 addDropdownToToolbar({
@@ -311,7 +315,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
-      previewColors,
+      preview,
       strategySpecificConfiguration: {
         useCenterSegmentIndex: true,
       },
@@ -322,7 +326,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularEraser,
-      previewColors,
+      preview,
     }
   );
   toolGroup.addToolInstance(
@@ -330,7 +334,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereBrush,
-      previewColors,
+      preview,
     }
   );
   toolGroup.addToolInstance(
@@ -375,7 +379,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdCircle,
-      previewColors,
+      preview,
       strategySpecificConfiguration: {
         useCenterSegmentIndex: true,
         THRESHOLD: { ...thresholdArgs },

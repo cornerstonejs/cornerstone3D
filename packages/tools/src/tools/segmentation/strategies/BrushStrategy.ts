@@ -2,10 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { cache, utilities as csUtils } from '@cornerstonejs/core';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import initializeSetValue from './utils/initializeSetValue';
-import initializePreview from './utils/initializePreview';
-import initializeRegionFill from './utils/initializeRegionFill';
-import initializeThreshold from './utils/initializeThreshold';
+import compositions from './compositions';
 import { getStrategyData } from './utils/getStrategyData';
 import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 import type {
@@ -24,10 +21,10 @@ export type InitializedOperationData = OperationData & {
   centerIJK?: Types.Point3;
   centerWorld: Types.Point3;
   viewport: Types.IViewport;
-  imageVoxelValue: csUtils.VoxelManager<number>;
-  segmentationVoxelValue: csUtils.VoxelManager<number>;
+  imageVoxelManager: csUtils.VoxelManager<number>;
+  segmentationVoxelManager: csUtils.VoxelManager<number>;
   segmentationImageData: ImageData;
-  previewVoxelValue: csUtils.VoxelManager<number>;
+  previewVoxelManager: csUtils.VoxelManager<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
@@ -50,7 +47,7 @@ export type InitializerInstance = {
 
 export type InitializerFunction = () => InitializerInstance;
 
-export type Initializer = InitializerFunction | InitializerInstance;
+export type Composition = InitializerFunction | InitializerInstance;
 
 /**
  * A brush strategy is a composition of individual parts which together form
@@ -82,12 +79,7 @@ export default class BrushStrategy {
    * Provide some default initializers for various situations, mostly for
    * external use to allow defining new brushes
    */
-  public static initializers = {
-    initializePreview,
-    initializeSetValue,
-    initializeThreshold,
-    initializeRegionFill,
-  };
+  public static COMPOSITIONS = compositions;
 
   protected static childFunctions = {
     initDown: addListMethod('initDown', 'createInitialized'),
@@ -101,10 +93,10 @@ export default class BrushStrategy {
     preview: addSingletonMethod('preview'),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
-    initializers: null,
+    compositions: null,
   };
 
-  public initializers: Initializer[];
+  public compositions: Composition[];
   public strategyFunction: (enabledElement, operationData) => unknown;
 
   protected configurationName: string;
@@ -113,9 +105,9 @@ export default class BrushStrategy {
   protected _acceptPreview: [];
   protected _initDown = [];
 
-  constructor(name, ...initializers: Initializer[]) {
+  constructor(name, ...initializers: Composition[]) {
     this.configurationName = name;
-    this.initializers = initializers;
+    this.compositions = initializers;
     initializers.forEach((initializer) => {
       const result =
         typeof initializer === 'function' ? initializer() : initializer;
@@ -162,17 +154,20 @@ export default class BrushStrategy {
 
     this._fill.forEach((func) => func(enabledElement, initializedData));
 
-    const { segmentationVoxelValue, previewVoxelValue, previewSegmentIndex } =
-      initializedData;
+    const {
+      segmentationVoxelManager,
+      previewVoxelManager,
+      previewSegmentIndex,
+    } = initializedData;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelValue.getArrayOfSlices()
+      segmentationVoxelManager.getArrayOfSlices()
     );
 
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
-    if (!previewSegmentIndex || !previewVoxelValue.modifiedSlices.size) {
+    if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
       return null;
     }
     // Use the original initialized data set to preserve preview info
@@ -208,21 +203,24 @@ export default class BrushStrategy {
       }
     }
 
-    const { imageVoxelValue, segmentationVoxelValue, segmentationImageData } =
-      data;
-    const previewVoxelValue =
-      operationData.preview?.previewVoxelValue ||
-      VoxelManager.historyVoxelValue(segmentationVoxelValue);
+    const {
+      imageVoxelManager,
+      segmentationVoxelManager,
+      segmentationImageData,
+    } = data;
+    const previewVoxelManager =
+      operationData.preview?.previewVoxelManager ||
+      VoxelManager.createHistoryVoxelManager(segmentationVoxelManager);
 
     const previewSegmentIndex = operationData.previewColors ? 255 : undefined;
     const initializedData: InitializedOperationData = {
       ...operationData,
       previewSegmentIndex,
       enabledElement,
-      imageVoxelValue,
-      segmentationVoxelValue,
+      imageVoxelManager,
+      segmentationVoxelManager,
       segmentationImageData,
-      previewVoxelValue,
+      previewVoxelManager,
       viewport,
 
       centerWorld: null,

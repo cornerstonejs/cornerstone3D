@@ -9,13 +9,8 @@ import {
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { OperationData, InitializedOperationData } from './BrushStrategy';
-import dynamicWithinThreshold from './utils/initializeDynamicThreshold';
 import type { CanvasCoordinates } from '../../../types';
-import initializeIslandRemoval from './utils/initializeIslandRemoval';
-import initializeRegionFill from './utils/initializeRegionFill';
-import initializeSetValue from './utils/initializeSetValue';
-import initializePreview from './utils/initializePreview';
-import initializeThreshold from './utils/initializeThreshold';
+import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -26,10 +21,10 @@ const initializeSphere = {
   ): void {
     const {
       points,
-      imageVoxelValue,
+      imageVoxelManager: imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -81,9 +76,9 @@ const initializeSphere = {
       ),
     ];
 
-    segmentationVoxelValue.boundsIJK = getBoundingBoxAroundShape(
+    segmentationVoxelManager.boundsIJK = getBoundingBoxAroundShape(
       ellipsoidCornersIJK,
-      segmentationVoxelValue.dimensions
+      segmentationVoxelManager.dimensions
     );
 
     // using circle as a form of ellipse
@@ -94,16 +89,18 @@ const initializeSphere = {
       zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
     };
 
-    imageVoxelValue.isInObject = (pointLPS /*, pointIJK */) =>
+    imageVoxelManager.isInObject = (pointLPS /*, pointIJK */) =>
       pointInEllipse(ellipseObj, pointLPS);
   },
 };
 
 const SPHERE_STRATEGY = new BrushStrategy(
   'Sphere',
-  initializeRegionFill,
-  initializeSetValue,
-  initializeSphere
+  compositions.regionFill,
+  compositions.setValue,
+  initializeSphere,
+  compositions.determineSegmentIndex,
+  compositions.preview
 );
 
 /**
@@ -116,13 +113,10 @@ const fillInsideSphere = SPHERE_STRATEGY.strategyFunction;
 
 const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   'SphereThreshold',
-  initializeRegionFill,
-  initializeSetValue,
-  initializeSphere,
-  dynamicWithinThreshold,
-  initializeThreshold,
-  initializePreview,
-  initializeIslandRemoval
+  ...SPHERE_STRATEGY.compositions,
+  compositions.dynamicThreshold,
+  compositions.threshold,
+  compositions.islandRemoval
 );
 
 /**
@@ -140,16 +134,8 @@ const thresholdInsideSphere = SPHERE_THRESHOLD_STRATEGY.strategyFunction;
  * @param enabledElement - The element that is enabled and selected.
  * @param operationData - OperationData
  */
-export function fillOutsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
+export function fillOutsideSphere(): void {
   throw new Error('fill outside sphere not implemented');
 }
 
-export {
-  SPHERE_STRATEGY,
-  SPHERE_THRESHOLD_STRATEGY,
-  fillInsideSphere,
-  thresholdInsideSphere,
-};
+export { fillInsideSphere, thresholdInsideSphere, SPHERE_STRATEGY };

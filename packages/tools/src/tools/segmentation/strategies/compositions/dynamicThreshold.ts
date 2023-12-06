@@ -17,8 +17,8 @@ export default {
     const {
       centerIJK,
       strategySpecificConfiguration,
-      segmentationVoxelValue,
-      imageVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
+      imageVoxelManager: imageVoxelManager,
       segmentIndex,
     } = operationData;
     const { THRESHOLD } = strategySpecificConfiguration;
@@ -27,7 +27,7 @@ export default {
       return;
     }
 
-    const { boundsIJK } = segmentationVoxelValue;
+    const { boundsIJK } = segmentationVoxelManager;
     const { threshold: oldThreshold, delta = 0 } = THRESHOLD;
     const useDelta = oldThreshold ? 0 : delta;
     const nestedBounds = boundsIJK.map((ijk, idx) => {
@@ -43,7 +43,7 @@ export default {
       threshold[0] = Math.min(value, threshold[0]);
       threshold[1] = Math.max(value, threshold[1]);
     };
-    imageVoxelValue.forEach(callback, { boundsIJK: nestedBounds });
+    imageVoxelManager.forEach(callback, { boundsIJK: nestedBounds });
 
     operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
   },

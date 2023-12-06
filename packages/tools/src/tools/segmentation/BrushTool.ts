@@ -108,16 +108,19 @@ class BrushTool extends BaseTool {
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
         brushSize: 25,
-        // No preview by default - define an empty map to use default colors
-        previewColors: undefined,
-        // The time before showing a preview
-        previewTimeMs: 250,
-        // The distance to move to show a preview before preview time expired
-        previewMoveDistance: 8,
-        // The distance to drag before being considered a drag rather than click
-        dragMoveDistance: 4,
-        // The time to consider a mouse click a drag when moved less than dragMoveDistance
-        dragTimeMs: 500,
+        preview: {
+          // Have to enable the preview to use this
+          enabled: false,
+          previewColors: {},
+          // The time before showing a preview
+          previewTimeMs: 250,
+          // The distance to move to show a preview before preview time expired
+          previewMoveDistance: 8,
+          // The distance to drag before being considered a drag rather than click
+          dragMoveDistance: 4,
+          // The time to consider a mouse click a drag when moved less than dragMoveDistance
+          dragTimeMs: 500,
+        },
         // Whether to show a center circle/position.  Set to null to not show
         centerRadius: 2,
       },
@@ -285,12 +288,11 @@ class BrushTool extends BaseTool {
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
-      const { previewColors } = this.configuration;
-      if (!previewColors) {
+      if (!this.configuration.preview.enabled) {
         return;
       }
       const { previewTimeMs, previewMoveDistance, dragMoveDistance } =
-        this.configuration;
+        this.configuration.preview;
       const { currentPoints, element } = evt.detail;
       const { canvas } = currentPoints;
 
@@ -464,8 +466,9 @@ class BrushTool extends BaseTool {
       ...editData,
       points: data?.handles?.points,
       segmentIndex,
-      previewSegmentIndex: this.configuration.previewSegmentIndex,
-      previewColors: this.configuration.previewColors,
+      previewColors: this.configuration.preview.enabled
+        ? this.configuration.preview.previewColors
+        : null,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,

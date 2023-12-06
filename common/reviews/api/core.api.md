@@ -3627,6 +3627,12 @@ class VoxelManager<T> {
     // (undocumented)
     clear(): void;
     // (undocumented)
+    static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
+    static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
+    // (undocumented)
+    static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
+    // (undocumented)
     readonly dimensions: Point3;
     // (undocumented)
     forEach: (callback: any, options?: any) => void;
@@ -3637,9 +3643,9 @@ class VoxelManager<T> {
     // (undocumented)
     getArrayOfSlices(): number[];
     // (undocumented)
-    getAt: ([i, j, k]: [any, any, any]) => T;
-    // (undocumented)
     getAtIJK: (i: any, j: any, k: any) => T;
+    // (undocumented)
+    getAtIJKPoint: ([i, j, k]: [any, any, any]) => T;
     // (undocumented)
     getAtIndex: (index: any) => T;
     // (undocumented)
@@ -3649,13 +3655,9 @@ class VoxelManager<T> {
     // (undocumented)
     getPoints(): Point3[];
     // (undocumented)
-    static historyVoxelValue<T>(sourceVoxelValue: VoxelManager<T>): VoxelManager<T>;
-    // (undocumented)
     isInObject: (pointIPS: any, pointIJK: any) => boolean;
     // (undocumented)
     map: Map<number, T>;
-    // (undocumented)
-    static mapVoxelValue<T>(dimension: Point3): VoxelManager<T>;
     // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
@@ -3665,19 +3667,17 @@ class VoxelManager<T> {
     // (undocumented)
     _set: (index: number, v: T) => boolean | void;
     // (undocumented)
-    setAt: ([i, j, k]: [any, any, any], v: any) => void;
-    // (undocumented)
     setAtIJK: (i: number, j: number, k: number, v: any) => void;
+    // (undocumented)
+    setAtIJKPoint: ([i, j, k]: [any, any, any], v: any) => void;
     // (undocumented)
     setAtIndex: (index: any, v: any) => void;
     // (undocumented)
-    sourceVoxelValue: VoxelManager<T>;
+    sourceVoxelManager: VoxelManager<T>;
     // (undocumented)
     toIJK(index: number): Point3;
     // (undocumented)
     toIndex(ijk: Point3): number;
-    // (undocumented)
-    static volumeVoxelValue(dimensions: Point3, scalarData: any): VoxelManager<number>;
     // (undocumented)
     width: number;
 }

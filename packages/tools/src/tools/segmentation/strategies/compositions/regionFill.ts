@@ -15,9 +15,9 @@ export default {
     const {
       segmentsLocked,
       segmentationImageData,
-      segmentationVoxelValue,
-      previewVoxelValue,
-      imageVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
+      previewVoxelManager: previewVoxelManager,
+      imageVoxelManager: imageVoxelManager,
       brushStrategy,
       centerIJK,
     } = operationData;
@@ -39,11 +39,11 @@ export default {
 
     pointInShapeCallback(
       segmentationImageData as unknown,
-      imageVoxelValue.isInObject,
+      imageVoxelManager.isInObject,
       callback,
-      segmentationVoxelValue.boundsIJK
+      segmentationVoxelManager.boundsIJK
     );
 
-    previewVoxelValue.addPoint(centerIJK);
+    previewVoxelManager.addPoint(centerIJK);
   },
 } as InitializerInstance;

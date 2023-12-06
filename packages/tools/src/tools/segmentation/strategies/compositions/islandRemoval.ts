@@ -12,8 +12,8 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
 export default {
   completeUp: (enabled, operationData: InitializedOperationData) => {
     const {
-      previewVoxelValue,
-      segmentationVoxelValue,
+      previewVoxelManager: previewVoxelManager,
+      segmentationVoxelManager: segmentationVoxelManager,
       strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,
@@ -23,7 +23,7 @@ export default {
       return;
     }
 
-    const clickedPoints = previewVoxelValue.getPoints();
+    const clickedPoints = previewVoxelManager.getPoints();
     if (!clickedPoints?.length) {
       return;
     }
@@ -34,7 +34,7 @@ export default {
 
     // Ensure the bounds includes the clicked points, otherwise the fill
     // fails.
-    const boundsIJK = previewVoxelValue
+    const boundsIJK = previewVoxelManager
       .getBoundsIJK()
       .map((bound, i) => [
         Math.min(bound[0], ...clickedPoints.map((point) => point[i])),
@@ -59,16 +59,16 @@ export default {
       ) {
         return -1;
       }
-      const index = segmentationVoxelValue.toIndex([i, j, k]);
+      const index = segmentationVoxelManager.toIndex([i, j, k]);
       if (floodedSet.has(index)) {
         // Values already flooded
         return -2;
       }
-      const oldVal = segmentationVoxelValue.getAtIndex(index);
+      const oldVal = segmentationVoxelManager.getAtIndex(index);
       const isIn =
         oldVal === previewSegmentIndex || oldVal === segmentIndex ? 1 : 0;
       if (!isIn) {
-        segmentationVoxelValue.addPoint(index);
+        segmentationVoxelManager.addPoint(index);
       }
       // 1 is values that are preview/segment index, 0 is everything else
       return isIn;
@@ -77,12 +77,12 @@ export default {
     let floodedCount = 0;
 
     const onFlood = (i, j, k) => {
-      const index = segmentationVoxelValue.toIndex([i, j, k]);
+      const index = segmentationVoxelManager.toIndex([i, j, k]);
       if (floodedSet.has(index)) {
         return;
       }
       // Fill this point with an indicator that this point is connected
-      previewVoxelValue.setAtIJK(i, j, k, previewSegmentIndex);
+      previewVoxelManager.setAtIJK(i, j, k, previewSegmentIndex);
       floodedSet.add(index);
       floodedCount++;
     };
@@ -101,20 +101,20 @@ export default {
     let previewCount = 0;
 
     const callback = ({ index, pointIJK, value: trackValue }) => {
-      const value = segmentationVoxelValue.getAtIndex(index);
+      const value = segmentationVoxelManager.getAtIndex(index);
       if (floodedSet.has(index)) {
         previewCount++;
         const newValue =
           trackValue === segmentIndex ? segmentIndex : previewSegmentIndex;
-        previewVoxelValue.setAt(pointIJK, newValue);
+        previewVoxelManager.setAtIJKPoint(pointIJK, newValue);
       } else if (value === previewSegmentIndex) {
         clearedCount++;
         const newValue = trackValue ?? 0;
-        previewVoxelValue.setAt(pointIJK, newValue);
+        previewVoxelManager.setAtIJKPoint(pointIJK, newValue);
       }
     };
 
-    previewVoxelValue.forEach(callback, {});
+    previewVoxelManager.forEach(callback, {});
 
     if (floodedCount - previewCount !== 0) {
       console.warn(
@@ -128,7 +128,7 @@ export default {
         floodedCount - previewCount
       );
     }
-    const islandMap = new Set(segmentationVoxelValue.points || []);
+    const islandMap = new Set(segmentationVoxelManager.points || []);
     floodedSet.clear();
 
     for (const index of islandMap.keys()) {
@@ -138,7 +138,7 @@ export default {
       let isInternal = true;
       const internalSet = new Set<number>();
       const onFloodInternal = (i, j, k) => {
-        const floodIndex = previewVoxelValue.toIndex([i, j, k]);
+        const floodIndex = previewVoxelManager.toIndex([i, j, k]);
         floodedSet.add(floodIndex);
         if (
           (boundsIJK[0][0] !== boundsIJK[0][1] &&
@@ -154,7 +154,7 @@ export default {
           internalSet.add(floodIndex);
         }
       };
-      const pointIJK = previewVoxelValue.toIJK(index);
+      const pointIJK = previewVoxelManager.toIJK(index);
       if (getter(...pointIJK) !== 0) {
         continue;
       }
@@ -164,13 +164,13 @@ export default {
       });
       if (isInternal) {
         for (const index of internalSet) {
-          previewVoxelValue.setAtIndex(index, previewSegmentIndex);
+          previewVoxelManager.setAtIndex(index, previewSegmentIndex);
         }
       }
     }
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelValue.getArrayOfSlices()
+      previewVoxelManager.getArrayOfSlices()
     );
   },
 };

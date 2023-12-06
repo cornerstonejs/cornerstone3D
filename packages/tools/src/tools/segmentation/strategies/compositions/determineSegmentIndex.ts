@@ -36,10 +36,10 @@ export default {
     const {
       segmentIndex,
       previewSegmentIndex,
-      segmentationVoxelValue,
+      segmentationVoxelManager: segmentationVoxelManager,
       centerIJK,
       strategySpecificConfiguration,
-      imageVoxelValue,
+      imageVoxelManager: imageVoxelManager,
       segmentationImageData,
       preview,
     } = operationData;
@@ -58,16 +58,16 @@ export default {
 
     pointInShapeCallback(
       segmentationImageData as unknown,
-      imageVoxelValue.isInObject,
+      imageVoxelManager.isInObject,
       callback,
-      segmentationVoxelValue.boundsIJK
+      segmentationVoxelManager.boundsIJK
     );
 
     if (!hasSegmentIndex && !hasPreviewIndex) {
       return;
     }
 
-    let existingValue = segmentationVoxelValue.getAt(centerIJK);
+    let existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
     if (existingValue === previewSegmentIndex) {
       if (preview) {
         existingValue = preview.segmentIndex;

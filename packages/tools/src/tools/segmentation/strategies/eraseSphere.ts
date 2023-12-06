@@ -1,13 +1,13 @@
 import BrushStrategy from './BrushStrategy';
 import { SPHERE_STRATEGY } from './fillSphere';
-import initializeErase from './utils/initializeErase';
+import compositions from './compositions';
 
-const ERASE_CIRCLE_STRATEGY = new BrushStrategy(
+const ERASE_SPHERE_STRATEGY = new BrushStrategy(
   'EraseSphere',
-  initializeErase,
-  ...SPHERE_STRATEGY.initializers
+  compositions.erase,
+  ...SPHERE_STRATEGY.compositions
 );
 
-const eraseInsideSphere = ERASE_CIRCLE_STRATEGY.strategyFunction;
+const eraseInsideSphere = ERASE_SPHERE_STRATEGY.strategyFunction;
 
 export { eraseInsideSphere };
