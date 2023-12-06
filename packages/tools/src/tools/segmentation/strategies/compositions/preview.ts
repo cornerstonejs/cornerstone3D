@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import type { InitializedOperationData } from '../BrushStrategy';
+import type { Composition, InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
 
@@ -12,8 +12,8 @@ import { config as segmentationConfig } from '../../../../stateManagement/segmen
  */
 export default {
   preview: function (enabledElement, operationData: InitializedOperationData) {
-    const { previewColors } = operationData;
-    if (!previewColors) {
+    const { previewColors, strategySpecificConfiguration } = operationData;
+    if (!previewColors || !strategySpecificConfiguration) {
       return;
     }
 
@@ -21,7 +21,7 @@ export default {
     if (operationData.preview) {
       delete operationData.preview;
     }
-    delete operationData.strategySpecificConfiguration.centerSegmentIndex;
+    delete strategySpecificConfiguration.centerSegmentIndex;
 
     // Now generate a normal preview as though the user had clicked, filled, released
     this.initDown?.(enabledElement, operationData);
@@ -130,4 +130,4 @@ export default {
     );
     previewVoxelManager.clear();
   },
-};
+} as Composition;

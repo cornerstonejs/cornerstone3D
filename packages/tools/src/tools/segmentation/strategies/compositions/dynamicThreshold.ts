@@ -1,4 +1,4 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type { Composition, InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
 
 /**
@@ -55,4 +55,4 @@ export default {
     }
     strategySpecificConfiguration.THRESHOLD.threshold = null;
   },
-};
+} as Composition;

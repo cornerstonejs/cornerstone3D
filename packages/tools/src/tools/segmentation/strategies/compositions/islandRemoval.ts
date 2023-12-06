@@ -1,4 +1,4 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type { Composition, InitializedOperationData } from '../BrushStrategy';
 import floodFill from '../../../../utilities/segmentation/floodFill';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 
@@ -173,4 +173,4 @@ export default {
       previewVoxelManager.getArrayOfSlices()
     );
   },
-};
+} as Composition;

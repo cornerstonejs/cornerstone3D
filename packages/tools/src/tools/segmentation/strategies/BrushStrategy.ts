@@ -5,6 +5,7 @@ import { triggerSegmentationDataModified } from '../../../stateManagement/segmen
 import compositions from './compositions';
 import { getStrategyData } from './utils/getStrategyData';
 import { isVolumeSegmentation } from './utils/stackVolumeCheck';
+import { StrategyCallbacks } from '../../../enums';
 import type {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
@@ -37,13 +38,7 @@ export type StrategyFunction = (
   operationData: InitializedOperationData
 ) => unknown;
 
-export type InitializerInstance = {
-  initDown?: StrategyFunction;
-  completeUp?: StrategyFunction;
-  fill?: StrategyFunction;
-  createInitialized?: StrategyFunction;
-  createIsInThreshold?: StrategyFunction;
-};
+export type InitializerInstance = Record<StrategyCallbacks, StrategyFunction>;
 
 export type InitializerFunction = () => InitializerInstance;
 
@@ -82,15 +77,29 @@ export default class BrushStrategy {
   public static COMPOSITIONS = compositions;
 
   protected static childFunctions = {
-    initDown: addListMethod('initDown', 'createInitialized'),
-    completeUp: addListMethod('completeUp', 'createInitialized'),
-    fill: addListMethod('fill'),
-    createInitialized: addListMethod('createInitialized'),
-    createIsInThreshold: addSingletonMethod('createIsInThreshold'),
-    acceptPreview: addListMethod('acceptPreview', 'createInitialized'),
-    rejectPreview: addListMethod('rejectPreview', 'createInitialized'),
-    setValue: addSingletonMethod('setValue'),
-    preview: addSingletonMethod('preview'),
+    [StrategyCallbacks.startStrategy]: addListMethod(
+      'initDown',
+      'createInitialized'
+    ),
+    [StrategyCallbacks.finishStrategy]: addListMethod(
+      'completeUp',
+      'createInitialized'
+    ),
+    [StrategyCallbacks.fill]: addListMethod('fill'),
+    [StrategyCallbacks.initialize]: addListMethod('createInitialized'),
+    [StrategyCallbacks.createIsInThreshold]: addSingletonMethod(
+      'createIsInThreshold'
+    ),
+    [StrategyCallbacks.acceptPreview]: addListMethod(
+      'acceptPreview',
+      'createInitialized'
+    ),
+    [StrategyCallbacks.rejectPreview]: addListMethod(
+      'rejectPreview',
+      'createInitialized'
+    ),
+    [StrategyCallbacks.INTERNAL_setValue]: addSingletonMethod('setValue'),
+    [StrategyCallbacks.preview]: addSingletonMethod('preview'),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -212,10 +221,9 @@ export default class BrushStrategy {
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createHistoryVoxelManager(segmentationVoxelManager);
 
-    const previewSegmentIndex = operationData.previewColors ? 255 : undefined;
     const initializedData: InitializedOperationData = {
+      previewSegmentIndex: 255,
       ...operationData,
-      previewSegmentIndex,
       enabledElement,
       imageVoxelManager,
       segmentationVoxelManager,

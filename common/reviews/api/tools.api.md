@@ -547,7 +547,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: 'initDown' | 'completeUp' | 'rejectPreview' | 'acceptPreview' | 'preview'): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -1718,7 +1718,8 @@ declare namespace Enums {
         AnnotationStyleStates,
         Events,
         SegmentationRepresentations,
-        Swipe
+        Swipe,
+        StrategyCallbacks
     }
 }
 export { Enums }
@@ -4436,6 +4437,30 @@ type Statistics = {
 
 // @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
+
+// @public (undocumented)
+enum StrategyCallbacks {
+    // (undocumented)
+    acceptPreview = "acceptPreview",
+    // (undocumented)
+    createIsInThreshold = "createIsInThreshold",
+    // (undocumented)
+    fill = "fill",
+    // (undocumented)
+    finishStrategy = "completeUp",
+    // (undocumented)
+    initialize = "createInitialized",
+    // (undocumented)
+    INTERNAL_setValue = "setValue",
+    // (undocumented)
+    preview = "preview",
+    // (undocumented)
+    rejectPreview = "rejectPreview",
+    // (undocumented)
+    startStrategy = "initDown",
+    // (undocumented)
+    strategyFunction = "strategyFunction"
+}
 
 // @public (undocumented)
 type StyleConfig = {

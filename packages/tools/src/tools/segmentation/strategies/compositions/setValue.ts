@@ -1,7 +1,4 @@
-import type {
-  InitializedOperationData,
-  InitializerInstance,
-} from '../BrushStrategy';
+import type { Composition, InitializedOperationData } from '../BrushStrategy';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -46,4 +43,4 @@ export default {
 
     previewVoxelManager.setAtIndex(index, useSegmentIndex);
   },
-} as InitializerInstance;
+} as Composition;

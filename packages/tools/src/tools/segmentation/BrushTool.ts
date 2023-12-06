@@ -19,7 +19,12 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { Events, ToolModes, SegmentationRepresentations } from '../../enums';
+import {
+  Events,
+  ToolModes,
+  SegmentationRepresentations,
+  StrategyCallbacks,
+} from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -260,7 +265,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      'initDown'
+      StrategyCallbacks.startStrategy
     );
 
     return true;
@@ -332,7 +337,7 @@ class BrushTool extends BaseTool {
     this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
-      'preview'
+      StrategyCallbacks.preview
     );
   };
 
@@ -543,7 +548,7 @@ class BrushTool extends BaseTool {
   /**
    * The end callback call is made when the mouse is released.  This will
    * perform another active strategy render event to render the final position.
-   * As well, the completeUp callback will be made during this time.
+   * As well, the finish strategy callback will be made during this time.
    */
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
@@ -568,7 +573,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       operationData,
-      'completeUp'
+      StrategyCallbacks.finishStrategy
     );
 
     if (!this._previewData.isDrag) {
@@ -587,7 +592,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      'rejectPreview'
+      StrategyCallbacks.rejectPreview
     );
     this._previewData.preview = null;
     this._previewData.isDrag = false;
@@ -605,7 +610,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      'acceptPreview'
+      StrategyCallbacks.acceptPreview
     );
     this._previewData.isDrag = false;
     this._previewData.preview = null;

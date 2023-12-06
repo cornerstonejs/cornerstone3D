@@ -1,4 +1,4 @@
-import type { InitializedOperationData } from '../BrushStrategy';
+import type { Composition, InitializedOperationData } from '../BrushStrategy';
 
 /**
  * Sets up a preview to erase/clear the segment values.
@@ -10,4 +10,4 @@ export default {
   ) => {
     operationData.segmentIndex = 0;
   },
-};
+} as Composition;

@@ -8,13 +8,17 @@ import {
 } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
-import type { OperationData, InitializedOperationData } from './BrushStrategy';
+import type {
+  OperationData,
+  InitializedOperationData,
+  Composition,
+} from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
 import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
 
-const initializeSphere = {
+const sphereComposition = {
   createInitialized: function intializeSphere(
     enabledElement,
     operationData: InitializedOperationData
@@ -92,13 +96,13 @@ const initializeSphere = {
     imageVoxelManager.isInObject = (pointLPS /*, pointIJK */) =>
       pointInEllipse(ellipseObj, pointLPS);
   },
-};
+} as Composition;
 
 const SPHERE_STRATEGY = new BrushStrategy(
   'Sphere',
   compositions.regionFill,
   compositions.setValue,
-  initializeSphere,
+  sphereComposition,
   compositions.determineSegmentIndex,
   compositions.preview
 );

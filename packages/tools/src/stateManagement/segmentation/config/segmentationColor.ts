@@ -98,11 +98,7 @@ function getColorForSegmentIndex(
   const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
   let colorValue = colorLUT[segmentIndex];
   if (!colorValue) {
-    if (
-      segmentIndex < 0 ||
-      segmentIndex > 65535 ||
-      Math.floor(segmentIndex) !== segmentIndex
-    ) {
+    if (typeof segmentIndex !== 'number') {
       throw new Error(`Can't create colour for LUT index ${segmentIndex}`);
     }
     colorValue = colorLUT[segmentIndex] = [0, 0, 0, 0];

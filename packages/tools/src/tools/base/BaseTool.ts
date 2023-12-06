@@ -6,6 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
+import StrategyCallbacks from '../../enums/StrategyCallbacks';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
 export interface IBaseTool {
@@ -98,17 +99,14 @@ abstract class BaseTool implements IBaseTool {
    *
    * @param enabledElement - The element that is being operated on.
    * @param operationData - The data that needs to be passed to the strategy.
+   * @param callbackType - the type of the callback
+   *
    * @returns The result of the strategy.
    */
   public applyActiveStrategyCallback(
     enabledElement: Types.IEnabledElement,
     operationData: unknown,
-    callbackType:
-      | 'initDown'
-      | 'completeUp'
-      | 'rejectPreview'
-      | 'acceptPreview'
-      | 'preview'
+    callbackType: StrategyCallbacks | string
   ): any {
     const { strategies, activeStrategy } = this.configuration;
     return strategies[activeStrategy][callbackType]?.call(

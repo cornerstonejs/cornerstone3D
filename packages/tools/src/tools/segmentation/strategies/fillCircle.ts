@@ -8,14 +8,15 @@ import {
 } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
-import type { InitializedOperationData } from './BrushStrategy';
+import type { Composition, InitializedOperationData } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
+import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
 
 const initializeCircle = {
-  createInitialized: function initializeCircle(
+  [StrategyCallbacks.initialize]: function initializeCircle(
     enabled,
     operationData: InitializedOperationData
   ): void {
@@ -79,7 +80,7 @@ const initializeCircle = {
     imageVoxelManager.isInObject = (pointLPS /*, pointIJK */) =>
       pointInEllipse(ellipseObj, pointLPS);
   },
-};
+} as Composition;
 
 const CIRCLE_STRATEGY = new BrushStrategy(
   'Circle',
