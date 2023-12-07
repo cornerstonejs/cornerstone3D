@@ -232,13 +232,11 @@ class RenderingEngine implements IRenderingEngine {
       this._clearAnimationFrame();
     }
 
-    // 8. Resize the offScreen canvas to accommodate for the new size (after removal)
-    // Note: Resize should not reset pan and zoom when disabling an element.
-    // This is because we are only resizing the offscreen canvas to deal with the element
-    // which was removed, and do not wish to alter the current state of any other currently enabled element
-    const immediate = true;
-    const keepCamera = true;
-    this.resize(immediate, keepCamera);
+    // Note: we should not call resize at the end of here, the reason is that
+    // in batch rendering, we might disable a viewport and enable others at the same
+    // time which would interfere with each other. So we just let the enable
+    // to call resize, and also resize getting called by applications on the
+    // DOM resize event.
   }
 
   /**
