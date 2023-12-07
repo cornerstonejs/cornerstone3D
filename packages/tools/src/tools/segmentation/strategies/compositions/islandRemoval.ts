@@ -11,7 +11,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
  * colours connected to the clicked/dragged over points.
  */
 export default {
-  [StrategyCallbacks.finishStrategy]: (
+  [StrategyCallbacks.onInteractionEnd]: (
     operationData: InitializedOperationData
   ) => {
     const {

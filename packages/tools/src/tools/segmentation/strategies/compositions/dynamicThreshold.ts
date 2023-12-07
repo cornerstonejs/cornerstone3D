@@ -21,7 +21,7 @@ export default {
     } = operationData;
     const { THRESHOLD } = strategySpecificConfiguration;
 
-    if (!THRESHOLD?.isDynamic || !centerIJK || segmentIndex === null) {
+    if (!THRESHOLD?.isDynamic || !centerIJK || !segmentIndex) {
       return;
     }
 
@@ -46,7 +46,7 @@ export default {
     operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
   },
   // Setup a clear threshold value on mouse/touch down
-  [StrategyCallbacks.startStrategy]: (
+  [StrategyCallbacks.onInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
     const { strategySpecificConfiguration, preview } = operationData;

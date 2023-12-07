@@ -16,9 +16,7 @@ import compositions from './compositions';
 const { transformWorldToIndex } = csUtils;
 
 const initializeCircle = {
-  [StrategyCallbacks.initialize]: function initializeCircle(
-    operationData: InitializedOperationData
-  ): void {
+  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
     const {
       points,
       imageVoxelManager: imageVoxelManager,

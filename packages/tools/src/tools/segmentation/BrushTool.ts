@@ -265,7 +265,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      StrategyCallbacks.startStrategy
+      StrategyCallbacks.onInteractionStart
     );
 
     return true;
@@ -573,7 +573,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       operationData,
-      StrategyCallbacks.finishStrategy
+      StrategyCallbacks.onInteractionEnd
     );
 
     if (!this._previewData.isDrag) {

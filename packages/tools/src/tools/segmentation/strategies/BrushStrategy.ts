@@ -80,29 +80,34 @@ export default class BrushStrategy {
   public static COMPOSITIONS = compositions;
 
   protected static childFunctions = {
-    [StrategyCallbacks.startStrategy]: addListMethod(
-      'initDown',
-      'createInitialized'
+    [StrategyCallbacks.onInteractionStart]: addListMethod(
+      StrategyCallbacks.onInteractionStart,
+      StrategyCallbacks.initialize
     ),
-    [StrategyCallbacks.finishStrategy]: addListMethod(
-      'completeUp',
-      'createInitialized'
+    [StrategyCallbacks.onInteractionEnd]: addListMethod(
+      StrategyCallbacks.onInteractionEnd,
+      StrategyCallbacks.initialize
     ),
-    [StrategyCallbacks.fill]: addListMethod('fill'),
-    [StrategyCallbacks.initialize]: addListMethod('createInitialized'),
+    [StrategyCallbacks.fill]: addListMethod(StrategyCallbacks.fill),
+    [StrategyCallbacks.initialize]: addListMethod(StrategyCallbacks.initialize),
     [StrategyCallbacks.createIsInThreshold]: addSingletonMethod(
-      'createIsInThreshold'
+      StrategyCallbacks.createIsInThreshold
     ),
     [StrategyCallbacks.acceptPreview]: addListMethod(
-      'acceptPreview',
-      'createInitialized'
+      StrategyCallbacks.acceptPreview,
+      StrategyCallbacks.initialize
     ),
     [StrategyCallbacks.rejectPreview]: addListMethod(
-      'rejectPreview',
-      'createInitialized'
+      StrategyCallbacks.rejectPreview,
+      StrategyCallbacks.initialize
     ),
-    [StrategyCallbacks.INTERNAL_setValue]: addSingletonMethod('setValue'),
-    [StrategyCallbacks.preview]: addSingletonMethod('preview', false),
+    [StrategyCallbacks.INTERNAL_setValue]: addSingletonMethod(
+      StrategyCallbacks.INTERNAL_setValue
+    ),
+    [StrategyCallbacks.preview]: addSingletonMethod(
+      StrategyCallbacks.preview,
+      false
+    ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -112,10 +117,10 @@ export default class BrushStrategy {
   public strategyFunction: (enabledElement, operationData) => unknown;
 
   protected configurationName: string;
-  protected _createInitialized = [];
+  protected _initialize = [];
   protected _fill = [];
   protected _acceptPreview: [];
-  protected _initDown = [];
+  protected _onInteractionStart = [];
 
   constructor(name, ...initializers: Composition[]) {
     this.configurationName = name;
@@ -150,10 +155,7 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => {
-    const initializedData = this.createInitialized(
-      enabledElement,
-      operationData
-    );
+    const initializedData = this.initialize(enabledElement, operationData);
 
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
@@ -186,7 +188,7 @@ export default class BrushStrategy {
     return initializedData.preview || initializedData;
   };
 
-  protected createInitialized(
+  protected initialize(
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ): InitializedOperationData {
@@ -240,7 +242,7 @@ export default class BrushStrategy {
       brushStrategy: this,
     };
 
-    this._createInitialized.forEach((func) => func(initializedData));
+    this._initialize.forEach((func) => func(initializedData));
 
     return initializedData;
   }
@@ -250,7 +252,7 @@ export default class BrushStrategy {
    * on mouse down, so calling this initDown.
    * Over-written by the strategy composition.
    */
-  public initDown = (
+  public onInteractionStart = (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => {
@@ -261,11 +263,10 @@ export default class BrushStrategy {
       preview.isPreviewFromHover = false;
       return;
     }
-    const initializedData = this.createInitialized(
-      enabledElement,
-      operationData
+    const initializedData = this.initialize(enabledElement, operationData);
+    this._onInteractionStart.forEach((func) =>
+      func.call(this, initializedData)
     );
-    this._initDown.forEach((func) => func.call(this, initializedData));
   };
 
   /**
@@ -274,7 +275,7 @@ export default class BrushStrategy {
    *
    * Over-written by the strategy composition.
    */
-  public completeUp: (
+  public onInteractionEnd: (
     enabledElement: Types.IEnabledElement,
     operationData: OperationData
   ) => void;
@@ -300,8 +301,8 @@ export default class BrushStrategy {
 
   /**
    * Display a preview at the current position.  This will typically
-   * using the initDown, fill and completeUp methods, plus settings to
-   * specify use of a preview.
+   * using the onInteractionStart, fill and onInteractionEnd methods,
+   * plus optional use of a preview.
    *
    * Over-written by the strategy composition.
    * @returns preview data if a preview is displayed.
@@ -319,10 +320,7 @@ export default class BrushStrategy {
   /**
    * Over-written by the strategy composition.
    */
-  public createIsInThreshold: (
-    enabled,
-    operationData: InitializedOperationData
-  ) => any;
+  public createIsInThreshold: (operationData: InitializedOperationData) => any;
 }
 
 /**

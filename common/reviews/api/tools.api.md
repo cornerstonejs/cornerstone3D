@@ -4447,17 +4447,17 @@ enum StrategyCallbacks {
     // (undocumented)
     fill = "fill",
     // (undocumented)
-    finishStrategy = "completeUp",
-    // (undocumented)
-    initialize = "createInitialized",
+    initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
+    // (undocumented)
+    onInteractionEnd = "onInteractionEnd",
+    // (undocumented)
+    onInteractionStart = "onInteractionStart",
     // (undocumented)
     preview = "preview",
     // (undocumented)
     rejectPreview = "rejectPreview",
-    // (undocumented)
-    startStrategy = "initDown",
     // (undocumented)
     strategyFunction = "strategyFunction"
 }

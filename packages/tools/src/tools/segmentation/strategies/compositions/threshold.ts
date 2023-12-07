@@ -15,7 +15,7 @@ export default {
       strategySpecificConfiguration,
       segmentIndex,
     } = operationData;
-    if (!strategySpecificConfiguration || segmentIndex === null) {
+    if (!strategySpecificConfiguration || !segmentIndex) {
       return;
     }
     return (index) => {

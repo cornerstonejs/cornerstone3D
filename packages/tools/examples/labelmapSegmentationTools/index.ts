@@ -43,7 +43,6 @@ const {
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
-const { config: segmentationConfig } = segmentation;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -229,6 +228,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  // This is not necessary, but makes the images appear faster
   utilities.imageRetrieveMetadataProvider.add(
     'volume',
     ProgressiveRetrieveImages.interleavedRetrieveStages
@@ -423,17 +423,6 @@ async function run() {
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId1, viewportId2, viewportId3]
-  );
-
-  // // Add the segmentation representation to the toolgroup
-  const [representationUID] = await segmentation.addSegmentationRepresentations(
-    toolGroupId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]
   );
 
   // Render the image

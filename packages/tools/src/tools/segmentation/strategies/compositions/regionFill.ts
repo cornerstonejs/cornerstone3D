@@ -19,10 +19,8 @@ export default {
       brushStrategy,
       centerIJK,
     } = operationData;
-    const isWithinThreshold = brushStrategy.createIsInThreshold?.(
-      operationData.enabledElement,
-      operationData
-    );
+    const isWithinThreshold =
+      brushStrategy.createIsInThreshold?.(operationData);
     const { setValue } = brushStrategy;
 
     const callback = isWithinThreshold

@@ -28,19 +28,17 @@ export default {
     delete strategySpecificConfiguration.centerSegmentIndex;
 
     // Now generate a normal preview as though the user had clicked, filled, released
-    this.initDown?.(enabledElement, operationData);
+    this.onInteractionStart?.(enabledElement, operationData);
     const preview = this.fill(enabledElement, operationData);
     if (preview) {
       preview.isPreviewFromHover = true;
       operationData.preview = preview;
-      this.completeUp?.(enabledElement, operationData);
+      this.onInteractionEnd?.(enabledElement, operationData);
     }
     return preview;
   },
 
-  [StrategyCallbacks.startStrategy]: (
-    operationData: InitializedOperationData
-  ) => {
+  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
     const {
       toolGroupId,
       segmentIndex,

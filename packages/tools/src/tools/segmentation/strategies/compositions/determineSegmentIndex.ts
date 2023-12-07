@@ -30,7 +30,7 @@ export default {
     }
   },
 
-  [StrategyCallbacks.startStrategy]: (
+  [StrategyCallbacks.onInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
     const {

@@ -8,12 +8,12 @@ enum StrategyCallbacks {
    * Note this is separate from preview and the endings for preview, which could
    * be called alternatively, but this may be nested within a preview.
    */
-  startStrategy = 'initDown',
+  onInteractionStart = 'onInteractionStart',
   /**
    * finishStrategy is called at the end of a strategy being applied, usually on
    * mouse up.
    */
-  finishStrategy = 'completeUp',
+  onInteractionEnd = 'onInteractionEnd',
   /**
    * The preview can be used for tools to show what would happen on accepting
    * before the change is actually done.  For example, a spline tool might
@@ -43,7 +43,7 @@ enum StrategyCallbacks {
    *  Some strategy functions need to initialize some data before being runnable.
    * This is mostly an internal detail, just useful to have an enum here for this.
    */
-  initialize = 'createInitialized',
+  initialize = 'initialize',
 
   // Internal Details
   INTERNAL_setValue = 'setValue',
