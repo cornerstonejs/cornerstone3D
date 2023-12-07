@@ -73,11 +73,12 @@ class WindowLevelTool extends BaseTool {
       throw new Error('Viewport is not a valid type');
     }
 
-    // If modality is PT, treat it special to not include the canvas delta in
+    // If modality is PT an the viewport is pre-scaled (SUV),
+    // treat it special to not include the canvas delta in
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT) {
+    if (modality === PT && isPreScaled) {
       newRange = this.getPTScaledNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,
