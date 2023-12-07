@@ -7,9 +7,9 @@ export class LivewirePath {
   public pointArray: LivewirePoint2[];
 
   /**
-   * List of control points.
+   * List of control points indexes
    */
-  public controlPointIndexArray: number[];
+  private _controlPointIndexes: number[];
 
   /**
    * @param inputPointArray - The list of Point2D that make the path (optional).
@@ -21,7 +21,7 @@ export class LivewirePath {
     inputControlPointIndexArray?: number[]
   ) {
     this.pointArray = inputPointArray ? inputPointArray.slice() : [];
-    this.controlPointIndexArray = inputControlPointIndexArray
+    this._controlPointIndexes = inputControlPointIndexArray
       ? inputControlPointIndexArray.slice()
       : [];
   }
@@ -46,7 +46,7 @@ export class LivewirePath {
   isControlPoint(point: LivewirePoint2): boolean {
     const index = this.pointArray.indexOf(point);
     if (index !== -1) {
-      return this.controlPointIndexArray.indexOf(index) !== -1;
+      return this._controlPointIndexes.indexOf(index) !== -1;
     } else {
       throw new Error('Error: isControlPoint called with not in list point.');
     }
@@ -79,23 +79,23 @@ export class LivewirePath {
     const index = this.pointArray.indexOf(point);
 
     if (index !== -1) {
-      this.controlPointIndexArray.push(index);
+      this._controlPointIndexes.push(index);
     } else {
       throw new Error('Cannot mark a non registered point as control point.');
     }
   }
 
   public getControlPoints() {
-    return this.controlPointIndexArray.map((i) => this.pointArray[i]);
+    return this._controlPointIndexes.map((i) => this.pointArray[i]);
   }
 
   public getNumControlPoints(): number {
-    return this.controlPointIndexArray.length;
+    return this._controlPointIndexes.length;
   }
 
   public removeLastControlPoint(): void {
-    if (this.controlPointIndexArray.length) {
-      this.controlPointIndexArray.pop();
+    if (this._controlPointIndexes.length) {
+      this._controlPointIndexes.pop();
     }
   }
 
@@ -109,9 +109,28 @@ export class LivewirePath {
   }
 
   /**
-   * Append a Path to this one.
+   * Prepend a path to this one.
    *
-   * @param other - The Path to append.
+   * @param other - The path to append.
+   */
+  // prependPath(other: LivewirePath): void {
+  //   const oldSize = this.pointArray.length;
+  //   const shiftedIndexArray: number[] = [];
+
+  //   this.pointArray = this.pointArray.concat(other.pointArray);
+
+  //   for (let i = 0; i < other._controlPointIndexes.length; ++i) {
+  //     shiftedIndexArray[i] = other._controlPointIndexes[i] + oldSize;
+  //   }
+
+  //   this._controlPointIndexes =
+  //     this._controlPointIndexes.concat(shiftedIndexArray);
+  // }
+
+  /**
+   * Append a path to this one.
+   *
+   * @param other - The path to append.
    */
   appendPath(other: LivewirePath): void {
     const oldSize = this.pointArray.length;
@@ -119,11 +138,11 @@ export class LivewirePath {
 
     this.pointArray = this.pointArray.concat(other.pointArray);
 
-    for (let i = 0; i < other.controlPointIndexArray.length; ++i) {
-      shiftedIndexArray[i] = other.controlPointIndexArray[i] + oldSize;
+    for (let i = 0; i < other._controlPointIndexes.length; ++i) {
+      shiftedIndexArray[i] = other._controlPointIndexes[i] + oldSize;
     }
 
-    this.controlPointIndexArray =
-      this.controlPointIndexArray.concat(shiftedIndexArray);
+    this._controlPointIndexes =
+      this._controlPointIndexes.concat(shiftedIndexArray);
   }
 }

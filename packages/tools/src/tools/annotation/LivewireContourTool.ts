@@ -55,7 +55,7 @@ import { LivewirePoint2 } from './LivewirePoint2';
 const { getViewportIdsWithToolToRender } = viewportFilters;
 const { getTextBoxCoordsCanvas } = drawing;
 
-setInterval(() => {
+(window as any).debugInterval = setInterval(() => {
   console.clear();
   if ((window as any).confirmedPath) {
     console.log('>>>>> confirmedPath:', (window as any).confirmedPath);
@@ -540,7 +540,7 @@ class LivewireContourTool extends AnnotationTool {
       }
 
       // Update parent points matrix
-      for (let i = 0; i < updatedParentPointsPairs.length - 1; i++) {
+      for (let i = 0; i < updatedParentPointsPairs.length; i++) {
         const [point, parentPoint] = updatedParentPointsPairs[i];
         parentPoints[point.y][point.x] = parentPoint;
       }
