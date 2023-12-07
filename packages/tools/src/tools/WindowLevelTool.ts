@@ -191,12 +191,7 @@ class WindowLevelTool extends BaseTool {
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
 
-    let multiplier = DEFAULT_MULTIPLIER;
-
-    if (ratio > 1) {
-      multiplier = Math.round(ratio);
-    }
-    return multiplier;
+    return ratio > 1 ? Math.round(ratio) : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
