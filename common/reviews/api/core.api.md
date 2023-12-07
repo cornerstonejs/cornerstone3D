@@ -3384,7 +3384,6 @@ type ViewportInputOptions = {
     displayArea?: DisplayArea;
     suppressEvents?: boolean;
     parallelProjection?: boolean;
-    flipHorizontal?: boolean;
 };
 
 // @public (undocumented)

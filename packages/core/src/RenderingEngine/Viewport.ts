@@ -733,7 +733,6 @@ class Viewport implements IViewport {
 
     //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
     const parallelScale = 1.1 * radius;
-    const fitToCanvasParallelScale = radius;
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];
@@ -793,9 +792,7 @@ class Viewport implements IViewport {
 
     const modifiedCamera = _cloneDeep(this.getCamera());
 
-    const fitToCanvasCamera = _cloneDeep(this.getCamera());
-    // fitToCanvasCamera.parallelScale = fitToCanvasParallelScale;
-    this.setFitToCanvasCamera(fitToCanvasCamera);
+    this.setFitToCanvasCamera(_cloneDeep(this.getCamera()));
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);

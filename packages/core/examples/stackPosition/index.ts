@@ -31,8 +31,8 @@ let renderingEngine, viewport;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Stack Viewport API',
-  'Demonstrates how to interact with a Stack viewport.'
+  'Stack Position',
+  'Demonstrates how to use the display area with rotation and flip'
 );
 
 const content = document.getElementById('content');
@@ -46,14 +46,14 @@ content.appendChild(element);
 const info = document.createElement('div');
 content.appendChild(info);
 
+const displayAreaInfo = document.createElement('div');
+info.appendChild(displayAreaInfo);
+
 const rotationInfo = document.createElement('div');
 info.appendChild(rotationInfo);
 
 const flipHorizontalInfo = document.createElement('div');
 info.appendChild(flipHorizontalInfo);
-
-const flipVerticalInfo = document.createElement('div');
-info.appendChild(flipVerticalInfo);
 
 element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   // Get the rendering engine
@@ -73,7 +73,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
-  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
+  displayAreaInfo.innerText = `DisplayArea: ${JSON.stringify(displayArea)}`;
 });
 
 const counter = 0;
@@ -133,13 +133,15 @@ displayAreas.set(
   createDisplayArea(2, [1, 1], undefined, 180, true)
 );
 
+let displayArea = 'none';
+
 addDropdownToToolbar({
   options: {
     values: [...displayAreas.keys()],
     defaultValue: displayAreas.keys().next().value,
   },
   onSelectedValueChange: (name) => {
-    const displayArea = displayAreas.get(name);
+    displayArea = displayAreas.get(name);
     viewport.setOptions(displayArea);
     viewport.setProperties(displayArea);
     const { flipHorizontal } = displayArea;
