@@ -12,6 +12,7 @@ import type {
 } from '../../../types/LabelmapToolOperationData';
 
 const { VoxelManager } = csUtils;
+
 export type OperationData =
   | LabelmapToolOperationDataVolume
   | LabelmapToolOperationDataStack;
@@ -220,9 +221,11 @@ export default class BrushStrategy {
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createHistoryVoxelManager(segmentationVoxelManager);
+    const previewEnabled = !!operationData.previewColors;
+    const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
     const initializedData: InitializedOperationData = {
-      previewSegmentIndex: 255,
+      previewSegmentIndex,
       ...operationData,
       enabledElement,
       imageVoxelManager,
