@@ -35,15 +35,17 @@ export type InitializedOperationData = OperationData & {
 };
 
 export type StrategyFunction = (
-  enabled,
-  operationData: InitializedOperationData
+  operationData: InitializedOperationData,
+  ...args
 ) => unknown;
 
-export type InitializerInstance = Record<StrategyCallbacks, StrategyFunction>;
+export type CompositionInstance = {
+  [callback in StrategyCallbacks]?: StrategyFunction;
+};
 
-export type InitializerFunction = () => InitializerInstance;
+export type CompositionFunction = () => CompositionInstance;
 
-export type Composition = InitializerFunction | InitializerInstance;
+export type Composition = CompositionFunction | CompositionInstance;
 
 /**
  * A brush strategy is a composition of individual parts which together form
@@ -100,7 +102,7 @@ export default class BrushStrategy {
       'createInitialized'
     ),
     [StrategyCallbacks.INTERNAL_setValue]: addSingletonMethod('setValue'),
-    [StrategyCallbacks.preview]: addSingletonMethod('preview'),
+    [StrategyCallbacks.preview]: addSingletonMethod('preview', false),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -162,7 +164,7 @@ export default class BrushStrategy {
       strategySpecificConfiguration.centerIJK = centerIJK;
     }
 
-    this._fill.forEach((func) => func(enabledElement, initializedData));
+    this._fill.forEach((func) => func(initializedData));
 
     const {
       segmentationVoxelManager,
@@ -238,9 +240,7 @@ export default class BrushStrategy {
       brushStrategy: this,
     };
 
-    this._createInitialized.forEach((func) =>
-      func(enabledElement, initializedData)
-    );
+    this._createInitialized.forEach((func) => func(initializedData));
 
     return initializedData;
   }
@@ -316,7 +316,7 @@ export default class BrushStrategy {
   /**
    * Over-written by the strategy composition.
    */
-  public setValue: (data, operationData: InitializedOperationData) => void;
+  public setValue: (operationData: InitializedOperationData, data) => void;
 
   /**
    * Over-written by the strategy composition.
@@ -335,25 +335,39 @@ function addListMethod(name: string, createInitialized?: string) {
   return (brushStrategy, func) => {
     brushStrategy[listName] ||= [];
     brushStrategy[listName].push(func);
-    brushStrategy[name] ||= function (enabledElement, operationData) {
-      const initializedData = createInitialized
-        ? brushStrategy[createInitialized](enabledElement, operationData)
-        : operationData;
-      brushStrategy[listName].forEach((func) =>
-        func.call(brushStrategy, enabledElement, initializedData)
-      );
-    };
+    brushStrategy[name] ||= createInitialized
+      ? (enabledElement, operationData) => {
+          const initializedData = brushStrategy[createInitialized](
+            enabledElement,
+            operationData
+          );
+          brushStrategy[listName].forEach((func) =>
+            func.call(brushStrategy, initializedData)
+          );
+        }
+      : (operationData) => {
+          brushStrategy[listName].forEach((func) =>
+            func.call(brushStrategy, operationData)
+          );
+        };
   };
 }
 
 /**
  * Adds a singleton method, throwing an exception if it is already defined
  */
-function addSingletonMethod(name: string) {
+function addSingletonMethod(name: string, isInitialized = true) {
   return (brushStrategy, func) => {
     if (brushStrategy[name]) {
       throw new Error(`The singleton method ${name} already exists`);
     }
-    brushStrategy[name] = func.bind(brushStrategy);
+    brushStrategy[name] = isInitialized
+      ? func
+      : (enabledElement, operationData) => {
+          // Store the enabled element in the operation data so we can use single
+          // argument calls
+          operationData.enabledElement = enabledElement;
+          return func.call(brushStrategy, operationData);
+        };
   };
 }

@@ -1,7 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import type { Composition, InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Sets up a preview to use an alternate set of colours.  First fills the
@@ -11,8 +12,11 @@ import { config as segmentationConfig } from '../../../../stateManagement/segmen
  * from the initial state or from the global state.
  */
 export default {
-  preview: function (enabledElement, operationData: InitializedOperationData) {
-    const { previewColors, strategySpecificConfiguration } = operationData;
+  [StrategyCallbacks.preview]: function (
+    operationData: InitializedOperationData
+  ) {
+    const { previewColors, strategySpecificConfiguration, enabledElement } =
+      operationData;
     if (!previewColors || !strategySpecificConfiguration) {
       return;
     }
@@ -34,8 +38,7 @@ export default {
     return preview;
   },
 
-  createInitialized: (
-    enabledElement,
+  [StrategyCallbacks.startStrategy]: (
     operationData: InitializedOperationData
   ) => {
     const {
@@ -79,7 +82,9 @@ export default {
     );
   },
 
-  acceptPreview: (enabledElement, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.acceptPreview]: (
+    operationData: InitializedOperationData
+  ) => {
     const {
       segmentationVoxelManager: segmentationVoxelManager,
       previewVoxelManager: previewVoxelManager,
@@ -110,7 +115,9 @@ export default {
     tracking.clear();
   },
 
-  rejectPreview: (enabledElement, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.rejectPreview]: (
+    operationData: InitializedOperationData
+  ) => {
     const {
       previewVoxelManager: previewVoxelManager,
       segmentationVoxelManager: segmentationVoxelManager,
@@ -130,4 +137,4 @@ export default {
     );
     previewVoxelManager.clear();
   },
-} as Composition;
+};

@@ -1,8 +1,6 @@
-import type {
-  InitializedOperationData,
-  InitializerInstance,
-} from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
 import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Creates a fill strategy that uses the isWithinThreshold created by the
@@ -11,7 +9,7 @@ import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
  * with the new segment by calling the setValue function.
  */
 export default {
-  fill: (enabledElement, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.fill]: (operationData: InitializedOperationData) => {
     const {
       segmentsLocked,
       segmentationImageData,
@@ -22,7 +20,7 @@ export default {
       centerIJK,
     } = operationData;
     const isWithinThreshold = brushStrategy.createIsInThreshold?.(
-      enabledElement,
+      operationData.enabledElement,
       operationData
     );
     const { setValue } = brushStrategy;
@@ -33,9 +31,9 @@ export default {
           if (segmentsLocked.includes(value) || !isWithinThreshold(index)) {
             return;
           }
-          setValue(data, operationData);
+          setValue(operationData, data);
         }
-      : (data) => setValue(data, operationData);
+      : (data) => setValue(operationData, data);
 
     pointInShapeCallback(
       segmentationImageData as unknown,
@@ -46,4 +44,4 @@ export default {
 
     previewVoxelManager.addPoint(centerIJK);
   },
-} as InitializerInstance;
+};

@@ -1,8 +1,6 @@
-import type {
-  InitializedOperationData,
-  InitializerInstance,
-} from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
 import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * This function determines whether to fill or erase based on what the user
@@ -21,10 +19,7 @@ import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
  *
  */
 export default {
-  createInitialized: (
-    enabledElement,
-    operationData: InitializedOperationData
-  ) => {
+  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
     const { strategySpecificConfiguration } = operationData;
     if (!strategySpecificConfiguration) {
       return;
@@ -35,7 +30,9 @@ export default {
     }
   },
 
-  initDown: (enabledElement, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.startStrategy]: (
+    operationData: InitializedOperationData
+  ) => {
     const {
       segmentIndex,
       previewSegmentIndex,
@@ -86,4 +83,4 @@ export default {
       segmentIndex: existingValue,
     };
   },
-} as InitializerInstance;
+};

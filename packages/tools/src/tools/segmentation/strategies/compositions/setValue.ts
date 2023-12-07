@@ -1,4 +1,5 @@
-import type { Composition, InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -8,7 +9,10 @@ import type { Composition, InitializedOperationData } from '../BrushStrategy';
  * as changed, and the original values remembered.
  */
 export default {
-  setValue: ({ value, index }, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.INTERNAL_setValue]: (
+    operationData: InitializedOperationData,
+    { value, index }
+  ) => {
     const {
       segmentsLocked,
       segmentIndex,
@@ -43,4 +47,4 @@ export default {
 
     previewVoxelManager.setAtIndex(index, useSegmentIndex);
   },
-} as Composition;
+};

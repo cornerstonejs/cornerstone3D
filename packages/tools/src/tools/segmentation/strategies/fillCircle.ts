@@ -17,7 +17,6 @@ const { transformWorldToIndex } = csUtils;
 
 const initializeCircle = {
   [StrategyCallbacks.initialize]: function initializeCircle(
-    enabled,
     operationData: InitializedOperationData
   ): void {
     const {

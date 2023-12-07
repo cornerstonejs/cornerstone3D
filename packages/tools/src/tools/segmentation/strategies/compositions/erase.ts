@@ -1,13 +1,11 @@
-import type { Composition, InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Sets up a preview to erase/clear the segment values.
  */
 export default {
-  createInitialized: (
-    enabledElement,
-    operationData: InitializedOperationData
-  ) => {
+  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
     operationData.segmentIndex = 0;
   },
-} as Composition;
+};

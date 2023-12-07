@@ -1,4 +1,5 @@
-import type { InitializedOperationData, Composition } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Adds an isWithinThreshold to the operation data that checks that the
@@ -6,7 +7,9 @@ import type { InitializedOperationData, Composition } from '../BrushStrategy';
  * No-op if threshold not defined.
  */
 export default {
-  createIsInThreshold: (enabled, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.createIsInThreshold]: (
+    operationData: InitializedOperationData
+  ) => {
     const {
       imageVoxelManager: imageVoxelManager,
       strategySpecificConfiguration,
@@ -29,4 +32,4 @@ export default {
       return threshold[0] <= voxelValue && voxelValue <= threshold[1];
     };
   },
-} as Composition;
+};

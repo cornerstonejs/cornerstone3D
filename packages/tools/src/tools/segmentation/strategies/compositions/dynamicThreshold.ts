@@ -1,5 +1,6 @@
-import type { Composition, InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Initializes the threshold values for the dynamic threshold.
@@ -10,10 +11,7 @@ import type BoundsIJK from '../../../../types/BoundsIJK';
  * center voxel at centerIJK.
  */
 export default {
-  createInitialized: (
-    enabledElement,
-    operationData: InitializedOperationData
-  ) => {
+  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
     const {
       centerIJK,
       strategySpecificConfiguration,
@@ -48,11 +46,13 @@ export default {
     operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
   },
   // Setup a clear threshold value on mouse/touch down
-  initDown: (enabled, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.startStrategy]: (
+    operationData: InitializedOperationData
+  ) => {
     const { strategySpecificConfiguration, preview } = operationData;
     if (!strategySpecificConfiguration?.THRESHOLD?.isDynamic && !preview) {
       return;
     }
     strategySpecificConfiguration.THRESHOLD.threshold = null;
   },
-} as Composition;
+};

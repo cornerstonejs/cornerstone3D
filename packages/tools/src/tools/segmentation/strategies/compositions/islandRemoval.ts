@@ -1,6 +1,7 @@
-import type { Composition, InitializedOperationData } from '../BrushStrategy';
+import type { InitializedOperationData } from '../BrushStrategy';
 import floodFill from '../../../../utilities/segmentation/floodFill';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**
  * Removes external islands and fills internal islands.
@@ -10,7 +11,9 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
  * colours connected to the clicked/dragged over points.
  */
 export default {
-  completeUp: (enabled, operationData: InitializedOperationData) => {
+  [StrategyCallbacks.finishStrategy]: (
+    operationData: InitializedOperationData
+  ) => {
     const {
       previewVoxelManager: previewVoxelManager,
       segmentationVoxelManager: segmentationVoxelManager,
@@ -173,4 +176,4 @@ export default {
       previewVoxelManager.getArrayOfSlices()
     );
   },
-} as Composition;
+};

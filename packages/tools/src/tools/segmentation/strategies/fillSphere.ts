@@ -15,12 +15,12 @@ import type {
 } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
 import compositions from './compositions';
+import StrategyCallbacks from '../../../enums/StrategyCallbacks';
 
 const { transformWorldToIndex } = csUtils;
 
 const sphereComposition = {
-  createInitialized: function intializeSphere(
-    enabledElement,
+  [StrategyCallbacks.initialize]: function intializeSphere(
     operationData: InitializedOperationData
   ): void {
     const {
