@@ -20,6 +20,10 @@ type ViewportInputOptions = {
    * parallel projection of a stack viewport or volume viewport using viewport input options.
    */
   parallelProjection?: boolean;
+  /**
+   * Used to apply initial flip settings
+   */
+  flipHorizontal?: boolean;
 };
 
 export default ViewportInputOptions;

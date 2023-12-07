@@ -1,6 +1,4 @@
 type DisplayArea = {
-  rotation?: number;
-  flipHorizontal?: boolean;
   imageArea: [number, number]; // areaX, areaY
   imageCanvasPoint: {
     imagePoint: [number, number]; // imageX, imageY

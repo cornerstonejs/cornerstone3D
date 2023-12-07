@@ -3,7 +3,6 @@ import {
   Types,
   Enums,
   getRenderingEngine,
-  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,6 +12,7 @@ import {
   addDropdownToToolbar,
   camera as cameraHelpers,
   ctVoiRange,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -76,7 +76,15 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
 
-function createDisplayArea(size, pointValue, canvasValue = pointValue) {
+const counter = 0;
+
+function createDisplayArea(
+  size,
+  pointValue,
+  canvasValue = pointValue,
+  rotation = 0,
+  flipHorizontal = false
+) {
   const imagePoint = Array.isArray(pointValue)
     ? pointValue
     : [pointValue, pointValue];
@@ -84,13 +92,15 @@ function createDisplayArea(size, pointValue, canvasValue = pointValue) {
     ? canvasValue
     : [canvasValue, canvasValue];
   return {
+    rotation,
+    flipHorizontal,
     displayArea: {
       imageArea: Array.isArray(size) ? size : [size, size],
       imageCanvasPoint: {
         imagePoint,
         canvasPoint,
       },
-      storeAsInitialCamera: true,
+      // storeAsInitialCamera: true,
     },
   };
 }
@@ -102,10 +112,26 @@ displayAreas.set('Left Top', createDisplayArea(1, 0));
 displayAreas.set('Right Top', createDisplayArea(1, [1, 0]));
 displayAreas.set('Left Bottom', createDisplayArea(1, [0, 1]));
 displayAreas.set('Right Bottom', createDisplayArea(1, [1, 1]));
-displayAreas.set('Left Top Half', createDisplayArea(2, 0));
-displayAreas.set('Right Top Half', createDisplayArea(2, [1, 0]));
+displayAreas.set('Left Top Half', createDisplayArea([2, 0.1], 0, undefined));
+displayAreas.set('Right Top Half', createDisplayArea([0.1, 2], [1, 0]));
 displayAreas.set('Left Bottom Half', createDisplayArea(2, [0, 1]));
 displayAreas.set('Right Bottom Half', createDisplayArea(2, [1, 1]));
+displayAreas.set(
+  '90 Left Top Half',
+  createDisplayArea([2, 0.1], 0, undefined, 90, false)
+);
+displayAreas.set(
+  '180 Right Top Half',
+  createDisplayArea([0.1, 2], [1, 0], undefined, 180, false)
+);
+displayAreas.set(
+  'Flip Left Bottom Half',
+  createDisplayArea(2, [0, 1], undefined, 0, true)
+);
+displayAreas.set(
+  'Flip 180 Right Bottom Half',
+  createDisplayArea(2, [1, 1], undefined, 180, true)
+);
 
 addDropdownToToolbar({
   options: {
@@ -114,8 +140,10 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (name) => {
     const displayArea = displayAreas.get(name);
-    console.log('Display area', name, displayArea);
-    viewport.setDisplayArea(displayArea.displayArea);
+    viewport.setOptions(displayArea);
+    viewport.setProperties(displayArea);
+    const { flipHorizontal } = displayArea;
+    viewport.setCamera({ flipHorizontal });
     viewport.render();
   },
 });
@@ -203,10 +231,11 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.9590.100.1.2.19841440611855834937505752510708699165',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -228,14 +257,8 @@ async function run() {
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
 
-  // Define a stack containing a few images
-  const stack = [imageIds[0], imageIds[1], imageIds[2]];
-
   // Set the stack on the viewport
-  await viewport.setStack(stack);
-
-  // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  await viewport.setStack(imageIds);
 
   // Render the image
   viewport.render();

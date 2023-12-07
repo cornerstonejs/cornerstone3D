@@ -584,14 +584,15 @@ class Viewport implements IViewport {
     const { storeAsInitialCamera } = displayArea;
 
     // make calculations relative to the fitToCanvasCamera view
-    this.setCamera(this.fitToCanvasCamera, false);
+    this.setCamera(this.fitToCanvasCamera, storeAsInitialCamera);
 
     const { imageArea, imageCanvasPoint } = displayArea;
 
+    let zoom = 1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      const zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      this.setZoom(zoom, storeAsInitialCamera);
+      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+      this.setZoom(1.1 * zoom, storeAsInitialCamera);
     }
 
     // getting the image info
@@ -604,18 +605,22 @@ class Viewport implements IViewport {
       const validateCanvasPanY = this.sHeight / devicePixelRatio;
       const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
       const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
-
       const dimensions = imageData.getDimensions();
       const canvasZero = this.worldToCanvas([0, 0, 0]);
-      const canvasEdge = this.worldToCanvas(dimensions);
+      const canvasEdge = this.worldToCanvas([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+      ]);
       const canvasImage = [
         canvasEdge[0] - canvasZero[0],
         canvasEdge[1] - canvasZero[1],
       ];
       const [imgWidth, imgHeight] = canvasImage;
       const [imageX, imageY] = imagePoint;
-      const imagePanX = imgWidth * (0.5 - imageX);
-      const imagePanY = imgHeight * (0.5 - imageY);
+      const imagePanX =
+        (zoom * imgWidth * (0.5 - imageX) * validateCanvasPanY) / imgHeight;
+      const imagePanY = zoom * validateCanvasPanY * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
@@ -789,7 +794,7 @@ class Viewport implements IViewport {
     const modifiedCamera = _cloneDeep(this.getCamera());
 
     const fitToCanvasCamera = _cloneDeep(this.getCamera());
-    fitToCanvasCamera.parallelScale = fitToCanvasParallelScale;
+    // fitToCanvasCamera.parallelScale = fitToCanvasParallelScale;
     this.setFitToCanvasCamera(fitToCanvasCamera);
 
     if (storeAsInitialCamera) {
