@@ -265,9 +265,7 @@ export default class BrushStrategy {
       enabledElement,
       operationData
     );
-    this._initDown.forEach((func) =>
-      func.call(this, enabledElement, initializedData)
-    );
+    this._initDown.forEach((func) => func.call(this, initializedData));
   };
 
   /**
