@@ -133,7 +133,7 @@ class BrushTool extends BaseTool {
             method: StrategyCallbacks.acceptPreview,
             bindings: [
               {
-                key: 'a',
+                key: 'Enter',
               },
             ],
           },
@@ -141,7 +141,7 @@ class BrushTool extends BaseTool {
             method: StrategyCallbacks.rejectPreview,
             bindings: [
               {
-                key: 'd',
+                key: 'Escape',
               },
             ],
           },

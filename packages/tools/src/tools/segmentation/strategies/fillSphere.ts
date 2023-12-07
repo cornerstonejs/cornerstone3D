@@ -8,11 +8,7 @@ import {
 } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
-import type {
-  OperationData,
-  InitializedOperationData,
-  Composition,
-} from './BrushStrategy';
+import type { InitializedOperationData, Composition } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
 import compositions from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';

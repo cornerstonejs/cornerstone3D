@@ -34,8 +34,13 @@ type LabelmapToolOperationDataStack = LabelmapToolOperationData &
 type LabelmapToolOperationDataVolume = LabelmapToolOperationData &
   LabelmapSegmentationDataVolume;
 
+type LabelmapToolOperationDataAny =
+  | LabelmapToolOperationDataVolume
+  | LabelmapToolOperationDataStack;
+
 export {
   LabelmapToolOperationData,
+  LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 };

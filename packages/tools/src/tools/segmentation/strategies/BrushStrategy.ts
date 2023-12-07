@@ -7,17 +7,13 @@ import { getStrategyData } from './utils/getStrategyData';
 import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 import { StrategyCallbacks } from '../../../enums';
 import type {
-  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataAny,
   LabelmapToolOperationDataVolume,
 } from '../../../types/LabelmapToolOperationData';
 
 const { VoxelManager } = csUtils;
 
-export type OperationData =
-  | LabelmapToolOperationDataVolume
-  | LabelmapToolOperationDataStack;
-
-export type InitializedOperationData = OperationData & {
+export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Additional data for performing the strategy
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;
@@ -153,7 +149,7 @@ export default class BrushStrategy {
    */
   public fill = (
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ) => {
     const initializedData = this.initialize(enabledElement, operationData);
 
@@ -190,7 +186,7 @@ export default class BrushStrategy {
 
   protected initialize(
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ): InitializedOperationData {
     const { viewport } = enabledElement;
     const data = getStrategyData({ operationData, viewport });
@@ -254,7 +250,7 @@ export default class BrushStrategy {
    */
   public onInteractionStart = (
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ) => {
     const { preview } = operationData;
     // Need to skip the init down if it has already occurred in teh preview
@@ -277,7 +273,7 @@ export default class BrushStrategy {
    */
   public onInteractionEnd: (
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ) => void;
 
   /**
@@ -286,7 +282,7 @@ export default class BrushStrategy {
    */
   public rejectPreview: (
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ) => void;
 
   /**
@@ -296,7 +292,7 @@ export default class BrushStrategy {
    */
   public acceptPreview: (
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ) => void;
 
   /**
@@ -309,7 +305,7 @@ export default class BrushStrategy {
    */
   public preview: (
     enabledElement: Types.IEnabledElement,
-    operationData: OperationData
+    operationData: LabelmapToolOperationDataAny
   ) => unknown;
 
   /**
