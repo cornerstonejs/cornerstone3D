@@ -493,87 +493,6 @@ class LivewireContourTool extends AnnotationTool {
     evt.preventDefault();
   };
 
-  private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
-    const { element, currentPoints } = evt.detail;
-    const { world: worldPos, canvas: canvasPos } = currentPoints;
-    const { viewport, renderingEngine } = getEnabledElement(element);
-    const { annotation } = this.editData;
-    const { data } = annotation;
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName()
-    );
-
-    this.editData.lastCanvasPoint = canvasPos;
-
-    const defaultActor = (<Types.IStackViewport>viewport).getDefaultActor();
-    const { actor } = defaultActor;
-    const vtkImageData = actor.getMapper().getInputData();
-    const dimensions = vtkImageData.getDimensions();
-    const [imgWidth, imgHeight] = dimensions;
-
-    // TODO: See what to do when working with volumes because this should be the
-    // index from image space
-    const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    let slicePoint = { x: imagePos[0], y: imagePos[1] };
-
-    // Check if the point is inside the bounding box
-    if (
-      slicePoint.x < 0 ||
-      slicePoint.y < 0 ||
-      slicePoint.x >= imgWidth ||
-      slicePoint.y >= imgHeight
-    ) {
-      return;
-    }
-
-    this.scissors.setPoint(slicePoint);
-
-    const { parentPoints } = data.path;
-
-    // Process and update parent points
-    while (!parentPoints[slicePoint.y][slicePoint.x]) {
-      const updatedParentPointsPairs = this.scissors.doWork();
-
-      if (updatedParentPointsPairs.length === 0) {
-        break;
-      }
-
-      // Update parent points matrix
-      for (let i = 0; i < updatedParentPointsPairs.length; i++) {
-        const [point, parentPoint] = updatedParentPointsPairs[i];
-        parentPoints[point.y][point.x] = parentPoint;
-      }
-    }
-
-    data.path.currentPath = new LivewirePath();
-    (window as any).currentPath = data.path.currentPath;
-
-    // Get the path that goes from the cursor position to the last control point
-    while (slicePoint) {
-      data.path.currentPath.addPoint(
-        new LivewirePoint2(slicePoint.x, slicePoint.y)
-      );
-
-      if (
-        !parentPoints[slicePoint.y] ||
-        !parentPoints[slicePoint.y][slicePoint.x]
-      ) {
-        break;
-      }
-
-      slicePoint = parentPoints[slicePoint.y][slicePoint.x];
-    }
-
-    // Merge the current path that goes from the cursor to the last control point
-    // and the "confirmed" path that goes from the last control point to the first
-    // control point
-    data.path.currentPath.appendPath(data.path.confirmedPath);
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-    evt.preventDefault();
-  };
-
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
     // const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
     const { annotation, viewportIdsToRender } = this.editData;
@@ -661,8 +580,10 @@ class LivewireContourTool extends AnnotationTool {
       }
 
       this.scissors.doTraining(slicePos);
+
+      // Add the current cursor position as a new control point after clicking
       data.path.confirmedPath.addControlPoint(
-        data.path.currentPath.getPoint(0)
+        data.path.currentPath.getLastPoint()
       );
     }
 
@@ -673,6 +594,95 @@ class LivewireContourTool extends AnnotationTool {
       this._endCallback(evt);
     }
 
+    evt.preventDefault();
+  };
+
+  private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    const { element, currentPoints } = evt.detail;
+    const { world: worldPos, canvas: canvasPos } = currentPoints;
+    const { viewport, renderingEngine } = getEnabledElement(element);
+    const { annotation } = this.editData;
+    const { data } = annotation;
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    this.editData.lastCanvasPoint = canvasPos;
+
+    const defaultActor = (<Types.IStackViewport>viewport).getDefaultActor();
+    const { actor } = defaultActor;
+    const vtkImageData = actor.getMapper().getInputData();
+    const dimensions = vtkImageData.getDimensions();
+    const [imgWidth, imgHeight] = dimensions;
+
+    // TODO: See what to do when working with volumes because this should be the
+    // index from image space
+    const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
+    let slicePoint = { x: imagePos[0], y: imagePos[1] };
+
+    // Check if the point is inside the bounding box
+    if (
+      slicePoint.x < 0 ||
+      slicePoint.y < 0 ||
+      slicePoint.x >= imgWidth ||
+      slicePoint.y >= imgHeight
+    ) {
+      return;
+    }
+
+    this.scissors.setPoint(slicePoint);
+
+    const { parentPoints } = data.path;
+
+    // Process and update parent points
+    while (!parentPoints[slicePoint.y][slicePoint.x]) {
+      const updatedParentPointsPairs = this.scissors.doWork();
+
+      if (updatedParentPointsPairs.length === 0) {
+        break;
+      }
+
+      // Update parent points matrix
+      for (let i = 0; i < updatedParentPointsPairs.length; i++) {
+        const [point, parentPoint] = updatedParentPointsPairs[i];
+        parentPoints[point.y][point.x] = parentPoint;
+      }
+    }
+
+    data.path.currentPath = new LivewirePath();
+    (window as any).currentPath = data.path.currentPath;
+
+    const reversedPathPoints = [];
+
+    // Get the path that goes from the cursor position to the last control point
+    while (slicePoint) {
+      // data.path.currentPath.addPoint(
+      //   new LivewirePoint2(slicePoint.x, slicePoint.y)
+      // );
+
+      reversedPathPoints.push(new LivewirePoint2(slicePoint.x, slicePoint.y));
+
+      if (
+        !parentPoints[slicePoint.y] ||
+        !parentPoints[slicePoint.y][slicePoint.x]
+      ) {
+        break;
+      }
+
+      slicePoint = parentPoints[slicePoint.y][slicePoint.x];
+    }
+
+    while (reversedPathPoints.length) {
+      data.path.currentPath.addPoint(reversedPathPoints.pop());
+    }
+
+    // Merge the current path that goes from the cursor to the last control point
+    // and the "confirmed" path that goes from the last control point to the first
+    // control point
+    data.path.currentPath.prependPath(data.path.confirmedPath);
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -969,7 +979,8 @@ class LivewireContourTool extends AnnotationTool {
       );
 
       if (!data.path.closed) {
-        canvasPathPoints.push([...this.editData.lastCanvasPoint]);
+        // canvasPathPoints.push([...this.editData.lastCanvasPoint]);
+        canvasPathPoints.push([...canvasPathPoints[0]]);
       }
 
       drawPolylineSvg(

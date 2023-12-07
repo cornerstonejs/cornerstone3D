@@ -29,12 +29,20 @@ export class LivewirePath {
   /**
    * Get a point of the list.
    *
-   * @param index - The index of the point
-   *   to get (beware, no size check).
+   * @param index - The index of the point to get
    * @returns The Point2D at the given index.
    */
   getPoint(index: number): LivewirePoint2 {
     return this.pointArray[index];
+  }
+
+  /**
+   * Get the last point of the list.
+   *
+   * @returns The last point of the list.
+   */
+  getLastPoint(): LivewirePoint2 {
+    return this.pointArray[this.pointArray.length - 1];
   }
 
   /**
@@ -64,7 +72,7 @@ export class LivewirePath {
   /**
    * Add a point to the path.
    *
-   * @param point - The Point2D to add.
+   * @param point - The Point2 to add.
    */
   addPoint(point: LivewirePoint2) {
     this.pointArray.push(point);
@@ -113,7 +121,26 @@ export class LivewirePath {
    *
    * @param other - The path to append.
    */
-  // prependPath(other: LivewirePath): void {
+  prependPath(other: LivewirePath): void {
+    const otherSize = other.pointArray.length;
+    const shiftedIndexArray: number[] = [];
+
+    this.pointArray = other.pointArray.concat(this.pointArray);
+
+    for (let i = 0; i < this._controlPointIndexes.length; ++i) {
+      shiftedIndexArray[i] = this._controlPointIndexes[i] + otherSize;
+    }
+
+    this._controlPointIndexes =
+      other._controlPointIndexes.concat(shiftedIndexArray);
+  }
+
+  /**
+   * Append a path to this one.
+   *
+   * @param other - The path to append.
+   */
+  // appendPath(other: LivewirePath): void {
   //   const oldSize = this.pointArray.length;
   //   const shiftedIndexArray: number[] = [];
 
@@ -126,23 +153,4 @@ export class LivewirePath {
   //   this._controlPointIndexes =
   //     this._controlPointIndexes.concat(shiftedIndexArray);
   // }
-
-  /**
-   * Append a path to this one.
-   *
-   * @param other - The path to append.
-   */
-  appendPath(other: LivewirePath): void {
-    const oldSize = this.pointArray.length;
-    const shiftedIndexArray: number[] = [];
-
-    this.pointArray = this.pointArray.concat(other.pointArray);
-
-    for (let i = 0; i < other._controlPointIndexes.length; ++i) {
-      shiftedIndexArray[i] = other._controlPointIndexes[i] + oldSize;
-    }
-
-    this._controlPointIndexes =
-      this._controlPointIndexes.concat(shiftedIndexArray);
-  }
 }
