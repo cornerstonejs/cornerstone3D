@@ -55,18 +55,8 @@ import { LivewirePoint2 } from './LivewirePoint2';
 const { getViewportIdsWithToolToRender } = viewportFilters;
 const { getTextBoxCoordsCanvas } = drawing;
 
-(window as any).debugInterval = setInterval(() => {
-  console.clear();
-  if ((window as any).confirmedPath) {
-    console.log('>>>>> confirmedPath:', (window as any).confirmedPath);
-  }
-  if ((window as any).currentPath) {
-    console.log('>>>>> currentPath:', (window as any).currentPath);
-  }
-}, 1000);
-
 const CONTOUR_MIN_POINTS = 1;
-const CLICK_CLOSE_CURVE_DIST = 10;
+const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2;
 
 class LivewireContourTool extends AnnotationTool {
   static toolName;
@@ -232,9 +222,6 @@ class LivewireContourTool extends AnnotationTool {
 
     confirmedPath.addPoint(p0);
     confirmedPath.addControlPoint(p0);
-
-    (window as any).confirmedPath = confirmedPath;
-    (window as any).currentPath = currentPath;
 
     const parentPoints = new Array(height);
 
@@ -493,6 +480,24 @@ class LivewireContourTool extends AnnotationTool {
     evt.preventDefault();
   };
 
+  private _transformIndexToCanvas(
+    element: HTMLDivElement,
+    point: Types.Point3
+  ) {
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const defaultActor = (<Types.IStackViewport>viewport).getDefaultActor();
+    const { actor } = defaultActor;
+    const vtkImageData = actor.getMapper().getInputData();
+
+    const worldControlPoint = csUtils.transformIndexToWorld(
+      vtkImageData,
+      point
+    );
+
+    return viewport.worldToCanvas(worldControlPoint);
+  }
+
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
     // const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
     const { annotation, viewportIdsToRender } = this.editData;
@@ -518,16 +523,19 @@ class LivewireContourTool extends AnnotationTool {
     // let addNewPoint = true;
 
     // Check if user clicked on the first point to close the curve
-    if (data.handles.points.length >= 3) {
+    if (controlPoints.length >= 2) {
       const closestHandlePoint = {
         index: -1,
         distSquared: Infinity,
       };
 
-      const controlPoints = data.path.confirmedPath.getControlPoints();
-
       for (let i = 0, len = controlPoints.length; i < len; i++) {
-        const controlPoint = controlPoints[i];
+        const sliceIndex = 1; // TODO: change it for volume viewports
+        const controlPoint = [
+          controlPoints[i].x,
+          controlPoints[i].y,
+          sliceIndex,
+        ];
         const worldControlPoint = csUtils.transformIndexToWorld(
           vtkImageData,
           controlPoint
@@ -538,9 +546,10 @@ class LivewireContourTool extends AnnotationTool {
           canvasPos,
           canvasControlPoint
         );
+        console.log('>>>>> distSquared:', distSquared);
 
         if (
-          distSquared <= CLICK_CLOSE_CURVE_DIST &&
+          distSquared <= CLICK_CLOSE_CURVE_SQR_DIST &&
           distSquared < closestHandlePoint.distSquared
         ) {
           closestHandlePoint.distSquared = distSquared;
@@ -549,15 +558,10 @@ class LivewireContourTool extends AnnotationTool {
       }
 
       if (closestHandlePoint.index === 0) {
-        // addNewPoint = false;
         console.log('>>>>> CLOSE!!!');
         closePath = true;
       }
     }
-
-    // if (addNewPoint) {
-    //   data.handles.points.push(worldPos);
-    // }
 
     data.path.closed = data.path.closed || closePath;
 
@@ -565,8 +569,6 @@ class LivewireContourTool extends AnnotationTool {
       const defaultActor = (<Types.IStackViewport>viewport).getDefaultActor();
       const { actor } = defaultActor;
       const vtkImageData = actor.getMapper().getInputData();
-      // const dimensions = vtkImageData.getDimensions();
-      // const [width, height] = dimensions;
       const volumePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
       const slicePos = { x: volumePos[0], y: volumePos[1] };
       const { parentPoints } = data.path;
@@ -650,17 +652,10 @@ class LivewireContourTool extends AnnotationTool {
       }
     }
 
-    data.path.currentPath = new LivewirePath();
-    (window as any).currentPath = data.path.currentPath;
-
+    // Stores the path that goes from the cursor position to the last control point
     const reversedPathPoints = [];
 
-    // Get the path that goes from the cursor position to the last control point
     while (slicePoint) {
-      // data.path.currentPath.addPoint(
-      //   new LivewirePoint2(slicePoint.x, slicePoint.y)
-      // );
-
       reversedPathPoints.push(new LivewirePoint2(slicePoint.x, slicePoint.y));
 
       if (
@@ -673,13 +668,17 @@ class LivewireContourTool extends AnnotationTool {
       slicePoint = parentPoints[slicePoint.y][slicePoint.x];
     }
 
+    // Store the new path in a new object since the old one is the new
+    // confirmed path
+    data.path.currentPath = new LivewirePath();
+
     while (reversedPathPoints.length) {
       data.path.currentPath.addPoint(reversedPathPoints.pop());
     }
 
-    // Merge the current path that goes from the cursor to the last control point
-    // and the "confirmed" path that goes from the last control point to the first
-    // control point
+    // Merge the "confirmed" path that goes from the first control point to the
+    // last one with the current path that goes from the last control point to
+    // the cursor point
     data.path.currentPath.prependPath(data.path.confirmedPath);
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
