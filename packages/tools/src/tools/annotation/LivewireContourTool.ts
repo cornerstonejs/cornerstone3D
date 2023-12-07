@@ -48,9 +48,8 @@ import {
 } from '../../types/EventTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
-import { Scissors } from './scissors';
+import { LivewireScissors } from './LivewireScissors';
 import { LivewirePath } from './LiveWirePath';
-import { LivewirePoint2 } from './LivewirePoint2';
 
 const { getViewportIdsWithToolToRender } = viewportFilters;
 const { getTextBoxCoordsCanvas } = drawing;
@@ -77,7 +76,7 @@ class LivewireContourTool extends AnnotationTool {
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
-  scissors = new Scissors();
+  scissors = new LivewireScissors();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -210,14 +209,14 @@ class LivewireContourTool extends AnnotationTool {
 
     // TODO: See what to do when working with mpr-able because this should be the
     // index from the image space place related to the image sent to scissor.setData()
-    const volumePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    const slicePos = { x: volumePos[0], y: volumePos[1] };
+    const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
+    const slicePos: Types.Point2 = [imagePos[0], imagePos[1]];
 
     this.scissors.doTraining(slicePos);
 
     const confirmedPath = new LivewirePath();
     const currentPath = new LivewirePath();
-    const p0 = new LivewirePoint2(volumePos[0], volumePos[1]);
+    const p0: Types.Point2 = [imagePos[0], imagePos[1]];
 
     confirmedPath.addPoint(p0);
     confirmedPath.addControlPoint(p0);
@@ -503,8 +502,9 @@ class LivewireContourTool extends AnnotationTool {
       };
 
       for (let i = 0, len = controlPoints.length; i < len; i++) {
+        const controlPoint = controlPoints[i];
         const sliceIndex = 1; // TODO: change it for volume viewports
-        const imagePoint = [controlPoints[i].x, controlPoints[i].y, sliceIndex];
+        const imagePoint = [controlPoint[0], controlPoint[1], sliceIndex];
         const worldControlPoint = csUtils.transformIndexToWorld(
           vtkImageData,
           imagePoint
@@ -533,7 +533,7 @@ class LivewireContourTool extends AnnotationTool {
     this.editData.closed = this.editData.closed || closePath;
 
     const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    const slicePos = { x: imagePos[0], y: imagePos[1] };
+    const slicePos: Types.Point2 = [imagePos[0], imagePos[1]];
     const { parentPoints } = this.editData;
 
     this.editData.confirmedPath = this.editData.currentPath;
@@ -566,8 +566,8 @@ class LivewireContourTool extends AnnotationTool {
     const { element, currentPoints } = evt.detail;
     const { world: worldPos, canvas: canvasPos } = currentPoints;
     const { viewport, renderingEngine } = getEnabledElement(element);
-    const { annotation } = this.editData;
-    const { data } = annotation;
+    // const { annotation } = this.editData;
+    // const { data } = annotation;
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -584,14 +584,14 @@ class LivewireContourTool extends AnnotationTool {
     // TODO: See what to do when working with volumes because this should be the
     // index from image space
     const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    let slicePoint = { x: imagePos[0], y: imagePos[1] };
+    let slicePoint: Types.Point2 = [imagePos[0], imagePos[1]];
 
     // Check if the point is inside the bounding box
     if (
-      slicePoint.x < 0 ||
-      slicePoint.y < 0 ||
-      slicePoint.x >= imgWidth ||
-      slicePoint.y >= imgHeight
+      slicePoint[0] < 0 ||
+      slicePoint[1] < 0 ||
+      slicePoint[0] >= imgWidth ||
+      slicePoint[1] >= imgHeight
     ) {
       return;
     }
@@ -601,7 +601,8 @@ class LivewireContourTool extends AnnotationTool {
     const { parentPoints } = this.editData;
 
     // Process and update parent points
-    while (!parentPoints[slicePoint.y][slicePoint.x]) {
+    // TODO: pass the point as parameter and remove this loop
+    while (!parentPoints[slicePoint[1]][slicePoint[0]]) {
       const updatedParentPointsPairs = this.scissors.doWork();
 
       if (updatedParentPointsPairs.length === 0) {
@@ -611,24 +612,24 @@ class LivewireContourTool extends AnnotationTool {
       // Update parent points matrix
       for (let i = 0; i < updatedParentPointsPairs.length; i++) {
         const [point, parentPoint] = updatedParentPointsPairs[i];
-        parentPoints[point.y][point.x] = parentPoint;
+        parentPoints[point[1]][point[0]] = parentPoint;
       }
     }
 
     // Stores the path that goes from the cursor position to the last control point
-    const reversedPathPoints = [];
+    const reversedPathPoints: Types.Point2[] = [];
 
     while (slicePoint) {
-      reversedPathPoints.push(new LivewirePoint2(slicePoint.x, slicePoint.y));
+      reversedPathPoints.push([slicePoint[0], slicePoint[1]]);
 
       if (
-        !parentPoints[slicePoint.y] ||
-        !parentPoints[slicePoint.y][slicePoint.x]
+        !parentPoints[slicePoint[1]] ||
+        !parentPoints[slicePoint[1]][slicePoint[0]]
       ) {
         break;
       }
 
-      slicePoint = parentPoints[slicePoint.y][slicePoint.x];
+      slicePoint = parentPoints[slicePoint[1]][slicePoint[0]];
     }
 
     // Store the new path in a new object since the old one is the new
@@ -984,7 +985,7 @@ class LivewireContourTool extends AnnotationTool {
     const sliceIndex = 1; // TODO: change this for volume viewports
 
     for (let i = 0, len = imagePoints.length; i < len; i++) {
-      const imagePoint = [imagePoints[i].x, imagePoints[i].y, sliceIndex];
+      const imagePoint = [imagePoints[i][0], imagePoints[i][1], sliceIndex];
       const worldPoint = csUtils.transformIndexToWorld(
         vtkImageData,
         imagePoint

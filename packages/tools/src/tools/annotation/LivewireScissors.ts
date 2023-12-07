@@ -1,119 +1,19 @@
+import { Types } from '@cornerstonejs/core';
+import { LivewireImage } from './LivewireImage';
 import { BucketQueue } from './bucketQueue';
 
-type ScissorPoint = {
-  x: number;
-  y: number;
-};
-
-// Pre-created to reduce allocation in inner loops
 const TWO_THIRD_PI = 2 / (3 * Math.PI);
 
 /**
- * Returns 2D augmented array containing greyscale data.
- * Greyscale values found by averaging colour channels.
- * Input image pixel data must be in a flat RGBA array, with values between 0 and 255.
- *
- * @param imagePixelData - Image pixel data (RGBA)
- * @param width - Image width
- * @param height - Image height
- * @returns A greyscale object that contains the data width same size as the input image
- */
-function computeGreyscale(
-  imagePixelData: Uint8ClampedArray,
-  width: number,
-  height: number
-) {
-  const data = new Array(height);
-
-  // 1/x because multiplication is faster than division
-  const avgMultiplier = 1 / (3 * 255);
-
-  // Compute actual values
-  for (let y = 0; y < height; y++) {
-    data[y] = new Array(width);
-
-    for (let x = 0; x < width; x++) {
-      const p = (y * width + x) * 4;
-      data[y][x] =
-        (imagePixelData[p] + imagePixelData[p + 1] + imagePixelData[p + 2]) *
-        avgMultiplier;
-    }
-  }
-
-  const getWidth = function () {
-    return this.data[0].length;
-  };
-
-  const getHeight = function () {
-    return this.data.length;
-  };
-
-  // Augment with convenience functions
-  const dx = function (x, y) {
-    if (x + 1 === this.getWidth()) {
-      // If we're at the end, back up one
-      x--;
-    }
-    return this.data[y][x + 1] - this.data[y][x];
-  };
-
-  const dy = function (x, y) {
-    if (y + 1 === this.getHeight()) {
-      // If we're at the end, back up one
-      y--;
-    }
-    return this.data[y][x] - this.data[y + 1][x];
-  };
-
-  const gradMagnitude = function (x, y) {
-    const dx = this.dx(x, y);
-    const dy = this.dy(x, y);
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  const laplace = function (x, y) {
-    // Laplacian of Gaussian
-    let lap = -16 * this.data[y][x];
-    lap += this.data[y - 2][x];
-    lap +=
-      this.data[y - 1][x - 1] +
-      2 * this.data[y - 1][x] +
-      this.data[y - 1][x + 1];
-    lap +=
-      this.data[y][x - 2] +
-      2 * this.data[y][x - 1] +
-      2 * this.data[y][x + 1] +
-      this.data[y][x + 2];
-    lap +=
-      this.data[y + 1][x - 1] +
-      2 * this.data[y + 1][x] +
-      this.data[y + 1][x + 1];
-    lap += this.data[y + 2][x];
-
-    return lap;
-  };
-
-  return {
-    data,
-    getWidth,
-    getHeight,
-    dx,
-    dy,
-    gradMagnitude,
-    laplace,
-  };
-}
-
-/**
- * @param greyscale - The input greyscale
+ * @param grayscale - The input grayscale
  * @returns A gradient object
  */
-function computeGradient(greyscale) {
-  // Returns a 2D array of gradient magnitude values for greyscale. The values
+function computeGradient(grayscale) {
+  // Returns a 2D array of gradient magnitude values for grayscale. The values
   // are scaled between 0 and 1, and then flipped, so that it works as a cost
   // function.
-  const height = greyscale.getHeight();
-  const width = greyscale.getWidth();
+  const height = grayscale.height;
+  const width = grayscale.width;
   const gradient = new Array(height);
 
   let max = 0; // Maximum gradient found, for scaling purposes
@@ -124,7 +24,7 @@ function computeGradient(greyscale) {
     gradient[y] = new Array(width);
 
     for (x = 0; x < width - 1; x++) {
-      gradient[y][x] = greyscale.gradMagnitude(x, y);
+      gradient[y][x] = grayscale.gradMagnitude(x, y);
       max = Math.max(gradient[y][x], max);
     }
 
@@ -147,13 +47,13 @@ function computeGradient(greyscale) {
 }
 
 /**
- * @param greyscale - The input greyscale
+ * @param grayscale - The input grayscale
  * @returns A laplace object
  */
-function computeLaplace(greyscale): number[][] {
-  const height = greyscale.getHeight();
-  const width = greyscale.getWidth();
-  const { data } = greyscale;
+function computeLaplace(grayscale): number[][] {
+  const height = grayscale.height;
+  const width = grayscale.width;
+  const { data } = grayscale;
 
   // Returns a 2D array of Laplacian of Gaussian values
   const laplace = new Array(height);
@@ -161,12 +61,6 @@ function computeLaplace(greyscale): number[][] {
   // Make the edges low cost here.
   laplace[0] = new Array(width);
   laplace[1] = new Array(width);
-  // Leo: Zero index empty?
-  // for (let i = 1; i < data.length; i++) {
-  //   // Pad top, since we can't compute Laplacian
-  //   laplace[0][i] = 1;
-  //   laplace[1][i] = 1;
-  // }
   laplace[0].fill(1);
   laplace[1].fill(1);
 
@@ -178,7 +72,7 @@ function computeLaplace(greyscale): number[][] {
 
     for (let x = 2; x < data[y].length - 2; x++) {
       // Threshold needed to get rid of clutter.
-      laplace[y][x] = greyscale.laplace(x, y) > 0.33 ? 0 : 1;
+      laplace[y][x] = grayscale.laplace(x, y) > 0.33 ? 0 : 1;
     }
 
     // Pad right, ditto
@@ -188,12 +82,6 @@ function computeLaplace(greyscale): number[][] {
 
   laplace[height - 2] = new Array(width);
   laplace[height - 1] = new Array(width);
-  // Leo: Zero index empty?
-  // for (let j = 1; j < height; j++) {
-  //   // Pad bottom, ditto
-  //   laplace[height - 2][j] = 1;
-  //   laplace[height - 1][j] = 1;
-  // }
   laplace[height - 2].fill(1);
   laplace[height - 1].fill(1);
 
@@ -203,20 +91,20 @@ function computeLaplace(greyscale): number[][] {
 /**
  * Compute the X gradient.
  *
- * @param {object} greyscale The values.
+ * @param {object} grayscale The values.
  * @returns {Array} The gradient.
  */
-function computeGradX(greyscale) {
-  // Returns 2D array of x-gradient values for greyscale
-  const width = greyscale.getWidth();
-  const height = greyscale.getHeight();
+function computeGradX(grayscale) {
+  // Returns 2D array of x-gradient values for grayscale
+  const width = grayscale.width;
+  const height = grayscale.height;
   const gradX = [];
 
   for (let y = 0; y < height; y++) {
     gradX[y] = [];
 
     for (let x = 0; x < width - 1; x++) {
-      gradX[y][x] = greyscale.dx(x, y);
+      gradX[y][x] = grayscale.dx(x, y);
     }
 
     gradX[y][width - 1] = gradX[y][width - 2];
@@ -228,20 +116,20 @@ function computeGradX(greyscale) {
 /**
  * Compute the Y gradient.
  *
- * @param {object} greyscale The values.
+ * @param {object} grayscale The values.
  * @returns {Array} The gradient.
  */
-function computeGradY(greyscale) {
-  // Returns 2D array of y-gradient values for greyscale
-  const width = greyscale.getWidth();
-  const height = greyscale.getHeight();
+function computeGradY(grayscale) {
+  // Returns 2D array of y-gradient values for grayscale
+  const width = grayscale.width;
+  const height = grayscale.height;
   const gradY = [];
 
   for (let y = 0; y < height - 1; y++) {
     gradY[y] = [];
 
     for (let x = 0; x < width; x++) {
-      gradY[y][x] = greyscale.dy(x, y);
+      gradY[y][x] = grayscale.dy(x, y);
     }
   }
 
@@ -263,7 +151,7 @@ function computeGradY(greyscale) {
  * @param {number} py The point Y.
  * @param {object} out The result.
  */
-function gradUnitVector(gradX, gradY, px, py, out) {
+function gradUnitVector(gradX, gradY, px, py, out: Types.Point2) {
   // Returns the gradient vector at (px,py), scaled to a magnitude of 1
   const ox = gradX[py][px];
   const oy = gradY[py][px];
@@ -271,8 +159,8 @@ function gradUnitVector(gradX, gradY, px, py, out) {
   let gvm = Math.sqrt(ox * ox + oy * oy);
   gvm = Math.max(gvm, 1e-100); // To avoid possible divide-by-0 errors
 
-  out.x = ox / gvm;
-  out.y = oy / gvm;
+  out[0] = ox / gvm;
+  out[1] = oy / gvm;
 }
 
 /**
@@ -287,23 +175,23 @@ function gradUnitVector(gradX, gradY, px, py, out) {
  * @returns {number} The direction.
  */
 function gradDirection(gradX, gradY, px, py, qx, qy) {
-  const __dgpuv = { x: -1, y: -1 };
-  const __gdquv = { x: -1, y: -1 };
+  const __dgpuv: Types.Point2 = [-1, -1];
+  const __gdquv: Types.Point2 = [-1, -1];
   // Compute the gradiant direction, in radians, between to points
   gradUnitVector(gradX, gradY, px, py, __dgpuv);
   gradUnitVector(gradX, gradY, qx, qy, __gdquv);
 
-  let dp = __dgpuv.y * (qx - px) - __dgpuv.x * (qy - py);
-  let dq = __gdquv.y * (qx - px) - __gdquv.x * (qy - py);
+  let dp = __dgpuv[1] * (qx - px) - __dgpuv[0] * (qy - py);
+  let dq = __gdquv[1] * (qx - px) - __gdquv[0] * (qy - py);
 
-  // Make sure dp is positive, to keep things consistant
+  // Make sure dp is positive, to keep things consistent
   if (dp < 0) {
     dp = -dp;
     dq = -dq;
   }
 
   if (px !== qx && py !== qy) {
-    // We're going diagonally between pixels
+    // It's going diagonally between pixels
     dp *= Math.SQRT1_2;
     dq *= Math.SQRT1_2;
   }
@@ -317,12 +205,12 @@ function gradDirection(gradX, gradY, px, py, qx, qy) {
  * @param {number} dist The distance.
  * @param {Array} gradX The X gradient.
  * @param {Array} gradY The Y gradient.
- * @param {object} greyscale The value.
+ * @param {object} grayscale The value.
  * @returns {object} The sides.
  */
-function computeSides(dist, gradX, gradY, greyscale) {
-  // Returns 2 2D arrays, containing inside and outside greyscale values.
-  // These greyscale values are the intensity just a little bit along the
+function computeSides(dist, gradX, gradY, grayscale) {
+  // Returns 2 2D arrays, containing inside and outside grayscale values.
+  // These grayscale values are the intensity just a little bit along the
   // gradient vector, in either direction, from the supplied point. These
   // values are used when using active-learning Intelligent Scissors
 
@@ -334,7 +222,8 @@ function computeSides(dist, gradX, gradY, greyscale) {
     outside: [],
   };
 
-  const guv = { x: -1, y: -1 }; // Current gradient unit vector
+  // Current gradient unit vector
+  const guv: Types.Point2 = [-1, -1];
 
   for (let y = 0; y < gradX.length; y++) {
     sides.inside[y] = [];
@@ -343,20 +232,20 @@ function computeSides(dist, gradX, gradY, greyscale) {
     for (let x = 0; x < gradX[y].length; x++) {
       gradUnitVector(gradX, gradY, x, y, guv);
 
-      //(x, y) rotated 90 = (y, -x)
+      // (x, y) rotated 90 = (y, -x)
 
-      let ix = Math.round(x + dist * guv.y);
-      let iy = Math.round(y - dist * guv.x);
-      let ox = Math.round(x - dist * guv.y);
-      let oy = Math.round(y + dist * guv.x);
+      let ix = Math.round(x + dist * guv[1]);
+      let iy = Math.round(y - dist * guv[0]);
+      let ox = Math.round(x - dist * guv[1]);
+      let oy = Math.round(y + dist * guv[0]);
 
       ix = Math.max(Math.min(ix, gradX[y].length - 1), 0);
       ox = Math.max(Math.min(ox, gradX[y].length - 1), 0);
       iy = Math.max(Math.min(iy, gradX.length - 1), 0);
       oy = Math.max(Math.min(oy, gradX.length - 1), 0);
 
-      sides.inside[y][x] = greyscale.data[iy][ix];
-      sides.outside[y][x] = greyscale.data[oy][ox];
+      sides.inside[y][x] = grayscale.data[iy][ix];
+      sides.outside[y][x] = grayscale.data[oy][ox];
     }
   }
 
@@ -406,14 +295,14 @@ function gaussianBlur(buffer, out: number[]) {
  *
  * Highly inspired from {@link http://code.google.com/p/livewire-javascript/}
  */
-export class Scissors {
+export class LivewireScissors {
   private width: number;
   private height: number;
   private searchGranBits: number;
   private searchGran: number;
   private pointsPerPost: number;
 
-  private greyscale: any;
+  private grayscale: any;
   private laplace: number[][];
   private gradient: number[][];
   private gradX: number[][];
@@ -421,7 +310,7 @@ export class Scissors {
 
   private working: boolean;
   private trained: boolean;
-  private trainingPoints: ScissorPoint[];
+  private trainingPoints: Types.Point2[];
   private edgeWidth: number;
   private trainingLength: number;
   private edgeGran: number;
@@ -436,11 +325,11 @@ export class Scissors {
   private outsideGran: number;
   private outsideTraining: number[];
 
-  /** Properties used only by A* algorithm */
+  /** A* algorithm related data */
   private visited: boolean[][];
-  private parents: ScissorPoint[][];
+  private parents: Types.Point2[][];
   private cost: number[][];
-  private priorityQueue: BucketQueue<ScissorPoint>;
+  private priorityQueue: BucketQueue<Types.Point2>;
 
   constructor() {
     this.width = -1;
@@ -452,7 +341,7 @@ export class Scissors {
 
     // Precomputed image data. All in ranges 0 >= x >= 1 and
     //   all inverted (1 - x).
-    this.greyscale = null; // Greyscale of image
+    this.grayscale = null; // Grayscale of image
     this.laplace = null; // Laplace zero-crossings (either 0 or 1).
     this.gradient = null; // Gradient magnitudes.
     this.gradX = null; // X-differences.
@@ -461,7 +350,8 @@ export class Scissors {
     // Matrix mapping point => parent along shortest-path to root.
     this.parents = null;
 
-    this.working = false; // Currently computing shortest paths?
+    // Currently computing shortest path?
+    this.working = false;
 
     // Begin Training:
     this.trained = false;
@@ -486,60 +376,58 @@ export class Scissors {
   // End Training
 
   // Begin training methods //
-  getTrainingIdx(granularity, value) {
+  private _getTrainingIdx(granularity, value) {
     return Math.round((granularity - 1) * value);
   }
 
-  getTrainedEdge(edge) {
-    return this.edgeTraining[this.getTrainingIdx(this.edgeGran, edge)];
+  private _getTrainedEdge(edge) {
+    return this.edgeTraining[this._getTrainingIdx(this.edgeGran, edge)];
   }
 
-  getTrainedGrad(grad) {
-    return this.gradTraining[this.getTrainingIdx(this.gradGran, grad)];
+  private _getTrainedGrad(grad) {
+    return this.gradTraining[this._getTrainingIdx(this.gradGran, grad)];
   }
 
-  getTrainedInside(inside) {
-    return this.insideTraining[this.getTrainingIdx(this.insideGran, inside)];
+  private _getTrainedInside(inside) {
+    return this.insideTraining[this._getTrainingIdx(this.insideGran, inside)];
   }
 
-  getTrainedOutside(outside) {
-    return this.outsideTraining[this.getTrainingIdx(this.outsideGran, outside)];
+  private _getTrainedOutside(outside) {
+    return this.outsideTraining[
+      this._getTrainingIdx(this.outsideGran, outside)
+    ];
   }
   // End training methods //
 
-  setWorking(working) {
-    // Sets working flag
+  /**
+   * Sets working flag
+   */
+  public setWorking(working) {
     this.working = working;
   }
 
-  setDimensions(width, height) {
+  public setDimensions(width, height) {
     this.width = width;
     this.height = height;
   }
 
-  setData(data) {
+  public setData(data) {
     if (this.width === -1 || this.height === -1) {
       // The width and height should have already been set
       throw new Error('Dimensions have not been set.');
     }
 
-    this.greyscale = computeGreyscale(data, this.width, this.height);
-    this.laplace = computeLaplace(this.greyscale);
-    this.gradient = computeGradient(this.greyscale);
-    this.gradX = computeGradX(this.greyscale);
-    this.gradY = computeGradY(this.greyscale);
-
-    window.laplace = this.laplace;
-    window.gradient = this.gradient;
-    window.gradX = this.gradX;
-    window.gradY = this.gradY;
-    // throw new Error('STOP!');
+    this.grayscale = new LivewireImage(data, this.width, this.height);
+    this.laplace = computeLaplace(this.grayscale);
+    this.gradient = computeGradient(this.grayscale);
+    this.gradX = computeGradX(this.grayscale);
+    this.gradY = computeGradY(this.grayscale);
 
     const sides = computeSides(
       this.edgeWidth,
       this.gradX,
       this.gradY,
-      this.greyscale
+      this.grayscale
     );
     this.inside = sides.inside;
     this.outside = sides.outside;
@@ -549,63 +437,63 @@ export class Scissors {
     this.outsideTraining = [];
   }
 
-  findTrainingPoints(p: ScissorPoint): ScissorPoint[] {
-    // Grab the last handful of points for training
+  /**
+   * Grab the last handful of points for training
+   */
+  public findTrainingPoints(point: Types.Point2): Types.Point2[] {
     const points = [];
 
     if (this.parents !== null) {
-      for (let i = 0; i < this.trainingLength && p; i++) {
-        points.push(p);
-        p = this.parents[p.x][p.y];
+      for (let i = 0; i < this.trainingLength && point; i++) {
+        points.push(point);
+        point = this.parents[point[0]][point[1]];
       }
     }
 
     return points;
   }
 
-  resetTraining() {
-    this.trained = false; // Training is ignored with this flag set
+  /**
+   * Reset training state
+   */
+  public resetTraining() {
+    this.trained = false;
   }
 
-  doTraining(point: ScissorPoint) {
-    console.log('>>>>> doTraining');
-
-    // Compute training weights and measures
+  /**
+   * Compute training weights and measures
+   */
+  public doTraining(point: Types.Point2) {
     this.trainingPoints = this.findTrainingPoints(point);
 
-    console.log('>>>>> this.trainingPoints ::', this.trainingPoints);
     if (this.trainingPoints.length < 8) {
       return; // Not enough points, I think. It might crash if length = 0.
     }
 
     const buffer = [];
 
-    console.log('>>>>> edgeTraining:', this.edgeTraining);
-    this.calculateTraining(
+    this._calculateTraining(
       buffer,
       this.edgeGran,
-      this.greyscale,
+      this.grayscale,
       this.edgeTraining
     );
 
-    console.log('>>>>> gradTraining:', this.gradTraining);
-    this.calculateTraining(
+    this._calculateTraining(
       buffer,
       this.gradGran,
       this.gradient,
       this.gradTraining
     );
 
-    console.log('>>>>> insideTraining:', this.insideTraining);
-    this.calculateTraining(
+    this._calculateTraining(
       buffer,
       this.insideGran,
       this.inside,
       this.insideTraining
     );
 
-    console.log('>>>>> outsideTraining:', this.outsideTraining);
-    this.calculateTraining(
+    this._calculateTraining(
       buffer,
       this.outsideGran,
       this.outside,
@@ -615,14 +503,13 @@ export class Scissors {
     if (this.trainingPoints.length < this.gradPointsNeeded) {
       // If we have two few training points, the gradient weight map might not
       // be smooth enough, so average with normal weights.
-      this.addInStaticGrad(this.trainingPoints.length, this.gradPointsNeeded);
+      this._addInStaticGrad(this.trainingPoints.length, this.gradPointsNeeded);
     }
 
     this.trained = true;
   }
 
-  calculateTraining(buffer, granularity, input, output) {
-    console.log('>>>>> calculateTraining');
+  private _calculateTraining(buffer, granularity, input, output) {
     let i = 0;
     // Build a map of raw-weights to trained-weights by favoring input values
     buffer.length = granularity;
@@ -632,10 +519,8 @@ export class Scissors {
 
     let maxVal = 1;
     for (i = 0; i < this.trainingPoints.length; i++) {
-      const p = this.trainingPoints[i];
-      console.log('>>>>> p: ', p);
-      console.log('>>>>> input[p.y]: ', input[p.y]);
-      const idx = this.getTrainingIdx(granularity, input[p.y][p.x]);
+      const point = this.trainingPoints[i];
+      const idx = this._getTrainingIdx(granularity, input[point[1]][point[0]]);
       buffer[idx] += 1;
 
       maxVal = Math.max(maxVal, buffer[idx]);
@@ -650,7 +535,7 @@ export class Scissors {
     gaussianBlur(buffer, output);
   }
 
-  addInStaticGrad(have, need) {
+  private _addInStaticGrad(have, need) {
     // Average gradient raw-weights to trained-weights map with standard weight
     // map so that we don't end up with something to spiky
     for (let i = 0; i < this.gradGran; i++) {
@@ -661,22 +546,16 @@ export class Scissors {
     }
   }
 
-  gradDirection(px, py, qx, qy) {
+  private _gradDirection(px, py, qx, qy) {
     return gradDirection(this.gradX, this.gradY, px, py, qx, qy);
   }
 
   /**
    * Return a weighted distance between two points used by the A* algorithm
-   * @param px
-   * @param py
-   * @param qx
-   * @param qy
-   * @returns
    */
-  // _getDistance(px, py, qx, qy) {
-  _getDistance(pointA: ScissorPoint, pointB: ScissorPoint) {
-    const { x: aX, y: aY } = pointA;
-    const { x: bX, y: bY } = pointB;
+  private _getDistance(pointA: Types.Point2, pointB: Types.Point2) {
+    const [aX, aY] = pointA;
+    const [bX, bY] = pointB;
 
     // Weighted distance function
     let grad = this.gradient[bY][bX];
@@ -687,14 +566,13 @@ export class Scissors {
     }
 
     const lap = this.laplace[bY][bX];
-    const dir = this.gradDirection(aX, aY, bX, bY);
+    const dir = this._gradDirection(aX, aY, bX, bY);
 
     if (this.trained) {
-      // Apply training magic
-      const gradT = this.getTrainedGrad(grad);
-      const edgeT = this.getTrainedEdge(this.greyscale.data[aY][aX]);
-      const insideT = this.getTrainedInside(this.inside[aY][aX]);
-      const outsideT = this.getTrainedOutside(this.outside[aY][aX]);
+      const gradT = this._getTrainedGrad(grad);
+      const edgeT = this._getTrainedEdge(this.grayscale.data[aY][aX]);
+      const insideT = this._getTrainedInside(this.inside[aY][aX]);
+      const outsideT = this._getTrainedOutside(this.outside[aY][aX]);
 
       return 0.3 * gradT + 0.3 * lap + 0.1 * (dir + edgeT + insideT + outsideT);
     } else {
@@ -708,19 +586,19 @@ export class Scissors {
    * @param point - Reference point
    * @returns Up to eight neighbor points
    */
-  private _getNeighborPoints(point): ScissorPoint[] {
-    const list: ScissorPoint[] = [];
+  private _getNeighborPoints(point: Types.Point2): Types.Point2[] {
+    const list: Types.Point2[] = [];
 
-    const sx = Math.max(point.x - 1, 0);
-    const sy = Math.max(point.y - 1, 0);
-    const ex = Math.min(point.x + 1, this.greyscale.getWidth() - 1);
-    const ey = Math.min(point.y + 1, this.greyscale.getHeight() - 1);
+    const sx = Math.max(point[0] - 1, 0);
+    const sy = Math.max(point[1] - 1, 0);
+    const ex = Math.min(point[0] + 1, this.grayscale.width - 1);
+    const ey = Math.min(point[1] + 1, this.grayscale.height - 1);
 
     let idx = 0;
     for (let y = sy; y <= ey; y++) {
       for (let x = sx; x <= ex; x++) {
-        if (x !== point.x || y !== point.y) {
-          list[idx++] = { x: x, y: y };
+        if (x !== point[0] || y !== point[1]) {
+          list[idx++] = [x, y];
         }
       }
     }
@@ -728,21 +606,21 @@ export class Scissors {
     return list;
   }
 
-  private _costFunction = (p: ScissorPoint): number => {
-    return Math.round(this.searchGran * this.cost[p.y][p.x]);
+  private _costFunction = (point: Types.Point2): number => {
+    return Math.round(this.searchGran * this.cost[point[1]][point[0]]);
   };
 
   private _arePointsEqual = (
-    pointA: ScissorPoint,
-    pointB: ScissorPoint
+    pointA: Types.Point2,
+    pointB: Types.Point2
   ): boolean => {
     return (
       pointA === pointB ||
-      (pointA && pointB && pointA.x === pointB.x && pointA.y === pointB.y)
+      (pointA && pointB && pointA[0] === pointB[0] && pointA[1] === pointB[1])
     );
   };
 
-  setPoint(sp) {
+  public setPoint(sp: Types.Point2): void {
     this.setWorking(true);
     this.visited = new Array(this.height);
     this.parents = new Array(this.height);
@@ -758,13 +636,14 @@ export class Scissors {
       this.cost[y].fill(Number.MAX_VALUE);
     }
 
-    this.cost[sp.y][sp.x] = 0;
+    this.cost[sp[1]][sp[0]] = 0;
 
-    this.priorityQueue = new BucketQueue<ScissorPoint>({
+    this.priorityQueue = new BucketQueue<Types.Point2>({
       numBits: this.searchGranBits,
       getPriority: this._costFunction,
       areEqual: this._arePointsEqual,
     });
+
     this.priorityQueue.push(sp);
   }
 
@@ -772,17 +651,17 @@ export class Scissors {
    * Runs a variation of Dijkstra algorithm to update the cost of
    * up to 500 (pointsPerPost) nodes
    */
-  doWork(): ScissorPoint[][] {
+  public doWork(): Types.Point2[][] {
     if (!this.working) {
       return;
     }
 
     let numPoints = 0;
-    const parentPointsPairs: ScissorPoint[][] = [];
+    const parentPointsPairs: Types.Point2[][] = [];
 
     while (!this.priorityQueue.isEmpty() && numPoints < this.pointsPerPost) {
       const point = this.priorityQueue.pop();
-      const { x: pX, y: pY } = point;
+      const [pX, pY] = point;
       const neighborsPoints = this._getNeighborPoints(point);
 
       parentPointsPairs.push([point, this.parents[pY][pX]]);
@@ -792,7 +671,7 @@ export class Scissors {
       // Update the cost of all neighbors that have a cost higher than the new one
       for (let i = 0, len = neighborsPoints.length; i < len; i++) {
         const neighborPoint = neighborsPoints[i];
-        const { x: neighborX, y: neighborY } = neighborPoint;
+        const [neighborX, neighborY] = neighborPoint;
         const dist = this._getDistance(point, neighborPoint);
         const neighborCost = this.cost[pY][pX] + dist;
 
@@ -810,8 +689,6 @@ export class Scissors {
 
       numPoints++;
     }
-
-    console.log('>>>>> numPoints:', numPoints);
 
     return parentPointsPairs;
   }

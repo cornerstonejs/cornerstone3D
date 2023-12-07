@@ -1,10 +1,13 @@
-import { LivewirePoint2 } from './LivewirePoint2';
-
+import { Types } from '@cornerstonejs/core';
+/**
+ * Path that contains points and control points to draw a path
+ * used by the livewire tool
+ */
 export class LivewirePath {
   /**
    * List of points.
    */
-  public pointArray: LivewirePoint2[];
+  public pointArray: Types.Point2[];
 
   /**
    * List of control points indexes
@@ -17,7 +20,7 @@ export class LivewirePath {
    *   Note: first and last point do not need to be equal.
    */
   constructor(
-    inputPointArray?: LivewirePoint2[],
+    inputPointArray?: Types.Point2[],
     inputControlPointIndexArray?: number[]
   ) {
     this.pointArray = inputPointArray ? inputPointArray.slice() : [];
@@ -32,7 +35,7 @@ export class LivewirePath {
    * @param index - The index of the point to get
    * @returns The Point2D at the given index.
    */
-  getPoint(index: number): LivewirePoint2 {
+  public getPoint(index: number): Types.Point2 {
     return this.pointArray[index];
   }
 
@@ -41,17 +44,17 @@ export class LivewirePath {
    *
    * @returns The last point of the list.
    */
-  getLastPoint(): LivewirePoint2 {
+  public getLastPoint(): Types.Point2 {
     return this.pointArray[this.pointArray.length - 1];
   }
 
   /**
    * Is the given point a control point.
    *
-   * @param point - point The Point2D to check.
-   * @returns True if a control point.
+   * @param point - The 2D point to check.
+   * @returns True if a control point, false otherwise.
    */
-  isControlPoint(point: LivewirePoint2): boolean {
+  public isControlPoint(point: Types.Point2): boolean {
     const index = this.pointArray.indexOf(point);
     if (index !== -1) {
       return this._controlPointIndexes.indexOf(index) !== -1;
@@ -61,29 +64,20 @@ export class LivewirePath {
   }
 
   /**
-   * Get the length of the path.
-   *
-   * @returns The length of the path.
-   */
-  // getLength(): number {
-  //   return this.pointArray.length;
-  // }
-
-  /**
    * Add a point to the path.
    *
-   * @param point - The Point2 to add.
+   * @param point - The 2D point to add.
    */
-  addPoint(point: LivewirePoint2) {
+  public addPoint(point: Types.Point2) {
     this.pointArray.push(point);
   }
 
   /**
    * Add a control point to the path.
    *
-   * @param point - The Point2D to make a control point.
+   * @param point - The 2D point to make a control point.
    */
-  addControlPoint(point: LivewirePoint2) {
+  public addControlPoint(point: Types.Point2) {
     const index = this.pointArray.indexOf(point);
 
     if (index !== -1) {
@@ -110,9 +104,9 @@ export class LivewirePath {
   /**
    * Add points to the path.
    *
-   * @param newPointArray - The list of Point2D to add.
+   * @param newPointArray - The list of 2D points to add.
    */
-  addPoints(newPointArray: LivewirePoint2[]) {
+  public addPoints(newPointArray: Types.Point2[]) {
     this.pointArray = this.pointArray.concat(newPointArray);
   }
 
@@ -121,7 +115,7 @@ export class LivewirePath {
    *
    * @param other - The path to append.
    */
-  prependPath(other: LivewirePath): void {
+  public prependPath(other: LivewirePath): void {
     const otherSize = other.pointArray.length;
     const shiftedIndexArray: number[] = [];
 
