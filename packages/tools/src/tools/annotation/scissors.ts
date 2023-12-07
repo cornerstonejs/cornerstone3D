@@ -326,9 +326,13 @@ function computeSides(dist, gradX, gradY, greyscale) {
   // gradient vector, in either direction, from the supplied point. These
   // values are used when using active-learning Intelligent Scissors
 
-  const sides = {};
-  sides.inside = [];
-  sides.outside = [];
+  const sides: {
+    inside: number[][];
+    outside: number[][];
+  } = {
+    inside: [],
+    outside: [],
+  };
 
   const guv = { x: -1, y: -1 }; // Current gradient unit vector
 
@@ -405,7 +409,6 @@ function gaussianBlur(buffer, out: number[]) {
 export class Scissors {
   private width: number;
   private height: number;
-  private curPoint: ScissorPoint;
   private searchGranBits: number;
   private searchGran: number;
   private pointsPerPost: number;
@@ -416,13 +419,14 @@ export class Scissors {
   private gradX: number[][];
   private gradY: number[][];
 
-  private parents: ScissorPoint[][];
   private working: boolean;
   private trained: boolean;
   private trainingPoints: ScissorPoint[];
   private edgeWidth: number;
   private trainingLength: number;
   private edgeGran: number;
+  private inside: number[][];
+  private outside: number[][];
   private edgeTraining: number[];
   private gradPointsNeeded: number;
   private gradGran: number;
@@ -431,15 +435,17 @@ export class Scissors {
   private insideTraining: number[];
   private outsideGran: number;
   private outsideTraining: number[];
+
+  /** Properties used only by A* algorithm */
   private visited: boolean[][];
+  private parents: ScissorPoint[][];
   private cost: number[][];
-  private priorityQueue: BucketQueue;
+  private priorityQueue: BucketQueue<ScissorPoint>;
 
   constructor() {
     this.width = -1;
     this.height = -1;
 
-    this.curPoint = null; // Corrent point we're searching on.
     this.searchGranBits = 8; // Bits of resolution for BucketQueue.
     this.searchGran = 1 << this.searchGranBits; //bits.
     this.pointsPerPost = 500;
@@ -659,24 +665,36 @@ export class Scissors {
     return gradDirection(this.gradX, this.gradY, px, py, qx, qy);
   }
 
-  dist(px, py, qx, qy) {
-    // The grand culmunation of most of the code: the weighted distance function
-    let grad = this.gradient[qy][qx];
+  /**
+   * Return a weighted distance between two points used by the A* algorithm
+   * @param px
+   * @param py
+   * @param qx
+   * @param qy
+   * @returns
+   */
+  // _getDistance(px, py, qx, qy) {
+  _getDistance(pointA: ScissorPoint, pointB: ScissorPoint) {
+    const { x: aX, y: aY } = pointA;
+    const { x: bX, y: bY } = pointB;
 
-    if (px === qx || py === qy) {
+    // Weighted distance function
+    let grad = this.gradient[bY][bX];
+
+    if (aX === bX || aY === bY) {
       // The distance is Euclidean-ish; non-diagonal edges should be shorter
       grad *= Math.SQRT1_2;
     }
 
-    const lap = this.laplace[qy][qx];
-    const dir = this.gradDirection(px, py, qx, qy);
+    const lap = this.laplace[bY][bX];
+    const dir = this.gradDirection(aX, aY, bX, bY);
 
     if (this.trained) {
       // Apply training magic
       const gradT = this.getTrainedGrad(grad);
-      const edgeT = this.getTrainedEdge(this.greyscale.data[py][px]);
-      const insideT = this.getTrainedInside(this.inside[py][px]);
-      const outsideT = this.getTrainedOutside(this.outside[py][px]);
+      const edgeT = this.getTrainedEdge(this.greyscale.data[aY][aX]);
+      const insideT = this.getTrainedInside(this.inside[aY][aX]);
+      const outsideT = this.getTrainedOutside(this.outside[aY][aX]);
 
       return 0.3 * gradT + 0.3 * lap + 0.1 * (dir + edgeT + insideT + outsideT);
     } else {
@@ -685,18 +703,23 @@ export class Scissors {
     }
   }
 
-  adj(p) {
-    const list = [];
+  /**
+   * Get up to 8 neighbors points
+   * @param point - Reference point
+   * @returns Up to eight neighbor points
+   */
+  private _getNeighborPoints(point): ScissorPoint[] {
+    const list: ScissorPoint[] = [];
 
-    const sx = Math.max(p.x - 1, 0);
-    const sy = Math.max(p.y - 1, 0);
-    const ex = Math.min(p.x + 1, this.greyscale.getWidth() - 1);
-    const ey = Math.min(p.y + 1, this.greyscale.getHeight() - 1);
+    const sx = Math.max(point.x - 1, 0);
+    const sy = Math.max(point.y - 1, 0);
+    const ex = Math.min(point.x + 1, this.greyscale.getWidth() - 1);
+    const ey = Math.min(point.y + 1, this.greyscale.getHeight() - 1);
 
     let idx = 0;
     for (let y = sy; y <= ey; y++) {
       for (let x = sx; x <= ex; x++) {
-        if (x !== p.x || y !== p.y) {
+        if (x !== point.x || y !== point.y) {
           list[idx++] = { x: x, y: y };
         }
       }
@@ -709,9 +732,18 @@ export class Scissors {
     return Math.round(this.searchGran * this.cost[p.y][p.x]);
   };
 
+  private _arePointsEqual = (
+    pointA: ScissorPoint,
+    pointB: ScissorPoint
+  ): boolean => {
+    return (
+      pointA === pointB ||
+      (pointA && pointB && pointA.x === pointB.x && pointA.y === pointB.y)
+    );
+  };
+
   setPoint(sp) {
     this.setWorking(true);
-    this.curPoint = sp;
     this.visited = new Array(this.height);
     this.parents = new Array(this.height);
     this.cost = new Array(this.height);
@@ -728,49 +760,60 @@ export class Scissors {
 
     this.cost[sp.y][sp.x] = 0;
 
-    this.priorityQueue = new BucketQueue(
-      this.searchGranBits,
-      this._costFunction
-    );
+    this.priorityQueue = new BucketQueue<ScissorPoint>({
+      numBits: this.searchGranBits,
+      getPriority: this._costFunction,
+      areEqual: this._arePointsEqual,
+    });
     this.priorityQueue.push(sp);
   }
 
-  doWork() {
+  /**
+   * Runs a variation of Dijkstra algorithm to update the cost of
+   * up to 500 (pointsPerPost) nodes
+   */
+  doWork(): ScissorPoint[] {
     if (!this.working) {
       return;
     }
 
-    let pointCount = 0;
-    const newPoints: ScissorPoint[] = [];
+    let numPoints = 0;
+    const parentPoints: ScissorPoint[] = [];
 
-    while (!this.priorityQueue.isEmpty() && pointCount < this.pointsPerPost) {
-      const p = this.priorityQueue.pop();
-      newPoints.push(p);
-      newPoints.push(this.parents[p.y][p.x]);
+    while (!this.priorityQueue.isEmpty() && numPoints < this.pointsPerPost) {
+      const point = this.priorityQueue.pop();
+      const { x: pX, y: pY } = point;
+      const neighborsPoints = this._getNeighborPoints(point);
 
-      this.visited[p.y][p.x] = true;
+      parentPoints.push(point);
+      parentPoints.push(this.parents[pY][pX]);
 
-      const adjList = this.adj(p);
-      for (let i = 0; i < adjList.length; i++) {
-        const q = adjList[i];
+      this.visited[pY][pX] = true;
 
-        const pqCost = this.cost[p.y][p.x] + this.dist(p.x, p.y, q.x, q.y);
+      // Update the cost of all neighbors that have a cost higher than the new one
+      for (let i = 0, len = neighborsPoints.length; i < len; i++) {
+        const neighborPoint = neighborsPoints[i];
+        const { x: neighborX, y: neighborY } = neighborPoint;
+        const dist = this._getDistance(point, neighborPoint);
+        const neighborCost = this.cost[pY][pX] + dist;
 
-        if (pqCost < this.cost[q.y][q.x]) {
-          if (this.cost[q.y][q.x] !== Number.MAX_VALUE) {
-            // Already in PQ, must remove it so we can re-add it.
-            this.priorityQueue.remove(q);
+        if (neighborCost < this.cost[neighborY][neighborX]) {
+          if (this.cost[neighborY][neighborX] !== Number.MAX_VALUE) {
+            // Already in priority queue. Must be remove so it can be re-added.
+            this.priorityQueue.remove(neighborPoint);
           }
 
-          this.cost[q.y][q.x] = pqCost;
-          this.parents[q.y][q.x] = p;
-          this.priorityQueue.push(q);
+          this.cost[neighborY][neighborX] = neighborCost;
+          this.parents[neighborY][neighborX] = point;
+          this.priorityQueue.push(neighborPoint);
         }
       }
 
-      pointCount++;
+      numPoints++;
     }
 
-    return newPoints;
+    console.log('>>>>> numPoints:', numPoints);
+
+    return parentPoints;
   }
-} // Scissors class
+}

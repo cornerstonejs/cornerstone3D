@@ -250,7 +250,7 @@ class LivewireContourTool extends AnnotationTool {
           activeHandleIndex: null,
         },
         path: {
-          path: livewirePath,
+          confirmedPath: livewirePath,
           currentPath: currentLivewirePath,
           parentPoints,
           closed: false,
@@ -448,13 +448,14 @@ class LivewireContourTool extends AnnotationTool {
 
     const { annotation } = this.editData;
     const { data } = annotation;
-    if (data.handles.points.length === CONTOUR_MIN_POINTS) {
-      this.cancel(element);
-      return;
-    } else {
-      const handlePointIndex = data.handles.points.length - 1;
-      this._deleteHandlePointByIndex(element, annotation, handlePointIndex);
-    }
+
+    // if (data.handles.points.length === CONTOUR_MIN_POINTS) {
+    //   this.cancel(element);
+    //   return;
+    // } else {
+    //   const handlePointIndex = data.handles.points.length - 1;
+    //   this._deleteHandlePointByIndex(element, annotation, handlePointIndex);
+    // }
 
     evt.preventDefault();
   };
@@ -483,6 +484,7 @@ class LivewireContourTool extends AnnotationTool {
     const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
     let slicePoint = { x: imagePos[0], y: imagePos[1] };
 
+    // Check if the point is inside the bounding box
     if (
       slicePoint.x < 0 ||
       slicePoint.y < 0 ||
@@ -495,43 +497,45 @@ class LivewireContourTool extends AnnotationTool {
     this.scissors.setPoint(slicePoint);
 
     const { parentPoints } = data.path;
-    let results = [];
-    let stop = false;
 
-    while (!parentPoints[slicePoint.y][slicePoint.x] && !stop) {
-      results = this.scissors.doWork();
+    // Process and update parent points
+    while (!parentPoints[slicePoint.y][slicePoint.x]) {
+      const updatedParentPoints = this.scissors.doWork();
 
-      if (results.length === 0) {
-        stop = true;
-      } else {
-        // fill parents
-        for (let i = 0; i < results.length - 1; i += 2) {
-          const _p = results[i];
-          const _q = results[i + 1];
-          parentPoints[_p.y][_p.x] = _q;
-        }
+      if (updatedParentPoints.length === 0) {
+        break;
+      }
+
+      // Update parent points matrix
+      for (let i = 0; i < updatedParentPoints.length - 1; i += 2) {
+        const point = updatedParentPoints[i];
+        const parentPoint = updatedParentPoints[i + 1];
+        parentPoints[point.y][point.x] = parentPoint;
       }
     }
 
-    // get the path
     data.path.currentPath = new LivewirePath();
-    stop = false;
-    while (slicePoint && !stop) {
+
+    // Get the path that goes from the cursor position to the last control point
+    while (slicePoint) {
       data.path.currentPath.addPoint(
         new LivewirePoint2(slicePoint.x, slicePoint.y)
       );
-      if (!data.path.parentPoints[slicePoint.y]) {
-        stop = true;
-      } else {
-        if (!data.path.parentPoints[slicePoint.y][slicePoint.x]) {
-          stop = true;
-        } else {
-          slicePoint = data.path.parentPoints[slicePoint.y][slicePoint.x];
-        }
+
+      if (
+        !parentPoints[slicePoint.y] ||
+        !parentPoints[slicePoint.y][slicePoint.x]
+      ) {
+        break;
       }
+
+      slicePoint = parentPoints[slicePoint.y][slicePoint.x];
     }
 
-    data.path.currentPath.appendPath(data.path.path);
+    // Merge the current path that goes from the cursor to the last control point
+    // and the "confirmed" path that goes from the last control point to the first
+    // control point
+    data.path.currentPath.appendPath(data.path.confirmedPath);
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
     evt.preventDefault();
@@ -566,7 +570,7 @@ class LivewireContourTool extends AnnotationTool {
         distSquared: Infinity,
       };
 
-      const controlPoints = data.path.path.getControlPoints();
+      const controlPoints = data.path.confirmedPath.getControlPoints();
 
       for (let i = 0, len = controlPoints.length; i < len; i++) {
         const controlPoint = controlPoints[i];
@@ -613,14 +617,16 @@ class LivewireContourTool extends AnnotationTool {
       const slicePos = { x: volumePos[0], y: volumePos[1] };
       const { parentPoints } = data.path;
 
-      data.path.path = data.path.currentPath;
+      data.path.confirmedPath = data.path.currentPath;
 
       for (let row = 0, rows = parentPoints.length; row < rows; row++) {
         parentPoints[row] = new Array(parentPoints[row].length);
       }
 
       this.scissors.doTraining(slicePos);
-      data.path.path.addControlPoint(data.path.currentPath.getPoint(0));
+      data.path.confirmedPath.addControlPoint(
+        data.path.currentPath.getPoint(0)
+      );
     }
 
     annotation.invalidated = true;

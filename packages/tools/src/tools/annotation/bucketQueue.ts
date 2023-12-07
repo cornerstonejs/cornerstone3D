@@ -1,3 +1,17 @@
+class BucketNode<T> {
+  private _value: T;
+  public next: BucketNode<T>;
+
+  constructor(value: T, next: BucketNode<T> = null) {
+    this._value = value;
+    this.next = next;
+  }
+
+  public get value(): T {
+    return this._value;
+  }
+}
+
 /**
  * Circular Bucket Queue.
  *
@@ -7,102 +21,140 @@
  * If the most recent point had a cost of c, any points added should have a cost
  * c' in the range c <= c' <= c + (capacity - 1).
  */
-export class BucketQueue {
+export class BucketQueue<T> {
+  private _bucketCount: number;
+  private _mask: number;
+  private _size: number;
+  private _currentBucketIndex: number;
+  private _getPriority: (item: T) => number;
+  private _areEqual: (itemA: T, itemB: T) => boolean;
+  private _buckets: BucketNode<T>[];
+
   /**
-   * @param {number} bits Number of bits.
-   * @param {Function} cost_functor The cost functor.
+   * @param bits - Number of bits.
+   * @param getPriority - A function that returns the priority of an item
    */
-  constructor(bits, cost_functor) {
-    this.bucketCount = 1 << bits; // # of buckets = 2^bits
-    this.mask = this.bucketCount - 1; // 2^bits - 1 = index mask
-    this.size = 0;
+  constructor({
+    numBits,
+    getPriority,
+    areEqual,
+  }: {
+    numBits: number;
+    getPriority?: (item: T) => number;
+    areEqual?: (itemA: T, itemB: T) => boolean;
+  }) {
+    this._bucketCount = 1 << numBits; // # of buckets = 2^numBits
+    this._mask = this._bucketCount - 1; // 2^numBits - 1 = index mask
+    this._size = 0;
+    this._currentBucketIndex = 0;
+    this._buckets = this._buildArray(this._bucketCount);
 
-    this.loc = 0; // Current index in bucket list
-    // Cost defaults to item value
-    this.cost =
-      typeof cost_functor !== 'undefined'
-        ? cost_functor
-        : function (item) {
-            return item;
-          };
-    this.buckets = this.buildArray(this.bucketCount);
+    this._getPriority =
+      typeof getPriority !== 'undefined'
+        ? getPriority
+        : (item) => item as number;
+
+    this._areEqual =
+      typeof areEqual === 'function'
+        ? areEqual
+        : (itemA, itemB) => itemA === itemB;
   }
 
-  push(item) {
-    // Prepend item to the list in the appropriate bucket
-    const bucket = this.getBucket(item);
-    item.next = this.buckets[bucket];
-    this.buckets[bucket] = item;
+  /**
+   * Prepend item to the list in the appropriate bucket
+   * @param item - Item to be added to the queue based on its priority
+   */
+  public push(item: T) {
+    const bucketIndex = this._getBucketIndex(item);
+    const oldHead = this._buckets[bucketIndex];
+    const newHead = new BucketNode(item, oldHead);
 
-    this.size++;
+    this._buckets[bucketIndex] = newHead;
+    this._size++;
   }
 
-  pop() {
-    if (this.size === 0) {
-      throw new Error('Cannot pop, bucketQueue is empty.');
+  public pop(): T {
+    if (this._size === 0) {
+      throw new Error('Cannot pop because the queue is empty.');
     }
 
     // Find first empty bucket
-    while (this.buckets[this.loc] === null) {
-      this.loc = (this.loc + 1) % this.bucketCount;
+    while (this._buckets[this._currentBucketIndex] === null) {
+      this._currentBucketIndex =
+        (this._currentBucketIndex + 1) % this._bucketCount;
     }
 
     // All items in bucket have same cost, return the first one
-    const ret = this.buckets[this.loc];
-    this.buckets[this.loc] = ret.next;
-    ret.next = null;
+    const ret = this._buckets[this._currentBucketIndex];
 
-    this.size--;
-    return ret;
+    this._buckets[this._currentBucketIndex] = ret.next;
+    this._size--;
+
+    return ret.value;
   }
 
-  // TODO: needs at least two items...
-  remove(item) {
-    // Tries to remove item from queue. Returns true on success, false otherwise
+  /**
+   * Tries to remove item from queue.
+   * @param item - Item to be removed from the queue
+   * @returns True if the item is found and removed or false otherwise
+   */
+  public remove(item: T): boolean {
     if (!item) {
       return false;
     }
 
     // To find node, go to bucket and search through unsorted list.
-    const bucket = this.getBucket(item);
-    let node = this.buckets[bucket];
+    const bucketIndex = this._getBucketIndex(item);
+    const firstBucketNode = this._buckets[bucketIndex];
+    let node = firstBucketNode;
+    let prevNode: BucketNode<T>;
 
-    while (
-      node !== null &&
-      !(node.next !== null && item.x === node.next.x && item.y === node.next.y)
-    ) {
+    while (node !== null) {
+      if (this._areEqual(item, node.value)) {
+        break;
+      }
+
+      prevNode = node;
       node = node.next;
     }
 
+    // Item not found
     if (node === null) {
-      // Item not in list, ergo item not in queue
       return false;
+    }
+
+    // Item found and it needs to be removed from the list
+    if (node === firstBucketNode) {
+      this._buckets[bucketIndex] = node.next;
     } else {
-      // Found item, do standard list node deletion
-      node.next = node.next.next;
-
-      this.size--;
-      return true;
-    }
-  }
-
-  isEmpty() {
-    return this.size === 0;
-  }
-
-  getBucket(item) {
-    // Bucket index is the masked cost
-    return this.cost(item) & this.mask;
-  }
-
-  buildArray(newSize) {
-    // Create array and initialze pointers to null
-    const buckets = new Array(newSize);
-
-    for (let i = 0; i < buckets.length; i++) {
-      buckets[i] = null;
+      prevNode.next = node.next;
     }
 
+    this._size--;
+    return true;
+  }
+
+  public isEmpty(): boolean {
+    return this._size === 0;
+  }
+
+  /**
+   * Return the bucket index
+   * @param item - Item for which the bucket shall be returned
+   * @returns Bucket index for the item provided
+   */
+  private _getBucketIndex(item): number {
+    return this._getPriority(item) & this._mask;
+  }
+
+  /**
+   * Create array and initialze pointers to null
+   * @param size - Size of the new array
+   * @returns An array with `N` buckets pointing to null
+   */
+  private _buildArray(size) {
+    const buckets = new Array(size);
+    buckets.fill(null);
     return buckets;
   }
-} // class BucketQueue
+}

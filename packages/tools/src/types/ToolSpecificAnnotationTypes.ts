@@ -171,7 +171,7 @@ export interface LivewireContourAnnotation extends Annotation {
       };
     };
     path: {
-      path: LivewirePath;
+      confirmedPath: LivewirePath;
       currentPath: LivewirePath;
       parentPoints: any[];
       closed: boolean;

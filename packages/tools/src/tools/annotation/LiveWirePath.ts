@@ -102,16 +102,17 @@ export class LivewirePath {
    *
    * @param other - The Path to append.
    */
-  appendPath(other: LivewirePath) {
+  appendPath(other: LivewirePath): void {
     const oldSize = this.pointArray.length;
+    const shiftedIndexArray: number[] = [];
+
     this.pointArray = this.pointArray.concat(other.pointArray);
-    const indexArray = [];
 
     for (let i = 0; i < other.controlPointIndexArray.length; ++i) {
-      indexArray[i] = other.controlPointIndexArray[i] + oldSize;
+      shiftedIndexArray[i] = other.controlPointIndexArray[i] + oldSize;
     }
 
     this.controlPointIndexArray =
-      this.controlPointIndexArray.concat(indexArray);
+      this.controlPointIndexArray.concat(shiftedIndexArray);
   }
 }
