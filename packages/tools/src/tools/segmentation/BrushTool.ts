@@ -128,6 +128,24 @@ class BrushTool extends BaseTool {
         },
         // Whether to show a center circle/position.  Set to null to not show
         centerRadius: 2,
+        actions: {
+          [StrategyCallbacks.acceptPreview]: {
+            method: StrategyCallbacks.acceptPreview,
+            bindings: [
+              {
+                key: 'a',
+              },
+            ],
+          },
+          [StrategyCallbacks.rejectPreview]: {
+            method: StrategyCallbacks.rejectPreview,
+            bindings: [
+              {
+                key: 'd',
+              },
+            ],
+          },
+        },
       },
     }
   ) {
@@ -435,12 +453,15 @@ class BrushTool extends BaseTool {
       currentPoints.canvas,
       this._previewData.startPoint
     );
-    const { dragTimeMs, dragMoveDistance } = this.configuration;
+    const { dragTimeMs, dragMoveDistance } = this.configuration.preview;
     if (
       !this._previewData.isDrag &&
+      this._previewData.preview &&
       Date.now() - this._previewData.timerStart < dragTimeMs &&
       delta < dragMoveDistance
     ) {
+      // If we are showing a preview, then don't start dragging quite immediately
+      // so that click up can accept the preview.
       return;
     }
 

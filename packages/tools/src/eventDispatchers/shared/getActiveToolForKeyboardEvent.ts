@@ -1,5 +1,5 @@
 import { ToolGroupManager } from '../../store';
-import { ToolModes, MouseBindings } from '../../enums';
+import { ToolModes, MouseBindings, KeyboardBindings } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
 import { EventTypes } from '../../types';
 import { getMouseButton } from '../../eventListeners/mouse/mouseDownListener';
@@ -24,6 +24,7 @@ export default function getActiveToolForKeyboardEvent(
   const mouseButton = getMouseButton();
 
   // If any keyboard modifier key is also pressed
+  // TODO - get the real modifier key
   const modifierKey = keyEventListener.getModifierKey();
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(

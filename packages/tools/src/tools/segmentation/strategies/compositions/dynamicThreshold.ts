@@ -26,8 +26,8 @@ export default {
     }
 
     const { boundsIJK } = segmentationVoxelManager;
-    const { threshold: oldThreshold, delta = 0 } = THRESHOLD;
-    const useDelta = oldThreshold ? 0 : delta;
+    const { threshold: oldThreshold, dynamicRadius = 0 } = THRESHOLD;
+    const useDelta = oldThreshold ? 0 : dynamicRadius;
     const nestedBounds = boundsIJK.map((ijk, idx) => {
       const [min, max] = ijk;
       return [

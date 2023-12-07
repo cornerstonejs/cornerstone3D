@@ -172,11 +172,14 @@ addDropdownToToolbar({
 });
 
 const thresholdOptions = new Map<string, any>();
-thresholdOptions.set('Dynamic r=0', { isDynamic: true, delta: 0 });
-thresholdOptions.set('Dynamic r=1', { isDynamic: true, delta: 1 });
-thresholdOptions.set('Dynamic r=3', { isDynamic: true, delta: 3 });
-thresholdOptions.set('Dynamic r=5', { isDynamic: true, delta: 5 });
-thresholdOptions.set('Same Threshold', { isDynamic: false, delta: 5 });
+thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
+thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
+thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
+thresholdOptions.set('Dynamic Radius 5', { isDynamic: true, dynamicRadius: 5 });
+thresholdOptions.set('Use Existing Threshold', {
+  isDynamic: false,
+  dynamicRadius: 5,
+});
 thresholdOptions.set('CT Fat: (-150, -70)', {
   threshold: [-150, -70],
   isDynamic: false,
@@ -358,20 +361,6 @@ async function run() {
     ],
   });
 
-  const keyMappingFn = {
-    fn: (evt) => {
-      const { element, key } = evt.detail;
-      const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-      const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-      const brush = toolGroup.getToolInstance(activeName);
-      if (key === 'Escape') {
-        brush.rejectPreview?.(element);
-      } else if (key === 'Enter') {
-        brush.acceptPreview?.(element);
-      }
-    },
-  };
-
   // Setup threshold and the default strategy arguments
   const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
   toolGroup.addToolInstance(
@@ -487,16 +476,6 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  element1.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    keyMappingFn.fn(evt);
-  });
-  element2.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    keyMappingFn.fn(evt);
-  });
-  element3.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    keyMappingFn.fn(evt);
-  });
-
   // Set the volume to load
   volume.load();
 
@@ -512,15 +491,12 @@ async function run() {
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // // Add the segmentation representation to the toolgroup
-  const [representationUID] = await segmentation.addSegmentationRepresentations(
-    toolGroupId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]
-  );
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
