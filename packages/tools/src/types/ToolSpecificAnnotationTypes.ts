@@ -155,6 +155,7 @@ export interface SplineROIAnnotation extends Annotation {
 
 export interface LivewireContourAnnotation extends Annotation {
   data: {
+    polyline: Types.Point3[];
     label?: string;
     handles: {
       points: Types.Point3[];

@@ -57,9 +57,9 @@ export class LivewirePath {
    *
    * @returns The length of the path.
    */
-  getLength(): number {
-    return this.pointArray.length;
-  }
+  // getLength(): number {
+  //   return this.pointArray.length;
+  // }
 
   /**
    * Add a point to the path.
@@ -77,6 +77,7 @@ export class LivewirePath {
    */
   addControlPoint(point: LivewirePoint2) {
     const index = this.pointArray.indexOf(point);
+
     if (index !== -1) {
       this.controlPointIndexArray.push(index);
     } else {
@@ -84,8 +85,18 @@ export class LivewirePath {
     }
   }
 
-  getControlPoints() {
+  public getControlPoints() {
     return this.controlPointIndexArray.map((i) => this.pointArray[i]);
+  }
+
+  public getNumControlPoints(): number {
+    return this.controlPointIndexArray.length;
+  }
+
+  public removeLastControlPoint(): void {
+    if (this.controlPointIndexArray.length) {
+      this.controlPointIndexArray.pop();
+    }
   }
 
   /**

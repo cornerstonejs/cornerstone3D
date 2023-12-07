@@ -772,21 +772,20 @@ export class Scissors {
    * Runs a variation of Dijkstra algorithm to update the cost of
    * up to 500 (pointsPerPost) nodes
    */
-  doWork(): ScissorPoint[] {
+  doWork(): ScissorPoint[][] {
     if (!this.working) {
       return;
     }
 
     let numPoints = 0;
-    const parentPoints: ScissorPoint[] = [];
+    const parentPointsPairs: ScissorPoint[][] = [];
 
     while (!this.priorityQueue.isEmpty() && numPoints < this.pointsPerPost) {
       const point = this.priorityQueue.pop();
       const { x: pX, y: pY } = point;
       const neighborsPoints = this._getNeighborPoints(point);
 
-      parentPoints.push(point);
-      parentPoints.push(this.parents[pY][pX]);
+      parentPointsPairs.push([point, this.parents[pY][pX]]);
 
       this.visited[pY][pX] = true;
 
@@ -814,6 +813,6 @@ export class Scissors {
 
     console.log('>>>>> numPoints:', numPoints);
 
-    return parentPoints;
+    return parentPointsPairs;
   }
 }
