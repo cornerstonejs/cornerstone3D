@@ -607,6 +607,8 @@ const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
 type DisplayArea = {
+    rotation?: number;
+    flipHorizontal?: boolean;
     imageArea: [number, number];
     imageCanvasPoint: {
         imagePoint: [number, number];
