@@ -9,7 +9,7 @@ function generateContourSetsFromLabelmap({
 }) {
     const LABELMAP = cornerstoneToolsEnums.SegmentationRepresentations.Labelmap;
 
-    const { representationData, segments } = segmentations;
+    const { representationData, segments = [1] } = segmentations;
     const { volumeId: segVolumeId } = representationData[LABELMAP];
 
     // Get segmentation volume
