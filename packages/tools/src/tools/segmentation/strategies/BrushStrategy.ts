@@ -151,14 +151,12 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: LabelmapToolOperationDataAny
   ) => {
-    console.time('fill');
     const initializedData = this.initialize(enabledElement, operationData);
 
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
     if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
-      console.timeEnd('fill');
       return operationData.preview;
     } else {
       strategySpecificConfiguration.centerIJK = centerIJK;
@@ -176,7 +174,6 @@ export default class BrushStrategy {
       initializedData.segmentationId,
       segmentationVoxelManager.getArrayOfSlices()
     );
-    console.timeEnd('fill');
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
     if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
