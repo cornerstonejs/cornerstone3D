@@ -6,6 +6,7 @@ import {
   getCanvasEllipseCorners,
   pointInEllipse,
 } from '../../../utilities/math/ellipse';
+import pointInSphere from '../../../utilities/math/sphere/pointInSphere';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
@@ -14,9 +15,12 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
+const EPSILON = 1e-4;
+const nearOrZero = (testValue, nearValue) =>
+  Math.abs(testValue) < EPSILON || Math.abs(testValue - nearValue) < EPSILON;
 
 const initializeCircle = {
-  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points,
       imageVoxelManager: imageVoxelManager,
@@ -65,19 +69,47 @@ const initializeCircle = {
       ellipsoidCornersIJK,
       segmentationVoxelManager.dimensions
     );
-
-    // using circle as a form of ellipse
-    const ellipseObj = {
-      center: center as Types.Point3,
-      xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-      yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-      zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-    };
-
-    imageVoxelManager.isInObject = (pointLPS /*, pointIJK */) =>
-      pointInEllipse(ellipseObj, pointLPS);
+    imageVoxelManager.isInObject = createEllipseInPoint({
+      topLeftWorld,
+      bottomRightWorld,
+      center,
+    });
   },
 } as Composition;
+
+function createEllipseInPoint(worldInfo) {
+  const { topLeftWorld, bottomRightWorld, center } = worldInfo;
+
+  const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
+  const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
+  const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
+
+  const radius = Math.max(xRadius, yRadius, zRadius);
+  if (
+    nearOrZero(xRadius, radius) &&
+    nearOrZero(yRadius, radius) &&
+    nearOrZero(zRadius, radius)
+  ) {
+    const sphereObj = {
+      center,
+      radius,
+      radius2: radius * radius,
+    };
+    return (pointLPS) => pointInSphere(sphereObj, pointLPS);
+  }
+  // using circle as a form of ellipse
+  const ellipseObj = {
+    center: center as Types.Point3,
+    xRadius,
+    yRadius,
+    zRadius,
+  };
+  const inverts = pointInEllipse.precalculateInverts(ellipseObj);
+  const { precalculated } = pointInEllipse;
+
+  return (pointLPS /*, pointIJK */) =>
+    precalculated(ellipseObj, pointLPS, inverts);
+}
 
 const CIRCLE_STRATEGY = new BrushStrategy(
   'Circle',
@@ -131,4 +163,5 @@ export {
   CIRCLE_THRESHOLD_STRATEGY,
   fillInsideCircle,
   thresholdInsideCircle,
+  createEllipseInPoint,
 };

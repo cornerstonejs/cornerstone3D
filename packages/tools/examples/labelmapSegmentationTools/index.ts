@@ -425,6 +425,14 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
+  // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
 }

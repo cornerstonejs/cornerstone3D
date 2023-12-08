@@ -8,11 +8,11 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
  * Sets up a preview to use an alternate set of colours.  First fills the
  * preview segment index with the final one for all pixels, then resets
  * the preview colours.
- * This is only activated when the preview segment index is defined, eihter
+ * This is only activated when the preview segment index is defined, either
  * from the initial state or from the global state.
  */
 export default {
-  [StrategyCallbacks.preview]: function (
+  [StrategyCallbacks.Preview]: function (
     operationData: InitializedOperationData
   ) {
     const { previewColors, strategySpecificConfiguration, enabledElement } =
@@ -38,7 +38,7 @@ export default {
     return preview;
   },
 
-  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       toolGroupId,
       segmentIndex,
@@ -80,7 +80,7 @@ export default {
     );
   },
 
-  [StrategyCallbacks.acceptPreview]: (
+  [StrategyCallbacks.AcceptPreview]: (
     operationData: InitializedOperationData
   ) => {
     const {
@@ -113,7 +113,7 @@ export default {
     tracking.clear();
   },
 
-  [StrategyCallbacks.rejectPreview]: (
+  [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
     const {

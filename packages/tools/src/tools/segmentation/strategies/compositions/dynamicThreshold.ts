@@ -11,7 +11,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
  * center voxel at centerIJK.
  */
 export default {
-  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       centerIJK,
       strategySpecificConfiguration,
@@ -46,7 +46,7 @@ export default {
     operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
   },
   // Setup a clear threshold value on mouse/touch down
-  [StrategyCallbacks.onInteractionStart]: (
+  [StrategyCallbacks.OnInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
     const { strategySpecificConfiguration, preview } = operationData;

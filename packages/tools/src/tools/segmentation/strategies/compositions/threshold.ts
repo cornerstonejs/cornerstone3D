@@ -7,7 +7,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
  * No-op if threshold not defined.
  */
 export default {
-  [StrategyCallbacks.createIsInThreshold]: (
+  [StrategyCallbacks.CreateIsInThreshold]: (
     operationData: InitializedOperationData
   ) => {
     const {

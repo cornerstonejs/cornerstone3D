@@ -19,7 +19,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
  *
  */
 export default {
-  [StrategyCallbacks.initialize]: (operationData: InitializedOperationData) => {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const { strategySpecificConfiguration } = operationData;
     if (!strategySpecificConfiguration) {
       return;
@@ -30,7 +30,7 @@ export default {
     }
   },
 
-  [StrategyCallbacks.onInteractionStart]: (
+  [StrategyCallbacks.OnInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
     const {

@@ -490,7 +490,7 @@ async function run() {
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 4);
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
-  // // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
       segmentationId,

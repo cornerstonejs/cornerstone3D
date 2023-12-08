@@ -129,16 +129,16 @@ class BrushTool extends BaseTool {
         // Whether to show a center circle/position.  Set to null to not show
         centerRadius: 2,
         actions: {
-          [StrategyCallbacks.acceptPreview]: {
-            method: StrategyCallbacks.acceptPreview,
+          [StrategyCallbacks.AcceptPreview]: {
+            method: StrategyCallbacks.AcceptPreview,
             bindings: [
               {
                 key: 'Enter',
               },
             ],
           },
-          [StrategyCallbacks.rejectPreview]: {
-            method: StrategyCallbacks.rejectPreview,
+          [StrategyCallbacks.RejectPreview]: {
+            method: StrategyCallbacks.RejectPreview,
             bindings: [
               {
                 key: 'Escape',
@@ -283,7 +283,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      StrategyCallbacks.onInteractionStart
+      StrategyCallbacks.OnInteractionStart
     );
 
     return true;
@@ -355,7 +355,7 @@ class BrushTool extends BaseTool {
     this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
-      StrategyCallbacks.preview
+      StrategyCallbacks.Preview
     );
   };
 
@@ -594,7 +594,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       operationData,
-      StrategyCallbacks.onInteractionEnd
+      StrategyCallbacks.OnInteractionEnd
     );
 
     if (!this._previewData.isDrag) {
@@ -613,7 +613,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      StrategyCallbacks.rejectPreview
+      StrategyCallbacks.RejectPreview
     );
     this._previewData.preview = null;
     this._previewData.isDrag = false;
@@ -631,7 +631,7 @@ class BrushTool extends BaseTool {
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
-      StrategyCallbacks.acceptPreview
+      StrategyCallbacks.AcceptPreview
     );
     this._previewData.isDrag = false;
     this._previewData.preview = null;

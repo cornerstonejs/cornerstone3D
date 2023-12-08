@@ -2,23 +2,18 @@ import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import {
-  getCanvasEllipseCorners,
-  pointInEllipse,
-} from '../../../utilities/math/ellipse';
+import { getCanvasEllipseCorners } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { InitializedOperationData, Composition } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
 import compositions from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';
-
+import { createEllipseInPoint } from './fillCircle';
 const { transformWorldToIndex } = csUtils;
 
 const sphereComposition = {
-  [StrategyCallbacks.initialize]: function intializeSphere(
-    operationData: InitializedOperationData
-  ): void {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points,
       imageVoxelManager: imageVoxelManager,
@@ -81,16 +76,11 @@ const sphereComposition = {
       segmentationVoxelManager.dimensions
     );
 
-    // using circle as a form of ellipse
-    const ellipseObj = {
-      center: center as Types.Point3,
-      xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-      yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-      zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-    };
-
-    imageVoxelManager.isInObject = (pointLPS /*, pointIJK */) =>
-      pointInEllipse(ellipseObj, pointLPS);
+    imageVoxelManager.isInObject = createEllipseInPoint({
+      topLeftWorld,
+      bottomRightWorld,
+      center,
+    });
   },
 } as Composition;
 

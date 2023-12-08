@@ -76,32 +76,32 @@ export default class BrushStrategy {
   public static COMPOSITIONS = compositions;
 
   protected static childFunctions = {
-    [StrategyCallbacks.onInteractionStart]: addListMethod(
-      StrategyCallbacks.onInteractionStart,
-      StrategyCallbacks.initialize
+    [StrategyCallbacks.OnInteractionStart]: addListMethod(
+      StrategyCallbacks.OnInteractionStart,
+      StrategyCallbacks.Initialize
     ),
-    [StrategyCallbacks.onInteractionEnd]: addListMethod(
-      StrategyCallbacks.onInteractionEnd,
-      StrategyCallbacks.initialize
+    [StrategyCallbacks.OnInteractionEnd]: addListMethod(
+      StrategyCallbacks.OnInteractionEnd,
+      StrategyCallbacks.Initialize
     ),
-    [StrategyCallbacks.fill]: addListMethod(StrategyCallbacks.fill),
-    [StrategyCallbacks.initialize]: addListMethod(StrategyCallbacks.initialize),
-    [StrategyCallbacks.createIsInThreshold]: addSingletonMethod(
-      StrategyCallbacks.createIsInThreshold
+    [StrategyCallbacks.Fill]: addListMethod(StrategyCallbacks.Fill),
+    [StrategyCallbacks.Initialize]: addListMethod(StrategyCallbacks.Initialize),
+    [StrategyCallbacks.CreateIsInThreshold]: addSingletonMethod(
+      StrategyCallbacks.CreateIsInThreshold
     ),
-    [StrategyCallbacks.acceptPreview]: addListMethod(
-      StrategyCallbacks.acceptPreview,
-      StrategyCallbacks.initialize
+    [StrategyCallbacks.AcceptPreview]: addListMethod(
+      StrategyCallbacks.AcceptPreview,
+      StrategyCallbacks.Initialize
     ),
-    [StrategyCallbacks.rejectPreview]: addListMethod(
-      StrategyCallbacks.rejectPreview,
-      StrategyCallbacks.initialize
+    [StrategyCallbacks.RejectPreview]: addListMethod(
+      StrategyCallbacks.RejectPreview,
+      StrategyCallbacks.Initialize
     ),
     [StrategyCallbacks.INTERNAL_setValue]: addSingletonMethod(
       StrategyCallbacks.INTERNAL_setValue
     ),
-    [StrategyCallbacks.preview]: addSingletonMethod(
-      StrategyCallbacks.preview,
+    [StrategyCallbacks.Preview]: addSingletonMethod(
+      StrategyCallbacks.Preview,
       false
     ),
     // Add other exposed fields below
@@ -151,12 +151,14 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: LabelmapToolOperationDataAny
   ) => {
+    console.time('fill');
     const initializedData = this.initialize(enabledElement, operationData);
 
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
     if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
+      console.timeEnd('fill');
       return operationData.preview;
     } else {
       strategySpecificConfiguration.centerIJK = centerIJK;
@@ -174,7 +176,7 @@ export default class BrushStrategy {
       initializedData.segmentationId,
       segmentationVoxelManager.getArrayOfSlices()
     );
-
+    console.timeEnd('fill');
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
     if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {

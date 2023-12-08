@@ -23,6 +23,23 @@ export default function pointInEllipse(
   pointLPS,
   inverts: Inverts = {}
 ) {
+  if (
+    inverts.invXRadiusSq === undefined ||
+    inverts.invYRadiusSq === undefined ||
+    inverts.invZRadiusSq === undefined
+  ) {
+    pointInEllipse.precalculateInverts(ellipse, inverts);
+  }
+  return pointInEllipse.precalculated(ellipse, pointLPS, inverts);
+}
+
+/**
+ * This will perform some precalculations to make things faster.
+ * @param ellipse
+ * @param inverts
+ * @returns
+ */
+pointInEllipse.precalculateInverts = (ellipse, inverts: Inverts = {}) => {
   const { center, xRadius, yRadius, zRadius } = ellipse;
 
   // This will run only once since we are caching the values in the same
@@ -36,7 +53,16 @@ export default function pointInEllipse(
     inverts.invYRadiusSq = yRadius !== 0 ? 1 / yRadius ** 2 : 0;
     inverts.invZRadiusSq = zRadius !== 0 ? 1 / zRadius ** 2 : 0;
   }
+  return inverts;
+};
 
+/**
+ * If you call the pointInEllipse.precalculateInverts first, then you
+ * can call precalculated directionly instead of having the extra time for
+ * the if conditions.
+ */
+pointInEllipse.precalculated = (ellipse, pointLPS, inverts) => {
+  const { center } = ellipse;
   let inside = 0;
 
   // Calculate the sum of normalized squared distances
@@ -57,4 +83,4 @@ export default function pointInEllipse(
 
   // Check if the point is inside the ellipse
   return inside <= 1;
-}
+};

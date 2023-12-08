@@ -3239,6 +3239,14 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
+namespace pointInEllipse {
+    var // (undocumented)
+    precalculateInverts: (ellipse: any, inverts?: Inverts) => Inverts;
+    var // (undocumented)
+    precalculated: (ellipse: any, pointLPS: any, inverts: any) => boolean;
+}
+
+// @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
@@ -4441,25 +4449,25 @@ function stopClip(element: HTMLDivElement): void;
 // @public (undocumented)
 enum StrategyCallbacks {
     // (undocumented)
-    acceptPreview = "acceptPreview",
+    AcceptPreview = "acceptPreview",
     // (undocumented)
-    createIsInThreshold = "createIsInThreshold",
+    CreateIsInThreshold = "createIsInThreshold",
     // (undocumented)
-    fill = "fill",
+    Fill = "fill",
     // (undocumented)
-    initialize = "initialize",
+    Initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
     // (undocumented)
-    onInteractionEnd = "onInteractionEnd",
+    OnInteractionEnd = "onInteractionEnd",
     // (undocumented)
-    onInteractionStart = "onInteractionStart",
+    OnInteractionStart = "onInteractionStart",
     // (undocumented)
-    preview = "preview",
+    Preview = "preview",
     // (undocumented)
-    rejectPreview = "rejectPreview",
+    RejectPreview = "rejectPreview",
     // (undocumented)
-    strategyFunction = "strategyFunction"
+    StrategyFunction = "strategyFunction"
 }
 
 // @public (undocumented)

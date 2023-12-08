@@ -9,7 +9,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
  * with the new segment by calling the setValue function.
  */
 export default {
-  [StrategyCallbacks.fill]: (operationData: InitializedOperationData) => {
+  [StrategyCallbacks.Fill]: (operationData: InitializedOperationData) => {
     const {
       segmentsLocked,
       segmentationImageData,
