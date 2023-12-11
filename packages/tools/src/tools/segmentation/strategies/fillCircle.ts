@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
-  pointInEllipse,
+  precalculatePointInEllipse,
 } from '../../../utilities/math/ellipse';
 import pointInSphere from '../../../utilities/math/sphere/pointInSphere';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
@@ -69,7 +69,7 @@ const initializeCircle = {
       ellipsoidCornersIJK,
       segmentationVoxelManager.dimensions
     );
-    imageVoxelManager.isInObject = createEllipseInPoint({
+    imageVoxelManager.isInObject = createPointInEllipse({
       topLeftWorld,
       bottomRightWorld,
       center,
@@ -77,7 +77,19 @@ const initializeCircle = {
   },
 } as Composition;
 
-function createEllipseInPoint(worldInfo) {
+/**
+ * Creates a function that tells the user if the provided point in LPS space
+ * is inside the ellipse.
+ *
+ * This will return a sphere test function if the bounds are a circle or
+ * sphere shape (same radius in two or three dimensions), or an elliptical shape
+ * if they differ.
+ */
+function createPointInEllipse(worldInfo: {
+  topLeftWorld: Types.Point3;
+  bottomRightWorld: Types.Point3;
+  center: Types.Point3 | vec3;
+}) {
   const { topLeftWorld, bottomRightWorld, center } = worldInfo;
 
   const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
@@ -104,11 +116,10 @@ function createEllipseInPoint(worldInfo) {
     yRadius,
     zRadius,
   };
-  const inverts = pointInEllipse.precalculateInverts(ellipseObj);
-  const { precalculated } = pointInEllipse;
+  const inverts = precalculatePointInEllipse(ellipseObj);
+  const { precalculated } = inverts;
 
-  return (pointLPS /*, pointIJK */) =>
-    precalculated(ellipseObj, pointLPS, inverts);
+  return precalculated;
 }
 
 const CIRCLE_STRATEGY = new BrushStrategy(
@@ -163,5 +174,5 @@ export {
   CIRCLE_THRESHOLD_STRATEGY,
   fillInsideCircle,
   thresholdInsideCircle,
-  createEllipseInPoint,
+  createPointInEllipse as createEllipseInPoint,
 };

@@ -1,8 +1,15 @@
+import type { Types } from '@cornerstonejs/core';
 interface Inverts {
   invXRadiusSq?: number;
   invYRadiusSq?: number;
   invZRadiusSq?: number;
   fast?: boolean;
+  /**
+   * If you call the pointInEllipse.precalculateInverts first, then you
+   * can call precalculated directly instead of having the extra time for
+   * the if conditions.
+   */
+  precalculated?: (pointLPS: Types.Point3) => boolean;
 }
 
 /**
@@ -23,24 +30,26 @@ export default function pointInEllipse(
   pointLPS,
   inverts: Inverts = {}
 ) {
-  if (
-    inverts.invXRadiusSq === undefined ||
-    inverts.invYRadiusSq === undefined ||
-    inverts.invZRadiusSq === undefined
-  ) {
-    pointInEllipse.precalculateInverts(ellipse, inverts);
+  if (!inverts.precalculated) {
+    precalculatePointInEllipse(ellipse, inverts);
   }
-  return pointInEllipse.precalculated(ellipse, pointLPS, inverts);
+  return inverts.precalculated(pointLPS);
 }
 
 /**
  * This will perform some precalculations to make things faster.
- * @param ellipse
- * @param inverts
- * @returns
+ * Ideally, use the 'precalculated' function inside inverts to call the
+ * test function.  This minimizes re-reading of variables and only needs the
+ * LPS passed each time.
+ * That is:
+ *
+ * ```
+ *    const inverts = precalcualtePointInEllipse(ellipse);
+ *    if( inverts.precalculated(pointLPS) ) ...
+ * ```
  */
-pointInEllipse.precalculateInverts = (ellipse, inverts: Inverts = {}) => {
-  const { center, xRadius, yRadius, zRadius } = ellipse;
+const precalculatePointInEllipse = (ellipse, inverts: Inverts = {}) => {
+  const { xRadius, yRadius, zRadius } = ellipse;
 
   // This will run only once since we are caching the values in the same
   // object that is passed in.
@@ -53,34 +62,33 @@ pointInEllipse.precalculateInverts = (ellipse, inverts: Inverts = {}) => {
     inverts.invYRadiusSq = yRadius !== 0 ? 1 / yRadius ** 2 : 0;
     inverts.invZRadiusSq = zRadius !== 0 ? 1 / zRadius ** 2 : 0;
   }
+
+  const { invXRadiusSq, invYRadiusSq, invZRadiusSq } = inverts;
+  const { center } = ellipse;
+  const [centerL, centerP, centerS] = center;
+
+  inverts.precalculated = (pointLPS) => {
+    // Calculate the sum of normalized squared distances
+    const dx = pointLPS[0] - centerL;
+    let inside = dx * dx * invXRadiusSq;
+    if (inside > 1) {
+      return false;
+    }
+
+    const dy = pointLPS[1] - centerP;
+    inside += dy * dy * invYRadiusSq;
+    if (inside > 1) {
+      return false;
+    }
+
+    const dz = pointLPS[2] - centerS;
+    inside += dz * dz * invZRadiusSq;
+
+    // Check if the point is inside the ellipse
+    return inside <= 1;
+  };
+
   return inverts;
 };
 
-/**
- * If you call the pointInEllipse.precalculateInverts first, then you
- * can call precalculated directionly instead of having the extra time for
- * the if conditions.
- */
-pointInEllipse.precalculated = (ellipse, pointLPS, inverts) => {
-  const { center } = ellipse;
-  let inside = 0;
-
-  // Calculate the sum of normalized squared distances
-  const dx = pointLPS[0] - center[0];
-  inside += dx * dx * inverts.invXRadiusSq;
-  if (inside > 1) {
-    return false;
-  }
-
-  const dy = pointLPS[1] - center[1];
-  inside += dy * dy * inverts.invYRadiusSq;
-  if (inside > 1) {
-    return false;
-  }
-
-  const dz = pointLPS[2] - center[2];
-  inside += dz * dz * inverts.invZRadiusSq;
-
-  // Check if the point is inside the ellipse
-  return inside <= 1;
-};
+export { precalculatePointInEllipse };

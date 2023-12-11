@@ -1616,6 +1616,7 @@ declare namespace elementCursor {
 declare namespace ellipse {
     export {
         pointInEllipse,
+        precalculatePointInEllipse,
         getCanvasEllipseCorners
     }
 }
@@ -3239,14 +3240,6 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-namespace pointInEllipse {
-    var // (undocumented)
-    precalculateInverts: (ellipse: any, inverts?: Inverts) => Inverts;
-    var // (undocumented)
-    precalculated: (ellipse: any, pointLPS: any, inverts: any) => boolean;
-}
-
-// @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
@@ -3277,6 +3270,9 @@ declare namespace polyline {
         calculateAreaOfPoints
     }
 }
+
+// @public (undocumented)
+const precalculatePointInEllipse: (ellipse: any, inverts?: Inverts) => Inverts;
 
 // @public (undocumented)
 interface ProbeAnnotation extends Annotation {
