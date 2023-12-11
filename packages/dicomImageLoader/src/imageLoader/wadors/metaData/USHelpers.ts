@@ -1,16 +1,16 @@
-import getNumberValues from './getNumberValues';
+import { getFirstNumberValue } from './getFirstNumberValue';
 import getSequenceItems from './getSequenceItems';
 
+/**
+ * This function retrieves the ultrasound regions from the provided metadata.
+ * @param metadata - The metadata from which to retrieve the ultrasound regions.
+ * @returns An array of ultrasound regions, or null if no regions are found.
+ */
 function getUSEnhancedRegions(metadata) {
   const sequenceOfUltrasoundRegions = getSequenceItems(metadata['00186011']);
 
   if (!sequenceOfUltrasoundRegions || !sequenceOfUltrasoundRegions.length) {
     return null;
-  }
-
-  function getFirstNumberValue(sequence: any, key: string): number | null {
-    const values = getNumberValues(sequence[key]);
-    return values ? values[0] : null;
   }
 
   const regions = sequenceOfUltrasoundRegions.map((sequence) => {
@@ -57,11 +57,9 @@ function getUSEnhancedRegions(metadata) {
       regionDataType,
       regionFlags,
       transducerFrequency,
-      pixelSpacing: [physicalDeltaX * 10, physicalDeltaY * 10],
     };
   });
 
   return regions;
 }
-
 export { getUSEnhancedRegions };

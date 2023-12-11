@@ -443,11 +443,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: Object.assign(
-        {},
-        this.csImage.calibration,
-        this.calibration
-      ),
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -489,11 +485,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: Object.assign(
-        {},
-        this.csImage.calibration,
-        this.calibration
-      ),
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
