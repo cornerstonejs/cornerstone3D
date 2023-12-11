@@ -6,13 +6,7 @@ import {
   volumeLoader,
   cache,
 } from '@cornerstonejs/core';
-import { adaptersRT } from '@cornerstonejs/adapters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
-import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { vec3 } from 'gl-matrix';
 
 import {
   initDemo,
@@ -24,13 +18,12 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import createBidirectionalToolData from './createBidirectionalToolData';
+import contourAndFindLargestBidirectional from './findLargestBidirectional';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
-
-const EPSILON = 1e-2;
 
 const {
   SegmentationDisplayTool,
@@ -58,8 +51,6 @@ const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
 const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-const viewportId3 = 'CT_CORONAL';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -189,13 +180,6 @@ addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: () => {
     const segmentationsList = segmentation.state.getSegmentations();
-    const { generateContourSetsFromLabelmap } = adaptersRT.Cornerstone3D.RTSS;
-    const vtkUtils = {
-      vtkImageMarchingSquares,
-      vtkDataArray,
-      vtkImageData,
-    };
-
     const config1 = segmentation.config.getSegmentSpecificConfig(
       toolGroupId,
       representationUID,
@@ -205,26 +189,9 @@ addButtonToToolbar({
       ...segmentationsList[0],
       segments: [null, config1],
     };
+    const bidirectional = contourAndFindLargestBidirectional(segmentations);
 
-    console.time('contour');
-    const contours = generateContourSetsFromLabelmap({
-      segmentations,
-      cornerstoneCache: cache,
-      cornerstoneToolsEnums: csToolsEnums,
-      vtkUtils,
-    });
-    console.timeEnd('contour');
-
-    console.log('Found contours', contours);
-    if (!contours?.length || !contours[0].sliceContours.length) {
-      instructions.innerText = 'No contours found';
-      return;
-    }
-
-    console.time('generateBidirectional');
-    const bidirectional = findLargestBidirectional(contours[0]);
     if (bidirectional) {
-      console.log('Found bidirectional measurement', bidirectional);
       const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
         bidirectional;
 
@@ -232,6 +199,7 @@ addButtonToToolbar({
     Major Axis: ${handle0}-${handle1} length ${roundNumber(maxMajor)}
     Minor Axis: ${handle2}-${handle3} length ${roundNumber(maxMinor)}
     `;
+
       const viewport = renderingEngine.getViewport(viewportId1);
       const bidirectionalToolData = createBidirectionalToolData(
         bidirectional,
@@ -242,94 +210,10 @@ addButtonToToolbar({
         bidirectionalToolData,
         FrameOfReferenceUID
       );
-      const allBidirectionals = annotation.state.getAnnotations(
-        BidirectionalTool.toolName,
-        FrameOfReferenceUID
-      );
-      console.log('The bidirectionals are:', allBidirectionals);
-      renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+      renderingEngine.renderViewports([viewportId1]);
     }
-    console.timeEnd('generateBidirectional');
   },
 });
-
-function findLargestBidirectional(contours) {
-  const { sliceContours } = contours;
-  let maxBidirectional;
-  for (const sliceContour of sliceContours) {
-    const bidirectional = createBidirectionalForSlice(
-      sliceContour,
-      maxBidirectional
-    );
-    if (!bidirectional) {
-      continue;
-    }
-    if (
-      !maxBidirectional ||
-      maxBidirectional.maxMajor < bidirectional.maxMajor ||
-      (maxBidirectional.maxMajor === bidirectional.maxMajor &&
-        maxBidirectional.maxMinor < bidirectional.maxMinor)
-    ) {
-      maxBidirectional = bidirectional;
-    }
-  }
-  return maxBidirectional;
-}
-
-function createBidirectionalForSlice(sliceContour, currentMax) {
-  const { points } = sliceContour.polyData;
-  let maxMajor = 0;
-  let maxMajorPoints = [0, 1];
-  for (let i = 0; i < points.length; i++) {
-    for (let j = i + 1; j < points.length; j++) {
-      const pointI = points[i];
-      const pointJ = points[j];
-      const distance = vec3.distance(pointI, pointJ);
-      if (distance > maxMajor) {
-        maxMajor = distance;
-        maxMajorPoints = [i, j];
-      }
-    }
-  }
-  if (maxMajor < currentMax) {
-    return;
-  }
-  const handle0 = points[maxMajorPoints[0]];
-  const handle1 = points[maxMajorPoints[1]];
-  const majorDelta = vec3.sub(vec3.create(), handle0, handle1);
-
-  let maxMinor = 0;
-  let maxMinorPoints = [0, 0];
-
-  for (let i = 0; i < points.length; i++) {
-    for (let j = i + 1; j < points.length; j++) {
-      const delta = vec3.sub(vec3.create(), points[i], points[j]);
-      const distance = vec3.distance(points[i], points[j]);
-      const dot = Math.abs(vec3.dot(delta, majorDelta)) / distance / maxMajor;
-      if (dot > EPSILON) {
-        continue;
-      }
-      if (distance > maxMinor) {
-        maxMinor = distance;
-        maxMinorPoints = [i, j];
-      }
-    }
-  }
-
-  const handle2 = points[maxMinorPoints[0]];
-  const handle3 = points[maxMinorPoints[1]];
-
-  const bidirectional = {
-    handle0,
-    handle1,
-    handle2,
-    handle3,
-    maxMajor,
-    maxMinor,
-    ...sliceContour,
-  };
-  return bidirectional;
-}
 
 // ============================= //
 
@@ -503,31 +387,11 @@ async function run() {
         background: <Types.Point3>[0, 0, 0],
       },
     },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0],
-      },
-    },
-    {
-      viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
-      },
-    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
-  toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
   volume.load();
@@ -536,7 +400,7 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+    [viewportId1]
   );
 
   // // Add the segmentation representation to the toolgroup
@@ -550,7 +414,7 @@ async function run() {
   representationUID = segmentationRepresentationUID;
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.renderViewports([viewportId1]);
 }
 
 run();
