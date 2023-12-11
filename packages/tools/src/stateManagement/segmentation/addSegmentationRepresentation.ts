@@ -44,7 +44,7 @@ async function addSegmentationRepresentation(
   const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
-    type: Representations.Labelmap,
+    type: representationInput.type,
     segmentsHidden,
     colorLUTIndex: colorLUTIndexToUse,
     active: true,
