@@ -793,6 +793,10 @@ class Viewport implements IViewport {
       this.setInitialCamera(modifiedCamera);
     }
 
+    if (resetZoom) {
+      this.setZoom(1, storeAsInitialCamera);
+    }
+
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
       renderer,
