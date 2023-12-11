@@ -62,11 +62,11 @@ let representationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic manual labelmap Segmentation tools',
-  'Here we demonstrate manual segmentation tools'
+  'Segment bidirectional tool',
+  'Here we demonstrate automatic creation of the largest bidirectional tool which will fit the segment'
 );
 
-const size = '500px';
+const size = '900px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -75,23 +75,13 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
-element3.style.width = size;
-element3.style.height = size;
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault();
-element2.oncontextmenu = (e) => e.preventDefault();
-element3.oncontextmenu = (e) => e.preventDefault();
 
 viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
-viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
