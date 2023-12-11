@@ -9,7 +9,10 @@
         "crosshairs",
         "kitware",
         "Labelmap",
-        "segmentations"
+        "segmentations",
+        "toolgroup",
+        "Viewports",
+        "wado"
     ],
     "ignoreWords": [],
     "import": []

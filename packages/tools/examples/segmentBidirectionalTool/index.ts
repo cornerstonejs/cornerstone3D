@@ -23,6 +23,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import createBidirectionalToolData from './createBidirectionalToolData';
 
 // This is for debugging purposes
 console.warn(
@@ -45,7 +46,9 @@ const {
   ZoomTool,
   StackScrollTool,
   StackScrollMouseWheelTool,
+  BidirectionalTool,
   utilities: cstUtils,
+  annotation,
 } = cornerstoneTools;
 
 const { roundNumber } = cstUtils;
@@ -53,6 +56,10 @@ const { roundNumber } = cstUtils;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
+let renderingEngine;
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_CORONAL';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -137,6 +144,7 @@ const optionsValues = [
   CircleScissorsTool.toolName,
   SphereScissorsTool.toolName,
   PaintFillTool.toolName,
+  BidirectionalTool.toolName,
 ];
 
 // ============================= //
@@ -181,7 +189,6 @@ addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: () => {
     const segmentationsList = segmentation.state.getSegmentations();
-    console.log('Found segmentations', segmentationsList, adaptersRT);
     const { generateContourSetsFromLabelmap } = adaptersRT.Cornerstone3D.RTSS;
     const vtkUtils = {
       vtkImageMarchingSquares,
@@ -214,7 +221,8 @@ addButtonToToolbar({
       return;
     }
 
-    const bidirectional = generateBidirectional(contours[0]);
+    console.time('generateBidirectional');
+    const bidirectional = findLargestBidirectional(contours[0]);
     if (bidirectional) {
       console.log('Found bidirectional measurement', bidirectional);
       const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
@@ -224,27 +232,43 @@ addButtonToToolbar({
     Major Axis: ${handle0}-${handle1} length ${roundNumber(maxMajor)}
     Minor Axis: ${handle2}-${handle3} length ${roundNumber(maxMinor)}
     `;
+      const viewport = renderingEngine.getViewport(viewportId1);
+      const bidirectionalToolData = createBidirectionalToolData(
+        bidirectional,
+        viewport
+      );
+      const { FrameOfReferenceUID } = bidirectional;
+      annotation.state.addAnnotation(
+        bidirectionalToolData,
+        FrameOfReferenceUID
+      );
+      const allBidirectionals = annotation.state.getAnnotations(
+        BidirectionalTool.toolName,
+        FrameOfReferenceUID
+      );
+      console.log('The bidirectionals are:', allBidirectionals);
+      renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
     }
+    console.timeEnd('generateBidirectional');
   },
 });
 
-function findLargestSlice(sliceContours) {
-  // TODO - implement this.
-  return sliceContours[0];
-}
-
-function createBidirectional(sliceContours) {
+function findLargestBidirectional(contours) {
+  const { sliceContours } = contours;
   let maxBidirectional;
   for (const sliceContour of sliceContours) {
-    const bidirectional = createBidirectionalForSlice(sliceContour);
+    const bidirectional = createBidirectionalForSlice(
+      sliceContour,
+      maxBidirectional
+    );
     if (!bidirectional) {
       continue;
     }
     if (
       !maxBidirectional ||
-      maxBidirectional.maxMajor > bidirectional.maxMajor ||
+      maxBidirectional.maxMajor < bidirectional.maxMajor ||
       (maxBidirectional.maxMajor === bidirectional.maxMajor &&
-        maxBidirectional.maxMinor > bidirectional.maxMinor)
+        maxBidirectional.maxMinor < bidirectional.maxMinor)
     ) {
       maxBidirectional = bidirectional;
     }
@@ -302,12 +326,8 @@ function createBidirectionalForSlice(sliceContour, currentMax) {
     handle3,
     maxMajor,
     maxMinor,
+    ...sliceContour,
   };
-  return bidirectional;
-}
-
-function generateBidirectional(contour) {
-  const bidirectional = createBidirectional(contour.sliceContours);
   return bidirectional;
 }
 
@@ -347,6 +367,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
@@ -364,6 +385,7 @@ async function run() {
   toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(BidirectionalTool.toolName);
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -445,6 +467,7 @@ async function run() {
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(BidirectionalTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -466,12 +489,9 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_SAGITTAL';
-  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
