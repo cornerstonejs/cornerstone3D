@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/streaming-image-volume-loader",
-  "version": "1.36.3",
+  "version": "1.37.0",
   "description": "",
   "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
