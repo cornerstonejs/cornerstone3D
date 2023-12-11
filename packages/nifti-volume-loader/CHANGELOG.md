@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.37.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.3...v1.37.0) (2023-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [1.36.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.2...v1.36.3) (2023-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [1.36.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.1...v1.36.2) (2023-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [1.36.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.0...v1.36.1) (2023-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [1.36.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.35.3...v1.36.0) (2023-12-05)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
 ## [1.35.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.35.2...v1.35.3) (2023-12-01)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader

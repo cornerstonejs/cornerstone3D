@@ -24,6 +24,7 @@ const {
   SegmentationDisplayTool,
   StackScrollMouseWheelTool,
   ZoomTool,
+  StackScrollTool,
   Enums: csToolsEnums,
   RectangleScissorsTool,
   SphereScissorsTool,
@@ -35,7 +36,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -93,6 +94,7 @@ const brushInstanceNames = {
   SphereBrush: 'SphereBrush',
   SphereEraser: 'SphereEraser',
   ThresholdBrush: 'ThresholdBrush',
+  DynamicThreshold: 'DynamicThreshold',
 };
 
 const brushStrategies = {
@@ -101,6 +103,7 @@ const brushStrategies = {
   [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
   [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
 
 const brushValues = [
@@ -109,6 +112,7 @@ const brushValues = [
   brushInstanceNames.SphereBrush,
   brushInstanceNames.SphereEraser,
   brushInstanceNames.ThresholdBrush,
+  brushInstanceNames.DynamicThreshold,
 ];
 
 const optionsValues = [
@@ -263,6 +267,7 @@ function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
@@ -279,6 +284,7 @@ function setupTools(toolGroupId) {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -321,6 +327,21 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.ThresholdBrush,
     }
   );
+  toolGroup.addToolInstance(
+    brushInstanceNames.DynamicThreshold,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.DynamicThreshold,
+      preview: {
+        enabled: true,
+      },
+      strategySpecificConfiguration: {
+        useCenterSegmentIndex: true,
+        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
+      },
+    }
+  );
+
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
@@ -332,12 +353,28 @@ function setupTools(toolGroupId) {
       {
         mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Ctrl,
+      },
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary, // Right Click
+      },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Alt,
       },
     ],
   });

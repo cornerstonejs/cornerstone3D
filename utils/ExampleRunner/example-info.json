@@ -294,6 +294,10 @@
         "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
       },
+      "labelmapSegmentationDynamicThreshold": {
+        "name": "Labelmap Segmentation Dynamic Threshold and Preview",
+        "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
+      },
       "labelmapSegmentLocking": {
         "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
