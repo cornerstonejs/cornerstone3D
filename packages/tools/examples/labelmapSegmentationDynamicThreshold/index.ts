@@ -15,6 +15,7 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -53,8 +54,8 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic manual labelmap Segmentation tools',
-  'Here we demonstrate manual segmentation tools'
+  'Labelmap Segmentation Dynamic Threshold',
+  'Here we demonstrate dynamic threshold with preview'
 );
 
 const size = '500px';
@@ -88,20 +89,22 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
-  Middle Click: Pan
-  Right Click: Zoom
-  Mouse wheel: Scroll Stack
+  Hover - show preview of segmentation tool
+  Left drag to extend preview
+  Left Click (or enter) to accept preview
+  Reject preview by button (or esc)
+  Hover outside of region to reset to hovered over segment index
+  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
   `;
 
 content.append(instructions);
 
 const brushInstanceNames = {
+  ThresholdCircle: 'ThresholdCircle',
   CircularBrush: 'CircularBrush',
   CircularEraser: 'CircularEraser',
   SphereBrush: 'SphereBrush',
   SphereEraser: 'SphereEraser',
-  ThresholdCircle: 'ThresholdCircle',
   ScissorsEraser: 'ScissorsEraser',
 };
 
@@ -115,11 +118,11 @@ const brushStrategies = {
 };
 
 const brushValues = [
+  brushInstanceNames.ThresholdCircle,
   brushInstanceNames.CircularBrush,
   brushInstanceNames.CircularEraser,
   brushInstanceNames.SphereBrush,
   brushInstanceNames.SphereEraser,
-  brushInstanceNames.ThresholdCircle,
 ];
 
 const optionsValues = [
@@ -130,6 +133,15 @@ const optionsValues = [
   brushInstanceNames.ScissorsEraser,
   PaintFillTool.toolName,
 ];
+
+const previewColors = {
+  0: [255, 255, 255, 128],
+  1: [0, 255, 255, 255],
+};
+const preview = {
+  enabled: true,
+  previewColors,
+};
 
 // ============================= //
 addDropdownToToolbar({
@@ -160,17 +172,29 @@ addDropdownToToolbar({
 });
 
 const thresholdOptions = new Map<string, any>();
+thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
+thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
+thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
+thresholdOptions.set('Dynamic Radius 5', { isDynamic: true, dynamicRadius: 5 });
+thresholdOptions.set('Use Existing Threshold', {
+  isDynamic: false,
+  dynamicRadius: 5,
+});
 thresholdOptions.set('CT Fat: (-150, -70)', {
   threshold: [-150, -70],
+  isDynamic: false,
 });
 thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: [200, 1000],
+  isDynamic: false,
 });
+
+const defaultThresholdOption = [...thresholdOptions.keys()][2];
 
 addDropdownToToolbar({
   options: {
     values: Array.from(thresholdOptions.keys()),
-    defaultValue: thresholdOptions[0],
+    defaultValue: defaultThresholdOption,
   },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
@@ -192,6 +216,28 @@ addSliderToToolbar({
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+  },
+});
+
+// ============================= //
+addDropdownToToolbar({
+  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  labelText: 'Segment',
+  onSelectedValueChange: (segmentIndex) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      Number(segmentIndex)
+    );
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reject Preview',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+    brush.rejectPreview?.(element1);
   },
 });
 
@@ -228,7 +274,6 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // This is not necessary, but makes the images appear faster
   utilities.imageRetrieveMetadataProvider.add(
     'volume',
     ProgressiveRetrieveImages.interleavedRetrieveStages
@@ -273,6 +318,10 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
+      preview,
+      strategySpecificConfiguration: {
+        useCenterSegmentIndex: true,
+      },
     }
   );
   toolGroup.addToolInstance(
@@ -280,6 +329,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularEraser,
+      preview,
     }
   );
   toolGroup.addToolInstance(
@@ -287,6 +337,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereBrush,
+      preview,
     }
   );
   toolGroup.addToolInstance(
@@ -294,6 +345,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereEraser,
+      previewColors,
     }
   );
   toolGroup.setToolActive(StackScrollTool.toolName, {
@@ -308,16 +360,25 @@ async function run() {
       },
     ],
   });
+
+  // Setup threshold and the default strategy arguments
+  const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
   toolGroup.addToolInstance(
     brushInstanceNames.ThresholdCircle,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdCircle,
+      preview,
+      strategySpecificConfiguration: {
+        useCenterSegmentIndex: true,
+        THRESHOLD: { ...thresholdArgs },
+      },
     }
   );
+
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+  toolGroup.setToolActive(brushInstanceNames.ThresholdCircle, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -424,6 +485,10 @@ async function run() {
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId1, viewportId2, viewportId3]
   );
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 3);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 4);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
