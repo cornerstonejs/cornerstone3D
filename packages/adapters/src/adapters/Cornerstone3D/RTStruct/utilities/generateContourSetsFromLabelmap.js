@@ -9,7 +9,7 @@ function generateContourSetsFromLabelmap({
 }) {
     const LABELMAP = cornerstoneToolsEnums.SegmentationRepresentations.Labelmap;
 
-    const { representationData, segments = [1] } = segmentations;
+    const { representationData, segments = [0, 1] } = segmentations;
     const { volumeId: segVolumeId } = representationData[LABELMAP];
 
     // Get segmentation volume
@@ -35,18 +35,9 @@ function generateContourSetsFromLabelmap({
 
     for (let z = 0; z < numSlices; z++) {
         for (let y = 0; y < vol.dimensions[1]; y++) {
-            for (let x = 0; x < vol.dimensions[0]; x++) {
-                const index = x + y * vol.dimensions[0] + z * pixelsPerSlice;
-
-                if (
-                    x === 0 ||
-                    y === 0 ||
-                    x === vol.dimensions[0] - 1 ||
-                    y === vol.dimensions[1] - 1
-                ) {
-                    segData[index] = 0;
-                }
-            }
+            const index = y * vol.dimensions[0] + z * pixelsPerSlice;
+            segData[index] = 0;
+            segData[index + vol.dimensions[0] - 1] = 0;
         }
     }
 

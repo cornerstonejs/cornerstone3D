@@ -6,6 +6,14 @@ import {
   volumeLoader,
   cache,
 } from '@cornerstonejs/core';
+import { adaptersRT } from '@cornerstonejs/adapters';
+import * as cornerstoneTools from '@cornerstonejs/tools';
+
+import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { vec3 } from 'gl-matrix';
+
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -15,13 +23,13 @@ import {
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import { adaptersRT } from '@cornerstonejs/adapters';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const EPSILON = 1e-2;
 
 const {
   SegmentationDisplayTool,
@@ -40,6 +48,8 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
+const { roundNumber } = cstUtils;
+
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
@@ -50,6 +60,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+let representationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -169,19 +180,136 @@ addSliderToToolbar({
 addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: () => {
-    const segmentations = segmentation.state.getSegmentations();
-    console.log('Found segmentations', segmentations, adaptersRT);
+    const segmentationsList = segmentation.state.getSegmentations();
+    console.log('Found segmentations', segmentationsList, adaptersRT);
     const { generateContourSetsFromLabelmap } = adaptersRT.Cornerstone3D.RTSS;
-    console.log('generate function', generateContourSetsFromLabelmap);
-    const vtkUtils = {};
+    const vtkUtils = {
+      vtkImageMarchingSquares,
+      vtkDataArray,
+      vtkImageData,
+    };
+
+    const config1 = segmentation.config.getSegmentSpecificConfig(
+      toolGroupId,
+      representationUID,
+      1
+    ) || { label: 'Segmentation', color: null };
+    const segmentations = {
+      ...segmentationsList[0],
+      segments: [null, config1],
+    };
+
+    console.time('contour');
     const contours = generateContourSetsFromLabelmap({
-      segmentations: segmentations[0],
+      segmentations,
       cornerstoneCache: cache,
       cornerstoneToolsEnums: csToolsEnums,
       vtkUtils,
     });
+    console.timeEnd('contour');
+
+    console.log('Found contours', contours);
+    if (!contours?.length || !contours[0].sliceContours.length) {
+      instructions.innerText = 'No contours found';
+      return;
+    }
+
+    const bidirectional = generateBidirectional(contours[0]);
+    if (bidirectional) {
+      console.log('Found bidirectional measurement', bidirectional);
+      const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
+        bidirectional;
+
+      instructions.innerText = `
+    Major Axis: ${handle0}-${handle1} length ${roundNumber(maxMajor)}
+    Minor Axis: ${handle2}-${handle3} length ${roundNumber(maxMinor)}
+    `;
+    }
   },
 });
+
+function findLargestSlice(sliceContours) {
+  // TODO - implement this.
+  return sliceContours[0];
+}
+
+function createBidirectional(sliceContours) {
+  let maxBidirectional;
+  for (const sliceContour of sliceContours) {
+    const bidirectional = createBidirectionalForSlice(sliceContour);
+    if (!bidirectional) {
+      continue;
+    }
+    if (
+      !maxBidirectional ||
+      maxBidirectional.maxMajor > bidirectional.maxMajor ||
+      (maxBidirectional.maxMajor === bidirectional.maxMajor &&
+        maxBidirectional.maxMinor > bidirectional.maxMinor)
+    ) {
+      maxBidirectional = bidirectional;
+    }
+  }
+  return maxBidirectional;
+}
+
+function createBidirectionalForSlice(sliceContour, currentMax) {
+  const { points } = sliceContour.polyData;
+  let maxMajor = 0;
+  let maxMajorPoints = [0, 1];
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      const pointI = points[i];
+      const pointJ = points[j];
+      const distance = vec3.distance(pointI, pointJ);
+      if (distance > maxMajor) {
+        maxMajor = distance;
+        maxMajorPoints = [i, j];
+      }
+    }
+  }
+  if (maxMajor < currentMax) {
+    return;
+  }
+  const handle0 = points[maxMajorPoints[0]];
+  const handle1 = points[maxMajorPoints[1]];
+  const majorDelta = vec3.sub(vec3.create(), handle0, handle1);
+
+  let maxMinor = 0;
+  let maxMinorPoints = [0, 0];
+
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      const delta = vec3.sub(vec3.create(), points[i], points[j]);
+      const distance = vec3.distance(points[i], points[j]);
+      const dot = Math.abs(vec3.dot(delta, majorDelta)) / distance / maxMajor;
+      if (dot > EPSILON) {
+        continue;
+      }
+      if (distance > maxMinor) {
+        maxMinor = distance;
+        maxMinorPoints = [i, j];
+      }
+    }
+  }
+
+  const handle2 = points[maxMinorPoints[0]];
+  const handle3 = points[maxMinorPoints[1]];
+
+  const bidirectional = {
+    handle0,
+    handle1,
+    handle2,
+    handle3,
+    maxMajor,
+    maxMinor,
+  };
+  return bidirectional;
+}
+
+function generateBidirectional(contour) {
+  const bidirectional = createBidirectional(contour.sliceContours);
+  return bidirectional;
+}
 
 // ============================= //
 
@@ -392,12 +520,14 @@ async function run() {
   );
 
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  const [segmentationRepresentationUID] =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  representationUID = segmentationRepresentationUID;
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
