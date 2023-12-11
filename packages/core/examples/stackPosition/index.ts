@@ -10,8 +10,6 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  camera as cameraHelpers,
-  ctVoiRange,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
 
@@ -146,24 +144,6 @@ addDropdownToToolbar({
     viewport.setProperties(displayArea);
     const { flipHorizontal } = displayArea;
     viewport.setCamera({ flipHorizontal });
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Top Left',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Set a range to highlight bones
-    viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
-
     viewport.render();
   },
 });

@@ -55,6 +55,11 @@ class Viewport implements IViewport {
   readonly renderingEngineId: string;
   /** Type of viewport */
   readonly type: ViewportType;
+  /**
+   * The amount by which the images are inset in a viewport by default.
+   */
+  protected insetImageMultiplier = 1.1;
+
   protected flipHorizontal = false;
   protected flipVertical = false;
   public isDisabled: boolean;
@@ -592,7 +597,7 @@ class Viewport implements IViewport {
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      this.setZoom(1.1 * zoom, storeAsInitialCamera);
+      this.setZoom(this.insetImageMultiplier * zoom, storeAsInitialCamera);
     }
 
     // getting the image info
@@ -732,7 +737,7 @@ class Viewport implements IViewport {
     }
 
     //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = 1.1 * radius;
+    const parallelScale = this.insetImageMultiplier * radius;
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];
@@ -748,7 +753,7 @@ class Viewport implements IViewport {
     // compute the radius of the enclosing sphere
     radius = Math.sqrt(radius) * 0.5;
 
-    const distance = 1.1 * radius;
+    const distance = this.insetImageMultiplier * radius;
 
     const viewUpToSet: Point3 =
       Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999
