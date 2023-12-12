@@ -34,8 +34,8 @@ const viewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Livewire Contour Tool',
-  'Livewire countour tool for...'
+  'Livewire Tool',
+  'Interactive segmentation with intelligent scissors that uses Laplacian of Gaussian filter to find the shortest-path'
 );
 
 const content = document.getElementById('content');
