@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.38.0](https://github.com/dcmjs-org/dcmjs/compare/v1.37.1...v1.38.0) (2023-12-12)
+
+### Features
+
+-   Provide access to tracking unique measurement to allow combining parts of a measurement ([#932](https://github.com/dcmjs-org/dcmjs/issues/932)) ([65245ce](https://github.com/dcmjs-org/dcmjs/commit/65245ce8924776e20c78b18b6e5a86283b6e2668))
+
 ## [1.37.1](https://github.com/dcmjs-org/dcmjs/compare/v1.37.0...v1.37.1) (2023-12-11)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
