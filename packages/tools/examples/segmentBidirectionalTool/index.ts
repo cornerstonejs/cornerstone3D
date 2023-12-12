@@ -210,11 +210,21 @@ addButtonToToolbar({
         bidirectional,
         viewport
       );
-      const { FrameOfReferenceUID } = bidirectional;
+      const { FrameOfReferenceUID, referencedImageId } = bidirectional;
       annotation.state.addAnnotation(
         bidirectionalToolData,
         FrameOfReferenceUID
       );
+      const imageIds = viewport.getImageIds();
+      const imageIndex = imageIds.findIndex(
+        (imageId) => imageId === referencedImageId
+      );
+
+      // TODO - figure out why this is reversed
+      cstUtils.jumpToSlice(element1, {
+        imageIndex: imageIds.length - 1 - imageIndex,
+        volumeId,
+      });
       renderingEngine.renderViewports([viewportId1]);
     }
   },

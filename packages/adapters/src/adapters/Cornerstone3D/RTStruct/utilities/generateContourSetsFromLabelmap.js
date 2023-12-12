@@ -57,7 +57,7 @@ function generateContourSetsFromLabelmap({
             continue;
         }
 
-        const contourSequence = [];
+        const sliceContours = [];
         const scalars = vtkUtils.vtkDataArray.newInstance({
             name: "Scalars",
             numberOfComponents: 1,
@@ -117,11 +117,12 @@ function generateContourSetsFromLabelmap({
                         reducedSet.points
                     );
 
-                    contourSequence.push({
+                    sliceContours.push({
                         referencedImageId: imageVol.imageIds[sliceIndex],
                         contours,
                         polyData: reducedSet,
                         FrameNumber: sliceIndex + 1,
+                        sliceIndex,
                         FrameOfReferenceUID
                     });
                 }
@@ -140,7 +141,7 @@ function generateContourSetsFromLabelmap({
             label: segment.label,
             color: segment.color,
             metadata,
-            sliceContours: contourSequence
+            sliceContours
         };
 
         ContourSets.push(ContourSet);
