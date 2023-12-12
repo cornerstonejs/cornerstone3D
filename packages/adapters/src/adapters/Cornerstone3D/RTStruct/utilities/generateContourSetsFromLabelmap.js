@@ -7,10 +7,10 @@ function generateContourSetsFromLabelmap({
     cornerstoneToolsEnums,
     vtkUtils
 }) {
-    const LABELMAP = cornerstoneToolsEnums.SegmentationRepresentations.Labelmap;
+    const { Labelmap } = cornerstoneToolsEnums.SegmentationRepresentations;
 
     const { representationData, segments = [0, 1] } = segmentations;
-    const { volumeId: segVolumeId } = representationData[LABELMAP];
+    const { volumeId: segVolumeId } = representationData[Labelmap];
 
     // Get segmentation volume
     const vol = cornerstoneCache.getVolume(segVolumeId);

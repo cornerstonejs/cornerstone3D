@@ -31,17 +31,50 @@ export default function contourAndFindLargestBidirectional(segmentations) {
     return;
   }
 
-  return findLargestBidirectional(contours[0]);
+  const { representationData, segments = [0, 1] } = segmentations;
+  const { Labelmap } = cornerstoneTools.Enums.SegmentationRepresentations;
+  const { volumeId: segVolumeId } = representationData[Labelmap];
+
+  return findLargestBidirectional(
+    contours[0],
+    segVolumeId,
+    segments.findIndex((it) => !!it)
+  );
 }
 
-function findLargestBidirectional(contours) {
+function createIsInSegment(segVolumeId: string, segment: number) {
+  // Get segmentation volume
+  const vol = cache.getVolume(segVolumeId);
+  if (!vol) {
+    console.warn(`No volume found for ${segVolumeId}`);
+    return;
+  }
+
+  const numSlices = vol.dimensions[2];
+
+  const segData = vol.imageData.getPointData().getScalars().getData();
+  const width = vol.dimensions[0];
+  const pixelsPerSlice = width * vol.dimensions[1];
+
+  return (point) => {
+    const ijk = vol.imageData.worldToIndex(point).map(Math.round);
+    const [i, j, k] = ijk;
+    const index = i + j * width + k * pixelsPerSlice;
+    const value = segData[index];
+    return value === segment;
+  };
+}
+
+function findLargestBidirectional(contours, segVolumeId, segment) {
   const { sliceContours } = contours;
   let maxBidirectional;
   console.time('generateBidirectional');
+  const isInSegment = createIsInSegment(segVolumeId, segment);
   for (const sliceContour of sliceContours) {
     const bidirectional = createBidirectionalForSlice(
       sliceContour,
-      maxBidirectional
+      maxBidirectional,
+      isInSegment
     );
     if (!bidirectional) {
       continue;
@@ -59,7 +92,28 @@ function findLargestBidirectional(contours) {
   return maxBidirectional;
 }
 
-function createBidirectionalForSlice(sliceContour, currentMax) {
+/**
+ * Determines if there is a point in points other than pointI or pointJ which
+ * is on the line between I and J.
+ */
+function isCrossing(points, pointI, pointJ, distance) {
+  for (const point of points) {
+    if (point === pointI || point === pointJ) {
+      continue;
+    }
+    const delta1 = vec3.sub(vec3.create(), pointI, point);
+    const delta2 = vec3.sub(vec3.create(), point, pointJ);
+    const length1 = vec3.length(delta1);
+    const length2 = vec3.length(delta2);
+    // Use a distance of half a mm for "on the line"
+    if (Math.abs(distance - length1 - length2) < 0.5) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
   const { points } = sliceContour.polyData;
   let maxMajor = 0;
   let maxMajorPoints = [0, 1];
@@ -69,12 +123,25 @@ function createBidirectionalForSlice(sliceContour, currentMax) {
       const pointJ = points[j];
       const distance = vec3.distance(pointI, pointJ);
       if (distance > maxMajor) {
+        if (isCrossing(points, pointI, pointJ, distance)) {
+          continue;
+        }
+        const pointCenter = vec3.scale(
+          vec3.create(),
+          vec3.add(vec3.create(), pointI, pointJ),
+          0.5
+        );
+        if (!isInSegment(pointCenter)) {
+          // Center between the two points has to be in the segment, otherwise
+          // this is out of bounds.
+          continue;
+        }
         maxMajor = distance;
         maxMajorPoints = [i, j];
       }
     }
   }
-  if (maxMajor < currentMax) {
+  if (maxMajor === 0 || maxMajor < currentMax) {
     return;
   }
   const handle0 = points[maxMajorPoints[0]];
@@ -86,13 +153,28 @@ function createBidirectionalForSlice(sliceContour, currentMax) {
 
   for (let i = 0; i < points.length; i++) {
     for (let j = i + 1; j < points.length; j++) {
-      const delta = vec3.sub(vec3.create(), points[i], points[j]);
-      const distance = vec3.distance(points[i], points[j]);
+      const pointI = points[i];
+      const pointJ = points[j];
+      const delta = vec3.sub(vec3.create(), pointI, pointJ);
+      const distance = vec3.distance(pointI, pointJ);
       const dot = Math.abs(vec3.dot(delta, majorDelta)) / distance / maxMajor;
       if (dot > EPSILON) {
         continue;
       }
       if (distance > maxMinor) {
+        if (isCrossing(points, pointI, pointJ, distance)) {
+          continue;
+        }
+        const pointCenter = vec3.scale(
+          vec3.create(),
+          vec3.add(vec3.create(), pointI, pointJ),
+          0.5
+        );
+        if (!isInSegment(pointCenter)) {
+          // Center between the two points has to be in the segment, otherwise
+          // this is out of bounds.
+          continue;
+        }
         maxMinor = distance;
         maxMinorPoints = [i, j];
       }
