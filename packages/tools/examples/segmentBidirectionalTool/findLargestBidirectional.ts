@@ -133,14 +133,14 @@ function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
         // so that all minor axis can be tested
         continue;
       }
-      const distance = Math.sqrt(distance2);
-      if (isCrossing(points, pointI, pointJ, distance)) {
-        // If the line intersects the segment boundary, then skip it
-        continue;
-      }
       if (!isInSegment(pointI, pointJ)) {
         // Center between the two points has to be in the segment, otherwise
         // this is out of bounds.
+        continue;
+      }
+      const distance = Math.sqrt(distance2);
+      if (isCrossing(points, pointI, pointJ, distance)) {
+        // If the line intersects the segment boundary, then skip it
         continue;
       }
       maxMajor = distance2;
@@ -175,12 +175,12 @@ function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
       if (dot > EPSILON) {
         continue;
       }
-      if (isCrossing(points, pointI, pointJ, distance)) {
-        continue;
-      }
       if (!isInSegment(pointI, pointJ)) {
         // Center between the two points has to be in the segment, otherwise
         // this is out of bounds.
+        continue;
+      }
+      if (isCrossing(points, pointI, pointJ, distance)) {
         continue;
       }
       maxMinor = distance2;
@@ -205,6 +205,5 @@ function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
     maxMinor,
     ...sliceContour,
   };
-  console.log('Found bidirectional', maxMajor, maxMinor);
   return bidirectional;
 }
