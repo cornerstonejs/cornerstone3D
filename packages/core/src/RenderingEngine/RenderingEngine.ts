@@ -619,10 +619,27 @@ class RenderingEngine implements IRenderingEngine {
       canvas.height = rect.height * devicePixelRatio;
 
       const prevCamera = vp.getCamera();
+      const rotation = vp.getRotation();
+      const pan = vp.getPan();
+      const zoom = vp.getZoom();
+      const { flipHorizontal } = prevCamera;
       vp.resetCamera();
 
+      const displayArea = vp.getDisplayArea();
+
       if (keepCamera) {
-        vp.setCamera(prevCamera);
+        if (displayArea) {
+          if (flipHorizontal) {
+            vp.setCamera({ flipHorizontal });
+          }
+          if (rotation) {
+            vp.setProperties({ rotation });
+          }
+          vp.setZoom(zoom);
+          vp.setPan(pan);
+        } else {
+          vp.setCamera(prevCamera);
+        }
       }
     });
 

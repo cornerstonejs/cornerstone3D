@@ -18,7 +18,7 @@ import {
   isEqual,
 } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
-import { EPSILON, RENDERING_DEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
   ActorEntry,
@@ -611,12 +611,14 @@ class Viewport implements IViewport {
       const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
       const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
       const dimensions = imageData.getDimensions();
-      const canvasZero = this.worldToCanvas([0, 0, 0]);
-      const canvasEdge = this.worldToCanvas([
-        dimensions[0] - 1,
-        dimensions[1] - 1,
-        dimensions[2],
-      ]);
+      const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+      const canvasEdge = this.worldToCanvas(
+        imageData.indexToWorld([
+          dimensions[0] - 1,
+          dimensions[1] - 1,
+          dimensions[2],
+        ])
+      );
       const canvasImage = [
         canvasEdge[0] - canvasZero[0],
         canvasEdge[1] - canvasZero[1],
