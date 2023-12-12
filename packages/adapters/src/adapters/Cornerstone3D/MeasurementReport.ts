@@ -401,7 +401,7 @@ export default class MeasurementReport {
                     );
 
                 const TrackingUniqueIdentifierValue =
-                    TrackingUniqueIdentifierGroup.UID;
+                    TrackingUniqueIdentifierGroup?.UID;
 
                 const toolClass =
                     hooks?.getToolClass?.(
