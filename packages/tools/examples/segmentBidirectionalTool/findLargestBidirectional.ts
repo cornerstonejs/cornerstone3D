@@ -35,10 +35,15 @@ export default function contourAndFindLargestBidirectional(segmentations) {
   const { Labelmap } = cornerstoneTools.Enums.SegmentationRepresentations;
   const { volumeId: segVolumeId } = representationData[Labelmap];
 
+  const segmentIndex = segments.findIndex((it) => !!it);
+  if (segmentIndex === -1) {
+    return;
+  }
+  segments[segmentIndex].segmentIndex = segmentIndex;
   return findLargestBidirectional(
     contours[0],
     segVolumeId,
-    segments.findIndex((it) => !!it)
+    segments[segmentIndex]
   );
 }
 
@@ -66,8 +71,9 @@ function createIsInSegment(segVolumeId: string, segment: number) {
 
 function findLargestBidirectional(contours, segVolumeId, segment) {
   const { sliceContours } = contours;
+  const { segmentIndex } = segment;
   let maxBidirectional;
-  const isInSegment = createIsInSegment(segVolumeId, segment);
+  const isInSegment = createIsInSegment(segVolumeId, segmentIndex);
   for (const sliceContour of sliceContours) {
     const startTimeMs = Date.now();
     const bidirectional = createBidirectionalForSlice(
@@ -86,6 +92,9 @@ function findLargestBidirectional(contours, segVolumeId, segment) {
     if (durationMs > 250) {
       console.log('Slice bidirectional calculation took', durationMs);
     }
+  }
+  if (maxBidirectional) {
+    Object.assign(maxBidirectional, segment);
   }
   return maxBidirectional;
 }

@@ -9,6 +9,7 @@ export default function createBidirectionalToolData(
     handle1,
     handle2,
     handle3,
+    label = '',
     FrameOfReferenceUID,
     referencedImageId,
   } = bidirectionalData;
@@ -39,7 +40,7 @@ export default function createBidirectionalToolData(
         },
         activeHandleIndex: null,
       },
-      label: '',
+      label,
       cachedStats: {},
     },
     isLocked: false,
