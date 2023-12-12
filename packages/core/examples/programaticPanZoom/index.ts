@@ -139,7 +139,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [2, 2],
       imageCanvasPoint: {
         imagePoint: [1, 0.5],
         canvasPoint: [1, 0.5],
@@ -161,7 +161,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [2, 2],
       imageCanvasPoint: {
         imagePoint: [0.5, 0],
         canvasPoint: [0.5, 0],
@@ -183,7 +183,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [2, 2],
       imageCanvasPoint: {
         imagePoint: [0.5, 1],
         canvasPoint: [0.5, 1],

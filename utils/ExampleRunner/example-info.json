@@ -317,7 +317,7 @@
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
       },
-      "segmentBidirectionalTools": {
+      "segmentBidirectionalTool": {
         "name": "Segmentation bidirectional tools",
         "description": "Demonstrates use of the adapter generateContourSetsFromLabelmap to find a largest bidirectional instance on a segmentation."
       }
