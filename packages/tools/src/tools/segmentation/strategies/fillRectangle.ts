@@ -18,7 +18,6 @@ type OperationData = LabelmapToolOperationData & {
  * the rectangle, set the scalar value to the segmentIndex
  * @param toolGroupId - string
  * @param operationData - OperationData
- * @param constraintFn - can be used to perform threshold segmentation
  * @param inside - boolean
  */
 // Todo: why we have another constraintFn? in addition to the one in the operationData?
@@ -27,7 +26,7 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
-  const { points, segmentsLocked, segmentIndex, segmentationId, constraintFn } =
+  const { points, segmentsLocked, segmentIndex, segmentationId } =
     operationData;
 
   const strategyData = getStrategyData({
@@ -61,19 +60,12 @@ function fillRectangle(
   // Since always all points inside the boundsIJK is inside the rectangle...
   const pointInRectangle = () => true;
 
-  const callback = ({ value, index, pointIJK }) => {
+  const callback = ({ value, index }) => {
     if (segmentsLocked.includes(value)) {
       return;
     }
 
-    if (!constraintFn) {
-      segmentationScalarData[index] = segmentIndex;
-      return;
-    }
-
-    if (constraintFn(pointIJK)) {
-      segmentationScalarData[index] = segmentIndex;
-    }
+    segmentationScalarData[index] = segmentIndex;
   };
 
   pointInShapeCallback(
@@ -91,7 +83,6 @@ function fillRectangle(
  * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.
- * @param constraintFn - can be used to perform threshold segmentation
  */
 export function fillInsideRectangle(
   enabledElement: Types.IEnabledElement,
@@ -105,7 +96,6 @@ export function fillInsideRectangle(
  * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.
- * @param constraintFn - can be used to perform threshold segmentation
  */
 export function fillOutsideRectangle(
   enabledElement: Types.IEnabledElement,

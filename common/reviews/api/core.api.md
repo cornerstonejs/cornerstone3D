@@ -177,6 +177,9 @@ enum BlendModes {
 }
 
 // @public (undocumented)
+type BoundsIJK = [Point2, Point2, Point2];
+
+// @public (undocumented)
 export const cache: Cache_2;
 
 // @public (undocumented)
@@ -2983,6 +2986,7 @@ declare namespace Types {
         ImageLoadListener,
         InternalVideoCamera,
         VideoViewportInput,
+        BoundsIJK,
         Color,
         ColorLUT
     }
@@ -3062,7 +3066,8 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        getBufferConfiguration
+        getBufferConfiguration,
+        VoxelManager
     }
 }
 export { utilities }
@@ -3299,6 +3304,8 @@ export class Viewport implements IViewport {
     readonly id: string;
     // (undocumented)
     protected initialCamera: ICamera;
+    // (undocumented)
+    protected insetImageMultiplier: number;
     // (undocumented)
     isDisabled: boolean;
     // (undocumented)
@@ -3609,6 +3616,73 @@ type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
     slabThickness?: number;
 };
+
+// @public (undocumented)
+class VoxelManager<T> {
+    constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean | void);
+    // (undocumented)
+    static addBounds(bounds: BoundsIJK, point: Point3): void;
+    // (undocumented)
+    addPoint(point: Point3 | number): void;
+    // (undocumented)
+    boundsIJK: BoundsIJK;
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
+    static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
+    // (undocumented)
+    static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
+    // (undocumented)
+    readonly dimensions: Point3;
+    // (undocumented)
+    forEach: (callback: any, options?: any) => void;
+    // (undocumented)
+    frameSize: number;
+    // (undocumented)
+    _get: (index: number) => T;
+    // (undocumented)
+    getArrayOfSlices(): number[];
+    // (undocumented)
+    getAtIJK: (i: any, j: any, k: any) => T;
+    // (undocumented)
+    getAtIJKPoint: ([i, j, k]: [any, any, any]) => T;
+    // (undocumented)
+    getAtIndex: (index: any) => T;
+    // (undocumented)
+    getBoundsIJK(): BoundsIJK;
+    // (undocumented)
+    getPointIndices(): number[];
+    // (undocumented)
+    getPoints(): Point3[];
+    // (undocumented)
+    isInObject: (pointIPS: any, pointIJK: any) => boolean;
+    // (undocumented)
+    map: Map<number, T>;
+    // (undocumented)
+    modifiedSlices: Set<number>;
+    // (undocumented)
+    points: Set<number>;
+    // (undocumented)
+    scalarData: VolumeScalarData;
+    // (undocumented)
+    _set: (index: number, v: T) => boolean | void;
+    // (undocumented)
+    setAtIJK: (i: number, j: number, k: number, v: any) => void;
+    // (undocumented)
+    setAtIJKPoint: ([i, j, k]: [any, any, any], v: any) => void;
+    // (undocumented)
+    setAtIndex: (index: any, v: any) => void;
+    // (undocumented)
+    sourceVoxelManager: VoxelManager<T>;
+    // (undocumented)
+    toIJK(index: number): Point3;
+    // (undocumented)
+    toIndex(ijk: Point3): number;
+    // (undocumented)
+    width: number;
+}
 
 declare namespace windowLevel {
     export {
