@@ -166,18 +166,33 @@ addSliderToToolbar({
   },
 });
 
+addDropdownToToolbar({
+  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  labelText: 'Segment',
+  onSelectedValueChange: (segmentIndex) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      Number(segmentIndex)
+    );
+  },
+});
+
 addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: () => {
     const segmentationsList = segmentation.state.getSegmentations();
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     const config1 = segmentation.config.getSegmentSpecificConfig(
       toolGroupId,
       representationUID,
-      1
-    ) || { label: 'Segmentation', color: null };
+      segmentIndex
+    ) || { label: `Segment ${segmentIndex}`, color: null };
+    const segments = [null];
+    segments[segmentIndex] = config1;
     const segmentations = {
       ...segmentationsList[0],
-      segments: [null, config1],
+      segments,
     };
     const bidirectional = contourAndFindLargestBidirectional(segmentations);
 
