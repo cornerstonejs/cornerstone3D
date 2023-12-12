@@ -1,3 +1,4 @@
+import { glMatrix, mat4, vec3 } from 'gl-matrix';
 import { AnnotationTool } from '../base';
 
 import {
@@ -5,6 +6,8 @@ import {
   eventTarget,
   triggerEvent,
   utilities as csUtils,
+  StackViewport,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
@@ -12,7 +15,6 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawHandles as drawHandlesSvg,
@@ -44,7 +46,7 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 
 const { getViewportIdsWithToolToRender } = viewportFilters;
-const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2;
+const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
 class LivewireContourTool extends AnnotationTool {
   public static toolName: string;
@@ -62,6 +64,8 @@ class LivewireContourTool extends AnnotationTool {
     confirmedPath?: LivewirePath;
     currentPath?: LivewirePath;
     closed?: boolean;
+    worldToSlice?: (point: Types.Point3) => Types.Point2;
+    sliceToWorld?: (point: Types.Point2) => Types.Point3;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -109,25 +113,66 @@ class LivewireContourTool extends AnnotationTool {
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-    const defaultActor = (<Types.IViewport>viewport).getDefaultActor();
+    const defaultActor = viewport.getDefaultActor();
 
     if (!defaultActor || !csUtils.isImageActor(defaultActor)) {
       throw new Error('Default actor must be an image actor');
     }
 
-    // const { uid: volumeId } = defaultActor;
-    // const volume = cache.getVolume(volumeId);
-    const { actor } = defaultActor;
-    const vtkImageData = actor.getMapper().getInputData();
-    const dimensions = vtkImageData.getDimensions();
-    const [width, height] = dimensions;
-    const scalarData = vtkImageData.getPointData().getScalars().getData();
-    const { voiRange } = viewport.getProperties();
+    const viewportImageData = viewport.getImageData();
+    const { imageData: vtkImageData } = viewportImageData;
+    let worldToSlice: (point: Types.Point3) => Types.Point2;
+    let sliceToWorld: (point: Types.Point2) => Types.Point3;
+    let scalarData;
+    let width;
+    let height;
 
-    // TODO: See what to do when working with mpr-able because this should be the
-    // index from the image space place related to the image sent to scissor.setData()
-    const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    const slicePos: Types.Point2 = [imagePos[0], imagePos[1]];
+    if (viewport instanceof StackViewport) {
+      scalarData = viewportImageData.scalarData;
+      width = viewportImageData.dimensions[0];
+      height = viewportImageData.dimensions[1];
+
+      worldToSlice = (point: Types.Point3) => {
+        const ijkPoint = csUtils.transformWorldToIndex(vtkImageData, point);
+        return [ijkPoint[0], ijkPoint[1]];
+      };
+
+      sliceToWorld = (point: Types.Point2) =>
+        csUtils.transformIndexToWorld(vtkImageData, [point[0], point[1], 0]);
+    } else if (viewport instanceof VolumeViewport) {
+      const sliceImageData = csUtils.getCurrentVolumeViewportSlice(viewport);
+      const { sliceToIndexMatrix, indexToSliceMatrix } = sliceImageData;
+
+      worldToSlice = (point: Types.Point3) => {
+        const ijkPoint = csUtils.transformWorldToIndex(vtkImageData, point);
+        const slicePoint = vec3.transformMat4(
+          [0, 0, 0],
+          ijkPoint,
+          indexToSliceMatrix
+        );
+
+        return [slicePoint[0], slicePoint[1]];
+      };
+
+      sliceToWorld = (point: Types.Point2) => {
+        const ijkPoint = vec3.transformMat4(
+          [0, 0, 0],
+          [point[0], point[1], 0],
+          sliceToIndexMatrix
+        ) as Types.Point3;
+
+        return csUtils.transformIndexToWorld(vtkImageData, ijkPoint);
+      };
+
+      scalarData = sliceImageData.scalarData;
+      width = sliceImageData.width;
+      height = sliceImageData.height;
+    } else {
+      throw new Error('Viewport not supported');
+    }
+
+    const { voiRange } = viewport.getProperties();
+    const startPos = worldToSlice(worldPos);
 
     this.scissors = LivewireScissors.createInstanceFromRawPixelData(
       scalarData,
@@ -136,14 +181,13 @@ class LivewireContourTool extends AnnotationTool {
       voiRange
     );
 
-    this.scissors.startSearch(slicePos);
+    this.scissors.startSearch(startPos);
 
     const confirmedPath = new LivewirePath();
     const currentPath = new LivewirePath();
-    const p0: Types.Point2 = [imagePos[0], imagePos[1]];
 
-    confirmedPath.addPoint(p0);
-    confirmedPath.addControlPoint(p0);
+    confirmedPath.addPoint(startPos);
+    confirmedPath.addControlPoint(startPos);
 
     const annotation: LivewireContourAnnotation = {
       highlighted: true,
@@ -158,7 +202,7 @@ class LivewireContourTool extends AnnotationTool {
       data: {
         polyline: [],
         handles: {
-          points: [],
+          points: [[...worldPos]],
           activeHandleIndex: null,
         },
       },
@@ -180,6 +224,8 @@ class LivewireContourTool extends AnnotationTool {
       confirmedPath: confirmedPath,
       currentPath: currentPath,
       closed: false,
+      worldToSlice,
+      sliceToWorld,
     };
 
     this._activateDraw(element);
@@ -336,7 +382,8 @@ class LivewireContourTool extends AnnotationTool {
   };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
-    const { annotation, viewportIdsToRender } = this.editData;
+    const { annotation, viewportIdsToRender, worldToSlice, sliceToWorld } =
+      this.editData;
 
     if (this.editData.closed) {
       return;
@@ -348,9 +395,6 @@ class LivewireContourTool extends AnnotationTool {
     const { canvas: canvasPos, world: worldPos } = currentPoints;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
-    const defaultActor = (<Types.IViewport>viewport).getDefaultActor();
-    const { actor } = defaultActor;
-    const vtkImageData = actor.getMapper().getInputData();
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = false;
 
@@ -361,14 +405,10 @@ class LivewireContourTool extends AnnotationTool {
         distSquared: Infinity,
       };
 
+      // Check if there is a control point close to the cursor
       for (let i = 0, len = controlPoints.length; i < len; i++) {
         const controlPoint = controlPoints[i];
-        const sliceIndex = 1; // TODO: change it for volume viewports
-        const imagePoint = [controlPoint[0], controlPoint[1], sliceIndex];
-        const worldControlPoint = csUtils.transformIndexToWorld(
-          vtkImageData,
-          imagePoint
-        );
+        const worldControlPoint = sliceToWorld(controlPoint);
         const canvasControlPoint = viewport.worldToCanvas(worldControlPoint);
 
         const distSquared = math.point.distanceToPointSquared(
@@ -391,10 +431,6 @@ class LivewireContourTool extends AnnotationTool {
     }
 
     this.editData.closed = this.editData.closed || closePath;
-
-    const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    const slicePos: Types.Point2 = [imagePos[0], imagePos[1]];
-
     this.editData.confirmedPath = this.editData.currentPath;
 
     // Add the current cursor position as a new control point after clicking
@@ -403,7 +439,7 @@ class LivewireContourTool extends AnnotationTool {
     );
 
     // Start a new search starting at the last control point
-    this.scissors.startSearch(slicePos);
+    this.scissors.startSearch(worldToSlice(worldPos));
 
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -420,9 +456,7 @@ class LivewireContourTool extends AnnotationTool {
   private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     const { element, currentPoints } = evt.detail;
     const { world: worldPos, canvas: canvasPos } = currentPoints;
-    const { viewport, renderingEngine } = getEnabledElement(element);
-    // const { annotation } = this.editData;
-    // const { data } = annotation;
+    const { renderingEngine } = getEnabledElement(element);
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -430,16 +464,9 @@ class LivewireContourTool extends AnnotationTool {
 
     this.editData.lastCanvasPoint = canvasPos;
 
-    const defaultActor = (<Types.IStackViewport>viewport).getDefaultActor();
-    const { actor } = defaultActor;
-    const vtkImageData = actor.getMapper().getInputData();
-    const dimensions = vtkImageData.getDimensions();
-    const [imgWidth, imgHeight] = dimensions;
-
-    // TODO: See what to do when working with volumes because imagePos should be
-    // the index in volume space
-    const imagePos = csUtils.transformWorldToIndex(vtkImageData, worldPos);
-    const slicePoint: Types.Point2 = [imagePos[0], imagePos[1]];
+    const { width: imgWidth, height: imgHeight } = this.scissors;
+    const { worldToSlice } = this.editData;
+    const slicePoint: Types.Point2 = worldToSlice(worldPos);
 
     // Check if the point is inside the bounding box
     if (
@@ -642,7 +669,6 @@ class LivewireContourTool extends AnnotationTool {
       return renderStatus;
     }
 
-    // const targetId = this.getTargetId(viewport);
     const newAnnotation = this.editData?.newAnnotation;
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
@@ -655,9 +681,9 @@ class LivewireContourTool extends AnnotationTool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as LivewireContourAnnotation;
-      const { annotationUID, data, highlighted } = annotation;
+      const { annotationUID, data } = annotation;
       const { handles } = data;
-      const { points, activeHandleIndex } = handles;
+      const { points } = handles;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -681,33 +707,27 @@ class LivewireContourTool extends AnnotationTool {
         worldToCanvas(p)
       ) as Types.Point2[];
 
-      let activeHandleCanvasCoords;
-
       if (!isAnnotationVisible(annotationUID)) {
         continue;
       }
 
+      // Render the first control point only when the annotaion is drawn for the
+      // first time to make it easier to know where the user needs to click to
+      // to close the ROI.
       if (
-        !isAnnotationLocked(annotation) &&
-        !this.editData &&
-        activeHandleIndex !== null
+        newAnnotation &&
+        annotation.annotationUID === this.editData?.annotation?.annotationUID
       ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
-      }
-
-      if (activeHandleCanvasCoords || newAnnotation || highlighted) {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          canvasCoordinates,
+          [canvasCoordinates[0]],
           {
             color,
             lineDash,
             lineWidth,
-            handleRadius: '3',
           }
         );
       }
@@ -743,20 +763,13 @@ class LivewireContourTool extends AnnotationTool {
       return;
     }
 
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const { actor } = (<Types.IViewport>viewport).getDefaultActor();
-    const vtkImageData = actor.getMapper().getInputData();
     const { pointArray: imagePoints } = livewirePath;
     const worldPolylinePoints: Types.Point3[] = [];
-    const sliceIndex = 1; // TODO: change this for volume viewports
+    const { sliceToWorld } = this.editData;
 
     for (let i = 0, len = imagePoints.length; i < len; i++) {
-      const imagePoint = [imagePoints[i][0], imagePoints[i][1], sliceIndex];
-      const worldPoint = csUtils.transformIndexToWorld(
-        vtkImageData,
-        imagePoint
-      );
+      const imagePoint = imagePoints[i];
+      const worldPoint = sliceToWorld(imagePoint);
       worldPolylinePoints.push(worldPoint);
     }
 

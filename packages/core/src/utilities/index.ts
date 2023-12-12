@@ -40,6 +40,7 @@ import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeView
 import { isImageActor, actorIsA } from './actorCheck';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
 import getClosestStackImageIndexForPoint from './getClosestStackImageIndexForPoint';
+import getCurrentVolumeViewportSlice from './getCurrentVolumeViewportSlice';
 import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRegistration';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
@@ -115,6 +116,7 @@ export {
   actorIsA,
   getViewportsWithImageURI,
   getClosestStackImageIndexForPoint,
+  getCurrentVolumeViewportSlice,
   calculateViewportsSpatialRegistration,
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,

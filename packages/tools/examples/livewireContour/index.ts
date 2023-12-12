@@ -2,14 +2,14 @@ import {
   RenderingEngine,
   Types,
   Enums,
-  getRenderingEngine,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addDropdownToToolbar,
-  addButtonToToolbar,
+  createInfoSection,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -30,7 +30,7 @@ const {
 const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
+const stackViewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -39,30 +39,43 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const element = document.createElement('div');
 
-// Disable right click context menu so we can have right click tools
-element.oncontextmenu = (e) => e.preventDefault();
+const viewoprtsContainer = document.createElement('div');
 
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+Object.assign(viewoprtsContainer.style, {
+  display: 'grid',
+  height: '500px',
+  gridTemplateColumns: '1fr 1fr 1fr',
+  gap: '5px',
+});
 
-content.appendChild(element);
+content.appendChild(viewoprtsContainer);
 
-const info = document.createElement('div');
-content.appendChild(info);
+const createViewportElement = (id: string) => {
+  const element = document.createElement('div');
 
-const addInstruction = (text) => {
-  const instructions = document.createElement('p');
-  instructions.innerText = `- ${text}`;
-  info.appendChild(instructions);
+  // Disable right click context menu so we can have right click tools
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  element.id = id;
+  viewoprtsContainer.appendChild(element);
+
+  return element;
 };
 
-addInstruction('Left click to use the livewire tool');
-addInstruction('Middle click to use the pan tool');
-addInstruction('Right click to use the zoom tool');
-addInstruction('Press "escape" to cancel drawing');
+const stackViewportElement = createViewportElement('axial-element');
+const volumeCoronalViewportElement = createViewportElement('coronal-element');
+const volumeSagittalViewportElement = createViewportElement('sagittal-element');
+
+const info = createInfoSection(content);
+
+info.addInstruction(
+  'Viewports: Axial (Stack), Coronal (Volume), Sagittal (Volume)'
+);
+info.addInstruction('Left click to use the livewire tool');
+info.addInstruction('Middle click to use the pan tool');
+info.addInstruction('Right click to use the zoom tool');
+info.addInstruction('Press "escape" to cancel drawing');
 
 // ============================= //
 
@@ -75,9 +88,16 @@ const cancelToolDrawing = (evt) => {
   }
 };
 
-element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+stackViewportElement.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
   cancelToolDrawing(evt);
 });
+
+volumeCoronalViewportElement.addEventListener(
+  csToolsEnums.Events.KEY_DOWN,
+  (evt) => {
+    cancelToolDrawing(evt);
+  }
+);
 
 /**
  * Runs the demo
@@ -144,37 +164,106 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportInput = {
-    viewportId,
+  const stackViewportInput = {
+    viewportId: stackViewportId,
     type: ViewportType.STACK,
-    element,
+    element: stackViewportElement,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
 
-  renderingEngine.enableElement(viewportInput);
+  renderingEngine.enableElement(stackViewportInput);
 
-  // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineId);
+  // Set the tool group on stack the viewport
+  toolGroup.addViewport(stackViewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
+  const stackViewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(stackViewportId)
   );
 
-  // Define a stack containing a single image
-  const stack = imageIds;
+  // Define a stack containing a few images
+  const stackImageIds = imageIds.slice(0, 5);
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
-
-  viewport.setProperties({
-    interpolationType: Enums.InterpolationType.NEAREST,
-  });
+  await stackViewport.setStack(stackImageIds);
 
   // Render the image
-  viewport.render();
+  stackViewport.render();
+
+  // Define a unique id for the volume
+  const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+  const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+  const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  // Set the volume to load
+  volume.load();
+
+  // Create a volume viewport (Coronal)
+  const volumeCoronalViewportId = 'CT_CORONAL';
+  const volumeCoronalViewportInput = {
+    viewportId: volumeCoronalViewportId,
+    type: ViewportType.ORTHOGRAPHIC,
+    element: volumeCoronalViewportElement,
+    defaultOptions: {
+      orientation: Enums.OrientationAxis.CORONAL,
+      background: <Types.Point3>[0.2, 0, 0.2],
+    },
+  };
+
+  renderingEngine.enableElement(volumeCoronalViewportInput);
+
+  // Set the tool group on stack the viewport
+  toolGroup.addViewport(volumeCoronalViewportId, renderingEngineId);
+
+  // Get the volume viewport that was created
+  const volumeCoronalViewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(volumeCoronalViewportId)
+  );
+
+  // Set the volume on the viewport
+  await volumeCoronalViewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
+
+  // Render the image
+  volumeCoronalViewport.render();
+
+  // Create a volume viewport (Coronal)
+  const volumeSagittalViewportId = 'CT_SAGITTAL';
+  const volumeSagittalViewportInput = {
+    viewportId: volumeSagittalViewportId,
+    type: ViewportType.ORTHOGRAPHIC,
+    element: volumeSagittalViewportElement,
+    defaultOptions: {
+      orientation: Enums.OrientationAxis.SAGITTAL,
+      background: <Types.Point3>[0.2, 0, 0.2],
+    },
+  };
+
+  renderingEngine.enableElement(volumeSagittalViewportInput);
+
+  // Set the tool group on stack the viewport
+  toolGroup.addViewport(volumeSagittalViewportId, renderingEngineId);
+
+  // Get the volume viewport that was created
+  const volumeSagittalViewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(volumeSagittalViewportId)
+  );
+
+  // Set the volume on the viewport
+  await volumeSagittalViewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
+
+  // Render the image
+  volumeSagittalViewport.render();
 }
 
 run();

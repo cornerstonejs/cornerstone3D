@@ -22,10 +22,10 @@ export class LivewireScissors {
   private searchGranularity: number;
 
   /** Width of the image */
-  private width: number;
+  public readonly width: number;
 
   /** Height of the image */
-  private height: number;
+  public readonly height: number;
 
   /** Grayscale image */
   private grayscalePixelData: Float32Array;
@@ -84,7 +84,15 @@ export class LivewireScissors {
   public startSearch(startPoint: Types.Point2): void {
     const startPointIndex = this._getPointIndex(startPoint[1], startPoint[0]);
 
-    this._reset();
+    this.startPoint = null;
+    this.visited.fill(false);
+    this.parents.fill(MAX_UINT32);
+    this.costs.fill(Infinity);
+    this.priorityQueueNew = new BucketQueue<number>({
+      numBits: this.searchGranularityBits,
+      getPriority: this._getPointCost,
+    });
+
     this.startPoint = startPoint;
     this.costs[startPointIndex] = 0;
     this.priorityQueueNew.push(startPointIndex);
@@ -94,7 +102,7 @@ export class LivewireScissors {
    * Runs Dijsktra until it finds a path from the start point to the target
    * point. Once it reaches the target point all the state is preserved in order
    * to save processing time the next time the method is called for a new target
-   * point. The search restarts from scratch only when setStartPoint is called.
+   * point. The search is restarted whenever `startSearch` is called.
    * @param targetPoint - Target point
    * @returns An array with all points for the shortest path found that goes
    * from startPoint to targetPoint.
@@ -267,8 +275,7 @@ export class LivewireScissors {
     const p42 = data[index(y + 2, x)];
 
     // Laplacian of Gaussian
-    let lap = 0; // -16 * p22;
-    lap += p02;
+    let lap = p02;
     lap += p11 + 2 * p12 + p13;
     lap += p20 + 2 * p21 - 16 * p22 + 2 * p23 + p24;
     lap += p31 + 2 * p32 + p33;
@@ -507,20 +514,6 @@ export class LivewireScissors {
     }
 
     return list;
-  }
-
-  /**
-   * Reset the livewire state.
-   */
-  private _reset() {
-    this.startPoint = null;
-    this.visited.fill(false);
-    this.parents.fill(MAX_UINT32);
-    this.costs.fill(Infinity);
-    this.priorityQueueNew = new BucketQueue<number>({
-      numBits: this.searchGranularityBits,
-      getPriority: this._getPointCost,
-    });
   }
 
   private _getPointCost = (pointIndex: number): number => {
