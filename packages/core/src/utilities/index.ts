@@ -59,6 +59,7 @@ import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
+import VoxelManager from './VoxelManager';
 
 // name spaces
 import * as planar from './planar';
@@ -133,4 +134,5 @@ export {
   genericMetadataProvider,
   isVideoTransferSyntax,
   getBufferConfiguration,
+  VoxelManager,
 };

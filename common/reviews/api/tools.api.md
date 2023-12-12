@@ -547,6 +547,8 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
+    // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
@@ -688,27 +690,66 @@ declare namespace boundingBox {
 }
 
 // @public (undocumented)
-type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    acceptPreview(element?: HTMLDivElement): void;
+    // (undocumented)
+    createEditData(element: any): {
+        volumeId: string;
+        referencedVolumeId: string;
+        segmentsLocked: number[] | [];
+        segmentationRepresentationUID: string;
+        imageIdReferenceMap?: undefined;
+    } | {
+        imageIdReferenceMap: Map<string, string>;
+        segmentsLocked: number[] | [];
+        segmentationRepresentationUID: string;
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+    };
+    // (undocumented)
+    protected getOperationData(element?: any): {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        segmentsLocked: number[];
+        imageIdReferenceMap?: Map<string, string>;
+        volumeId?: string;
+        referencedVolumeId?: string;
+    };
+    // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: () => void;
+    onSetToolDisabled: (evt: any) => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
-    onSetToolPassive: () => void;
+    onSetToolPassive: (evt: any) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    previewCallback: () => void;
+    // (undocumented)
+    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    protected updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
 
 // @public (undocumented)
@@ -729,6 +770,14 @@ function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRender
 
 // @public (undocumented)
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
+
+// @public (undocumented)
+type CanvasCoordinates = [
+Types_2.Point2,
+Types_2.Point2,
+Types_2.Point2,
+Types_2.Point2
+];
 
 // @public (undocumented)
 type CardinalSplineProps = SplineProps & {
@@ -1567,6 +1616,7 @@ declare namespace elementCursor {
 declare namespace ellipse {
     export {
         pointInEllipse,
+        precalculatePointInEllipse,
         getCanvasEllipseCorners
     }
 }
@@ -1669,7 +1719,8 @@ declare namespace Enums {
         AnnotationStyleStates,
         Events,
         SegmentationRepresentations,
-        Swipe
+        Swipe,
+        StrategyCallbacks
     }
 }
 export { Enums }
@@ -1866,8 +1917,8 @@ type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
 
 // @public (undocumented)
 type FloodFillOptions = {
-    onFlood?: (x: any, y: any) => void;
-    onBoundary?: (x: any, y: any) => void;
+    onFlood?: (x: number, y: number, z?: number) => void;
+    onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
 };
@@ -1981,7 +2032,7 @@ const getCalibratedLengthUnits: (handles: any, image: any) => string;
 const getCalibratedScale: (image: any) => any;
 
 // @public (undocumented)
-function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
+function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
 function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
@@ -2573,12 +2624,15 @@ type LabelmapSegmentationDataVolume = {
 type LabelmapToolOperationData = {
     segmentationId: string;
     segmentIndex: number;
+    previewColors?: Record<number, [number, number, number, number]>;
     segmentsLocked: number[];
     viewPlaneNormal: number[];
     viewUp: number[];
     strategySpecificConfiguration: any;
-    constraintFn: (pointIJK: number) => boolean;
     segmentationRepresentationUID: string;
+    points: Types_2.Point3[];
+    preview: any;
+    toolGroupId: string;
 };
 
 // @public (undocumented)
@@ -3186,7 +3240,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -3216,6 +3270,9 @@ declare namespace polyline {
         calculateAreaOfPoints
     }
 }
+
+// @public (undocumented)
+const precalculatePointInEllipse: (ellipse: any, inverts?: Inverts) => Inverts;
 
 // @public (undocumented)
 interface ProbeAnnotation extends Annotation {
@@ -4053,7 +4110,7 @@ function setAttributesIfNecessary(attributes: any, svgNode: any): void;
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number, toolName?: string): void;
 
 // @public (undocumented)
-function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2, otherArgs?: Record<string, unknown>): void;
 
 // @public (undocumented)
 function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Types_2.Color): void;
@@ -4384,6 +4441,30 @@ type Statistics = {
 
 // @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
+
+// @public (undocumented)
+enum StrategyCallbacks {
+    // (undocumented)
+    AcceptPreview = "acceptPreview",
+    // (undocumented)
+    CreateIsInThreshold = "createIsInThreshold",
+    // (undocumented)
+    Fill = "fill",
+    // (undocumented)
+    Initialize = "initialize",
+    // (undocumented)
+    INTERNAL_setValue = "setValue",
+    // (undocumented)
+    OnInteractionEnd = "onInteractionEnd",
+    // (undocumented)
+    OnInteractionStart = "onInteractionStart",
+    // (undocumented)
+    Preview = "preview",
+    // (undocumented)
+    RejectPreview = "rejectPreview",
+    // (undocumented)
+    StrategyFunction = "strategyFunction"
+}
 
 // @public (undocumented)
 type StyleConfig = {
@@ -4808,6 +4889,7 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
+        CanvasCoordinates,
         IAnnotationManager,
         GroupSpecificAnnotations,
         AnnotationState,
@@ -4849,7 +4931,7 @@ declare namespace Types {
         SVGPoint_2 as SVGPoint,
         ScrollOptions_2 as ScrollOptions,
         CINETypes,
-        BoundsIJK,
+        BoundsIJK_2 as BoundsIJK,
         SVGDrawingHelper,
         FloodFillResult,
         FloodFillGetter,

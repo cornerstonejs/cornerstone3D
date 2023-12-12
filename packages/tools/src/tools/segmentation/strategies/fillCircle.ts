@@ -1,201 +1,178 @@
 import { vec3 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
-import { cache } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
-  pointInEllipse,
+  precalculatePointInEllipse,
 } from '../../../utilities/math/ellipse';
+import pointInSphere from '../../../utilities/math/sphere/pointInSphere';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInShapeCallback } from '../../../utilities';
-import isWithinThreshold from './utils/isWithinThreshold';
-import { LabelmapToolOperationData } from '../../../types';
-import { getStrategyData } from './utils/getStrategyData';
-import { isVolumeSegmentation } from './utils/stackVolumeCheck';
+import BrushStrategy from './BrushStrategy';
+import type { Composition, InitializedOperationData } from './BrushStrategy';
+import type { CanvasCoordinates } from '../../../types';
+import { StrategyCallbacks } from '../../../enums';
+import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
+const EPSILON = 1e-4;
+const nearOrZero = (testValue, nearValue) =>
+  Math.abs(testValue) < EPSILON || Math.abs(testValue - nearValue) < EPSILON;
 
-type OperationData = LabelmapToolOperationData & {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-};
+const initializeCircle = {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
+    const {
+      points,
+      imageVoxelManager: imageVoxelManager,
+      viewport,
+      segmentationImageData,
+      segmentationVoxelManager: segmentationVoxelManager,
+    } = operationData;
 
-function fillCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  threshold = false
-): void {
-  const {
-    points,
-    segmentsLocked,
-    segmentIndex,
-    segmentationId,
-    strategySpecificConfiguration,
-  } = operationData;
-
-  const { viewport } = enabledElement;
-  const data = getStrategyData({ operationData, viewport });
-
-  if (!data) {
-    console.warn('No data found for fillCircle');
-    return;
-  }
-
-  const { imageScalarData, segmentationImageData, segmentationScalarData } =
-    data;
-
-  const { ellipseObj, boundsIJK } = getEllipse(
-    viewport,
-    segmentationImageData,
-    points
-  );
-
-  const modifiedSlicesToUse = new Set() as Set<number>;
-
-  let callback;
-
-  if (threshold) {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-
-      if (
-        isWithinThreshold(index, imageScalarData, strategySpecificConfiguration)
-      ) {
-        segmentationScalarData[index] = segmentIndex;
-        //Todo: I don't think this will always be index 2 in streamingImageVolume?
-        modifiedSlicesToUse.add(pointIJK[2]);
-      }
-    };
-  } else {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-      segmentationScalarData[index] = segmentIndex;
-      modifiedSlicesToUse.add(pointIJK[2]);
-    };
-  }
-
-  pointInShapeCallback(
-    segmentationImageData,
-    (pointLPS) =>
-      pointInEllipse(ellipseObj, pointLPS, {
-        fast: true,
-      }),
-    callback,
-    boundsIJK
-  );
-
-  const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse);
-
-  triggerSegmentationDataModified(segmentationId, arrayOfSlices);
-}
-
-/**
- * Fill inside the circular region segment inside the segmentation defined by the operationData.
- * It fills the segmentation pixels inside the defined circle.
- * @param enabledElement - The element for which the segment is being erased.
- * @param operationData - EraseOperationData
- */
-export function fillInsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  fillCircle(enabledElement, operationData, false);
-}
-
-/**
- * Fill inside the circular region segment inside the segmentation defined by the operationData.
- * It fills the segmentation pixels inside the defined circle.
- * @param enabledElement - The element for which the segment is being erased.
- * @param operationData - EraseOperationData
- */
-export function thresholdInsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  if (isVolumeSegmentation(operationData)) {
-    const { referencedVolumeId, volumeId } = operationData;
-
-    const imageVolume = cache.getVolume(referencedVolumeId);
-    const segmentation = cache.getVolume(volumeId);
-
-    if (
-      !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-      !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-    ) {
-      throw new Error(
-        'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-      );
+    // Happens on a preview setup
+    if (!points) {
+      return;
     }
-  }
+    // Average the points to get the center of the ellipse
+    const center = vec3.fromValues(0, 0, 0);
+    points.forEach((point) => {
+      vec3.add(center, center, point);
+    });
+    vec3.scale(center, center, 1 / points.length);
 
-  fillCircle(enabledElement, operationData, true);
+    operationData.centerWorld = center as Types.Point3;
+    operationData.centerIJK = transformWorldToIndex(
+      segmentationImageData,
+      center as Types.Point3
+    );
+    const canvasCoordinates = points.map((p) =>
+      viewport.worldToCanvas(p)
+    ) as CanvasCoordinates;
+
+    // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
+    // corners in canvas coordinates
+    const [topLeftCanvas, bottomRightCanvas] =
+      getCanvasEllipseCorners(canvasCoordinates);
+
+    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
+
+    const ellipsoidCornersIJK = [
+      <Types.Point3>transformWorldToIndex(segmentationImageData, topLeftWorld),
+      <Types.Point3>(
+        transformWorldToIndex(segmentationImageData, bottomRightWorld)
+      ),
+    ];
+
+    segmentationVoxelManager.boundsIJK = getBoundingBoxAroundShape(
+      ellipsoidCornersIJK,
+      segmentationVoxelManager.dimensions
+    );
+    imageVoxelManager.isInObject = createPointInEllipse({
+      topLeftWorld,
+      bottomRightWorld,
+      center,
+    });
+  },
+} as Composition;
+
+/**
+ * Creates a function that tells the user if the provided point in LPS space
+ * is inside the ellipse.
+ *
+ * This will return a sphere test function if the bounds are a circle or
+ * sphere shape (same radius in two or three dimensions), or an elliptical shape
+ * if they differ.
+ */
+function createPointInEllipse(worldInfo: {
+  topLeftWorld: Types.Point3;
+  bottomRightWorld: Types.Point3;
+  center: Types.Point3 | vec3;
+}) {
+  const { topLeftWorld, bottomRightWorld, center } = worldInfo;
+
+  const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
+  const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
+  const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
+
+  const radius = Math.max(xRadius, yRadius, zRadius);
+  if (
+    nearOrZero(xRadius, radius) &&
+    nearOrZero(yRadius, radius) &&
+    nearOrZero(zRadius, radius)
+  ) {
+    const sphereObj = {
+      center,
+      radius,
+      radius2: radius * radius,
+    };
+    return (pointLPS) => pointInSphere(sphereObj, pointLPS);
+  }
+  // using circle as a form of ellipse
+  const ellipseObj = {
+    center: center as Types.Point3,
+    xRadius,
+    yRadius,
+    zRadius,
+  };
+  const inverts = precalculatePointInEllipse(ellipseObj);
+  const { precalculated } = inverts;
+
+  return precalculated;
 }
+
+const CIRCLE_STRATEGY = new BrushStrategy(
+  'Circle',
+  compositions.regionFill,
+  compositions.setValue,
+  initializeCircle,
+  compositions.determineSegmentIndex,
+  compositions.preview
+);
+
+const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
+  'CircleThreshold',
+  compositions.regionFill,
+  compositions.setValue,
+  initializeCircle,
+  compositions.determineSegmentIndex,
+  compositions.dynamicThreshold,
+  compositions.threshold,
+  compositions.preview,
+  compositions.islandRemoval
+);
+
+/**
+ * Fill inside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param operationData - EraseOperationData
+ */
+const fillInsideCircle = CIRCLE_STRATEGY.strategyFunction;
+
+/**
+ * Fill inside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param operationData - EraseOperationData
+ */
+const thresholdInsideCircle = CIRCLE_THRESHOLD_STRATEGY.strategyFunction;
 
 /**
  * Fill outside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels outside the  defined circle.
-j * @param enabledElement - The element for which the segment is being erased.
- * @param operationData - EraseOperationData
- */
-export function fillOutsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  throw new Error('Not yet implemented');
-}
-
-/**
- * Fill inside the circular region segment inside the segmentation defined by the operationData.
- * It fills the segmentation pixels inside the defined circle.
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-function getCenter(points) {
-  // Average the points to get the center of the ellipse
-  const center = vec3.fromValues(0, 0, 0);
-  points.forEach((point) => {
-    vec3.add(center, center, point);
-  });
-  vec3.scale(center, center, 1 / points.length);
-  return center;
+export function fillOutsideCircle(): void {
+  throw new Error('Not yet implemented');
 }
 
-function getEllipse(viewport, imageData, points) {
-  const center = getCenter(points);
-  const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-  const dimensions = imageData.getDimensions();
-
-  // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
-  // corners in canvas coordinates
-  const [topLeftCanvas, bottomRightCanvas] =
-    getCanvasEllipseCorners(canvasCoordinates);
-
-  // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-  const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
-  const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
-
-  const ellipsoidCornersIJK = [
-    <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
-    <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
-  ];
-
-  const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions);
-
-  if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet');
-  }
-
-  // using circle as a form of ellipse
-  const ellipseObj = {
-    center: center as Types.Point3,
-    xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-    yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-    zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-  };
-  return { ellipseObj, boundsIJK };
-}
+export {
+  CIRCLE_STRATEGY,
+  CIRCLE_THRESHOLD_STRATEGY,
+  fillInsideCircle,
+  thresholdInsideCircle,
+  createPointInEllipse as createEllipseInPoint,
+};

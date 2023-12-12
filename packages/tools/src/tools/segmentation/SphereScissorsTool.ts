@@ -10,6 +10,7 @@ import {
 } from '../../types';
 
 import { fillInsideSphere } from './strategies/fillSphere';
+import { eraseInsideSphere } from './strategies/eraseSphere';
 import { Events, SegmentationRepresentations } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
@@ -71,6 +72,7 @@ class SphereScissorsTool extends BaseTool {
       configuration: {
         strategies: {
           FILL_INSIDE: fillInsideSphere,
+          ERASE_INSIDE: eraseInsideSphere,
         },
         defaultStrategy: 'FILL_INSIDE',
         activeStrategy: 'FILL_INSIDE',
@@ -153,6 +155,7 @@ class SphereScissorsTool extends BaseTool {
       centerCanvas: canvasPos,
       segmentationRepresentationUID,
       segmentIndex,
+      segmentationId,
       segmentsLocked,
       segmentColor,
       toolGroupId,
