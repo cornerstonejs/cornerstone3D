@@ -224,6 +224,10 @@
       "advancedColorBar": {
         "name": "Advanced Colorbar",
         "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
+      },
+      "livewireContour": {
+        "name": "Livewire",
+        "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
     "video" : {

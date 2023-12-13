@@ -28,6 +28,7 @@ import EllipticalROITool from './annotation/EllipticalROITool';
 import CircleROITool from './annotation/CircleROITool';
 import SplineROITool from './annotation/SplineROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
+import LivewireContourTool from './annotation/LivewireContourTool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
@@ -76,6 +77,7 @@ export {
   CircleROITool,
   SplineROITool,
   PlanarFreehandROITool,
+  LivewireContourTool,
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
