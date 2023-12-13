@@ -21,6 +21,9 @@
     "video": {
       "description": "Video Viewport"
     },
+    "wsi": {
+      "description": "Whole Slide Imaging"
+    },
     "nifti": {
       "description": "Nifti Volume loader"
     }
@@ -224,6 +227,12 @@
       "advancedColorBar": {
         "name": "Advanced Colorbar",
         "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
+      }
+    },
+    "wsi" : {
+      "wsi": {
+        "name": "Whole Slide Imaging",
+        "description": "Basic WSI Viewport"
       }
     },
     "video" : {

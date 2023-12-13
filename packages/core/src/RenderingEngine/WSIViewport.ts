@@ -363,9 +363,13 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.microscopyElement.style.background = 'red';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
-    // const { viewer: DicomMicroscopyViewer, metadata: metadataUtils } =
-    //   await import('dicom-microscopy-viewer');
-    console.log('Loaded DICOMMicroscopyViewer');
+    const { viewer: DicomMicroscopyViewer, metadata: metadataUtils } =
+      await import('dicom-microscopy-viewer');
+    console.log(
+      'Loaded DICOMMicroscopyViewer',
+      DicomMicroscopyViewer,
+      metadataUtils
+    );
     this.microscopyElement.style.background = 'green';
     this.microscopyElement.innerText = `Loaded ${this.imageIds.length} imageIds`;
     console.log('Using: image ids', this.imageIds);
