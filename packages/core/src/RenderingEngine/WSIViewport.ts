@@ -361,7 +361,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return worldPos;
   };
 
-  public async setWSI(imageIds: string[], metaDataManager) {
+  public async setWSI(imageIds: string[], client) {
     console.log('Setting image ids', imageIds.length);
     this.microscopyElement.style.background = 'red';
     this.microscopyElement.innerText = 'Loading';
@@ -370,7 +370,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     console.log('Loaded DICOMMicroscopyViewer', DicomMicroscopyViewer);
     this.frameOfReferenceUID = null;
     const metadata = this.imageIds.map((imageId) => {
-      const imageMetadata = metaDataManager.get(imageId);
+      const imageMetadata = client.getDICOMwebMetadata(imageId);
 
       Object.defineProperty(imageMetadata, 'isMultiframe', {
         value: imageMetadata.isMultiframe,
@@ -407,7 +407,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
         console.log('Image type not volume', image.ImageType);
       }
     });
-    const client = this.getClient();
     // Construct viewer instance
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client,
@@ -415,19 +414,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
     });
 
     // Render viewer instance in the "viewport" HTML element
-    viewer.render({ container: this.microscopyElement.id });
+    viewer.render({ container: this.microscopyElement });
     this.microscopyElement.style.background = 'green';
     console.log('Wahoo - rendered first WSI');
-  }
-
-  /**
-   * Returns a DICOMweb client look-alike based on dicom image loader
-   * for loading images for WSI
-   */
-  protected getClient() {
-    return {
-      // TODO - figure out what goes here
-    };
   }
 
   /**

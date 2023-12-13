@@ -82,6 +82,11 @@ module.exports = {
           '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
         to: '${destPath.replace(/\\/g, '/')}',
       },
+      {
+        from:
+        '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/index.worker.min.worker.js',
+        to: '${destPath.replace(/\\/g, '/')}',
+      },
       ],
     }),
   ],
@@ -104,6 +109,8 @@ module.exports = {
         /\\/g,
         '/'
       )}',
+      'dicom-microscopy-viewer':
+      'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
       // We use this alias and the CopyPlugin to support using the dynamic-import version
       // of WADO Image Loader
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(

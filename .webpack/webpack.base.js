@@ -49,6 +49,7 @@ module.exports = (env, argv, { DIST_DIR }) => {
       alias: {
         '@cornerstonejs/dicom-image-loader':
           '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
+        'dicom-microscopy-viewer': 'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
       },
       fallback: {
         fs: false,
@@ -65,12 +66,6 @@ module.exports = (env, argv, { DIST_DIR }) => {
           commonjs: 'gl-matrix',
           commonjs2: 'gl-matrix',
           amd: 'gl-matrix',
-        },
-        'dicom-microscopy-viewer': {
-          root: 'window',
-          commonjs: 'dicom-microscopy-viewer',
-          commonjs2: 'dicom-microscopy-viewer',
-          amd: 'dicom-microscopy-viewer',
         },
       },
     ],

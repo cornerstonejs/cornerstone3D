@@ -5,6 +5,7 @@ import {
   getRenderingEngine,
 } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
+import { api } from 'dicomweb-client';
 
 import {
   initDemo,
@@ -81,12 +82,16 @@ async function run() {
   await initDemo();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
+  // TODO - deploy the testdata publically
+  const wadoRsRoot =
+    getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+  const client = new api.DICOMwebClient({ url: wadoRsRoot });
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.2.276.1.74.1.2.132733202464108492637644434464108492',
     SeriesInstanceUID:
       '2.16.840.1.113883.3.8467.132733202477512857637644434477512857',
-    // TODO - deploy the testdata publically
-    wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
+    client,
+    wadoRsRoot,
     convertMultiframe: false,
   });
 
@@ -109,8 +114,9 @@ async function run() {
   // Get the stack viewport that was created
   const viewport = <Types.IWSIViewport>renderingEngine.getViewport(viewportId);
 
+  client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
   // Set the stack on the viewport
-  await viewport.setWSI(imageIds, wadors.metaDataManager);
+  await viewport.setWSI(imageIds, client);
 }
 
 run();

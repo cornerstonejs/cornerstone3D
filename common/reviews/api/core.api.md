@@ -2175,7 +2175,7 @@ interface IWSIViewport extends IViewport {
     // (undocumented)
     setProperties(props: WSIViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
-    setWSI: (imageIds: string[]) => Promise<unknown>;
+    setWSI: (imageIds: string[], client: any) => Promise<unknown>;
 }
 
 // @public (undocumented)
@@ -3796,7 +3796,7 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     setProperties(props: WSIViewportProperties): void;
     // (undocumented)
-    setWSI(imageIds: string[]): Promise<void>;
+    setWSI(imageIds: string[], client: any): Promise<void>;
     // (undocumented)
     readonly uid: any;
     // (undocumented)

@@ -45,6 +45,11 @@ module.exports = {
             '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
           to: '${destPath.replace(/\\/g, '/')}',
         },
+        {
+          from:
+          '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/index.worker.min.worker.js',
+          to: '${destPath.replace(/\\/g, '/')}',
+        },
       ],
     }),
     // new BundleAnalyzerPlugin()
@@ -56,6 +61,9 @@ module.exports = {
   },
   module: {
     rules,
+  },
+  externals: {
+
   },
   resolve: {
     alias: {

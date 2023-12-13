@@ -30,7 +30,7 @@ export default interface IWSIViewport extends IViewport {
    * Without these, other tools requiring metadata wont work, although basic
    * playback does work if the setWSIURL is used instead.
    */
-  setWSI: (imageIds: string[], metaDataManager) => Promise<unknown>;
+  setWSI: (imageIds: string[], client) => Promise<unknown>;
 
   /**
    * Reset the viewport properties to the default values

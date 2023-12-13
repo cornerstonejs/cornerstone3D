@@ -219,6 +219,8 @@ module.exports = function (config) {
           '@cornerstonejs/dicomImageLoader': path.resolve(
             'packages/dicomImageLoader/src/imageLoader/index'
           ),
+          'dicom-microscopy-viewer':
+            'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
         },
       },
     },
