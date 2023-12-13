@@ -47,6 +47,7 @@ import type FlipDirection from './FlipDirection';
 import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
 import type IStackViewport from './IStackViewport';
+import type IWSIViewport from './IWSIViewport';
 import type IVolumeViewport from './IVolumeViewport';
 import type ViewportPreset from './ViewportPreset';
 
@@ -100,11 +101,13 @@ export type {
 import type { ImageLoadListener } from './ImageLoadListener';
 import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
+import type WSIViewportProperties from './WSIViewportProperties';
 import type IVideoViewport from './IVideoViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import { WSIViewportInput } from './WSIViewportTypes';
 import type BoundsIJK from './BoundsIJK';
 
 export type {
@@ -114,6 +117,7 @@ export type {
   ICamera,
   IStackViewport,
   IVideoViewport,
+  IWSIViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
@@ -164,6 +168,7 @@ export type {
   Plane,
   ViewportInputOptions,
   VideoViewportProperties,
+  WSIViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -213,6 +218,7 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
+  WSIViewportInput,
   BoundsIJK,
   Color,
   ColorLUT,

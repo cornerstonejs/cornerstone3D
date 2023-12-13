@@ -34,6 +34,7 @@
     "comlink": "^4.4.1",
     "detect-gpu": "^5.0.22",
     "gl-matrix": "^3.4.3",
+    "dicom-microscopy-viewer": "^0.44.0",
     "lodash.clonedeep": "4.5.0"
   },
   "contributors": [

@@ -66,6 +66,12 @@ module.exports = (env, argv, { DIST_DIR }) => {
           commonjs2: 'gl-matrix',
           amd: 'gl-matrix',
         },
+        'dicom-microscopy-viewer': {
+          root: 'window',
+          commonjs: 'dicom-microscopy-viewer',
+          commonjs2: 'dicom-microscopy-viewer',
+          amd: 'dicom-microscopy-viewer',
+        },
       },
     ],
     plugins: [

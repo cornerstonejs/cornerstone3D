@@ -1,7 +1,7 @@
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
-import { triggerEvent, uuidv4 } from '../utilities';
+import { triggerEvent } from '../utilities';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
@@ -11,11 +11,9 @@ import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesC
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
-import type IVideoViewport from '../types/IVideoViewport';
 import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import type { IViewport } from '../types/IViewport';
-import VideoViewport from './VideoViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -88,7 +86,7 @@ class RenderingEngine implements IRenderingEngine {
    * @param uid - Unique identifier for RenderingEngine
    */
   constructor(id?: string) {
-    this.id = id ? id : uuidv4();
+    this.id = id ? id : crypto.randomUUID();
     this.useCPURendering = getShouldUseCPURendering();
 
     renderingEngineCache.set(this);
@@ -380,24 +378,6 @@ class RenderingEngine implements IRenderingEngine {
     };
 
     return viewports.filter(isStackViewport) as Array<IStackViewport>;
-  }
-
-  /**
-   * Filters all the available viewports and return the stack viewports
-   * @returns stack viewports registered on the rendering Engine
-   */
-  public getVideoViewports(): Array<IVideoViewport> {
-    this._throwIfDestroyed();
-
-    const viewports = this.getViewports();
-
-    const isVideoViewport = (
-      viewport: IViewport
-    ): viewport is VideoViewport => {
-      return viewport instanceof VideoViewport;
-    };
-
-    return viewports.filter(isVideoViewport) as Array<IVideoViewport>;
   }
 
   /**
