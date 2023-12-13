@@ -76,6 +76,21 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Reset Zoom',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.resetCamera(false, true, false);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Reset Original',
   onClick: () => {
     // Get the rendering engine
@@ -117,7 +132,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [0, 0.5],
         canvasPoint: [0, 0.5],
@@ -139,7 +154,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [1, 0.5],
         canvasPoint: [1, 0.5],
@@ -161,7 +176,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [0.5, 0],
         canvasPoint: [0.5, 0],
@@ -183,7 +198,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [0.5, 1],
         canvasPoint: [0.5, 1],

@@ -29,7 +29,7 @@ class VolumeRotateMouseWheelTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         direction: DIRECTIONS.Z,
-        rotateIncrementDegrees: 0.5,
+        rotateIncrementDegrees: 30,
       },
     }
   ) {
@@ -51,7 +51,8 @@ class VolumeRotateMouseWheelTool extends BaseTool {
     const [cx, cy, cz] = focalPoint;
     const [ax, ay, az] = direction;
 
-    const angle = deltaY * rotateIncrementDegrees;
+    //Calculate angle in radian as glmatrix rotate is in radian
+    const angle = (deltaY * (rotateIncrementDegrees * Math.PI)) / 180;
 
     // position[3] = 1.0
     // focalPoint[3] = 1.0
