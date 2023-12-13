@@ -4,8 +4,9 @@ import { transformIJKToCanvas } from './transformIJKToCanvas';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
 
 /**
- * Get the image data for the current slice rendered on the viewport.
- * It does not work for oblique views.
+ * Get the image data for the current slice rendered on the viewport. The image
+ * data returned is the full slice and not only the region that is visible on
+ * the viewport. It does not work for oblique views.
  * @param viewport - Volume viewport
  * @returns Slice image dataand  matrices to convert from volume
  *   to slice and vice-versa
