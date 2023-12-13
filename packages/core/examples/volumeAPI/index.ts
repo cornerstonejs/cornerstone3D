@@ -151,7 +151,7 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Apply rotation',
+  title: 'Apply random rotation',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -162,7 +162,7 @@ addButtonToToolbar({
     );
 
     // Apply the rotation to the camera of the viewport
-    viewport.setProperties({ rotation: 75 });
+    viewport.setProperties({ rotation: Math.random() * 360 });
     viewport.render();
   },
 });
