@@ -1,6 +1,5 @@
 import {
   BaseVolumeViewport,
-  StackViewport,
   cache,
   getEnabledElement,
   metaData,

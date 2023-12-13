@@ -1,9 +1,13 @@
-import { cache } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from './stackVolumeCheck';
 import { LabelmapToolOperationDataStack } from '../../../../types';
 
+const { VoxelManager } = utilities;
+
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
+  let dimensions: Types.Point3;
   if (isVolumeSegmentation(operationData)) {
     const { volumeId, referencedVolumeId } = operationData;
 
@@ -17,6 +21,7 @@ function getStrategyData({ operationData, viewport }) {
     ({ imageData: segmentationImageData } = segmentationVolume);
     segmentationScalarData = segmentationVolume.getScalarData();
     imageScalarData = imageVolume.getScalarData();
+    dimensions = imageVolume.dimensions;
   } else {
     const { imageIdReferenceMap, segmentationRepresentationUID } =
       operationData as LabelmapToolOperationDataStack;
@@ -46,12 +51,21 @@ function getStrategyData({ operationData, viewport }) {
     // This is the pixel data of the image that is being segmented in the cache
     // and we need to use this to for the modification
     imageScalarData = image.getPixelData();
+    dimensions = [image.columns, image.rows, 1];
   }
 
   return {
     segmentationImageData,
     segmentationScalarData,
+    segmentationVoxelManager: VoxelManager.createVolumeVoxelManager(
+      dimensions,
+      segmentationScalarData
+    ),
     imageScalarData,
+    imageVoxelManager: VoxelManager.createVolumeVoxelManager(
+      dimensions,
+      imageScalarData
+    ),
   };
 }
 
