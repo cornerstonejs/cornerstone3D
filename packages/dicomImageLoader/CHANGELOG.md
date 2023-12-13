@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.38.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.38.0...v1.38.1) (2023-12-13)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.38.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.37.1...v1.38.0) (2023-12-12)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.37.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.37.0...v1.37.1) (2023-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.37.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.3...v1.37.0) (2023-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.36.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.2...v1.36.3) (2023-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.36.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.1...v1.36.2) (2023-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.36.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.0...v1.36.1) (2023-12-06)
+
+### Bug Fixes
+
+- Use callbacks to set headers for base loader ([#926](https://github.com/cornerstonejs/cornerstone3D/issues/926)) ([6df0c66](https://github.com/cornerstonejs/cornerstone3D/commit/6df0c6671e97ff89c91a039bd012f4b47edb8b11))
+
+# [1.36.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.35.3...v1.36.0) (2023-12-05)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [1.35.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.35.2...v1.35.3) (2023-12-01)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader

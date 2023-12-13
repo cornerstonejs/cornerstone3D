@@ -695,9 +695,7 @@ function findReferenceSourceImageId(
     }
 
     let frameSourceImageSequence = undefined;
-    if (SourceImageSequence && SourceImageSequence.length !== 0) {
-        frameSourceImageSequence = SourceImageSequence[frameSegment];
-    } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
+    if (PerFrameFunctionalGroup.DerivationImageSequence) {
         let DerivationImageSequence =
             PerFrameFunctionalGroup.DerivationImageSequence;
         if (Array.isArray(DerivationImageSequence)) {
@@ -719,6 +717,11 @@ function findReferenceSourceImageId(
                 }
             }
         }
+    } else if (SourceImageSequence && SourceImageSequence.length !== 0) {
+        console.warn(
+            "DerivationImageSequence not present, using SourceImageSequence assuming SEG has the same geometry as the source image."
+        );
+        frameSourceImageSequence = SourceImageSequence[frameSegment];
     }
 
     if (frameSourceImageSequence) {

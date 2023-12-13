@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
 import { ISpline } from './';
+import { LivewirePath } from '../utilities/livewire/LiveWirePath';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -148,6 +149,17 @@ export interface SplineROIAnnotation extends Annotation {
         area: number;
         areaUnit: string;
       };
+    };
+  };
+}
+
+export interface LivewireContourAnnotation extends Annotation {
+  data: {
+    polyline: Types.Point3[];
+    label?: string;
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
     };
   };
 }

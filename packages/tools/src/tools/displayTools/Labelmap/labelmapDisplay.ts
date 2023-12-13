@@ -31,75 +31,14 @@ import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackV
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
-/**
- * For each viewport, in the toolGroup it adds the segmentation labelmap
- * representation to its viewports.
- * @param toolGroup - the tool group that contains the viewports
- * @param representationInput - The segmentation representation input
- * @param toolGroupSpecificConfig - The configuration object for toolGroup
- *
- * @returns The UID of the new segmentation representation
- */
-async function addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  const { segmentationId } = representationInput;
-  const segmentationRepresentationUID = utilities.uuidv4();
-
-  // Todo: make these configurable during representation input by user
-  const segmentsHidden = new Set() as Set<number>;
-  const colorLUTIndex = 0;
-  const active = true;
+function getRepresentationRenderingConfig() {
   const cfun = vtkColorTransferFunction.newInstance();
   const ofun = vtkPiecewiseFunction.newInstance();
-
   ofun.addPoint(0, 0);
-
-  const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
-    segmentationId,
-    segmentationRepresentationUID,
-    type: Representations.Labelmap,
-    segmentsHidden,
-    colorLUTIndex,
-    active,
-    segmentationRepresentationSpecificConfig: {},
-    segmentSpecificConfig: {},
-    config: {
-      cfun,
-      ofun,
-    },
+  return {
+    ofun,
+    cfun,
   };
-
-  // Update the toolGroup specific configuration
-  if (toolGroupSpecificConfig) {
-    // Since setting configuration on toolGroup will trigger a segmentationRepresentation
-    // update event, we don't want to trigger the event twice, so we suppress
-    // the first one
-    const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-
-    const mergedConfig = utilities.deepMerge(
-      currentToolGroupConfig,
-      toolGroupSpecificConfig
-    );
-
-    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations:
-        mergedConfig.renderInactiveSegmentations || true,
-      representations: {
-        ...mergedConfig.representations,
-      },
-    });
-  }
-
-  SegmentationState.addSegmentationRepresentation(
-    toolGroupId,
-    toolGroupSpecificRepresentation
-  );
-
-  return segmentationRepresentationUID;
 }
 
 /**
@@ -532,7 +471,13 @@ async function _addLabelmapToViewport(
 }
 
 export default {
+  getRepresentationRenderingConfig,
   render,
-  addSegmentationRepresentation,
+  removeSegmentationRepresentation,
+};
+
+export {
+  getRepresentationRenderingConfig,
+  render,
   removeSegmentationRepresentation,
 };

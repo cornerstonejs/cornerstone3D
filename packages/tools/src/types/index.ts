@@ -34,8 +34,6 @@ import type BoundsIJK from './BoundsIJK';
 import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
-  Color,
-  ColorLUT,
   RepresentationConfig,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
@@ -58,6 +56,7 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type { Statistics } from './CalculatorTypes';
+import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
@@ -79,6 +78,7 @@ export type {
   // AnnotationState
   Annotation,
   Annotations,
+  CanvasCoordinates,
   IAnnotationManager,
   GroupSpecificAnnotations,
   AnnotationState,
@@ -120,8 +120,6 @@ export type {
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   RepresentationPublicInput,
-  Color,
-  ColorLUT,
   LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,

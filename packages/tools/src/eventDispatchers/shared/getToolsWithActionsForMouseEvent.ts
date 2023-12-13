@@ -5,8 +5,6 @@ import { ToolAction, EventTypes } from '../../types';
 import { keyEventListener } from '../../eventListeners';
 import getMouseModifier from './getMouseModifier';
 
-type ModesFilter = Array<ToolModes>;
-
 /**
  * Given the mouse event and a list of tool modes, find all tool instances
  * with actions that were added to the tool group associated with the viewport

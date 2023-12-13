@@ -40,10 +40,10 @@ function addAnnotation(annotation: Annotation, annotationGroupSelector: Annotati
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
 
 // @public (undocumented)
-function addColorLUT(colorLUT: ColorLUT, index: number): void;
+function addColorLUT(colorLUT: Types_2.ColorLUT, index: number): void;
 
 // @public (undocumented)
-function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
+function addColorLUT_2(colorLUT: Types_2.ColorLUT, colorLUTIndex: number): void;
 
 // @public (undocumented)
 function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEvents?: boolean): void;
@@ -547,6 +547,8 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
+    // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
@@ -688,27 +690,66 @@ declare namespace boundingBox {
 }
 
 // @public (undocumented)
-type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    acceptPreview(element?: HTMLDivElement): void;
+    // (undocumented)
+    createEditData(element: any): {
+        volumeId: string;
+        referencedVolumeId: string;
+        segmentsLocked: number[] | [];
+        segmentationRepresentationUID: string;
+        imageIdReferenceMap?: undefined;
+    } | {
+        imageIdReferenceMap: Map<string, string>;
+        segmentsLocked: number[] | [];
+        segmentationRepresentationUID: string;
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+    };
+    // (undocumented)
+    protected getOperationData(element?: any): {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        segmentsLocked: number[];
+        imageIdReferenceMap?: Map<string, string>;
+        volumeId?: string;
+        referencedVolumeId?: string;
+    };
+    // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: () => void;
+    onSetToolDisabled: (evt: any) => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
-    onSetToolPassive: () => void;
+    onSetToolPassive: (evt: any) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    previewCallback: () => void;
+    // (undocumented)
+    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    protected updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
 
 // @public (undocumented)
@@ -729,6 +770,14 @@ function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRender
 
 // @public (undocumented)
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
+
+// @public (undocumented)
+type CanvasCoordinates = [
+Types_2.Point2,
+Types_2.Point2,
+Types_2.Point2,
+Types_2.Point2
+];
 
 // @public (undocumented)
 type CardinalSplineProps = SplineProps & {
@@ -897,7 +946,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -1049,9 +1098,6 @@ export class CobbAngleTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// @public (undocumented)
-type Color = [number, number, number, number];
-
 declare namespace color {
     export {
         getColorForSegmentIndex,
@@ -1164,9 +1210,6 @@ type ColorbarTicksStyle = {
 
 // @public (undocumented)
 type ColorbarVOIRange = ColorbarImageRange;
-
-// @public (undocumented)
-type ColorLUT = Array<Color>;
 
 declare namespace config {
     export {
@@ -1573,6 +1616,7 @@ declare namespace elementCursor {
 declare namespace ellipse {
     export {
         pointInEllipse,
+        precalculatePointInEllipse,
         getCanvasEllipseCorners
     }
 }
@@ -1675,7 +1719,8 @@ declare namespace Enums {
         AnnotationStyleStates,
         Events,
         SegmentationRepresentations,
-        Swipe
+        Swipe,
+        StrategyCallbacks
     }
 }
 export { Enums }
@@ -1872,8 +1917,8 @@ type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
 
 // @public (undocumented)
 type FloodFillOptions = {
-    onFlood?: (x: any, y: any) => void;
-    onBoundary?: (x: any, y: any) => void;
+    onFlood?: (x: number, y: number, z?: number) => void;
+    onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
 };
@@ -1987,7 +2032,7 @@ const getCalibratedLengthUnits: (handles: any, image: any) => string;
 const getCalibratedScale: (image: any) => any;
 
 // @public (undocumented)
-function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
+function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
 function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
@@ -1996,10 +2041,10 @@ function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_
 } | undefined;
 
 // @public (undocumented)
-function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Color;
+function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Types_2.Color;
 
 // @public (undocumented)
-function getColorLUT(index: number): ColorLUT | undefined;
+function getColorLUT(index: number): Types_2.ColorLUT | undefined;
 
 // @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
@@ -2049,6 +2094,9 @@ function getMeanPoints(points: IPoints[]): IPoints;
 
 // @public (undocumented)
 function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
+
+// @public (undocumented)
+function getNextColorLUTIndex(): number;
 
 // @public (undocumented)
 function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
@@ -2576,12 +2624,15 @@ type LabelmapSegmentationDataVolume = {
 type LabelmapToolOperationData = {
     segmentationId: string;
     segmentIndex: number;
+    previewColors?: Record<number, [number, number, number, number]>;
     segmentsLocked: number[];
     viewPlaneNormal: number[];
     viewUp: number[];
     strategySpecificConfiguration: any;
-    constraintFn: (pointIJK: number) => boolean;
     segmentationRepresentationUID: string;
+    points: Types_2.Point3[];
+    preview: any;
+    toolGroupId: string;
 };
 
 // @public (undocumented)
@@ -2691,6 +2742,64 @@ declare namespace lineSegment {
         distanceToPointSquaredInfo,
         intersectLine
     }
+}
+
+// @public (undocumented)
+interface LivewireContourAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        polyline: Types_2.Point3[];
+        label?: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+}
+
+// @public (undocumented)
+export class LivewireContourTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LivewireContourAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => string;
+    // (undocumented)
+    editData: {
+        annotation: LivewireContourAnnotation;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+        lastCanvasPoint?: Types_2.Point2;
+        confirmedPath?: LivewirePath;
+        currentPath?: LivewirePath;
+        closed?: boolean;
+        worldToSlice?: (point: Types_2.Point3) => Types_2.Point2;
+        sliceToWorld?: (point: Types_2.Point2) => Types_2.Point3;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: LivewireContourAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+    // (undocumented)
+    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
 
 declare namespace locking {
@@ -3189,7 +3298,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -3219,6 +3328,9 @@ declare namespace polyline {
         calculateAreaOfPoints
     }
 }
+
+// @public (undocumented)
+const precalculatePointInEllipse: (ellipse: any, inverts?: Inverts) => Inverts;
 
 // @public (undocumented)
 interface ProbeAnnotation extends Annotation {
@@ -3746,6 +3858,9 @@ type RepresentationConfig = {
 type RepresentationPublicInput = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
+    options?: {
+        colorLUTOrIndex?: Types_2.ColorLUT | number;
+    };
 };
 
 // @public (undocumented)
@@ -3991,7 +4106,7 @@ enum SegmentationRepresentations {
 
 // @public (undocumented)
 type SegmentationState = {
-    colorLUT: ColorLUT[];
+    colorLUT: Types_2.ColorLUT[];
     segmentations: Segmentation[];
     globalConfig: SegmentationRepresentationConfig;
     toolGroups: {
@@ -4053,10 +4168,10 @@ function setAttributesIfNecessary(attributes: any, svgNode: any): void;
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number, toolName?: string): void;
 
 // @public (undocumented)
-function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2, otherArgs?: Record<string, unknown>): void;
 
 // @public (undocumented)
-function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
+function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Types_2.Color): void;
 
 // @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
@@ -4370,6 +4485,7 @@ declare namespace state_3 {
         getSegmentationRepresentationByUID,
         addColorLUT,
         getColorLUT,
+        getNextColorLUTIndex,
         removeColorLUT
     }
 }
@@ -4383,6 +4499,30 @@ type Statistics = {
 
 // @public (undocumented)
 function stopClip(element: HTMLDivElement): void;
+
+// @public (undocumented)
+enum StrategyCallbacks {
+    // (undocumented)
+    AcceptPreview = "acceptPreview",
+    // (undocumented)
+    CreateIsInThreshold = "createIsInThreshold",
+    // (undocumented)
+    Fill = "fill",
+    // (undocumented)
+    Initialize = "initialize",
+    // (undocumented)
+    INTERNAL_setValue = "setValue",
+    // (undocumented)
+    OnInteractionEnd = "onInteractionEnd",
+    // (undocumented)
+    OnInteractionStart = "onInteractionStart",
+    // (undocumented)
+    Preview = "preview",
+    // (undocumented)
+    RejectPreview = "rejectPreview",
+    // (undocumented)
+    StrategyFunction = "strategyFunction"
+}
 
 // @public (undocumented)
 type StyleConfig = {
@@ -4660,6 +4800,7 @@ declare namespace ToolSpecificAnnotationTypes {
         AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
         SplineROIAnnotation,
+        LivewireContourAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,
@@ -4807,6 +4948,7 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
+        CanvasCoordinates,
         IAnnotationManager,
         GroupSpecificAnnotations,
         AnnotationState,
@@ -4843,14 +4985,12 @@ declare namespace Types {
         ToolGroupSpecificLabelmapRepresentation,
         ToolGroupSpecificRepresentation,
         RepresentationPublicInput,
-        Color,
-        ColorLUT,
         LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,
         ScrollOptions_2 as ScrollOptions,
         CINETypes,
-        BoundsIJK,
+        BoundsIJK_2 as BoundsIJK,
         SVGDrawingHelper,
         FloodFillResult,
         FloodFillGetter,

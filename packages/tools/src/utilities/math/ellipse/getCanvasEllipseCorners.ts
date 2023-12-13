@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-type canvasCoordinates = [
+export type CanvasCoordinates = [
   Types.Point2, // bottom
   Types.Point2, // top
   Types.Point2, // left
@@ -15,7 +15,7 @@ type canvasCoordinates = [
  * @returns An array of two points.
  */
 export default function getCanvasEllipseCorners(
-  ellipseCanvasPoints: canvasCoordinates
+  ellipseCanvasPoints: CanvasCoordinates
 ): Array<Types.Point2> {
   const [bottom, top, left, right] = ellipseCanvasPoints;
 

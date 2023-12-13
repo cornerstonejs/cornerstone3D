@@ -26,6 +26,7 @@ import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
+import transformIndexToWorld from './transformIndexToWorld';
 import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
@@ -39,6 +40,7 @@ import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeView
 import { isImageActor, actorIsA } from './actorCheck';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
 import getClosestStackImageIndexForPoint from './getClosestStackImageIndexForPoint';
+import getCurrentVolumeViewportSlice from './getCurrentVolumeViewportSlice';
 import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRegistration';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
@@ -59,6 +61,7 @@ import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
+import VoxelManager from './VoxelManager';
 
 // name spaces
 import * as planar from './planar';
@@ -97,6 +100,7 @@ export {
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,
+  transformIndexToWorld,
   loadImageToCanvas,
   renderToCanvasCPU,
   renderToCanvasGPU,
@@ -112,6 +116,7 @@ export {
   actorIsA,
   getViewportsWithImageURI,
   getClosestStackImageIndexForPoint,
+  getCurrentVolumeViewportSlice,
   calculateViewportsSpatialRegistration,
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,
@@ -133,4 +138,5 @@ export {
   genericMetadataProvider,
   isVideoTransferSyntax,
   getBufferConfiguration,
+  VoxelManager,
 };

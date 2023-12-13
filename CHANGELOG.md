@@ -3,6 +3,54 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.38.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.38.0...v1.38.1) (2023-12-13)
+
+### Bug Fixes
+
+- **resetCamera:** Fixing relative zoom behavior in resetCamera ([#940](https://github.com/cornerstonejs/cornerstone3D/issues/940)) ([51a2509](https://github.com/cornerstonejs/cornerstone3D/commit/51a2509b41e2e15acbde70b797e7c2046b9e7c5e))
+
+# [1.38.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.37.1...v1.38.0) (2023-12-12)
+
+### Features
+
+- Provide access to tracking unique measurement to allow combining parts of a measurement ([#932](https://github.com/cornerstonejs/cornerstone3D/issues/932)) ([65245ce](https://github.com/cornerstonejs/cornerstone3D/commit/65245ce8924776e20c78b18b6e5a86283b6e2668))
+
+## [1.37.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.37.0...v1.37.1) (2023-12-11)
+
+### Bug Fixes
+
+- Display positioning and sizing was wrong ([#930](https://github.com/cornerstonejs/cornerstone3D/issues/930)) ([28a4955](https://github.com/cornerstonejs/cornerstone3D/commit/28a49559a7ebc8ca44e774c6d2b70d159219b810))
+
+# [1.37.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.3...v1.37.0) (2023-12-11)
+
+### Features
+
+- **dynamic brush:** Add a dynamic threshold brush tool with preview ([#909](https://github.com/cornerstonejs/cornerstone3D/issues/909)) ([16fe759](https://github.com/cornerstonejs/cornerstone3D/commit/16fe759e618577a86c1b5535801b984d65a9d49d))
+
+## [1.36.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.2...v1.36.3) (2023-12-06)
+
+### Bug Fixes
+
+- **disableElement:** should not resize the viewports ([#931](https://github.com/cornerstonejs/cornerstone3D/issues/931)) ([d7f8d34](https://github.com/cornerstonejs/cornerstone3D/commit/d7f8d3447649bb9550a71286de73480cf84e360a))
+
+## [1.36.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.1...v1.36.2) (2023-12-06)
+
+### Bug Fixes
+
+- **dicomImageLoader:** Restore accidentally deleted options ([#916](https://github.com/cornerstonejs/cornerstone3D/issues/916)) ([#929](https://github.com/cornerstonejs/cornerstone3D/issues/929)) ([4cca3e4](https://github.com/cornerstonejs/cornerstone3D/commit/4cca3e4dc491139ea4b55fdf98a3b0b61ab42c4f))
+
+## [1.36.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.36.0...v1.36.1) (2023-12-06)
+
+### Bug Fixes
+
+- Use callbacks to set headers for base loader ([#926](https://github.com/cornerstonejs/cornerstone3D/issues/926)) ([6df0c66](https://github.com/cornerstonejs/cornerstone3D/commit/6df0c6671e97ff89c91a039bd012f4b47edb8b11))
+
+# [1.36.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.35.3...v1.36.0) (2023-12-05)
+
+### Features
+
+- **segmentation:** segmentation color change and fix seg import([#920](https://github.com/cornerstonejs/cornerstone3D/issues/920)) ([3af4437](https://github.com/cornerstonejs/cornerstone3D/commit/3af4437c4b20f7cc2556de4d655fc8f118e310a4))
+
 ## [1.35.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.35.2...v1.35.3) (2023-12-01)
 
 ### Bug Fixes

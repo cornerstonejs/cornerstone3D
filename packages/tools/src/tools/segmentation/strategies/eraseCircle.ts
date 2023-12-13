@@ -1,22 +1,13 @@
-import type { Types } from '@cornerstonejs/core';
+import BrushStrategy from './BrushStrategy';
+import { CIRCLE_STRATEGY } from './fillCircle';
+import compositions from './compositions';
 
-import { fillInsideCircle } from './fillCircle';
-import { LabelmapToolOperationData } from '../../../types';
+const ERASE_CIRCLE_STRATEGY = new BrushStrategy(
+  'EraseCircle',
+  compositions.erase,
+  ...CIRCLE_STRATEGY.compositions
+);
 
-type OperationData = LabelmapToolOperationData & {
-  points: any; // todo fix
-};
+const eraseInsideCircle = ERASE_CIRCLE_STRATEGY.strategyFunction;
 
-export function eraseInsideCircle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  // Take the arguments and set the segmentIndex to 0,
-  // Then use existing fillInsideCircle functionality.
-  const eraseOperationData = {
-    ...operationData,
-    segmentIndex: 0,
-  };
-
-  fillInsideCircle(enabledElement, eraseOperationData);
-}
+export { eraseInsideCircle };
