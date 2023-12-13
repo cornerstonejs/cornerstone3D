@@ -44,6 +44,10 @@ module.exports = {
       fs: false,
       path: false,
     },
+    alias: {
+      'dicom-microscopy-viewer':
+      'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
+    },
   },
   module: {
     noParse: [/(codecs)/],
