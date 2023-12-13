@@ -4,10 +4,11 @@ import {
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
+
 import {
   initDemo,
   setTitleAndDescription,
-  addButtonToToolbar,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
@@ -16,6 +17,8 @@ import {
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const { wadors } = dicomImageLoader;
 
 const { ViewportType, Events } = Enums;
 
@@ -107,7 +110,7 @@ async function run() {
   const viewport = <Types.IWSIViewport>renderingEngine.getViewport(viewportId);
 
   // Set the stack on the viewport
-  await viewport.setWSI(imageIds);
+  await viewport.setWSI(imageIds, wadors.metaDataManager);
 }
 
 run();

@@ -28,6 +28,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
   private videoWidth = 0;
   private videoHeight = 0;
 
+  private frameOfReferenceUID: string;
+
   protected metadata;
   private microscopyElement: HTMLDivElement;
 
@@ -60,6 +62,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // use absolute positioning internally.
     this.element.style.position = 'relative';
     this.microscopyElement = document.createElement('div');
+    this.microscopyElement.id = crypto.randomUUID();
     this.microscopyElement.innerText = 'Initial';
     this.microscopyElement.style.background = 'grey';
     this.microscopyElement.style.width = '100%';
@@ -313,7 +316,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
   };
 
   public getFrameOfReferenceUID = (): string => {
-    return 'todo';
+    return this.frameOfReferenceUID;
   };
 
   public resize = (): void => {
@@ -358,22 +361,75 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return worldPos;
   };
 
-  public async setWSI(imageIds: string[]) {
+  public async setWSI(imageIds: string[], metaDataManager) {
     console.log('Setting image ids', imageIds.length);
     this.microscopyElement.style.background = 'red';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
-    const { viewer: DicomMicroscopyViewer, metadata: metadataUtils } =
-      await import('dicom-microscopy-viewer');
-    console.log(
-      'Loaded DICOMMicroscopyViewer',
-      DicomMicroscopyViewer,
-      metadataUtils
-    );
+    const DicomMicroscopyViewer = await import('dicom-microscopy-viewer');
+    console.log('Loaded DICOMMicroscopyViewer', DicomMicroscopyViewer);
+    this.frameOfReferenceUID = null;
+    const metadata = this.imageIds.map((imageId) => {
+      const imageMetadata = metaDataManager.get(imageId);
+
+      Object.defineProperty(imageMetadata, 'isMultiframe', {
+        value: imageMetadata.isMultiframe,
+        enumerable: false,
+      });
+      Object.defineProperty(imageMetadata, 'frameNumber', {
+        value: undefined,
+        enumerable: false,
+      });
+      const imageType = imageMetadata['00080008']?.Value;
+      if (imageType?.length === 1) {
+        imageMetadata['00080008'].Value = imageType[0].split('\\');
+      }
+      const frameOfReference = imageMetadata['00200052']?.Value?.[0];
+      if (!this.frameOfReferenceUID) {
+        this.frameOfReferenceUID = frameOfReference;
+      } else if (frameOfReference !== this.frameOfReferenceUID) {
+        imageMetadata['00200052'].Value = [this.frameOfReferenceUID];
+      }
+
+      return imageMetadata;
+    });
+    console.log('Loaded metadata for', metadata.length, 'images');
+    const volumeImages = [];
+    metadata.forEach((m) => {
+      const image =
+        new DicomMicroscopyViewer.metadata.VLWholeSlideMicroscopyImage({
+          metadata: m,
+        });
+      const imageFlavor = image.ImageType[2];
+      if (imageFlavor === 'VOLUME' || imageFlavor === 'THUMBNAIL') {
+        volumeImages.push(image);
+      } else {
+        console.log('Image type not volume', image.ImageType);
+      }
+    });
+    const client = this.getClient();
+    // Construct viewer instance
+    const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
+      client,
+      metadata: volumeImages,
+    });
+
+    // Render viewer instance in the "viewport" HTML element
+    viewer.render({ container: this.microscopyElement.id });
     this.microscopyElement.style.background = 'green';
-    this.microscopyElement.innerText = `Loaded ${this.imageIds.length} imageIds`;
-    console.log('Using: image ids', this.imageIds);
+    console.log('Wahoo - rendered first WSI');
   }
+
+  /**
+   * Returns a DICOMweb client look-alike based on dicom image loader
+   * for loading images for WSI
+   */
+  protected getClient() {
+    return {
+      // TODO - figure out what goes here
+    };
+  }
+
   /**
    * Converts and [x,y] video coordinate to a Cornerstone3D VideoViewport.
    *

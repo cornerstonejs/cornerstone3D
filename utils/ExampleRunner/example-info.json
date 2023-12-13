@@ -221,12 +221,12 @@
         "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
       },
       "colorBar": {
-        "name": "Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack viewport"
+        "name": "ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack viewport"
       },
       "advancedColorBar": {
-        "name": "Advanced Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
+        "name": "Advanced ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack and volume viewports with PT/CT volumes"
       }
     },
     "wsi" : {
