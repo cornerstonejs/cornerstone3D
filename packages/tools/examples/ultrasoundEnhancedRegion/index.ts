@@ -4,6 +4,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
+  addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -80,6 +81,16 @@ addDropdownToToolbar({
     toolGroup.setToolPassive(selectedToolName);
 
     selectedToolName = <string>newSelectedToolName;
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Display Both Axes Distances for the Ultrasound Directional Tool',
+  onClick: (isOn) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    toolGroup.setToolConfiguration(UltrasoundDirectionalTool.toolName, {
+      displayBothAxesDistances: isOn,
+    });
   },
 });
 

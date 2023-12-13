@@ -51,6 +51,11 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 const { transformWorldToIndex } = csUtils;
 
+/**
+ * The `UltrasoundDirectionalTool` class is a tool for creating directional ultrasound annotations.
+ * It allows users to draw lines and measure distances between two points in the image.
+ * It automatically calculates the distance based on the relevant unit of measurement.
+ */
 class UltrasoundDirectionalTool extends AnnotationTool {
   static toolName;
 
@@ -77,6 +82,11 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        /**
+         * Determines whether both horizontal and vertical distances should be displayed
+         * in the text lines when generating annotations' measurement information.
+         */
+        displayBothAxesDistances: false,
       },
     }
   ) {
@@ -91,11 +101,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a Length Annotation and stores it in the annotationManager
+   * a Ultrasound Directional Tool and store it in the annotationManager
    *
    * @param evt -  EventTypes.InteractionEventType
    * @returns The annotation object.
-   *
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
@@ -588,11 +597,14 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].value == null
+        data.cachedStats[targetId].xValues == null
       ) {
         data.cachedStats[targetId] = {
-          value: null,
-          unit: null,
+          xValues: [0, 0],
+          yValues: [0, 0],
+          isHorizontal: false,
+          units: [''],
+          isUnitless: false,
         };
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);
@@ -641,30 +653,28 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         1
       );
 
-      const unit = data.cachedStats[targetId].unit;
-      if (unit !== 'px') {
+      const isUnitless = data.cachedStats[targetId].isUnitless;
+
+      if (!isUnitless) {
         const canvasPoint1 = canvasCoordinates[0];
         const canvasPoint2 = canvasCoordinates[1];
 
         const canvasDeltaY = canvasPoint2[1] - canvasPoint1[1];
         const canvasDeltaX = canvasPoint2[0] - canvasPoint1[0];
 
-        const orientation =
-          Math.abs(canvasDeltaX) > Math.abs(canvasDeltaY)
-            ? 'HORIZONTAL'
-            : 'VERTICAL';
+        const isHorizontal = data.cachedStats[targetId].isHorizontal;
 
         // then for the third point we need to go from first point towards
         // the second point (it can be left or right in the horizontal orientation)
         // or up or down in the vertical orientation, and only add
         // the delta y to the x or y coordinate of the first point
         let projectedPointCanvas = [0, 0] as Types.Point2;
-        if (orientation === 'HORIZONTAL') {
+        if (isHorizontal) {
           projectedPointCanvas = [
             canvasPoint1[0] + canvasDeltaX,
             canvasPoint1[1],
           ];
-        } else if (orientation === 'VERTICAL') {
+        } else {
           projectedPointCanvas = [
             canvasPoint1[0],
             canvasPoint1[1] + canvasDeltaY,
@@ -742,7 +752,11 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(
+        data,
+        targetId,
+        this.configuration
+      );
 
       if (!data.handles.textBox.hasMoved) {
         // linked to the vertex by default
@@ -818,8 +832,8 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       const { values: values2, units: units2 } =
         getCalibratedProbeUnitsAndValue(image, [imageIndex2]);
 
-      let value;
-      let unit = 'px';
+      let xValues, yValues, units, isHorizontal;
+      let isUnitless = false;
       if (
         units1[0] !== units2[0] ||
         units1[1] !== units2[1] ||
@@ -827,7 +841,12 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       ) {
         // if units are not the same, we cannot calculate the diff
         // so we just report the px distance
-        value = distanceToPoint(worldPos1, worldPos2);
+        const value = distanceToPoint(worldPos1, worldPos2);
+
+        xValues = [value, 0];
+        yValues = [value, 0];
+        units = ['px'];
+        isUnitless = true;
       } else {
         const canvasPoint1 = enabledElement.viewport.worldToCanvas(worldPos1);
         const canvasPoint2 = enabledElement.viewport.worldToCanvas(worldPos2);
@@ -835,32 +854,19 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         const canvasDeltaY = canvasPoint2[1] - canvasPoint1[1];
         const canvasDeltaX = canvasPoint2[0] - canvasPoint1[0];
 
-        const orientation =
-          Math.abs(canvasDeltaX) > Math.abs(canvasDeltaY)
-            ? 'HORIZONTAL'
-            : 'VERTICAL';
+        isHorizontal = Math.abs(canvasDeltaX) > Math.abs(canvasDeltaY);
+        xValues = [values1[0], values2[0]];
+        yValues = [values1[1], values2[1]];
 
-        // then for the third point we need to go from first point towards
-        // the second point (it can be left or right in the horizontal orientation)
-        // or up or down in the vertical orientation, and only add
-        // the delta y to the x or y coordinate of the first point
-        const xValues = [values1[0], values2[0]];
-        const yValues = [values1[1], values2[1]];
-
-        if (orientation === 'HORIZONTAL') {
-          value = Math.abs(xValues[1] - xValues[0]);
-          unit = units1[0];
-        } else if (orientation === 'VERTICAL') {
-          value = Math.abs(yValues[1] - yValues[0]);
-          unit = units1[1];
-        } else {
-          throw new Error('Invalid orientation');
-        }
+        units = [units1[0], units1[1]];
       }
 
       cachedStats[targetId] = {
-        value,
-        unit,
+        xValues,
+        yValues,
+        isHorizontal,
+        units,
+        isUnitless,
       };
     }
 
@@ -880,15 +886,31 @@ class UltrasoundDirectionalTool extends AnnotationTool {
   }
 }
 
-function defaultGetTextLines(data, targetId): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { value, unit } = cachedVolumeStats;
+function defaultGetTextLines(data, targetId, configuration): string[] {
+  const cachedStats = data.cachedStats[targetId];
+  const { xValues, yValues, units, isUnitless, isHorizontal } = cachedStats;
 
-  if (value === undefined) {
-    return;
+  if (isUnitless) {
+    return [`${roundNumber(xValues[0])} px`];
   }
 
-  return [`${roundNumber(value)} ${unit}`];
+  if (configuration.displayBothAxesDistances) {
+    const dist1 = Math.abs(xValues[1] - xValues[0]);
+    const dist2 = Math.abs(yValues[1] - yValues[0]);
+    return [
+      `${roundNumber(dist1)} ${units[0]}`,
+      `${roundNumber(dist2)} ${units[1]}`,
+    ];
+  }
+
+  if (isHorizontal) {
+    const dist = Math.abs(xValues[1] - xValues[0]);
+    return [`${roundNumber(dist)} ${units[0]}`];
+  } else {
+    const dist = Math.abs(yValues[1] - yValues[0]);
+    return [`${roundNumber(dist)} ${units[1]}`];
+  }
 }
+
 UltrasoundDirectionalTool.toolName = 'UltrasoundDirectionalTool';
 export default UltrasoundDirectionalTool;
