@@ -132,11 +132,19 @@ class LivewireContourTool extends AnnotationTool {
       width = viewportImageData.dimensions[0];
       height = viewportImageData.dimensions[1];
 
+      // Method only to simplify the code making stack and volume viewports code
+      // similar and avoiding `if(stack)/else` whenever a coordinate needs to be
+      // transformed because `worldToSlice` in this case returns the same IJK
+      // coordinate from index space.
       worldToSlice = (point: Types.Point3) => {
         const ijkPoint = csUtils.transformWorldToIndex(vtkImageData, point);
         return [ijkPoint[0], ijkPoint[1]];
       };
 
+      // Method only to simplify the code making stack and volume viewports code
+      // similar and avoiding `if(stack)/else` whenever a coordinate needs to be
+      // transformed because `sliceToWorld` in this case receives the same IJK
+      // coordinate from index space.
       sliceToWorld = (point: Types.Point2) =>
         csUtils.transformIndexToWorld(vtkImageData, [point[0], point[1], 0]);
     } else if (viewport instanceof VolumeViewport) {
@@ -382,6 +390,7 @@ class LivewireContourTool extends AnnotationTool {
   };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
+    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
     const { annotation, viewportIdsToRender, worldToSlice, sliceToWorld } =
       this.editData;
 
@@ -396,7 +405,8 @@ class LivewireContourTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
-    let closePath = false;
+    let closePath = controlPoints.length >= 2 && doubleClick;
+    let addNewPoint = true;
 
     // Check if user clicked on the first point to close the curve
     if (controlPoints.length >= 2) {
@@ -426,20 +436,24 @@ class LivewireContourTool extends AnnotationTool {
       }
 
       if (closestHandlePoint.index === 0) {
+        addNewPoint = false;
         closePath = true;
       }
     }
 
     this.editData.closed = this.editData.closed || closePath;
-    this.editData.confirmedPath = this.editData.currentPath;
 
-    // Add the current cursor position as a new control point after clicking
-    this.editData.confirmedPath.addControlPoint(
-      this.editData.currentPath.getLastPoint()
-    );
+    if (addNewPoint) {
+      this.editData.confirmedPath = this.editData.currentPath;
 
-    // Start a new search starting at the last control point
-    this.scissors.startSearch(worldToSlice(worldPos));
+      // Add the current cursor position as a new control point after clicking
+      this.editData.confirmedPath.addControlPoint(
+        this.editData.currentPath.getLastPoint()
+      );
+
+      // Start a new search starting at the last control point
+      this.scissors.startSearch(worldToSlice(worldPos));
+    }
 
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);

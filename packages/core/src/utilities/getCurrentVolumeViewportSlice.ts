@@ -1,6 +1,7 @@
 import { glMatrix, mat4, vec3 } from 'gl-matrix';
-import { transformIndexToWorld, transformWorldToIndex } from '.';
-import { IVolumeViewport, Point2, Point3 } from '../types';
+import { IVolumeViewport, Point3 } from '../types';
+import { transformIJKToCanvas } from './transformIJKToCanvas';
+import { transformCanvasToIJK } from './transformCanvasToIJK';
 
 /**
  * Get the image data for the current slice rendered on the viewport.
@@ -10,43 +11,25 @@ import { IVolumeViewport, Point2, Point3 } from '../types';
  *   to slice and vice-versa
  */
 function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
-  const {
-    dimensions,
-    scalarData,
-    imageData: vtkImageData,
-  } = viewport.getImageData();
-
-  // Convert coordinates from index to canvas space
-  const ijkToCanvas = (volPoint: Point3) => {
-    const worldPoint = transformIndexToWorld(vtkImageData, volPoint);
-
-    return viewport.worldToCanvas(worldPoint);
-  };
-
-  // Convert coordinates from canvas to index space
-  const canvasToIJK = (canvasPoint: Point2) => {
-    const worldPoint = viewport.canvasToWorld(canvasPoint);
-    return transformWorldToIndex(vtkImageData, worldPoint);
-  };
-
+  const { dimensions, scalarData } = viewport.getImageData();
   const { width: canvasWidth, height: canvasHeight } = viewport.getCanvas();
 
   // Get three points from the canvas to help us identify the orientation of
   // the slice. Using canvas width/height to get point far away for each other
   // because points such as (0,0), (1,0) and (0,1) may be converted to the same
   // ijk index when the image is zoomed in.
-  const ijkOriginPoint = canvasToIJK([0, 0]);
-  const ijkRowPoint = canvasToIJK([canvasWidth, 0]);
-  const ijkColPoint = canvasToIJK([0, canvasHeight]);
+  const ijkOriginPoint = transformCanvasToIJK(viewport, [0, 0]);
+  const ijkRowPoint = transformCanvasToIJK(viewport, [canvasWidth - 1, 0]);
+  const ijkColPoint = transformCanvasToIJK(viewport, [0, canvasHeight - 1]);
 
   // Subtract the points to get the row and column vectors in index space
   const ijkRowVec = vec3.sub(vec3.create(), ijkRowPoint, ijkOriginPoint);
   const ijkColVec = vec3.sub(vec3.create(), ijkColPoint, ijkOriginPoint);
-  const ijkDepthVec = vec3.cross(vec3.create(), ijkRowVec, ijkColVec);
+  const ijkSliceVec = vec3.cross(vec3.create(), ijkRowVec, ijkColVec);
 
   vec3.normalize(ijkRowVec, ijkRowVec);
   vec3.normalize(ijkColVec, ijkColVec);
-  vec3.normalize(ijkDepthVec, ijkDepthVec);
+  vec3.normalize(ijkSliceVec, ijkSliceVec);
 
   // Any unit vector parallel to IJK have one component equal to 1 and
   // the other two components equal to 0. If two of them are parallel
@@ -84,7 +67,9 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
   ];
 
   // Project the volume corners onto the canvas
-  const canvasCorners = ijkCorners.map((volCorner) => ijkToCanvas(volCorner));
+  const canvasCorners = ijkCorners.map((ijkCorner) =>
+    transformIJKToCanvas(viewport, ijkCorner)
+  );
 
   // Calculate the AABB from the corners project onto the canvas
   const canvasAABB = canvasCorners.reduce(
@@ -101,15 +86,21 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
 
   // Get the top-left, bottom-right and the diagonal vector of
   // the slice in index space
-  const ijkTopLeft = canvasToIJK([canvasAABB.minX, canvasAABB.minY]);
-  const ijkBottomRight = canvasToIJK([canvasAABB.maxX, canvasAABB.maxY]);
+  const ijkTopLeft = transformCanvasToIJK(viewport, [
+    canvasAABB.minX,
+    canvasAABB.minY,
+  ]);
+  const ijkBottomRight = transformCanvasToIJK(viewport, [
+    canvasAABB.maxX,
+    canvasAABB.maxY,
+  ]);
   const ijkDiagonal = vec3.sub(vec3.create(), ijkBottomRight, ijkTopLeft);
 
   // prettier-ignore
   const sliceToIndexMatrix = mat4.fromValues(
       ijkRowVec[0],   ijkRowVec[1],   ijkRowVec[2],  0,
       ijkColVec[0],   ijkColVec[1],   ijkColVec[2],  0,
-    ijkDepthVec[0], ijkDepthVec[1], ijkDepthVec[2],  0,
+    ijkSliceVec[0], ijkSliceVec[1], ijkSliceVec[2],  0,
      ijkTopLeft[0],  ijkTopLeft[1],  ijkTopLeft[2],  1
   );
 
@@ -143,7 +134,13 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
         ijkPixelCol[1] * dimensions[0] +
         ijkPixelCol[0];
 
-      sliceData[slicePixelIndex++] = scalarData[volumePixelIndex];
+      // It may never throw any "out of bounds" error but just to be safe
+      if (volumePixelIndex < scalarData.length) {
+        sliceData[slicePixelIndex] = scalarData[volumePixelIndex];
+      }
+
+      // Move to next slice pixel
+      slicePixelIndex++;
 
       // Move to the next voxel
       vec3.add(ijkPixelCol, ijkPixelCol, ijkRowVec);
