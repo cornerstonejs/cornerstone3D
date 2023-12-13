@@ -43,7 +43,7 @@ export class BucketQueue<T> {
     this._getPriority =
       typeof getPriority !== 'undefined'
         ? getPriority
-        : (item) => item as number;
+        : (item) => item as unknown as number;
 
     this._areEqual =
       typeof areEqual === 'function'

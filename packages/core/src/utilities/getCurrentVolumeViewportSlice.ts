@@ -120,7 +120,7 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
   const sliceHeight = vec3.dot(ijkColVec, ijkDiagonal) + 1;
 
   // Create a TypedArray with same type from the original scalarData
-  const TypedArray = scalarData.constructor;
+  const TypedArray = (scalarData as any).constructor;
   const sliceData = new TypedArray(sliceWidth * sliceHeight);
 
   // We need to know how many pixels to jump for every change in Z direction
