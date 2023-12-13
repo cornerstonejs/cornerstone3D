@@ -55,6 +55,11 @@ class Viewport implements IViewport {
   readonly renderingEngineId: string;
   /** Type of viewport */
   readonly type: ViewportType;
+  /**
+   * The amount by which the images are inset in a viewport by default.
+   */
+  protected insetImageMultiplier = 1.1;
+
   protected flipHorizontal = false;
   protected flipVertical = false;
   public isDisabled: boolean;
@@ -584,14 +589,15 @@ class Viewport implements IViewport {
     const { storeAsInitialCamera } = displayArea;
 
     // make calculations relative to the fitToCanvasCamera view
-    this.setCamera(this.fitToCanvasCamera, false);
+    this.setCamera(this.fitToCanvasCamera, storeAsInitialCamera);
 
     const { imageArea, imageCanvasPoint } = displayArea;
 
+    let zoom = 1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      const zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      this.setZoom(zoom, storeAsInitialCamera);
+      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+      this.setZoom(this.insetImageMultiplier * zoom, storeAsInitialCamera);
     }
 
     // getting the image info
@@ -604,18 +610,22 @@ class Viewport implements IViewport {
       const validateCanvasPanY = this.sHeight / devicePixelRatio;
       const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
       const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
-
       const dimensions = imageData.getDimensions();
       const canvasZero = this.worldToCanvas([0, 0, 0]);
-      const canvasEdge = this.worldToCanvas(dimensions);
+      const canvasEdge = this.worldToCanvas([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+      ]);
       const canvasImage = [
         canvasEdge[0] - canvasZero[0],
         canvasEdge[1] - canvasZero[1],
       ];
       const [imgWidth, imgHeight] = canvasImage;
       const [imageX, imageY] = imagePoint;
-      const imagePanX = imgWidth * (0.5 - imageX);
-      const imagePanY = imgHeight * (0.5 - imageY);
+      const imagePanX =
+        (zoom * imgWidth * (0.5 - imageX) * validateCanvasPanY) / imgHeight;
+      const imagePanY = zoom * validateCanvasPanY * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
@@ -727,7 +737,7 @@ class Viewport implements IViewport {
     }
 
     //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = 1.1 * radius;
+    const parallelScale = this.insetImageMultiplier * radius;
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];
@@ -743,7 +753,7 @@ class Viewport implements IViewport {
     // compute the radius of the enclosing sphere
     radius = Math.sqrt(radius) * 0.5;
 
-    const distance = 1.1 * radius;
+    const distance = this.insetImageMultiplier * radius;
 
     const viewUpToSet: Point3 =
       Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999

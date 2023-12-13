@@ -1195,6 +1195,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   private setRotationGPU(rotation: number): void {
+    const pan = this.getPan();
+    this.setPan([0, 0]);
     const { flipVertical } = this.getCamera();
 
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
@@ -1208,6 +1210,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
+    this.setPan(pan);
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {

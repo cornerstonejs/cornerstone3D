@@ -3317,6 +3317,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected initialCamera: ICamera;
     // (undocumented)
+    protected insetImageMultiplier: number;
+    // (undocumented)
     isDisabled: boolean;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
