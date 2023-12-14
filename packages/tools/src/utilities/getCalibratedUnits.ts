@@ -151,18 +151,21 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     // Todo: expand on this logic
     const region = regions[0];
 
+    const physicalDeltaX = Math.abs(region.physicalDeltaX);
+    const physicalDeltaY = Math.abs(region.physicalDeltaY);
+
     // if we are in a supported region then we should check if the
     // physicalDeltaX and physicalDeltaY are the same. If they are not
     // then we should show px again, but if they are the same then we should
     // show the units
     const isSamePhysicalDelta = utilities.isEqual(
-      region.physicalDeltaX,
-      region.physicalDeltaY,
+      physicalDeltaX,
+      physicalDeltaY,
       EPS
     );
 
     if (isSamePhysicalDelta) {
-      scale = 1 / (region.physicalDeltaX * region.physicalDeltaY * 100);
+      scale = 1 / (physicalDeltaX * physicalDeltaY * 100);
       calibrationType = 'US Region';
       units = 'mm';
     } else {
