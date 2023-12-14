@@ -228,6 +228,10 @@
       "ultrasoundenhancedregion": {
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
+      },
+      "livewireContour": {
+        "name": "Livewire",
+        "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
 
     },

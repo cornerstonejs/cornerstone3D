@@ -5,7 +5,6 @@ import {
   RepresentationPublicInput,
   ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes';
-import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from './config/segmentationConfig';
 import {
   addSegmentationRepresentation as addSegmentationRepresentationToState,

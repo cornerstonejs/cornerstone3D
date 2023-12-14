@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.40.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.0...v1.40.1) (2023-12-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.40.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.39.0...v1.40.0) (2023-12-13)
+
+### Features
+
+- **VolumeViewport:** add rotation property for Volume Viewport ([#928](https://github.com/cornerstonejs/cornerstone3D/issues/928)) ([8bb4f09](https://github.com/cornerstonejs/cornerstone3D/commit/8bb4f0906774c540a8c307326b4f7e75e054a6b9))
+
+# [1.39.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.38.1...v1.39.0) (2023-12-13)
+
+### Features
+
+- **livewire:** livewire tool ([#941](https://github.com/cornerstonejs/cornerstone3D/issues/941)) ([cadb42b](https://github.com/cornerstonejs/cornerstone3D/commit/cadb42beb3e180629e5e219b235c8aa3faff65be))
+
+## [1.38.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.38.0...v1.38.1) (2023-12-13)
+
+### Bug Fixes
+
+- **resetCamera:** Fixing relative zoom behavior in resetCamera ([#940](https://github.com/cornerstonejs/cornerstone3D/issues/940)) ([51a2509](https://github.com/cornerstonejs/cornerstone3D/commit/51a2509b41e2e15acbde70b797e7c2046b9e7c5e))
+
 # [1.38.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.37.1...v1.38.0) (2023-12-12)
 
 **Note:** Version bump only for package @cornerstonejs/core

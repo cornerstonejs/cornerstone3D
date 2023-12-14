@@ -125,6 +125,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
@@ -147,7 +149,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -852,6 +854,15 @@ function getColormapNames(): any[];
 
 // @public (undocumented)
 export function getConfiguration(): Cornerstone3DConfig;
+
+// @public (undocumented)
+function getCurrentVolumeViewportSlice(viewport: IVolumeViewport): {
+    width: number;
+    height: number;
+    scalarData: any;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+};
 
 // @public (undocumented)
 export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
@@ -2139,7 +2150,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId: string): void;
     // (undocumented)
@@ -2887,6 +2898,9 @@ declare namespace transferFunctionUtils {
 }
 
 // @public (undocumented)
+function transformIndexToWorld(imageData: any, voxelPos: Point3): any;
+
+// @public (undocumented)
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
@@ -3043,6 +3057,7 @@ declare namespace utilities {
         getVolumeViewportsContainingSameVolumes,
         getViewportsWithVolumeId,
         transformWorldToIndex,
+        transformIndexToWorld,
         loadImageToCanvas,
         renderToCanvasCPU,
         renderToCanvasGPU,
@@ -3058,6 +3073,7 @@ declare namespace utilities {
         actorIsA,
         getViewportsWithImageURI,
         getClosestStackImageIndexForPoint,
+        getCurrentVolumeViewportSlice,
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld,
@@ -3436,6 +3452,7 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -3587,9 +3604,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getRotation: () => number;
-    // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
@@ -3627,6 +3642,7 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
     slabThickness?: number;
+    orientation?: OrientationAxis;
 };
 
 // @public (undocumented)
