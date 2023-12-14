@@ -97,7 +97,6 @@ class LivewireContourTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
-    console.debug('🚀 ~ isDrawing:');
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
