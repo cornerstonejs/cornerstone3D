@@ -627,6 +627,8 @@ class RenderingEngine implements IRenderingEngine {
 
       const displayArea = vp.getDisplayArea();
 
+      // TODO - make this use get/set Presentation or in some way preserve the
+      // basic presentation info on this viewport, rather than preserving camera
       if (keepCamera) {
         if (displayArea) {
           if (flipHorizontal) {
@@ -635,8 +637,7 @@ class RenderingEngine implements IRenderingEngine {
           if (rotation) {
             vp.setProperties({ rotation });
           }
-          vp.setZoom(zoom);
-          vp.setPan(pan);
+          console.log('What to do with pan and zoom', pan[0], pan[1], zoom);
         } else {
           vp.setCamera(prevCamera);
         }

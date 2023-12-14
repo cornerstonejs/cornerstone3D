@@ -589,7 +589,7 @@ class Viewport implements IViewport {
     const { storeAsInitialCamera } = displayArea;
 
     // make calculations relative to the fitToCanvasCamera view
-    this.setCamera(this.fitToCanvasCamera, storeAsInitialCamera);
+    this.setCamera(this.fitToCanvasCamera, false);
 
     const { imageArea, imageCanvasPoint } = displayArea;
 
@@ -597,7 +597,7 @@ class Viewport implements IViewport {
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      this.setZoom(this.insetImageMultiplier * zoom, storeAsInitialCamera);
+      this.setZoom(this.insetImageMultiplier * zoom, false);
     }
 
     // getting the image info
@@ -633,7 +633,7 @@ class Viewport implements IViewport {
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
-      this.setPan(deltaPoint2, storeAsInitialCamera);
+      this.setPan(deltaPoint2, false); // storeAsInitialCamera);
     }
 
     if (storeAsInitialCamera) {
