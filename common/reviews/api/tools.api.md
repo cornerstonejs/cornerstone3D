@@ -5052,8 +5052,11 @@ interface UltrasoundDirectionalAnnotation extends Annotation {
         label: string;
         cachedStats: {
             [targetId: string]: {
-                value: number;
-                unit: string;
+                xValues: number[];
+                yValues: number[];
+                units: string[];
+                isHorizontal: boolean;
+                isUnitless: boolean;
             };
         };
     };
