@@ -15,6 +15,8 @@ import {
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
+import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
+import createBidirectionalToolData from './createBidirectionalToolData';
 
 export {
   thresholdVolumeByRange,
@@ -30,4 +32,6 @@ export {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
   thresholdSegmentationByRange,
+  contourAndFindLargestBidirectional,
+  createBidirectionalToolData,
 };

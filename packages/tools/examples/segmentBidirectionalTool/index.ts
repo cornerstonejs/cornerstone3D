@@ -16,8 +16,6 @@ import {
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import createBidirectionalToolData from './createBidirectionalToolData';
-import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 
 // This is for debugging purposes
 console.warn(
@@ -203,7 +201,8 @@ addButtonToToolbar({
       ...segmentationsList[0],
       segments,
     };
-    const bidirectional = contourAndFindLargestBidirectional(segmentations);
+    const bidirectional =
+      cstUtils.segmentation.contourAndFindLargestBidirectional(segmentations);
 
     if (bidirectional) {
       const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
@@ -215,10 +214,11 @@ addButtonToToolbar({
     `;
 
       const viewport = renderingEngine.getViewport(viewportId1);
-      const bidirectionalToolData = createBidirectionalToolData(
-        bidirectional,
-        viewport
-      );
+      const bidirectionalToolData =
+        cstUtils.segmentation.createBidirectionalToolData(
+          bidirectional,
+          viewport
+        );
       const { FrameOfReferenceUID, referencedImageId } = bidirectional;
       annotation.state.addAnnotation(
         bidirectionalToolData,
