@@ -1,4 +1,4 @@
-import { glMatrix, mat4, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { AnnotationTool } from '../base';
 
 import {
@@ -30,11 +30,7 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import {
-  math,
-  viewportFilters,
-  triggerAnnotationRenderForViewportIds,
-} from '../../utilities';
+import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import {
   AnnotationCompletedEventDetail,
@@ -44,8 +40,8 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 
-const { getViewportIdsWithToolToRender } = viewportFilters;
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
 class LivewireContourTool extends AnnotationTool {
