@@ -18,7 +18,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import createBidirectionalToolData from './createBidirectionalToolData';
-import contourAndFindLargestBidirectional from './findLargestBidirectional';
+import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 
 // This is for debugging purposes
 console.warn(
