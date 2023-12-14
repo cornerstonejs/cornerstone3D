@@ -5,7 +5,6 @@ import {
   RepresentationPublicInput,
   ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes';
-import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from './config/segmentationConfig';
 import {
   addSegmentationRepresentation as addSegmentationRepresentationToState,
@@ -44,7 +43,7 @@ async function addSegmentationRepresentation(
   const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
-    type: Representations.Labelmap,
+    type: representationInput.type,
     segmentsHidden,
     colorLUTIndex: colorLUTIndexToUse,
     active: true,

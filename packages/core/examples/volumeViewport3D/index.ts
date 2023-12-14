@@ -1,6 +1,7 @@
 import {
   CONSTANTS,
   Enums,
+  getRenderingEngine,
   RenderingEngine,
   setVolumesForViewports,
   Types,
@@ -9,6 +10,7 @@ import {
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
+  addButtonToToolbar,
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
   initDemo,
@@ -65,6 +67,23 @@ const instructions = document.createElement('p');
 instructions.innerText = 'Click the image to rotate it.';
 
 content.append(instructions);
+
+addButtonToToolbar({
+  title: 'Apply random rotation',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Apply the rotation to the camera of the viewport
+    viewport.setProperties({ rotation: Math.random() * 360 });
+    viewport.render();
+  },
+});
 
 addDropdownToToolbar({
   options: {

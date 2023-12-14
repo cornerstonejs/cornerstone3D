@@ -151,6 +151,23 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Apply random rotation',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Apply the rotation to the camera of the viewport
+    viewport.setProperties({ rotation: Math.random() * 360 });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Apply colormap',
   onClick: () => {
     // Get the rendering engine
@@ -179,8 +196,6 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // Resets the viewport's camera
-    viewport.resetCamera();
     // TODO reset the viewport properties, we don't have API for this.
     viewport.resetProperties(volumeId);
     viewport.render();

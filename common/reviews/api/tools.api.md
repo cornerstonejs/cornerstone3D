@@ -946,7 +946,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -2742,6 +2742,64 @@ declare namespace lineSegment {
         distanceToPointSquaredInfo,
         intersectLine
     }
+}
+
+// @public (undocumented)
+interface LivewireContourAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        polyline: Types_2.Point3[];
+        label?: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+}
+
+// @public (undocumented)
+export class LivewireContourTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LivewireContourAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => string;
+    // (undocumented)
+    editData: {
+        annotation: LivewireContourAnnotation;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+        lastCanvasPoint?: Types_2.Point2;
+        confirmedPath?: LivewirePath;
+        currentPath?: LivewirePath;
+        closed?: boolean;
+        worldToSlice?: (point: Types_2.Point3) => Types_2.Point2;
+        sliceToWorld?: (point: Types_2.Point2) => Types_2.Point3;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: LivewireContourAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+    // (undocumented)
+    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
 
 declare namespace locking {
@@ -4742,6 +4800,7 @@ declare namespace ToolSpecificAnnotationTypes {
         AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
         SplineROIAnnotation,
+        LivewireContourAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,

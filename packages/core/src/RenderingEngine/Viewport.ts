@@ -18,7 +18,7 @@ import {
   isEqual,
 } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
-import { EPSILON, RENDERING_DEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
   ActorEntry,
@@ -803,6 +803,10 @@ class Viewport implements IViewport {
       this.setInitialCamera(modifiedCamera);
     }
 
+    if (resetZoom) {
+      this.setZoom(1, storeAsInitialCamera);
+    }
+
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
       renderer,
@@ -1186,7 +1190,11 @@ class Viewport implements IViewport {
     updatedCamera: ICamera
   ): Promise<void> {
     const actorEntries = this.getActors();
-    const allPromises = actorEntries.map(async (actorEntry) => {
+    // Todo: this was using an async and promise wait all because of the
+    // new surface rendering use case, which broke the more important 3D
+    // volume rendering, so reverting this back for now until I can figure
+    // out a better way to handle this.
+    actorEntries.map((actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping. Update clipping planes only if the actor is
       // a vtkVolume
@@ -1224,7 +1232,6 @@ class Viewport implements IViewport {
       });
     });
 
-    await Promise.all(allPromises);
     this.posProcessNewActors();
   }
 
