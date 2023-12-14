@@ -1,4 +1,4 @@
-import { Enums } from '@cornerstonejs/core';
+import { Enums, utilities } from '@cornerstonejs/core';
 
 const { CalibrationTypes } = Enums;
 const PIXEL_UNITS = 'px';
@@ -19,6 +19,8 @@ const UNIT_MAPPING = {
   3: 'cm',
   4: 'seconds',
 };
+
+const EPS = 1e-3;
 
 /**
  * Extracts the length units and the type of calibration for those units
@@ -113,20 +115,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
-    const supportedRegionsMetadata =
-      calibration.sequenceOfUltrasoundRegions.filter(
-        (region) =>
-          SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
-          SUPPORTED_LENGTH_VARIANT.includes(
-            `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
-          )
-      );
-
-    if (!supportedRegionsMetadata.length) {
-      return { units, areaUnits, scale };
-    }
-
-    const region = supportedRegionsMetadata.find(
+    let regions = calibration.sequenceOfUltrasoundRegions.filter(
       (region) =>
         imageIndex1[0] >= region.regionLocationMinX0 &&
         imageIndex1[0] <= region.regionLocationMaxX1 &&
@@ -138,10 +127,46 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
         imageIndex2[1] <= region.regionLocationMaxY1
     );
 
-    if (region) {
+    // If we are not in a region at all we should show the underlying calibration
+    // which might be the mm spacing for the image
+    if (!regions?.length) {
+      return { units, areaUnits, scale };
+    }
+
+    // if we are in a region then it is the question of whether we support it
+    // or not. If we do not support it we should show px
+
+    regions = regions.filter(
+      (region) =>
+        SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
+        SUPPORTED_LENGTH_VARIANT.includes(
+          `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+        )
+    );
+
+    if (!regions.length) {
+      return { units: PIXEL_UNITS, areaUnits: PIXEL_UNITS + SQUARE, scale };
+    }
+
+    // Todo: expand on this logic
+    const region = regions[0];
+
+    // if we are in a supported region then we should check if the
+    // physicalDeltaX and physicalDeltaY are the same. If they are not
+    // then we should show px again, but if they are the same then we should
+    // show the units
+    const isSamePhysicalDelta = utilities.isEqual(
+      region.physicalDeltaX,
+      region.physicalDeltaY,
+      EPS
+    );
+
+    if (isSamePhysicalDelta) {
       scale = 1 / (region.physicalDeltaX * region.physicalDeltaY * 100);
       calibrationType = 'US Region';
       units = 'mm';
+    } else {
+      return { units: PIXEL_UNITS, areaUnits: PIXEL_UNITS + SQUARE, scale };
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
