@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  cache,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -88,6 +87,8 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 instructions.innerText = `
   Left Click: Use selected Segmentation Tool.
+  Use button to generate new bidirectional on largest slice.
+  Note that segment index 3 is consider to be 3,2 or 1 combined.
   Middle Click: Pan
   Right Click: Zoom
   Mouse wheel: Scroll Stack
@@ -183,13 +184,21 @@ addButtonToToolbar({
     const segmentationsList = segmentation.state.getSegmentations();
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    const config1 = segmentation.config.getSegmentSpecificConfig(
+    const containedSegmentIndices =
+      segmentIndex === 3
+        ? { has: (segmentIndex) => segmentIndex !== 0 }
+        : undefined;
+    const segmentConfig = segmentation.config.getSegmentSpecificConfig(
       toolGroupId,
       representationUID,
       segmentIndex
-    ) || { label: `Segment ${segmentIndex}`, color: null };
+    ) || {
+      label: `Segment ${segmentIndex}`,
+      color: null,
+      containedSegmentIndices,
+    };
     const segments = [null];
-    segments[segmentIndex] = config1;
+    segments[segmentIndex] = segmentConfig;
     const segmentations = {
       ...segmentationsList[0],
       segments,

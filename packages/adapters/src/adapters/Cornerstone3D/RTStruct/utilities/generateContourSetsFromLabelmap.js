@@ -64,6 +64,7 @@ function generateContourSetsFromLabelmap({
             size: pixelsPerSlice * numSlices,
             dataType: "Uint8Array"
         });
+        const { containedSegmentIndices } = segment;
         for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
             // Check if the slice is empty before running marching cube
             if (
@@ -82,7 +83,10 @@ function generateContourSetsFromLabelmap({
                 // Modify segData for this specific segment directly
                 for (let i = 0; i < pixelsPerSlice; i++) {
                     const value = segData[i + frameStart];
-                    if (value === segIndex) {
+                    if (
+                        value === segIndex ||
+                        containedSegmentIndices?.has(value)
+                    ) {
                         scalars.setValue(i + frameStart, 1);
                     } else {
                         scalars.setValue(i, 0);

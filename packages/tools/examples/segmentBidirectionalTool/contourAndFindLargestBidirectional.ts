@@ -129,8 +129,8 @@ function findLargestBidirectional(contours, segVolumeId: string, segment) {
     const startTimeMs = Date.now();
     const bidirectional = createBidirectionalForSlice(
       sliceContour,
-      maxBidirectional,
-      isInSegment
+      isInSegment,
+      maxBidirectional
     );
     const durationMs = Date.now() - startTimeMs;
     if (!bidirectional) {
@@ -156,15 +156,16 @@ const lengthSq = (point) =>
 const distanceSq = (p1, p2) => lengthSq(vec3.sub(vec3.create(), p1, p2));
 
 /**
- * Determines if there is a point in points other than point1 or point2 which
- * is on the line (or nearly so, to deal with quantization issues) between them.
- * The algorithm used is to compare the distances between point1 and the test point
+ * Determines if there is a point in points other than those referenced by the
+ * two indices, which is on the line (or nearly so, to deal with quantization issues)
+ * between the points referenced in the two indices.
+ * The algorithm used is to first check the boundary region of point1/point2 to
+ * exclude obvious outside boundary points, then
+ * compare the distances between point1 and the   test point
  * and between the test point and point2 to see if they add up to distance, and
  * are thus a straight line.
- * point1 must be contained in the points list as an object instance
- * point2 may be contained in the points list as an object instance
  *
- * Note, skips points before point1 in the index
+ * Uses the values in the map point1Lengths to speed up the distance calculations
  */
 function isCrossing(
   points,
@@ -175,12 +176,21 @@ function isCrossing(
 ) {
   const point1 = points[point1Index];
   const point2 = points[point2Index];
+  const pointMax = point1.map((it, index) => Math.max(it, point2[index]));
+  const pointMin = point1.map((it, index) => Math.min(it, point2[index]));
   const pointsLength = points.length;
   for (let testIndex = 0; testIndex < pointsLength; testIndex++) {
     if (testIndex === point1Index || testIndex === point2Index) {
       continue;
     }
     const point = points[testIndex];
+    if (
+      point.find((v, index) => v < pointMin[index] || v > pointMax[index]) !==
+      undefined
+    ) {
+      // Points entirely outside should be skipped
+      continue;
+    }
     const point1Length = point1Lengths.get(testIndex);
     const length1 = point1Length ?? vec3.distance(point1, point);
     if (point1Length === undefined) {
@@ -196,15 +206,27 @@ function isCrossing(
   return false;
 }
 
-function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
+/**
+ * This function creates a bidirectional data object for the given slice and
+ * slice contour, only when the major distance is larger than currentMax, or
+ * equal to current max and the minor is larger than currentMax's minor.
+ * It does this by looking at every pair of distances in sliceCountour to find
+ * those larger than the currentMax, and then finds the minor distance for those
+ * major distances.
+ *
+ */
+function createBidirectionalForSlice(
+  sliceContour,
+  isInSegment,
+  currentMax = { maxMajor: 0, maxMinor: 0 }
+) {
   const { points } = sliceContour.polyData;
-  const { maxMinor: currentMaxMinor, maxMajor: currentMaxMajor } =
-    currentMax || { maxMajor: 0, maxMinor: 0 };
+  const { maxMinor: currentMaxMinor, maxMajor: currentMaxMajor } = currentMax;
   let maxMajor = currentMaxMajor * currentMaxMajor;
   let maxMinor = currentMaxMinor * currentMaxMinor;
   let maxMajorPoints;
   for (let index1 = 0; index1 < points.length; index1++) {
-    const point1Distances = new Map<number>();
+    const point1Lengths = new Map<number>();
     for (let index2 = index1 + 1; index2 < points.length; index2++) {
       const point1 = points[index1];
       const point2 = points[index2];
@@ -222,8 +244,8 @@ function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
         // this is out of bounds.
         continue;
       }
-      const distance = point1Distances.get(index2) ?? Math.sqrt(distance2);
-      if (isCrossing(points, index1, index2, distance, point1Distances)) {
+      const distance = point1Lengths.get(index2) ?? Math.sqrt(distance2);
+      if (isCrossing(points, index1, index2, distance, point1Lengths)) {
         // If the line intersects the segment boundary, then skip it
         continue;
       }
@@ -244,31 +266,32 @@ function createBidirectionalForSlice(sliceContour, currentMax, isInSegment) {
 
   let maxMinorPoints;
 
-  for (let i = 0; i < points.length; i++) {
-    for (let j = i + 1; j < points.length; j++) {
-      const pointI = points[i];
-      const pointJ = points[j];
-      const distance2 = distanceSq(pointI, pointJ);
+  for (let index1 = 0; index1 < points.length; index1++) {
+    const point1Lengths = new Map<number, number>();
+    for (let index2 = index1 + 1; index2 < points.length; index2++) {
+      const point1 = points[index1];
+      const point2 = points[index2];
+      const distance2 = distanceSq(point1, point2);
       if (distance2 <= maxMinor) {
         continue;
       }
-      const distance = Math.sqrt(distance2);
-      const delta = vec3.sub(vec3.create(), pointI, pointJ);
+      const distance = point1Lengths.get(index2) ?? Math.sqrt(distance2);
+      const delta = vec3.sub(vec3.create(), point1, point2);
 
       const dot = Math.abs(vec3.dot(delta, majorDelta)) / distance;
       if (dot > EPSILON) {
         continue;
       }
-      if (!isInSegment(pointI, pointJ)) {
+      if (!isInSegment(point1, point2)) {
         // Center between the two points has to be in the segment, otherwise
         // this is out of bounds.
         continue;
       }
-      if (isCrossing(points, pointI, pointJ, distance)) {
+      if (isCrossing(points, index1, index2, distance, point1Lengths)) {
         continue;
       }
       maxMinor = distance2;
-      maxMinorPoints = [i, j];
+      maxMinorPoints = [index1, index2];
     }
   }
 
