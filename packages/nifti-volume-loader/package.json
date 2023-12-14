@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/nifti-volume-loader",
-  "version": "1.40.1",
+  "version": "1.40.2",
   "description": "",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
