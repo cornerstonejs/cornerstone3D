@@ -1,18 +1,24 @@
 import type { Types } from '@cornerstonejs/core';
+import type { BidirectionalData } from './contourAndFindLargestBidirectional';
 
+/**
+ * Creates data suitable for the BidirectionalTool from the basic bidirectional
+ * data object.
+ */
 export default function createBidirectionalToolData(
-  bidirectionalData,
+  bidirectionalData: BidirectionalData,
   viewport
 ) {
   const {
-    handle0,
-    handle1,
-    handle2,
-    handle3,
+    majorAxis,
+    minorAxis,
     label = '',
     FrameOfReferenceUID,
     referencedImageId,
   } = bidirectionalData;
+  const [handle0, handle1] = majorAxis;
+  const [handle2, handle3] = minorAxis;
+
   const { viewUp, viewPlaneNormal } = viewport.getCamera();
   const points = [handle0, handle1, handle2, handle3];
   const bidirectionalToolData = {

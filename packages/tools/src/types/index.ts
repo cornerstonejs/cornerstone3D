@@ -73,11 +73,13 @@ import type { ISpline } from './ISpline';
 import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
+import type { BidirectionalData } from '../utilities/segmentation/contourAndFindLargestBidirectional';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
+  BidirectionalData,
   CanvasCoordinates,
   IAnnotationManager,
   GroupSpecificAnnotations,

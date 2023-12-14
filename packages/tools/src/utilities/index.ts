@@ -26,6 +26,7 @@ import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 
 // name spaces
+import * as rtstruct from './rtstruct';
 import * as segmentation from './segmentation';
 import * as drawing from './drawing';
 import * as math from './math';
@@ -63,6 +64,7 @@ export {
   getCalibratedAreaUnits,
   getCalibratedScale,
   segmentation,
+  rtstruct,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
   pointInShapeCallback,

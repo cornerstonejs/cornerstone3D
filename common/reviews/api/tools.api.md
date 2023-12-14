@@ -451,6 +451,21 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
 }
 
 // @public (undocumented)
+class AnnotationToPointData {
+    constructor();
+    // (undocumented)
+    static convert(annotation: any, index: any, metadataProvider: any): {
+        ReferencedROINumber: any;
+        ROIDisplayColor: number[];
+        ContourSequence: any;
+    };
+    // (undocumented)
+    static register(toolClass: any): void;
+    // (undocumented)
+    static TOOL_NAMES: Record<string, any>;
+}
+
+// @public (undocumented)
 type AnnotationVisibilityChangeEventDetail = {
     lastHidden: Array<string>;
     lastVisible: Array<string>;
@@ -615,6 +630,19 @@ interface BidirectionalAnnotation extends Annotation {
         };
     };
 }
+
+// @public (undocumented)
+type BidirectionalData = {
+    majorAxis: [Types_2.Point3, Types_2.Point3];
+    minorAxis: [Types_2.Point3, Types_2.Point3];
+    maxMajor: number;
+    maxMinor: number;
+    segmentIndex: number;
+    label?: string;
+    color?: string | number[];
+    referencedImageId: string;
+    FrameOfReferenceUID: string;
+};
 
 // @public (undocumented)
 export class BidirectionalTool extends AnnotationTool {
@@ -1244,6 +1272,9 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
+function contourAndFindLargestBidirectional(segmentations: any): any;
+
+// @public (undocumented)
 type ContourSegmentationData = {
     geometryIds: string[];
 };
@@ -1262,6 +1293,39 @@ function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
 
 // @public (undocumented)
 const CORNERSTONE_COLOR_LUT: number[][];
+
+// @public (undocumented)
+function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewport: any): {
+    highlighted: boolean;
+    invalidated: boolean;
+    metadata: {
+        toolName: string;
+        viewPlaneNormal: any;
+        viewUp: any;
+        FrameOfReferenceUID: string;
+        referencedImageId: string;
+    };
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+            activeHandleIndex: any;
+        };
+        label: string;
+        cachedStats: {};
+    };
+    isLocked: boolean;
+    isVisible: boolean;
+};
 
 // @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
@@ -1447,6 +1511,22 @@ const _default: {
 
 // @public (undocumented)
 const _default_2: {
+    findContours: typeof findContours;
+    findContoursFromReducedSet: typeof findContoursFromReducedSet;
+};
+
+// @public (undocumented)
+const _default_3: {
+    removeDuplicatePoints: typeof removeDuplicatePoints;
+};
+
+// @public (undocumented)
+const _default_4: {
+    processContourHoles: typeof processContourHoles;
+};
+
+// @public (undocumented)
+const _default_5: {
     interpolateAnnotation: typeof interpolateAnnotation;
 };
 
@@ -1963,6 +2043,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 }
 
 // @public (undocumented)
+function generateContourSetsFromLabelmap({ segmentations }: {
+    segmentations: any;
+}): any[];
+
+// @public (undocumented)
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
 
 // @public (undocumented)
@@ -2105,6 +2190,21 @@ function getNumberOfAnnotations(toolName: string, annotationGroupSelector: Annot
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
+function getPatientModule(imageId: any, metadataProvider: any): {
+    Modality: any;
+    PatientID: any;
+    PatientName: any;
+    PatientBirthDate: string;
+    PatientAge: any;
+    PatientSex: any;
+    PatientWeight: any;
+    StudyDate: any;
+    StudyTime: any;
+    StudyID: string;
+    AccessionNumber: any;
+};
+
+// @public (undocumented)
 function getPoint(points: any, idx: any): any[];
 
 // @public (undocumented)
@@ -2115,6 +2215,39 @@ function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
 
 // @public (undocumented)
 function getPolyDataPoints(polyData: vtkPolyData): any[];
+
+// @public (undocumented)
+function getReferencedFrameOfReferenceSequence(metadata: any, metadataProvider: any, dataset: any): {
+    FrameOfReferenceUID: any;
+    RTReferencedStudySequence: {
+        ReferencedSOPClassUID: any;
+        ReferencedSOPInstanceUID: any;
+        RTReferencedSeriesSequence: {
+            SeriesInstanceUID: any;
+            ContourImageSequence: any[];
+        }[];
+    }[];
+}[];
+
+// @public (undocumented)
+function getReferencedSeriesSequence(metadata: any, _index: any, metadataProvider: any, DicomMetadataStore: any): {
+    SeriesInstanceUID: any;
+    ReferencedInstanceSequence: any[];
+}[];
+
+// @public (undocumented)
+function getRTROIObservationsSequence(toolData: any, index: any): {
+    ObservationNumber: any;
+    ReferencedROINumber: any;
+    RTROIInterpretedType: string;
+    ROIInterpreter: string;
+};
+
+// @public (undocumented)
+function getRTSeriesModule(DicomMetaDictionary: any): {
+    SeriesInstanceUID: any;
+    SeriesNumber: string;
+};
 
 // @public (undocumented)
 function getSegmentation(segmentationId: string): Segmentation | undefined;
@@ -2145,6 +2278,15 @@ function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentatio
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
+
+// @public (undocumented)
+function getStructureSetModule(contour: any, index: any): {
+    ROINumber: any;
+    ROIName: any;
+    ROIDescription: string;
+    ROIGenerationAlgorithm: string;
+    ReferencedFrameOfReferenceUID: any;
+};
 
 // @public (undocumented)
 const getSubPixelSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
@@ -3251,7 +3393,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
 
 declare namespace planarFreehandROITool {
     export {
-        _default_2 as default,
+        _default_5 as default,
         interpolateAnnotation
     }
 }
@@ -3872,6 +4014,22 @@ function resetElementCursor(element: HTMLDivElement): void;
 // @public (undocumented)
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
 
+declare namespace rtstruct {
+    export {
+        _default_2 as contourFinder,
+        _default_3 as mergePoints,
+        _default_4 as detectContourHoles,
+        generateContourSetsFromLabelmap,
+        AnnotationToPointData,
+        getPatientModule,
+        getReferencedFrameOfReferenceSequence,
+        getReferencedSeriesSequence,
+        getRTROIObservationsSequence,
+        getRTSeriesModule,
+        getStructureSetModule
+    }
+}
+
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
     // (undocumented)
@@ -3995,7 +4153,9 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
-        thresholdSegmentationByRange
+        thresholdSegmentationByRange,
+        contourAndFindLargestBidirectional,
+        createBidirectionalToolData
     }
 }
 
@@ -4948,6 +5108,7 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
+        BidirectionalData,
         CanvasCoordinates,
         IAnnotationManager,
         GroupSpecificAnnotations,
@@ -5047,6 +5208,7 @@ declare namespace utilities {
         getCalibratedAreaUnits,
         getCalibratedScale,
         segmentation_2 as segmentation,
+        rtstruct,
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRender,
         pointInShapeCallback,

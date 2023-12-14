@@ -1,19 +1,24 @@
 import { cache } from '@cornerstonejs/core';
-import { adaptersRT } from '@cornerstonejs/adapters';
-import * as cornerstoneTools from '@cornerstonejs/tools';
-
-import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-const vtkUtils = {
-  vtkImageMarchingSquares,
-  vtkDataArray,
-  vtkImageData,
+import { generateContourSetsFromLabelmap } from '../rtstruct';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+
+export type BidirectionalData = {
+  majorAxis: [Types.Point3, Types.Point3];
+  minorAxis: [Types.Point3, Types.Point3];
+  maxMajor: number;
+  maxMinor: number;
+  segmentIndex: number;
+  label?: string;
+  color?: string | number[];
+  referencedImageId: string;
+  FrameOfReferenceUID: string;
 };
 
 const EPSILON = 1e-2;
+const { Labelmap } = SegmentationRepresentations;
 
 /**
  * Generates a contour object over the segment, and then uses the contouring to
@@ -26,14 +31,9 @@ const EPSILON = 1e-2;
  * @param segmentations.segments.color - the color to use for the segment label
  */
 export default function contourAndFindLargestBidirectional(segmentations) {
-  const { generateContourSetsFromLabelmap } = adaptersRT.Cornerstone3D.RTSS;
-
   console.time('contour');
   const contours = generateContourSetsFromLabelmap({
     segmentations,
-    cornerstoneCache: cache,
-    cornerstoneToolsEnums: cornerstoneTools.Enums,
-    vtkUtils,
   });
   console.timeEnd('contour');
 
@@ -48,7 +48,6 @@ export default function contourAndFindLargestBidirectional(segmentations) {
       { label: 'Unspecified', color: null, containedSegmentIndices: null },
     ],
   } = segmentations;
-  const { Labelmap } = cornerstoneTools.Enums.SegmentationRepresentations;
   const { volumeId: segVolumeId } = representationData[Labelmap];
 
   const segmentIndex = segments.findIndex((it) => !!it);
@@ -226,7 +225,7 @@ function createBidirectionalForSlice(
   let maxMinor = currentMaxMinor * currentMaxMinor;
   let maxMajorPoints;
   for (let index1 = 0; index1 < points.length; index1++) {
-    const point1Lengths = new Map<number>();
+    const point1Lengths = new Map<number, number>();
     for (let index2 = index1 + 1; index2 < points.length; index2++) {
       const point1 = points[index1];
       const point2 = points[index2];
@@ -304,13 +303,11 @@ function createBidirectionalForSlice(
   const handle3 = points[maxMinorPoints[1]];
 
   const bidirectional = {
-    handle0,
-    handle1,
-    handle2,
-    handle3,
+    majorAxis: [handle0, handle1],
+    minorAxis: [handle2, handle3],
     maxMajor,
     maxMinor,
     ...sliceContour,
-  };
+  } as BidirectionalData;
   return bidirectional;
 }
