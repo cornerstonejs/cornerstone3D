@@ -1194,6 +1194,8 @@ interface IImage {
         voiLUT?: CPUFallbackLUT;
     };
     // (undocumented)
+    calibration?: IImageCalibration;
+    // (undocumented)
     color: boolean;
     // (undocumented)
     colormap?: CPUFallbackColormap;
@@ -2227,6 +2229,8 @@ export { metaData }
 // @public (undocumented)
 enum MetadataModules {
     // (undocumented)
+    CALIBRATION = "calibrationModule",
+    // (undocumented)
     CINE = "cineModule",
     // (undocumented)
     GENERAL_SERIES = "generalSeriesModule",
@@ -2237,11 +2241,19 @@ enum MetadataModules {
     // (undocumented)
     IMAGE_URL = "imageUrlModule",
     // (undocumented)
+    MODALITY_LUT = "modalityLutModule",
+    // (undocumented)
     MULTIFRAME = "multiframeModule",
     // (undocumented)
     NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
     // (undocumented)
-    PATIENT_STUDY = "patientStudyModule"
+    PATIENT_STUDY = "patientStudyModule",
+    // (undocumented)
+    SOP_COMMON = "sopCommonModule",
+    // (undocumented)
+    ULTRASOUND_ENHANCED_REGION = "ultrasoundEnhancedRegionModule",
+    // (undocumented)
+    VOI_LUT = "voiLutModule"
 }
 
 // @public (undocumented)

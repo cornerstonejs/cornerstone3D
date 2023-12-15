@@ -346,6 +346,35 @@ export interface AngleAnnotation extends Annotation {
   };
 }
 
+export interface UltrasoundDirectionalAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    label: string;
+    cachedStats: {
+      [targetId: string]: {
+        xValues: number[];
+        yValues: number[];
+        units: string[];
+        isHorizontal: boolean;
+        isUnitless: boolean;
+      };
+    };
+  };
+}
+
 export interface CobbAngleAnnotation extends Annotation {
   data: {
     handles: {
