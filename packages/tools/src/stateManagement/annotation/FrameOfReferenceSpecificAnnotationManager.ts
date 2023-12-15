@@ -5,6 +5,7 @@ import {
   AnnotationState,
   GroupSpecificAnnotations,
 } from '../../types/AnnotationTypes';
+import { triggerAnnotationAddedForFOR } from './helpers/state';
 
 import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 
@@ -233,6 +234,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     toolSpecificAnnotations.push(annotation);
     checkAndDefineIsLockedProperty(annotation);
     checkAndDefineIsVisibleProperty(annotation);
+
+    triggerAnnotationAddedForFOR(annotation);
   };
 
   /**
