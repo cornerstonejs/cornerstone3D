@@ -11,6 +11,7 @@ import {
   PixelDataTypedArray,
 } from '../types';
 import convertColorSpace from './convertColorSpace';
+import isColorConversionRequirementsFulfilled from './isColorConversionRequirementsFulfilled';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
@@ -228,9 +229,12 @@ function createImage(
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
+      const { rows, columns } = imageFrame;
       if (isColorImage) {
-        const { rows, columns } = imageFrame;
-        if (TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax]) {
+        if (
+          TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax] &&
+          isColorConversionRequirementsFulfilled(imageFrame, useRGBA)
+        ) {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');

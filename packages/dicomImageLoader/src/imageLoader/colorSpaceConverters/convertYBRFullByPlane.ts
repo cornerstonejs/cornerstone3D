@@ -6,10 +6,12 @@ export default function (
   useRGBA: boolean
 ): void {
   if (imageFrame === undefined) {
-    throw new Error('decodeRGB: ybrBuffer must not be undefined');
+    throw new Error('convertYBRFullByPlane: ybrBuffer must be defined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw new Error('decodeRGB: ybrBuffer length must be divisble by 3');
+    throw new Error(
+      `convertYBRFullByPlane: ybrBuffer length ${imageFrame.length} must be divisible by 3`
+    );
   }
 
   const numPixels = imageFrame.length / 3;
