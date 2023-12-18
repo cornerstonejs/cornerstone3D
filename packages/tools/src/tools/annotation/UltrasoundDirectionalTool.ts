@@ -3,6 +3,8 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
+  utilities as csUtils,
+  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -13,19 +15,17 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import * as lineSegment from '../../utilities/math/line';
-import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
-import roundNumber from '../../utilities/roundNumber';
+import { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
-  drawHandles as drawHandlesSvg,
+  drawHandle as drawHandleSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import { roundNumber } from '../../utilities';
+import { distanceToPoint } from '../../utilities/math/point';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   AnnotationCompletedEventDetail,
@@ -44,16 +44,24 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
+  InteractionTypes,
 } from '../../types';
-import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
+const { transformWorldToIndex } = csUtils;
 
-class AngleTool extends AnnotationTool {
+/**
+ * The `UltrasoundDirectionalTool` class is a tool for creating directional ultrasound annotations.
+ * It allows users to draw lines and measure distances between two points in the image.
+ * It automatically calculates the distance based on the relevant unit of measurement.
+ */
+class UltrasoundDirectionalTool extends AnnotationTool {
   static toolName;
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
-  angleStartedNotYetCompleted: boolean;
+  startedDrawing: boolean;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
@@ -74,6 +82,11 @@ class AngleTool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        /**
+         * Determines whether both horizontal and vertical distances should be displayed
+         * in the text lines when generating annotations' measurement information.
+         */
+        displayBothAxesDistances: false,
       },
     }
   ) {
@@ -88,26 +101,31 @@ class AngleTool extends AnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a Length Annotation and stores it in the annotationManager
+   * a Ultrasound Directional Tool and store it in the annotationManager
    *
    * @param evt -  EventTypes.InteractionEventType
    * @returns The annotation object.
-   *
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
-  ): AngleAnnotation => {
-    if (this.angleStartedNotYetCompleted) {
+  ): UltrasoundDirectionalAnnotation => {
+    if (this.startedDrawing) {
       return;
     }
 
-    this.angleStartedNotYetCompleted = true;
+    this.startedDrawing = true;
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
 
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
+
+    if (!(viewport instanceof StackViewport)) {
+      throw new Error(
+        'UltrasoundDirectionalTool can only be used on a StackViewport'
+      );
+    }
 
     hideElementCursor(element);
     this.isDrawing = true;
@@ -191,102 +209,25 @@ class AngleTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: AngleAnnotation,
+    annotation: UltrasoundDirectionalAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const { data } = annotation;
-    const [point1, point2, point3] = data.handles.points;
-    const canvasPoint1 = viewport.worldToCanvas(point1);
-    const canvasPoint2 = viewport.worldToCanvas(point2);
-
-    const line1 = {
-      start: {
-        x: canvasPoint1[0],
-        y: canvasPoint1[1],
-      },
-      end: {
-        x: canvasPoint2[0],
-        y: canvasPoint2[1],
-      },
-    };
-
-    const distanceToPoint = lineSegment.distanceToPoint(
-      [line1.start.x, line1.start.y],
-      [line1.end.x, line1.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
-
-    if (distanceToPoint <= proximity) {
-      return true;
-    }
-    if (!point3) {
-      return false;
-    }
-
-    const canvasPoint3 = viewport.worldToCanvas(point3);
-
-    const line2 = {
-      start: {
-        x: canvasPoint2[0],
-        y: canvasPoint2[1],
-      },
-      end: {
-        x: canvasPoint3[0],
-        y: canvasPoint3[1],
-      },
-    };
-
-    const distanceToPoint2 = lineSegment.distanceToPoint(
-      [line2.start.x, line2.start.y],
-      [line2.end.x, line2.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
-
-    if (distanceToPoint2 <= proximity) {
-      return true;
-    }
-
     return false;
   };
 
-  toolSelectedCallback = (
+  toolSelectedCallback(
     evt: EventTypes.InteractionEventType,
-    annotation: AngleAnnotation
-  ): void => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-
-    annotation.highlighted = true;
-
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName()
-    );
-
-    this.editData = {
-      annotation,
-      viewportIdsToRender,
-      movingTextBox: false,
-    };
-
-    this._activateModify(element);
-
-    hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    evt.preventDefault();
-  };
+    annotation: Annotation,
+    interactionType: InteractionTypes,
+    canvasCoords?: Types.Point2
+  ): void {
+    return;
+  }
 
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
-    annotation: AngleAnnotation,
+    annotation: UltrasoundDirectionalAnnotation,
     handle: ToolHandle
   ): void {
     const eventDetail = evt.detail;
@@ -295,9 +236,13 @@ class AngleTool extends AnnotationTool {
 
     annotation.highlighted = true;
 
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
     let movingTextBox = false;
     let handleIndex;
-
     if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true;
     } else {
@@ -305,16 +250,11 @@ class AngleTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName()
-    );
 
     this.editData = {
+      handleIndex,
       annotation,
       viewportIdsToRender,
-      handleIndex,
-      movingTextBox,
     };
     this._activateModify(element);
 
@@ -344,13 +284,13 @@ class AngleTool extends AnnotationTool {
 
     // If preventing new measurement means we are in the middle of an existing measurement
     // we shouldn't deactivate modify or draw
-    if (this.angleStartedNotYetCompleted && data.handles.points.length === 2) {
+    if (this.startedDrawing && data.handles.points.length === 1) {
       // adds the last point to the measurement
-      this.editData.handleIndex = 2;
+      this.editData.handleIndex = 1;
       return;
     }
 
-    this.angleStartedNotYetCompleted = false;
+    this.startedDrawing = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
@@ -468,7 +408,7 @@ class AngleTool extends AnnotationTool {
       }
 
       this.editData = null;
-      this.angleStartedNotYetCompleted = false;
+      this.startedDrawing = false;
       return annotation.annotationUID;
     }
   };
@@ -644,14 +584,12 @@ class AngleTool extends AnnotationTool {
 
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as AngleAnnotation;
+      const annotation = annotations[i] as UltrasoundDirectionalAnnotation;
       const { annotationUID, data } = annotation;
-      const { points, activeHandleIndex } = data.handles;
+      const { points } = data.handles;
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
@@ -659,10 +597,14 @@ class AngleTool extends AnnotationTool {
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].angle == null
+        data.cachedStats[targetId].xValues == null
       ) {
         data.cachedStats[targetId] = {
-          angle: null,
+          xValues: [0, 0],
+          yValues: [0, 0],
+          isHorizontal: false,
+          units: [''],
+          isUnitless: false,
         };
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);
@@ -674,78 +616,126 @@ class AngleTool extends AnnotationTool {
         );
       }
 
-      let activeHandleCanvasCoords;
-
-      if (
-        !isAnnotationLocked(annotation) &&
-        !this.editData &&
-        activeHandleIndex !== null
-      ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
-      }
-
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
-      if (activeHandleCanvasCoords) {
-        const handleGroupUID = '0';
-
-        drawHandlesSvg(
-          svgDrawingHelper,
-          annotationUID,
-          handleGroupUID,
-          canvasCoordinates,
-          {
-            color,
-            lineDash,
-            lineWidth,
-          }
-        );
-      }
-
-      let lineUID = '1';
-      drawLineSvg(
+      // draw first point
+      let handleGroupUID = '0';
+      drawHandleSvg(
         svgDrawingHelper,
         annotationUID,
-        lineUID,
+        handleGroupUID,
         canvasCoordinates[0],
-        canvasCoordinates[1],
         {
           color,
-          width: lineWidth,
-          lineDash,
-        }
+        },
+        0
       );
 
       renderStatus = true;
 
-      // Don't add textBox until annotation has 3 anchor points (actually 4 because of the center point)
-      if (canvasCoordinates.length !== 3) {
+      if (canvasCoordinates.length !== 2) {
         return renderStatus;
       }
 
-      lineUID = '2';
-
-      drawLineSvg(
+      handleGroupUID = '1';
+      drawHandleSvg(
         svgDrawingHelper,
         annotationUID,
-        lineUID,
+        handleGroupUID,
         canvasCoordinates[1],
-        canvasCoordinates[2],
         {
           color,
-          width: lineWidth,
-          lineDash,
-        }
+        },
+        1
       );
 
-      if (!data.cachedStats[targetId]?.angle) {
-        continue;
+      const isUnitless = data.cachedStats[targetId].isUnitless;
+
+      if (!isUnitless) {
+        const canvasPoint1 = canvasCoordinates[0];
+        const canvasPoint2 = canvasCoordinates[1];
+
+        const canvasDeltaY = canvasPoint2[1] - canvasPoint1[1];
+        const canvasDeltaX = canvasPoint2[0] - canvasPoint1[0];
+
+        const isHorizontal = data.cachedStats[targetId].isHorizontal;
+
+        // then for the third point we need to go from first point towards
+        // the second point (it can be left or right in the horizontal orientation)
+        // or up or down in the vertical orientation, and only add
+        // the delta y to the x or y coordinate of the first point
+        let projectedPointCanvas = [0, 0] as Types.Point2;
+        if (isHorizontal) {
+          projectedPointCanvas = [
+            canvasPoint1[0] + canvasDeltaX,
+            canvasPoint1[1],
+          ];
+        } else {
+          projectedPointCanvas = [
+            canvasPoint1[0],
+            canvasPoint1[1] + canvasDeltaY,
+          ];
+        }
+
+        // create a line from the first point to the third point
+        let dataId = `${annotationUID}-line-1`;
+        let lineUID = '1';
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          canvasCoordinates[0],
+          projectedPointCanvas,
+          {
+            color,
+            width: 1,
+            shadow: this.configuration.shadow,
+          },
+          dataId
+        );
+
+        // draw another line from first point to the projected one
+        dataId = `${annotationUID}-line-2`;
+        lineUID = '2';
+
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          canvasCoordinates[1],
+          projectedPointCanvas,
+          {
+            color,
+            width: 1,
+            lineDash: [1, 1],
+            shadow: this.configuration.shadow,
+          },
+          dataId
+        );
+      } else {
+        // draw straight line between the two points
+        const dataId = `${annotationUID}-line-1`;
+        const lineUID = '1';
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          canvasCoordinates[0],
+          canvasCoordinates[1],
+          {
+            color,
+            width: 1,
+            shadow: this.configuration.shadow,
+          },
+          dataId
+        );
       }
+
+      // draw another line from first point to the
 
       const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
       if (!options.visibility) {
@@ -762,7 +752,11 @@ class AngleTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
+      const textLines = this.configuration.getTextLines(
+        data,
+        targetId,
+        this.configuration
+      );
 
       if (!data.handles.textBox.hasMoved) {
         // linked to the vertex by default
@@ -805,27 +799,74 @@ class AngleTool extends AnnotationTool {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
 
-    // Until we have all three anchors bail out
-    if (data.handles.points.length !== 3) {
+    // Until we have all two anchors bail out
+    if (data.handles.points.length !== 2) {
       return;
     }
-
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
-    const worldPos3 = data.handles.points[2];
 
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const angle = angleBetweenLines(
-        [worldPos1, worldPos2],
-        [worldPos2, worldPos3]
-      );
+
+      const image = this.getTargetIdImage(targetId, renderingEngine);
+
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!image) {
+        continue;
+      }
+
+      const { imageData } = image;
+
+      const worldPos1 = data.handles.points[0];
+      const worldPos2 = data.handles.points[1];
+
+      const imageIndex1 = transformWorldToIndex(imageData, worldPos1);
+      const imageIndex2 = transformWorldToIndex(imageData, worldPos2);
+
+      const { values: values1, units: units1 } =
+        getCalibratedProbeUnitsAndValue(image, [imageIndex1]);
+      const { values: values2, units: units2 } =
+        getCalibratedProbeUnitsAndValue(image, [imageIndex2]);
+
+      let xValues, yValues, units, isHorizontal;
+      let isUnitless = false;
+      if (
+        units1[0] !== units2[0] ||
+        units1[1] !== units2[1] ||
+        (units1[0] === 'raw' && units2[0] === 'raw')
+      ) {
+        // if units are not the same, we cannot calculate the diff
+        // so we just report the px distance
+        const value = distanceToPoint(worldPos1, worldPos2);
+
+        xValues = [value, 0];
+        yValues = [value, 0];
+        units = ['px'];
+        isUnitless = true;
+      } else {
+        const canvasPoint1 = enabledElement.viewport.worldToCanvas(worldPos1);
+        const canvasPoint2 = enabledElement.viewport.worldToCanvas(worldPos2);
+
+        const canvasDeltaY = canvasPoint2[1] - canvasPoint1[1];
+        const canvasDeltaX = canvasPoint2[0] - canvasPoint1[0];
+
+        isHorizontal = Math.abs(canvasDeltaX) > Math.abs(canvasDeltaY);
+        xValues = [values1[0], values2[0]];
+        yValues = [values1[1], values2[1]];
+
+        units = [units1[0], units1[1]];
+      }
 
       cachedStats[targetId] = {
-        angle: isNaN(angle) ? 'Incomplete Angle' : angle,
+        xValues,
+        yValues,
+        isHorizontal,
+        units,
+        isUnitless,
       };
     }
 
@@ -845,18 +886,31 @@ class AngleTool extends AnnotationTool {
   }
 }
 
-function defaultGetTextLines(data, targetId): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { angle } = cachedVolumeStats;
+function defaultGetTextLines(data, targetId, configuration): string[] {
+  const cachedStats = data.cachedStats[targetId];
+  const { xValues, yValues, units, isUnitless, isHorizontal } = cachedStats;
 
-  if (angle === undefined) {
-    return;
+  if (isUnitless) {
+    return [`${roundNumber(xValues[0])} px`];
   }
 
-  const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
+  if (configuration.displayBothAxesDistances) {
+    const dist1 = Math.abs(xValues[1] - xValues[0]);
+    const dist2 = Math.abs(yValues[1] - yValues[0]);
+    return [
+      `${roundNumber(dist1)} ${units[0]}`,
+      `${roundNumber(dist2)} ${units[1]}`,
+    ];
+  }
 
-  return textLines;
+  if (isHorizontal) {
+    const dist = Math.abs(xValues[1] - xValues[0]);
+    return [`${roundNumber(dist)} ${units[0]}`];
+  } else {
+    const dist = Math.abs(yValues[1] - yValues[0]);
+    return [`${roundNumber(dist)} ${units[1]}`];
+  }
 }
 
-AngleTool.toolName = 'Angle';
-export default AngleTool;
+UltrasoundDirectionalTool.toolName = 'UltrasoundDirectionalTool';
+export default UltrasoundDirectionalTool;

@@ -1623,6 +1623,9 @@ function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, 
 function drawEllipseByCoordinates(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, canvasCoordinates: [Types_2.Point2, Types_2.Point2, Types_2.Point2, Types_2.Point2], options?: {}, dataId?: string): void;
 
 // @public (undocumented)
+function drawHandle(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handle: Types_2.Point2, options: {}, uniqueIndex: any): void;
+
+// @public (undocumented)
 function drawHandles(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
 
 declare namespace drawing {
@@ -1632,6 +1635,7 @@ declare namespace drawing {
         drawEllipse,
         drawEllipseByCoordinates,
         drawHandles,
+        drawHandle,
         drawLine,
         drawPolyline,
         drawLinkedTextBox,
@@ -2114,7 +2118,7 @@ const getCalibratedAreaUnits: (handles: any, image: any) => string;
 const getCalibratedLengthUnits: (handles: any, image: any) => string;
 
 // @public (undocumented)
-const getCalibratedScale: (image: any) => any;
+const getCalibratedScale: (image: any, handles?: any[]) => any;
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
@@ -4968,6 +4972,7 @@ declare namespace ToolSpecificAnnotationTypes {
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
+        UltrasoundDirectionalAnnotation,
         CobbAngleAnnotation,
         ReferenceCursor,
         ReferenceLineAnnotation,
@@ -5185,6 +5190,91 @@ declare namespace Types_3 {
         ColorbarTicksStyle,
         ViewportColorbarProps
     }
+}
+
+// @public (undocumented)
+interface UltrasoundDirectionalAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                xValues: number[];
+                yValues: number[];
+                units: string[];
+                isHorizontal: boolean;
+                isUnitless: boolean;
+            };
+        };
+    };
+}
+
+// @public (undocumented)
+export class UltrasoundDirectionalTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => UltrasoundDirectionalAnnotation;
+    // (undocumented)
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: UltrasoundDirectionalAnnotation, handle: ToolHandle): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: UltrasoundDirectionalAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    startedDrawing: boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes, canvasCoords?: Types_2.Point2): void;
+    // (undocumented)
+    touchDragCallback: any;
 }
 
 // @public (undocumented)
