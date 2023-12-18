@@ -1,11 +1,11 @@
 import { utilities } from "@cornerstonejs/tools";
 import dcmjs from "dcmjs";
-import getPatientModule from "./getPatientModule";
-import getReferencedFrameOfReferenceSequence from "./getReferencedFrameOfReferenceSequence";
-import getReferencedSeriesSequence from "./getReferencedSeriesSequence";
-import getRTROIObservationsSequence from "./getRTROIObservationsSequence";
-import getRTSeriesModule from "./getRTSeriesModule";
-import getStructureSetModule from "./getStructureSetModule";
+import getPatientModule from "./utilities/getPatientModule";
+import getReferencedFrameOfReferenceSequence from "./utilities/getReferencedFrameOfReferenceSequence";
+import getReferencedSeriesSequence from "./utilities/getReferencedSeriesSequence";
+import getRTROIObservationsSequence from "./utilities/getRTROIObservationsSequence";
+import getRTSeriesModule from "./utilities/getRTSeriesModule";
+import getStructureSetModule from "./utilities/getStructureSetModule";
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
     utilities.rtstruct;
