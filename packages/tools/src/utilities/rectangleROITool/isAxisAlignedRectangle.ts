@@ -7,7 +7,7 @@ import { utilities as csUtils } from '@cornerstonejs/core';
  * @param rectangleCornersIJK - The corner points of the rectangle in IJK coordinates
  * @returns True if the rectangle is aligned with the IJK axes, false otherwise
  */
-function isRectangleAlignedWithAxes(rectangleCornersIJK) {
+function isAxisAlignedRectangle(rectangleCornersIJK) {
   const iAxis = [1, 0, 0];
   const jAxis = [0, 1, 0];
   const kAxis = [0, 0, 1];
@@ -59,4 +59,4 @@ function isRectangleAlignedWithAxes(rectangleCornersIJK) {
   return isAligned;
 }
 
-export { isRectangleAlignedWithAxes };
+export { isAxisAlignedRectangle };

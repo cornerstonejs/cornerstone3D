@@ -1,4 +1,4 @@
 import getBoundsIJKFromRectangleAnnotations from './getBoundsIJKFromRectangleAnnotations';
-import { isRectangleAlignedWithAxes } from './isRectangleAlignedWithAxes';
+import { isAxisAlignedRectangle } from './isAxisAlignedRectangle';
 
-export { getBoundsIJKFromRectangleAnnotations, isRectangleAlignedWithAxes };
+export { getBoundsIJKFromRectangleAnnotations, isAxisAlignedRectangle };

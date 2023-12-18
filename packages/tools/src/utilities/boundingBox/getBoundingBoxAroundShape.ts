@@ -34,10 +34,8 @@ function getBoundingBoxAroundShape(
     }
   });
 
-  xMin = Math.floor(xMin);
-  xMax = Math.floor(xMax);
-  yMin = Math.floor(yMin);
-  yMax = Math.floor(yMax);
+  // IMPORTANT: we used to do flooring here, which really
+  // did not make sense.
 
   if (clipBounds) {
     // clip the min, max to the provided dimensions
@@ -47,8 +45,6 @@ function getBoundingBoxAroundShape(
     yMax = Math.min(clipBounds[1] - 1, yMax);
 
     if (is3D && clipBounds.length === 3) {
-      zMin = Math.floor(zMin);
-      zMax = Math.floor(zMax);
       zMin = Math.max(0, zMin);
       zMax = Math.min(clipBounds[2] - 1, zMax);
     }

@@ -15,9 +15,6 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 
 const { transformWorldToIndex } = csUtils;
-const EPSILON = 1e-4;
-const nearOrZero = (testValue, nearValue) =>
-  Math.abs(testValue) < EPSILON || Math.abs(testValue - nearValue) < EPSILON;
 
 const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
@@ -97,11 +94,13 @@ function createPointInEllipse(worldInfo: {
   const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
 
   const radius = Math.max(xRadius, yRadius, zRadius);
-  if (
-    nearOrZero(xRadius, radius) &&
-    nearOrZero(yRadius, radius) &&
-    nearOrZero(zRadius, radius)
-  ) {
+
+  const isSphere =
+    csUtils.isEqual(xRadius, yRadius) &&
+    csUtils.isEqual(yRadius, zRadius) &&
+    csUtils.isEqual(zRadius, xRadius);
+
+  if (isSphere) {
     const sphereObj = {
       center,
       radius,
@@ -109,13 +108,15 @@ function createPointInEllipse(worldInfo: {
     };
     return (pointLPS) => pointInSphere(sphereObj, pointLPS);
   }
-  // using circle as a form of ellipse
+
+  // using ellipse as a form of circle
   const ellipseObj = {
     center: center as Types.Point3,
     xRadius,
     yRadius,
     zRadius,
   };
+
   const inverts = precalculatePointInEllipse(ellipseObj);
   const { precalculated } = inverts;
 
