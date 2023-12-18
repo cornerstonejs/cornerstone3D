@@ -105,7 +105,10 @@ export default function segmentContourAction(
       FrameOfReferenceUID
     );
 
-    if (forSegment === segment) {
+    if (
+      forSegment.segmentIndex === segment.segmentIndex &&
+      forSegment.segmentationId === segment.segmentationId
+    ) {
       newBidirectional = bidirectionalData;
       const { style } = segment;
       if (style) {

@@ -254,7 +254,7 @@ function createBidirectionalForSlice(
     }
   }
   if (!maxMajorPoints) {
-    return currentMax;
+    return;
   }
 
   maxMajor = Math.sqrt(maxMajor);
@@ -296,7 +296,7 @@ function createBidirectionalForSlice(
 
   if (!maxMinorPoints) {
     // Didn't find a larger minor distance
-    return currentMax;
+    return;
   }
   maxMinor = Math.sqrt(maxMinor);
   const handle2 = points[maxMinorPoints[0]];
