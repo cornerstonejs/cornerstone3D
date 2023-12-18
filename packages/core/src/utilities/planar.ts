@@ -30,9 +30,19 @@ function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3 {
  * @param point - a point on the plane
  * @returns - [A, B,C, D] of plane equation A*X + B*Y + C*Z = D
  */
-function planeEquation(normal: Point3, point: Point3 | vec3): Plane {
+function planeEquation(
+  normal: Point3,
+  point: Point3 | vec3,
+  normalized = false
+): Plane {
   const [A, B, C] = normal;
   const D = A * point[0] + B * point[1] + C * point[2];
+
+  if (normalized) {
+    const length = Math.sqrt(A * A + B * B + C * C);
+    return [A / length, B / length, C / length, D / length];
+  }
+
   return [A, B, C, D];
 }
 
