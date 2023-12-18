@@ -4,6 +4,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  getEnabledElement,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -38,7 +39,6 @@ const {
   StackScrollMouseWheelTool,
   BidirectionalTool,
   utilities: cstUtils,
-  annotation,
 } = cornerstoneTools;
 
 const { roundNumber } = cstUtils;
@@ -47,7 +47,7 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
-const viewportId1 = 'CT_AXIAL';
+const viewportId = 'CT_AXIAL';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -56,6 +56,18 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 let representationUID;
+
+const actionConfiguration = {
+  contourBidirectional: {
+    method: cstUtils.segmentation.segmentContourAction,
+    bindings: [
+      {
+        key: 'c',
+      },
+    ],
+    segmentData: new Map(),
+  },
+};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -179,63 +191,36 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: () => {
-    const segmentationsList = segmentation.state.getSegmentations();
-    const segmentIndex =
-      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    const containedSegmentIndices =
-      segmentIndex === 3
-        ? { has: (segmentIndex) => segmentIndex !== 0 }
-        : undefined;
-    const segmentConfig = segmentation.config.getSegmentSpecificConfig(
-      toolGroupId,
-      representationUID,
-      segmentIndex
-    ) || {
-      label: `Segment ${segmentIndex}`,
-      color: null,
-      containedSegmentIndices,
-    };
-    const segments = [null];
-    segments[segmentIndex] = segmentConfig;
-    const segmentations = {
-      ...segmentationsList[0],
-      segments,
-    };
-    const bidirectional =
-      cstUtils.segmentation.contourAndFindLargestBidirectional(segmentations);
+    const enabledElement = getEnabledElement(element1);
+    const bidirectional = actionConfiguration.contourBidirectional.method(
+      enabledElement,
+      actionConfiguration.contourBidirectional
+    );
 
-    if (bidirectional) {
-      const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
-        bidirectional;
+    if (!bidirectional) {
+      console.log('No bidirectional found');
+      return;
+    }
+    const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
+      bidirectional;
 
-      instructions.innerText = `
+    instructions.innerText = `
     Major Axis: ${handle0}-${handle1} length ${roundNumber(maxMajor)}
     Minor Axis: ${handle2}-${handle3} length ${roundNumber(maxMinor)}
     `;
 
-      const viewport = renderingEngine.getViewport(viewportId1);
-      const bidirectionalToolData =
-        cstUtils.segmentation.createBidirectionalToolData(
-          bidirectional,
-          viewport
-        );
-      const { FrameOfReferenceUID, referencedImageId } = bidirectional;
-      annotation.state.addAnnotation(
-        bidirectionalToolData,
-        FrameOfReferenceUID
-      );
-      const imageIds = viewport.getImageIds();
-      const imageIndex = imageIds.findIndex(
-        (imageId) => imageId === referencedImageId
-      );
+    const { referencedImageId } = bidirectional;
+    const imageIds = enabledElement.viewport.getImageIds();
+    const imageIndex = imageIds.findIndex(
+      (imageId) => imageId === referencedImageId
+    );
 
-      // TODO - figure out why this is reversed
-      cstUtils.jumpToSlice(element1, {
-        imageIndex: imageIds.length - 1 - imageIndex,
-        volumeId,
-      });
-      renderingEngine.renderViewports([viewportId1]);
-    }
+    // TODO - figure out why this is reversed
+    cstUtils.jumpToSlice(element1, {
+      imageIndex: imageIds.length - 1 - imageIndex,
+      volumeId,
+    });
+    renderingEngine.renderViewports([viewportId]);
   },
 });
 
@@ -266,6 +251,51 @@ async function addSegmentationsToState() {
 }
 
 /**
+ * One possible way to create segment colours and combinations
+ */
+function createSegmentConfiguration(segmentIndex, otherSegments?) {
+  const containedSegmentIndices = otherSegments
+    ? { has: (segmentIndex) => otherSegments.indexOf(segmentIndex) !== -1 }
+    : undefined;
+  const colorConfig = segmentation.config.color.getColorForSegmentIndex(
+    toolGroupId,
+    representationUID,
+    segmentIndex
+  );
+  // Allow null style to skip style set
+  let color, activeColor;
+  if (colorConfig?.length) {
+    color = `rgb(${colorConfig.join(',')})`;
+    // Possible alternative if you want a slightly different active color
+    // activeColor = `rgb(${colorConfig
+    //   .map((sample) => {
+    //     return Math.round(
+    //       sample < 128 ? sample + 64 : sample + (255 - sample) * 0.1
+    //     );
+    //   })
+    //   .join(',')})`;
+    activeColor = color;
+  }
+  const style = {
+    color,
+    colorHighlightedActive: activeColor,
+    colorActive: activeColor,
+    textBoxColor: color,
+    textBoxColorActive: activeColor,
+    textBoxColorHighlightedActive: activeColor,
+  };
+  const label = otherSegments
+    ? `Combined ${segmentIndex} with ${otherSegments.join(', ')}`
+    : `Segment ${segmentIndex}`;
+
+  actionConfiguration.contourBidirectional.segmentData.set(segmentIndex, {
+    containedSegmentIndices,
+    label,
+    style,
+  });
+}
+
+/**
  * Runs the demo
  */
 async function run() {
@@ -293,7 +323,10 @@ async function run() {
   toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
+
+  toolGroup.addTool(BidirectionalTool.toolName, {
+    actions: actionConfiguration,
+  });
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -403,7 +436,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportId: viewportId1,
+      viewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -414,8 +447,7 @@ async function run() {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
-
-  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Set the volume to load
   volume.load();
@@ -424,7 +456,7 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1]
+    [viewportId]
   );
 
   // // Add the segmentation representation to the toolgroup
@@ -436,9 +468,13 @@ async function run() {
       },
     ]);
   representationUID = segmentationRepresentationUID;
+  // Setup configuration for contour bidirectional action
+  createSegmentConfiguration(1);
+  createSegmentConfiguration(2);
+  createSegmentConfiguration(3, [1, 2]);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1]);
+  renderingEngine.renderViewports([viewportId]);
 }
 
 run();

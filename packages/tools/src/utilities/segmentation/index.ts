@@ -17,6 +17,7 @@ import {
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
+import segmentContourAction from './segmentContourAction';
 
 export {
   thresholdVolumeByRange,
@@ -34,4 +35,5 @@ export {
   thresholdSegmentationByRange,
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,
+  segmentContourAction,
 };
