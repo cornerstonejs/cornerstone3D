@@ -1,16 +1,14 @@
 import { utilities } from "@cornerstonejs/tools";
 import dcmjs from "dcmjs";
+import getPatientModule from "./getPatientModule";
+import getReferencedFrameOfReferenceSequence from "./getReferencedFrameOfReferenceSequence";
+import getReferencedSeriesSequence from "./getReferencedSeriesSequence";
+import getRTROIObservationsSequence from "./getRTROIObservationsSequence";
+import getRTSeriesModule from "./getRTSeriesModule";
+import getStructureSetModule from "./getStructureSetModule";
 
-const {
-    generateContourSetsFromLabelmap,
-    AnnotationToPointData,
-    getPatientModule,
-    getReferencedFrameOfReferenceSequence,
-    getReferencedSeriesSequence,
-    getRTROIObservationsSequence,
-    getRTSeriesModule,
-    getStructureSetModule
-} = utilities.rtstruct;
+const { generateContourSetsFromLabelmap, AnnotationToPointData } =
+    utilities.rtstruct;
 const { DicomMetaDictionary } = dcmjs.data;
 
 /**

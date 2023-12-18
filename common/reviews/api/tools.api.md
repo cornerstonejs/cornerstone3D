@@ -2164,21 +2164,6 @@ function getNumberOfAnnotations(toolName: string, annotationGroupSelector: Annot
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
-function getPatientModule(imageId: any, metadataProvider: any): {
-    Modality: any;
-    PatientID: any;
-    PatientName: any;
-    PatientBirthDate: string;
-    PatientAge: any;
-    PatientSex: any;
-    PatientWeight: any;
-    StudyDate: any;
-    StudyTime: any;
-    StudyID: string;
-    AccessionNumber: any;
-};
-
-// @public (undocumented)
 function getPoint(points: any, idx: any): any[];
 
 // @public (undocumented)
@@ -2189,39 +2174,6 @@ function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
 
 // @public (undocumented)
 function getPolyDataPoints(polyData: vtkPolyData): any[];
-
-// @public (undocumented)
-function getReferencedFrameOfReferenceSequence(metadata: any, metadataProvider: any, dataset: any): {
-    FrameOfReferenceUID: any;
-    RTReferencedStudySequence: {
-        ReferencedSOPClassUID: any;
-        ReferencedSOPInstanceUID: any;
-        RTReferencedSeriesSequence: {
-            SeriesInstanceUID: any;
-            ContourImageSequence: any[];
-        }[];
-    }[];
-}[];
-
-// @public (undocumented)
-function getReferencedSeriesSequence(metadata: any, _index: any, metadataProvider: any, DicomMetadataStore: any): {
-    SeriesInstanceUID: any;
-    ReferencedInstanceSequence: any[];
-}[];
-
-// @public (undocumented)
-function getRTROIObservationsSequence(toolData: any, index: any): {
-    ObservationNumber: any;
-    ReferencedROINumber: any;
-    RTROIInterpretedType: string;
-    ROIInterpreter: string;
-};
-
-// @public (undocumented)
-function getRTSeriesModule(DicomMetaDictionary: any): {
-    SeriesInstanceUID: any;
-    SeriesNumber: string;
-};
 
 // @public (undocumented)
 function getSegmentation(segmentationId: string): Segmentation | undefined;
@@ -2252,15 +2204,6 @@ function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentatio
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
-
-// @public (undocumented)
-function getStructureSetModule(contour: any, index: any): {
-    ROINumber: any;
-    ROIName: any;
-    ROIDescription: string;
-    ROIGenerationAlgorithm: string;
-    ReferencedFrameOfReferenceUID: any;
-};
 
 // @public (undocumented)
 const getSubPixelSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
@@ -3994,13 +3937,7 @@ declare namespace rtstruct {
         _default_3 as mergePoints,
         _default_4 as detectContourHoles,
         generateContourSetsFromLabelmap,
-        AnnotationToPointData,
-        getPatientModule,
-        getReferencedFrameOfReferenceSequence,
-        getReferencedSeriesSequence,
-        getRTROIObservationsSequence,
-        getRTSeriesModule,
-        getStructureSetModule
+        AnnotationToPointData
     }
 }
 
