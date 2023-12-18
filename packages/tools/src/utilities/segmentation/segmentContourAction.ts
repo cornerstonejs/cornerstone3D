@@ -79,9 +79,9 @@ export default function segmentContourAction(
   let newBidirectional;
   existingSegments.forEach((annotation) => {
     const segments = [];
-    const { segment: forSegment } = annotation.data;
-    const { segmentIndex, segmentationId } = forSegment;
-    segments[segmentIndex] = forSegment;
+    const { segment: updateSegment } = annotation.data;
+    const { segmentIndex, segmentationId } = updateSegment;
+    segments[segmentIndex] = updateSegment;
     annotationState.removeAnnotation(annotation.annotationUID);
     const bidirectionalData = contourAndFindLargestBidirectional({
       ...segmentationsList.find(
@@ -98,7 +98,7 @@ export default function segmentContourAction(
       enabledElement.viewport
     );
     bidirectionalToolData.annotationUID = annotation.annotationUID;
-    bidirectionalToolData.data.segment = forSegment;
+    bidirectionalToolData.data.segment = updateSegment;
 
     const annotationUID = annotationState.addAnnotation(
       bidirectionalToolData,
@@ -106,8 +106,8 @@ export default function segmentContourAction(
     );
 
     if (
-      forSegment.segmentIndex === segment.segmentIndex &&
-      forSegment.segmentationId === segment.segmentationId
+      updateSegment.segmentIndex === segment.segmentIndex &&
+      updateSegment.segmentationId === segment.segmentationId
     ) {
       newBidirectional = bidirectionalData;
       const { style } = segment;
