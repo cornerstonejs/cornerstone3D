@@ -79,9 +79,7 @@ const size = '900px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex';
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.display = 'block';
 
 const element1 = document.createElement('div');
 element1.style.width = size;

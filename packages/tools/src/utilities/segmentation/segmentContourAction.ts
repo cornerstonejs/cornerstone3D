@@ -35,7 +35,7 @@ export type SegmentContourActionConfiguration = {
 };
 
 export default function segmentContourAction(
-  element: HtmlElement,
+  element: HTMLDivElement,
   configuration: SegmentContourActionConfiguration
 ) {
   const enabledElement = getEnabledElement(element);

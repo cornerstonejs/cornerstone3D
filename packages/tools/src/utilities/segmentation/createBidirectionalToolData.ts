@@ -17,11 +17,11 @@ export default function createBidirectionalToolData(
     FrameOfReferenceUID,
     referencedImageId,
   } = bidirectionalData;
-  const [handle0, handle1] = majorAxis;
-  const [handle2, handle3] = minorAxis;
+  const [major0, major1] = majorAxis;
+  const [minor0, minor1] = minorAxis;
 
   const { viewUp, viewPlaneNormal } = viewport.getCamera();
-  const points = [handle0, handle1, handle2, handle3];
+  const points = [major0, major1, minor0, minor1];
   const bidirectionalToolData = {
     highlighted: true,
     invalidated: true,

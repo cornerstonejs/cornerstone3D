@@ -1295,37 +1295,7 @@ function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
 const CORNERSTONE_COLOR_LUT: number[][];
 
 // @public (undocumented)
-function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewport: any): {
-    highlighted: boolean;
-    invalidated: boolean;
-    metadata: {
-        toolName: string;
-        viewPlaneNormal: any;
-        viewUp: any;
-        FrameOfReferenceUID: string;
-        referencedImageId: string;
-    };
-    data: {
-        handles: {
-            points: Types_2.Point3[];
-            textBox: {
-                hasMoved: boolean;
-                worldPosition: Types_2.Point3;
-                worldBoundingBox: {
-                    topLeft: Types_2.Point3;
-                    topRight: Types_2.Point3;
-                    bottomLeft: Types_2.Point3;
-                    bottomRight: Types_2.Point3;
-                };
-            };
-            activeHandleIndex: any;
-        };
-        label: string;
-        cachedStats: {};
-    };
-    isLocked: boolean;
-    isVisible: boolean;
-};
+function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewport: any): Annotation;
 
 // @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
@@ -4283,7 +4253,7 @@ type SegmentationState = {
 };
 
 // @public (undocumented)
-function segmentContourAction(enabledElement: Types_2.IEnabledElement, configuration: SegmentContourActionConfiguration): any;
+function segmentContourAction(element: HTMLDivElement, configuration: SegmentContourActionConfiguration): any;
 
 declare namespace segmentIndex {
     export {
