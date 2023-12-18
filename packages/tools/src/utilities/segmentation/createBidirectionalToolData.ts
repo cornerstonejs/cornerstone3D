@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import type { BidirectionalData } from './contourAndFindLargestBidirectional';
+import type { Annotation } from '../../types/AnnotationTypes';
 
 /**
  * Creates data suitable for the BidirectionalTool from the basic bidirectional
@@ -8,7 +9,7 @@ import type { BidirectionalData } from './contourAndFindLargestBidirectional';
 export default function createBidirectionalToolData(
   bidirectionalData: BidirectionalData,
   viewport
-) {
+): Annotation {
   const {
     majorAxis,
     minorAxis,

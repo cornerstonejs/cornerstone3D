@@ -178,7 +178,7 @@ addSliderToToolbar({
 });
 
 addDropdownToToolbar({
-  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  options: { values: ['1', '2', '3', '4'], defaultValue: '1' },
   labelText: 'Segment',
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
@@ -193,7 +193,7 @@ addButtonToToolbar({
   onClick: () => {
     const enabledElement = getEnabledElement(element1);
     const bidirectional = actionConfiguration.contourBidirectional.method(
-      enabledElement,
+      element1,
       actionConfiguration.contourBidirectional
     );
 
@@ -201,26 +201,13 @@ addButtonToToolbar({
       console.log('No bidirectional found');
       return;
     }
-    const { handle0, handle1, handle2, handle3, maxMajor, maxMinor } =
-      bidirectional;
-
+    const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
+    const [majorPoint0, majorPoint1] = majorAxis;
+    const [minorPoint0, minorPoint1] = minorAxis;
     instructions.innerText = `
-    Major Axis: ${handle0}-${handle1} length ${roundNumber(maxMajor)}
-    Minor Axis: ${handle2}-${handle3} length ${roundNumber(maxMinor)}
+    Major Axis: ${majorPoint0}-${majorPoint1} length ${roundNumber(maxMajor)}
+    Minor Axis: ${minorPoint0}-${minorPoint1} length ${roundNumber(maxMinor)}
     `;
-
-    const { referencedImageId } = bidirectional;
-    const imageIds = enabledElement.viewport.getImageIds();
-    const imageIndex = imageIds.findIndex(
-      (imageId) => imageId === referencedImageId
-    );
-
-    // TODO - figure out why this is reversed
-    cstUtils.jumpToSlice(element1, {
-      imageIndex: imageIds.length - 1 - imageIndex,
-      volumeId,
-    });
-    renderingEngine.renderViewports([viewportId]);
   },
 });
 

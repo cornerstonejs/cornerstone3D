@@ -34,7 +34,9 @@ export default function keyDown(evt: KeyDownEventType): void {
   if (activeToolsWithEventBinding?.size) {
     const { element } = evt.detail;
     for (const [key, value] of [...activeToolsWithEventBinding.entries()]) {
-      key[value.method](element);
+      const method =
+        typeof value.method === 'function' ? value.method : key[value.method];
+      method.call(key, element, value);
     }
   }
 }
