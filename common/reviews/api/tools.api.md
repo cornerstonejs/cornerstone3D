@@ -4159,7 +4159,8 @@ declare namespace segmentation_2 {
         setBrushThresholdForToolGroup,
         thresholdSegmentationByRange,
         contourAndFindLargestBidirectional,
-        createBidirectionalToolData
+        createBidirectionalToolData,
+        segmentContourAction
     }
 }
 
@@ -4280,6 +4281,9 @@ type SegmentationState = {
         };
     };
 };
+
+// @public (undocumented)
+function segmentContourAction(enabledElement: Types_2.IEnabledElement, configuration: SegmentContourActionConfiguration): any;
 
 declare namespace segmentIndex {
     export {

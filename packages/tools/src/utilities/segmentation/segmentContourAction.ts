@@ -84,10 +84,7 @@ export default function segmentContourAction(
   );
   const { style } = segment;
   if (style) {
-    console.log('Found style', style);
     annotation.config.style.setAnnotationStyles(annotationUID, style);
-  } else {
-    console.log('No style found in', configuration);
   }
   return bidirectionalData;
 }
