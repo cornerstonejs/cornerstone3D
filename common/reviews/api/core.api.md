@@ -125,6 +125,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
@@ -132,6 +134,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     hasVolumeId(volumeId: string): boolean;
     // (undocumented)
     protected initialTransferFunctionNodes: any;
+    // (undocumented)
+    protected initialViewUp: Point3;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -147,7 +151,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -175,6 +179,9 @@ enum BlendModes {
     // (undocumented)
     MINIMUM_INTENSITY_BLEND = 2
 }
+
+// @public (undocumented)
+type BoundsIJK = [Point2, Point2, Point2];
 
 // @public (undocumented)
 export const cache: Cache_2;
@@ -851,6 +858,15 @@ function getColormapNames(): any[];
 export function getConfiguration(): Cornerstone3DConfig;
 
 // @public (undocumented)
+function getCurrentVolumeViewportSlice(viewport: IVolumeViewport): {
+    width: number;
+    height: number;
+    scalarData: any;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+};
+
+// @public (undocumented)
 export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
@@ -1177,6 +1193,8 @@ interface IImage {
         modalityLUT?: unknown;
         voiLUT?: CPUFallbackLUT;
     };
+    // (undocumented)
+    calibration?: IImageCalibration;
     // (undocumented)
     color: boolean;
     // (undocumented)
@@ -2134,7 +2152,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId: string): void;
     // (undocumented)
@@ -2211,6 +2229,8 @@ export { metaData }
 // @public (undocumented)
 enum MetadataModules {
     // (undocumented)
+    CALIBRATION = "calibrationModule",
+    // (undocumented)
     CINE = "cineModule",
     // (undocumented)
     GENERAL_SERIES = "generalSeriesModule",
@@ -2221,11 +2241,19 @@ enum MetadataModules {
     // (undocumented)
     IMAGE_URL = "imageUrlModule",
     // (undocumented)
+    MODALITY_LUT = "modalityLutModule",
+    // (undocumented)
     MULTIFRAME = "multiframeModule",
     // (undocumented)
     NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
     // (undocumented)
-    PATIENT_STUDY = "patientStudyModule"
+    PATIENT_STUDY = "patientStudyModule",
+    // (undocumented)
+    SOP_COMMON = "sopCommonModule",
+    // (undocumented)
+    ULTRASOUND_ENHANCED_REGION = "ultrasoundEnhancedRegionModule",
+    // (undocumented)
+    VOI_LUT = "voiLutModule"
 }
 
 // @public (undocumented)
@@ -2872,6 +2900,9 @@ declare namespace transferFunctionUtils {
 }
 
 // @public (undocumented)
+function transformIndexToWorld(imageData: any, voxelPos: Point3): any;
+
+// @public (undocumented)
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
@@ -2983,6 +3014,7 @@ declare namespace Types {
         ImageLoadListener,
         InternalVideoCamera,
         VideoViewportInput,
+        BoundsIJK,
         Color,
         ColorLUT
     }
@@ -3027,6 +3059,7 @@ declare namespace utilities {
         getVolumeViewportsContainingSameVolumes,
         getViewportsWithVolumeId,
         transformWorldToIndex,
+        transformIndexToWorld,
         loadImageToCanvas,
         renderToCanvasCPU,
         renderToCanvasGPU,
@@ -3042,6 +3075,7 @@ declare namespace utilities {
         actorIsA,
         getViewportsWithImageURI,
         getClosestStackImageIndexForPoint,
+        getCurrentVolumeViewportSlice,
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld,
@@ -3062,7 +3096,8 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        getBufferConfiguration
+        getBufferConfiguration,
+        VoxelManager
     }
 }
 export { utilities }
@@ -3300,6 +3335,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected initialCamera: ICamera;
     // (undocumented)
+    protected insetImageMultiplier: number;
+    // (undocumented)
     isDisabled: boolean;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
@@ -3417,6 +3454,7 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -3568,9 +3606,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getRotation: () => number;
-    // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
@@ -3608,7 +3644,75 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
     slabThickness?: number;
+    orientation?: OrientationAxis;
 };
+
+// @public (undocumented)
+class VoxelManager<T> {
+    constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean | void);
+    // (undocumented)
+    static addBounds(bounds: BoundsIJK, point: Point3): void;
+    // (undocumented)
+    addPoint(point: Point3 | number): void;
+    // (undocumented)
+    boundsIJK: BoundsIJK;
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
+    static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
+    // (undocumented)
+    static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
+    // (undocumented)
+    readonly dimensions: Point3;
+    // (undocumented)
+    forEach: (callback: any, options?: any) => void;
+    // (undocumented)
+    frameSize: number;
+    // (undocumented)
+    _get: (index: number) => T;
+    // (undocumented)
+    getArrayOfSlices(): number[];
+    // (undocumented)
+    getAtIJK: (i: any, j: any, k: any) => T;
+    // (undocumented)
+    getAtIJKPoint: ([i, j, k]: [any, any, any]) => T;
+    // (undocumented)
+    getAtIndex: (index: any) => T;
+    // (undocumented)
+    getBoundsIJK(): BoundsIJK;
+    // (undocumented)
+    getPointIndices(): number[];
+    // (undocumented)
+    getPoints(): Point3[];
+    // (undocumented)
+    isInObject: (pointIPS: any, pointIJK: any) => boolean;
+    // (undocumented)
+    map: Map<number, T>;
+    // (undocumented)
+    modifiedSlices: Set<number>;
+    // (undocumented)
+    points: Set<number>;
+    // (undocumented)
+    scalarData: VolumeScalarData;
+    // (undocumented)
+    _set: (index: number, v: T) => boolean | void;
+    // (undocumented)
+    setAtIJK: (i: number, j: number, k: number, v: any) => void;
+    // (undocumented)
+    setAtIJKPoint: ([i, j, k]: [any, any, any], v: any) => void;
+    // (undocumented)
+    setAtIndex: (index: any, v: any) => void;
+    // (undocumented)
+    sourceVoxelManager: VoxelManager<T>;
+    // (undocumented)
+    toIJK(index: number): Point3;
+    // (undocumented)
+    toIndex(ijk: Point3): number;
+    // (undocumented)
+    width: number;
+}
 
 declare namespace windowLevel {
     export {

@@ -1,95 +1,96 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import _cloneDeep from 'lodash.clonedeep';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import { vec2, vec3, mat4 } from 'gl-matrix';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import * as metaData from '../metaData';
-import Viewport from './Viewport';
+import { mat4, vec2, vec3 } from 'gl-matrix';
+import _cloneDeep from 'lodash.clonedeep';
 import eventTarget from '../eventTarget';
-import {
-  triggerEvent,
-  isEqual,
-  invertRgbTransferFunction,
-  createSigmoidRGBTransferFunction,
-  windowLevel as windowLevelUtil,
-  imageIdToURI,
-  isImageActor,
-  actorIsA,
-  colormap as colormapUtils,
-  updateVTKImageDataWithCornerstoneImage,
-  imageRetrieveMetadataProvider,
-} from '../utilities';
+import * as metaData from '../metaData';
 import type {
-  Point2,
-  Point3,
-  VOIRange,
+  ActorEntry,
+  CPUFallbackColormapData,
+  CPUFallbackEnabledElement,
+  CPUIImageData,
+  ColormapPublic,
+  EventTypes,
+  FlipDirection,
   ICamera,
   IImage,
+  IImageCalibration,
   IImageData,
-  CPUIImageData,
+  IImagesLoader,
+  IStackInput,
+  IStackViewport,
+  ImageLoadListener,
+  Mat3,
   PTScaling,
+  Point2,
+  Point3,
   Scaling,
   StackViewportProperties,
-  FlipDirection,
-  ActorEntry,
-  CPUFallbackEnabledElement,
-  CPUFallbackColormapData,
-  EventTypes,
-  IStackViewport,
+  VOIRange,
   VolumeActor,
-  Mat3,
-  ColormapPublic,
-  IImageCalibration,
-  IStackInput,
-  IImagesLoader,
-  ImageLoadListener,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
-import drawImageSync from './helpers/cpuFallback/drawImageSync';
-import { getColormap } from './helpers/cpuFallback/colors/index';
-
-import { loadAndCacheImage, ImageLoaderOptions } from '../loaders/imageLoader';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import {
-  InterpolationType,
-  RequestType,
+  actorIsA,
+  colormap as colormapUtils,
+  createSigmoidRGBTransferFunction,
+  imageIdToURI,
+  imageRetrieveMetadataProvider,
+  invertRgbTransferFunction,
+  isEqual,
+  isImageActor,
+  triggerEvent,
+  updateVTKImageDataWithCornerstoneImage,
+  windowLevel as windowLevelUtil,
+} from '../utilities';
+import Viewport from './Viewport';
+import { getColormap } from './helpers/cpuFallback/colors/index';
+import drawImageSync from './helpers/cpuFallback/drawImageSync';
+
+import {
   Events,
+  InterpolationType,
+  MetadataModules,
+  RequestType,
   VOILUTFunctionType,
   ViewportStatus,
 } from '../enums';
-import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
-import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
-import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
+import { ImageLoaderOptions, loadAndCacheImage } from '../loaders/imageLoader';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
+import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
+import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
+import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
-import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
+import cache from '../cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
+import {
+  ImagePixelModule,
+  ImagePlaneModule,
+  PixelDataTypedArray,
+} from '../types';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import cache from '../cache';
-import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
-import {
-  PixelDataTypedArray,
-  ImagePixelModule,
-  ImagePlaneModule,
-} from '../types';
-import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import {
   getTransferFunctionNodes,
   setTransferFunctionNodes,
 } from '../utilities/transferFunctionUtils';
+import correctShift from './helpers/cpuFallback/rendering/correctShift';
+import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
+import { Transform } from './helpers/cpuFallback/rendering/transform';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -442,7 +443,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -484,7 +485,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -587,6 +588,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     const { modality } = metaData.get('generalSeriesModule', imageId);
     const imageIdScalingFactor = metaData.get('scalingModule', imageId);
+    const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
     if (modality === 'PT' && imageIdScalingFactor) {
       this._addScalingToViewport(imageIdScalingFactor);
@@ -596,7 +598,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
-    this.calibration = null;
+    this.calibration = calibration;
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     if (!this.useCPURendering) {
@@ -1193,6 +1195,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   private setRotationGPU(rotation: number): void {
+    const pan = this.getPan();
+    this.setPan([0, 0]);
     const { flipVertical } = this.getCamera();
 
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
@@ -1206,6 +1210,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
+    this.setPan(pan);
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
@@ -2960,15 +2965,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   // create default values for imagePlaneModule if values are undefined
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
     this.calibration ||= imagePlaneModule.calibration;
-
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };

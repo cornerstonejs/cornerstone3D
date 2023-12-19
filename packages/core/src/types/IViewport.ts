@@ -42,7 +42,7 @@ interface IViewport {
   isDisabled: boolean;
   /** The rendering state of this viewport */
   viewportStatus: ViewportStatus;
-  /** the rotation applied to the view */
+  /** get the rotation either from the camera provided or the viewport if not provided */
   getRotation: () => number;
   /** frameOfReferenceUID the viewport's default actor is rendering */
   getFrameOfReferenceUID: () => string;

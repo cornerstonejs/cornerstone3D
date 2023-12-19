@@ -42,7 +42,6 @@ class VolumeViewport extends BaseVolumeViewport {
     super(props);
 
     const { orientation } = this.options;
-
     // if the camera is set to be acquisition axis then we need to skip
     // it for now until the volume is set
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
@@ -144,6 +143,7 @@ class VolumeViewport extends BaseVolumeViewport {
       viewUp,
     });
 
+    this.viewportProperties.orientation = orientation;
     this.resetCamera();
 
     if (immediate) {
@@ -196,6 +196,7 @@ class VolumeViewport extends BaseVolumeViewport {
       viewUp,
     });
 
+    this.initialViewUp = viewUp;
     this.resetCamera();
   }
 
@@ -231,7 +232,8 @@ class VolumeViewport extends BaseVolumeViewport {
   public resetCamera(
     resetPan = true,
     resetZoom = true,
-    resetToCenter = true
+    resetToCenter = true,
+    resetRotation = false
   ): boolean {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
 
@@ -239,6 +241,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
+    const viewUp = <Point3>activeCamera.getViewUp();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
     // always add clipping planes for the volume viewport. If a use case
@@ -273,6 +276,19 @@ class VolumeViewport extends BaseVolumeViewport {
         mapper.addClippingPlane(clipPlane2);
       }
     });
+
+    //Only reset the rotation of the camera if wanted (so we don't reset everytime resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
+    if (
+      resetRotation &&
+      MPR_CAMERA_VALUES[this.viewportProperties.orientation] !== undefined
+    ) {
+      const viewToReset =
+        MPR_CAMERA_VALUES[this.viewportProperties.orientation];
+      this.setCameraNoEvent({
+        viewUp: viewToReset.viewUp,
+        viewPlaneNormal: viewToReset.viewPlaneNormal,
+      });
+    }
 
     return true;
   }
@@ -370,8 +386,6 @@ class VolumeViewport extends BaseVolumeViewport {
     return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
 
-  getRotation = (): number => 0;
-
   /**
    * Reset the viewport properties to the default values
    *
@@ -432,6 +446,12 @@ class VolumeViewport extends BaseVolumeViewport {
       },
       volumeId: volumeActor.uid,
     };
+
+    const resetPan = true;
+    const resetZoom = true;
+    const resetToCenter = true;
+    const resetCameraRotation = true;
+    this.resetCamera(resetPan, resetZoom, resetToCenter, resetCameraRotation);
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
