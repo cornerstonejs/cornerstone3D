@@ -196,6 +196,7 @@ class VolumeViewport extends BaseVolumeViewport {
       viewUp,
     });
 
+    this.initialViewUp = viewUp;
     this.resetCamera();
   }
 

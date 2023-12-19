@@ -1,4 +1,4 @@
-import { glMatrix, mat4, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { AnnotationTool } from '../base';
 
 import {
@@ -30,11 +30,7 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import {
-  math,
-  viewportFilters,
-  triggerAnnotationRenderForViewportIds,
-} from '../../utilities';
+import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import {
   AnnotationCompletedEventDetail,
@@ -44,8 +40,8 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 
-const { getViewportIdsWithToolToRender } = viewportFilters;
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
 class LivewireContourTool extends AnnotationTool {
@@ -406,7 +402,6 @@ class LivewireContourTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
-    let addNewPoint = true;
 
     // Check if user clicked on the first point to close the curve
     if (controlPoints.length >= 2) {
@@ -436,24 +431,20 @@ class LivewireContourTool extends AnnotationTool {
       }
 
       if (closestHandlePoint.index === 0) {
-        addNewPoint = false;
         closePath = true;
       }
     }
 
     this.editData.closed = this.editData.closed || closePath;
+    this.editData.confirmedPath = this.editData.currentPath;
 
-    if (addNewPoint) {
-      this.editData.confirmedPath = this.editData.currentPath;
+    // Add the current cursor position as a new control point after clicking
+    this.editData.confirmedPath.addControlPoint(
+      this.editData.currentPath.getLastPoint()
+    );
 
-      // Add the current cursor position as a new control point after clicking
-      this.editData.confirmedPath.addControlPoint(
-        this.editData.currentPath.getLastPoint()
-      );
-
-      // Start a new search starting at the last control point
-      this.scissors.startSearch(worldToSlice(worldPos));
-    }
+    // Start a new search starting at the last control point
+    this.scissors.startSearch(worldToSlice(worldPos));
 
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);

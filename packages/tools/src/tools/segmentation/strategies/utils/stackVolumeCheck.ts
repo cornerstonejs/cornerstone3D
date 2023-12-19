@@ -26,7 +26,7 @@ function isVolumeSegmentation(
   | LabelmapToolOperationDataVolume
   | LabelmapSegmentationDataVolume {
   return (
-    (operationData as LabelmapToolOperationDataVolume).volumeId !== undefined
+    (operationData as LabelmapToolOperationDataVolume)?.volumeId !== undefined
   );
 }
 

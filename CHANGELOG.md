@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.41.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.3...v1.41.0) (2023-12-15)
+
+### Features
+
+- **ultrasound regions:** Add new US specific tool and augment length and probe tool to better support US ([#927](https://github.com/cornerstonejs/cornerstone3D/issues/927)) ([2211842](https://github.com/cornerstonejs/cornerstone3D/commit/2211842c990facbd66958aa26839ee53bc974d96))
+
+## [1.40.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.2...v1.40.3) (2023-12-14)
+
+### Bug Fixes
+
+- **viewUp:** Adjust behavior after orientation change ([#948](https://github.com/cornerstonejs/cornerstone3D/issues/948)) ([464e2cf](https://github.com/cornerstonejs/cornerstone3D/commit/464e2cf5ba963c49d4143011a96463626257abf6))
+
+## [1.40.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.1...v1.40.2) (2023-12-14)
+
+### Bug Fixes
+
+- **livewire:** issue when closing a path ([#946](https://github.com/cornerstonejs/cornerstone3D/issues/946)) ([50b7cdc](https://github.com/cornerstonejs/cornerstone3D/commit/50b7cdc7f633bcc9bf5f73518e88936fa929a0f1))
+
+## [1.40.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.0...v1.40.1) (2023-12-14)
+
+### Bug Fixes
+
+- import from the viewportFilters again ([#945](https://github.com/cornerstonejs/cornerstone3D/issues/945)) ([c10ad71](https://github.com/cornerstonejs/cornerstone3D/commit/c10ad71d71c5d7d851674946834f3a6e4c2e8458))
+
 # [1.40.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.39.0...v1.40.0) (2023-12-13)
 
 ### Bug Fixes
