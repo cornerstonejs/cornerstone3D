@@ -4,6 +4,7 @@ import {
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -12,10 +13,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import {
-  _convertVolumeToStackViewport,
-  _convertStackToVolumeViewport,
-} from './_setViewports';
+import { createMockEllipsoidStackSegmentation } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -26,6 +24,7 @@ const {
   LengthTool,
   PanTool,
   ZoomTool,
+  SegmentationDisplayTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
@@ -96,21 +95,28 @@ addButtonToToolbar({
 
     const viewport = renderingEngine.getViewport(viewportId);
 
+    let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      _convertStackToVolumeViewport(
-        renderingEngine,
-        viewport as Types.IStackViewport,
-        toolGroup
-      );
-      return;
+      newViewport = utilities.viewport.convertStackToVolumeViewport({
+        viewport: viewport as Types.IStackViewport,
+        options: {
+          background: <Types.Point3>[0, 0.4, 0],
+          volumeId: `cornerstoneStreamingImageVolume:myVolume`,
+        },
+      });
+    } else {
+      newViewport = utilities.viewport.convertVolumeToStackViewport({
+        viewport: viewport as Types.IVolumeViewport,
+        options: {
+          background: <Types.Point3>[0.4, 0.0, 0.4],
+        },
+      });
     }
 
-    // convert to stack
-    _convertVolumeToStackViewport(
-      renderingEngine,
-      viewport as Types.IVolumeViewport,
-      toolGroup
-    );
+    // Set the tool group on the viewport
+    if (toolGroup) {
+      toolGroup.addViewport(newViewport.id, renderingEngineId);
+    }
   },
 });
 
@@ -200,12 +206,11 @@ async function run() {
   const stack = imageIds;
 
   // Set the stack on the viewport
-  viewport.setStack(stack, 0);
+  viewport.setStack(stack, 80);
 
   utilities.stackContextPrefetch.enable(viewport.element);
 
-  // Render the image
-  viewport.render();
+  renderingEngine.render();
 }
 
 run();

@@ -35,7 +35,6 @@ import type {
   VOIRange,
   EventTypes,
   VolumeViewportProperties,
-  ICamera,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';

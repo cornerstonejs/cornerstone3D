@@ -73,6 +73,9 @@ interface IImageVolume {
 
   /** destroy the volume and make it unusable */
   destroy(): void;
+
+  /** decache */
+  decache?: () => void;
 }
 
 export default IImageVolume;
