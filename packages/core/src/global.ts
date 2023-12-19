@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    crossOriginIsolated: unknown;
+    crossOriginIsolated: boolean;
     SharedArrayBuffer: unknown;
   }
 }
