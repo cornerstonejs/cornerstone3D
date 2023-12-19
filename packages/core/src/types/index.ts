@@ -106,6 +106,7 @@ import type {
   VideoViewportInput,
 } from './VideoViewportTypes';
 import type BoundsIJK from './BoundsIJK';
+import type BoundsLPS from './BoundsLPS';
 
 export type {
   // config
@@ -214,6 +215,7 @@ export type {
   InternalVideoCamera,
   VideoViewportInput,
   BoundsIJK,
+  BoundsLPS,
   Color,
   ColorLUT,
 };
