@@ -1,12 +1,11 @@
 import { vec3 } from 'gl-matrix';
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { StackViewport, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
   precalculatePointInEllipse,
 } from '../../../utilities/math/ellipse';
-import pointInSphere from '../../../utilities/math/sphere/pointInSphere';
 import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
@@ -19,7 +18,7 @@ const { transformWorldToIndex } = csUtils;
 const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
-      points,
+      points, // bottom, top, left, right
       imageVoxelManager: imageVoxelManager,
       viewport,
       segmentationImageData,
@@ -42,6 +41,7 @@ const initializeCircle = {
       segmentationImageData,
       center as Types.Point3
     );
+
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
     ) as CanvasCoordinates;
@@ -55,17 +55,18 @@ const initializeCircle = {
     const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
     const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
 
-    const ellipsoidCornersIJK = [
-      <Types.Point3>transformWorldToIndex(segmentationImageData, topLeftWorld),
-      <Types.Point3>(
-        transformWorldToIndex(segmentationImageData, bottomRightWorld)
-      ),
-    ];
+    const circleCornersIJK = points.map((world) => {
+      return transformWorldToIndex(segmentationImageData, world);
+    });
 
-    segmentationVoxelManager.boundsIJK = getBoundingBoxAroundShape(
-      ellipsoidCornersIJK,
-      segmentationVoxelManager.dimensions
+    // get the bounds from the circle points since in oblique images the
+    // circle will not be axis aligned
+    const boundsIJK = getBoundingBoxAroundShape(
+      circleCornersIJK,
+      segmentationImageData.getDimensions()
     );
+
+    segmentationVoxelManager.boundsIJK = boundsIJK;
     imageVoxelManager.isInObject = createPointInEllipse({
       topLeftWorld,
       bottomRightWorld,
@@ -93,22 +94,6 @@ function createPointInEllipse(worldInfo: {
   const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
   const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
 
-  const radius = Math.max(xRadius, yRadius, zRadius);
-
-  const isSphere =
-    csUtils.isEqual(xRadius, yRadius) &&
-    csUtils.isEqual(yRadius, zRadius) &&
-    csUtils.isEqual(zRadius, xRadius);
-
-  if (isSphere) {
-    const sphereObj = {
-      center,
-      radius,
-      radius2: radius * radius,
-    };
-    return (pointLPS) => pointInSphere(sphereObj, pointLPS);
-  }
-
   // using ellipse as a form of circle
   const ellipseObj = {
     center: center as Types.Point3,
@@ -117,9 +102,7 @@ function createPointInEllipse(worldInfo: {
     zRadius,
   };
 
-  const inverts = precalculatePointInEllipse(ellipseObj);
-  const { precalculated } = inverts;
-
+  const { precalculated } = precalculatePointInEllipse(ellipseObj, {});
   return precalculated;
 }
 
