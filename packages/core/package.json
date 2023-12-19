@@ -14,6 +14,13 @@
     "test": "test"
   },
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/ems/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
   "scripts": {
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
