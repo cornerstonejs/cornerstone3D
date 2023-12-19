@@ -30,18 +30,20 @@ export type SegmentContourActionConfiguration = {
    * Optional map for data about each segment
    */
   segmentationId?: string;
+  segmentIndex?: number;
   segmentData?: Map<number, Segment>;
   toolGroupId?: string;
 };
 
 export default function segmentContourAction(
   element: HTMLDivElement,
-  configuration: SegmentContourActionConfiguration
+  configuration
 ) {
+  const { data: configurationData } = configuration;
   const enabledElement = getEnabledElement(element);
-  const segment = (configuration.getSegment || defaultGetSegment)(
+  const segment = (configurationData.getSegment || defaultGetSegment)(
     enabledElement,
-    configuration
+    configurationData
   );
   if (!segment) {
     return;
@@ -152,6 +154,7 @@ export function defaultGetSegment(
   const segmentationId =
     configuration.segmentationId || segmentationsList[0].segmentationId;
   const segmentIndex =
+    configuration.segmentIndex ??
     segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
   if (!segmentIndex) {
     return;

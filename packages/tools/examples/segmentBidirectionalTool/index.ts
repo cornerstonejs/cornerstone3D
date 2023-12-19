@@ -65,7 +65,9 @@ const actionConfiguration = {
         key: 'c',
       },
     ],
-    segmentData: new Map(),
+    data: {
+      segmentData: new Map(),
+    },
   },
 };
 
@@ -276,7 +278,7 @@ function createSegmentConfiguration(segmentIndex, otherSegments?) {
     ? `Combined ${segmentIndex} with ${otherSegments.join(', ')}`
     : `Segment ${segmentIndex}`;
 
-  actionConfiguration.contourBidirectional.segmentData.set(segmentIndex, {
+  actionConfiguration.contourBidirectional.data.segmentData.set(segmentIndex, {
     containedSegmentIndices,
     label,
     style,

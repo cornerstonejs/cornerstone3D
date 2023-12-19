@@ -4190,7 +4190,7 @@ type SegmentationState = {
 };
 
 // @public (undocumented)
-function segmentContourAction(element: HTMLDivElement, configuration: SegmentContourActionConfiguration): any;
+function segmentContourAction(element: HTMLDivElement, configuration: any): any;
 
 declare namespace segmentIndex {
     export {
