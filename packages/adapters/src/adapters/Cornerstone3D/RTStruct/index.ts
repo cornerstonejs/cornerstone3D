@@ -4,7 +4,7 @@ import {
     generateRTSSFromSegmentations
 } from "./RTSS";
 
-const { generateContourSetsFromLabelmap } = utilities.rtstruct;
+const { generateContourSetsFromLabelmap } = utilities.contours;
 
 export {
     generateContourSetsFromLabelmap,

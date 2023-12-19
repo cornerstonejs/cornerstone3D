@@ -8,7 +8,7 @@ import getRTSeriesModule from "./utilities/getRTSeriesModule";
 import getStructureSetModule from "./utilities/getStructureSetModule";
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
-    utilities.rtstruct;
+    utilities.contours;
 const { DicomMetaDictionary } = dcmjs.data;
 
 /**

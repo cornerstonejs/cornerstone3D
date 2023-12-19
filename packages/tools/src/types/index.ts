@@ -73,7 +73,7 @@ import type { ISpline } from './ISpline';
 import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
-import type { BidirectionalData } from '../utilities/segmentation/contourAndFindLargestBidirectional';
+import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 
 export type {
   // AnnotationState

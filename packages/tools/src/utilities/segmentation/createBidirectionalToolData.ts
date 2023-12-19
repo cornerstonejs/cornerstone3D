@@ -1,6 +1,17 @@
 import type { Types } from '@cornerstonejs/core';
-import type { BidirectionalData } from './contourAndFindLargestBidirectional';
 import type { Annotation } from '../../types/AnnotationTypes';
+
+export type BidirectionalData = {
+  majorAxis: [Types.Point3, Types.Point3];
+  minorAxis: [Types.Point3, Types.Point3];
+  maxMajor: number;
+  maxMinor: number;
+  segmentIndex: number;
+  label?: string;
+  color?: string | number[];
+  referencedImageId: string;
+  FrameOfReferenceUID: string;
+};
 
 /**
  * Creates data suitable for the BidirectionalTool from the basic bidirectional

@@ -54,35 +54,39 @@ export default function segmentContourAction(
     FrameOfReferenceUID
   );
   let hasExistingActiveSegment = false;
-  const existingSegments = bidirectionals.filter((it) => {
-    const { segment } = it.data;
-    if (!segment) {
-      return;
+  const existingLargestBidirectionals = bidirectionals.filter(
+    (existingBidirectionalItem) => {
+      const { segment } = existingBidirectionalItem.data;
+      if (!segment) {
+        return;
+      }
+      if (
+        segment.segmentationId === segmentationId &&
+        segment.segmentIndex === segmentIndex
+      ) {
+        hasExistingActiveSegment = true;
+        existingBidirectionalItem.data.segment = segment;
+      }
+      return !!segment;
     }
-    if (
-      segment.segmentationId === segmentationId &&
-      segment.segmentIndex === segmentIndex
-    ) {
-      hasExistingActiveSegment = true;
-      it.data.segment = segment;
-    }
-    return !!segment;
-  });
+  );
   if (!hasExistingActiveSegment) {
     // Just create a dummy annotation object containing just enough information
     // to create a real one.
-    existingSegments.push({
+    existingLargestBidirectionals.push({
       data: { segment },
     } as unknown as Annotation);
   }
 
   let newBidirectional;
-  existingSegments.forEach((annotation) => {
+  existingLargestBidirectionals.forEach((existingLargestBidirectional) => {
     const segments = [];
-    const { segment: updateSegment } = annotation.data;
+    const { segment: updateSegment } = existingLargestBidirectional.data;
     const { segmentIndex, segmentationId } = updateSegment;
     segments[segmentIndex] = updateSegment;
-    annotationState.removeAnnotation(annotation.annotationUID);
+    annotationState.removeAnnotation(
+      existingLargestBidirectional.annotationUID
+    );
     const bidirectionalData = contourAndFindLargestBidirectional({
       ...segmentationsList.find(
         (segmentation) => segmentation.segmentationId === segmentationId
@@ -97,7 +101,8 @@ export default function segmentContourAction(
       bidirectionalData,
       enabledElement.viewport
     );
-    bidirectionalToolData.annotationUID = annotation.annotationUID;
+    bidirectionalToolData.annotationUID =
+      existingLargestBidirectional.annotationUID;
     bidirectionalToolData.data.segment = updateSegment;
 
     const annotationUID = annotationState.addAnnotation(

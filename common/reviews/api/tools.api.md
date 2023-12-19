@@ -1272,7 +1272,17 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
-function contourAndFindLargestBidirectional(segmentations: any): any;
+function contourAndFindLargestBidirectional(segmentation: any): any;
+
+declare namespace contours {
+    export {
+        _default_2 as contourFinder,
+        _default_3 as mergePoints,
+        _default_4 as detectContourHoles,
+        generateContourSetsFromLabelmap,
+        AnnotationToPointData
+    }
+}
 
 // @public (undocumented)
 type ContourSegmentationData = {
@@ -3931,16 +3941,6 @@ function resetElementCursor(element: HTMLDivElement): void;
 // @public (undocumented)
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
 
-declare namespace rtstruct {
-    export {
-        _default_2 as contourFinder,
-        _default_3 as mergePoints,
-        _default_4 as detectContourHoles,
-        generateContourSetsFromLabelmap,
-        AnnotationToPointData
-    }
-}
-
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
     // (undocumented)
@@ -5209,7 +5209,7 @@ declare namespace utilities {
         getCalibratedAreaUnits,
         getCalibratedScale,
         segmentation_2 as segmentation,
-        rtstruct,
+        contours,
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRender,
         pointInShapeCallback,

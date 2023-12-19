@@ -72,7 +72,8 @@ const actionConfiguration = {
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segment bidirectional tool',
-  'Here we demonstrate automatic creation of the largest bidirectional tool which will fit the segment'
+  'Here we demonstrate automatic creation of the largest bidirectional tool which will fit the segment, or the combined segments ' +
+    'when a segment is configured to be comprised of several segment indices.'
 );
 
 const size = '900px';
@@ -94,9 +95,10 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
+  Segment index 3 is consider to be 3, 2 and 1.
+  Other indices are individual ones.
   Left Click: Use selected Segmentation Tool.
-  Use button to generate new bidirectional on largest slice.
-  Note that segment index 3 is consider to be 3,2 or 1 combined.
+  Press 'c' to apply a new bidirectional on largest segment on a slice.
   Middle Click: Pan
   Right Click: Zoom
   Mouse wheel: Scroll Stack
@@ -176,12 +178,13 @@ addSliderToToolbar({
 });
 
 addDropdownToToolbar({
-  options: { values: ['1', '2', '3', '4'], defaultValue: '1' },
+  options: { values: ['1', '2', '3,2,1', '4'], defaultValue: '1' },
   labelText: 'Segment',
   onSelectedValueChange: (segmentIndex) => {
+    const indices = String(segmentIndex).split(',');
     segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,
-      Number(segmentIndex)
+      Number(indices[0])
     );
   },
 });
