@@ -1,10 +1,5 @@
-import {
-  cache,
-  Enums,
-  RenderingEngine,
-  metaData,
-  imageLoader,
-} from '@cornerstonejs/core';
+import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -13,6 +8,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { createMockEllipsoidStackSegmentation } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -387,38 +383,6 @@ function setupTools(toolGroupId) {
 // ============================= //
 
 /**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-function createMockEllipsoidSegmentation(imageIds, segmentationImageIds) {
-  const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
-  const dimensions = [columns, rows, imageIds.length];
-
-  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
-  const outerRadius = 64;
-  const innerRadius = 32;
-  for (let z = 0; z < dimensions[2]; z++) {
-    let voxelIndex = 0;
-    const image = cache.getImage(segmentationImageIds[z]);
-    const scalarData = image.getPixelData();
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) +
-            (y - center[1]) * (y - center[1]) +
-            (z - center[2]) * (z - center[2])
-        );
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
-        }
-        voxelIndex++;
-      }
-    }
-  }
-}
-
-/**
  * Runs the demo
  */
 async function run() {
@@ -465,10 +429,11 @@ async function run() {
 
   await viewport.setStack(imageIdsArray, 0);
 
-  createMockEllipsoidSegmentation(
-    imageIdsArray.slice(0, 2),
-    segmentationImageIds
-  );
+  createMockEllipsoidStackSegmentation({
+    imageIds: imageIdsArray.slice(0, 2),
+    segmentationImageIds,
+    cornerstone,
+  });
 
   renderingEngine.renderViewports([viewportId]);
 

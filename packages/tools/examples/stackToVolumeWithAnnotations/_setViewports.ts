@@ -46,8 +46,6 @@ function _convertVolumeToStackViewport(
 
   const stack = volume.imageIds.reverse();
 
-  // Set the stack on the viewport
-  // const currentIndex = Math.floor(stack.length / 2);
   stackViewport.setStack(stack, 0);
 
   // Render the image
