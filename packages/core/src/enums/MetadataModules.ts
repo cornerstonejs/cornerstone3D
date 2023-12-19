@@ -9,12 +9,17 @@
 enum MetadataModules {
   CINE = 'cineModule',
   IMAGE_URL = 'imageUrlModule',
+  SOP_COMMON = 'sopCommonModule',
+  VOI_LUT = 'voiLutModule',
+  MODALITY_LUT = 'modalityLutModule',
   GENERAL_SERIES = 'generalSeriesModule',
   PATIENT_STUDY = 'patientStudyModule',
   NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',
   IMAGE_PLANE = 'imagePlaneModule',
   IMAGE_PIXEL = 'imagePixelModule',
   MULTIFRAME = 'multiframeModule',
+  ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
+  CALIBRATION = 'calibrationModule',
 }
 
 export default MetadataModules;

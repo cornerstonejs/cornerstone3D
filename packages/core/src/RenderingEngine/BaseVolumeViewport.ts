@@ -82,7 +82,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     VolumeViewportProperties
   >();
   // Camera properties
-  private initialViewUp: Point3;
+  protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
 
   constructor(props: ViewportInput) {
@@ -100,16 +100,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const renderer = this.getRenderer();
 
     const camera = vtkSlabCamera.newInstance();
-
-    this.initialViewUp = <Point3>[0, -1, 0];
-    const viewPlaneNormal = <Point3>[0, 0, -1];
-
-    camera.setDirectionOfProjection(
-      -viewPlaneNormal[0],
-      -viewPlaneNormal[1],
-      -viewPlaneNormal[2]
-    );
-    camera.setViewUp(...this.initialViewUp);
     renderer.setActiveCamera(camera);
 
     switch (this.type) {
@@ -145,6 +135,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       -viewPlaneNormal[2]
     );
     camera.setViewUpFrom(viewUp);
+    this.initialViewUp = viewUp;
 
     this.resetCamera();
   }
@@ -1029,9 +1020,12 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     // the viewPlaneNormal indicates a positive or negative rotation respectively.
     const normalDot = vec3.dot(initialToCurrentViewUpCross, viewPlaneNormal);
 
-    return normalDot >= 0
-      ? initialToCurrentViewUpAngle
-      : (360 - initialToCurrentViewUpAngle) % 360;
+    const value =
+      normalDot >= 0
+        ? initialToCurrentViewUpAngle
+        : (360 - initialToCurrentViewUpAngle) % 360;
+
+    return value;
   };
 
   /**

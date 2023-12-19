@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.41.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.3...v1.41.0) (2023-12-15)
+
+### Features
+
+- **ultrasound regions:** Add new US specific tool and augment length and probe tool to better support US ([#927](https://github.com/cornerstonejs/cornerstone3D/issues/927)) ([2211842](https://github.com/cornerstonejs/cornerstone3D/commit/2211842c990facbd66958aa26839ee53bc974d96))
+
+## [1.40.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.2...v1.40.3) (2023-12-14)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [1.40.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.40.1...v1.40.2) (2023-12-14)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
