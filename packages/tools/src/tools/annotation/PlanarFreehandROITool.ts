@@ -136,7 +136,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   isEditingClosed = false;
   isEditingOpen = false;
 
-  private activateDraw: (
+  protected activateDraw: (
     evt: EventTypes.InteractionEventType,
     annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]

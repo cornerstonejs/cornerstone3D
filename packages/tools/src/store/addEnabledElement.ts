@@ -13,6 +13,7 @@ import {
   touchToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
+  annotationInterpolationEventDispatcher,
 } from '../eventDispatchers';
 import { state } from './state';
 
@@ -52,6 +53,7 @@ export default function addEnabledElement(
   mouseToolEventDispatcher.enable(element);
   keyboardToolEventDispatcher.enable(element);
   touchToolEventDispatcher.enable(element);
+  annotationInterpolationEventDispatcher.enable(element);
 
   // labelmap
   // State

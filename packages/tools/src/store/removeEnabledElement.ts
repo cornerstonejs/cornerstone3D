@@ -12,6 +12,7 @@ import {
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
   touchToolEventDispatcher,
+  annotationInterpolationEventDispatcher,
 } from '../eventDispatchers';
 // ~~
 
@@ -56,6 +57,7 @@ function removeEnabledElement(
   mouseToolEventDispatcher.disable(element);
   keyboardToolEventDispatcher.disable(element);
   touchToolEventDispatcher.disable(element);
+  annotationInterpolationEventDispatcher.disable(element);
 
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?

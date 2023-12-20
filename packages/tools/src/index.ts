@@ -66,6 +66,7 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
+  ContourROITool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -108,6 +109,7 @@ export {
   SplineROITool,
   BidirectionalTool,
   PlanarFreehandROITool,
+  ContourROITool,
   LivewireContourTool,
   ArrowAnnotateTool,
   AngleTool,

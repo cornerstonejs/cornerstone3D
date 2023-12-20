@@ -70,10 +70,12 @@ function getAnnotations(
  * @param annotation - The annotation that is being added to the annotations manager.
  * @param annotationGroupSelector - element or FrameOfReferenceUID that is used
  * to group annotations in the annotation manager.
+ * @param suppressEvents - If true, the event will not be triggered.
  */
 function addAnnotation(
   annotation: Annotation,
-  annotationGroupSelector: AnnotationGroupSelector
+  annotationGroupSelector: AnnotationGroupSelector,
+  suppressEvents?: boolean
 ): string {
   if (!annotation.annotationUID) {
     annotation.annotationUID = csUtils.uuidv4() as string;
@@ -84,15 +86,17 @@ function addAnnotation(
 
   manager.addAnnotation(annotation, groupKey);
 
-  // if the annotation manager selector is an element, trigger the
-  // annotation added event for that element.
-  if (annotationGroupSelector instanceof HTMLDivElement) {
-    triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
-  } else {
-    // if no element is provided, render all viewports that have the
-    // same frame of reference.
-    // Todo: we should do something else here for other types of annotation managers.
-    triggerAnnotationAddedForFOR(annotation);
+  if (!suppressEvents) {
+    // if the annotation manager selector is an element, trigger the
+    // annotation added event for that element.
+    if (annotationGroupSelector instanceof HTMLDivElement) {
+      triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
+    } else {
+      // if no element is provided, render all viewports that have the
+      // same frame of reference.
+      // Todo: we should do something else here for other types of annotation managers.
+      triggerAnnotationAddedForFOR(annotation);
+    }
   }
 
   return annotation.annotationUID;
@@ -124,8 +128,12 @@ function getNumberOfAnnotations(
 /**
  * Remove the annotation by UID of the annotation.
  * @param annotationUID - The unique identifier for the annotation.
+ * @param suppressEvents - If true, the event will not be triggered.
  */
-function removeAnnotation(annotationUID: string): void {
+function removeAnnotation(
+  annotationUID: string,
+  suppressEvents?: boolean
+): void {
   const manager = getAnnotationManager();
   const annotation = manager.getAnnotation(annotationUID);
 
@@ -136,15 +144,17 @@ function removeAnnotation(annotationUID: string): void {
 
   manager.removeAnnotation(annotationUID);
 
-  // trigger annotation removed
-  const eventType = Events.ANNOTATION_REMOVED;
+  if (!suppressEvents) {
+    // trigger annotation removed
+    const eventType = Events.ANNOTATION_REMOVED;
 
-  const eventDetail: AnnotationRemovedEventDetail = {
-    annotation,
-    annotationManagerUID: manager.uid,
-  };
+    const eventDetail: AnnotationRemovedEventDetail = {
+      annotation,
+      annotationManagerUID: manager.uid,
+    };
 
-  triggerEvent(eventTarget, eventType, eventDetail);
+    triggerEvent(eventTarget, eventType, eventDetail);
+  }
 }
 
 /**
