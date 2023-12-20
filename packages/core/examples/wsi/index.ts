@@ -4,6 +4,7 @@ import {
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
 
@@ -18,6 +19,17 @@ import {
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const {
+  PanTool,
+  ZoomTool,
+  StackScrollMouseWheelTool,
+  StackScrollTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
+
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
 const { wadors } = dicomImageLoader;
 
@@ -74,12 +86,67 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
 
+function registerTools() {
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackScrollTool);
+}
+
+function createToolGroup(toolGroupId = 'default') {
+  // Define a tool group, which defines how mouse events map to tool commands for
+  // Any viewport using the group
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add tools to the tool group
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
+
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Ctrl Left drag
+        modifierKey: KeyboardBindings.Ctrl,
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift Left Click
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+
+  return toolGroup;
+}
 /**
  * Runs the demo
  */
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+
+  registerTools();
+  const toolGroupId = 'default';
+  const toolGroup = createToolGroup(toolGroupId);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   // TODO - deploy the testdata publically
@@ -117,6 +184,8 @@ async function run() {
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
   // Set the stack on the viewport
   await viewport.setWSI(imageIds, client);
+
+  toolGroup.addViewport(viewportId, renderingEngineId);
 }
 
 run();
