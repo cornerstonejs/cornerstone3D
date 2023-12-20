@@ -492,11 +492,6 @@ async function run() {
     imageIds,
   });
 
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdVolume, 1);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdStack, 1);
-
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -544,6 +539,11 @@ async function run() {
     [viewportId1]
   );
   await stackViewport.setStack(imageIdsStack);
+
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdVolume, 1);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdStack, 1);
 
   // // Add the segmentation representation to the toolgroup
   // Setup configuration for contour bidirectional action
