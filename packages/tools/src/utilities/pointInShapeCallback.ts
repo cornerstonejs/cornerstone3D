@@ -22,7 +22,7 @@ export type PointInShapeCallback = ({
   pointLPS: vec3;
 }) => void;
 
-export type ShapeFnCriteria = (pointLPS: vec3) => boolean;
+export type ShapeFnCriteria = (pointIJK: vec3, pointLPS: vec3) => boolean;
 
 /**
  * For each point in the image (If boundsIJK is not provided, otherwise, for each
@@ -121,7 +121,7 @@ export default function pointInShapeCallback(
         const pointIJK: Types.Point3 = [i, j, k];
 
         // The current world position (pointLPS) is now in currentPos
-        if (pointInShapeFn(currentPos as Types.Point3)) {
+        if (pointInShapeFn(currentPos as Types.Point3, currentPos)) {
           const index = k * zMultiple + j * yMultiple + i * xMultiple;
           let value;
           if (xMultiple > 2) {
