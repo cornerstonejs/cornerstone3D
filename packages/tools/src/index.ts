@@ -51,6 +51,7 @@ import {
   SphereScissorsTool,
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
+  CircleROIStartEndThresholdTool,
   SegmentationDisplayTool,
   BrushTool,
   AngleTool,
@@ -123,6 +124,7 @@ export {
   SphereScissorsTool,
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
+  CircleROIStartEndThresholdTool,
   BrushTool,
   OrientationMarkerTool,
   // Synchronizers

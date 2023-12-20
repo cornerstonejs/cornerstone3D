@@ -42,6 +42,7 @@ import CircleScissorsTool from './segmentation/CircleScissorsTool';
 import SphereScissorsTool from './segmentation/SphereScissorsTool';
 import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool';
 import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
+import CircleROIStartEndThresholdTool from './segmentation/CircleROIStartEndThresholdTool';
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
@@ -88,6 +89,7 @@ export {
   SphereScissorsTool,
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
+  CircleROIStartEndThresholdTool,
   BrushTool,
   MagnifyTool,
   AdvancedMagnifyTool,

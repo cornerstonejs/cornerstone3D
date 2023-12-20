@@ -108,13 +108,18 @@ export interface CircleROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?: ROICachedStats & {
-      [targetId: string]: {
-        radius: number;
-        radiusUnit: string;
-        perimeter: number;
-      };
-    };
+    cachedStats?:
+      | (ROICachedStats & {
+          [targetId: string]: {
+            radius: number;
+            radiusUnit: string;
+            perimeter: number;
+          };
+        })
+      | {
+          pointsInVolume: Types.Point3[];
+          projectionPoints: Types.Point3[][];
+        };
   };
 }
 
@@ -247,6 +252,35 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     };
     handles: {
       points: Types.Point3[];
+      activeHandleIndex: number | null;
+    };
+  };
+}
+
+export interface CircleROIStartEndThresholdAnnotation extends Annotation {
+  metadata: {
+    cameraPosition?: Types.Point3;
+    cameraFocalPoint?: Types.Point3;
+    viewPlaneNormal?: Types.Point3;
+    viewUp?: Types.Point3;
+    annotationUID?: string;
+    FrameOfReferenceUID: string;
+    referencedImageId?: string;
+    toolName: string;
+    enabledElement: any; // Todo: how to remove this from the annotation??
+    volumeId: string;
+    spacingInNormal: number;
+  };
+  data: {
+    label: string;
+    startSlice: number;
+    endSlice: number;
+    cachedStats?: {
+      pointsInVolume: Types.Point3[];
+      projectionPoints: Types.Point3[][];
+    };
+    handles: {
+      points: [Types.Point3, Types.Point3]; // [center, end]
       activeHandleIndex: number | null;
     };
   };
