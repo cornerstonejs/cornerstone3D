@@ -59,7 +59,7 @@ async function convertStackToVolumeViewport({
     },
   });
 
-  // Define a volume in memory
+  // Define a volume in memory based on the stack imageIds
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });

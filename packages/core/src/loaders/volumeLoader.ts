@@ -511,7 +511,13 @@ function _handleCacheOptimization(volumeId) {
       }
 
       const imageFrame = image.imageFrame;
-      let pixelData = imageFrame.pixelData;
+
+      let pixelData;
+      if (imageFrame) {
+        pixelData = imageFrame.pixelData;
+      } else {
+        pixelData = image.getPixelData();
+      }
 
       const view = new pixelData.constructor(
         scalarData.buffer,
@@ -519,15 +525,18 @@ function _handleCacheOptimization(volumeId) {
         pixelData.length
       );
 
-      image.getPixelData = null;
-      imageFrame.pixelData = null;
-
       image.getPixelData = () => view;
-      imageFrame.pixelData = view;
+
+      if (imageFrame) {
+        imageFrame.pixelData = view;
+      }
+
+      image.bufferView = {
+        buffer: scalarData.buffer,
+        offset,
+      };
 
       cache.decrementImageCacheSize(image.sizeInBytes);
-
-      pixelData = null;
     }
 
     eventTarget.removeEventListener(

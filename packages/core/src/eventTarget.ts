@@ -52,7 +52,11 @@ class CornerstoneEventTarget implements EventTarget {
     const stackLength = stack.length;
 
     for (let i = 0; i < stackLength; i++) {
-      stack[i].call(this, event);
+      try {
+        stack[i].call(this, event);
+      } catch (error) {
+        console.error(`error in event listener of type:  ${event.type}`, error);
+      }
     }
 
     return !event.defaultPrevented;

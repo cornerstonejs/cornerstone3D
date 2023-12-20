@@ -121,6 +121,11 @@ interface IImage {
   imageQualityStatus?: ImageQualityStatus;
   calibration?: IImageCalibration;
   imageFrame?: any;
+
+  bufferView?: {
+    buffer: ArrayBuffer;
+    offset?: number;
+  };
 }
 
 export default IImage;
