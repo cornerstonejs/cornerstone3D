@@ -21,7 +21,7 @@ const defaultConfig: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
 
 let config: Cornerstone3DConfig = {
@@ -35,7 +35,7 @@ let config: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
 
 let webWorkerManager = null;

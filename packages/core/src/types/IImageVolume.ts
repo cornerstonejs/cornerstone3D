@@ -76,6 +76,9 @@ interface IImageVolume {
 
   /** decache */
   decache?: () => void;
+
+  /** */
+  get imageCacheOffsetMap(): Map<string, any>;
 }
 
 export default IImageVolume;

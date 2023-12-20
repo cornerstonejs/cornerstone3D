@@ -18,9 +18,9 @@ export class ImageVolume implements IImageVolume {
   private _imageIds: Array<string>;
   private _imageIdsIndexMap = new Map();
   private _imageURIsIndexMap = new Map();
+  private _imageCacheOffsetMap = new Map();
   /** volume scalar data 3D or 4D */
   protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
-
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
 
@@ -107,6 +107,10 @@ export class ImageVolume implements IImageVolume {
       this._imageIdsIndexMap.set(imageId, i);
       this._imageURIsIndexMap.set(imageURI, i);
     });
+  }
+
+  public get imageCacheOffsetMap(): Map<string, any> {
+    return this._imageCacheOffsetMap;
   }
 
   cancelLoading: () => void;

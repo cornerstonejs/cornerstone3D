@@ -1,11 +1,24 @@
 import {
   Types,
   Enums,
+  cache,
+  eventTarget,
   volumeLoader,
   setVolumesForViewports,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
+/**
+ * Converts a stack viewport to a volume viewport.
+ *
+ * @param params - The parameters for the conversion.
+ * @param params.viewport - The stack viewport to convert.
+ * @param params.options - The options for the conversion.
+ * @param [params.options.volumeId] - The volumeId that will get generated, it should have the volume loader schema inside too
+ * @param [params.options.viewportId] - The viewportId that will get used for new viewport. If not provided, the stack viewport id will be used.
+ * @param [params.options.background] - The background color of the volume viewport.
+ * @returns The converted volume viewport.
+ */
 async function convertStackToVolumeViewport({
   viewport,
   options,
@@ -16,21 +29,24 @@ async function convertStackToVolumeViewport({
     viewportId?: string;
     background?: Types.Point3;
   };
-}): Promise<void> {
+}): Promise<Types.IVolumeViewport> {
   const renderingEngine = viewport.getRenderingEngine();
-  const { volumeId, background } = options || { volumeId: csUtils.uuidv4() };
+
+  const { volumeId, background } = options;
 
   const { id, element } = viewport;
   const viewportId = options.viewportId || id;
 
   const prevCamera = viewport.getCamera();
 
-  const volumeLoaderScheme = volumeId.split(':')[0];
-
   let imageIds = viewport.getImageIds();
+
+  // get the image loader scheme
+  const imageLoaderScheme = imageIds[0].split(':')[0];
+
   imageIds = imageIds.map((imageId) => {
     const imageURI = csUtils.imageIdToURI(imageId);
-    return `${volumeLoaderScheme}:${imageURI}`;
+    return `${imageLoaderScheme}:${imageURI}`;
   });
 
   // this will disable the stack viewport and remove it from the toolGroup
@@ -67,15 +83,29 @@ async function convertStackToVolumeViewport({
     [viewportId]
   );
 
-  // preserve the slice location when switching from stack to volume
-  // element.addEventListener(Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME, () => {
-  //   volumeViewport.setCamera({
-  //     focalPoint: prevCamera.focalPoint,
-  //   });
-  //   volumeViewport.render();
-  // });
+  const volumeViewportNewVolumeHandler = () => {
+    volumeViewport.setCamera({
+      focalPoint: prevCamera.focalPoint,
+    });
+    volumeViewport.render();
+    element.removeEventListener(
+      Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      volumeViewportNewVolumeHandler
+    );
+  };
+
+  const addVolumeViewportNewVolumeListener = () => {
+    element.addEventListener(
+      Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      volumeViewportNewVolumeHandler
+    );
+  };
+
+  addVolumeViewportNewVolumeListener();
 
   volumeViewport.render();
+
+  return volumeViewport;
 }
 
 export { convertStackToVolumeViewport };

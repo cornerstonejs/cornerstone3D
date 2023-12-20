@@ -19,7 +19,7 @@ import {
   Mat3,
   PixelDataTypedArray,
 } from '../types';
-import { getConfiguration } from '../init';
+import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -155,6 +155,8 @@ function loadVolumeFromVolumeLoader(
   }
 
   const volumeLoadObject = loader(volumeId, options);
+
+  _handleCacheOptimization(volumeId);
 
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
@@ -465,4 +467,74 @@ export function registerUnknownVolumeLoader(
   unknownVolumeLoader = volumeLoader;
 
   return oldVolumeLoader;
+}
+
+/**
+ * This function will check if the cache optimization is enabled and if it is
+ * it will check if the created volume was derived from an already cached stack
+ * of images, if so it will go back to the image cache and create a view at the
+ * correct offset of the bigger volume array buffer, this will save memory.
+ *
+ * @param volumeId - The volumeId that will be checked for cache optimization
+ */
+function _handleCacheOptimization(volumeId) {
+  const { enableCacheOptimization } = getConfiguration();
+  const shouldUseSAB = getShouldUseSharedArrayBuffer();
+
+  const performOptimization = enableCacheOptimization && shouldUseSAB;
+  if (!performOptimization) {
+    return;
+  }
+
+  const callback = (evt) => {
+    if (evt.detail.volumeId !== volumeId) {
+      return;
+    }
+
+    // go get each of the images from the cache
+    const volume = cache.getVolume(volumeId);
+    const scalarData = volume.getScalarData();
+
+    const imageCacheOffsetMap = volume.imageCacheOffsetMap;
+
+    if (imageCacheOffsetMap.size === 0) {
+      return;
+    }
+
+    // for each image, get the image from the cache, and replace its
+    // scalar data with the volume's scalar data view at the correct offset
+    for (const [imageId, { offset }] of imageCacheOffsetMap) {
+      const image = cache.getImage(imageId);
+
+      if (!image) {
+        continue;
+      }
+
+      const imageFrame = image.imageFrame;
+      let pixelData = imageFrame.pixelData;
+
+      const view = new pixelData.constructor(
+        scalarData.buffer,
+        offset,
+        pixelData.length
+      );
+
+      image.getPixelData = null;
+      imageFrame.pixelData = null;
+
+      image.getPixelData = () => view;
+      imageFrame.pixelData = view;
+
+      cache.decrementImageCacheSize(image.sizeInBytes);
+
+      pixelData = null;
+    }
+
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      callback
+    );
+  };
+
+  eventTarget.addEventListener(Events.IMAGE_VOLUME_LOADING_COMPLETED, callback);
 }

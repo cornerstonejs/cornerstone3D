@@ -120,6 +120,7 @@ interface IImage {
 
   imageQualityStatus?: ImageQualityStatus;
   calibration?: IImageCalibration;
+  imageFrame?: any;
 }
 
 export default IImage;

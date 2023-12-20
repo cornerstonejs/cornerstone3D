@@ -402,7 +402,7 @@ class Cache implements ICache {
         cachedImage.loaded = true;
         cachedImage.image = image;
         cachedImage.sizeInBytes = image.sizeInBytes;
-        this._incrementImageCacheSize(cachedImage.sizeInBytes);
+        this.incrementImageCacheSize(cachedImage.sizeInBytes);
         const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
           image: cachedImage,
         };
@@ -598,7 +598,7 @@ class Cache implements ICache {
         // cachedVolume.loaded = true
         cachedVolume.volume = volume;
         cachedVolume.sizeInBytes = volume.sizeInBytes;
-        this._incrementVolumeCacheSize(cachedVolume.sizeInBytes);
+        this.incrementVolumeCacheSize(cachedVolume.sizeInBytes);
 
         const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
           volume: cachedVolume,
@@ -720,7 +720,7 @@ class Cache implements ICache {
       );
     }
 
-    this._incrementImageCacheSize(-cachedImage.sizeInBytes);
+    this.incrementImageCacheSize(-cachedImage.sizeInBytes);
 
     const eventDetails = {
       imageId,
@@ -751,7 +751,7 @@ class Cache implements ICache {
       );
     }
 
-    this._incrementVolumeCacheSize(-cachedVolume.sizeInBytes);
+    this.incrementVolumeCacheSize(-cachedVolume.sizeInBytes);
 
     const eventDetails = {
       volume: cachedVolume,
@@ -835,7 +835,7 @@ class Cache implements ICache {
    *
    * @param increment - bytes length
    */
-  private _incrementImageCacheSize = (increment: number) => {
+  public incrementImageCacheSize = (increment: number) => {
     this._imageCacheSize += increment;
   };
 
@@ -844,8 +844,26 @@ class Cache implements ICache {
    *
    * @param increment - bytes length
    */
-  private _incrementVolumeCacheSize = (increment: number) => {
+  public incrementVolumeCacheSize = (increment: number) => {
     this._volumeCacheSize += increment;
+  };
+
+  /**
+   * Decreases the image cache size with the provided decrement
+   *
+   * @param decrement - bytes length
+   */
+  public decrementImageCacheSize = (decrement: number) => {
+    this._imageCacheSize -= decrement;
+  };
+
+  /**
+   * Decreases the cache size with the provided decrement
+   *
+   * @param decrement - bytes length
+   */
+  public decrementVolumeCacheSize = (decrement: number) => {
+    this._volumeCacheSize -= decrement;
   };
 }
 

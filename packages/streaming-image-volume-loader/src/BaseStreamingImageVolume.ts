@@ -66,7 +66,7 @@ export default class BaseStreamingImageVolume
   /**
    * Returns the number of frames stored in a scalarData object. The number of
    * frames is equal to the number of images for 3D volumes or the number of
-   * frames per time poins for 4D volumes.
+   * frames per time points for 4D volumes.
    * @returns number of frames per volume
    */
   private _getNumFrames(): number {
@@ -350,6 +350,16 @@ export default class BaseStreamingImageVolume
 
     // it is either cachedImage or cachedVolume
     const isFromImageCache = !!cachedImage;
+
+    if (isFromImageCache) {
+      // put it in the imageCacheOffsetMap, since we are going to use it
+      // for cache optimization later
+      this.imageCacheOffsetMap.set(imageId, {
+        imageIdIndex,
+        frameIndex,
+        offset: options.targetBuffer?.offset,
+      });
+    }
 
     const cachedImageOrVolume = cachedImage || cachedVolume.volume;
 
@@ -1007,7 +1017,7 @@ export default class BaseStreamingImageVolume
    * enough space left inside the imageCache. Finally it will decache the Volume.
    *
    */
-  private _convertToImages() {
+  public convertToImagesAndCache() {
     // 1. Try to decache images in the volatile Image Cache to provide
     //    enough space to store another entire copy of the volume (as Images).
     //    If we do not have enough, we will store as many images in the cache
@@ -1025,7 +1035,6 @@ export default class BaseStreamingImageVolume
       const imageId = this.imageIds[imageIdIndex];
 
       bytesRemaining = bytesRemaining - bytesPerImage;
-
       // 2. Convert each imageId to a cornerstone Image object which is
       // resolved inside the promise of imageLoadObject
       const imageLoadObject = this.convertToCornerstoneImage(
@@ -1061,7 +1070,7 @@ export default class BaseStreamingImageVolume
     if (completelyRemove) {
       this._removeFromCache();
     } else {
-      this._convertToImages();
+      this.convertToImagesAndCache();
     }
   }
 }
