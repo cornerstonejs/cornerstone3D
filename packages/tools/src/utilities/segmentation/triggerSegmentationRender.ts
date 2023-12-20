@@ -113,18 +113,23 @@ class SegmentationRenderingEngine {
     }
 
     const { viewportsInfo } = toolGroup;
-    const viewports = [];
 
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewports = viewportsInfo
+      .map(({ viewportId, renderingEngineId }) => {
+        const renderingEngine = getRenderingEngine(renderingEngineId);
 
-      if (!renderingEngine) {
-        console.warn('rendering Engine has been destroyed');
-        return;
-      }
+        if (!renderingEngine) {
+          console.warn('rendering Engine has been destroyed');
+          return;
+        }
 
-      viewports.push(renderingEngine.getViewport(viewportId));
-    });
+        const viewport = renderingEngine.getViewport(viewportId);
+
+        if (viewport) {
+          return viewport;
+        }
+      })
+      .filter(Boolean);
 
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
       SegmentationDisplayTool.toolName

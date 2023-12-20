@@ -47,7 +47,7 @@ class RectangleScissorsTool extends BaseTool {
   _throttledCalculateCachedStats: any;
   editData: {
     //
-    imageIdReferenceMap: Map<string, string>;
+    imageIdReferenceMap: Map<string, Set<string>>;
     volumeId: string;
     referencedVolumeId: string;
     //

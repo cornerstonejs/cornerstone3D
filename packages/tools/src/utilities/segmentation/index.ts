@@ -15,6 +15,7 @@ import {
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
+import { createImageIdReferenceMap } from './createImageIdReferenceMap';
 
 export {
   thresholdVolumeByRange,
@@ -30,4 +31,5 @@ export {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
   thresholdSegmentationByRange,
+  createImageIdReferenceMap,
 };

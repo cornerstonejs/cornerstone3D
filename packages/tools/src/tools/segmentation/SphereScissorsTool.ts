@@ -51,7 +51,7 @@ class SphereScissorsTool extends BaseTool {
     //
     volumeId: string;
     referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
+    imageIdReferenceMap: Map<string, Set<string>>;
     //
     toolGroupId: string;
     segmentColor: [number, number, number, number];
