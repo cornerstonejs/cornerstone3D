@@ -428,6 +428,10 @@ class BrushTool extends BaseTool {
 
     this._calculateCursor(element, centerCanvas);
 
+    if (!this._hoverData) {
+      return;
+    }
+
     triggerAnnotationRenderForViewportUIDs(
       getEnabledElement(element).renderingEngine,
       this._hoverData.viewportIdsToRender
@@ -547,6 +551,10 @@ class BrushTool extends BaseTool {
       topCursorInWorld[i] = centerCursorInWorld[i] + viewUp[i] * brushSize;
       leftCursorInWorld[i] = centerCursorInWorld[i] - viewRight[i] * brushSize;
       rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
+    }
+
+    if (!this._hoverData) {
+      return;
     }
 
     const { brushCursor } = this._hoverData;

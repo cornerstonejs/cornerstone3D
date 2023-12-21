@@ -6,7 +6,6 @@ import {
   cache,
   utilities,
   Types,
-  metaData,
 } from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import Representations from '../../enums/SegmentationRepresentations';

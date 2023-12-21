@@ -85,9 +85,10 @@ async function convertStackToVolumeViewport({
 
   const volumeViewportNewVolumeHandler = () => {
     volumeViewport.setCamera({
-      focalPoint: prevCamera.focalPoint,
+      ...prevCamera,
     });
     volumeViewport.render();
+
     element.removeEventListener(
       Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
       volumeViewportNewVolumeHandler
