@@ -61,6 +61,9 @@ import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
+import { createImageVolumePropsFromImageIds } from './createImageVolumePropsFromImageIds';
+import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
+import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 
 // name spaces
@@ -68,6 +71,7 @@ import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
+import * as cacheUtils from './cacheUtils';
 
 export {
   eventListener,
@@ -139,4 +143,8 @@ export {
   isVideoTransferSyntax,
   getBufferConfiguration,
   VoxelManager,
+  createImageVolumePropsFromImageIds,
+  convertStackToVolumeViewport,
+  convertVolumeToStackViewport,
+  cacheUtils,
 };

@@ -15,6 +15,7 @@ import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import ImageVolume from './classes/ImageVolume';
+import { restoreImagesFromBuffer } from '../utilities/cacheUtils';
 
 const ONE_GB = 1073741824;
 
@@ -152,6 +153,10 @@ class Cache implements ICache {
     if (volume.imageData) {
       volume.imageData.delete();
     }
+
+    // if we had views for the images of the volume, we need to restore them
+    // to avoid memory leaks
+    restoreImagesFromBuffer(volume);
 
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
