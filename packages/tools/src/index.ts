@@ -67,6 +67,7 @@ import {
   OverlayGridTool,
   SegmentationIntersectionTool,
   ContourROITool,
+  FreehandROISculptorTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -121,6 +122,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  FreehandROISculptorTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
