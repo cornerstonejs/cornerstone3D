@@ -2040,8 +2040,6 @@ export class FreehandROISculptorTool extends BaseTool {
     // (undocumented)
     _getNextHandleIndexBeforeInsert(insertIndex: number, length: number): number;
     // (undocumented)
-    _getPreviousHandleIndex(i: any, length: any): number;
-    // (undocumented)
     _insertHandleRadially(insertIndex: number): void;
     // (undocumented)
     _insertNewHandles(pushedHandles: {
