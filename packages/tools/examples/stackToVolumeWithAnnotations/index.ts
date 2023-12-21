@@ -3,6 +3,7 @@ import {
   Types,
   Enums,
   getRenderingEngine,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -94,7 +95,7 @@ addButtonToToolbar({
 
     let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      newViewport = await utilities.viewport.convertStackToVolumeViewport({
+      newViewport = await csUtils.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
@@ -102,7 +103,7 @@ addButtonToToolbar({
         },
       });
     } else {
-      newViewport = await utilities.viewport.convertVolumeToStackViewport({
+      newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0.0, 0.4],
