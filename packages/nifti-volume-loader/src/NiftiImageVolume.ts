@@ -1,4 +1,4 @@
-import { ImageVolume, cache } from '@cornerstonejs/core';
+import { Volume, cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 type LoadStatus = {
@@ -16,12 +16,12 @@ type NiftiImageProperties = {
  * NiftiImageVolume Class that extends ImageVolume base class.
  * It implements load method to load the data from the Nifti file, and insert them into the volume.
  */
-export default class NiftiImageVolume extends ImageVolume {
+export default class NiftiImageVolume extends Volume {
   loadStatus: LoadStatus;
   controller: AbortController;
 
   constructor(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.VolumeProps,
     streamingProperties: NiftiImageProperties
   ) {
     super(imageVolumeProperties);

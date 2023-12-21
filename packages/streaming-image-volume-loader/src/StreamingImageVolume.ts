@@ -8,9 +8,13 @@ import ImageLoadRequests from './types/ImageLoadRequests';
  */
 export default class StreamingImageVolume extends BaseStreamingImageVolume {
   constructor(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
+    // Just for fallback to the old API
+    if (!imageVolumeProperties.imageIds) {
+      imageVolumeProperties.imageIds = streamingProperties.imageIds;
+    }
     super(imageVolumeProperties, streamingProperties);
   }
 
@@ -18,8 +22,8 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    * Return the scalar data (buffer)
    * @returns volume scalar data
    */
-  public getScalarData(): Types.VolumeScalarData {
-    return <Types.VolumeScalarData>this.scalarData;
+  public getScalarData(): Types.PixelDataTypedArray {
+    return <Types.PixelDataTypedArray>this.scalarData;
   }
 
   /**

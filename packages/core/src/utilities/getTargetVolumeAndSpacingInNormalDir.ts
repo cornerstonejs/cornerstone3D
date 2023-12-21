@@ -1,7 +1,6 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
-// import type { VolumeViewport } from '../RenderingEngine'
-import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
+import { ICamera, IVolume, IVolumeViewport, Point3 } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 
@@ -41,7 +40,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   targetVolumeId?: string,
   useSlabThickness = false
 ): {
-  imageVolume: IImageVolume;
+  imageVolume: IVolume;
   spacingInNormalDirection: number;
   actorUID: string;
 } {
@@ -132,7 +131,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 }
 
 function getSpacingInNormal(
-  imageVolume: IImageVolume,
+  imageVolume: IVolume,
   viewPlaneNormal: Point3,
   viewport: IVolumeViewport,
   useSlabThickness = false

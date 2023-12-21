@@ -240,6 +240,7 @@ function cornerstoneStreamingImageVolumeLoader(
         direction,
         scalarData,
         sizeInBytes,
+        imageIds: sortedImageIds,
       },
       // Streaming properties
       {

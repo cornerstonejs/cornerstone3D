@@ -1,7 +1,6 @@
 import {
   ICache,
   IImage,
-  IImageVolume,
   IGeometry,
   IImageLoadObject,
   IVolumeLoadObject,
@@ -10,10 +9,12 @@ import {
   ICachedVolume,
   ICachedGeometry,
   EventTypes,
+  IVolume,
 } from '../types';
 import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import ImageVolume from './classes/ImageVolume';
 
 const ONE_GB = 1073741824;
 
@@ -465,7 +466,7 @@ class Cache implements ICache {
    * @returns - Volume object
    */
   public getVolumeContainingImageId(imageId: string): {
-    volume: IImageVolume;
+    volume: IVolume;
     imageIdIndex: number;
   } {
     const volumeIds = Array.from(this._volumeCache.keys());
@@ -479,7 +480,10 @@ class Cache implements ICache {
         return;
       }
 
-      const imageIdIndex = volume.getImageURIIndex(imageIdToUse);
+      let imageIdIndex = -1;
+      if (volume instanceof ImageVolume) {
+        imageIdIndex = volume.getImageURIIndex(imageIdToUse);
+      }
 
       if (imageIdIndex > -1) {
         return { volume, imageIdIndex };
@@ -566,7 +570,7 @@ class Cache implements ICache {
     this._volumeCache.set(volumeId, cachedVolume);
 
     return volumeLoadObject.promise
-      .then((volume: IImageVolume) => {
+      .then((volume: IVolume) => {
         if (!this._volumeCache.get(volumeId)) {
           // If the image has been purged before being loaded, we stop here.
           console.warn(
@@ -683,7 +687,7 @@ class Cache implements ICache {
    * @param volumeId - Volume ID
    * @returns Volume
    */
-  public getVolume = (volumeId: string): IImageVolume => {
+  public getVolume = (volumeId: string): IVolume => {
     if (volumeId === undefined) {
       throw new Error('getVolume: volumeId must not be undefined');
     }

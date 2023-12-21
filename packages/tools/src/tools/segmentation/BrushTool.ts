@@ -69,7 +69,7 @@ class BrushTool extends BaseTool {
   private _editData: {
     segmentsLocked: number[]; //
     segmentationRepresentationUID?: string;
-    imageIdReferenceMap?: Map<string, string>;
+    imageIdReferenceMap?: Map<string, Set<string>>;
     volumeId?: string;
     referencedVolumeId?: string;
   } | null;
@@ -171,7 +171,7 @@ class BrushTool extends BaseTool {
 
   createEditData(element) {
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     const toolGroupId = this.toolGroupId;
 
@@ -197,8 +197,6 @@ class BrushTool extends BaseTool {
 
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-
-    const viewportIdsToRender = [viewport.id];
 
     if (isVolumeSegmentation(labelmapData)) {
       const { volumeId } = representationData[

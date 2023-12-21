@@ -178,7 +178,7 @@ class SegmentationRenderingEngine {
     viewports.forEach(({ element }) => {
       element.addEventListener(
         Enums.Events.IMAGE_RENDERED,
-        onSegmentationRender
+        onSegmentationRender as EventListener
       );
     });
 

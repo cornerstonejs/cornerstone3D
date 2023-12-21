@@ -4,7 +4,6 @@ import {
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
-import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -13,7 +12,6 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { createMockEllipsoidStackSegmentation } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -24,7 +22,6 @@ const {
   LengthTool,
   PanTool,
   ZoomTool,
-  SegmentationDisplayTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
@@ -89,7 +86,7 @@ addDropdownToToolbar({
 
 addButtonToToolbar({
   title: 'Switch StackViewport to VolumeViewport, and vice versa',
-  onClick: () => {
+  onClick: async () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -97,7 +94,7 @@ addButtonToToolbar({
 
     let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      newViewport = utilities.viewport.convertStackToVolumeViewport({
+      newViewport = await utilities.viewport.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
@@ -105,7 +102,7 @@ addButtonToToolbar({
         },
       });
     } else {
-      newViewport = utilities.viewport.convertVolumeToStackViewport({
+      newViewport = await utilities.viewport.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0.0, 0.4],

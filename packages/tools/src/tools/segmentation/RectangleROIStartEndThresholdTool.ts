@@ -209,7 +209,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   // Todo: make it work for planes other than acquisition planes
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
-    imageVolume: Types.IImageVolume
+    imageVolume: Types.IVolume
   ): void {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;

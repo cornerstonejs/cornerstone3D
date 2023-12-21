@@ -3,12 +3,12 @@ import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import { vec3 } from 'gl-matrix';
 
-import cache from '../cache';
+import cache, { ImageVolume } from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import { BlendModes, OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
-  IImageVolume,
+  IVolume,
   IVolumeInput,
   OrientationVectors,
   Point3,
@@ -180,7 +180,7 @@ class VolumeViewport extends BaseVolumeViewport {
     };
   }
 
-  private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
+  private _setViewPlaneToAcquisitionPlane(imageVolume: IVolume): void {
     let viewPlaneNormal, viewUp;
 
     if (imageVolume) {
@@ -376,6 +376,10 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const { uid } = actorEntry;
     const volume = cache.getVolume(uid);
+
+    if (!(volume instanceof ImageVolume)) {
+      return null;
+    }
 
     if (!volume) {
       return;

@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
+import { ImageVolume } from '../cache/classes/ImageVolume';
 import * as metaData from '../metaData';
-import type { IImageVolume, Point3 } from '../types';
+import type { IVolume, Point3 } from '../types';
 
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { EPSILON } from '../constants';
-
 /**
  * Given an image, a point in space and the viewPlaneNormal it returns the
  * closest imageId of the image volume that is within half voxel spacing
@@ -16,11 +16,11 @@ import { EPSILON } from '../constants';
  * @returns The imageId for the tool.
  */
 export default function getClosestImageId(
-  imageVolume: IImageVolume,
+  imageVolume: IVolume,
   worldPos: Point3,
   viewPlaneNormal: Point3
 ): string {
-  if (!imageVolume) {
+  if (!imageVolume || !(imageVolume instanceof ImageVolume)) {
     return;
   }
 

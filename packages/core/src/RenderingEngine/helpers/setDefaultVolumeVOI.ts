@@ -1,9 +1,4 @@
-import {
-  VolumeActor,
-  IImageVolume,
-  VOIRange,
-  ScalingParameters,
-} from '../../types';
+import { VolumeActor, VOIRange, ScalingParameters, IVolume } from '../../types';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import { getMinMax, windowLevel } from '../../utilities';
@@ -23,7 +18,7 @@ const REQUEST_TYPE = RequestType.Prefetch;
  */
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
-  imageVolume: IImageVolume,
+  imageVolume: IVolume,
   useNativeDataType: boolean
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
@@ -47,7 +42,7 @@ async function setDefaultVolumeVOI(
     .setMappingRange(lower, upper);
 }
 
-function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
+function handlePreScaledVolume(imageVolume: IVolume, voi: VOIRange) {
   const imageIds = imageVolume.imageIds;
   const imageIdIndex = Math.floor(imageIds.length / 2);
   const imageId = imageIds[imageIdIndex];
@@ -78,7 +73,7 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
  * @param imageVolume - The image volume that we want to get the VOI from.
  * @returns VOIRange with lower and upper values
  */
-function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
+function getVOIFromMetadata(imageVolume: IVolume): VOIRange {
   const { imageIds } = imageVolume;
 
   const imageIdIndex = Math.floor(imageIds.length / 2);
@@ -116,7 +111,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * @returns The VOIRange with lower and upper values
  */
 async function getVOIFromMinMax(
-  imageVolume: IImageVolume,
+  imageVolume: IVolume,
   useNativeDataType: boolean
 ): Promise<VOIRange> {
   const { imageIds } = imageVolume;

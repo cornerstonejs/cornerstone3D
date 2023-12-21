@@ -19,7 +19,7 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume } from './cache';
+import cache, { ImageVolume, Volume } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 
@@ -103,6 +103,7 @@ export {
   VideoViewport,
   RenderingEngine,
   ImageVolume,
+  Volume,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,

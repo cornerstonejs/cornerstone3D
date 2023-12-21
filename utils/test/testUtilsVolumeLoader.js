@@ -1,6 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { ImageVolume } from '@cornerstonejs/core';
+import { Volume } from '@cornerstonejs/core';
 import {
   getVerticalBarRGBVolume,
   getVerticalBarVolume,
@@ -120,7 +120,7 @@ const fakeVolumeLoader = (volumeId) => {
   imageData.setOrigin([0, 0, 0]);
   imageData.getPointData().setScalars(scalarArray);
 
-  const imageVolume = new ImageVolume({
+  const imageVolume = new Volume({
     volumeId,
     metadata: volumeMetadata,
     dimensions: dimensions,
