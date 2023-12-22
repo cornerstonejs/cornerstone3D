@@ -50,7 +50,7 @@ function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, nifti
 
 // @public (undocumented)
 export class NiftiImageVolume extends ImageVolume {
-    constructor(imageVolumeProperties: Types.IVolume, streamingProperties: NiftiImageProperties);
+    constructor(imageVolumeProperties: Types.ImageVolumeProps, streamingProperties: NiftiImageProperties);
     // (undocumented)
     cancelLoading: () => void;
     // (undocumented)

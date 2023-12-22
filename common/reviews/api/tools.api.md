@@ -705,7 +705,7 @@ export class BrushTool extends BaseTool {
         segmentationRepresentationUID: string;
         imageIdReferenceMap?: undefined;
     } | {
-        imageIdReferenceMap: Map<string, string>;
+        imageIdReferenceMap: Map<string, Set<string>>;
         segmentsLocked: number[] | [];
         segmentationRepresentationUID: string;
         volumeId?: undefined;
@@ -724,7 +724,7 @@ export class BrushTool extends BaseTool {
         strategySpecificConfiguration: any;
         preview: unknown;
         segmentsLocked: number[];
-        imageIdReferenceMap?: Map<string, string>;
+        imageIdReferenceMap?: Map<string, Set<string>>;
         volumeId?: string;
         referencedVolumeId?: string;
     };
@@ -920,7 +920,7 @@ export class CircleScissorsTool extends BaseTool {
         segmentIndex: number;
         volumeId: string;
         referencedVolumeId: string;
-        imageIdReferenceMap: Map<string, string>;
+        imageIdReferenceMap: Map<string, Set<string>>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -1255,6 +1255,27 @@ type ControlPointInfo = {
 };
 
 // @public (undocumented)
+function convertStackToVolumeSegmentation({ segmentationId, options, }: {
+    segmentationId: string;
+    options?: {
+        toolGroupId: string;
+        volumeId?: string;
+        newSegmentationId?: string;
+        removeOriginal?: boolean;
+    };
+}): Promise<void>;
+
+// @public (undocumented)
+function convertVolumeToStackSegmentation({ segmentationId, options, }: {
+    segmentationId: string;
+    options?: {
+        toolGroupId: string;
+        newSegmentationId?: string;
+        removeOriginal?: boolean;
+    };
+}): Promise<void>;
+
+// @public (undocumented)
 function copyPoints(points: ITouchPoints): ITouchPoints;
 
 // @public (undocumented)
@@ -1265,6 +1286,9 @@ const CORNERSTONE_COLOR_LUT: number[][];
 
 // @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds: string[]): Map<string, Set<string>>;
 
 // @public (undocumented)
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
@@ -2615,7 +2639,7 @@ type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegment
 
 // @public (undocumented)
 type LabelmapSegmentationDataStack = {
-    imageIdReferenceMap: Map<string, string>;
+    imageIdReferenceMap: Map<string, Set<string>>;
 };
 
 // @public (undocumented)
@@ -3688,7 +3712,7 @@ export class RectangleScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        imageIdReferenceMap: Map<string, string>;
+        imageIdReferenceMap: Map<string, Set<string>>;
         volumeId: string;
         referencedVolumeId: string;
         annotation: any;
@@ -3846,6 +3870,9 @@ function removeSegmentation(segmentationId: string): void;
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
+function removeSegmentationRepresentations(toolGroupId: string): void;
+
+// @public (undocumented)
 function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationRepresentationUIDs?: string[] | undefined, immediate?: boolean): void;
 
 // @public (undocumented)
@@ -3980,7 +4007,9 @@ declare namespace segmentation {
         segmentLocking,
         config_2 as config,
         segmentIndex,
-        triggerSegmentationEvents
+        triggerSegmentationEvents,
+        convertStackToVolumeSegmentation,
+        convertVolumeToStackSegmentation
     }
 }
 export { segmentation }
@@ -3999,7 +4028,8 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
-        thresholdSegmentationByRange
+        thresholdSegmentationByRange,
+        createImageIdReferenceMap
     }
 }
 
@@ -4253,7 +4283,7 @@ export class SphereScissorsTool extends BaseTool {
         segmentationRepresentationUID: string;
         volumeId: string;
         referencedVolumeId: string;
-        imageIdReferenceMap: Map<string, string>;
+        imageIdReferenceMap: Map<string, Set<string>>;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -4476,6 +4506,7 @@ declare namespace state_3 {
         getSegmentationRepresentations,
         addSegmentationRepresentation,
         removeSegmentationRepresentation,
+        removeSegmentationRepresentations,
         getToolGroupSpecificConfig,
         setToolGroupSpecificConfig,
         getGlobalConfig,
