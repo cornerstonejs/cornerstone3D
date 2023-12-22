@@ -154,16 +154,19 @@ function loadVolumeFromVolumeLoader(
 ): IVolumeLoadObject {
   const colonIndex = volumeId.indexOf(':');
   const scheme = volumeId.substring(0, colonIndex);
-  const loader = volumeLoaders[scheme];
+  let loader = volumeLoaders[scheme];
 
   if (loader === undefined || loader === null) {
-    if (unknownVolumeLoader !== undefined) {
-      return unknownVolumeLoader(volumeId, options);
+    if (
+      unknownVolumeLoader == null ||
+      typeof unknownVolumeLoader !== 'function'
+    ) {
+      throw new Error(
+        `No volume loader for scheme ${scheme} has been registered`
+      );
     }
 
-    throw new Error(
-      'loadVolumeFromVolumeLoader: no volume loader for volumeId'
-    );
+    loader = unknownVolumeLoader;
   }
 
   const volumeLoadObject = loader(volumeId, options);
@@ -495,7 +498,10 @@ export async function createAndCacheVolumeFromImages(
 
   await Promise.all(imagePromises);
 
-  const volume = new ImageVolume(volumeProps);
+  const volume = new ImageVolume({
+    ...volumeProps,
+    referencedImageIds: imageIds,
+  });
 
   // since we generated the volume from images, we can optimize the cache
   // by replacing the pixelData of the images with a view of the volume's

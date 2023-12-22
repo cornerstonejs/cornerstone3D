@@ -49,6 +49,8 @@ interface IImageVolume {
   imageIds: Array<string>;
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
+  /** volume referencedImageIds (if it is derived from set of images in the image cache) */
+  referencedImageIds?: Array<string>;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** return true if it is a 4D volume or false if it is 3D volume */

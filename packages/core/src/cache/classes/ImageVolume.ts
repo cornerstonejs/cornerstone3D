@@ -70,11 +70,14 @@ export class ImageVolume implements IImageVolume {
   loadStatus?: Record<string, any>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
+  /** optional reference image ids if the volume is derived from a set of images in the image cache */
+  referencedImageIds?: Array<string>;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
 
   constructor(props: ImageVolumeProps) {
     const {
+      imageIds,
       scalarData,
       scaling,
       dimensions,
@@ -86,8 +89,10 @@ export class ImageVolume implements IImageVolume {
       sizeInBytes,
       imageData,
       metadata,
+      referencedImageIds,
     } = props;
 
+    this.imageIds = imageIds;
     this.volumeId = volumeId;
     this.metadata = metadata;
     this.dimensions = dimensions;
@@ -120,7 +125,6 @@ export class ImageVolume implements IImageVolume {
       this.imageData = imageData;
     }
 
-    this.imageIds = props.imageIds;
     this.numFrames = this._getNumFrames();
     this._reprocessImageIds();
     this._createCornerstoneImageMetaData();
@@ -131,6 +135,10 @@ export class ImageVolume implements IImageVolume {
 
     if (referencedVolumeId) {
       this.referencedVolumeId = referencedVolumeId;
+    }
+
+    if (referencedImageIds) {
+      this.referencedImageIds = referencedImageIds;
     }
   }
 
