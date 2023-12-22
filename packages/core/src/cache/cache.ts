@@ -1,7 +1,6 @@
 import {
   ICache,
   IImage,
-  IImageVolume,
   IGeometry,
   IImageLoadObject,
   IVolumeLoadObject,
@@ -10,10 +9,12 @@ import {
   ICachedVolume,
   ICachedGeometry,
   EventTypes,
+  IImageVolume,
 } from '../types';
 import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import { ImageVolume } from './classes/ImageVolume';
 
 const ONE_GB = 1073741824;
 
@@ -151,6 +152,10 @@ class Cache implements ICache {
     if (volume.imageData) {
       volume.imageData.delete();
     }
+
+    // if we had views for the images of the volume, we need to restore them
+    // to avoid memory leaks
+    this._restoreImagesFromBuffer(volume);
 
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
@@ -865,6 +870,66 @@ class Cache implements ICache {
   public decrementVolumeCacheSize = (decrement: number) => {
     this._volumeCacheSize -= decrement;
   };
+
+  /**
+   * This function will restore the images' pixel data from the shared array buffer
+   * back to the individual images when the volume is purged from cache. It ensures
+   * that each image retrieves its correct portion of data from the buffer based on
+   * the previously stored offset and length information.
+   *
+   * @param volumeId - The volumeId whose images need to be restored.
+   */
+  private _restoreImagesFromBuffer(volume: IImageVolume) {
+    if (!(volume instanceof ImageVolume)) {
+      console.warn(
+        'Volume is not an ImageVolume. Cannot restore images from buffer.'
+      );
+      return;
+    }
+
+    // Retrieve the scalar data and the offset map from the volume
+    const scalarData = volume.getScalarData();
+    const imageCacheOffsetMap = volume.imageCacheOffsetMap;
+
+    if (imageCacheOffsetMap.size === 0) {
+      console.warn('No cached images to restore for this volume.');
+      return;
+    }
+
+    // Iterate over each image and restore its pixel data from the shared buffer
+    for (const [imageId, { offset, length }] of imageCacheOffsetMap) {
+      const image = this.getImage(imageId);
+
+      if (!image) {
+        console.warn(`Image with id ${imageId} not found in cache.`);
+        continue;
+      }
+
+      const viewPixelData = image.getPixelData();
+
+      // Create a new view of the buffer for this specific image
+      // @ts-ignore
+      const pixelData = new viewPixelData.constructor(
+        scalarData.buffer,
+        offset,
+        length
+      );
+
+      // Restore the original getPixelData function and pixelData
+      image.getPixelData = (() => pixelData).bind(image);
+
+      if (image.imageFrame) {
+        image.imageFrame.pixelData = pixelData;
+      }
+
+      delete image.bufferView;
+
+      // Optionally, increment the image cache size again if needed
+      this.incrementImageCacheSize(image.sizeInBytes);
+    }
+
+    console.log(`Images restored from buffer for volume ${volume.volumeId}.`);
+  }
 }
 
 /**

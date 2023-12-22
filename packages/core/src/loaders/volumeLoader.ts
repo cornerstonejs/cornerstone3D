@@ -6,7 +6,6 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import cloneDeep from 'lodash.clonedeep';
 
 import { ImageVolume } from '../cache/classes/ImageVolume';
-import type * as Types from '../types';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
@@ -17,9 +16,15 @@ import {
   Metadata,
   EventTypes,
   Mat3,
+  IImageVolume,
+  VolumeLoaderFn,
+  IDynamicImageVolume,
   PixelDataTypedArray,
+  IVolumeLoadObject,
+  PixelDataTypedArrayString,
 } from '../types';
-import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
+import { getConfiguration } from '../init';
+import { performCacheOptimizationForVolume } from '../utilities/cacheUtils';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -28,7 +33,7 @@ interface VolumeLoaderOptions {
 interface DerivedVolumeOptions {
   volumeId: string;
   targetBuffer?: {
-    type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int16Array';
+    type: PixelDataTypedArrayString;
     sharedArrayBuffer?: boolean;
   };
 }
@@ -46,7 +51,7 @@ interface LocalVolumeOptions {
  */
 function addScalarDataToImageData(
   imageData: vtkImageDataType,
-  scalarData: Types.VolumeScalarData,
+  scalarData: PixelDataTypedArray,
   dataArrayAttrs
 ) {
   const scalarArray = vtkDataArray.newInstance({
@@ -63,7 +68,7 @@ function addScalarDataToImageData(
  */
 function addScalarDataArraysToImageData(
   imageData: vtkImageDataType,
-  scalarDataArrays: Types.VolumeScalarData[],
+  scalarDataArrays: PixelDataTypedArray[],
   dataArrayAttrs
 ) {
   scalarDataArrays.forEach((scalarData, i) => {
@@ -81,7 +86,7 @@ function addScalarDataArraysToImageData(
 }
 
 function createInternalVTKRepresentation(
-  volume: Types.IImageVolume
+  volume: IImageVolume
 ): vtkImageDataType {
   const { dimensions, metadata, spacing, direction, origin } = volume;
   const { PhotometricInterpretation } = metadata;
@@ -101,7 +106,7 @@ function createInternalVTKRepresentation(
 
   // Add scalar data to 3D or 4D volume
   if (volume.isDynamicVolume()) {
-    const scalarDataArrays = (<Types.IDynamicImageVolume>(
+    const scalarDataArrays = (<IDynamicImageVolume>(
       volume
     )).getScalarDataArrays();
 
@@ -139,7 +144,7 @@ let unknownVolumeLoader;
 function loadVolumeFromVolumeLoader(
   volumeId: string,
   options?: VolumeLoaderOptions
-): Types.IVolumeLoadObject {
+): IVolumeLoadObject {
   const colonIndex = volumeId.indexOf(':');
   const scheme = volumeId.substring(0, colonIndex);
   const loader = volumeLoaders[scheme];
@@ -156,7 +161,7 @@ function loadVolumeFromVolumeLoader(
 
   const volumeLoadObject = loader(volumeId, options);
 
-  _handleCacheOptimization(volumeId);
+  performCacheOptimizationForVolume(volumeId);
 
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
@@ -188,7 +193,7 @@ function loadVolumeFromVolumeLoader(
 export function loadVolume(
   volumeId: string,
   options: VolumeLoaderOptions = { imageIds: [] }
-): Promise<Types.IImageVolume> {
+): Promise<IImageVolume> {
   if (volumeId === undefined) {
     throw new Error('loadVolume: parameter volumeId must not be undefined');
   }
@@ -201,7 +206,7 @@ export function loadVolume(
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
-  return volumeLoadObject.promise.then((volume: Types.IImageVolume) => {
+  return volumeLoadObject.promise.then((volume: IImageVolume) => {
     volume.imageData = createInternalVTKRepresentation(volume);
     return volume;
   });
@@ -234,7 +239,7 @@ export async function createAndCacheVolume(
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
-  volumeLoadObject.promise.then((volume: Types.IImageVolume) => {
+  volumeLoadObject.promise.then((volume: IImageVolume) => {
     volume.imageData = createInternalVTKRepresentation(volume);
   });
 
@@ -260,7 +265,7 @@ export async function createAndCacheVolume(
 export async function createAndCacheDerivedVolume(
   referencedVolumeId: string,
   options: DerivedVolumeOptions
-): Promise<ImageVolume> {
+): Promise<IImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);
 
   if (!referencedVolume) {
@@ -332,6 +337,7 @@ export async function createAndCacheDerivedVolume(
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
     referencedVolumeId,
+    imageIds: [],
   });
 
   const volumeLoadObject = {
@@ -357,7 +363,7 @@ export function createLocalVolume(
   options: LocalVolumeOptions,
   volumeId: string,
   preventCache = false
-): ImageVolume {
+): IImageVolume {
   const { scalarData, metadata, dimensions, spacing, origin, direction } =
     options;
 
@@ -383,7 +389,7 @@ export function createLocalVolume(
   const cachedVolume = cache.getVolume(volumeId);
 
   if (cachedVolume) {
-    return cachedVolume as ImageVolume;
+    return cachedVolume as IImageVolume;
   }
 
   const scalarLength = dimensions[0] * dimensions[1] * dimensions[2];
@@ -420,6 +426,7 @@ export function createLocalVolume(
     imageData: imageData,
     scalarData,
     sizeInBytes: numBytes,
+    imageIds: [],
   });
 
   if (preventCache) {
@@ -442,7 +449,7 @@ export function createLocalVolume(
  */
 export function registerVolumeLoader(
   scheme: string,
-  volumeLoader: Types.VolumeLoaderFn
+  volumeLoader: VolumeLoaderFn
 ): void {
   volumeLoaders[scheme] = volumeLoader;
 }
@@ -460,8 +467,8 @@ export function getVolumeLoaderSchemes(): string[] {
  * @returns The previous Unknown Volume Loader
  */
 export function registerUnknownVolumeLoader(
-  volumeLoader: Types.VolumeLoaderFn
-): Types.VolumeLoaderFn | undefined {
+  volumeLoader: VolumeLoaderFn
+): VolumeLoaderFn | undefined {
   const oldVolumeLoader = unknownVolumeLoader;
 
   unknownVolumeLoader = volumeLoader;
@@ -469,81 +476,6 @@ export function registerUnknownVolumeLoader(
   return oldVolumeLoader;
 }
 
-/**
- * This function will check if the cache optimization is enabled and if it is
- * it will check if the created volume was derived from an already cached stack
- * of images, if so it will go back to the image cache and create a view at the
- * correct offset of the bigger volume array buffer, this will save memory.
- *
- * @param volumeId - The volumeId that will be checked for cache optimization
- */
-function _handleCacheOptimization(volumeId) {
-  const { enableCacheOptimization } = getConfiguration();
-  const shouldUseSAB = getShouldUseSharedArrayBuffer();
-
-  const performOptimization = enableCacheOptimization && shouldUseSAB;
-  if (!performOptimization) {
-    return;
-  }
-
-  const callback = (evt) => {
-    if (evt.detail.volumeId !== volumeId) {
-      return;
-    }
-
-    // go get each of the images from the cache
-    const volume = cache.getVolume(volumeId);
-    const scalarData = volume.getScalarData();
-
-    const imageCacheOffsetMap = volume.imageCacheOffsetMap;
-
-    if (imageCacheOffsetMap.size === 0) {
-      return;
-    }
-
-    // for each image, get the image from the cache, and replace its
-    // scalar data with the volume's scalar data view at the correct offset
-    for (const [imageId, { offset }] of imageCacheOffsetMap) {
-      const image = cache.getImage(imageId);
-
-      if (!image) {
-        continue;
-      }
-
-      const imageFrame = image.imageFrame;
-
-      let pixelData;
-      if (imageFrame) {
-        pixelData = imageFrame.pixelData;
-      } else {
-        pixelData = image.getPixelData();
-      }
-
-      const view = new pixelData.constructor(
-        scalarData.buffer,
-        offset,
-        pixelData.length
-      );
-
-      image.getPixelData = () => view;
-
-      if (imageFrame) {
-        imageFrame.pixelData = view;
-      }
-
-      image.bufferView = {
-        buffer: scalarData.buffer,
-        offset,
-      };
-
-      cache.decrementImageCacheSize(image.sizeInBytes);
-    }
-
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_LOADING_COMPLETED,
-      callback
-    );
-  };
-
-  eventTarget.addEventListener(Events.IMAGE_VOLUME_LOADING_COMPLETED, callback);
+export function getUnknownVolumeLoaderSchema(): string {
+  return unknownVolumeLoader.name;
 }

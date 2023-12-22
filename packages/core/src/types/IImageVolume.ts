@@ -1,7 +1,7 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
   Metadata,
-  VolumeScalarData,
+  PixelDataTypedArray,
   Point3,
   IImageLoadObject,
   Mat3,
@@ -63,7 +63,7 @@ interface IImageVolume {
   cancelLoading?: () => void;
 
   /** return the volume scalar data */
-  getScalarData(): VolumeScalarData;
+  getScalarData(): PixelDataTypedArray;
 
   /** return the index of a given imageId */
   getImageIdIndex(imageId: string): number;

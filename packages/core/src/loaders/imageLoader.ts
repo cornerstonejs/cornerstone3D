@@ -1,4 +1,5 @@
 import cache from '../cache/cache';
+import { ImageVolume } from '../cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import {
@@ -120,11 +121,14 @@ function loadImageFromCacheOrVolume(
   // 2. Check if there exists a volume in the cache containing the imageId,
   // we copy the pixelData over.
   const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId);
-  if (cachedVolumeInfo && cachedVolumeInfo.volume.loadStatus.loaded) {
+  if (cachedVolumeInfo?.volume?.loadStatus?.loaded) {
     // 2.1 Convert the volume at the specific slice to a cornerstoneImage object.
     // this will copy the pixel data over.
     const { volume, imageIdIndex } = cachedVolumeInfo;
-    imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+
+    if (volume instanceof ImageVolume) {
+      imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+    }
     return imageLoadObject;
   }
   // 3. If no volume found, we search inside the imageCache for the imageId
