@@ -86,7 +86,7 @@ function cornerstoneStreamingImageVolumeLoader(
       sizeInBytes,
       metadata,
       imageIds,
-    } = csUtils.createImageVolumePropsFromImageIds(options.imageIds, volumeId);
+    } = csUtils.generateVolumePropsFromIds(options.imageIds, volumeId);
 
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties

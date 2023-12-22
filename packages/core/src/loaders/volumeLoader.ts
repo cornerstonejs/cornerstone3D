@@ -10,7 +10,11 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
-import { getBufferConfiguration, uuidv4 } from '../utilities';
+import {
+  generateVolumePropsFromIds,
+  getBufferConfiguration,
+  uuidv4,
+} from '../utilities';
 import {
   Point3,
   Metadata,
@@ -24,7 +28,10 @@ import {
   PixelDataTypedArrayString,
 } from '../types';
 import { getConfiguration } from '../init';
-import { performCacheOptimizationForVolume } from '../utilities/cacheUtils';
+import {
+  performCacheOptimizationForVolume,
+  setupCacheOptimizationEventListener,
+} from '../utilities/cacheUtils';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -161,7 +168,7 @@ function loadVolumeFromVolumeLoader(
 
   const volumeLoadObject = loader(volumeId, options);
 
-  performCacheOptimizationForVolume(volumeId);
+  setupCacheOptimizationEventListener(volumeId);
 
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
@@ -439,6 +446,73 @@ export function createLocalVolume(
   cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
   return derivedVolume;
+}
+
+export async function createAndCacheVolumeFromImages(
+  volumeId: string,
+  imageIds: string[],
+  options: {
+    preventCache?: boolean;
+  } = {}
+): Promise<IImageVolume> {
+  const { preventCache = false } = options;
+
+  if (imageIds === undefined) {
+    throw new Error(
+      'createAndCacheVolumeFromImages: parameter imageIds must not be undefined'
+    );
+  }
+
+  if (volumeId === undefined) {
+    throw new Error(
+      'createAndCacheVolumeFromImages: parameter volumeId must not be undefined'
+    );
+  }
+
+  const cachedVolume = cache.getVolume(volumeId);
+
+  if (cachedVolume) {
+    return Promise.resolve(cachedVolume);
+  }
+
+  const volumeProps = generateVolumePropsFromIds(imageIds, volumeId);
+
+  // volume is an empty volume, we need to load the data from the imageIds
+  // into the volume scalarData
+
+  // it is important to get the imageIds from the volumeProps
+  // since they are sorted
+  const imagePromises = volumeProps.imageIds.map((imageId, imageIdIndex) => {
+    const imageLoadObject = cache.getImageLoadObject(imageId);
+
+    return imageLoadObject.promise.then((image) => {
+      const pixelData = image.getPixelData();
+      const offset = imageIdIndex * image.rows * image.columns;
+
+      (volumeProps.scalarData as PixelDataTypedArray).set(pixelData, offset);
+    });
+  });
+
+  await Promise.all(imagePromises);
+
+  const volume = new ImageVolume(volumeProps);
+
+  // since we generated the volume from images, we can optimize the cache
+  // by replacing the pixelData of the images with a view of the volume's
+  // scalarData
+  performCacheOptimizationForVolume(volume);
+
+  const volumeLoadObject = {
+    promise: Promise.resolve(volume),
+  };
+
+  if (preventCache) {
+    return volumeLoadObject.promise;
+  }
+
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+
+  return volumeLoadObject.promise;
 }
 
 /**

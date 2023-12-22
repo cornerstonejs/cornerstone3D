@@ -1,4 +1,5 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import isTypedArray from '../../utilities/isTypedArray';
 import { getMinMax, imageIdToURI } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
@@ -73,30 +74,63 @@ export class ImageVolume implements IImageVolume {
   hasPixelSpacing: boolean;
 
   constructor(props: ImageVolumeProps) {
-    this.volumeId = props.volumeId;
-    this.metadata = props.metadata;
-    this.dimensions = props.dimensions;
-    this.spacing = props.spacing;
-    this.origin = props.origin;
-    this.direction = props.direction;
-    this.imageData = props.imageData;
-    this.scalarData = props.scalarData;
-    this.sizeInBytes = props.sizeInBytes;
+    const {
+      scalarData,
+      scaling,
+      dimensions,
+      spacing,
+      origin,
+      direction,
+      volumeId,
+      referencedVolumeId,
+      sizeInBytes,
+      imageData,
+      metadata,
+    } = props;
+
+    this.volumeId = volumeId;
+    this.metadata = metadata;
+    this.dimensions = dimensions;
+    this.spacing = spacing;
+    this.origin = origin;
+    this.direction = direction;
+    this.scalarData = scalarData;
+    this.sizeInBytes = sizeInBytes;
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
+
+    if (imageData) {
+      this.imageData = imageData;
+    } else {
+      const imageData = vtkImageData.newInstance();
+
+      const scalarArray = vtkDataArray.newInstance({
+        name: 'Pixels',
+        numberOfComponents: 1,
+        values: scalarData,
+      });
+
+      imageData.setDimensions(dimensions);
+      imageData.setSpacing(spacing);
+      imageData.setDirection(direction);
+      imageData.setOrigin(origin);
+      imageData.getPointData().setScalars(scalarArray);
+
+      this.imageData = imageData;
+    }
 
     this.imageIds = props.imageIds;
     this.numFrames = this._getNumFrames();
     this._reprocessImageIds();
     this._createCornerstoneImageMetaData();
 
-    if (props.scaling) {
-      this.scaling = props.scaling;
+    if (scaling) {
+      this.scaling = scaling;
     }
 
-    if (props.referencedVolumeId) {
-      this.referencedVolumeId = props.referencedVolumeId;
+    if (referencedVolumeId) {
+      this.referencedVolumeId = referencedVolumeId;
     }
   }
 

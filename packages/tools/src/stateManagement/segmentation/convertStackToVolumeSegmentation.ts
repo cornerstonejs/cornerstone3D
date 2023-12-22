@@ -1,5 +1,9 @@
-import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core';
-import { SegmentationRepresentations } from '../../enums';
+import {
+  volumeLoader,
+  utilities as csUtils,
+  eventTarget,
+} from '@cornerstonejs/core';
+import { Events, SegmentationRepresentations } from '../../enums';
 import addSegmentations from './addSegmentations';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
@@ -47,19 +51,12 @@ async function convertStackToVolumeSegmentation({
     (imageIdsSet) => [...imageIdsSet][0]
   );
 
-  const sortedSegImageIds =
-    csUtils.sortImageIdsAndGetSpacing(segmentationImageIds);
-
-  const sortedImageIds = csUtils.sortImageIdsAndGetSpacing(
-    Array.from(imageIdReferenceMap.keys())
+  // Since segmentations are already cached and are not
+  // loaded like volumes, we can create a volume out of their images
+  await volumeLoader.createAndCacheVolumeFromImages(
+    volumeId,
+    segmentationImageIds
   );
-
-  // We can create a streaming image volume which is imageId based here
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: sortedSegImageIds.sortedImageIds,
-  });
-
-  volume.load();
 
   const newSegmentationId = options?.newSegmentationId ?? csUtils.uuidv4();
 
@@ -89,7 +86,9 @@ async function convertStackToVolumeSegmentation({
   triggerSegmentationRender(toolGroupId);
   // Note: It is crucial to trigger the data modified event. This ensures that the
   // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
-  triggerSegmentationDataModified(newSegmentationId);
+  eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
+    triggerSegmentationDataModified(newSegmentationId)
+  );
 }
 
 export { convertStackToVolumeSegmentation };

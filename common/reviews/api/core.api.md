@@ -602,7 +602,7 @@ function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): 
 function createFloat32SharedArray(length: number): Float32Array;
 
 // @public (undocumented)
-function createImageVolumePropsFromImageIds(imageIds: string[], volumeId: string): ImageVolumeProps;
+function generateVolumePropsFromIds(imageIds: string[], volumeId: string): ImageVolumeProps;
 
 // @public (undocumented)
 function createInt16SharedArray(length: number): Int16Array;
@@ -3152,7 +3152,7 @@ declare namespace utilities {
         isVideoTransferSyntax,
         getBufferConfiguration,
         VoxelManager,
-        createImageVolumePropsFromImageIds,
+        generateVolumePropsFromIds,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
         cacheUtils
