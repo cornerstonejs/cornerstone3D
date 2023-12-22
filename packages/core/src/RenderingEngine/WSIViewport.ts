@@ -14,6 +14,9 @@ import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
+import { EPSILON } from '../constants';
+
+const _map = Symbol.for('map');
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -30,12 +33,20 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   private frameOfReferenceUID: string;
 
+  // First is some specific metadata on the current image
   protected metadata;
+  // Then the metadata array containing the dicomweb metadata definitions
+  protected metadataDicomweb;
+
   private microscopyElement: HTMLDivElement;
 
-  private internalCamera: InternalVideoCamera = {
+  private internalCamera = {
     panWorld: [0, 0],
-    parallelScale: 1,
+    worldToCanvasRatio: 1,
+    rotation: 0,
+    centerWorld: [0, 0],
+    xSpacing: 1,
+    ySpacing: 1,
   };
 
   private viewer;
@@ -101,6 +112,18 @@ class WSIViewport extends Viewport implements IWSIViewport {
   }
 
   private _getImageDataMetadata(imageIndex = 0) {
+    const columns = Math.max(
+      ...this.metadataDicomweb.map((image) => image.TotalPixelMatrixColumns)
+    );
+    const rows = Math.max(
+      ...this.metadataDicomweb.map((image) => image.TotalPixelMatrixRows)
+    );
+    const {
+      ImagedVolumeWidth: width,
+      ImagedVolumeHeight: height,
+      ImagedVolumeDepth: depth,
+    } = this.metadataDicomweb[0];
+
     const imagePlaneModule = metaData.get(
       MetadataModules.IMAGE_PLANE,
       this.imageIds[imageIndex]
@@ -128,7 +151,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
-    const { rows, columns } = imagePlaneModule;
     this.slideHeight = rows;
     this.slideWidth = columns;
 
@@ -137,15 +159,15 @@ class WSIViewport extends Viewport implements IWSIViewport {
       origin = [0, 0, 0];
     }
 
-    const xSpacing = imagePlaneModule.columnPixelSpacing || 1;
-    const ySpacing = imagePlaneModule.rowPixelSpacing || 1;
+    const xSpacing = width / columns;
+    const ySpacing = height / rows;
     const xVoxels = columns;
     const yVoxels = rows;
 
-    const zSpacing = 1;
+    const zSpacing = depth;
     const zVoxels = 1;
 
-    this.hasPixelSpacing = !!imagePlaneModule.columnPixelSpacing;
+    this.hasPixelSpacing = !!(width && height);
     return {
       bitsAllocated: 8,
       numComps: 3,
@@ -242,32 +264,33 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const { parallelScale, focalPoint } = camera;
     // console.log('Setting WSI Camera to', camera);
 
-    // NOTE: the parallel scale should be done first
-    // because it affects the focal point later
-    if (camera.parallelScale !== undefined) {
-      this.internalCamera.parallelScale =
-        this.element.clientHeight / 2 / parallelScale;
+    const view = this.getView();
+    if (!view) {
+      return;
+    }
+    const {
+      metadata: {
+        spacing: [xSpacing, ySpacing],
+      },
+    } = this;
+
+    if (parallelScale) {
+      const worldToCanvasRatio = this.element.clientHeight / 2 / parallelScale;
+      const resolution = 1 / xSpacing / worldToCanvasRatio;
+      view.setResolution(resolution);
+      console.log('New resolution', resolution);
     }
 
-    if (focalPoint !== undefined) {
-      const focalPointCanvas = this.worldToCanvas(focalPoint);
-      const canvasCenter: Point2 = [
-        this.element.clientWidth / 2,
-        this.element.clientHeight / 2,
-      ];
+    if (focalPoint) {
+      const extent = view.getProjection().getExtent();
+      const centerX = (extent[0] + extent[2]) / 2;
+      const centerY = (extent[1] + extent[3]) / 3;
 
-      const panWorldDelta: Point2 = [
-        (focalPointCanvas[0] - canvasCenter[0]) /
-          this.internalCamera.parallelScale,
-        (focalPointCanvas[1] - canvasCenter[1]) /
-          this.internalCamera.parallelScale,
-      ];
-
-      this.internalCamera.panWorld = [
-        this.internalCamera.panWorld[0] - panWorldDelta[0],
-        this.internalCamera.panWorld[1] - panWorldDelta[1],
-      ];
+      const newCenter = [focalPoint[0] / xSpacing, focalPoint[1] / ySpacing];
+      view.setCenter(newCenter);
+      console.log('Setting new center', newCenter);
     }
+    this.refreshRenderValues();
   }
 
   /**
@@ -292,7 +315,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   public getCamera(): ICamera {
     this.showWSI();
-    const { parallelScale } = this.internalCamera;
+
+    this.refreshRenderValues();
+
+    const { worldToCanvasRatio: parallelScale } = this.internalCamera;
 
     const canvasCenter: Point2 = [
       this.element.clientWidth / 2,
@@ -346,12 +372,17 @@ class WSIViewport extends Viewport implements IWSIViewport {
    * @returns World position
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
-    const pan: Point2 = this.internalCamera.panWorld; // In world coordinates
-    const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
+    const {
+      centerWorld,
+      panWorld: pan,
+      worldToCanvasRatio,
+      xSpacing: spacingX,
+      ySpacing: spacingY,
+    } = this.internalCamera;
 
     const panOffsetCanvas: Point2 = [
-      pan[0] * worldToCanvasRatio,
-      pan[1] * worldToCanvasRatio,
+      pan[0] * worldToCanvasRatio + this.canvas.offsetWidth / 2,
+      pan[1] * worldToCanvasRatio + this.canvas.offsetHeight / 2,
     ];
 
     const subCanvasPos: Point2 = [
@@ -360,8 +391,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
     ];
 
     const worldPos: Point3 = [
-      subCanvasPos[0] / worldToCanvasRatio,
-      subCanvasPos[1] / worldToCanvasRatio,
+      subCanvasPos[0] / worldToCanvasRatio + centerWorld[0],
+      subCanvasPos[1] / worldToCanvasRatio - centerWorld[1],
       0,
     ];
 
@@ -374,9 +405,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.imageIds = imageIds;
     const DicomMicroscopyViewer = await import('dicom-microscopy-viewer');
     this.frameOfReferenceUID = null;
-    this.metadata = this._getImageDataMetadata();
 
-    const metadata = this.imageIds.map((imageId) => {
+    const metadataDicomweb = this.imageIds.map((imageId) => {
       const imageMetadata = client.getDICOMwebMetadata(imageId);
 
       Object.defineProperty(imageMetadata, 'isMultiframe', {
@@ -400,9 +430,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
       return imageMetadata;
     });
-    console.log('Loaded metadata for', metadata.length, 'images');
     const volumeImages = [];
-    metadata.forEach((m) => {
+    metadataDicomweb.forEach((m) => {
       const image =
         new DicomMicroscopyViewer.metadata.VLWholeSlideMicroscopyImage({
           metadata: m,
@@ -414,6 +443,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
         console.log('Image type not volume', image.ImageType);
       }
     });
+    this.metadataDicomweb = volumeImages;
+    console.log('volumeImages data', volumeImages);
+
     // Construct viewer instance
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client,
@@ -424,6 +456,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
     // Render viewer instance in the "viewport" HTML element
     viewer.render({ container: this.microscopyElement });
+
+    this.metadata = this._getImageDataMetadata();
+
     // viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
     this.resize();
@@ -475,69 +510,82 @@ class WSIViewport extends Viewport implements IWSIViewport {
       return;
     }
 
-    const {
-      imageMetadata,
-      frameOfReferenceUID,
-      size,
-      boundingBox,
-      numLevels,
-      physicalOffset,
-      physicalSize,
-    } = this.viewer;
+    const view = this.getView();
     console.log(
-      'image data',
-      size,
-      numLevels,
-      physicalOffset,
-      physicalSize,
-      boundingBox,
-      imageMetadata
+      'Position info',
+      view.getCenter(),
+      view.getResolution(),
+      view.getZoom(),
+      view.getRotation()
     );
-    const _map = Symbol('map');
+  }
+
+  getView() {
+    if (!this.viewer) {
+      return;
+    }
     const map = this.viewer[_map];
-    console.log('map=', map);
-    window.viewer = this.viewer;
     window.map = map;
+    window.viewer = this.viewer;
+    window.view = map?.getView();
+    window.wsi = this;
+    return map?.getView();
   }
 
   private refreshRenderValues() {
-    this.showWSI();
+    const view = this.getView();
+    if (!view) {
+      console.log("No view yet, can't update render values");
+      return;
+    }
+    const resolution = view.getResolution();
+    if (!resolution || resolution < EPSILON) {
+      return;
+    }
+    // The location of the center right now
+    const center = view.getCenter();
+    const extent = view.getProjection().getExtent();
+
+    const {
+      metadata: {
+        spacing: [xSpacing, ySpacing],
+      },
+    } = this;
 
     // this means that each unit (pixel) in the world (video) would be
     // represented by n pixels in the canvas.
-    let worldToCanvasRatio = this.canvas.width / this.slideHeight;
+    const worldToCanvasRatio = 1 / resolution / xSpacing;
 
-    if (this.slideWidth * worldToCanvasRatio > this.canvas.height) {
-      // If by fitting the width, we exceed the height of the viewport, then we need to decrease the
-      // size of the viewport further by considering its verticality.
-      const secondWorldToCanvasRatio =
-        this.canvas.height / (this.slideWidth * worldToCanvasRatio);
-
-      worldToCanvasRatio *= secondWorldToCanvasRatio;
-    }
-
-    // Set the width as big as possible, this is the portion of the canvas
-    // that the video will occupy.
-    const drawWidth = Math.floor(this.slideHeight * worldToCanvasRatio);
-    const drawHeight = Math.floor(this.slideWidth * worldToCanvasRatio);
+    const centerX = (extent[0] + extent[2]) / 2;
+    const centerY = (extent[1] + extent[3]) / 2;
 
     // calculate x and y offset in order to center the image
-    const xOffsetCanvas = this.canvas.width / 2 - drawWidth / 2;
-    const yOffsetCanvas = this.canvas.height / 2 - drawHeight / 2;
+    const xOffsetPixels = centerX - center[0];
+    const yOffsetPixels = centerY - center[1];
 
-    const xOffsetWorld = xOffsetCanvas / worldToCanvasRatio;
-    const yOffsetWorld = yOffsetCanvas / worldToCanvasRatio;
+    const xOffsetWorld = xOffsetPixels / resolution;
+    const yOffsetWorld = yOffsetPixels / resolution;
 
     this.internalCamera.panWorld = [xOffsetWorld, yOffsetWorld];
-    this.internalCamera.parallelScale = worldToCanvasRatio;
+    this.internalCamera.worldToCanvasRatio = worldToCanvasRatio;
+    this.internalCamera.centerWorld = [centerX * xSpacing, centerY * ySpacing];
+    this.internalCamera.xSpacing = xSpacing;
+    this.internalCamera.ySpacing = ySpacing;
+
+    console.log(
+      'worldToCanvasRatio is',
+      worldToCanvasRatio,
+      xOffsetWorld,
+      yOffsetWorld
+    );
   }
 
   private getWorldToCanvasRatio() {
-    return this.internalCamera.parallelScale;
+    return this.internalCamera.worldToCanvasRatio;
   }
 
   private getCanvasToWorldRatio() {
-    return 1.0 / this.internalCamera.parallelScale;
+    return 1.0 / this.internalCamera.worldToCanvasRatio;
   }
 
   public customRenderViewportToCanvas = () => {
