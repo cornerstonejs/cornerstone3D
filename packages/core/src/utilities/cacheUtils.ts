@@ -47,91 +47,65 @@ export function performCacheOptimizationForVolume(volume) {
 
   const scalarData = volume.getScalarData();
 
-  // check if during the loading of the volume we were using the
-  // image cache to load the volume
-  const imageCacheOffsetMap = volume.imageCacheOffsetMap;
-  if (imageCacheOffsetMap.size > 0) {
-    // for each image, get the image from the cache, and replace its
-    // scalar data with the volume's scalar data view at the correct offset
-    for (const [imageId, { offset }] of imageCacheOffsetMap) {
-      const image = cache.getImage(imageId);
-
-      if (!image) {
-        continue;
-      }
-
-      const imageFrame = image.imageFrame;
-
-      let pixelData;
-      if (imageFrame) {
-        pixelData = imageFrame.pixelData;
-      } else {
-        pixelData = image.getPixelData();
-      }
-
-      const view = new pixelData.constructor(
-        scalarData.buffer,
-        offset,
-        pixelData.length
-      );
-
-      image.getPixelData = () => view;
-
-      if (imageFrame) {
-        imageFrame.pixelData = view;
-      }
-
-      image.bufferView = {
-        buffer: scalarData.buffer,
-        offset,
-      };
-
-      cache.decrementImageCacheSize(image.sizeInBytes);
-    }
-
-    console.log(
-      `Cache optimization performed for volume ${volume.volumeId}. Images now use array view instead of copy.`
-    );
-    return;
+  // Process image cache offset map if it has data
+  if (volume.imageCacheOffsetMap.size > 0) {
+    _processImageCacheOffsetMap(volume, scalarData);
+  } else {
+    // Process images directly associated with the volume
+    _processVolumeImages(volume, scalarData);
   }
 
-  // there is one more scenario where we can perform cache optimization
-  // whether we used the image pixelData and locally created a volume from it
-  volume.imageIds.forEach((imageId) => {
-    const image = cache.getImage(imageId);
+  console.log(
+    `Cache optimization performed for volume ${volume.volumeId}. Images now use array view instead of copy.`
+  );
+}
 
+function _processImageCacheOffsetMap(volume, scalarData) {
+  volume.imageCacheOffsetMap.forEach(({ offset }, imageId) => {
+    const image = cache.getImage(imageId);
     if (!image) {
       return;
     }
 
-    const imageFrame = image.imageFrame;
+    _updateImageWithScalarDataView(image, scalarData, offset);
+    cache.decrementImageCacheSize(image.sizeInBytes);
+  });
+}
 
-    let pixelData;
-    if (imageFrame) {
-      pixelData = imageFrame.pixelData;
-    } else {
-      pixelData = image.getPixelData();
+function _processVolumeImages(volume, scalarData) {
+  volume.imageIds.forEach((imageId) => {
+    const image = cache.getImage(imageId);
+    if (!image) {
+      return;
     }
 
     const index = volume.getImageIdIndex(imageId);
+    const offset = index * image.getPixelData().length;
 
-    const view = new pixelData.constructor(
-      scalarData.buffer,
-      index * pixelData.length,
-      pixelData.length
-    );
-
-    image.getPixelData = () => view;
-
-    if (imageFrame) {
-      imageFrame.pixelData = view;
-    }
-
-    image.bufferView = {
-      buffer: scalarData.buffer,
-      offset: 0,
-    };
-
+    _updateImageWithScalarDataView(image, scalarData, offset);
     cache.decrementImageCacheSize(image.sizeInBytes);
   });
+}
+
+function _updateImageWithScalarDataView(image, scalarData, offset) {
+  const pixelData = image.imageFrame
+    ? image.imageFrame.pixelData
+    : image.getPixelData();
+
+  const view = new pixelData.constructor(
+    scalarData.buffer,
+    offset,
+    pixelData.length
+  );
+
+  image.getPixelData = () => view;
+
+  if (image.imageFrame) {
+    image.imageFrame.pixelData = view;
+  }
+
+  image.bufferView = {
+    buffer: scalarData.buffer,
+    offset,
+  };
 }
