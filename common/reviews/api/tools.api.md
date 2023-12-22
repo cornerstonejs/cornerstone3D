@@ -837,14 +837,122 @@ interface CircleROIAnnotation extends Annotation {
             };
         };
         label: string;
-        cachedStats?: ROICachedStats & {
+        cachedStats?: (ROICachedStats & {
             [targetId: string]: {
                 radius: number;
                 radiusUnit: string;
                 perimeter: number;
             };
+        }) | {
+            pointsInVolume: Types_2.Point3[];
+            projectionPoints: Types_2.Point3[][];
         };
     };
+}
+
+// @public (undocumented)
+interface CircleROIStartEndThresholdAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        label: string;
+        startSlice: number;
+        endSlice: number;
+        cachedStats?: {
+            pointsInVolume: Types_2.Point3[];
+            projectionPoints: Types_2.Point3[][];
+        };
+        handles: {
+            points: [Types_2.Point3, Types_2.Point3];
+            activeHandleIndex: number | null;
+        };
+    };
+    // (undocumented)
+    metadata: {
+        cameraPosition?: Types_2.Point3;
+        cameraFocalPoint?: Types_2.Point3;
+        viewPlaneNormal?: Types_2.Point3;
+        viewUp?: Types_2.Point3;
+        annotationUID?: string;
+        FrameOfReferenceUID: string;
+        referencedImageId?: string;
+        toolName: string;
+        enabledElement: any;
+        volumeId: string;
+        spacingInNormal: number;
+    };
+}
+
+// @public (undocumented)
+export class CircleROIStartEndThresholdTool extends CircleROITool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => {
+        highlighted: boolean;
+        invalidated: boolean;
+        metadata: {
+            toolName: string;
+            viewPlaneNormal: Types_2.Point3;
+            viewUp: Types_2.Point3;
+            FrameOfReferenceUID: string;
+            referencedImageId: any;
+            volumeId: any;
+            spacingInNormal: number;
+            enabledElement: Types_2.IEnabledElement;
+        };
+        data: {
+            label: string;
+            startSlice: number;
+            endSlice: number;
+            handles: {
+                textBox: {
+                    hasMoved: boolean;
+                    worldPosition: any;
+                    worldBoundingBox: any;
+                };
+                points: [Types_2.Point3, Types_2.Point3];
+                activeHandleIndex: any;
+            };
+            cachedStats: {
+                pointsInVolume: any[];
+                projectionPoints: any[];
+            };
+            labelmapUID: any;
+        };
+    };
+    // (undocumented)
+    _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
+    // (undocumented)
+    _computePointsInsideVolume(annotation: any, imageVolume: any, enabledElement: any): void;
+    // (undocumented)
+    _computeProjectionPoints(annotation: CircleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: Array<string>;
+        handleIndex?: number;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    _getImageIdIndex(imageVolume: Types_2.IImageVolume, pos: vec3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    _getStartSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
 }
 
 // @public (undocumented)
@@ -3435,6 +3543,7 @@ interface RectangleROIAnnotation extends Annotation {
         };
         label: string;
         cachedStats?: ROICachedStats | {
+            pointsInVolume?: Types_2.Point3[];
             projectionPoints?: Types_2.Point3[];
             projectionPointsImageIds?: string[];
         };
@@ -3449,6 +3558,7 @@ interface RectangleROIStartEndThresholdAnnotation extends Annotation {
         startSlice: number;
         endSlice: number;
         cachedStats: {
+            pointsInVolume: Types_2.Point3[];
             projectionPoints: Types_2.Point3[][];
             projectionPointsImageIds: string[];
         };
@@ -3495,6 +3605,7 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
             startSlice: number;
             endSlice: number;
             cachedStats: {
+                pointsInVolume: any[];
                 projectionPoints: any[];
                 projectionPointsImageIds: any[];
             };
@@ -3512,6 +3623,8 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     };
     // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
+    // (undocumented)
+    _computePointsInsideVolume(annotation: any, imageVolume: any, enabledElement: any): void;
     // (undocumented)
     _computeProjectionPoints(annotation: RectangleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
@@ -4809,6 +4922,7 @@ declare namespace ToolSpecificAnnotationTypes {
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,
         RectangleROIStartEndThresholdAnnotation,
+        CircleROIStartEndThresholdAnnotation,
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
