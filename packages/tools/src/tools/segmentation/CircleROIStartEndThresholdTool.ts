@@ -1,13 +1,4 @@
 import {
-  EventTypes,
-  PublicToolProps,
-  SVGDrawingHelper,
-  ToolProps,
-} from 'tools/src/types';
-import CircleROITool from '../annotation/CircleROITool';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import throttle from '../../utilities/throttle';
-import {
   StackViewport,
   Types,
   cache,
@@ -17,23 +8,34 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
+
+import { vec3 } from 'gl-matrix';
+import { Events } from '../../enums';
 import {
   addAnnotation,
   getAnnotations,
 } from '../../stateManagement/annotation/annotationState';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { hideElementCursor } from '../../cursors/elementCursor';
-import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
-import { AnnotationModifiedEventDetail } from 'tools/src/types/EventTypes';
-import { StyleSpecifier } from 'tools/src/types/AnnotationStyle';
-import { CircleROIStartEndThresholdAnnotation } from 'tools/src/types/ToolSpecificAnnotationTypes';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
 } from '../../drawingSvg';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import throttle from '../../utilities/throttle';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { hideElementCursor } from '../../cursors/elementCursor';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+
+import {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
+import { CircleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import CircleROITool from '../annotation/CircleROITool';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
