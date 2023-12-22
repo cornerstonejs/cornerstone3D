@@ -66,7 +66,13 @@ async function convertVolumeToStackViewport({
   // decached to
   const isDerivedFromStack = volume.imageCacheOffsetMap.size > 0;
   const purgeFromCache = isDerivedFromStack ? true : false;
-  volume.decache(purgeFromCache);
+
+  const volumeUsedInOtherViewports =
+    renderingEngine
+      .getVolumeViewports()
+      .filter((vp) => vp.hasVolumeId(volumeId)).length > 0;
+
+  volume.decache(purgeFromCache && !volumeUsedInOtherViewports);
 
   const stack = volume.imageIds.reverse();
   await stackViewport.setStack(
