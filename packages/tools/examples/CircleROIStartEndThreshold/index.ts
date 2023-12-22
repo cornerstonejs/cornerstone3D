@@ -5,14 +5,13 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-  addSliderToToolbar,
-  addDropdownToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
@@ -29,14 +28,11 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  RectangleROIThresholdTool,
   CircleROIStartEndThresholdTool,
-  RectangleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
   annotation,
-  utilities: csToolsUtils,
 } = cornerstoneTools;
 
 const { selection } = annotation;
@@ -60,8 +56,8 @@ let segmentationRepresentationByUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Circle ROI Threshold Tool',
-  'Here we demonstrate usage of the ROI Threshold tool'
+  'Circle ROI Start End Threshold Tool',
+  'Here we demonstrate usage of the Start en End ROI tool'
 );
 
 const size = '500px';
@@ -96,8 +92,8 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 instructions.innerText = `
   - Draw a target region with the left click.
-  - Move the sliders to set the number of slices perpendicular to the region to segment, and the thresholding range.
-  - Click Execute Threshold to perform the thresholded segmentation.
+  - Click Set Start Slice to set the first slice for the annotation.
+  - Click Set End Slice Threshold to set the last slice for the annotation.
 
   Middle Click: Pan
   Right Click: Zoom
@@ -108,32 +104,12 @@ content.append(instructions);
 
 // ============================= //
 
-let numSlicesToProject = 3;
-let ctLowerThreshold = -900;
-let ctUpperThreshold = -700;
-const overwrite = true;
-
-let ptLowerThreshold = 0;
-let ptUpperThreshold = 5;
-let overlapType = 0;
-
-addDropdownToToolbar({
-  options: {
-    values: ['All voxels', 'Any voxel'],
-    defaultValue: 'Any voxel',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    if (selectedValue === 'All voxels') {
-      overlapType = 1;
-    } else if (selectedValue === 'Any voxel') {
-      overlapType = 0;
-    }
-  },
-});
-
 addButtonToToolbar({
-  title: 'Execute threshold',
+  title: 'Set Start Slice',
   onClick: () => {
+    const re = getRenderingEngine('myRenderingEngine');
+    const viewport = re.getVolumeViewports();
+
     const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
       CircleROIStartEndThresholdTool.toolName
     ) as Array<string>;
@@ -145,120 +121,57 @@ addButtonToToolbar({
     const annotationUID = selectedAnnotationUIDs[0];
     const annotation = cornerstoneTools.annotation.state.getAnnotation(
       annotationUID
-    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation;
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
 
     if (!annotation) {
       return;
     }
 
-    console.debug(annotation);
+    // get the current slice Index
+    const sliceIndex = viewport[0].getCurrentImageIdIndex();
+    annotation.data.startSlice = sliceIndex;
 
-    // Todo: this only works for volumeViewport
-    const ctVolume = cache.getVolume(ctVolumeId);
-    const ptVolume = cache.getVolume(ptVolumeId);
-    const segmentationVolume = cache.getVolume(segmentationId);
-
-    // csToolsUtils.segmentation.rectangleROIThresholdVolumeByRange(
-    //   selectedAnnotationUIDs,
-    //   segmentationVolume,
-    //   [
-    //     { volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold },
-    //     { volume: ptVolume, lower: ptLowerThreshold, upper: ptUpperThreshold },
-    //   ],
-    //   {
-    //     numSlicesToProject,
-    //     overwrite,
-    //     overlapType,
-    //   }
-    // );
+    // IMPORTANT: invalidate the toolData for the cached stat to get updated
+    // and re-calculate the projection points
+    annotation.invalidated = true;
+    viewport[0].render();
   },
 });
 
-addSliderToToolbar({
-  title: `#Slices to Segment: ${numSlicesToProject}`,
-  range: [1, 10],
-  defaultValue: numSlicesToProject,
-  onSelectedValueChange: (value) => {
-    numSlicesToProject = Number(value);
-  },
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `#Slices to Segment: ${value}`;
+addButtonToToolbar({
+  title: 'Set End Slice',
+  onClick: () => {
+    const re = getRenderingEngine('myRenderingEngine');
+    const viewport = re.getVolumeViewports();
+
+    const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
+      CircleROIStartEndThresholdTool.toolName
+    ) as Array<string>;
+
+    if (!selectedAnnotationUIDs) {
+      throw new Error('No annotation selected ');
+    }
+
+    const annotationUID = selectedAnnotationUIDs[0];
+    const annotation = cornerstoneTools.annotation.state.getAnnotation(
+      annotationUID
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
+
+    if (!annotation) {
+      return;
+    }
+
+    // get the current slice Index
+    const sliceIndex = viewport[0].getCurrentImageIdIndex();
+    annotation.data.endSlice = sliceIndex;
+
+    // IMPORTANT: invalidate the toolData for the cached stat to get updated
+    // and re-calculate the projection points
+    annotation.invalidated = true;
+
+    viewport[0].render();
   },
 });
-
-addSliderToToolbar({
-  title: `PT Lower Thresh: ${ptLowerThreshold}`,
-  range: [0, 10],
-  defaultValue: ptLowerThreshold,
-  onSelectedValueChange: (value) => {
-    ptLowerThreshold = Number(value);
-  },
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `PT Lower Thresh: ${value}`;
-  },
-});
-
-addSliderToToolbar({
-  title: `PT Upper Thresh: ${ptUpperThreshold}`,
-  range: [0, 10],
-  defaultValue: ptUpperThreshold,
-  onSelectedValueChange: (value) => {
-    ptUpperThreshold = Number(value);
-  },
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `PT Upper Thresh: ${value}`;
-  },
-});
-
-addSliderToToolbar({
-  title: `CT Lower Thresh: ${ctLowerThreshold}`,
-  range: [-1000, 1000],
-  defaultValue: ctLowerThreshold,
-  onSelectedValueChange: (value) => {
-    ctLowerThreshold = Number(value);
-  },
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `CT Lower Thresh: ${value}`;
-  },
-});
-
-addSliderToToolbar({
-  title: `CT Upper Thresh: ${ctUpperThreshold}`,
-  range: [-1000, 1000],
-  defaultValue: ctUpperThreshold,
-  onSelectedValueChange: (value) => {
-    ctUpperThreshold = Number(value);
-  },
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `CT Upper Thresh: ${value}`;
-  },
-});
-
-// ============================= //
-
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: segmentationId,
-  });
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: segmentationId,
-        },
-      },
-    },
-  ]);
-}
 
 /**
  * Runs the demo
@@ -337,9 +250,6 @@ async function run() {
     imageIds: ptImageIds,
   });
 
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
-
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -414,17 +324,6 @@ async function run() {
     ],
     [viewportId1, viewportId2, viewportId3]
   );
-
-  // // Add the segmentation representation to the toolgroup
-  const segmentationRepresentationByUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
-
-  segmentationRepresentationByUID = segmentationRepresentationByUIDs[0];
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

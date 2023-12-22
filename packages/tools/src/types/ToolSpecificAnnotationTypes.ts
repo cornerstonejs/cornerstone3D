@@ -33,6 +33,7 @@ export interface RectangleROIAnnotation extends Annotation {
     cachedStats?:
       | ROICachedStats
       | {
+          pointsInVolume?: Types.Point3[];
           projectionPoints?: Types.Point3[];
           projectionPointsImageIds?: string[];
         };
@@ -247,6 +248,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     startSlice: number;
     endSlice: number;
     cachedStats: {
+      pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
     };

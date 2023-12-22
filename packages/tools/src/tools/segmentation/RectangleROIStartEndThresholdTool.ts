@@ -33,6 +33,7 @@ import {
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { pointInShapeCallback } from '../../utilities/';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -154,6 +155,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         startSlice: startIndex,
         endSlice: endIndex,
         cachedStats: {
+          pointsInVolume: [],
           projectionPoints: [],
           projectionPointsImageIds: [referencedImageId],
         },
@@ -264,6 +266,78 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     data.cachedStats.projectionPointsImageIds = projectionPointsImageIds;
   }
 
+  _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
+    const { data } = annotation;
+    const projectionPoints = data.cachedStats.projectionPoints;
+
+    const pointsInsideVolume: Types.Point3[][] = [[]];
+
+    for (let i = 0; i < projectionPoints.length; i++) {
+      const projectionPoint = projectionPoints[i][0];
+
+      const worldPos1 = data.handles.points[0];
+      const worldPos2 = data.handles.points[3];
+
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!imageVolume) {
+        continue;
+      }
+
+      const { dimensions, imageData } = imageVolume;
+
+      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
+      //We only need to change the Z of our bounds so we are getting the Z from the current projection point
+      const worldProjectionPointIndex = transformWorldToIndex(
+        imageData,
+        projectionPoint
+      );
+
+      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
+      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
+      worldPos1Index[2] = Math.floor(worldProjectionPointIndex[2]);
+
+      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
+
+      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
+      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
+      worldPos2Index[2] = Math.floor(worldProjectionPointIndex[2]);
+
+      // Check if one of the indexes are inside the volume, this then gives us
+      // Some area to do stats over.
+
+      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+        this.isHandleOutsideImage = false;
+        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
+        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
+
+        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
+        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
+
+        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
+        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
+
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          () => true,
+          null,
+          boundsIJK
+        );
+
+        //@ts-ignore
+        pointsInsideVolume.push(pointsInShape);
+      }
+    }
+    data.cachedStats.pointsInVolume = pointsInsideVolume;
+  }
+
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
     const { viewportId, renderingEngineId, viewport } = enabledElement;
@@ -276,6 +350,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
+    this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
 
     annotation.invalidated = false;
 
