@@ -45,6 +45,11 @@ class PanTool extends BaseTool {
       focalPoint[1] - deltaPointsWorld[1],
       focalPoint[2] - deltaPointsWorld[2],
     ];
+    console.log(
+      'deltaPointsWorld, updatedPosition',
+      deltaPointsWorld,
+      updatedFocalPoint
+    );
 
     enabledElement.viewport.setCamera({
       focalPoint: updatedFocalPoint,
