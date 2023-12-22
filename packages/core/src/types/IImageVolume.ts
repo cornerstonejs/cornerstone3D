@@ -53,6 +53,8 @@ interface IImageVolume {
   referencedImageIds?: Array<string>;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
+  /** Property to store additional information */
+  additionalDetails?: Record<string, any>;
   /** return true if it is a 4D volume or false if it is 3D volume */
   isDynamicVolume(): boolean;
   /** method to convert the volume data in the volume cache, to separate images in the image cache */

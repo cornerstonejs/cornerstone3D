@@ -1,5 +1,10 @@
-import { Types, cache, utilities as csUtils } from '@cornerstonejs/core';
-import { SegmentationRepresentations } from '../../enums';
+import {
+  Types,
+  cache,
+  utilities as csUtils,
+  eventTarget,
+} from '@cornerstonejs/core';
+import { Events, SegmentationRepresentations } from '../../enums';
 import addSegmentations from './addSegmentations';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import {
@@ -22,7 +27,7 @@ import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
  *
  * @returns A promise that resolves when the conversion is complete.
  */
-async function convertVolumeToStackSegmentation({
+export async function convertVolumeToStackSegmentation({
   segmentationId,
   options,
 }: {
@@ -43,43 +48,8 @@ async function convertVolumeToStackSegmentation({
     data.volumeId
   ) as Types.IImageVolume;
 
-  // There might be or might not be segmentationImageIds, if it is a volume
-  // segmentation converted from stack segmentation, there will be segmentationImageIds
-  // otherwise, if it is empty volume segmentation derived from
-  // a volume that is not a stack, there will be no segmentationImageIds
-  const segmentationImageIds = segmentationVolume.imageIds;
-
-  // @ts-ignore
-  let referencedImageIds = segmentationVolume.referencedImageIds;
-
-  if (!referencedImageIds) {
-    // check if the segmentation volume is derived from another volume and
-    // whether if that volume has imageIds
-    const referencedVolumeId = segmentationVolume.referencedVolumeId;
-    const referencedVolume = cache.getVolume(referencedVolumeId);
-    if (
-      referencedVolume?.imageIds &&
-      !referencedVolume.imageIds?.[0].startsWith('derived')
-    ) {
-      // if the referenced volume has imageIds, and itself is not derived from
-      // another segmentation then we can use the imageIds from the referenced volume
-      referencedImageIds = referencedVolume.imageIds;
-    } else {
-      throw new Error(
-        'Cannot convert volume segmentation to stack segmentation, missing referencedImageIds'
-      );
-    }
-  }
-
-  if (!segmentationImageIds) {
-    // if the segmentation volume is derived, it will not have imageIds
-    // so we kind of need to create imageIds for it
-  }
-
-  const imageIdReferenceMap = createImageIdReferenceMap(
-    referencedImageIds,
-    segmentationImageIds
-  );
+  const imageIdReferenceMap =
+    _getImageIdReferenceMapForStackSegmentation(segmentationVolume);
 
   const newSegmentationId = options?.newSegmentationId ?? csUtils.uuidv4();
 
@@ -109,7 +79,63 @@ async function convertVolumeToStackSegmentation({
   triggerSegmentationRender(toolGroupId);
   // Note: It is crucial to trigger the data modified event. This ensures that the
   // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
-  triggerSegmentationDataModified(newSegmentationId);
+  eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
+    triggerSegmentationDataModified(newSegmentationId)
+  );
 }
 
-export { convertVolumeToStackSegmentation };
+function _getImageIdReferenceMapForStackSegmentation(
+  segmentationVolume: Types.IImageVolume
+) {
+  // There might be or might not be segmentationImageIds, if it is a volume
+  // segmentation converted from stack segmentation, there will be segmentationImageIds
+  // otherwise, if it is empty volume segmentation derived from
+  // a volume that is not a stack, there will be no segmentationImageIds
+  const segmentationImageIds = segmentationVolume.imageIds;
+
+  if (segmentationVolume.additionalDetails?.imageIdReferenceMap) {
+    // this means the segmentation volume is derived from a stack segmentation
+    // and we can use the imageIdReferenceMap from the additionalDetails
+    return segmentationVolume.additionalDetails.imageIdReferenceMap;
+  } else if (
+    segmentationVolume.referencedImageIds?.length &&
+    !segmentationVolume.referencedImageIds[0].startsWith('derived')
+  ) {
+    // this means the segmentation volume is derived from a stack segmentation
+    // and we can use the referencedImageIds from the segmentationVolume
+    const referencedImageIds = segmentationVolume.referencedImageIds;
+
+    return createImageIdReferenceMap(referencedImageIds, segmentationImageIds);
+  } else {
+    // check if the segmentation volume is derived from another volume and
+    // whether if that volume has imageIds
+    const referencedVolumeId = segmentationVolume.referencedVolumeId;
+    const referencedVolume = cache.getVolume(referencedVolumeId);
+
+    if (!referencedVolume) {
+      throw new Error(
+        'Cannot convert volumetric segmentation without referenced volume to stack segmentation yet'
+      );
+    }
+
+    if (!referencedVolume?.imageIds?.length) {
+      throw new Error(
+        'Cannot convert volumetric segmentation without imageIds to stack segmentation yet'
+      );
+    }
+
+    if (referencedVolume.imageIds?.[0].startsWith('derived')) {
+      throw new Error(
+        `Cannot convert volume segmentation that is derived from another segmentation
+         to stack segmentation yet, include the additionalDetails.imageIdReferenceMap
+         in the volume segmentation in case you need it for the conversion`
+      );
+    }
+
+    // if the referenced volume has imageIds, and itself is not derived from
+    // another segmentation then we can use the imageIds from the referenced volume
+    const referencedImageIds = referencedVolume.imageIds;
+
+    return createImageIdReferenceMap(referencedImageIds, segmentationImageIds);
+  }
+}

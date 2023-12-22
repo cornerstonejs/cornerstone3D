@@ -248,6 +248,7 @@ export default class BaseStreamingImageVolume
         imageIdIndex,
         frameIndex,
         offset: options.targetBuffer?.offset,
+        length: options.targetBuffer?.length,
       });
     }
 

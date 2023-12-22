@@ -897,7 +897,7 @@ class Cache implements ICache {
     }
 
     // Iterate over each image and restore its pixel data from the shared buffer
-    for (const [imageId, { offset, length }] of imageCacheOffsetMap) {
+    for (const [imageId, { offset }] of imageCacheOffsetMap) {
       const image = this.getImage(imageId);
 
       if (!image) {
@@ -906,6 +906,7 @@ class Cache implements ICache {
       }
 
       const viewPixelData = image.getPixelData();
+      const length = viewPixelData.length;
 
       // Create a new view of the buffer for this specific image
       // @ts-ignore
@@ -916,7 +917,7 @@ class Cache implements ICache {
       );
 
       // Restore the original getPixelData function and pixelData
-      image.getPixelData = (() => pixelData).bind(image);
+      image.getPixelData = () => pixelData;
 
       if (image.imageFrame) {
         image.imageFrame.pixelData = pixelData;

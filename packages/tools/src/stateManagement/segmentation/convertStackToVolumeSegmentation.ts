@@ -51,11 +51,18 @@ async function convertStackToVolumeSegmentation({
     (imageIdsSet) => [...imageIdsSet][0]
   );
 
+  const additionalDetails = {
+    imageIdReferenceMap,
+  };
+
   // Since segmentations are already cached and are not
   // loaded like volumes, we can create a volume out of their images
   await volumeLoader.createAndCacheVolumeFromImages(
     volumeId,
-    segmentationImageIds
+    segmentationImageIds,
+    {
+      additionalDetails,
+    }
   );
 
   const newSegmentationId = options?.newSegmentationId ?? csUtils.uuidv4();

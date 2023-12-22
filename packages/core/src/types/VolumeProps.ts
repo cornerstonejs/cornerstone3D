@@ -37,6 +37,9 @@ interface VolumeProps {
   /** Size of the volume data in bytes (optional) */
   sizeInBytes?: number;
 
+  /** Property to store additional information */
+  additionalDetails?: Record<string, any>;
+
   /** Scaling parameters if the volume contains scaled data (optional) */
   scaling?: {
     PT?: {

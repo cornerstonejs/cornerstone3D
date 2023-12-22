@@ -74,6 +74,8 @@ export class ImageVolume implements IImageVolume {
   referencedImageIds?: Array<string>;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
+  /** Property to store additional information */
+  additionalDetails?: Record<string, any>;
 
   constructor(props: ImageVolumeProps) {
     const {
@@ -90,6 +92,7 @@ export class ImageVolume implements IImageVolume {
       imageData,
       metadata,
       referencedImageIds,
+      additionalDetails,
     } = props;
 
     this.imageIds = imageIds;
@@ -139,6 +142,10 @@ export class ImageVolume implements IImageVolume {
 
     if (referencedImageIds) {
       this.referencedImageIds = referencedImageIds;
+    }
+
+    if (additionalDetails) {
+      this.additionalDetails = additionalDetails;
     }
   }
 

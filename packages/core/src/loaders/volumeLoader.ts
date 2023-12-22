@@ -456,6 +456,7 @@ export async function createAndCacheVolumeFromImages(
   imageIds: string[],
   options: {
     preventCache?: boolean;
+    additionalDetails?: Record<string, any>;
   } = {}
 ): Promise<IImageVolume> {
   const { preventCache = false } = options;
@@ -501,6 +502,7 @@ export async function createAndCacheVolumeFromImages(
   const volume = new ImageVolume({
     ...volumeProps,
     referencedImageIds: imageIds,
+    ...options,
   });
 
   // since we generated the volume from images, we can optimize the cache
