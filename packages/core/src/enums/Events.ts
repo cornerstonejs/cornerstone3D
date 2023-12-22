@@ -212,6 +212,11 @@ enum Events {
   VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
 
   /**
+   * Triggers when the scroll function is called on a volume.
+   */
+  VOLUME_SCROLL = 'CORNERSTONE_VOLUME_SCROLL',
+
+  /**
    * Triggers when the clipping planes has been updated
    */
   CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
