@@ -1,5 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
 import type {
-  ColorLUT,
   RepresentationConfig,
   Segmentation,
   SegmentationPublicInput,
@@ -383,9 +383,14 @@ function removeColorLUT(colorLUTIndex: number): void {
  * @param index - The index of the color lut to retrieve.
  * @returns A ColorLUT array.
  */
-function getColorLUT(index: number): ColorLUT | undefined {
+function getColorLUT(index: number): Types.ColorLUT | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getColorLUT(index);
+}
+
+function getNextColorLUTIndex(): number {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getNextColorLUTIndex();
 }
 
 /**
@@ -393,7 +398,7 @@ function getColorLUT(index: number): ColorLUT | undefined {
  * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
  */
-function addColorLUT(colorLUT: ColorLUT, index: number): void {
+function addColorLUT(colorLUT: Types.ColorLUT, index: number): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.addColorLUT(colorLUT, index);
   // Todo: trigger event color LUT added
@@ -426,5 +431,6 @@ export {
   // color
   addColorLUT,
   getColorLUT,
+  getNextColorLUTIndex,
   removeColorLUT,
 };

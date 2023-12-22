@@ -17,6 +17,11 @@ let options: LoaderOptions = {
   imageCreated(/* image */) {
     // image created code
   },
+  strict: false,
+  decodeConfig: {
+    convertFloatPixelDataToInt: true,
+    use16BitDataType: false,
+  },
 };
 
 export function setOptions(newOptions: LoaderOptions): void {

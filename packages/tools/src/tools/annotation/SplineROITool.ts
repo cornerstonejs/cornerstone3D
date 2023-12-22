@@ -32,14 +32,15 @@ import {
 } from '../../types';
 import {
   math,
-  viewportFilters,
-  drawing,
   throttle,
   roundNumber,
   triggerAnnotationRenderForViewportIds,
   getCalibratedScale,
   getCalibratedAreaUnits,
 } from '../../utilities';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+
 import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import {
   AnnotationCompletedEventDetail,
@@ -51,9 +52,6 @@ import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
-
-const { getViewportIdsWithToolToRender } = viewportFilters;
-const { getTextBoxCoordsCanvas } = drawing;
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;

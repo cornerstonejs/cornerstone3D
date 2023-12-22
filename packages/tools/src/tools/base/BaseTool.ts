@@ -6,6 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
+import StrategyCallbacks from '../../enums/StrategyCallbacks';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
 export interface IBaseTool {
@@ -73,7 +74,8 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * It applies the active strategy to the enabled element.
+   * Applies the active strategy function to the enabled element with the specified
+   * operation data.
    * @param enabledElement - The element that is being operated on.
    * @param operationData - The data that needs to be passed to the strategy.
    * @returns The result of the strategy.
@@ -83,7 +85,35 @@ abstract class BaseTool implements IBaseTool {
     operationData: unknown
   ): any {
     const { strategies, activeStrategy } = this.configuration;
-    return strategies[activeStrategy].call(this, enabledElement, operationData);
+    return strategies[activeStrategy]?.call(
+      this,
+      enabledElement,
+      operationData
+    );
+  }
+
+  /**
+   * Applies the active strategy, with a given event type being applied.
+   * The event type function is found by indexing it on the active strategy
+   * function.
+   *
+   * @param enabledElement - The element that is being operated on.
+   * @param operationData - The data that needs to be passed to the strategy.
+   * @param callbackType - the type of the callback
+   *
+   * @returns The result of the strategy.
+   */
+  public applyActiveStrategyCallback(
+    enabledElement: Types.IEnabledElement,
+    operationData: unknown,
+    callbackType: StrategyCallbacks | string
+  ): any {
+    const { strategies, activeStrategy } = this.configuration;
+    return strategies[activeStrategy][callbackType]?.call(
+      this,
+      enabledElement,
+      operationData
+    );
   }
 
   /**

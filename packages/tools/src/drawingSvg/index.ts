@@ -1,7 +1,9 @@
 import draw from './draw';
 import drawCircle from './drawCircle';
 import drawEllipse from './drawEllipse';
+import drawEllipseByCoordinates from './drawEllipseByCoordinates';
 import drawHandles from './drawHandles';
+import drawHandle from './drawHandle';
 import drawLine from './drawLine';
 import drawPolyline from './drawPolyline';
 import drawLinkedTextBox from './drawLinkedTextBox';
@@ -16,7 +18,9 @@ export {
   draw,
   drawCircle,
   drawEllipse,
+  drawEllipseByCoordinates,
   drawHandles,
+  drawHandle,
   drawLine,
   drawPolyline,
   drawLinkedTextBox,

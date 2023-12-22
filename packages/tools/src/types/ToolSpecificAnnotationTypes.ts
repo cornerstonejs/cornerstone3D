@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
 import { ISpline } from './';
+import { LivewirePath } from '../utilities/livewire/LiveWirePath';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -154,6 +155,17 @@ export interface SplineROIAnnotation extends Annotation {
         area: number;
         areaUnit: string;
       };
+    };
+  };
+}
+
+export interface LivewireContourAnnotation extends Annotation {
+  data: {
+    polyline: Types.Point3[];
+    label?: string;
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
     };
   };
 }
@@ -365,6 +377,35 @@ export interface AngleAnnotation extends Annotation {
     cachedStats: {
       [targetId: string]: {
         angle: number;
+      };
+    };
+  };
+}
+
+export interface UltrasoundDirectionalAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    label: string;
+    cachedStats: {
+      [targetId: string]: {
+        xValues: number[];
+        yValues: number[];
+        units: string[];
+        isHorizontal: boolean;
+        isUnitless: boolean;
       };
     };
   };
