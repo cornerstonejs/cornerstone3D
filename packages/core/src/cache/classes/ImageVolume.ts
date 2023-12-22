@@ -222,7 +222,7 @@ export class ImageVolume extends Volume implements IImageVolume {
    * enough space left inside the imageCache. Finally it will decache the Volume.
    *
    */
-  public convertToImagesAndCache() {
+  public convertToImagesAndCache(removeFromCache = true) {
     // 1. Try to decache images in the volatile Image Cache to provide
     //    enough space to store another entire copy of the volume (as Images).
     //    If we do not have enough, we will store as many images in the cache
@@ -262,7 +262,9 @@ export class ImageVolume extends Volume implements IImageVolume {
     }
     // 5. When as much of the Volume is processed into Images as possible
     //    without breaching the cache limit, remove the Volume
-    this.removeFromCache();
+    if (removeFromCache) {
+      this.removeFromCache();
+    }
   }
 
   /**

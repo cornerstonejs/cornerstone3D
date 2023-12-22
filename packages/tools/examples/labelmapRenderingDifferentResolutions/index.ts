@@ -143,7 +143,7 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
     direction: direction as Types.Mat3,
   };
 
-  const lowResSegmentationVolume = await volumeLoader.createLocalVolume(
+  const lowResSegmentationVolume = await volumeLoader.createLocalImageVolume(
     localVolumeOptions,
     lowResSegmentationId
   );

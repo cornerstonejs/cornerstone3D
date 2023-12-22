@@ -61,7 +61,7 @@ export default async function createLabelmapVolumeForViewport(input: {
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = _cloneDeep(options);
-    await volumeLoader.createLocalVolume(properties, segmentationId);
+    await volumeLoader.createLocalImageVolume(properties, segmentationId);
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeId } = viewport.getDefaultActor();

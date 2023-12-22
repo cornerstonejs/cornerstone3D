@@ -17,6 +17,7 @@ import {
   EventTypes,
   Mat3,
   PixelDataTypedArray,
+  PixelDataTypedArrayString,
 } from '../types';
 import { getConfiguration } from '../init';
 import { Volume } from '../cache';
@@ -31,7 +32,7 @@ interface VolumeLoaderOptions {
 interface DerivedVolumeOptions {
   volumeId: string;
   targetBuffer?: {
-    type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int16Array';
+    type: PixelDataTypedArrayString;
     sharedArrayBuffer?: boolean;
   };
 }
@@ -359,10 +360,14 @@ function createVolumeBase(
   const { scalarData, metadata, dimensions, spacing, origin, direction } =
     options;
 
-  if (!scalarData || !isTypedArray(scalarData)) {
+  if (!scalarData) {
     throw new Error(
       'To use createLocalVolume you should pass scalarData of a valid typed array'
     );
+  }
+
+  if (scalarData.length > 0) {
+    throw new Error('Currently createLocalVolume only supports 3D volumes. ');
   }
 
   if (volumeId === undefined) {
@@ -370,7 +375,8 @@ function createVolumeBase(
   }
 
   const scalarLength = dimensions[0] * dimensions[1] * dimensions[2];
-  const numBytes = scalarData.buffer.byteLength || scalarLength * 4;
+  const numBytes =
+    (scalarData as PixelDataTypedArray).buffer.byteLength || scalarLength * 4;
 
   if (!cache.isCacheable(numBytes)) {
     throw new Error(Events.CACHE_SIZE_EXCEEDED);
@@ -405,18 +411,7 @@ function createVolumeBase(
   };
 }
 
-function isTypedArray(
-  scalarData: any
-): scalarData is Uint8Array | Float32Array | Uint16Array | Int16Array {
-  return (
-    scalarData instanceof Uint8Array ||
-    scalarData instanceof Float32Array ||
-    scalarData instanceof Uint16Array ||
-    scalarData instanceof Int16Array
-  );
-}
-
-export function createLocalVolume(
+export function createAndCacheLocalVolume(
   options: LocalVolumeOptions,
   volumeId: string,
   preventCache = false
@@ -445,7 +440,7 @@ export function createLocalVolume(
   return derivedVolume as Volume;
 }
 
-export function createLocalImageVolume(
+export function createAndCacheLocalImageVolume(
   options: LocalVolumeOptions,
   volumeId: string,
   preventCache = false

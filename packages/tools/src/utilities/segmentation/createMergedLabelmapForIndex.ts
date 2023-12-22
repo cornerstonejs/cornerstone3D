@@ -53,7 +53,7 @@ function createMergedLabelmapForIndex(
 
   const preventCache = true;
   // Todo: following should be async
-  const mergedVolume = volumeLoader.createLocalVolume(
+  const mergedVolume = volumeLoader.createLocalImageVolume(
     options,
     volumeId,
     preventCache

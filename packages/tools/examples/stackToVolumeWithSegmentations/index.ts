@@ -3,6 +3,7 @@ import {
   Types,
   Enums,
   getRenderingEngine,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
@@ -87,7 +88,7 @@ addButtonToToolbar({
     if (viewport.type === ViewportType.STACK) {
       segmentation.state.removeSegmentationRepresentations(volumeToolGroupId);
 
-      newViewport = await utilities.viewport.convertStackToVolumeViewport({
+      newViewport = await csUtils.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
@@ -110,7 +111,7 @@ addButtonToToolbar({
     } else {
       segmentation.state.removeSegmentationRepresentations(stackToolGroupId);
 
-      newViewport = await utilities.viewport.convertVolumeToStackViewport({
+      newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0, 0.4],
@@ -219,7 +220,7 @@ async function run() {
     });
     // Set the initial state of the tools, here we set one tool active on left click.
     // This means left click will draw that tool.
-    toolGroup.setToolActive('SphereBrush', {
+    toolGroup.setToolActive('CircularBrush', {
       bindings: [
         {
           mouseButton: MouseBindings.Primary, // Left Click
@@ -261,121 +262,119 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  // const viewportInput = {
-  //   viewportId,
-  //   type: ViewportType.STACK,
-  //   element,
-  //   defaultOptions: {
-  //     background: <Types.Point3>[0.4, 0, 0.4],
-  //   },
-  // };
-
-  // renderingEngine.enableElement(viewportInput);
-
-  // // Set the tool group on the viewport
-  // stackToolGroup.addViewport(viewportId, renderingEngineId);
-
-  // // Get the stack viewport that was created
-  // const viewport = <Types.IStackViewport>(
-  //   renderingEngine.getViewport(viewportId)
-  // );
-
-  // // Define a stack containing a single image
-  // const stack = imageIds;
-
-  // // It is really important to await here, since the segmentation
-  // // data later on depends on the stack being set on the viewport
-  // await viewport.setStack(stack, 80);
-
-  // utilities.stackContextPrefetch.enable(viewport.element);
-
-  // // Render the image
-  // renderingEngine.render();
-
-  // window.imageId = segmentationImageIds[0];
-
-  // await segmentation.addSegmentations([
-  //   {
-  //     segmentationId: stackSegmentationId,
-  //     representation: {
-  //       type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //       data: {
-  //         imageIdReferenceMap: utilities.segmentation.createImageIdReferenceMap(
-  //           imageIds,
-  //           segmentationImageIds
-  //         ),
-  //       },
-  //     },
-  //   },
-  // ]);
-  // // Add the segmentation representation to the toolgroup
-  // await segmentation.addSegmentationRepresentations(stackToolGroupId, [
-  //   {
-  //     segmentationId: stackSegmentationId,
-  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //   },
-  // ]);
-  // utilities.segmentation.triggerSegmentationRender(stackToolGroupId);
-
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0, 0.4, 0],
+      background: <Types.Point3>[0.4, 0, 0.4],
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Set the tool group on the viewport
-  volumeToolGroup.addViewport(viewportId, renderingEngineId);
+  stackToolGroup.addViewport(viewportId, renderingEngineId);
 
-  // Define a stack containing a single image
-
-  const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-  const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-  const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
-  // Define a volume in memory
-  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
-
-  // Set the volume to load
-  volume.load();
-  await cornerstone.setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId]
+  // Get the stack viewport that was created
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportId)
   );
 
-  renderingEngine.render();
+  // Define a stack containing a single image
+  const stack = imageIds;
 
-  await cornerstone.volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: volumeSegmentationId,
-  });
+  // It is really important to await here, since the segmentation
+  // data later on depends on the stack being set on the viewport
+  await viewport.setStack(stack, 80);
+
+  utilities.stackContextPrefetch.enable(viewport.element);
+
+  // Render the image
+  renderingEngine.render();
 
   await segmentation.addSegmentations([
     {
-      segmentationId: volumeSegmentationId,
+      segmentationId: stackSegmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          volumeId: volumeSegmentationId,
+          imageIdReferenceMap: utilities.segmentation.createImageIdReferenceMap(
+            imageIds,
+            segmentationImageIds
+          ),
         },
       },
     },
   ]);
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
+  await segmentation.addSegmentationRepresentations(stackToolGroupId, [
     {
-      segmentationId: volumeSegmentationId,
+      segmentationId: stackSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender(volumeToolGroupId);
+  utilities.segmentation.triggerSegmentationRender(stackToolGroupId);
+
+  // const viewportInput = {
+  //   viewportId,
+  //   type: ViewportType.ORTHOGRAPHIC,
+  //   element,
+  //   defaultOptions: {
+  //     orientation: Enums.OrientationAxis.SAGITTAL,
+  //     background: <Types.Point3>[0, 0.4, 0],
+  //   },
+  // };
+
+  // renderingEngine.enableElement(viewportInput);
+
+  // // Set the tool group on the viewport
+  // volumeToolGroup.addViewport(viewportId, renderingEngineId);
+
+  // // Define a stack containing a single image
+
+  // const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+  // const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+  // const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+  // // Define a volume in memory
+  // const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
+  //   imageIds,
+  // });
+
+  // // Set the volume to load
+  // volume.load();
+  // await cornerstone.setVolumesForViewports(
+  //   renderingEngine,
+  //   [{ volumeId }],
+  //   [viewportId]
+  // );
+
+  // renderingEngine.render();
+
+  // await cornerstone.volumeLoader.createAndCacheDerivedVolume(volumeId, {
+  //   volumeId: volumeSegmentationId,
+  // });
+
+  // await segmentation.addSegmentations([
+  //   {
+  //     segmentationId: volumeSegmentationId,
+  //     representation: {
+  //       type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //       data: {
+  //         volumeId: volumeSegmentationId,
+  //       },
+  //     },
+  //   },
+  // ]);
+  // // Add the segmentation representation to the toolgroup
+  // await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
+  //   {
+  //     segmentationId: volumeSegmentationId,
+  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //   },
+  // ]);
+  // utilities.segmentation.triggerSegmentationRender(volumeToolGroupId);
 }
 
 run();
