@@ -327,8 +327,8 @@
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
       },
       "segmentBidirectionalTool": {
-        "name": "Segmentation bidirectional tools",
-        "description": "Demonstrates use of the adapter generateContourSetsFromLabelmap to find a largest bidirectional instance on a segmentation."
+        "name": "Segmentation Bidirectional Tool",
+        "description": "Demonstrates the calculation of largest bidirectional diameters within segmented contours, akin to RECIST measurements for assessing changes in tumor sizes or anatomical structures over time in medical imaging."
       }
     },
     "tools-advanced": {

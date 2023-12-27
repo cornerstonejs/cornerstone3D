@@ -5,7 +5,6 @@ import {
   setVolumesForViewports,
   volumeLoader,
   imageLoader,
-  getEnabledElement,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -29,11 +28,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  RectangleScissorsTool,
-  SphereScissorsTool,
-  CircleScissorsTool,
   BrushTool,
-  PaintFillTool,
   PanTool,
   ZoomTool,
   StackScrollTool,
@@ -49,7 +44,6 @@ const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
 const viewportId1 = 'volumeViewport';
-const viewportId2 = 'stackViewport';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -57,7 +51,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationIdVolume = 'volumeSegmentationId';
 const segmentationIdStack = 'stackSegmentationId';
-const toolGroupIds = ['toolgroupIdVolume', 'toolgroupIdStack'];
+const toolGroupIds = ['toolgroupIdVolume'];
 const segmentationRepresentationUIDs = [];
 let stackImageIds;
 
@@ -99,14 +93,6 @@ element1.oncontextmenu = (e) => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 
-const element2 = document.createElement('div');
-element2.oncontextmenu = () => false;
-
-element2.style.width = size;
-element2.style.height = size;
-
-viewportGrid.appendChild(element2);
-
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
@@ -146,14 +132,7 @@ const brushValues = [
   brushInstanceNames.ThresholdBrush,
 ];
 
-const optionsValues = [
-  ...brushValues,
-  RectangleScissorsTool.toolName,
-  CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
-  PaintFillTool.toolName,
-  BidirectionalTool.toolName,
-];
+const optionsValues = [...brushValues, BidirectionalTool.toolName];
 
 // ============================= //
 addDropdownToToolbar({
@@ -216,7 +195,7 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: () => {
-    [element1, element2].forEach((element) => {
+    [element1].forEach((element) => {
       const bidirectional = actionConfiguration.contourBidirectional.method(
         element,
         actionConfiguration.contourBidirectional
@@ -283,14 +262,6 @@ async function addSegmentationsToState() {
     ...(await segmentation.addSegmentationRepresentations(toolGroupIds[0], [
       {
         segmentationId: segmentationIdVolume,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]))
-  );
-  segmentationRepresentationUIDs.push(
-    ...(await segmentation.addSegmentationRepresentations(toolGroupIds[1], [
-      {
-        segmentationId: segmentationIdStack,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]))
@@ -377,10 +348,6 @@ async function run() {
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(RectangleScissorsTool);
-  cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(SphereScissorsTool);
-  cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -399,10 +366,6 @@ async function run() {
 
     // Segmentation Tools
     toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.addTool(RectangleScissorsTool.toolName);
-    toolGroup.addTool(CircleScissorsTool.toolName);
-    toolGroup.addTool(SphereScissorsTool.toolName);
-    toolGroup.addTool(PaintFillTool.toolName);
     toolGroup.addToolInstance(
       brushInstanceNames.CircularBrush,
       BrushTool.toolName,
@@ -508,14 +471,6 @@ async function run() {
         background: <Types.Point3>[255, 0, 0],
       },
     },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.STACK,
-      element: element2,
-      defaultOptions: {
-        background: <Types.Point3>[0, 255, 0],
-      },
-    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -523,11 +478,6 @@ async function run() {
     viewportId1,
     renderingEngineId
   );
-  ToolGroupManager.getToolGroup(toolGroupIds[1]).addViewport(
-    viewportId2,
-    renderingEngineId
-  );
-  const stackViewport = renderingEngine.getViewport(viewportId2);
 
   // Set the volume to load
   volume.load();
@@ -538,7 +488,6 @@ async function run() {
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId1]
   );
-  await stackViewport.setStack(imageIdsStack);
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
@@ -552,7 +501,7 @@ async function run() {
   createSegmentConfiguration(3, [1, 2]);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2]);
+  renderingEngine.renderViewports([viewportId1]);
 }
 
 run();
