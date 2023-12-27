@@ -47,13 +47,9 @@ export function performCacheOptimizationForVolume(volume) {
 
   const scalarData = volume.getScalarData();
 
-  // Process image cache offset map if it has data
-  if (volume.imageCacheOffsetMap.size > 0) {
-    _processImageCacheOffsetMap(volume, scalarData);
-  } else {
-    // Process images directly associated with the volume
-    _processVolumeImages(volume, scalarData);
-  }
+  volume.imageCacheOffsetMap.size > 0
+    ? _processImageCacheOffsetMap(volume, scalarData)
+    : _processVolumeImages(volume, scalarData);
 
   console.log(
     `Cache optimization performed for volume ${volume.volumeId}. Images now use array view instead of copy.`
@@ -80,7 +76,7 @@ function _processVolumeImages(volume, scalarData) {
     }
 
     const index = volume.getImageIdIndex(imageId);
-    const offset = index * image.getPixelData().length;
+    const offset = index * image.getPixelData().byteLength;
 
     _updateImageWithScalarDataView(image, scalarData, offset);
     cache.decrementImageCacheSize(image.sizeInBytes);

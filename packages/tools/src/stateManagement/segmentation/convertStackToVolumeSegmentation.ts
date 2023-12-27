@@ -43,8 +43,6 @@ async function convertStackToVolumeSegmentation({
 
   const imageIdReferenceMap = data.imageIdReferenceMap;
 
-  const volumeId = options?.volumeId;
-
   // Get the imageIds from the imageIdReferenceMap
   // Todo: fix the scenario for multiple derived imageIds
   const segmentationImageIds = Array.from(imageIdReferenceMap.values()).map(
@@ -57,6 +55,8 @@ async function convertStackToVolumeSegmentation({
 
   // Since segmentations are already cached and are not
   // loaded like volumes, we can create a volume out of their images
+  const volumeId = options?.volumeId;
+
   await volumeLoader.createAndCacheVolumeFromImages(
     volumeId,
     segmentationImageIds,
