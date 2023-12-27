@@ -136,6 +136,18 @@ function _getImageIdReferenceMapForStackSegmentation(
     // another segmentation then we can use the imageIds from the referenced volume
     const referencedImageIds = referencedVolume.imageIds;
 
-    return createImageIdReferenceMap(referencedImageIds, segmentationImageIds);
+    let segmentationImageIdsToUse = segmentationVolume.imageIds;
+    if (!segmentationImageIdsToUse?.length) {
+      // If segmentation Ids don't exist it means that the segmentation is literally
+      // just a volume so we need to assume imageIds and decache it to the _imageCache
+      // so that it can be used for the conversion
+      segmentationImageIdsToUse =
+        segmentationVolume.convertToImageSlicesAndCache();
+    }
+
+    return createImageIdReferenceMap(
+      referencedImageIds,
+      segmentationImageIdsToUse
+    );
   }
 }

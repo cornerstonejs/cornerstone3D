@@ -1,7 +1,11 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import isTypedArray from '../../utilities/isTypedArray';
-import { getMinMax, imageIdToURI } from '../../utilities';
+import {
+  genericMetadataProvider,
+  getMinMax,
+  imageIdToURI,
+} from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import {
   Metadata,
@@ -240,11 +244,11 @@ export class ImageVolume implements IImageVolume {
    * @param completelyRemove - If true, the image will be removed from the
    * cache completely.
    */
-  public decache(completelyRemove = false): void {
+  public decache(completelyRemove = false): void | Array<string> {
     if (completelyRemove) {
       this.removeFromCache();
     } else {
-      this._convertToImages();
+      this.convertToImageSlicesAndCache();
     }
   }
 
@@ -513,15 +517,34 @@ export class ImageVolume implements IImageVolume {
    * enough space left inside the imageCache. Finally it will decache the Volume.
    *
    */
-  private _convertToImages() {
+  public convertToImageSlicesAndCache() {
     // 1. Try to decache images in the volatile Image Cache to provide
     //    enough space to store another entire copy of the volume (as Images).
     //    If we do not have enough, we will store as many images in the cache
     //    as possible, and the rest of the volume will be decached.
     const byteLength = this.sizeInBytes;
+
+    if (!this.imageIds?.length) {
+      // generate random imageIds
+      // check if the referenced volume has imageIds to see how many
+      // images we need to generate
+      const referencedVolumeId = this.referencedVolumeId;
+      const referencedVolume = cache.getVolume(referencedVolumeId);
+
+      const numSlices =
+        referencedVolume?.imageIds?.length || this.dimensions[2];
+
+      this.imageIds = Array.from({ length: numSlices }, (_, i) => {
+        return `generated:${this.volumeId}:${i}`;
+      });
+
+      this._reprocessImageIds();
+      this.numFrames = this._getNumFrames();
+      this._createCornerstoneImageMetaData();
+    }
+
     const numImages = this.imageIds.length;
     const { bytesPerImage } = this.cornerstoneImageMetaData;
-
     let bytesRemaining = cache.decacheIfNecessaryUntilBytesAvailable(
       byteLength,
       this.imageIds
@@ -534,10 +557,11 @@ export class ImageVolume implements IImageVolume {
 
       // 2. Convert each imageId to a cornerstone Image object which is
       // resolved inside the promise of imageLoadObject
-      const imageLoadObject = this.convertToCornerstoneImage(
-        imageId,
-        imageIdIndex
-      );
+      const image = this.getCornerstoneImage(imageId, imageIdIndex);
+
+      const imageLoadObject = {
+        promise: Promise.resolve(image),
+      };
 
       // 3. Caching the image
       if (!cache.getImageLoadObject(imageId)) {
@@ -551,10 +575,83 @@ export class ImageVolume implements IImageVolume {
       if (bytesRemaining <= bytesPerImage) {
         break;
       }
+
+      const imageOrientationPatient = [
+        this.direction[0],
+        this.direction[1],
+        this.direction[2],
+        this.direction[3],
+        this.direction[4],
+        this.direction[5],
+      ];
+
+      const imagePositionPatient = [
+        this.origin[0] + imageIdIndex * this.direction[6] * this.spacing[0],
+        this.origin[1] + imageIdIndex * this.direction[7] * this.spacing[1],
+        this.origin[2] + imageIdIndex * this.direction[8] * this.spacing[2],
+      ];
+
+      const imagePixelModule = {
+        // bitsAllocated
+        // bitsStored: number;
+        // samplesPerPixel: number;
+        // highBit: number;
+        // pixelRepresentation: string;
+        // modality: string;
+        photometricInterpretation: image.photometricInterpretation,
+        windowWidth: image.windowWidth,
+        windowCenter: image.windowCenter,
+        voiLUTFunction: image.voiLUTFunction,
+      };
+
+      const imagePlaneModule = {
+        rowCosines: [this.direction[0], this.direction[1], this.direction[2]],
+        columnCosines: [
+          this.direction[3],
+          this.direction[4],
+          this.direction[5],
+        ],
+        pixelSpacing: [this.spacing[0], this.spacing[1]],
+        // sliceLocation?: number;
+        // sliceThickness?: number;
+        // frameOfReferenceUID: string;
+        imageOrientationPatient: imageOrientationPatient,
+        imagePositionPatient: imagePositionPatient,
+        columnPixelSpacing: image.columnPixelSpacing,
+        rowPixelSpacing: image.rowPixelSpacing,
+        columns: image.columns,
+        rows: image.rows,
+      };
+
+      const generalSeriesModule = {
+        // modality: image.modality,
+        // seriesInstanceUID: string;
+        // seriesNumber: number;
+        // studyInstanceUID: string;
+        // seriesDate: DicomDateObject;
+        // seriesTime: DicomTimeObject;
+      };
+
+      const metadata = {
+        imagePixelModule,
+        imagePlaneModule,
+        generalSeriesModule,
+      };
+
+      ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
+        (type) => {
+          genericMetadataProvider.add(imageId, {
+            type,
+            metadata: metadata[type],
+          });
+        }
+      );
     }
     // 5. When as much of the Volume is processed into Images as possible
     //    without breaching the cache limit, remove the Volume
     this.removeFromCache();
+
+    return this.imageIds;
   }
 }
 
