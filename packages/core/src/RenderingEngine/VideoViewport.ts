@@ -505,7 +505,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * @param imageURI - containing frame number or range.
    * @returns
    */
-  public hasImageURI(imageURI: string) {
+  public hasImageURI(imageURI: string): boolean {
     // TODO - move annotationFrameRange into core so it can be used here.
     const framesMatch = imageURI.match(VideoViewport.frameRangeExtractor);
     const testURI = framesMatch

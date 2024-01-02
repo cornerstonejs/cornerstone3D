@@ -248,7 +248,9 @@ abstract class BaseTool implements IBaseTool {
    * @returns targetId
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
-    if (viewport instanceof StackViewport) {
+    if (viewport.getTargetId) {
+      return viewport.getTargetId();
+    } else if (viewport instanceof StackViewport) {
       return `imageId:${viewport.getCurrentImageId()}`;
     } else if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;

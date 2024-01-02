@@ -6,7 +6,6 @@ import {
   Point3,
   Point2,
   ICamera,
-  InternalVideoCamera,
   WSIViewportInput,
   VOIRange,
 } from '../types';
@@ -28,8 +27,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
   protected imageIds: string[];
   readonly uid;
   readonly renderingEngineId: string;
-  private slideHeight = 0;
-  private slideWidth = 0;
 
   private frameOfReferenceUID: string;
 
@@ -43,9 +40,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
   private internalCamera = {
     worldToCanvasRatio: 1,
     rotation: 0,
-    centerWorld: vec3.create(),
-    focalPoint: vec3.create(),
+    centerWorld: vec3.create() as Point3,
+    focalPoint: vec3.create() as Point3,
     extent: [0, -2, 1, -1],
+    panWorld: [0, 0],
     xSpacing: 1,
     ySpacing: 1,
   };
@@ -84,7 +82,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.microscopyElement.style.position = 'absolute';
     this.microscopyElement.style.left = '0';
     this.microscopyElement.style.top = '0';
-    this.element.appendChild(this.microscopyElement);
+    const cs3dElement = this.element.firstElementChild;
+    cs3dElement.insertBefore(this.microscopyElement, cs3dElement.childNodes[1]);
 
     this.addEventListeners();
     this.resize();
@@ -151,9 +150,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
     );
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
-
-    this.slideHeight = rows;
-    this.slideWidth = columns;
 
     let origin = imagePlaneModule.imagePositionPatient;
     if (!origin) {
@@ -323,14 +319,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
     }
     const canvasCenterWorld = this.canvasToWorld(canvasCenter);
 
-    console.log(
-      'Computed points',
-      focalPoint[0],
-      focalPoint[1],
-      canvasCenterWorld[0],
-      canvasCenterWorld[1]
-    );
-
     return {
       parallelProjection: true,
       focalPoint,
@@ -373,7 +361,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
    * @returns World position
    */
   public canvasToWorld = (canvasPosition: Point2): Point3 => {
-    const { centerWorld, focalPoint, worldToCanvasRatio } = this.internalCamera;
+    const { focalPoint, worldToCanvasRatio } = this.internalCamera;
 
     const centerRelativeCanvas = [
       canvasPosition[0] - this.canvas.offsetWidth / 2,
@@ -385,7 +373,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
       0
     );
     const worldPos = vec3.add(vec3.create(), centerRelativeWorld, focalPoint);
-    return worldPos;
+    return [worldPos[0], worldPos[1], worldPos[2]];
   };
 
   /**
@@ -408,7 +396,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
       this.canvas.offsetHeight / 2 - centerRelativeCanvas[1],
     ];
 
-    return canvasPosition;
+    return canvasPosition as Point2;
   };
 
   public async setWSI(imageIds: string[], client) {
@@ -451,12 +439,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
       const imageFlavor = image.ImageType[2];
       if (imageFlavor === 'VOLUME' || imageFlavor === 'THUMBNAIL') {
         volumeImages.push(image);
-      } else {
-        console.log('Image type not volume', image.ImageType);
       }
     });
     this.metadataDicomweb = volumeImages;
-    console.log('volumeImages data', volumeImages);
 
     // Construct viewer instance
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
@@ -502,10 +487,12 @@ class WSIViewport extends Viewport implements IWSIViewport {
     }
     // TODO - use a native method rather than accessing internals directly
     const map = this.viewer[_map];
-    window.map = map;
-    window.viewer = this.viewer;
-    window.view = map?.getView();
-    window.wsi = this;
+    // TODO - remove the globals setter
+    const anyWindow = window as unknown as Record<string, unknown>;
+    anyWindow.map = map;
+    anyWindow.viewer = this.viewer;
+    anyWindow.view = map?.getView();
+    anyWindow.wsi = this;
     return map?.getView();
   }
 
@@ -542,7 +529,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     );
 
     this.internalCamera.extent = extent;
-    this.internalCamera.focalPoint = focalPoint;
+    this.internalCamera.focalPoint = focalPoint as Point3;
     this.internalCamera.worldToCanvasRatio = worldToCanvasRatio;
     this.internalCamera.centerWorld = [
       centerX * xSpacing,
@@ -589,6 +576,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // Translate back
     transform.translate(-focalPoint[0] / xSpacing, -focalPoint[1] / ySpacing);
     return transform;
+  }
+
+  public getTargetId(): string {
+    return `imageId:${this.getCurrentImageId()}`;
   }
 }
 

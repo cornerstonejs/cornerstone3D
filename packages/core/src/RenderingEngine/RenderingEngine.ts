@@ -1,7 +1,7 @@
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
-import { triggerEvent } from '../utilities';
+import { triggerEvent, uuidv4 } from '../utilities';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
@@ -86,7 +86,7 @@ class RenderingEngine implements IRenderingEngine {
    * @param uid - Unique identifier for RenderingEngine
    */
   constructor(id?: string) {
-    this.id = id ? id : crypto.randomUUID();
+    this.id = id ? id : uuidv4();
     this.useCPURendering = getShouldUseCPURendering();
 
     renderingEngineCache.set(this);

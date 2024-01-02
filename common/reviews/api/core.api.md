@@ -1995,6 +1995,8 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getTargetId?: () => string;
+    // (undocumented)
     getZoom(): number;
     // (undocumented)
     id: string;
@@ -3753,7 +3755,7 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
+    canvasToWorld: (canvasPosition: Point2) => Point3;
     // (undocumented)
     customRenderViewportToCanvas: () => void;
     // (undocumented)
@@ -3800,7 +3802,13 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     protected getScalarData(): any;
     // (undocumented)
+    getTargetId(): string;
+    // (undocumented)
     protected getTransform(): Transform;
+    // (undocumented)
+    getView(): any;
+    // (undocumented)
+    getZoom(): any;
     // (undocumented)
     hasImageURI(imageURI: string): boolean;
     // (undocumented)
@@ -3809,6 +3817,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     protected indexToCanvas: (indexPos: Point2) => Point2;
     // (undocumented)
     protected metadata: any;
+    // (undocumented)
+    protected metadataDicomweb: any;
     // (undocumented)
     modality: any;
     // (undocumented)
@@ -3827,6 +3837,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     setProperties(props: WSIViewportProperties): void;
     // (undocumented)
     setWSI(imageIds: string[], client: any): Promise<void>;
+    // (undocumented)
+    setZoom(zoom: number): void;
     // (undocumented)
     readonly uid: any;
     // (undocumented)
