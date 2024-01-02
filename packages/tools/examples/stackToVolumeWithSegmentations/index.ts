@@ -37,8 +37,8 @@ const { MouseBindings } = csToolsEnums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Stack and VolumeViewport conversions',
-  'In this demo, you see how the stack and volume viewport conversions work. The purple background represents a StackViewport while the green background represents a VolumeViewport. You can start annotating the images and annotations will be rendered correctly regardless of the viewport they were drawn on.'
+  'Stack and Volume segmentation conversions',
+  'In this demo, you see how the stack and volume segmentation conversions work. The purple background represents a StackViewport while the green background represents a VolumeViewport. You can start drawing using the brush tool and switch between stack and volume viewports'
 );
 
 const content = document.getElementById('content');

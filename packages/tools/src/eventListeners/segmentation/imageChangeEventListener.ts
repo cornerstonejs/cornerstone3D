@@ -1,3 +1,5 @@
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
   StackViewport,
   getEnabledElement,
@@ -12,8 +14,6 @@ import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 
 const enable = function (element: HTMLDivElement): void {
@@ -116,6 +116,26 @@ function _imageChangeEventListener(evt) {
   const representationList = Object.keys(segmentationRepresentations);
   const currentImageId = viewport.getCurrentImageId();
   const actors = viewport.getActors();
+
+  const segmentationFound = actors.find((actor) => {
+    if (!representationList.includes(actor.uid)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (!segmentationFound) {
+    // If the segmentation is not found, it could be because of some special cases
+    // where we are in the process of updating the volume conversion to a stack while
+    // the data is still coming in. In such situations, we should trigger the render
+    // to ensure that the segmentation actors are created, even if the data arrives late.
+    triggerSegmentationRender(toolGroup.id);
+
+    // we should return here, since there is no segmentation actor to update
+    // we will hit this function later on after the actor is created
+    return;
+  }
 
   actors.forEach((actor) => {
     if (!representationList.includes(actor.uid)) {

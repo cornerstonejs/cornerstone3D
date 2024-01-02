@@ -84,10 +84,37 @@ async function convertVolumeToStackViewport({
 
   const stack = [...volume.imageIds].reverse();
 
-  await stackViewport.setStack(
-    stack,
-    Math.max(volume.imageIds.length - imageIdIndex - 1, 0)
+  let imageIdIndexToJump = Math.max(
+    volume.imageIds.length - imageIdIndex - 1,
+    0
   );
+
+  // Check to see if the image is already cached or not. If it's not, we will use another
+  // nearby imageId for the first image to jump to. There seem to be a lot of side effects
+  // if we jump to an image that is not cached in stack viewport while we convert
+  // from a volume viewport. For example, if we switch back and forth between stack and volume,
+  // and then try to jump to an image that is not cached, the image will not render at
+  // all when the full volume is filled. I'm not sure why yet.
+  const imageToJump = cache.getImage(stack[imageIdIndexToJump]);
+  if (!imageToJump) {
+    let minDistance = Infinity;
+    let minDistanceIndex = null;
+
+    stack.forEach((imageId, index) => {
+      const image = cache.getImage(imageId);
+      if (image) {
+        const distance = Math.abs(imageIdIndexToJump - index);
+        if (distance < minDistance) {
+          minDistance = distance;
+          minDistanceIndex = index;
+        }
+      }
+    });
+
+    imageIdIndexToJump = minDistanceIndex;
+  }
+
+  await stackViewport.setStack(stack, imageIdIndexToJump);
 
   // Render the image
   stackViewport.render();

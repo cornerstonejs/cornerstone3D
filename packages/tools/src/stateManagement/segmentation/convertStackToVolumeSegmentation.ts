@@ -44,10 +44,7 @@ async function convertStackToVolumeSegmentation({
   const imageIdReferenceMap = data.imageIdReferenceMap;
 
   // Get the imageIds from the imageIdReferenceMap
-  // Todo: fix the scenario for multiple derived imageIds
-  const segmentationImageIds = Array.from(imageIdReferenceMap.values()).map(
-    (imageIdsSet) => [...imageIdsSet][0]
-  );
+  const segmentationImageIds = Array.from(imageIdReferenceMap.values());
 
   const additionalDetails = {
     imageIdReferenceMap,
