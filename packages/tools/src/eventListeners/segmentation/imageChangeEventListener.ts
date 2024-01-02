@@ -163,9 +163,11 @@ function _imageChangeEventListener(evt) {
     // the origin of the segmentation can be slightly different from the
     // current image origin. This can cause the segmentation to be rendered
     // in the wrong location.
-    // Todo: This will not work for segmentations that are not in the same
-    // e.g., partial segmentations, which kind of does not make sense
-    // for stack segmentation anyway.
+    // Todo: This will not work for segmentations that are not in the same frame
+    // of reference or derived from the same image. This can happen when we have
+    // a segmentation that happens to exist in the same space as the image but is
+    // not derived from it. We need to find a way to handle this case, but don't think
+    // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
     const originToUse = currentOrigin;
 
     segmentationImageData.setOrigin(originToUse);

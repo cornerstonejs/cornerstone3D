@@ -59,8 +59,8 @@ type Cornerstone3DConfig = {
    * of the bigger volume array buffer, this will save memory. This will get enabled
    * if cornerstone3D is configured to use SharedArrayBuffer, the reason is that
    * when we modify the image cache then the images are referring to a different
-   * buffer (SharedArrayBuffer) and sometimes in some system we don't want to enable
-   * usage for SharedArrayBuffer for whatever reason.
+   * buffer (SharedArrayBuffer) and some systems don't support shared array
+   * buffers.
    */
   enableCacheOptimization: boolean;
 };

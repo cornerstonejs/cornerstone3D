@@ -1,7 +1,6 @@
 import * as Types from '../types';
 import cache, { ImageVolume } from '../cache';
 import { ViewportType } from '../enums';
-import uuidv4 from './uuidv4';
 
 /**
  * Converts a volume viewport to a stack viewport.
@@ -24,13 +23,13 @@ async function convertVolumeToStackViewport({
     viewportId?: string;
     background?: Types.Point3;
   };
-}): Promise<Types.IVolumeViewport> {
+}): Promise<Types.IStackViewport> {
   const volumeViewport = viewport;
   const { id, element } = volumeViewport;
   const renderingEngine = viewport.getRenderingEngine();
   const imageIdIndex = viewport.getCurrentImageIdIndex();
 
-  const { background } = options || { volumeId: uuidv4() };
+  const { background } = options;
   const viewportId = options.viewportId || id;
 
   const actorEntry = volumeViewport.getDefaultActor();
@@ -66,34 +65,34 @@ async function convertVolumeToStackViewport({
   // 2. It was actually a native volume and we need to decache it, this is a bit more
   // complicated since then we need to decide on the imageIds for it to get
   // decached to
-  const isDerivedFromStack = volume.imageCacheOffsetMap.size > 0;
-  const allImagesAlreadyCached = volume.imageIds.every((imageId) =>
-    cache.getImage(imageId)
-  );
+  const hasCachedImages = volume.imageCacheOffsetMap.size > 0;
+  // Initialize the variable to hold the final result
+  let isAllImagesCached = false;
 
-  const purgeFromCache = isDerivedFromStack
-    ? allImagesAlreadyCached
-      ? true
-      : false
-    : false;
+  if (hasCachedImages) {
+    // Check if every imageId in the volume is in the _imageCache
+    isAllImagesCached = volume.imageIds.every((imageId) =>
+      cache.getImage(imageId)
+    );
+  }
 
-  const volumeUsedInOtherViewports =
-    renderingEngine
-      .getVolumeViewports()
-      .filter((vp) => vp.hasVolumeId(volumeId)).length > 0;
+  const volumeUsedInOtherViewports = renderingEngine
+    .getVolumeViewports()
+    .find((vp) => vp.hasVolumeId(volumeId));
 
-  volume.decache(purgeFromCache && !volumeUsedInOtherViewports);
+  volume.decache(!volumeUsedInOtherViewports && isAllImagesCached);
 
-  const stack = volume.imageIds.reverse();
+  const stack = [...volume.imageIds].reverse();
+
   await stackViewport.setStack(
     stack,
     Math.max(volume.imageIds.length - imageIdIndex - 1, 0)
   );
 
   // Render the image
-  volumeViewport.render();
+  stackViewport.render();
 
-  return volumeViewport;
+  return stackViewport;
 }
 
 export { convertVolumeToStackViewport };

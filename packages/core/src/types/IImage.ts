@@ -124,7 +124,7 @@ interface IImage {
 
   bufferView?: {
     buffer: ArrayBuffer;
-    offset?: number;
+    offset: number;
   };
 }
 

@@ -50,12 +50,17 @@ export function performCacheOptimizationForVolume(volume) {
   volume.imageCacheOffsetMap.size > 0
     ? _processImageCacheOffsetMap(volume, scalarData)
     : _processVolumeImages(volume, scalarData);
-
-  console.log(
-    `Cache optimization performed for volume ${volume.volumeId}. Images now use array view instead of copy.`
-  );
 }
 
+/**
+ * This function will process the volume images and replace the pixel data of each
+ * image in the image cache (if found) with a view of the volume's scalar data.
+ * This function is used when the volume is derived from an already cached stack
+ * of images.
+ *
+ * @param volume - The volume to process.
+ * @param scalarData - The scalar data to use for the volume.
+ */
 function _processImageCacheOffsetMap(volume, scalarData) {
   volume.imageCacheOffsetMap.forEach(({ offset }, imageId) => {
     const image = cache.getImage(imageId);
@@ -68,6 +73,15 @@ function _processImageCacheOffsetMap(volume, scalarData) {
   });
 }
 
+/**
+ * This function will process the volume images and replace the pixel data of each
+ * image in the image cache (if found) with a view of the volume's scalar data.
+ * This function is used when the volume is not derived from an already cached stack
+ * of images.
+ *
+ * @param volume - The volume to process.
+ * @param scalarData - The scalar data to use for the volume.
+ */
 function _processVolumeImages(volume, scalarData) {
   volume.imageIds.forEach((imageId) => {
     const image = cache.getImage(imageId);

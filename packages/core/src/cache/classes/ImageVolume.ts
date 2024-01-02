@@ -450,7 +450,7 @@ export class ImageVolume implements IImageVolume {
 
   /**
    * Converts imageIdIndex into frameIndex which will be the same
-   * for 3D volumes but different for 4D volumes
+   * for 3D volumes but different for 4D volumes. The indices are 0 based.
    */
   protected imageIdIndexToFrameIndex(imageIdIndex: number): number {
     return imageIdIndex % this.numFrames;

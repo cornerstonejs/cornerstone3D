@@ -241,13 +241,13 @@ export default class BaseStreamingImageVolume
     // it is either cachedImage or cachedVolume
     const isFromImageCache = !!cachedImage;
 
-    if (isFromImageCache) {
+    if (isFromImageCache && options.targetBuffer) {
       // put it in the imageCacheOffsetMap, since we are going to use it
       // for cache optimization later
       this.imageCacheOffsetMap.set(imageId, {
         imageIdIndex,
         frameIndex,
-        offset: options.targetBuffer?.offset,
+        offset: options.targetBuffer?.offset || 0,
         length: options.targetBuffer?.length,
       });
     }
