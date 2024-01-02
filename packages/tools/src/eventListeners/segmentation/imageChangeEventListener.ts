@@ -197,7 +197,7 @@ function _imageChangeEventListener(evt) {
               imageData.setDimensions(dimensions[0], dimensions[1], 1);
               imageData.setSpacing(spacing);
               imageData.setDirection(direction);
-              imageData.setOrigin(origin);
+              imageData.setOrigin(originToUse);
               imageData.getPointData().setScalars(scalarArray);
 
               imageActor.getMapper().setInputData(imageData);
