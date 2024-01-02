@@ -280,7 +280,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
         focalPoint[1] / ySpacing + extent[1],
       ];
       view.setCenter(newCenter);
-      console.log('Setting new center', newCenter);
     }
     this.refreshRenderValues();
   }
@@ -472,7 +471,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
     this.metadata = this._getImageDataMetadata();
 
-    // viewer.deactivateDragPanInteraction();
+    viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
     this.resize();
     this.microscopyElement.style.background = 'green';
@@ -501,6 +500,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     if (!this.viewer) {
       return;
     }
+    // TODO - use a native method rather than accessing internals directly
     const map = this.viewer[_map];
     window.map = map;
     window.viewer = this.viewer;
@@ -585,7 +585,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
       worldToCanvasRatio * xSpacing,
       worldToCanvasRatio * ySpacing
     );
-    console.log('transform data', halfCanvas[0], xSpacing, worldToCanvasRatio);
 
     // Translate back
     transform.translate(-focalPoint[0] / xSpacing, -focalPoint[1] / ySpacing);
