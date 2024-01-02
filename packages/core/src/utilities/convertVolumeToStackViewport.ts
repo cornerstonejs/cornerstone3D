@@ -67,7 +67,15 @@ async function convertVolumeToStackViewport({
   // complicated since then we need to decide on the imageIds for it to get
   // decached to
   const isDerivedFromStack = volume.imageCacheOffsetMap.size > 0;
-  const purgeFromCache = isDerivedFromStack ? true : false;
+  const allImagesAlreadyCached = volume.imageIds.every((imageId) =>
+    cache.getImage(imageId)
+  );
+
+  const purgeFromCache = isDerivedFromStack
+    ? allImagesAlreadyCached
+      ? true
+      : false
+    : false;
 
   const volumeUsedInOtherViewports =
     renderingEngine
