@@ -27,6 +27,7 @@ import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 
 // name spaces
+import * as contours from './contours';
 import * as segmentation from './segmentation';
 import * as drawing from './drawing';
 import * as math from './math';
@@ -66,6 +67,7 @@ export {
   getCalibratedAreaUnits,
   getCalibratedScale,
   segmentation,
+  contours,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
   pointInShapeCallback,
