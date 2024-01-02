@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.42.0](https://github.com/dcmjs-org/dcmjs/compare/v1.41.0...v1.42.0) (2023-12-27)
+
+### Features
+
+-   **tool:** Bidirectional creation on largest segment slice ([#937](https://github.com/dcmjs-org/dcmjs/issues/937)) ([b4ee6bf](https://github.com/dcmjs-org/dcmjs/commit/b4ee6bfdad64c208e37183a39681ba80c06ffe85))
+
 # [1.41.0](https://github.com/dcmjs-org/dcmjs/compare/v1.40.3...v1.41.0) (2023-12-15)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
