@@ -11,7 +11,7 @@ import {
   getCalibratedLengthUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {

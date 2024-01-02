@@ -14,7 +14,7 @@ import {
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
-import roundNumber from '../roundNumber';
+import { roundNumber } from '../../utilities';
 
 let configuration = {
   maxImagesToPrefetch: Infinity,

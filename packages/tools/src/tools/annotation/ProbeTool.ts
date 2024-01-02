@@ -24,7 +24,7 @@ import {
 import { state } from '../../store';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import {
   resetElementCursor,
   hideElementCursor,

@@ -150,10 +150,25 @@ function _imageChangeEventListener(evt) {
 
     const derivedImage = cache.getImage(derivedImageId);
 
-    const { origin, dimensions, spacing, direction } =
+    const { dimensions, spacing, direction } =
       viewport.getImageDataMetadata(derivedImage);
 
-    segmentationImageData.setOrigin(origin);
+    const currentImage = cache.getImage(currentImageId);
+    const { origin: currentOrigin } =
+      viewport.getImageDataMetadata(currentImage);
+
+    // IMPORTANT: We need to make sure that the origin of the segmentation
+    // is the same as the current image origin. This is because due to some
+    // floating point precision issues, when coming from volume to stack
+    // the origin of the segmentation can be slightly different from the
+    // current image origin. This can cause the segmentation to be rendered
+    // in the wrong location.
+    // Todo: This will not work for segmentations that are not in the same
+    // e.g., partial segmentations, which kind of does not make sense
+    // for stack segmentation anyway.
+    const originToUse = currentOrigin;
+
+    segmentationImageData.setOrigin(originToUse);
     segmentationImageData.modified();
 
     if (

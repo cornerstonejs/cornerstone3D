@@ -65,6 +65,7 @@ import { generateVolumePropsFromIds } from './generateVolumePropsFromIds';
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
+import roundNumber, { roundToPrecision } from './roundNumber';
 
 // name spaces
 import * as planar from './planar';
@@ -147,4 +148,6 @@ export {
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   cacheUtils,
+  roundNumber,
+  roundToPrecision,
 };

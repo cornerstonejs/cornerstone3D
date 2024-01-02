@@ -585,19 +585,38 @@ export class ImageVolume implements IImageVolume {
         this.direction[5],
       ];
 
+      const precision = 6;
       const imagePositionPatient = [
-        this.origin[0] + imageIdIndex * this.direction[6] * this.spacing[0],
-        this.origin[1] + imageIdIndex * this.direction[7] * this.spacing[1],
-        this.origin[2] + imageIdIndex * this.direction[8] * this.spacing[2],
+        parseFloat(
+          (
+            this.origin[0] +
+            imageIdIndex * this.direction[6] * this.spacing[0]
+          ).toFixed(precision)
+        ),
+        parseFloat(
+          (
+            this.origin[1] +
+            imageIdIndex * this.direction[7] * this.spacing[1]
+          ).toFixed(precision)
+        ),
+        parseFloat(
+          (
+            this.origin[2] +
+            imageIdIndex * this.direction[8] * this.spacing[2]
+          ).toFixed(precision)
+        ),
       ];
 
+      const pixelData = image.getPixelData();
+      const bitsAllocated = pixelData.BYTES_PER_ELEMENT * 8;
+
       const imagePixelModule = {
-        // bitsAllocated
         // bitsStored: number;
         // samplesPerPixel: number;
         // highBit: number;
         // pixelRepresentation: string;
         // modality: string;
+        bitsAllocated,
         photometricInterpretation: image.photometricInterpretation,
         windowWidth: image.windowWidth,
         windowCenter: image.windowCenter,

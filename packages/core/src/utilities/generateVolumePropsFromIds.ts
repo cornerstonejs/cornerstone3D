@@ -154,6 +154,17 @@ function generateVolumePropsFromIds(
         ? createUint8SharedArray(length * numComponents)
         : new Uint8Array(length * numComponents);
       break;
+    case 32:
+      sizeInBytes = length * 4;
+      handleCache(sizeInBytes);
+      scalarData = useSharedArrayBuffer
+        ? createFloat32SharedArray(length)
+        : new Float32Array(length);
+      break;
+    default:
+      throw new Error(
+        `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`
+      );
   }
 
   return {
