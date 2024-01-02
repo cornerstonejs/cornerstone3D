@@ -233,11 +233,9 @@ class BrushTool extends BaseTool {
       // and should throw an error or maybe simply just allow circle manipulation
       // and not sphere manipulation
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        console.warn(
-          'Sphere manipulation is not supported for this stack of images yet'
+        throw new Error(
+          'Sphere manipulation is not supported for stacks of image segmentations yet'
         );
-        return;
-
         // Todo: add sphere (volumetric) manipulation support for stacks of images
         // we should basically check if the stack constructs a valid volume
         // meaning all the metadata is present and consistent

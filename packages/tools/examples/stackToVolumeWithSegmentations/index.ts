@@ -108,8 +108,29 @@ addButtonToToolbar({
           newSegmentationId: volumeSegmentationId,
         },
       });
+
+      if (volumeToolGroup) {
+        volumeToolGroup.addViewport(newViewport.id, renderingEngineId);
+
+        volumeToolGroup.setToolDisabled('CircularBrush');
+        volumeToolGroup.setToolActive('SphereBrush', {
+          bindings: [
+            {
+              mouseButton: MouseBindings.Primary, // Left Click
+            },
+          ],
+        });
+      }
     } else {
       segmentation.state.removeSegmentationRepresentations(stackToolGroupId);
+
+      segmentation.convertVolumeToStackSegmentation({
+        segmentationId: volumeSegmentationId,
+        options: {
+          toolGroupId: stackToolGroupId,
+          newSegmentationId: stackSegmentationId,
+        },
+      });
 
       newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
@@ -121,15 +142,16 @@ addButtonToToolbar({
       // Set the tool group on the viewport
       if (stackToolGroup) {
         stackToolGroup.addViewport(newViewport.id, renderingEngineId);
-      }
 
-      segmentation.convertVolumeToStackSegmentation({
-        segmentationId: volumeSegmentationId,
-        options: {
-          toolGroupId: stackToolGroupId,
-          newSegmentationId: stackSegmentationId,
-        },
-      });
+        stackToolGroup.setToolDisabled('SphereBrush');
+        stackToolGroup.setToolActive('CircularBrush', {
+          bindings: [
+            {
+              mouseButton: MouseBindings.Primary, // Left Click
+            },
+          ],
+        });
+      }
     }
 
     addOrientationDropdownIfVolumeViewport();
@@ -220,14 +242,6 @@ async function run() {
     });
     // Set the initial state of the tools, here we set one tool active on left click.
     // This means left click will draw that tool.
-    toolGroup.setToolActive('CircularBrush', {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
     toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [
         {
@@ -244,6 +258,12 @@ async function run() {
     });
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
     toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+
+    utilities.segmentation.setBrushSizeForToolGroup(
+      toolGroup.id,
+      50,
+      BrushTool.toolName
+    );
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
@@ -255,12 +275,103 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // imageIds = imageIds.slice(0, 4);
+
+  await _startFromStack(imageIds, renderingEngine);
+  // await _startFromVolume(renderingEngine, imageIds);
+}
+
+run();
+
+async function _startFromVolume(
+  renderingEngine: RenderingEngine,
+  imageIds: string[]
+) {
+  volumeToolGroup.setToolActive('SphereBrush', {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  const viewportInput = {
+    viewportId,
+    type: ViewportType.ORTHOGRAPHIC,
+    element,
+    defaultOptions: {
+      // orientation: Enums.OrientationAxis.SAGITTAL,
+      background: <Types.Point3>[0, 0.4, 0],
+    },
+  };
+
+  renderingEngine.enableElement(viewportInput);
+
+  // Set the tool group on the viewport
+  volumeToolGroup.addViewport(viewportId, renderingEngineId);
+
+  // Define a stack containing a single image
+  const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+  const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+  const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+  // Define a volume in memory
+  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  // Set the volume to load
+  volume.load();
+  await cornerstone.setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId]
+  );
+
+  renderingEngine.render();
+
+  await cornerstone.volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    volumeId: volumeSegmentationId,
+  });
+
+  await segmentation.addSegmentations([
+    {
+      segmentationId: volumeSegmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: {
+          volumeId: volumeSegmentationId,
+        },
+      },
+    },
+  ]);
+  // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
+    {
+      segmentationId: volumeSegmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  utilities.segmentation.triggerSegmentationRender(volumeToolGroupId);
+}
+
+async function _startFromStack(
+  imageIds: string[],
+  renderingEngine: RenderingEngine
+) {
+  stackToolGroup.setToolActive('CircularBrush', {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
   const { imageIds: segmentationImageIds } =
     await cornerstone.imageLoader.createAndCacheDerivedImages(imageIds);
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
   // Create a stack viewport
   const viewportInput = {
     viewportId,
@@ -286,7 +397,7 @@ async function run() {
 
   // It is really important to await here, since the segmentation
   // data later on depends on the stack being set on the viewport
-  await viewport.setStack(stack, 80);
+  await viewport.setStack(stack, 0);
 
   utilities.stackContextPrefetch.enable(viewport.element);
 
@@ -307,6 +418,7 @@ async function run() {
       },
     },
   ]);
+
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(stackToolGroupId, [
     {
@@ -315,66 +427,4 @@ async function run() {
     },
   ]);
   utilities.segmentation.triggerSegmentationRender(stackToolGroupId);
-
-  // const viewportInput = {
-  //   viewportId,
-  //   type: ViewportType.ORTHOGRAPHIC,
-  //   element,
-  //   defaultOptions: {
-  //     orientation: Enums.OrientationAxis.SAGITTAL,
-  //     background: <Types.Point3>[0, 0.4, 0],
-  //   },
-  // };
-
-  // renderingEngine.enableElement(viewportInput);
-
-  // // Set the tool group on the viewport
-  // volumeToolGroup.addViewport(viewportId, renderingEngineId);
-
-  // // Define a stack containing a single image
-
-  // const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-  // const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-  // const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
-  // // Define a volume in memory
-  // const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-  //   imageIds,
-  // });
-
-  // // Set the volume to load
-  // volume.load();
-  // await cornerstone.setVolumesForViewports(
-  //   renderingEngine,
-  //   [{ volumeId }],
-  //   [viewportId]
-  // );
-
-  // renderingEngine.render();
-
-  // await cornerstone.volumeLoader.createAndCacheDerivedVolume(volumeId, {
-  //   volumeId: volumeSegmentationId,
-  // });
-
-  // await segmentation.addSegmentations([
-  //   {
-  //     segmentationId: volumeSegmentationId,
-  //     representation: {
-  //       type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //       data: {
-  //         volumeId: volumeSegmentationId,
-  //       },
-  //     },
-  //   },
-  // ]);
-  // // Add the segmentation representation to the toolgroup
-  // await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
-  //   {
-  //     segmentationId: volumeSegmentationId,
-  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //   },
-  // ]);
-  // utilities.segmentation.triggerSegmentationRender(volumeToolGroupId);
 }
-
-run();
