@@ -69,7 +69,7 @@ class BrushTool extends BaseTool {
   private _editData: {
     segmentsLocked: number[]; //
     segmentationRepresentationUID?: string;
-    imageIdReferenceMap?: Map<string, Set<string>>;
+    imageIdReferenceMap?: Map<string, string>;
     volumeId?: string;
     referencedVolumeId?: string;
   } | null;

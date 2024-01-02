@@ -48,7 +48,7 @@ class CircleScissorsTool extends BaseTool {
     //
     volumeId: string;
     referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, Set<string>>;
+    imageIdReferenceMap: Map<string, string>;
     //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];

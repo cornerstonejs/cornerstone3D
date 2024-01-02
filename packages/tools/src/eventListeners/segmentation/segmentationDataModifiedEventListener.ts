@@ -101,10 +101,7 @@ const onSegmentationDataModified = function (
           const currentSegmentationImageId =
             imageIdReferenceMap.get(currentImageId);
 
-          // Todo: fix the logic to support multiple derived imageIds
-          const segImageId = [...currentSegmentationImageId][0];
-
-          const segmentationImage = cache.getImage(segImageId);
+          const segmentationImage = cache.getImage(currentSegmentationImageId);
           segImageData.modified();
 
           // update the cache with the new image data

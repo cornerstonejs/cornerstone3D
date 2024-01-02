@@ -110,10 +110,8 @@ class PaintFillTool extends BaseTool {
         labelmapData as LabelmapSegmentationDataStack;
 
       const currentImageId = enabledElement.viewport.getCurrentImageId();
-      const currentSegmentationImageIds =
+      const currentSegmentationImageId =
         imageIdReferenceMap.get(currentImageId);
-
-      const currentSegmentationImageId = [...currentSegmentationImageIds][0];
 
       if (!currentSegmentationImageId) {
         throw new Error(

@@ -45,7 +45,7 @@ export type LabelmapSegmentationDataStack = {
    * This is a Map from referenced imageId to the segmentation (Derived) imageIds (can be
    * multiple) that are associated with it.
    */
-  imageIdReferenceMap: Map<string, Set<string>>;
+  imageIdReferenceMap: Map<string, string>;
 };
 
 export type LabelmapSegmentationData =

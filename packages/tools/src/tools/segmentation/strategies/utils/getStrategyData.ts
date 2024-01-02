@@ -40,10 +40,7 @@ function getStrategyData({ operationData, viewport }) {
     // of that actor at that moment so we have the imageData already
     const actor = viewport.getActor(segmentationRepresentationUID);
     segmentationImageData = actor.actor.getMapper().getInputData();
-    const currentSegmentationImageIds = imageIdReferenceMap.get(currentImageId);
-
-    // Todo: fix this to support multiple derived imageIds
-    const currentSegmentationImageId = [...currentSegmentationImageIds][0];
+    const currentSegmentationImageId = imageIdReferenceMap.get(currentImageId);
 
     const segmentationImage = cache.getImage(currentSegmentationImageId);
     segmentationScalarData = segmentationImage.getPixelData();

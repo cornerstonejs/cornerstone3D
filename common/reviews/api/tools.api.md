@@ -734,7 +734,7 @@ export class BrushTool extends BaseTool {
         segmentationRepresentationUID: string;
         imageIdReferenceMap?: undefined;
     } | {
-        imageIdReferenceMap: Map<string, Set<string>>;
+        imageIdReferenceMap: Map<string, string>;
         segmentsLocked: number[] | [];
         segmentationRepresentationUID: string;
         volumeId?: undefined;
@@ -753,7 +753,7 @@ export class BrushTool extends BaseTool {
         strategySpecificConfiguration: any;
         preview: unknown;
         segmentsLocked: number[];
-        imageIdReferenceMap?: Map<string, Set<string>>;
+        imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
         referencedVolumeId?: string;
     };
@@ -949,7 +949,7 @@ export class CircleScissorsTool extends BaseTool {
         segmentIndex: number;
         volumeId: string;
         referencedVolumeId: string;
-        imageIdReferenceMap: Map<string, Set<string>>;
+        imageIdReferenceMap: Map<string, string>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -1333,7 +1333,7 @@ function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewp
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds: string[]): Map<string, Set<string>>;
+function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds: string[]): Map<string, string>;
 
 // @public (undocumented)
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
@@ -2705,7 +2705,7 @@ type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegment
 
 // @public (undocumented)
 type LabelmapSegmentationDataStack = {
-    imageIdReferenceMap: Map<string, Set<string>>;
+    imageIdReferenceMap: Map<string, string>;
 };
 
 // @public (undocumented)
@@ -3778,7 +3778,7 @@ export class RectangleScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        imageIdReferenceMap: Map<string, Set<string>>;
+        imageIdReferenceMap: Map<string, string>;
         volumeId: string;
         referencedVolumeId: string;
         annotation: any;
@@ -4355,7 +4355,7 @@ export class SphereScissorsTool extends BaseTool {
         segmentationRepresentationUID: string;
         volumeId: string;
         referencedVolumeId: string;
-        imageIdReferenceMap: Map<string, Set<string>>;
+        imageIdReferenceMap: Map<string, string>;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];

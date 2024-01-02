@@ -204,16 +204,13 @@ addButtonToToolbar({
     const newSegmentationId = `SEGMENTATION_${newSegImageId}`;
     segmentationIds.push(newSegmentationId);
 
-    const imageIdReferenceMap = new Map();
-    imageIdReferenceMap.set(currentImageId, new Set([newSegImageId]));
-
     segmentation.addSegmentations([
       {
         segmentationId: newSegmentationId,
         representation: {
           type: csToolsEnums.SegmentationRepresentations.Labelmap,
           data: {
-            imageIdReferenceMap,
+            imageIdReferenceMap: new Map([[currentImageId, newSegImageId]]),
           },
         },
       },

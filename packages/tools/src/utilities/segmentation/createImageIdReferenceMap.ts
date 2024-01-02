@@ -10,13 +10,10 @@
 function createImageIdReferenceMap(
   imageIdsArray: string[],
   segmentationImageIds: string[]
-): Map<string, Set<string>> {
-  const imageIdReferenceMap = new Map<string, Set<string>>(
+): Map<string, string> {
+  const imageIdReferenceMap = new Map<string, string>(
     imageIdsArray.map((imageId, index) => {
-      const derivedSet = new Set<string>();
-      derivedSet.add(segmentationImageIds[index]);
-
-      return [imageId, derivedSet];
+      return [imageId, segmentationImageIds[index]];
     })
   );
 

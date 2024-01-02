@@ -61,12 +61,9 @@ async function addLabelmapToElement(
   } else {
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
-    const segmentationImageIds = (
+    const segmentationImageId = (
       labelMapData as LabelmapSegmentationDataStack
     ).imageIdReferenceMap.get(viewport.getCurrentImageId());
-
-    // Todo: fix this to support multiple derived imageIds
-    const segmentationImageId = [...segmentationImageIds][0];
 
     const stackInputs: Types.IStackInput[] = [
       {

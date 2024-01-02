@@ -125,10 +125,7 @@ function _imageChangeEventListener(evt) {
 
     const { imageIdReferenceMap } = segmentationRepresentations[actor.uid];
 
-    const derivedImageIds = imageIdReferenceMap.get(currentImageId);
-
-    // Todo: fix this to support multiple derived imageIds
-    const derivedImageId = [...derivedImageIds][0];
+    const derivedImageId = imageIdReferenceMap.get(currentImageId);
 
     const segmentationImageData = segmentationActor.getMapper().getInputData();
 
