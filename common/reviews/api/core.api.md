@@ -323,7 +323,7 @@ function convertVolumeToStackViewport({ viewport, options, }: {
         viewportId?: string;
         background?: Types.Point3;
     };
-}): Promise<Types.IVolumeViewport>;
+}): Promise<Types.IStackViewport>;
 
 // @public (undocumented)
 type Cornerstone3DConfig = {
@@ -1227,7 +1227,7 @@ interface IImage {
     // (undocumented)
     bufferView?: {
         buffer: ArrayBuffer;
-        offset?: number;
+        offset: number;
     };
     // (undocumented)
     cachedLut?: {
