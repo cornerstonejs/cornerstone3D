@@ -13,6 +13,7 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -44,6 +45,20 @@ setTitleAndDescription(
   'WSI - Whole Slide Imaging Viewport',
   'Demonstrates viewing of whole slide imaging data'
 );
+
+addButtonToToolbar({
+  title: 'Zoom In',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    viewport.setZoom(2 * viewport.getZoom());
+    viewport.render();
+  },
+});
 
 const content = document.getElementById('content');
 const element = document.createElement('div');

@@ -263,8 +263,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   public setCamera(camera: ICamera): void {
     const { parallelScale, focalPoint } = camera;
-    // console.log('Setting WSI Camera to', camera);
-
+    const view = this.getView();
     this.refreshRenderValues();
     const { xSpacing, ySpacing, extent } = this.internalCamera;
 
@@ -273,12 +272,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
       const resolution = 1 / xSpacing / worldToCanvasRatio;
 
       view.setResolution(resolution);
-      console.log('New resolution', resolution);
     }
 
     if (focalPoint) {
       const newCenter = [
-        focalPoint[0] / xSpacing + extent[0],
+        extent[0] - focalPoint[0] / xSpacing,
         focalPoint[1] / ySpacing + extent[1],
       ];
       view.setCenter(newCenter);
@@ -491,7 +489,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
-
     return transform.transformPoint(canvasPos);
   };
 
@@ -539,7 +536,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const centerX = (extent[0] + extent[2]) / 2;
     const centerY = (extent[1] + extent[3]) / 2;
     const focalPoint = vec3.fromValues(
-      (center[0] - extent[0]) * xSpacing,
+      (extent[0] - center[0]) * xSpacing,
       (center[1] - extent[1]) * ySpacing,
       0
     );
@@ -560,8 +557,19 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // console.log('TODO - custom render');
   };
 
+  public getZoom() {
+    return this.getView()?.getZoom();
+  }
+
+  public setZoom(zoom: number) {
+    this.getView()?.setZoom(zoom);
+    this.refreshRenderValues();
+  }
+
   protected getTransform() {
-    const { worldToCanvasRatio, focalPoint } = this.internalCamera;
+    this.refreshRenderValues();
+    const { focalPoint, worldToCanvasRatio, xSpacing, ySpacing } =
+      this.internalCamera;
 
     const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
     const transform = new Transform();
@@ -571,10 +579,16 @@ class WSIViewport extends Viewport implements IWSIViewport {
     transform.translate(halfCanvas[0], halfCanvas[1]);
 
     // Scale
-    transform.scale(worldToCanvasRatio, worldToCanvasRatio);
+    transform.scale(
+      // 1 / worldToCanvasRatio / xSpacing,
+      // 1 / worldToCanvasRatio / ySpacing
+      worldToCanvasRatio * xSpacing,
+      worldToCanvasRatio * ySpacing
+    );
+    console.log('transform data', halfCanvas[0], xSpacing, worldToCanvasRatio);
 
     // Translate back
-    transform.translate(-focalPoint[0], -focalPoint[1]);
+    transform.translate(-focalPoint[0] / xSpacing, -focalPoint[1] / ySpacing);
     return transform;
   }
 }
