@@ -853,7 +853,7 @@ type FlipDirection = {
 };
 
 // @public (undocumented)
-function generateVolumePropsFromIds(imageIds: string[], volumeId: string): ImageVolumeProps;
+function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): ImageVolumeProps;
 
 declare namespace geometryLoader {
     export {
@@ -3180,7 +3180,7 @@ declare namespace utilities {
         isVideoTransferSyntax,
         getBufferConfiguration,
         VoxelManager,
-        generateVolumePropsFromIds,
+        generateVolumePropsFromImageIds,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
         cacheUtils,

@@ -11,7 +11,7 @@ import { ImageVolumeProps, Mat3, Point3 } from '../types';
 import cache from '../cache';
 import { Events } from '../enums';
 
-function generateVolumePropsFromIds(
+function generateVolumePropsFromImageIds(
   imageIds: string[],
   volumeId: string
 ): ImageVolumeProps {
@@ -180,4 +180,4 @@ function generateVolumePropsFromIds(
   };
 }
 
-export { generateVolumePropsFromIds };
+export { generateVolumePropsFromImageIds };

@@ -11,7 +11,7 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import {
-  generateVolumePropsFromIds,
+  generateVolumePropsFromImageIds,
   getBufferConfiguration,
   uuidv4,
 } from '../utilities';
@@ -479,7 +479,7 @@ export async function createAndCacheVolumeFromImages(
     return Promise.resolve(cachedVolume);
   }
 
-  const volumeProps = generateVolumePropsFromIds(imageIds, volumeId);
+  const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
 
   // volume is an empty volume, we need to load the data from the imageIds
   // into the volume scalarData

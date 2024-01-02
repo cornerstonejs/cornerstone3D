@@ -61,7 +61,7 @@ import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
-import { generateVolumePropsFromIds } from './generateVolumePropsFromIds';
+import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageIds';
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
@@ -144,7 +144,7 @@ export {
   isVideoTransferSyntax,
   getBufferConfiguration,
   VoxelManager,
-  generateVolumePropsFromIds,
+  generateVolumePropsFromImageIds,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   cacheUtils,
