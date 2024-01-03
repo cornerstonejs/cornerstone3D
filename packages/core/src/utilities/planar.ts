@@ -28,6 +28,7 @@ function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3 {
  * It returns the plane equation defined by a point and a normal vector.
  * @param normal - normal vector
  * @param point - a point on the plane
+ * @param normalized - if true, the values of the plane equation will be normalized
  * @returns - [A, B,C, D] of plane equation A*X + B*Y + C*Z = D
  */
 function planeEquation(

@@ -179,7 +179,7 @@ class BrushTool extends BaseTool {
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
     if (!activeSegmentationRepresentation) {
       throw new Error(
-        'No active segmentation detected, create one before using the brush tool'
+        'No active segmentation detected, create a segmentation representation before using the brush tool'
       );
     }
 

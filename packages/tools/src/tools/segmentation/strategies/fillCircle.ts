@@ -1,17 +1,18 @@
 import { vec3 } from 'gl-matrix';
-import { StackViewport, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
   precalculatePointInEllipse,
 } from '../../../utilities/math/ellipse';
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
+import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
+import { pointInSphere } from '../../../utilities/math/sphere';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -61,7 +62,7 @@ const initializeCircle = {
 
     // get the bounds from the circle points since in oblique images the
     // circle will not be axis aligned
-    const boundsIJK = getBoundingBoxAroundShape(
+    const boundsIJK = getBoundingBoxAroundShapeIJK(
       circleCornersIJK,
       segmentationImageData.getDimensions()
     );

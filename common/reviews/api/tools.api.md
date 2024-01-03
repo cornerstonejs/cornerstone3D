@@ -714,7 +714,9 @@ export class BidirectionalTool extends AnnotationTool {
 declare namespace boundingBox {
     export {
         extend2DBoundingBoxInViewAxis,
-        getBoundingBoxAroundShape
+        getBoundingBoxAroundShapeIJK,
+        getBoundingBoxAroundShapeWorld,
+        getBoundingBoxAroundShapeIJK as getBoundingBoxAroundShape
     }
 }
 
@@ -2105,7 +2107,10 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
-function getBoundingBoxAroundShape(points: Types_2.Point2[] | Types_2.Point3[], clipBounds?: Types_2.Point2 | Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2 | null];
+function getBoundingBoxAroundShapeIJK(points: Types_2.Point2[] | Types_2.Point3[], dimensions?: Types_2.Point2 | Types_2.Point3): BoundingBox;
+
+// @public (undocumented)
+function getBoundingBoxAroundShapeWorld(points: Types_2.Point2[] | Types_2.Point3[], clipBounds?: Types_2.Point2 | Types_2.Point3): BoundingBox;
 
 // @public (undocumented)
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;

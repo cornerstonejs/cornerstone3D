@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
 import { BoundsIJK } from '../types';
-import { getBoundingBoxAroundShape } from './boundingBox';
+import { getBoundingBoxAroundShapeIJK } from './boundingBox';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -134,7 +134,7 @@ function _computeBoundsIJKWithCamera(
   );
 
   // get the bounding box of the sphere in the image
-  const boundsIJK = getBoundingBoxAroundShape(
+  const boundsIJK = getBoundingBoxAroundShapeIJK(
     [topLeftIJK, bottomRightIJK, ...pointsIJK],
     dimensions
   );

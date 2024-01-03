@@ -1,7 +1,10 @@
 import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
+import {
+  getBoundingBoxAroundShapeIJK,
+  getBoundingBoxAroundShapeWorld,
+} from '../../../utilities/boundingBox';
 import { pointInShapeCallback } from '../../../utilities';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { LabelmapToolOperationData } from '../../../types';
@@ -54,7 +57,7 @@ function fillRectangle(
     });
   });
 
-  const boundsIJK = getBoundingBoxAroundShape(
+  const boundsIJK = getBoundingBoxAroundShapeIJK(
     rectangleCornersIJK,
     segmentationImageData.getDimensions()
   );
@@ -80,16 +83,24 @@ function fillRectangle(
     viewPlaneNormal
   );
 
-  const pointsBoundsLPS = getBoundingBoxAroundShape(points);
-  const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = pointsBoundsLPS;
+  const pointsBoundsLPS = getBoundingBoxAroundShapeWorld(points);
+  let [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = pointsBoundsLPS;
+
+  // Update the bounds with +/- EPS
+  xMin -= EPS;
+  xMax += EPS;
+  yMin -= EPS;
+  yMax += EPS;
+  zMin -= EPS;
+  zMax += EPS;
 
   const pointInShapeFn = isAligned
     ? () => true
     : (pointLPS) => {
         const [x, y, z] = pointLPS;
-        const xInside = x >= xMin - EPS && x <= xMax + EPS;
-        const yInside = y >= yMin - EPS && y <= yMax + EPS;
-        const zInside = z >= zMin - EPS && z <= zMax + EPS;
+        const xInside = x >= xMin && x <= xMax;
+        const yInside = y >= yMin && y <= yMax;
+        const zInside = z >= zMin && z <= zMax;
 
         return xInside && yInside && zInside;
       };

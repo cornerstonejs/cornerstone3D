@@ -1,24 +1,23 @@
 import type { Types } from '@cornerstonejs/core';
+import { CONSTANTS } from '@cornerstonejs/core';
 
-/**
- * With a given vertices (points) coordinates in 2D or 3D IJK, it calculates the minimum and maximum
- * coordinate in each axis, and returns them. If clipBounds are provided it also
- * clip the min, max to the provided width, height and depth
- *
- * @param points - shape corner points coordinates (IJK)
- * @param clipBounds - bounds to clip the min, max
- * @returns [[xMin,xMax],[yMin,yMax], [zMin,zMax]]
- */
-function getBoundingBoxAroundShape(
-  points: Types.Point2[] | Types.Point3[],
-  clipBounds?: Types.Point2 | Types.Point3
-): [Types.Point2, Types.Point2, Types.Point2 | null] {
+const { EPSILON } = CONSTANTS;
+
+type BoundingBox =
+  | [Types.Point2, Types.Point2, null]
+  | [Types.Point2, Types.Point2, Types.Point2];
+
+function calculateBoundingBox(
+  points,
+  dimensions,
+  isWorld = false
+): BoundingBox {
   let xMin = Infinity;
-  let xMax = -Infinity;
+  let xMax = isWorld ? -Infinity : 0;
   let yMin = Infinity;
-  let yMax = -Infinity;
+  let yMax = isWorld ? -Infinity : 0;
   let zMin = Infinity;
-  let zMax = -Infinity;
+  let zMax = isWorld ? -Infinity : 0;
 
   const is3D = points[0] && points[0].length === 3;
 
@@ -34,19 +33,35 @@ function getBoundingBoxAroundShape(
     }
   });
 
-  // IMPORTANT: we used to do flooring here, which really
-  // did not make sense.
+  if (dimensions) {
+    xMin = Math.max(isWorld ? dimensions[0] + EPSILON : 0, xMin);
+    xMax = Math.min(
+      isWorld ? dimensions[0] - EPSILON : dimensions[0] - 1,
+      xMax
+    );
+    yMin = Math.max(isWorld ? dimensions[1] + EPSILON : 0, yMin);
+    yMax = Math.min(
+      isWorld ? dimensions[1] - EPSILON : dimensions[1] - 1,
+      yMax
+    );
 
-  if (clipBounds) {
-    // clip the min, max to the provided dimensions
+    if (is3D && dimensions.length === 3) {
+      zMin = Math.max(isWorld ? dimensions[2] + EPSILON : 0, zMin);
+      zMax = Math.min(
+        isWorld ? dimensions[2] - EPSILON : dimensions[2] - 1,
+        zMax
+      );
+    }
+  } else if (!isWorld) {
+    // still need to bound to 0 and Infinity if no dimensions are provided for ijk
     xMin = Math.max(0, xMin);
-    xMax = Math.min(clipBounds[0] - 1, xMax);
+    xMax = Math.min(Infinity, xMax);
     yMin = Math.max(0, yMin);
-    yMax = Math.min(clipBounds[1] - 1, yMax);
+    yMax = Math.min(Infinity, yMax);
 
-    if (is3D && clipBounds.length === 3) {
+    if (is3D) {
       zMin = Math.max(0, zMin);
-      zMax = Math.min(clipBounds[2] - 1, zMax);
+      zMax = Math.min(Infinity, zMax);
     }
   }
 
@@ -59,4 +74,34 @@ function getBoundingBoxAroundShape(
     : [[xMin, xMax], [yMin, yMax], null];
 }
 
-export default getBoundingBoxAroundShape;
+/**
+ * With a given vertices (points) coordinates in 2D or 3D in IJK, it calculates the minimum and maximum
+ * coordinate in each axis, and returns them. If clipBounds are provided it also
+ * clip the min, max to the provided width, height and depth
+ *
+ * @param points - shape corner points coordinates either in IJK (image coordinate)
+ * @param dimensions - bounds to clip the min, max
+ * @returns [[xMin,xMax],[yMin,yMax], [zMin,zMax]]
+ */
+export function getBoundingBoxAroundShapeIJK(
+  points: Types.Point2[] | Types.Point3[],
+  dimensions?: Types.Point2 | Types.Point3
+): BoundingBox {
+  return calculateBoundingBox(points, dimensions, false);
+}
+
+/**
+ * With a given vertices (points) coordinates in 2D or 3D in World Coordinates, it calculates the minimum and maximum
+ * coordinate in each axis, and returns them. If clipBounds are provided it also
+ * clip the min, max to the provided width, height and depth
+ *
+ * @param points - shape corner points coordinates either in IJK (image coordinate)
+ * @param clipBounds - bounds to clip the min, max
+ * @returns [[xMin,xMax],[yMin,yMax], [zMin,zMax]]
+ */
+export function getBoundingBoxAroundShapeWorld(
+  points: Types.Point2[] | Types.Point3[],
+  clipBounds?: Types.Point2 | Types.Point3
+): BoundingBox {
+  return calculateBoundingBox(points, clipBounds, true);
+}
