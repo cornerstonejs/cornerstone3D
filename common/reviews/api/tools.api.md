@@ -7,13 +7,14 @@
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import type { mat4 } from 'gl-matrix';
+import { mat3 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
-import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
@@ -451,6 +452,21 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
 }
 
 // @public (undocumented)
+class AnnotationToPointData {
+    constructor();
+    // (undocumented)
+    static convert(annotation: any, index: any, metadataProvider: any): {
+        ReferencedROINumber: any;
+        ROIDisplayColor: number[];
+        ContourSequence: any;
+    };
+    // (undocumented)
+    static register(toolClass: any): void;
+    // (undocumented)
+    static TOOL_NAMES: Record<string, any>;
+}
+
+// @public (undocumented)
 type AnnotationVisibilityChangeEventDetail = {
     lastHidden: Array<string>;
     lastVisible: Array<string>;
@@ -615,6 +631,19 @@ interface BidirectionalAnnotation extends Annotation {
         };
     };
 }
+
+// @public (undocumented)
+type BidirectionalData = {
+    majorAxis: [Types_2.Point3, Types_2.Point3];
+    minorAxis: [Types_2.Point3, Types_2.Point3];
+    maxMajor: number;
+    maxMinor: number;
+    segmentIndex: number;
+    label?: string;
+    color?: string | number[];
+    referencedImageId: string;
+    FrameOfReferenceUID: string;
+};
 
 // @public (undocumented)
 export class BidirectionalTool extends AnnotationTool {
@@ -1244,6 +1273,19 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
+function contourAndFindLargestBidirectional(segmentation: any): any;
+
+declare namespace contours {
+    export {
+        _default_2 as contourFinder,
+        _default_3 as mergePoints,
+        _default_4 as detectContourHoles,
+        generateContourSetsFromLabelmap,
+        AnnotationToPointData
+    }
+}
+
+// @public (undocumented)
 type ContourSegmentationData = {
     geometryIds: string[];
 };
@@ -1255,6 +1297,27 @@ type ControlPointInfo = {
 };
 
 // @public (undocumented)
+function convertStackToVolumeSegmentation({ segmentationId, options, }: {
+    segmentationId: string;
+    options?: {
+        toolGroupId: string;
+        volumeId?: string;
+        newSegmentationId?: string;
+        removeOriginal?: boolean;
+    };
+}): Promise<void>;
+
+// @public (undocumented)
+function convertVolumeToStackSegmentation({ segmentationId, options, }: {
+    segmentationId: string;
+    options?: {
+        toolGroupId: string;
+        newSegmentationId?: string;
+        removeOriginal?: boolean;
+    };
+}): Promise<void>;
+
+// @public (undocumented)
 function copyPoints(points: ITouchPoints): ITouchPoints;
 
 // @public (undocumented)
@@ -1264,7 +1327,13 @@ function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
 const CORNERSTONE_COLOR_LUT: number[][];
 
 // @public (undocumented)
+function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewport: any): Annotation;
+
+// @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds: string[]): Map<string, string>;
 
 // @public (undocumented)
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
@@ -1447,6 +1516,22 @@ const _default: {
 
 // @public (undocumented)
 const _default_2: {
+    findContours: typeof findContours;
+    findContoursFromReducedSet: typeof findContoursFromReducedSet;
+};
+
+// @public (undocumented)
+const _default_3: {
+    removeDuplicatePoints: typeof removeDuplicatePoints;
+};
+
+// @public (undocumented)
+const _default_4: {
+    processContourHoles: typeof processContourHoles;
+};
+
+// @public (undocumented)
+const _default_5: {
     interpolateAnnotation: typeof interpolateAnnotation;
 };
 
@@ -1965,6 +2050,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     // (undocumented)
     readonly uid: string;
 }
+
+// @public (undocumented)
+function generateContourSetsFromLabelmap({ segmentations }: {
+    segmentations: any;
+}): any[];
 
 // @public (undocumented)
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
@@ -3267,7 +3357,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
 
 declare namespace planarFreehandROITool {
     export {
-        _default_2 as default,
+        _default_5 as default,
         interpolateAnnotation
     }
 }
@@ -3856,6 +3946,9 @@ function removeSegmentation(segmentationId: string): void;
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
+function removeSegmentationRepresentations(toolGroupId: string): void;
+
+// @public (undocumented)
 function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationRepresentationUIDs?: string[] | undefined, immediate?: boolean): void;
 
 // @public (undocumented)
@@ -3884,7 +3977,7 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-function roundNumber(value: string | number | (string | number)[], precision?: number): string;
+const roundNumber: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -3990,7 +4083,9 @@ declare namespace segmentation {
         segmentLocking,
         config_2 as config,
         segmentIndex,
-        triggerSegmentationEvents
+        triggerSegmentationEvents,
+        convertStackToVolumeSegmentation,
+        convertVolumeToStackSegmentation
     }
 }
 export { segmentation }
@@ -4009,7 +4104,11 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
-        thresholdSegmentationByRange
+        thresholdSegmentationByRange,
+        createImageIdReferenceMap,
+        contourAndFindLargestBidirectional,
+        createBidirectionalToolData,
+        segmentContourAction
     }
 }
 
@@ -4130,6 +4229,9 @@ type SegmentationState = {
         };
     };
 };
+
+// @public (undocumented)
+function segmentContourAction(element: HTMLDivElement, configuration: any): any;
 
 declare namespace segmentIndex {
     export {
@@ -4486,6 +4588,7 @@ declare namespace state_3 {
         getSegmentationRepresentations,
         addSegmentationRepresentation,
         removeSegmentationRepresentation,
+        removeSegmentationRepresentations,
         getToolGroupSpecificConfig,
         setToolGroupSpecificConfig,
         getGlobalConfig,
@@ -4963,6 +5066,7 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
+        BidirectionalData,
         CanvasCoordinates,
         IAnnotationManager,
         GroupSpecificAnnotations,
@@ -5147,6 +5251,7 @@ declare namespace utilities {
         getCalibratedAreaUnits,
         getCalibratedScale,
         segmentation_2 as segmentation,
+        contours,
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRender,
         pointInShapeCallback,

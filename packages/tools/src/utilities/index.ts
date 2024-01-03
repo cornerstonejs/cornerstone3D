@@ -1,3 +1,5 @@
+import { utilities } from '@cornerstonejs/core';
+
 import {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
@@ -21,11 +23,11 @@ import jumpToSlice from './viewport/jumpToSlice';
 import pointInShapeCallback from './pointInShapeCallback';
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
-import roundNumber from './roundNumber';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 
 // name spaces
+import * as contours from './contours';
 import * as segmentation from './segmentation';
 import * as drawing from './drawing';
 import * as math from './math';
@@ -42,6 +44,8 @@ import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
 import * as voi from './voi';
+
+const roundNumber = utilities.roundNumber;
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -63,6 +67,7 @@ export {
   getCalibratedAreaUnits,
   getCalibratedScale,
   segmentation,
+  contours,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
   pointInShapeCallback,

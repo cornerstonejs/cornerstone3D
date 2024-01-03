@@ -4,12 +4,13 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import {
   cache,
   getEnabledElementByIds,
+  StackViewport,
   Types,
   utilities,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import type {
@@ -18,7 +19,6 @@ import type {
   LabelmapSegmentationData,
 } from '../../../types/LabelmapTypes';
 import {
-  RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
@@ -131,11 +131,21 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    console.warn('No segmentation found for segmentationId: ', segmentationId);
+    return;
+  }
+
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
 
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
   if (isVolumeSegmentation(labelmapData)) {
+    if (viewport instanceof StackViewport) {
+      return;
+    }
+
     const { volumeId: labelmapUID } = labelmapData;
 
     const labelmap = cache.getVolume(labelmapUID);
@@ -159,6 +169,10 @@ async function render(
 
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   } else {
+    if (viewport instanceof VolumeViewport) {
+      return;
+    }
+
     // stack segmentation
     const imageId = viewport.getCurrentImageId();
     const { imageIdReferenceMap } = labelmapData;

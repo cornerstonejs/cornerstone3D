@@ -13,7 +13,7 @@ import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, isEqual } = csUtils;
 
 const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
@@ -94,7 +94,20 @@ function createPointInEllipse(worldInfo: {
   const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
   const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
 
-  // using ellipse as a form of circle
+  const radius = Math.max(xRadius, yRadius, zRadius);
+  if (
+    isEqual(xRadius, radius) &&
+    isEqual(yRadius, radius) &&
+    isEqual(zRadius, radius)
+  ) {
+    const sphereObj = {
+      center,
+      radius,
+      radius2: radius * radius,
+    };
+    return (pointLPS) => pointInSphere(sphereObj, pointLPS);
+  }
+  // using circle as a form of ellipse
   const ellipseObj = {
     center: center as Types.Point3,
     xRadius,

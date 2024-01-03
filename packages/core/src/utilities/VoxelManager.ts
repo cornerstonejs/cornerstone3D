@@ -1,4 +1,4 @@
-import type { BoundsIJK, Point3, VolumeScalarData } from '../types';
+import type { BoundsIJK, Point3, PixelDataTypedArray } from '../types';
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
@@ -12,7 +12,7 @@ export default class VoxelManager<T> {
   ] as BoundsIJK;
 
   // Provide direct access to the underlying data, if any
-  public scalarData: VolumeScalarData;
+  public scalarData: PixelDataTypedArray;
   public map: Map<number, T>;
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;

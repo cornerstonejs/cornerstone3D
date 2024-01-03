@@ -2279,13 +2279,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
+
+    const pixelArray = image.getPixelData();
     this._createVTKImageData({
       origin,
       direction,
       dimensions,
       spacing,
       numComps,
-      pixelArray: image.getPixelData(),
+      pixelArray,
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone

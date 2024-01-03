@@ -6,7 +6,7 @@ type TimePoint = {
   /** imageIds of each timepoint  */
   imageIds: Array<string>;
   /** volume scalar data  */
-  scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+  scalarData: Types.PixelDataTypedArray;
 };
 
 /**
@@ -22,7 +22,7 @@ export default class StreamingDynamicImageVolume
   private _timePointIndex = 0;
 
   constructor(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
     StreamingDynamicImageVolume._ensureValidData(
@@ -31,16 +31,16 @@ export default class StreamingDynamicImageVolume
     );
 
     super(imageVolumeProperties, streamingProperties);
-    this._numTimePoints = (<Types.VolumeScalarData[]>this.scalarData).length;
+    this._numTimePoints = (<Types.PixelDataTypedArray[]>this.scalarData).length;
     this._timePoints = this._getTimePointsData();
   }
 
   private static _ensureValidData(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: Types.IStreamingVolumeProperties
   ): void {
     const imageIds = streamingProperties.imageIds;
-    const scalarDataArrays = <Types.VolumeScalarData[]>(
+    const scalarDataArrays = <Types.PixelDataTypedArray[]>(
       imageVolumeProperties.scalarData
     );
 
@@ -57,7 +57,7 @@ export default class StreamingDynamicImageVolume
    */
   private _getTimePointsData(): TimePoint[] {
     const { imageIds } = this;
-    const scalarData = <Types.VolumeScalarData[]>this.scalarData;
+    const scalarData = <Types.PixelDataTypedArray[]>this.scalarData;
 
     const { numFrames } = this;
     const numTimePoints = scalarData.length;
@@ -182,8 +182,8 @@ export default class StreamingDynamicImageVolume
    * Return the active scalar data (buffer)
    * @returns volume scalar data
    */
-  public getScalarData(): Types.VolumeScalarData {
-    return (<Types.VolumeScalarData[]>this.scalarData)[this._timePointIndex];
+  public getScalarData(): Types.PixelDataTypedArray {
+    return (<Types.PixelDataTypedArray[]>this.scalarData)[this._timePointIndex];
   }
 
   /**

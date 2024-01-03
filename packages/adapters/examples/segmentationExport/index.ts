@@ -208,8 +208,6 @@ async function addSegmentationsToState() {
         }
     ]);
 
-    // Add some data to the segmentations
-    // createMockEllipsoidSegmentation(segmentationVolume);
     createMockEllipsoidSegmentation(
         segmentationVolume,
         40,
