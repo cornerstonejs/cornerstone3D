@@ -314,14 +314,31 @@ function _setLabelmapColorAndOpacity(
   // @ts-ignore
   actor.getProperty().setInterpolationTypeToNearest();
 
-  if (utilities.actorIsA(actorEntry, 'vtkVolume')) {
-    // @ts-ignore
-    actor.getProperty().setUseLabelOutline(renderOutline);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineThickness(outlineWidth);
-  }
+  // @ts-ignore
+  actor.getProperty().setUseLabelOutline(renderOutline);
+  // @ts-ignore
+  actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+
+  const { activeSegmentIndex } = SegmentationState.getSegmentation(
+    segmentationRepresentation.segmentationId
+  );
+
+  // create an array that contains all the segment indices and for the active
+  // segment index, use the activeSegmentOutlineWidth, otherwise use the
+  // outlineWidth
+  const segmentIndices = Array.from(Array(numColors).keys());
+
+  // remove the background segment index
+  segmentIndices.shift();
+
+  const outlineWidths = segmentIndices.map((segmentIndex) => {
+    return segmentIndex === activeSegmentIndex
+      ? toolGroupLabelmapConfig.activeSegmentOutlineWidth
+      : outlineWidth;
+  });
+
+  // @ts-ignore
+  actor.getProperty().setLabelOutlineThickness(outlineWidths);
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but

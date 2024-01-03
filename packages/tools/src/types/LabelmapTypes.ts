@@ -7,10 +7,12 @@ import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/Piec
 export type LabelmapConfig = {
   /** whether to render segmentation outline  */
   renderOutline?: boolean;
-  /** thickness of the outline when segmentation is active */
+  /** thickness of the outline when segmentation is active - all segments */
   outlineWidthActive?: number;
-  /** thickness of the outline when segmentation is inactive */
+  /** thickness of the outline when segmentation is inactive - all segments */
   outlineWidthInactive?: number;
+  /**  thickness of the outline when segmentation is active - only active segment index */
+  activeSegmentOutlineWidth?: number;
   /** whether to render segmentation filling */
   renderFill?: boolean;
   /** whether to render segmentation filling when inactive */

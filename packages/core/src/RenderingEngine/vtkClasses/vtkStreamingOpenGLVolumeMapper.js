@@ -1,4 +1,3 @@
-import { mat3, mat4, vec3 } from 'gl-matrix';
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
@@ -6,9 +5,8 @@ import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 
-const { vtkWarningMacro } = macro;
 /**
- * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
+ * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
  * into GPU memory using the new methods on vtkStreamingOpenGLTexture.
  *
@@ -248,29 +246,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     model.VBOBuildTime.modified();
   };
 
-  // publicAPI.getRenderTargetSize = () => {
-  //   // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/VolumeMapper/index.js#L952
-  //   if (model.lastXYF > 1.43) {
-  //     const sz = model.framebuffer.getSize()
-  //     return [model.fvp[0] * sz[0], model.fvp[1] * sz[1]]
-  //   }
-
-  //   // This seems wrong, it assumes the renderWindow only has one renderer
-  //   // but I don't know if this stuff is correct...
-
-  //   const { usize, vsize } = model.openGLRenderer.getTiledSizeAndOrigin()
-
-  //   return [usize, vsize]
-  // }
-
-  // publicAPI.getRenderTargetSize = () => {
-  //   if (model._useSmallViewport) {
-  //     return [model._smallViewportWidth, model._smallViewportHeight]
-  //   }
-
-  //   return model._openGLRenderWindow.getFramebufferSize()
-  // }
-
   publicAPI.getRenderTargetSize = () => {
     if (model._useSmallViewport) {
       return [model._smallViewportWidth, model._smallViewportHeight];
@@ -286,71 +261,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       model._openGLRenderer.getTiledSizeAndOrigin();
 
     return [lowerLeftU, lowerLeftV];
-  };
-
-  publicAPI.updateLabelOutlineThicknessTexture = (volume) => {
-    const labelOutlineThicknessArray = volume
-      .getProperty()
-      .getLabelOutlineThickness();
-
-    const lTex = model._openGLRenderWindow.getGraphicsResourceForObject(
-      labelOutlineThicknessArray
-    );
-
-    // compute the join of the labelOutlineThicknessArray so that
-    // we can use it to decide whether to rebuild the labelOutlineThicknessTexture
-    // or not
-    const toString = `${labelOutlineThicknessArray.join('-')}`;
-
-    const reBuildL =
-      !lTex?.vtkObj ||
-      lTex?.hash !== toString ||
-      model.labelOutlineThicknessTextureString !== toString;
-
-    if (reBuildL) {
-      const lWidth = 1024;
-      const lHeight = 1;
-      const lSize = lWidth * lHeight;
-      const lTable = new Uint8Array(lSize);
-
-      // Assuming labelOutlineThicknessArray contains the thickness for each segment
-      for (let i = 0; i < lWidth; ++i) {
-        // Retrieve the thickness value for the current segment index.
-        // If the value is undefined, null, or 0, use the first element's value as a default.
-        const thickness =
-          labelOutlineThicknessArray[i] || labelOutlineThicknessArray[0];
-        lTable[i] = thickness;
-      }
-
-      model.labelOutlineThicknessTexture.releaseGraphicsResources(
-        model._openGLRenderWindow
-      );
-
-      model.labelOutlineThicknessTexture.resetFormatAndType();
-      model.labelOutlineThicknessTexture.setMinificationFilter(Filter.NEAREST);
-      model.labelOutlineThicknessTexture.setMagnificationFilter(Filter.NEAREST);
-
-      // Create a 2D texture (acting as 1D) from the raw data
-      model.labelOutlineThicknessTexture.create2DFromRaw(
-        lWidth,
-        lHeight,
-        1,
-        VtkDataTypes.UNSIGNED_CHAR,
-        lTable
-      );
-
-      model.labelOutlineThicknessTextureString = toString;
-      if (labelOutlineThicknessArray) {
-        model._openGLRenderWindow.setGraphicsResourceForObject(
-          labelOutlineThicknessArray,
-          model.labelOutlineThicknessTexture,
-          model.labelOutlineThicknessTextureString
-        );
-      }
-    } else {
-      model.labelOutlineThicknessTexture = lTex.vtkObj;
-      model.labelOutlineThicknessTextureString = lTex.hash;
-    }
   };
 
   // TODO: it seems like this may be needed to reset the GPU memory associated

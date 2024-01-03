@@ -3095,10 +3095,10 @@
     merge-source-map "^1.1.0"
     schema-utils "^2.7.0"
 
-"@kitware/vtk.js@29.2.0":
-  version "29.2.0"
-  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-29.2.0.tgz#0c4b8f8f4759045d7dd23c8978f21df572c62691"
-  integrity sha512-2EYcDfKT8o9Q7NZW90Xa9zLLVzV9RKqOzxtpmOq5+hOR4ksqmn+mP4u+P8Z8/Pr+9myA/zNuIP506GigDCnpTA==
+"@kitware/vtk.js@29.3.0":
+  version "29.3.0"
+  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-29.3.0.tgz#8601e07cde3da61c285aabfcb3484ae1ffb1074b"
+  integrity sha512-EofIxo6Qcfhh8SRx8Xp7B8HGM//2tzjQbhrMQsiaoPgs3yhtrqm+CBFmqboxt+waF8qUKxuUQb+DzM8cX2ivAg==
   dependencies:
     "@babel/runtime" "7.22.11"
     "@types/webxr" "^0.5.5"
@@ -17399,7 +17399,7 @@ pkg-up@^3.1.0:
   version "1.1.0"
   resolved "https://codeload.github.com/ataft/plugin-image-zoom/tar.gz/8e1b866c79ed6d42cefc4c52f851f1dfd1d0c7de"
   dependencies:
-    medium-zoom "^1.0.8"
+    medium-zoom "^1.0.4"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
