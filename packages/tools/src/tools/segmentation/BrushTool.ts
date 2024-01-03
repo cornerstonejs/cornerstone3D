@@ -171,7 +171,7 @@ class BrushTool extends BaseTool {
 
   createEditData(element) {
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     const toolGroupId = this.toolGroupId;
 
@@ -197,8 +197,6 @@ class BrushTool extends BaseTool {
 
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-
-    const viewportIdsToRender = [viewport.id];
 
     if (isVolumeSegmentation(labelmapData)) {
       const { volumeId } = representationData[
@@ -235,11 +233,9 @@ class BrushTool extends BaseTool {
       // and should throw an error or maybe simply just allow circle manipulation
       // and not sphere manipulation
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        console.warn(
-          'Sphere manipulation is not supported for this stack of images yet'
+        throw new Error(
+          'Sphere manipulation is not supported for stacks of image segmentations yet'
         );
-        return;
-
         // Todo: add sphere (volumetric) manipulation support for stacks of images
         // we should basically check if the stack constructs a valid volume
         // meaning all the metadata is present and consistent
@@ -428,6 +424,10 @@ class BrushTool extends BaseTool {
 
     this._calculateCursor(element, centerCanvas);
 
+    if (!this._hoverData) {
+      return;
+    }
+
     triggerAnnotationRenderForViewportUIDs(
       getEnabledElement(element).renderingEngine,
       this._hoverData.viewportIdsToRender
@@ -547,6 +547,10 @@ class BrushTool extends BaseTool {
       topCursorInWorld[i] = centerCursorInWorld[i] + viewUp[i] * brushSize;
       leftCursorInWorld[i] = centerCursorInWorld[i] - viewRight[i] * brushSize;
       rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
+    }
+
+    if (!this._hoverData) {
+      return;
     }
 
     const { brushCursor } = this._hoverData;

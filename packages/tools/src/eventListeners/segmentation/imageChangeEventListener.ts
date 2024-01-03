@@ -1,3 +1,5 @@
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
   StackViewport,
   getEnabledElement,
@@ -6,15 +8,12 @@ import {
   cache,
   utilities,
   Types,
-  metaData,
 } from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 
 const enable = function (element: HTMLDivElement): void {
@@ -118,6 +117,26 @@ function _imageChangeEventListener(evt) {
   const currentImageId = viewport.getCurrentImageId();
   const actors = viewport.getActors();
 
+  const segmentationFound = actors.find((actor) => {
+    if (!representationList.includes(actor.uid)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (!segmentationFound) {
+    // If the segmentation is not found, it could be because of some special cases
+    // where we are in the process of updating the volume conversion to a stack while
+    // the data is still coming in. In such situations, we should trigger the render
+    // to ensure that the segmentation actors are created, even if the data arrives late.
+    triggerSegmentationRender(toolGroup.id);
+
+    // we should return here, since there is no segmentation actor to update
+    // we will hit this function later on after the actor is created
+    return;
+  }
+
   actors.forEach((actor) => {
     if (!representationList.includes(actor.uid)) {
       return;
@@ -148,10 +167,27 @@ function _imageChangeEventListener(evt) {
 
     const derivedImage = cache.getImage(derivedImageId);
 
-    const { origin, dimensions, spacing, direction } =
+    const { dimensions, spacing, direction } =
       viewport.getImageDataMetadata(derivedImage);
 
-    segmentationImageData.setOrigin(origin);
+    const currentImage = cache.getImage(currentImageId);
+    const { origin: currentOrigin } =
+      viewport.getImageDataMetadata(currentImage);
+
+    // IMPORTANT: We need to make sure that the origin of the segmentation
+    // is the same as the current image origin. This is because due to some
+    // floating point precision issues, when coming from volume to stack
+    // the origin of the segmentation can be slightly different from the
+    // current image origin. This can cause the segmentation to be rendered
+    // in the wrong location.
+    // Todo: This will not work for segmentations that are not in the same frame
+    // of reference or derived from the same image. This can happen when we have
+    // a segmentation that happens to exist in the same space as the image but is
+    // not derived from it. We need to find a way to handle this case, but don't think
+    // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
+    const originToUse = currentOrigin;
+
+    segmentationImageData.setOrigin(originToUse);
     segmentationImageData.modified();
 
     if (
@@ -180,7 +216,7 @@ function _imageChangeEventListener(evt) {
               imageData.setDimensions(dimensions[0], dimensions[1], 1);
               imageData.setSpacing(spacing);
               imageData.setDirection(direction);
-              imageData.setOrigin(origin);
+              imageData.setOrigin(originToUse);
               imageData.getPointData().setScalars(scalarArray);
 
               imageActor.getMapper().setInputData(imageData);

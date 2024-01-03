@@ -7,13 +7,14 @@
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import type { mat4 } from 'gl-matrix';
+import { mat3 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
-import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
@@ -1296,6 +1297,27 @@ type ControlPointInfo = {
 };
 
 // @public (undocumented)
+function convertStackToVolumeSegmentation({ segmentationId, options, }: {
+    segmentationId: string;
+    options?: {
+        toolGroupId: string;
+        volumeId?: string;
+        newSegmentationId?: string;
+        removeOriginal?: boolean;
+    };
+}): Promise<void>;
+
+// @public (undocumented)
+function convertVolumeToStackSegmentation({ segmentationId, options, }: {
+    segmentationId: string;
+    options?: {
+        toolGroupId: string;
+        newSegmentationId?: string;
+        removeOriginal?: boolean;
+    };
+}): Promise<void>;
+
+// @public (undocumented)
 function copyPoints(points: ITouchPoints): ITouchPoints;
 
 // @public (undocumented)
@@ -1309,6 +1331,9 @@ function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewp
 
 // @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds: string[]): Map<string, string>;
 
 // @public (undocumented)
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
@@ -3911,6 +3936,9 @@ function removeSegmentation(segmentationId: string): void;
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
+function removeSegmentationRepresentations(toolGroupId: string): void;
+
+// @public (undocumented)
 function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationRepresentationUIDs?: string[] | undefined, immediate?: boolean): void;
 
 // @public (undocumented)
@@ -3939,7 +3967,7 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-function roundNumber(value: string | number | (string | number)[], precision?: number): string;
+const roundNumber: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -4045,7 +4073,9 @@ declare namespace segmentation {
         segmentLocking,
         config_2 as config,
         segmentIndex,
-        triggerSegmentationEvents
+        triggerSegmentationEvents,
+        convertStackToVolumeSegmentation,
+        convertVolumeToStackSegmentation
     }
 }
 export { segmentation }
@@ -4065,6 +4095,7 @@ declare namespace segmentation_2 {
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
         thresholdSegmentationByRange,
+        createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
         createBidirectionalToolData,
         segmentContourAction
@@ -4547,6 +4578,7 @@ declare namespace state_3 {
         getSegmentationRepresentations,
         addSegmentationRepresentation,
         removeSegmentationRepresentation,
+        removeSegmentationRepresentations,
         getToolGroupSpecificConfig,
         setToolGroupSpecificConfig,
         getGlobalConfig,

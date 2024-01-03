@@ -15,7 +15,7 @@ import {
   getCalibratedScale,
   getCalibratedAspect,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,

@@ -21,7 +21,7 @@ export default class NiftiImageVolume extends ImageVolume {
   controller: AbortController;
 
   constructor(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: NiftiImageProperties
   ) {
     super(imageVolumeProperties);
