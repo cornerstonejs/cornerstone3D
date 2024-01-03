@@ -239,7 +239,7 @@ class RequestPoolManager {
         this.numRequests[type]++;
         this.awake = true;
 
-        requestDetails.requestFn().finally(() => {
+        requestDetails.requestFn()?.finally(() => {
           this.numRequests[type]--;
           this.startAgain();
         });

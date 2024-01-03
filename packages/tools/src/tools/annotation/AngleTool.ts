@@ -16,7 +16,7 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
 import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -25,7 +25,6 @@ import {
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   AnnotationCompletedEventDetail,
@@ -43,7 +42,6 @@ import {
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';

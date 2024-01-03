@@ -4,6 +4,8 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  ProgressiveRetrieveImages,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,6 +14,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -32,11 +35,12 @@ const {
   PaintFillTool,
   PanTool,
   ZoomTool,
+  StackScrollTool,
   StackScrollMouseWheelTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -97,7 +101,8 @@ const brushInstanceNames = {
   CircularEraser: 'CircularEraser',
   SphereBrush: 'SphereBrush',
   SphereEraser: 'SphereEraser',
-  ThresholdBrush: 'ThresholdBrush',
+  ThresholdCircle: 'ThresholdCircle',
+  ScissorsEraser: 'ScissorsEraser',
 };
 
 const brushStrategies = {
@@ -105,7 +110,8 @@ const brushStrategies = {
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
   [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
-  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ThresholdCircle]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE',
 };
 
 const brushValues = [
@@ -113,7 +119,7 @@ const brushValues = [
   brushInstanceNames.CircularEraser,
   brushInstanceNames.SphereBrush,
   brushInstanceNames.SphereEraser,
-  brushInstanceNames.ThresholdBrush,
+  brushInstanceNames.ThresholdCircle,
 ];
 
 const optionsValues = [
@@ -121,6 +127,7 @@ const optionsValues = [
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
   SphereScissorsTool.toolName,
+  brushInstanceNames.ScissorsEraser,
   PaintFillTool.toolName,
 ];
 
@@ -152,21 +159,29 @@ addDropdownToToolbar({
   },
 });
 
-const thresholdOptions = ['CT Fat: (-150, -70)', 'CT Bone: (200, 1000)'];
+const thresholdOptions = new Map<string, any>();
+thresholdOptions.set('CT Fat: (-150, -70)', {
+  threshold: [-150, -70],
+});
+thresholdOptions.set('CT Bone: (200, 1000)', {
+  threshold: [200, 1000],
+});
 
 addDropdownToToolbar({
-  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
+  options: {
+    values: Array.from(thresholdOptions.keys()),
+    defaultValue: thresholdOptions[0],
+  },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
 
-    let threshold;
-    if (name === thresholdOptions[0]) {
-      threshold = [-150, -70];
-    } else if (name == thresholdOptions[1]) {
-      threshold = [100, 1000];
-    }
+    const thresholdArgs = thresholdOptions.get(name);
 
-    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
+    segmentationUtils.setBrushThresholdForToolGroup(
+      toolGroupId,
+      thresholdArgs.threshold,
+      thresholdArgs
+    );
   },
 });
 
@@ -213,10 +228,17 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  // This is not necessary, but makes the images appear faster
+  utilities.imageRetrieveMetadataProvider.add(
+    'volume',
+    ProgressiveRetrieveImages.interleavedRetrieveStages
+  );
+
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
@@ -237,7 +259,15 @@ async function run() {
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
+  toolGroup.addToolInstance(
+    brushInstanceNames.ScissorsEraser,
+    SphereScissorsTool.toolName,
+    {
+      activeStrategy: brushStrategies.ScissorsEraser,
+    }
+  );
   toolGroup.addTool(PaintFillTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
@@ -266,11 +296,23 @@ async function run() {
       activeStrategy: brushStrategies.SphereEraser,
     }
   );
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Alt,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Meta,
+      },
+    ],
+  });
   toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdBrush,
+    brushInstanceNames.ThresholdCircle,
     BrushTool.toolName,
     {
-      activeStrategy: brushStrategies.ThresholdBrush,
+      activeStrategy: brushStrategies.ThresholdCircle,
     }
   );
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
@@ -279,10 +321,23 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift Left Click
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Ctrl,
       },
     ],
   });
@@ -303,7 +358,8 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -369,7 +425,22 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // // Add the segmentation representation to the toolgroup
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+
+  // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
       segmentationId,

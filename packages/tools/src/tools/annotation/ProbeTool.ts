@@ -16,6 +16,7 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
+import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
@@ -23,7 +24,7 @@ import {
 import { state } from '../../store';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -590,7 +591,7 @@ class ProbeTool extends AnnotationTool {
           index[2] * zMultiple +
           index[1] * yMultiple +
           index[0] * samplesPerPixel;
-        const value =
+        let value =
           samplesPerPixel > 2
             ? [
                 scalarData[baseIndex],
@@ -614,11 +615,28 @@ class ProbeTool extends AnnotationTool {
           index[2] = viewport.getCurrentImageIdIndex();
         }
 
-        const modalityUnit = getModalityUnit(
-          modality,
-          annotation.metadata.referencedImageId,
-          modalityUnitOptions
-        );
+        let modalityUnit;
+
+        if (modality === 'US') {
+          const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
+            index,
+          ]);
+
+          const hasEnhancedRegionValues = calibratedResults.values.every(
+            (value) => value !== null
+          );
+
+          value = hasEnhancedRegionValues ? calibratedResults.values : value;
+          modalityUnit = hasEnhancedRegionValues
+            ? calibratedResults.units
+            : 'raw';
+        } else {
+          modalityUnit = getModalityUnit(
+            modality,
+            annotation.metadata.referencedImageId,
+            modalityUnitOptions
+          );
+        }
 
         cachedStats[targetId] = {
           index,
@@ -664,7 +682,13 @@ function defaultGetTextLines(data, targetId): string[] {
 
   textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-  textLines.push(`${roundNumber(value)} ${modalityUnit}`);
+  if (value instanceof Array && modalityUnit instanceof Array) {
+    for (let i = 0; i < value.length; i++) {
+      textLines.push(`${roundNumber(value[i])} ${modalityUnit[i]}`);
+    }
+  } else {
+    textLines.push(`${roundNumber(value)} ${modalityUnit}`);
+  }
 
   return textLines;
 }

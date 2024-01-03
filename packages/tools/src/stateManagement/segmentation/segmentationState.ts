@@ -1,5 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
 import type {
-  ColorLUT,
   RepresentationConfig,
   Segmentation,
   SegmentationPublicInput,
@@ -369,6 +369,22 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Removes all segmentation representations associated with a tool group.
+ * @param toolGroupId - The ID of the tool group.
+ */
+function removeSegmentationRepresentations(toolGroupId: string): void {
+  const segmentationRepresentations =
+    getSegmentationRepresentations(toolGroupId) || [];
+
+  segmentationRepresentations.forEach((representation) => {
+    removeSegmentationRepresentation(
+      toolGroupId,
+      representation.segmentationRepresentationUID
+    );
+  });
+}
+
+/**
  * Add a color LUT to the segmentation state manager
  * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
@@ -383,9 +399,14 @@ function removeColorLUT(colorLUTIndex: number): void {
  * @param index - The index of the color lut to retrieve.
  * @returns A ColorLUT array.
  */
-function getColorLUT(index: number): ColorLUT | undefined {
+function getColorLUT(index: number): Types.ColorLUT | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getColorLUT(index);
+}
+
+function getNextColorLUTIndex(): number {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getNextColorLUTIndex();
 }
 
 /**
@@ -393,7 +414,7 @@ function getColorLUT(index: number): ColorLUT | undefined {
  * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
  */
-function addColorLUT(colorLUT: ColorLUT, index: number): void {
+function addColorLUT(colorLUT: Types.ColorLUT, index: number): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.addColorLUT(colorLUT, index);
   // Todo: trigger event color LUT added
@@ -410,6 +431,7 @@ export {
   getSegmentationRepresentations,
   addSegmentationRepresentation,
   removeSegmentationRepresentation,
+  removeSegmentationRepresentations,
   // config
   getToolGroupSpecificConfig,
   setToolGroupSpecificConfig,
@@ -426,5 +448,6 @@ export {
   // color
   addColorLUT,
   getColorLUT,
+  getNextColorLUTIndex,
   removeColorLUT,
 };

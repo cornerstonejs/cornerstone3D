@@ -1,4 +1,3 @@
-2
 import type { Types } from '@cornerstonejs/core';
 import { SVGDrawingHelper } from '../types';
 
@@ -35,9 +34,10 @@ function drawEllipseByCoordinates(
 
   const w = Math.hypot(left[0] - right[0], left[1] - right[1]);
   const h = Math.hypot(top[0] - bottom[0], top[1] - bottom[1]);
-  const angle = Math.atan2(left[1] - right[1], left[0] - right[0]) * 180 / Math.PI;
+  const angle =
+    (Math.atan2(left[1] - right[1], left[0] - right[0]) * 180) / Math.PI;
 
-  const center = [(left[0] + right[0]) / 2 , ( top[1] + bottom[1] ) / 2];
+  const center = [(left[0] + right[0]) / 2, (top[1] + bottom[1]) / 2];
   const radiusX = w / 2;
   const radiusY = h / 2;
 
@@ -48,7 +48,7 @@ function drawEllipseByCoordinates(
     ry: `${radiusY}`,
     stroke: color,
     fill: 'transparent',
-    'transform': `rotate(${angle} ${center[0]} ${center[1]})`,
+    transform: `rotate(${angle} ${center[0]} ${center[1]})`,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };

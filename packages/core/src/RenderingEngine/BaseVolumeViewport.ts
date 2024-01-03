@@ -3,6 +3,8 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
+import { vec3 } from 'gl-matrix';
+
 import cache from '../cache';
 import {
   MPR_CAMERA_VALUES,
@@ -31,6 +33,7 @@ import type {
   Point2,
   Point3,
   VOIRange,
+  EventTypes,
   VolumeViewportProperties,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
@@ -77,7 +80,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     string,
     VolumeViewportProperties
   >();
-
+  // Camera properties
+  protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
 
   constructor(props: ViewportInput) {
@@ -130,6 +134,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       -viewPlaneNormal[2]
     );
     camera.setViewUpFrom(viewUp);
+    this.initialViewUp = viewUp;
 
     this.resetCamera();
   }
@@ -471,6 +476,33 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     this.viewportProperties.voiRange = voiRangeToUse;
   }
 
+  private setRotation(rotation: number): void {
+    const previousCamera = this.getCamera();
+
+    this.rotateCamera(rotation);
+
+    // New camera after rotation
+    const camera = this.getCamera();
+
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      previousCamera,
+      camera,
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      rotation,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+    this.viewportProperties.rotation = rotation;
+  }
+
+  private rotateCamera(rotation: number): void {
+    const rotationToApply = rotation - this.getRotation();
+    // rotating camera to the new value
+    this.getVtkActiveCamera().roll(-rotationToApply);
+  }
+
   /**
    * Update the default properties for the volume viewport on the volume
    * @param ViewportProperties - The properties to set
@@ -525,6 +557,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       preset,
       interpolationType,
       slabThickness,
+      rotation,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -538,6 +571,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         colormap,
         preset,
         slabThickness,
+        rotation,
       });
     }
 
@@ -576,6 +610,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = slabThickness;
     }
+
+    if (rotation !== undefined) {
+      this.setRotation(rotation);
+    }
   }
 
   /**
@@ -607,6 +645,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
+    }
+
+    if (properties.rotation !== undefined) {
+      this.setRotation(properties.rotation);
     }
 
     this.render();
@@ -683,6 +725,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       interpolationType,
       invert,
       slabThickness,
+      rotation,
     } = this.viewportProperties;
 
     const voiRanges = this.getActors()
@@ -711,6 +754,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       interpolationType: interpolationType,
       invert: invert,
       slabThickness: slabThickness,
+      rotation: rotation,
     };
   };
 
@@ -936,6 +980,52 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     return true;
   }
+
+  /**
+   * Gets the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently from the camera provided or the viewport.
+   *
+   * @returns the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently.
+   */
+  public getRotation = (): number => {
+    const {
+      viewUp: currentViewUp,
+      viewPlaneNormal,
+      flipVertical,
+    } = this.getCamera();
+
+    // The initial view up vector without any rotation, but incorporating vertical flip.
+    const initialViewUp = flipVertical
+      ? vec3.negate(vec3.create(), this.initialViewUp)
+      : this.initialViewUp;
+
+    // The angle between the initial and current view up vectors.
+    // TODO: check with VTK about rounding errors here.
+    const initialToCurrentViewUpAngle =
+      (vec3.angle(initialViewUp, currentViewUp) * 180) / Math.PI;
+
+    // Now determine if initialToCurrentViewUpAngle is positive or negative by comparing
+    // the direction of the initial/current view up cross product with the current
+    // viewPlaneNormal.
+
+    const initialToCurrentViewUpCross = vec3.cross(
+      vec3.create(),
+      initialViewUp,
+      currentViewUp
+    );
+
+    // The sign of the dot product of the start/end view up cross product and
+    // the viewPlaneNormal indicates a positive or negative rotation respectively.
+    const normalDot = vec3.dot(initialToCurrentViewUpCross, viewPlaneNormal);
+
+    const value =
+      normalDot >= 0
+        ? initialToCurrentViewUpAngle
+        : (360 - initialToCurrentViewUpAngle) % 360;
+
+    return value;
+  };
 
   /**
    * gets the visible bounds of the viewport in the world coordinate system
@@ -1209,6 +1299,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       typeof orientation === 'string' &&
       MPR_CAMERA_VALUES[orientation]
     ) {
+      this.viewportProperties.orientation = orientation;
       return MPR_CAMERA_VALUES[orientation];
     } else {
       throw new Error(

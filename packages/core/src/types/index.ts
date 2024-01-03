@@ -3,7 +3,7 @@ import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
-import type { IVolume, VolumeScalarData } from './IVolume';
+import type { IVolume } from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type DisplayArea from './displayArea';
 import type ImageLoaderFn from './ImageLoaderFn';
@@ -98,12 +98,16 @@ export type {
   IImagesLoader,
 } from './IRetrieveConfiguration';
 import type { ImageLoadListener } from './ImageLoadListener';
+import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type IVideoViewport from './IVideoViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import type BoundsIJK from './BoundsIJK';
+import type { ImageVolumeProps } from './ImageVolumeProps';
+import type { VolumeProps } from './VolumeProps';
 
 export type {
   // config
@@ -116,9 +120,9 @@ export type {
   IEnabledElement,
   ICache,
   IVolume,
-  VolumeScalarData,
   IViewportId,
   IImageVolume,
+  ImageVolumeProps,
   IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
@@ -211,4 +215,8 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
+  BoundsIJK,
+  Color,
+  ColorLUT,
+  VolumeProps,
 };
