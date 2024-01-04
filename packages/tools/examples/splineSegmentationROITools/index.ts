@@ -17,7 +17,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const DEFAULT_SEGMENT_CONFIG = {
+const DEFAULT_SEGMENTATION_CONFIG = {
   fillAlpha: 0.5,
   fillAlphaInactive: 0.3,
   outlineOpacity: 1,
@@ -95,22 +95,22 @@ function updateInputsForCurrentSegmentation() {
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
     String(
       contourConfig.outlineWidthActive ??
-        DEFAULT_SEGMENT_CONFIG.outlineWidthActive
+        DEFAULT_SEGMENTATION_CONFIG.outlineWidthActive
     );
 
   (document.getElementById('outlineOpacity') as HTMLInputElement).value =
     String(
-      contourConfig.outlineOpacity ?? DEFAULT_SEGMENT_CONFIG.outlineOpacity
+      contourConfig.outlineOpacity ?? DEFAULT_SEGMENTATION_CONFIG.outlineOpacity
     );
 
   (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
-    contourConfig.fillAlpha ?? DEFAULT_SEGMENT_CONFIG.fillAlpha
+    contourConfig.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
   );
 
   (document.getElementById('outlineDashActive') as HTMLInputElement).value =
     String(
       contourConfig.outlineDashActive?.split(',')[0] ??
-        DEFAULT_SEGMENT_CONFIG.outlineDashActive?.split(',')[0] ??
+        DEFAULT_SEGMENTATION_CONFIG.outlineDashActive?.split(',')[0] ??
         '0'
     );
 }
@@ -303,7 +303,7 @@ function initializeGlobalConfig() {
 
   Object.assign(
     globalSegmentationConfig.representations.CONTOUR,
-    DEFAULT_SEGMENT_CONFIG
+    DEFAULT_SEGMENTATION_CONFIG
   );
 
   segmentation.config.setGlobalConfig(globalSegmentationConfig);
@@ -458,7 +458,6 @@ async function run() {
     segmentationRepresentationUID
   );
 
-  updateInputsForCurrentSegmentation();
   updateActiveSegmentIndex(1);
   initializeGlobalConfig();
   updateInputsForCurrentSegmentation();
