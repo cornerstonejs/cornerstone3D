@@ -107,6 +107,43 @@ function createMockEllipsoidStackSegmentation({
   }
 }
 
+/**
+ * Adds two concentric circles to each axial slice of the demo segmentation.
+ */
+function createMockEllipsoidVolumeSegmentation({
+  volumeId: segVolumeId,
+  cornerstone,
+  innerRadius = 32,
+  outerRadius = 64,
+}) {
+  const segmentationVolume = cornerstone.cache.getVolume(segVolumeId);
+  const scalarData = segmentationVolume.scalarData;
+  const { dimensions } = segmentationVolume;
+
+  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
+
+  let voxelIndex = 0;
+
+  for (let z = 0; z < dimensions[2]; z++) {
+    for (let y = 0; y < dimensions[1]; y++) {
+      for (let x = 0; x < dimensions[0]; x++) {
+        const distanceFromCenter = Math.sqrt(
+          (x - center[0]) * (x - center[0]) +
+            (y - center[1]) * (y - center[1]) +
+            (z - center[2]) * (z - center[2])
+        );
+        if (distanceFromCenter < innerRadius) {
+          scalarData[voxelIndex] = 1;
+        } else if (distanceFromCenter < outerRadius) {
+          scalarData[voxelIndex] = 2;
+        }
+
+        voxelIndex++;
+      }
+    }
+  }
+}
+
 export {
   fakeImageLoader,
   fakeMetaDataProvider,
@@ -116,4 +153,5 @@ export {
   // utils
   colors,
   createMockEllipsoidStackSegmentation,
+  createMockEllipsoidVolumeSegmentation,
 };

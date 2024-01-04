@@ -33,7 +33,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const highResSegmentationId = 'HIGH_RES_SEGMENTATION_ID';
 const lowResSegmentationId = 'LOW_RES_SEGMENTATION_ID';
 
-// The amount we should downsample the second example segementation (should be a factor of 2)
+// The amount we should downsample the second example segmentation (should be a factor of 2)
 const DOWN_SAMPLE_RATE = 8;
 
 // ======== Set up page ======== //

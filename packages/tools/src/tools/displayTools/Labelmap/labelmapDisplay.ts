@@ -326,16 +326,16 @@ function _setLabelmapColorAndOpacity(
   // create an array that contains all the segment indices and for the active
   // segment index, use the activeSegmentOutlineWidth, otherwise use the
   // outlineWidth
-  const segmentIndices = Array.from(Array(numColors).keys());
+  // Pre-allocate the array with the required size to avoid dynamic resizing.
+  const outlineWidths = new Array(numColors - 1);
 
-  // remove the background segment index
-  segmentIndices.shift();
-
-  const outlineWidths = segmentIndices.map((segmentIndex) => {
-    return segmentIndex === activeSegmentIndex
-      ? toolGroupLabelmapConfig.activeSegmentOutlineWidth
-      : outlineWidth;
-  });
+  for (let i = 1; i < numColors; i++) {
+    // Start from 1 to skip the background segment index.
+    outlineWidths[i - 1] =
+      i === activeSegmentIndex
+        ? toolGroupLabelmapConfig.activeSegmentOutlineWidth
+        : outlineWidth;
+  }
 
   // @ts-ignore
   actor.getProperty().setLabelOutlineThickness(outlineWidths);

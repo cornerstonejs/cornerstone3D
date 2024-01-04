@@ -362,6 +362,40 @@ class BrushTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
+    const viewportIdsToRender = [viewport.id];
+
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      segmentColor,
+    } = this.getActiveSegmentationData() || {};
+
+    // Center of circle in canvas Coordinates
+    const brushCursor = {
+      metadata: {
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId: '',
+        toolName: this.getToolName(),
+        segmentColor,
+      },
+      data: {},
+    };
+
+    return {
+      brushCursor,
+      centerCanvas,
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      segmentColor,
+      viewportIdsToRender,
+    };
+  }
+
+  private getActiveSegmentationData() {
     const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
@@ -384,30 +418,11 @@ class BrushTool extends BaseTool {
       segmentIndex
     );
 
-    const viewportIdsToRender = [viewport.id];
-
-    // Center of circle in canvas Coordinates
-
-    const brushCursor = {
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
-        toolName: this.getToolName(),
-        segmentColor,
-      },
-      data: {},
-    };
-
     return {
-      brushCursor,
-      centerCanvas,
       segmentIndex,
       segmentationId,
       segmentationRepresentationUID,
       segmentColor,
-      viewportIdsToRender,
     };
   }
 
@@ -678,11 +693,17 @@ class BrushTool extends BaseTool {
   };
 
   public invalidateBrushCursor() {
-    if (this._hoverData !== undefined) {
-      const { data } = this._hoverData.brushCursor;
-
-      data.invalidated = true;
+    if (this._hoverData === undefined) {
+      return;
     }
+    const { data } = this._hoverData.brushCursor;
+
+    data.invalidated = true;
+
+    // Todo: figure out if other brush metadata (other than segment color) should get updated
+    // during the brush cursor invalidation
+    const { segmentColor } = this.getActiveSegmentationData() || {};
+    this._hoverData.brushCursor.metadata.segmentColor = segmentColor;
   }
 
   renderAnnotation(
@@ -713,6 +734,10 @@ class BrushTool extends BaseTool {
     }
 
     const toolMetadata = brushCursor.metadata;
+    if (!toolMetadata) {
+      return;
+    }
+
     const annotationUID = toolMetadata.brushCursorUID;
 
     const data = brushCursor.data;
