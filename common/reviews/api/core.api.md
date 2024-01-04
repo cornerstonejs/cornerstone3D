@@ -2088,6 +2088,8 @@ interface IViewport {
     // (undocumented)
     getActorUIDByIndex(index: number): string;
     // (undocumented)
+    getActorUIDs(): Array<string>;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getCanvas(): HTMLCanvasElement;
@@ -3395,6 +3397,8 @@ export class Viewport implements IViewport {
     getActors(): Array<ActorEntry>;
     // (undocumented)
     getActorUIDByIndex(index: number): string;
+    // (undocumented)
+    getActorUIDs(): Array<string>;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
