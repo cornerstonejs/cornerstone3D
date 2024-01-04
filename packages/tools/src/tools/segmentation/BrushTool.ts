@@ -754,7 +754,7 @@ class BrushTool extends BaseTool {
 
     const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
-    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
+    const color = `rgb(${toolMetadata.segmentColor?.slice(0, 3) || [0, 0, 0]})`;
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {

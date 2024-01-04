@@ -88,7 +88,6 @@ const brushStrategies = {
 
 const stackSegmentationId = 'SEGMENTATION_STACK';
 const volumeSegmentationId = 'SEGMENTATION_VOLUME';
-const segmentationRepresentationUIDs = [];
 
 // ============================= //
 
@@ -195,8 +194,8 @@ async function run() {
       viewportId: volumeViewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
-      options: {
-        orientation: Enums.OrientationAxis.CORONAL,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
     },
   ];

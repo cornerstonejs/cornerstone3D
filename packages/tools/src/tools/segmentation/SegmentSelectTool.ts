@@ -40,7 +40,7 @@ class SegmentSelectTool extends BaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        hoverTimeout: 500,
+        hoverTimeout: 750,
       },
     }
   ) {
