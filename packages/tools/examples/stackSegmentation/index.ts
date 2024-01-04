@@ -23,7 +23,6 @@ const {
   StackScrollTool,
   Enums: csToolsEnums,
   RectangleScissorsTool,
-  SphereScissorsTool,
   CircleScissorsTool,
   BrushTool,
   PaintFillTool,
@@ -87,8 +86,6 @@ content.append(instructions);
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
   CircularEraser: 'CircularEraser',
-  SphereBrush: 'SphereBrush',
-  SphereEraser: 'SphereEraser',
   ThresholdBrush: 'ThresholdBrush',
   DynamicThreshold: 'DynamicThreshold',
 };
@@ -96,8 +93,6 @@ const brushInstanceNames = {
 const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
-  [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
   [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
@@ -105,8 +100,6 @@ const brushStrategies = {
 const brushValues = [
   brushInstanceNames.CircularBrush,
   brushInstanceNames.CircularEraser,
-  brushInstanceNames.SphereBrush,
-  brushInstanceNames.SphereEraser,
   brushInstanceNames.ThresholdBrush,
   brushInstanceNames.DynamicThreshold,
 ];
@@ -115,7 +108,6 @@ const optionsValues = [
   ...brushValues,
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
   PaintFillTool.toolName,
 ];
 
@@ -268,7 +260,6 @@ function setupTools(toolGroupId) {
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(SphereScissorsTool);
   cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
@@ -286,7 +277,6 @@ function setupTools(toolGroupId) {
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
-  toolGroup.addTool(SphereScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
@@ -300,20 +290,6 @@ function setupTools(toolGroupId) {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularEraser,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereBrush,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereEraser,
     }
   );
   toolGroup.addToolInstance(

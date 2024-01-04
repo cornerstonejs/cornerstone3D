@@ -102,7 +102,7 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthActive', value);
+    setConfigValue('outlineWidthActive', Number(value));
   },
 });
 addSliderToToolbar({
@@ -118,7 +118,7 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthInactive', value);
+    setConfigValue('outlineWidthInactive', Number(value));
   },
 });
 addSliderToToolbar({
