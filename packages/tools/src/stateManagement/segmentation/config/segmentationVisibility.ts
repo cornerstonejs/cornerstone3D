@@ -21,6 +21,10 @@ function getSegmentationIndices(segmentationId) {
     }
     return Object.keys(keySet).map((it) => parseInt(it, 10));
   } else if (segmentation.type === SegmentationRepresentations.Contour) {
+    const annotationUIDsMap =
+      segmentation.representationData.CONTOUR?.annotationUIDsMap;
+
+    const indices = new Set(annotationUIDsMap.keys());
     const geometryIds = segmentation.representationData.CONTOUR?.geometryIds;
 
     if (!geometryIds) {
@@ -29,10 +33,12 @@ function getSegmentationIndices(segmentationId) {
       );
     }
 
-    return geometryIds.map((geometryId) => {
+    geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
-      return (geometry.data as Types.IContourSet).getSegmentIndex();
+      indices.add((geometry.data as Types.IContourSet).getSegmentIndex());
     });
+
+    return Array.from(indices.values()).sort();
   }
 }
 
@@ -115,9 +121,11 @@ function getSegmentationVisibility(
     return;
   }
 
-  const { segmentsHidden } = representation;
+  const { segmentsHidden, segmentationId } = representation;
+  const indices = getSegmentationIndices(segmentationId);
 
-  return segmentsHidden.size === 0;
+  // TODO: check indices
+  return segmentsHidden.size !== indices.length;
 }
 
 /**
@@ -186,9 +194,28 @@ function setSegmentVisibility(
   );
 }
 
+function getSegmentVisibility(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  segmentIndex: number
+): boolean {
+  const segRepresentation =
+    SegmentationState.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+  if (!segRepresentation) {
+    return false;
+  }
+
+  return !segRepresentation.segmentsHidden.has(segmentIndex);
+}
+
 export {
   setSegmentationVisibility,
   getSegmentationVisibility,
   setSegmentVisibility,
   setSegmentsVisibility,
+  getSegmentVisibility,
 };

@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -17,6 +18,17 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const DEFAULT_SEGMENTATION_CONFIG = {
+  fillAlpha: 0.5,
+  fillAlphaInactive: 0.3,
+  outlineOpacity: 0.5,
+  outlineOpacityInactive: 0.85,
+  outlineWidthActive: 3,
+  outlineWidthInactive: 1,
+  outlineDashActive: undefined,
+  outlineDashInactive: undefined,
+};
 
 const {
   PlanarFreehandROITool,
@@ -26,6 +38,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   annotation,
+  segmentation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -40,6 +53,9 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
+
+const segmentationId = `SEGMENTATION_ID`;
+let segmentationRepresentationUID = '';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -57,43 +73,76 @@ viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
-element1.style.width = size;
-element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
+const elements = [element1, element2];
 
-// Disable right click context menu so we can have right click tool
-element1.oncontextmenu = (e) => e.preventDefault();
-element2.oncontextmenu = (e) => e.preventDefault();
+elements.forEach((element) => {
+  element.style.width = size;
+  element.style.height = size;
 
-viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
+  // Disable right click context menu so we can have right click tool
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  viewportGrid.appendChild(element);
+});
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-Drawing:
+createInfoSection(content, { title: 'Drawing' })
+  .addInstruction('Left click and drag to draw a contour')
+  .openNestedSection()
+  .addInstruction(
+    'If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)'
+  );
 
-- Left click and drag to draw a contour.
--- If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)
+createInfoSection(content, { title: 'Editing' })
+  .addInstruction(
+    'Left click and drag on the line of an existing contour to edit it'
+  )
+  .openNestedSection()
+  .addInstruction('Closed Contours')
+  .openNestedSection()
+  .addInstruction(
+    'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
+  )
+  .closeNestedSection()
+  .addInstruction('Open Contours')
+  .openNestedSection()
+  .addInstruction(
+    'Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).'
+  )
+  .addInstruction(
+    'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
+  )
+  .addInstruction(
+    'If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.'
+  )
+  .closeNestedSection();
 
-Editing:
-- Left click and drag on the line of an existing contour to edit it:
--- Closed Contours:
---- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
--- Open Contours:
---- Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).
---- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
---- If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.
+createInfoSection(content, {
+  title:
+    'Setting an open annotation to join the endpoints and draw the longest line from the midpoint to the contour (for horseshoe shaped contours, e.g. in Cardiac workflows) (In the future this should likely be pulled out to its own tool)',
+})
+  .addInstruction('Draw an open contour as a horseshow shape.')
+  .addInstruction(
+    'With the open contour selected, click the "Render selected open contour with joined ends and midpoint line" button.'
+  )
+  .addInstruction(
+    'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
+  );
 
-Setting an open annotation to join the endpoints and draw the longest line from the midpoint to the contour (for horseshoe shaped contours, e.g. in Cardiac workflows) (In the future this should likely be pulled out to its own tool):
-- Draw an open contour as a horseshow shape.
-- With the open contour selected, click the 'Render selected open contour with joined ends and midpoint line' button.
-- The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.
-`;
+const cancelDrawingEventListener = (evt) => {
+  const { element, key } = evt.detail;
+  if (key === 'Escape') {
+    cornerstoneTools.cancelActiveManipulations(element);
+  }
+};
 
-content.append(instructions);
+elements.forEach((element) => {
+  element.addEventListener(
+    csToolsEnums.Events.KEY_DOWN,
+    cancelDrawingEventListener
+  );
+});
 
 addButtonToToolbar({
   title: 'Render selected open contour with joined ends and midpoint line',
@@ -149,6 +198,17 @@ function addToggleCalculateStatsButton(toolGroup) {
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+
+function initializeGlobalConfig() {
+  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
+
+  Object.assign(
+    globalSegmentationConfig.representations.CONTOUR,
+    DEFAULT_SEGMENTATION_CONFIG
+  );
+
+  segmentation.config.setGlobalConfig(globalSegmentationConfig);
+}
 
 /**
  * Runs the demo
@@ -280,6 +340,42 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+
+  // Add a segmentation that will contains the contour annotations
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+        data: {
+          geometryIds: [],
+          annotationUIDsMap: new Map(),
+        },
+      },
+    },
+  ]);
+
+  // Create a segmentation representation associated to the toolGroupId
+  const segmentationRepresentationUIDs =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
+
+  // Store the segmentation representation that was just created
+  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
+
+  // Make the segmentation created as the active one
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+
+  initializeGlobalConfig();
 }
 
 run();

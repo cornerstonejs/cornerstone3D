@@ -15,11 +15,7 @@ import {
 } from '../../utilities/getCalibratedUnits';
 import { roundNumber } from '../../utilities';
 import { Events } from '../../enums';
-import { AnnotationTool } from '../base';
-import {
-  addAnnotation,
-  getAnnotations,
-} from '../../stateManagement/annotation/annotationState';
+import { getAnnotations } from '../../stateManagement/annotation/annotationState';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -53,11 +49,9 @@ import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/plana
 import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -124,7 +118,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  * Read more in the Docs section of the website.
  */
 
-class PlanarFreehandROITool extends AnnotationTool {
+class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   static toolName;
 
   public touchDragCallback: any;
@@ -268,6 +262,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const segmentationAnnotationData = super.getSegmentationAnnotationData();
 
     const annotation: PlanarFreehandROIAnnotation = {
       highlighted: true,
@@ -298,10 +293,10 @@ class PlanarFreehandROITool extends AnnotationTool {
         label: '',
         cachedStats: {},
       },
+      ...segmentationAnnotationData,
     };
 
-    addAnnotation(annotation, element);
-
+    this.addAnnotation(annotation, element);
     this.activateDraw(evt, annotation, viewportIdsToRender);
 
     evt.preventDefault();
@@ -503,10 +498,12 @@ class PlanarFreehandROITool extends AnnotationTool {
         camera,
         spacingInNormalDirection
       );
-    } else {
+    } else if (viewport instanceof StackViewport) {
       // Use the default `filterAnnotationsForDisplay` utility, as the stack
       // path doesn't require handles.
       annotationsToDisplay = filterAnnotationsForDisplay(viewport, annotations);
+    } else {
+      throw new Error('Unsupported viewport type');
     }
 
     return annotationsToDisplay;
@@ -576,6 +573,20 @@ class PlanarFreehandROITool extends AnnotationTool {
     }
 
     return annotationsWithinSlice;
+  }
+
+  protected getAnnotationStyle(context) {
+    // This method exists only because `super` cannot be called from
+    // _getRenderingOptions() which is in an external file.
+    return super.getAnnotationStyle(context);
+  }
+
+  protected getPolylinePoints(annotation: Annotation): Types.Point2[] {
+    // Combine code from renderContourBeingDrawn, renderClosedContourBeingEdited
+    // and renderOpenContourBeingEdited to return the polyline points that needs
+    // for the segments that need to be rendered. Currently they are being
+    // rendered by this class but it should be rendered by the base class.
+    return [];
   }
 
   /**

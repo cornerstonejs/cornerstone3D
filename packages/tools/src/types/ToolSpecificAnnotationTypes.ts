@@ -1,7 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
 import { ISpline } from './';
-import { LivewirePath } from '../utilities/livewire/LiveWirePath';
+import {
+  SegmentationAnnotation,
+  SegmentationAnnotationData,
+} from './SegmentationAnnotation';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -119,23 +122,9 @@ export interface CircleROIAnnotation extends Annotation {
   };
 }
 
-export interface SplineROIAnnotation extends Annotation {
+export type SplineROIAnnotation = Annotation & {
   data: {
     label?: string;
-    handles: {
-      points: Types.Point3[];
-      activeHandleIndex: number | null;
-      textBox?: {
-        hasMoved: boolean;
-        worldPosition: Types.Point3;
-        worldBoundingBox: {
-          topLeft: Types.Point3;
-          topRight: Types.Point3;
-          bottomLeft: Types.Point3;
-          bottomRight: Types.Point3;
-        };
-      };
-    };
     spline: {
       type: string;
       instance: ISpline;
@@ -151,7 +140,10 @@ export interface SplineROIAnnotation extends Annotation {
       };
     };
   };
-}
+};
+
+export type SplineSegmentationROIAnnotation = SplineROIAnnotation &
+  SegmentationAnnotationData;
 
 export interface LivewireContourAnnotation extends Annotation {
   data: {
@@ -264,17 +256,17 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   };
 }
 
-export interface PlanarFreehandROIAnnotation extends Annotation {
-  metadata: {
-    cameraPosition?: Types.Point3;
-    cameraFocalPoint?: Types.Point3;
-    viewPlaneNormal?: Types.Point3;
-    viewUp?: Types.Point3;
-    annotationUID?: string;
-    FrameOfReferenceUID: string;
-    referencedImageId?: string;
-    toolName: string;
-  };
+export type PlanarFreehandROIAnnotation = SegmentationAnnotation & {
+  // metadata: {
+  //   cameraPosition?: Types.Point3;
+  //   cameraFocalPoint?: Types.Point3;
+  //   viewPlaneNormal?: Types.Point3;
+  //   viewUp?: Types.Point3;
+  //   annotationUID?: string;
+  //   FrameOfReferenceUID: string;
+  //   referencedImageId?: string;
+  //   toolName: string;
+  // };
   data: {
     polyline: Types.Point3[];
     label?: string;
@@ -282,23 +274,23 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
     isOpenUShapeContour?: boolean;
     // Present if isOpenUShapeContour is true:
     openUShapeContourVectorToPeak?: Types.Point3[];
-    handles: {
-      points: Types.Point3[];
-      activeHandleIndex: number | null;
-      textBox: {
-        hasMoved: boolean;
-        worldPosition: Types.Point3;
-        worldBoundingBox: {
-          topLeft: Types.Point3;
-          topRight: Types.Point3;
-          bottomLeft: Types.Point3;
-          bottomRight: Types.Point3;
-        };
-      };
-    };
+    // handles: {
+    //   points: Types.Point3[];
+    //   activeHandleIndex: number | null;
+    //   textBox: {
+    //     hasMoved: boolean;
+    //     worldPosition: Types.Point3;
+    //     worldBoundingBox: {
+    //       topLeft: Types.Point3;
+    //       topRight: Types.Point3;
+    //       bottomLeft: Types.Point3;
+    //       bottomRight: Types.Point3;
+    //     };
+    //   };
+    // };
     cachedStats?: ROICachedStats;
   };
-}
+};
 
 export interface ArrowAnnotation extends Annotation {
   data: {

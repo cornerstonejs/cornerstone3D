@@ -28,16 +28,20 @@ function _getRenderingOptions(
     annotationUID: annotation.annotationUID,
   };
 
-  const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-  const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-  const color = this.getStyle('color', styleSpecifier, annotation);
+  const { lineWidth, lineDash, color, fillColor, fillOpacity } =
+    this.getAnnotationStyle({
+      annotation,
+      styleSpecifier,
+    });
 
   const isOpenContour = annotation.data.isOpenContour;
 
   const options = {
-    color: color === undefined ? undefined : <string>color,
-    width: lineWidth === undefined ? undefined : <number>lineWidth,
-    lineDash: lineDash === undefined ? undefined : <number[]>lineDash,
+    color: color ?? <string>color,
+    width: lineWidth ?? <number>lineWidth,
+    lineDash: lineDash ?? <number[]>lineDash,
+    fillColor: fillColor ?? <string>fillColor,
+    fillOpacity: fillOpacity ?? <number>fillOpacity,
     connectLastToFirst: !isOpenContour,
   };
 

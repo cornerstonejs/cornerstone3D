@@ -229,6 +229,10 @@
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
       },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
       "livewireContour": {
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
@@ -333,6 +337,14 @@
       "segmentSelect": {
         "name": "Segment Select Tool",
         "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
+      },
+      "splineSegmentationROITools": {
+        "name": "Spline Segmentation ROI Tools",
+        "description": "Demonstrates how to use spline segmentation ROI tools on a single viewport"
+      },
+      "splineSegmentationROIToolsAdvanced": {
+        "name": "Advanced Spline Segmentation ROI Tools",
+        "description": "Demonstrates how to use spline segmentation ROI tools on multiple viewports (stack and volume), segmentations and different styles for active and inactive states"
       }
     },
     "tools-advanced": {
