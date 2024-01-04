@@ -40,7 +40,17 @@ git
 Another solution here is to add better blocked encoding to the HTJ2K encoder to allow decoding of sub-resolution blocks to have teh decoding natively use map fragmented image data.
    * The estimate on this would be 2 weeks to encode HTJ2K into the WSI format
 
+8a. Support for multiple focal depths ("volume" in WSI terms, but only shown as a stack of WSI images)
+   * Idea is to treat each focal depth as an additional stack of images, all based on a single one of them
+   * Estimate: 1 week
 
-Base estimate: 16 weeks
- + 5 weeks for labelmap segmentation
- + various for WSI encoder
+8b. Support multiple colour channels (eg fluoroscopy and multi-wavelength measurements)
+   * Idea is to treat similar to focal depth, but allow mixing
+   * Estimate: 2 weeks
+
+Base estimate: 16 weeks, not including:
+ * 5 weeks for labelmap segmentation
+ * various for WSI encoder
+ * 3 for multi color channels
+ * Saving/loading of CS3D annotations on the WSI viewport
+ * Volumetric reconstruction of WSI data

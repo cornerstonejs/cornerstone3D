@@ -46,7 +46,6 @@ export default function filterAnnotationsForDisplay(
       const imageId = annotation.metadata.referencedImageId;
 
       if (imageId === undefined) {
-        console.log('referencedImageId is undefined');
         // This annotation was not drawn on a non-coplanar reformat, and such does
         // not have a referenced imageId.
         return false;
@@ -54,7 +53,6 @@ export default function filterAnnotationsForDisplay(
 
       const colonIndex = imageId.indexOf(':');
       const referenceImageURI = imageId.substring(colonIndex + 1);
-      console.log('Test imageId', referenceImageURI, imageURI);
       return referenceImageURI === imageURI;
     });
   } else if (viewport instanceof VideoViewport) {

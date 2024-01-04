@@ -111,26 +111,27 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.removeEventListeners();
   }
 
-  private _getImageDataMetadata(imageIndex = 0) {
-    const columns = Math.max(
-      ...this.metadataDicomweb.map((image) => image.TotalPixelMatrixColumns)
-    );
-    const rows = Math.max(
-      ...this.metadataDicomweb.map((image) => image.TotalPixelMatrixRows)
-    );
+  private getImageDataMetadata(imageIndex = 0) {
+    const maxImage = this.metadataDicomweb.reduce((maxImage, image) => {
+      return maxImage?.NumberOfFrames < image.NumberOfFrames ? image : maxImage;
+    });
+    console.log('maxImage=', maxImage);
     const {
+      TotalPixelMatrixColumns: columns,
+      TotalPixelMatrixRows: rows,
+      ImageOrientationSlide,
       ImagedVolumeWidth: width,
       ImagedVolumeHeight: height,
       ImagedVolumeDepth: depth,
-    } = this.metadataDicomweb[0];
+    } = maxImage;
 
     const imagePlaneModule = metaData.get(
       MetadataModules.IMAGE_PLANE,
       this.imageIds[imageIndex]
     );
 
-    let rowCosines = <Point3>imagePlaneModule.rowCosines;
-    let columnCosines = <Point3>imagePlaneModule.columnCosines;
+    let rowCosines = ImageOrientationSlide.slice(0, 3);
+    let columnCosines = ImageOrientationSlide.slice(3, 6);
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {
@@ -151,11 +152,27 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
-    let origin = imagePlaneModule.imagePositionPatient;
-    if (!origin) {
-      origin = [0, 0, 0];
-    }
+    const {
+      XOffsetInSlideCoordinateSystem = 0,
+      YOffsetInSlideCoordinateSystem = 0,
+      ZOffsetInSlideCoordinateSystem = 0,
+    } = maxImage.TotalPixelMatrixOriginSequence?.[0] || {};
+    const origin = [
+      XOffsetInSlideCoordinateSystem,
+      YOffsetInSlideCoordinateSystem,
+      ZOffsetInSlideCoordinateSystem,
+    ];
 
+    const pixelSpacing =
+      maxImage.SharedFunctionalGroupsSequence[0].PixelMeasuresSequence[0]
+        .PixelSpacing;
+    console.log(
+      'TODO - figure out pixelSpacing',
+      pixelSpacing,
+      width / columns,
+      height / rows,
+      origin
+    );
     const xSpacing = width / columns;
     const ySpacing = height / rows;
     const xVoxels = columns;
@@ -220,6 +237,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvas(point);
           const pixelCoord = this.canvasToIndex(canvasPoint);
+          console.log('worldToIndex', point, pixelCoord[0], pixelCoord[1]);
           return [pixelCoord[0], pixelCoord[1], 0];
         },
         indexToWorld: (point: Point3) => {
@@ -272,7 +290,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
     if (focalPoint) {
       const newCenter = [
-        extent[0] - focalPoint[0] / xSpacing,
+        focalPoint[0] / xSpacing + extent[0],
         focalPoint[1] / ySpacing + extent[1],
       ];
       view.setCenter(newCenter);
@@ -454,7 +472,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // Render viewer instance in the "viewport" HTML element
     viewer.render({ container: this.microscopyElement });
 
-    this.metadata = this._getImageDataMetadata();
+    this.metadata = this.getImageDataMetadata();
 
     viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
@@ -473,6 +491,12 @@ class WSIViewport extends Viewport implements IWSIViewport {
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
+    console.log(
+      'canvasToIndex',
+      canvasPos,
+      transform.transformPoint(canvasPos),
+      transform
+    );
     return transform.transformPoint(canvasPos);
   };
 
@@ -523,7 +547,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const centerX = (extent[0] + extent[2]) / 2;
     const centerY = (extent[1] + extent[3]) / 2;
     const focalPoint = vec3.fromValues(
-      (extent[0] - center[0]) * xSpacing,
+      (center[0] - extent[0]) * xSpacing,
       (center[1] - extent[1]) * ySpacing,
       0
     );
