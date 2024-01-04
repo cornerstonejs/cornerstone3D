@@ -137,19 +137,14 @@ function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume1 = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
+  const segmentationVolume1 =
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: segmentationId1,
-    }
-  );
-  const segmentationVolume2 = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
+    });
+  const segmentationVolume2 =
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: segmentationId2,
-    }
-  );
+    });
 
   // Add the segmentations to state
   segmentation.addSegmentations([

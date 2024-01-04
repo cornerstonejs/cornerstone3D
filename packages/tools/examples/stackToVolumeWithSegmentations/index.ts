@@ -332,9 +332,12 @@ async function _startFromVolume(
 
   renderingEngine.render();
 
-  await cornerstone.volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: volumeSegmentationId,
-  });
+  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
+    volumeId,
+    {
+      volumeId: volumeSegmentationId,
+    }
+  );
 
   await segmentation.addSegmentations([
     {

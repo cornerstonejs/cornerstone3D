@@ -227,10 +227,12 @@ async function _handleVolumeViewport(volumeImageIds, renderingEngine) {
   );
 
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  await cornerstone.volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: volumeSegmentationId,
-  });
+  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
+    volumeId,
+    {
+      volumeId: volumeSegmentationId,
+    }
+  );
 
   createMockEllipsoidVolumeSegmentation({
     volumeId: volumeSegmentationId,

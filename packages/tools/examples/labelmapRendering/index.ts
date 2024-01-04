@@ -69,13 +69,9 @@ content.appendChild(viewportGrid);
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: segmentationId,
-    }
-  );
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    volumeId: segmentationId,
+  });
 
   // Add the segmentations to state
   segmentation.addSegmentations([

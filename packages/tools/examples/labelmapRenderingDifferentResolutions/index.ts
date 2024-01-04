@@ -106,9 +106,8 @@ function fillSegmentationWithCircles(segmentationVolume) {
 
 async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
   const highResSegmentationVolume =
-    await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: highResSegmentationId,
     });
 

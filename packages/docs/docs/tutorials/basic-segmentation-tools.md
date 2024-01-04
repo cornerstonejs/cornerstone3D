@@ -102,7 +102,7 @@ We need another volume for segmentation (we don't want to modify the CT volume f
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // Create a segmentation of the same resolution as the source data for the CT volume
-await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
   volumeId: segmentationId,
 });
 ```
@@ -285,7 +285,7 @@ const volume = await volumeLoader.createAndCacheVolume(volumeId, {
 });
 
 // Create a segmentation of the same resolution as the source data for the CT volume
-await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
   volumeId: segmentationId,
 });
 
@@ -384,7 +384,6 @@ Learn more about:
 - [Segmentation](../concepts/cornerstone-tools/segmentation/index.md)
 - [SegmentationDisplay](../concepts/cornerstone-tools/segmentation/segmentationDisplay.md)
 - [SegmentationTools](../concepts/cornerstone-tools/segmentation/segmentation-tools.md)
-
 
 :::note Tip
 

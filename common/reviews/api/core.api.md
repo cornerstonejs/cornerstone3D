@@ -585,7 +585,19 @@ type CPUImageData = {
 function createAndCacheDerivedImage(referencedImageId: string, options?: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
 
 // @public (undocumented)
-function createAndCacheDerivedImages(referencedImageIds: Array<string>, getDerivedImageId?: (referencedImageId: string) => string): DerivedImages;
+function createAndCacheDerivedImages(referencedImageIds: Array<string>, options?: {
+    getDerivedImageId?: (referencedImageId: string) => string;
+    targetBufferType?: PixelDataTypedArrayString;
+}): DerivedImages;
+
+// @public (undocumented)
+function createAndCacheDerivedSegmentationImage(referencedImageId: string, options?: DerivedImageOptions): Promise<IImage>;
+
+// @public (undocumented)
+function createAndCacheDerivedSegmentationImages(referencedImageIds: Array<string>, options?: DerivedImageOptions): DerivedImages;
+
+// @public (undocumented)
+function createAndCacheDerivedSegmentationVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
 
 // @public (undocumented)
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
@@ -1528,6 +1540,8 @@ declare namespace imageLoader {
         registerImageLoader,
         registerUnknownImageLoader,
         unregisterAllImageLoaders,
+        createAndCacheDerivedSegmentationImages,
+        createAndCacheDerivedSegmentationImage,
         ImageLoaderOptions
     }
 }
@@ -3658,7 +3672,8 @@ declare namespace volumeLoader {
         registerVolumeLoader,
         getVolumeLoaderSchemes,
         registerUnknownVolumeLoader,
-        getUnknownVolumeLoaderSchema
+        getUnknownVolumeLoaderSchema,
+        createAndCacheDerivedSegmentationVolume
     }
 }
 export { volumeLoader }
