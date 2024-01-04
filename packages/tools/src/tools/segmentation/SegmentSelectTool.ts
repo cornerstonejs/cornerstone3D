@@ -39,6 +39,9 @@ class SegmentSelectTool extends BaseTool {
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: {
+        hoverTimeout: 500,
+      },
     }
   ) {
     super(toolProps, defaultToolProps);
@@ -53,7 +56,7 @@ class SegmentSelectTool extends BaseTool {
     this.hoverTimer = setTimeout(() => {
       this._setActiveSegment(evt);
       this.hoverTimer = null;
-    }, 500);
+    }, this.configuration.hoverTimeout);
 
     return true;
   };
