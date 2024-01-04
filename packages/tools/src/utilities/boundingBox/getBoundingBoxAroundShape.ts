@@ -19,7 +19,7 @@ function calculateBoundingBox(
   let zMin = Infinity;
   let zMax = isWorld ? -Infinity : 0;
 
-  const is3D = points[0] && points[0].length === 3;
+  const is3D = points[0]?.length === 3;
 
   points.forEach((p) => {
     xMin = Math.min(p[0], xMin);
