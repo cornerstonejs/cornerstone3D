@@ -6,7 +6,6 @@ import {
   getEnabledElementByIds,
   StackViewport,
   Types,
-  utilities,
   VolumeViewport,
 } from '@cornerstonejs/core';
 
@@ -302,21 +301,17 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
-  const actor = actorEntry.actor as Types.Actor;
+  const actor = actorEntry.actor as Types.VolumeActor;
 
-  // @ts-ignore
   actor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
 
-  // @ts-ignore
   actor.getProperty().setScalarOpacity(0, ofun);
-  // @ts-ignore
   actor.getProperty().setInterpolationTypeToNearest();
-
-  // @ts-ignore
   actor.getProperty().setUseLabelOutline(renderOutline);
-  // @ts-ignore
+
+  // @ts-ignore - fix type in vtk
   actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
 
   const { activeSegmentIndex } = SegmentationState.getSegmentation(
@@ -324,7 +319,7 @@ function _setLabelmapColorAndOpacity(
   );
 
   // create an array that contains all the segment indices and for the active
-  // segment index, use the activeSegmentOutlineWidth, otherwise use the
+  // segment index, use the activeSegmentOutlineWidthDelta, otherwise use the
   // outlineWidth
   // Pre-allocate the array with the required size to avoid dynamic resizing.
   const outlineWidths = new Array(numColors - 1);
@@ -333,11 +328,10 @@ function _setLabelmapColorAndOpacity(
     // Start from 1 to skip the background segment index.
     outlineWidths[i - 1] =
       i === activeSegmentIndex
-        ? toolGroupLabelmapConfig.activeSegmentOutlineWidth
+        ? outlineWidth + toolGroupLabelmapConfig.activeSegmentOutlineWidthDelta
         : outlineWidth;
   }
 
-  // @ts-ignore
   actor.getProperty().setLabelOutlineThickness(outlineWidths);
 
   // Set visibility based on whether actor visibility is specifically asked

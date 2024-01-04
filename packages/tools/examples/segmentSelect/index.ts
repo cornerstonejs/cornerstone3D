@@ -8,8 +8,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import {
-  createMockEllipsoidStackSegmentation,
-  createMockEllipsoidVolumeSegmentation,
+  fillStackSegmentationWithMockData,
+  fillVolumeSegmentationWithMockData,
 } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
@@ -206,6 +206,9 @@ async function run() {
 
   _handleStackViewport(stackImageIds);
   _handleVolumeViewport(volumeImageIds, renderingEngine);
+
+  const config = segmentation.config.getGlobalConfig();
+  config.representations.LABELMAP.activeSegmentOutlineWidthDelta = 1;
 }
 
 run();
@@ -233,7 +236,7 @@ async function _handleVolumeViewport(volumeImageIds, renderingEngine) {
     }
   );
 
-  createMockEllipsoidVolumeSegmentation({
+  fillVolumeSegmentationWithMockData({
     volumeId: volumeSegmentationId,
     cornerstone,
   });
@@ -272,7 +275,7 @@ async function _handleStackViewport(stackImageIds: string[]) {
 
   await stackViewport.setStack(imageIdsArray, 0);
 
-  createMockEllipsoidStackSegmentation({
+  fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,
     segmentationImageIds,
     cornerstone,

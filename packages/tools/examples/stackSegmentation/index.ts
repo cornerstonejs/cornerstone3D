@@ -8,7 +8,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import { createMockEllipsoidStackSegmentation } from '../../../../utils/test/testUtils';
+import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -429,7 +429,7 @@ async function run() {
 
   await viewport.setStack(imageIdsArray, 0);
 
-  createMockEllipsoidStackSegmentation({
+  fillStackSegmentationWithMockData({
     imageIds: imageIdsArray.slice(0, 2),
     segmentationImageIds,
     cornerstone,

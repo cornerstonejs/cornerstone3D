@@ -12,7 +12,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { createMockEllipsoidVolumeSegmentation } from '../../../../utils/test/testUtils';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -90,7 +90,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  createMockEllipsoidVolumeSegmentation({
+  fillVolumeSegmentationWithMockData({
     volumeId: segmentationId,
     cornerstone,
   });

@@ -271,9 +271,11 @@ class BrushTool extends BaseTool {
     this._previewData.isDrag = false;
     this._previewData.timerStart = Date.now();
 
+    const hoverData = this._hoverData || this.createHoverData(element);
+
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
-      this._hoverData.viewportIdsToRender
+      hoverData.viewportIdsToRender
     );
 
     this.applyActiveStrategyCallback(

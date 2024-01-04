@@ -2693,7 +2693,7 @@ type LabelmapConfig = {
     renderOutline?: boolean;
     outlineWidthActive?: number;
     outlineWidthInactive?: number;
-    activeSegmentOutlineWidth?: number;
+    activeSegmentOutlineWidthDelta?: number;
     renderFill?: boolean;
     renderFillInactive?: boolean;
     fillAlpha?: number;

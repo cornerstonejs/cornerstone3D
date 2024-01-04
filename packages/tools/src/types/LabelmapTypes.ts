@@ -11,8 +11,9 @@ export type LabelmapConfig = {
   outlineWidthActive?: number;
   /** thickness of the outline when segmentation is inactive - all segments */
   outlineWidthInactive?: number;
-  /**  thickness of the outline when segmentation is active - only active segment index */
-  activeSegmentOutlineWidth?: number;
+  /** delta thickness of the active segment index outline (0 means same thickness,
+   * 1 means 1px thicker, -1 means 1px thinner) */
+  activeSegmentOutlineWidthDelta?: number;
   /** whether to render segmentation filling */
   renderFill?: boolean;
   /** whether to render segmentation filling when inactive */
