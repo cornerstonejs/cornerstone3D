@@ -329,6 +329,10 @@
       "segmentBidirectionalTool": {
         "name": "Segmentation Bidirectional Tool",
         "description": "Demonstrates the calculation of largest bidirectional diameters within segmented contours, akin to RECIST measurements for assessing changes in tumor sizes or anatomical structures over time in medical imaging."
+      },
+      "segmentSelect": {
+        "name": "Segment Select Tool",
+        "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
       }
     },
     "tools-advanced": {
@@ -382,7 +386,7 @@
       },
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
-        "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
+        "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
       }
     },
     "dicom-image-loader": {

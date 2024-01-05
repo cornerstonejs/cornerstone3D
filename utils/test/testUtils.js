@@ -1,8 +1,9 @@
 import resemble from 'resemblejs';
-
 import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader';
 import { fakeVolumeLoader } from './testUtilsVolumeLoader';
 import { createNormalizedMouseEvent } from './testUtilsMouseEvents';
+import { fillStackSegmentationWithMockData } from './fillStackSegmentationWithMockData';
+import { fillVolumeSegmentationWithMockData } from './fillVolumeSegmentationWithMockData';
 
 /**
  * TestUtils: used for colorizing the image and comparing it to a baseline,
@@ -70,43 +71,6 @@ function compareImages(imageDataURL, baseline, outputName) {
   });
 }
 
-/**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-function createMockEllipsoidStackSegmentation({
-  imageIds,
-  segmentationImageIds,
-  cornerstone,
-}) {
-  const { metaData, cache } = cornerstone;
-  const { rows, columns } = metaData.get('imagePlaneModule', imageIds[0]);
-  const dimensions = [columns, rows, imageIds.length];
-
-  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
-  const outerRadius = 64;
-  const innerRadius = 32;
-  for (let z = 0; z < dimensions[2]; z++) {
-    let voxelIndex = 0;
-    const image = cache.getImage(segmentationImageIds[z]);
-    const scalarData = image.getPixelData();
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) +
-            (y - center[1]) * (y - center[1]) +
-            (z - center[2]) * (z - center[2])
-        );
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
-        }
-        voxelIndex++;
-      }
-    }
-  }
-}
-
 export {
   fakeImageLoader,
   fakeMetaDataProvider,
@@ -115,5 +79,6 @@ export {
   createNormalizedMouseEvent,
   // utils
   colors,
-  createMockEllipsoidStackSegmentation,
+  fillStackSegmentationWithMockData,
+  fillVolumeSegmentationWithMockData,
 };

@@ -35,7 +35,7 @@
     "lodash.get": "^4.4.2"
   },
   "peerDependencies": {
-    "@kitware/vtk.js": "27.3.1",
+    "@kitware/vtk.js": "29.3.0",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",
