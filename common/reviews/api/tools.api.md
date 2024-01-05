@@ -30,6 +30,7 @@ declare namespace aabb {
 declare namespace activeSegmentation {
     export {
         getActiveSegmentationRepresentation,
+        getActiveSegmentation,
         setActiveSegmentationRepresentation
     }
 }
@@ -2062,6 +2063,9 @@ function generateContourSetsFromLabelmap({ segmentations }: {
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
 
 // @public (undocumented)
+function getActiveSegmentation(toolGroupId: string): Segmentation;
+
+// @public (undocumented)
 function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
 
 // @public (undocumented)
@@ -2370,6 +2374,9 @@ function interpolateAnnotation(enabledElement: Types_2.IEnabledElement, annotati
 
 // @public (undocumented)
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+
+// @public (undocumented)
+function invalidateBrushCursor(toolGroupId: string): void;
 
 // @public (undocumented)
 function invertOrientationStringLPS(orientationString: string): string;
@@ -2703,6 +2710,7 @@ type LabelmapConfig = {
     renderOutline?: boolean;
     outlineWidthActive?: number;
     outlineWidthInactive?: number;
+    activeSegmentOutlineWidthDelta?: number;
     renderFill?: boolean;
     renderFillInactive?: boolean;
     fillAlpha?: number;
@@ -4113,7 +4121,8 @@ declare namespace segmentation_2 {
         createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
         createBidirectionalToolData,
-        segmentContourAction
+        segmentContourAction,
+        invalidateBrushCursor
     }
 }
 
@@ -4251,6 +4260,25 @@ declare namespace segmentLocking {
         setSegmentIndexLocked,
         getLockedSegments
     }
+}
+
+// @public (undocumented)
+export class SegmentSelectTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    _setActiveSegment(evt?: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    _setActiveSegmentLabelmap(activeSegmentation: Segmentation, worldPoint: Types_2.Point3, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): void;
+    // (undocumented)
+    static toolName: any;
 }
 
 declare namespace selection {

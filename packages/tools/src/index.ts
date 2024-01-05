@@ -66,6 +66,7 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
+  SegmentSelectTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -129,6 +130,7 @@ export {
   RectangleROIStartEndThresholdTool,
   BrushTool,
   OrientationMarkerTool,
+  SegmentSelectTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

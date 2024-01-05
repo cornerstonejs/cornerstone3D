@@ -6,7 +6,6 @@ import {
   getEnabledElementByIds,
   StackViewport,
   Types,
-  utilities,
   VolumeViewport,
 } from '@cornerstonejs/core';
 
@@ -302,26 +301,38 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
-  const actor = actorEntry.actor as Types.Actor;
+  const actor = actorEntry.actor as Types.VolumeActor;
 
-  // @ts-ignore
   actor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
 
-  // @ts-ignore
   actor.getProperty().setScalarOpacity(0, ofun);
-  // @ts-ignore
   actor.getProperty().setInterpolationTypeToNearest();
+  actor.getProperty().setUseLabelOutline(renderOutline);
 
-  if (utilities.actorIsA(actorEntry, 'vtkVolume')) {
-    // @ts-ignore
-    actor.getProperty().setUseLabelOutline(renderOutline);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineThickness(outlineWidth);
+  // @ts-ignore - fix type in vtk
+  actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+
+  const { activeSegmentIndex } = SegmentationState.getSegmentation(
+    segmentationRepresentation.segmentationId
+  );
+
+  // create an array that contains all the segment indices and for the active
+  // segment index, use the activeSegmentOutlineWidthDelta, otherwise use the
+  // outlineWidth
+  // Pre-allocate the array with the required size to avoid dynamic resizing.
+  const outlineWidths = new Array(numColors - 1);
+
+  for (let i = 1; i < numColors; i++) {
+    // Start from 1 to skip the background segment index.
+    outlineWidths[i - 1] =
+      i === activeSegmentIndex
+        ? outlineWidth + toolGroupLabelmapConfig.activeSegmentOutlineWidthDelta
+        : outlineWidth;
   }
+
+  actor.getProperty().setLabelOutlineThickness(outlineWidths);
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
