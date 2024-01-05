@@ -50,7 +50,7 @@ function createViewport(renderingEngine, viewportId = viewportId1) {
   return element;
 }
 
-fdescribe('Stack Segmentation Rendering -- ', () => {
+describe('Stack Segmentation Rendering -- ', () => {
   beforeAll(() => {
     window.devicePixelRatio = 1;
     cornerstone3D.setUseCPURendering(false);
