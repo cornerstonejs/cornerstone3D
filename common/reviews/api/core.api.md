@@ -3802,6 +3802,8 @@ class VoxelManager<T> {
     // (undocumented)
     static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
     // (undocumented)
+    static createLazyVoxelManager<T>(dimensions: Point3, layerFactory: (width: number, height: number) => T): VoxelManager<T>;
+    // (undocumented)
     static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
     // (undocumented)
     static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;

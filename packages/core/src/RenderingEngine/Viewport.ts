@@ -484,6 +484,7 @@ class Viewport implements IViewport {
     const { uid: actorUID, actor } = actorEntry;
     const renderingEngine = this.getRenderingEngine();
 
+    console.trace('Adding actor');
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       console.warn(
         `Cannot add actor UID of ${actorUID} Rendering Engine has been destroyed`

@@ -291,6 +291,36 @@ export default class VoxelManager<T> {
     voxelManager.sourceVoxelManager = sourceVoxelManager;
     return voxelManager;
   }
+
+  /**
+   * Creates a history remembering voxel manager.
+   * This will remember the original values in the voxels, and will apply the
+   * update to the underlying source voxel manager.
+   */
+  public static createLazyVoxelManager<T>(
+    dimensions: Point3,
+    layerFactory: (width: number, height: number) => T
+  ): VoxelManager<T> {
+    const map = new Map<number, T>();
+    const [width, height, depth] = dimensions;
+    const layerSize = width * height;
+
+    const voxelManager = new VoxelManager(
+      dimensions,
+      (index) => map.get(Math.floor(index / layerSize))?.[index % layerSize],
+      function (index, v) {
+        const k = Math.floor(index / layerSize);
+        let layer = map.get(k);
+        if (!layer) {
+          layer = layerFactory(width, height);
+          map.set(k, layer);
+        }
+        layer[index % layerSize] = v;
+      }
+    );
+    voxelManager.map = map;
+    return voxelManager;
+  }
 }
 
 export type { VoxelManager };
