@@ -269,6 +269,8 @@ export function createAndCacheDerivedImage(
     }
   );
 
+  console.log('added to genericMetadataProvider', derivedImageId);
+
   const localImage = createAndCacheLocalImage(
     { scalarData: imageScalarData },
     options.imageId,
