@@ -3,6 +3,7 @@ import { CONSTANTS } from '@cornerstonejs/core';
 
 const { EPSILON } = CONSTANTS;
 
+/** Bounding box type */
 type BoundingBox =
   | [Types.Point2, Types.Point2, null]
   | [Types.Point2, Types.Point2, Types.Point2];
