@@ -19,6 +19,7 @@ import { createImageIdReferenceMap } from './createImageIdReferenceMap';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
+import { invalidateBrushCursor } from './invalidateBrushCursor';
 
 export {
   thresholdVolumeByRange,
@@ -38,4 +39,5 @@ export {
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,
   segmentContourAction,
+  invalidateBrushCursor,
 };

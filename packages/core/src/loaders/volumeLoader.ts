@@ -561,3 +561,24 @@ export function registerUnknownVolumeLoader(
 export function getUnknownVolumeLoaderSchema(): string {
   return unknownVolumeLoader.name;
 }
+
+/**
+ * Creates and caches a derived segmentation volume based on a referenced volume.
+ * This is basically a utility method since for the segmentations we have to specify
+ * Uint8Array as the targetBuffer type for now until we support other types.
+ *
+ * @param referencedVolumeId - The ID of the referenced volume.
+ * @param options - The options for creating the derived volume.
+ * @returns A promise that resolves to the created derived segmentation volume.
+ */
+export async function createAndCacheDerivedSegmentationVolume(
+  referencedVolumeId: string,
+  options: DerivedVolumeOptions
+): Promise<IImageVolume> {
+  return createAndCacheDerivedVolume(referencedVolumeId, {
+    ...options,
+    targetBuffer: {
+      type: 'Uint8Array',
+    },
+  });
+}

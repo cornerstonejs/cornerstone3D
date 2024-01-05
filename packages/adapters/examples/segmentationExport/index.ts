@@ -184,13 +184,10 @@ function createMockEllipsoidSegmentation(
 
 async function addSegmentationsToState() {
     // Create a segmentation of the same resolution as the source data
-    // using volumeLoader.createAndCacheDerivedVolume.
-    segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-        volumeId,
-        {
+    segmentationVolume =
+        await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
             volumeId: segmentationId
-        }
-    );
+        });
 
     // Add the segmentations to state
     segmentation.addSegmentations([

@@ -1000,6 +1000,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       ? vec3.negate(vec3.create(), this.initialViewUp)
       : this.initialViewUp;
 
+    if (!initialViewUp) {
+      return 0;
+    }
+
     // The angle between the initial and current view up vectors.
     // TODO: check with VTK about rounding errors here.
     const initialToCurrentViewUpAngle =
