@@ -3,12 +3,8 @@ import type { Types } from '@cornerstonejs/core';
 
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
-import { pointInSphere } from './math/sphere';
-import pointInShapeCallback, {
-  PointInShapeCallback,
-} from './pointInShapeCallback';
 import { BoundsIJK } from '../types';
-import { getBoundingBoxAroundShape } from './boundingBox';
+import { getBoundingBoxAroundShapeIJK } from './boundingBox';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -27,36 +23,7 @@ const { transformWorldToIndex } = csUtils;
  * @param circlePoints - bottom and top points of the great circle in world coordinates
  * @param callback - A callback function that will be called for each point in the shape.
  */
-export default function pointInSurroundingSphereCallback(
-  imageData: vtkImageData,
-  circlePoints: [Types.Point3, Types.Point3],
-  callback: PointInShapeCallback,
-  viewport?: Types.IVolumeViewport
-): void {
-  // We can run the sphere equation to determine if a point is inside
-  // the sphere; however, since the imageData dimensions can be quite large, we
-  // can narrow down the search by estimating the bounds of the sphere in index
-  // space.
-  const { boundsIJK, centerWorld, radiusWorld } = _getBounds(
-    circlePoints,
-    imageData,
-    viewport
-  );
-
-  const sphereObj = {
-    center: centerWorld,
-    radius: radiusWorld,
-  };
-
-  pointInShapeCallback(
-    imageData,
-    (pointLPS) => pointInSphere(sphereObj, pointLPS),
-    callback,
-    boundsIJK
-  );
-}
-
-function _getBounds(
+function getSphereBoundsInfo(
   circlePoints: [Types.Point3, Types.Point3],
   imageData: vtkImageData,
   viewport
@@ -64,6 +31,8 @@ function _getBounds(
   boundsIJK: BoundsIJK;
   centerWorld: Types.Point3;
   radiusWorld: number;
+  topLeftWorld: Types.Point3;
+  bottomRightWorld: Types.Point3;
 } {
   const [bottom, top] = circlePoints;
 
@@ -77,53 +46,27 @@ function _getBounds(
   // sphere radius in world
   const radiusWorld = vec3.distance(bottom, top) / 2;
 
-  let boundsIJK;
-
   if (!viewport) {
-    // If no viewport is provide (no camera), we can estimate the bounding box
-    // of the sphere in index space.
-    // This is done by calculating the maximum value for radius in the index
-    // space (since the radius is in world space, we need to convert it to index, and
-    // each dimensions can have a different scale factor). Therefore, by finding
-    // the minimum spacing value in the imageData, we can calculate the maximum
-    // radius in index space and use that to calculate the bounds of the sphere
-    // This will not be accurate, but it is a good first approximation.
-    // sphere center in index
-    const centerIJK = transformWorldToIndex(
-      imageData,
-      centerWorld as Types.Point3
+    throw new Error(
+      'viewport is required in order to calculate the sphere bounds'
     );
-
-    const spacings = imageData.getSpacing();
-    const minSpacing = Math.min(...spacings);
-
-    const maxRadiusIJK = Math.ceil(radiusWorld / minSpacing);
-
-    boundsIJK = [
-      [centerIJK[0] - maxRadiusIJK, centerIJK[0] + maxRadiusIJK],
-      [centerIJK[1] - maxRadiusIJK, centerIJK[1] + maxRadiusIJK],
-      [centerIJK[2] - maxRadiusIJK, centerIJK[2] + maxRadiusIJK],
-    ];
-
-    return {
-      boundsIJK,
-      centerWorld: centerWorld as Types.Point3,
-      radiusWorld,
-    };
   }
 
-  boundsIJK = _computeBoundsIJKWithCamera(
-    imageData,
-    viewport,
-    circlePoints,
-    centerWorld,
-    radiusWorld
-  );
+  const { boundsIJK, topLeftWorld, bottomRightWorld } =
+    _computeBoundsIJKWithCamera(
+      imageData,
+      viewport,
+      circlePoints,
+      centerWorld,
+      radiusWorld
+    );
 
   return {
     boundsIJK,
     centerWorld: centerWorld as Types.Point3,
     radiusWorld,
+    topLeftWorld: topLeftWorld as Types.Point3,
+    bottomRightWorld: bottomRightWorld as Types.Point3,
   };
 }
 
@@ -137,6 +80,7 @@ function _computeBoundsIJKWithCamera(
   const [bottom, top] = circlePoints;
 
   const dimensions = imageData.getDimensions() as Types.Point3;
+
   const camera = viewport.getCamera();
 
   // Calculate viewRight from the camera, this will get used in order to
@@ -172,17 +116,30 @@ function _computeBoundsIJKWithCamera(
   vec3.scaleAndAdd(topLeftWorld, topLeftWorld, viewRight, -radiusWorld);
   vec3.scaleAndAdd(bottomRightWorld, bottomRightWorld, viewRight, radiusWorld);
 
-  // convert the world coordinates to index coordinates
+  // In order to correctly come up with the boundsIJK, we need to consider
+  // all the points IJK to get the bounds, since the viewport might have
+  // rotate views and we cannot guarantee that the topLeft and bottomRight in the
+  // world, are the ones that will define the bounds in IJK
+  const topLeftIJK = transformWorldToIndex(
+    imageData,
+    topLeftWorld as Types.Point3
+  );
+  const bottomRightIJK = transformWorldToIndex(
+    imageData,
+    bottomRightWorld as Types.Point3
+  );
 
-  const sphereCornersIJK = [
-    <Types.Point3>transformWorldToIndex(imageData, <Types.Point3>topLeftWorld),
-    <Types.Point3>(
-      transformWorldToIndex(imageData, <Types.Point3>bottomRightWorld)
-    ),
-  ];
+  const pointsIJK = circlePoints.map((p) =>
+    transformWorldToIndex(imageData, p)
+  );
 
   // get the bounding box of the sphere in the image
-  const boundsIJK = getBoundingBoxAroundShape(sphereCornersIJK, dimensions);
+  const boundsIJK = getBoundingBoxAroundShapeIJK(
+    [topLeftIJK, bottomRightIJK, ...pointsIJK],
+    dimensions
+  );
 
-  return boundsIJK;
+  return { boundsIJK, topLeftWorld, bottomRightWorld };
 }
+
+export { getSphereBoundsInfo };

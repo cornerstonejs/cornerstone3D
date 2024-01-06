@@ -108,6 +108,7 @@ import type {
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';
+import type BoundsLPS from './BoundsLPS';
 
 export type {
   // config
@@ -216,6 +217,7 @@ export type {
   InternalVideoCamera,
   VideoViewportInput,
   BoundsIJK,
+  BoundsLPS,
   Color,
   ColorLUT,
   VolumeProps,

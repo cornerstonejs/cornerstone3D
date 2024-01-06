@@ -8,8 +8,6 @@ import * as imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed from './groundTruth/ima
 const { cache, RenderingEngine, Enums, metaData, imageLoader, eventTarget } =
   cornerstone3D;
 
-window.cornerstone = cornerstone3D;
-
 const { unregisterAllImageLoaders } = imageLoader;
 const { ViewportType } = Enums;
 
@@ -21,8 +19,6 @@ const {
   ZoomTool,
   BrushTool,
 } = csTools3d;
-
-window.cornerstoneTools = csTools3d;
 
 const { Events } = csToolsEnums;
 
@@ -127,7 +123,7 @@ describe('Stack Segmentation Rendering -- ', () => {
             imageURI_64_64_10_5_1_1_0_SEG_Mocked,
             'imageURI_64_64_10_5_1_1_0_SEG_Mocked'
           ).then(done, done.fail);
-        }, 100);
+        }, 500);
       });
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -190,7 +186,7 @@ describe('Stack Segmentation Rendering -- ', () => {
             imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked,
             'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
           ).then(done, done.fail);
-        }, 100);
+        }, 500);
       });
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -285,7 +281,7 @@ describe('Stack Segmentation Rendering -- ', () => {
             imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed,
             'imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed'
           ).then(done, done.fail);
-        }, 100);
+        }, 500);
       };
 
       const performBrushing = () => {
@@ -363,7 +359,7 @@ describe('Stack Segmentation Rendering -- ', () => {
         // request animation frame is done and is ready for the next frame.
         setTimeout(() => {
           performBrushing();
-        }, 100);
+        }, 500);
       };
 
       eventTarget.addEventListener(

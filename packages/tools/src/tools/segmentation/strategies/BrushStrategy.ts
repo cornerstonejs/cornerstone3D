@@ -10,6 +10,7 @@ import type {
   LabelmapToolOperationDataAny,
   LabelmapToolOperationDataVolume,
 } from '../../../types/LabelmapToolOperationData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const { VoxelManager } = csUtils;
 
@@ -21,7 +22,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   viewport: Types.IViewport;
   imageVoxelManager: csUtils.VoxelManager<number>;
   segmentationVoxelManager: csUtils.VoxelManager<number>;
-  segmentationImageData: ImageData;
+  segmentationImageData: vtkImageData;
   previewVoxelManager: csUtils.VoxelManager<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
