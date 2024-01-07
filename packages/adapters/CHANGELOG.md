@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.43.0](https://github.com/dcmjs-org/dcmjs/compare/v1.42.1...v1.43.0) (2024-01-07)
+
+### Features
+
+-   **vtk.js:** Upgrade version and add Segment Select Tool ([#922](https://github.com/dcmjs-org/dcmjs/issues/922)) ([d5f6abb](https://github.com/dcmjs-org/dcmjs/commit/d5f6abbfd0ca7f868d229696d27f047fb47f99cc))
+
 ## [1.42.1](https://github.com/dcmjs-org/dcmjs/compare/v1.42.0...v1.42.1) (2024-01-03)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

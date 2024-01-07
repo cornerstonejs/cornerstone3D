@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.43.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.42.1...v1.43.0) (2024-01-07)
+
+### Bug Fixes
+
+- **segmentation-tools:** Improve rectangle and sphere brushes for non axis aligned images ([#961](https://github.com/cornerstonejs/cornerstone3D/issues/961)) ([3f4496f](https://github.com/cornerstonejs/cornerstone3D/commit/3f4496fee7636707fdaacf525144ff809346b27c))
+
+### Features
+
+- **release:** remove the test to release ([#987](https://github.com/cornerstonejs/cornerstone3D/issues/987)) ([0bddff3](https://github.com/cornerstonejs/cornerstone3D/commit/0bddff3ab156b96b4486655202b182351a95aa52))
+- **vtk.js:** Upgrade version and add Segment Select Tool ([#922](https://github.com/cornerstonejs/cornerstone3D/issues/922)) ([d5f6abb](https://github.com/cornerstonejs/cornerstone3D/commit/d5f6abbfd0ca7f868d229696d27f047fb47f99cc))
+
 ## [1.42.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.42.0...v1.42.1) (2024-01-03)
 
 **Note:** Version bump only for package @cornerstonejs/tools
