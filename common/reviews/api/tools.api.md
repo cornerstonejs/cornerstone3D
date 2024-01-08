@@ -264,8 +264,8 @@ export { annotation }
 
 // @public (undocumented)
 type AnnotationAddedEventDetail = {
-    viewportId: string;
-    renderingEngineId: string;
+    viewportId?: string;
+    renderingEngineId?: string;
     annotation: Annotation;
 };
 
