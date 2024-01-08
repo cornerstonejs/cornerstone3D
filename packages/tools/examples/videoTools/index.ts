@@ -33,6 +33,7 @@ const {
   CobbAngleTool,
   ArrowAnnotateTool,
   PlanarFreehandROITool,
+  LivewireContourTool,
 
   VideoRedactionTool,
   ToolGroupManager,
@@ -126,6 +127,7 @@ const toolsNames = [
   ArrowAnnotateTool.toolName,
   PlanarFreehandROITool.toolName,
   VideoRedactionTool.toolName,
+  LivewireContourTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -259,6 +261,7 @@ async function run() {
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(VideoRedactionTool);
+  cornerstoneTools.addTool(LivewireContourTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -277,6 +280,7 @@ async function run() {
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(LivewireContourTool.toolName);
 
   toolGroup.setToolActive(KeyImageTool.toolName, {
     bindings: [
@@ -293,6 +297,7 @@ async function run() {
       },
     ],
   });
+  addNavigationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
