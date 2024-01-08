@@ -404,7 +404,7 @@ async function run() {
   viewport.pause();
 
   fillStackSegmentationWithMockData({
-    imageIds: imageIdsArray.slice(0, 2),
+    imageIds: imageIdsArray,
     segmentationImageIds,
     cornerstone,
   });

@@ -14,7 +14,13 @@ import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
 import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
+import type {
+  VolumeActor,
+  Actor,
+  ActorEntry,
+  ImageActor,
+  ICanvasActor,
+} from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -149,6 +155,7 @@ export type {
   Actor,
   ActorEntry,
   ImageActor,
+  ICanvasActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,

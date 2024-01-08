@@ -13,6 +13,7 @@ import {
   InternalVideoCamera,
   VideoViewportInput,
   VOIRange,
+  ICanvasActor,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -826,7 +827,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return transform;
   }
 
-  public addImages(stackInputs: Array<IStackInput>) {
+  public addImages(stackInputs: Array<any>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const image = cache.getImage(stackInput.imageId);
@@ -843,7 +844,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   protected createActorMapper(image) {
-    return new CanvasActor(image);
+    return new CanvasActor(this, image);
   }
 
   private renderFrame = () => {
@@ -867,7 +868,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.videoHeight
     );
 
-    console.log('Should actors render right here', this.getActors().length);
     for (const actor of this.getActors()) {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);
     }

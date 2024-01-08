@@ -8,6 +8,14 @@ export type ImageActor = vtkImageSlice;
 
 export interface ICanvasActor {
   render(viewport, context): void;
+
+  getMapper();
+
+  getProperty();
+
+  isA(actorType): boolean;
+
+  getClassName(): string;
 }
 
 /**

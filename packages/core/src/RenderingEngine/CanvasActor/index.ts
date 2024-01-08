@@ -35,6 +35,18 @@ export class CanvasProperties {
   }
 }
 
+export class CanvasMapper {
+  private actor: CanvasActor;
+
+  constructor(actor: CanvasActor) {
+    this.actor = actor;
+  }
+
+  getInputData() {
+    return this.actor.getImage();
+  }
+}
+
 /**
  * Handles canvas rendering of image data.
  */
@@ -42,18 +54,25 @@ export default class CanvasActor implements ICanvasActor {
   private image;
   private canvasProperties = new CanvasProperties(this);
   private visibility = false;
+  private mapper = new CanvasMapper(this);
+  private viewport;
 
-  constructor(image) {
+  constructor(viewport: IViewport, image) {
     this.image = image;
+    this.viewport = viewport;
   }
 
   public render(viewport: IViewport, context: CanvasRenderingContext2D): void {
     if (!this.visibility) {
       return;
     }
-    console.log('Rendering canvas actor', viewport);
+    console.log('Rendering canvas actor', viewport, this.image);
     context.fillStyle = 'red';
     context.fillRect(25, 25, 50, 50);
+  }
+
+  public getClassName() {
+    return 'CanvasActor';
   }
 
   public getProperty() {
@@ -65,6 +84,28 @@ export default class CanvasActor implements ICanvasActor {
   }
 
   public getMapper() {
-    return null;
+    return this.mapper;
+  }
+
+  public isA(actorType) {
+    console.log('Testing if this is a', actorType);
+    return false;
+  }
+
+  public getImage() {
+    const imageData = this.viewport.getImageData();
+    this.image.worldToIndex = (worldPos) =>
+      imageData.imageData.worldToIndex(worldPos);
+    this.image.indexToWorld = (index) =>
+      imageData.imageData.indexToWorld(index);
+    this.image.getDimensions = () => imageData.dimensions;
+    this.image.getScalarData = () => this.image.getPixelData();
+    this.image.getDirection = () => imageData.direction;
+    this.image.getSpacing = () => imageData.spacing;
+    this.image.modified = () => {
+      console.log('Modified segdata');
+    };
+    console.log('imageData=', imageData, this.image);
+    return this.image;
   }
 }

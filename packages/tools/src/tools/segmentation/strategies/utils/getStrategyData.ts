@@ -46,12 +46,13 @@ function getStrategyData({ operationData, viewport }) {
     segmentationScalarData = segmentationImage.getPixelData();
 
     const image = cache.getImage(currentImageId);
+    const imageData = image ? null : viewport.getImageData();
 
     // VERY IMPORTANT
     // This is the pixel data of the image that is being segmented in the cache
     // and we need to use this to for the modification
-    imageScalarData = image.getPixelData();
-    dimensions = [image.columns, image.rows, 1];
+    imageScalarData = image?.getPixelData() || imageData.getScalarData();
+    dimensions = image ? [image.columns, image.rows, 1] : imageData.dimensions;
   }
 
   return {

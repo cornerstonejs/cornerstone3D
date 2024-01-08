@@ -32,7 +32,7 @@ type Actor = vtkActor;
 // @public (undocumented)
 type ActorEntry = {
     uid: string;
-    actor: Actor | VolumeActor | ImageActor;
+    actor: Actor | VolumeActor | ImageActor | ICanvasActor;
     referenceId?: string;
     slabThickness?: number;
     clippingFilter?: any;
@@ -1130,6 +1130,20 @@ interface ICamera {
     viewPlaneNormal?: Point3;
     // (undocumented)
     viewUp?: Point3;
+}
+
+// @public (undocumented)
+interface ICanvasActor {
+    // (undocumented)
+    getClassName(): string;
+    // (undocumented)
+    getMapper(): any;
+    // (undocumented)
+    getProperty(): any;
+    // (undocumented)
+    isA(actorType: any): boolean;
+    // (undocumented)
+    render(viewport: any, context: any): void;
 }
 
 // @public (undocumented)
@@ -3056,6 +3070,7 @@ declare namespace Types {
         Actor,
         ActorEntry,
         ImageActor,
+        ICanvasActor,
         IImageLoadObject,
         IVolumeLoadObject,
         IVolumeInput,
@@ -3217,11 +3232,15 @@ function uuidv4(): string;
 export class VideoViewport extends Viewport implements IVideoViewport {
     constructor(props: VideoViewportInput);
     // (undocumented)
+    addImages(stackInputs: Array<any>): void;
+    // (undocumented)
     readonly canvasContext: CanvasRenderingContext2D;
     // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
+    // (undocumented)
+    protected createActorMapper(image: any): CanvasActor;
     // (undocumented)
     customRenderViewportToCanvas: () => void;
     // (undocumented)
