@@ -16,7 +16,7 @@ If the answer is Yes, it is recommended to document it.
 To run documentation you need to execute
 
 ```sh
-cs packages/docs/
+cd packages/docs/
 
 yarn run start
 ```

@@ -264,8 +264,8 @@ export { annotation }
 
 // @public (undocumented)
 type AnnotationAddedEventDetail = {
-    viewportId: string;
-    renderingEngineId: string;
+    viewportId?: string;
+    renderingEngineId?: string;
     annotation: Annotation;
 };
 
@@ -715,7 +715,9 @@ export class BidirectionalTool extends AnnotationTool {
 declare namespace boundingBox {
     export {
         extend2DBoundingBoxInViewAxis,
-        getBoundingBoxAroundShape
+        getBoundingBoxAroundShapeIJK,
+        getBoundingBoxAroundShapeWorld,
+        getBoundingBoxAroundShapeIJK as getBoundingBoxAroundShape
     }
 }
 
@@ -2109,7 +2111,10 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
-function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+function getBoundingBoxAroundShapeIJK(points: Types_2.Point2[] | Types_2.Point3[], dimensions?: Types_2.Point2 | Types_2.Point3): BoundingBox;
+
+// @public (undocumented)
+function getBoundingBoxAroundShapeWorld(points: Types_2.Point2[] | Types_2.Point3[], clipBounds?: Types_2.Point2 | Types_2.Point3): BoundingBox;
 
 // @public (undocumented)
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
@@ -2240,6 +2245,15 @@ function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentatio
 
 // @public (undocumented)
 function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
+
+// @public (undocumented)
+function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData, viewport: any): {
+    boundsIJK: BoundsIJK_2;
+    centerWorld: Types_2.Point3;
+    radiusWorld: number;
+    topLeftWorld: Types_2.Point3;
+    bottomRightWorld: Types_2.Point3;
+};
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
@@ -2383,6 +2397,9 @@ function isAnnotationSelected(annotationUID: string): boolean;
 
 // @public (undocumented)
 function isAnnotationVisible(annotationUID: string): boolean | undefined;
+
+// @public (undocumented)
+function isAxisAlignedRectangle(rectangleCornersIJK: any): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3403,9 +3420,6 @@ function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
-function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
-
-// @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
 
 // @public (undocumented)
@@ -3771,7 +3785,8 @@ export class RectangleROITool extends AnnotationTool {
 
 declare namespace rectangleROITool {
     export {
-        getBoundsIJKFromRectangleAnnotations
+        getBoundsIJKFromRectangleAnnotations,
+        isAxisAlignedRectangle
     }
 }
 
@@ -5273,7 +5288,7 @@ declare namespace utilities {
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRender,
         pointInShapeCallback,
-        pointInSurroundingSphereCallback,
+        getSphereBoundsInfo,
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
