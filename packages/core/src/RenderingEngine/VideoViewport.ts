@@ -264,10 +264,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public play() {
-    if (!this.isPlaying) {
-      this.videoElement.play();
-      this.isPlaying = true;
-      this.renderWhilstPlaying();
+    try {
+      if (!this.isPlaying) {
+        this.videoElement.play();
+        this.isPlaying = true;
+        this.renderWhilstPlaying();
+      }
+    } catch (e) {
+      // No-op, this happens sometimes on startup
     }
   }
 

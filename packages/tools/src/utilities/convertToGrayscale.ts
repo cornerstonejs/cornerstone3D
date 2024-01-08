@@ -3,17 +3,20 @@ export default function convertToGrayscale(
   width: number,
   height: number
 ) {
-  if (scalarData.length === width * height * 4) {
+  const isRGBA = scalarData.length === width * height * 4;
+  const isRGB = scalarData.length === width * height * 3;
+  if (isRGBA || isRGB) {
     const newScalarData = new Float32Array(width * height);
     let offset = 0;
     let destOffset = 0;
+    const increment = isRGBA ? 4 : 3;
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         const r = scalarData[offset];
         const g = scalarData[offset + 1];
         const b = scalarData[offset + 2];
-        newScalarData[destOffset] = r * r + g * g + b * b;
-        offset++;
+        newScalarData[destOffset] = Math.sqrt(r * r + g * g + b * b);
+        offset += increment;
         destOffset++;
       }
     }
