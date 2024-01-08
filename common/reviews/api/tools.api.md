@@ -345,7 +345,7 @@ type AnnotationHandle = Types_2.Point3;
 
 // @public (undocumented)
 type AnnotationInterpolationCompletedEventDetail = {
-    annotation: Annotation;
+    annotation: InterpolationROIAnnotation;
     element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
@@ -353,6 +353,17 @@ type AnnotationInterpolationCompletedEventDetail = {
 
 // @public (undocumented)
 type AnnotationInterpolationCompletedEventType = Types_2.CustomEventType<AnnotationInterpolationCompletedEventDetail>;
+
+// @public (undocumented)
+type AnnotationInterpolationRemovedEventDetail = {
+    annotations: Array<InterpolationROIAnnotation>;
+    element: HTMLDivElement;
+    viewportId: string;
+    renderingEngineId: string;
+};
+
+// @public (undocumented)
+type AnnotationInterpolationRemovedEventType = Types_2.CustomEventType<AnnotationInterpolationRemovedEventDetail>;
 
 // @public (undocumented)
 type AnnotationLabelChangeEventDetail = {
@@ -1791,6 +1802,8 @@ enum Events {
     // (undocumented)
     ANNOTATION_VISIBILITY_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_VISIBILITY_CHANGE",
     // (undocumented)
+    INTERPOLATED_ANNOTATIONS_REMOVED = "CORNERSTONE_TOOLS_INTERPOLATED_ANNOTATIONS_REMOVED",
+    // (undocumented)
     KEY_DOWN = "CORNERSTONE_TOOLS_KEY_DOWN",
     // (undocumented)
     KEY_UP = "CORNERSTONE_TOOLS_KEY_UP",
@@ -1882,6 +1895,8 @@ declare namespace EventTypes_2 {
         AnnotationLabelChangeEventType,
         AnnotationInterpolationCompletedEventDetail,
         AnnotationInterpolationCompletedEventType,
+        AnnotationInterpolationRemovedEventDetail,
+        AnnotationInterpolationRemovedEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
         SegmentationRepresentationModifiedEventType,

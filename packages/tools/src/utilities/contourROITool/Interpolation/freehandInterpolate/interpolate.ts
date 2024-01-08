@@ -4,6 +4,7 @@ import generateInterpolationData from './generateInterpolationData';
 import TOOL_NAMES from '../toolNames';
 import type { InterpolationViewportData } from '../InterpolationTypes';
 import { InterpolationROIAnnotation } from '../../../../types/ToolSpecificAnnotationTypes';
+import { AnnotationInterpolationCompletedEventDetail } from '../../../../types/EventTypes';
 import { annotation } from '../../../../index';
 import EventTypes from '../../../../enums/Events';
 
@@ -50,10 +51,20 @@ function startInterpolation(viewportData: InterpolationViewportData) {
     }
   }
 
+  const { id, renderingEngineId, element } = viewportData.viewport;
+
+  const eventDetails: AnnotationInterpolationCompletedEventDetail = {
+    annotation: toolData,
+    element,
+    viewportId: id,
+    renderingEngineId,
+  };
+
   if (interpolationList.length) {
     triggerEvent(
       viewportData.viewport.element,
-      EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED
+      EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
+      eventDetails
     );
   }
 }
@@ -247,6 +258,8 @@ function _editInterpolatedContour(
     oldToolData.metadata.referencedImageId;
   interpolatedAnnotation.metadata.referencedSliceIndex =
     oldToolData.metadata.referencedSliceIndex;
+  // To update existing annotation, not intend to add or remove
+  interpolatedAnnotation.annotationUID = oldToolData.annotationUID;
   // Skip triggering events on removal of interpolated roi's.
   annotation.state.removeAnnotation(oldToolData.annotationUID, true);
   annotation.state.addAnnotation(
