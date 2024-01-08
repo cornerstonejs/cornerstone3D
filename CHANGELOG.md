@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.0...v1.43.1) (2024-01-08)
+
+### Bug Fixes
+
+- Prevent errors during access to property of undefined object. ([#955](https://github.com/cornerstonejs/cornerstone3D/issues/955)) ([f15a218](https://github.com/cornerstonejs/cornerstone3D/commit/f15a218680fec529841881d20d3563aafe991f5b))
+
 # [1.43.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.42.1...v1.43.0) (2024-01-07)
 
 ### Bug Fixes
