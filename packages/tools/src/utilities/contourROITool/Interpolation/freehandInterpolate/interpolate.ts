@@ -13,7 +13,6 @@ const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-samplin
  * interpolate - Interpolate missing contours in the ROIContours.
  * If input is tool data collection, it is expected to be sorted in the order of stack image in which it was drawn
  *
- * @param toolDatas - object, The tool data collection of the roi contours.
  * @param viewportData - Object
  * @returns null
  */
@@ -25,7 +24,6 @@ function interpolate(viewportData: InterpolationViewportData) {
 
 /**
  * Start the actual interpolation from the list
- * @param toolData - Array[]
  * @param viewportData - Object
  * @returns null
  */
@@ -65,9 +63,9 @@ function startInterpolation(viewportData: InterpolationViewportData) {
  * indices array between the contourPair.
  *
  * @param indicies - Number[], An array of slice indices to interpolate.
- * @param contourPair - Number[],  The pair of contours to interpolate between.
- * @param ROIContourData - object[], Data for the slice location of contours
- *                                    for the ROIContour.
+ * @param annotationPair - Number[], The slice indicies of the reference contours.
+ * @param interpolationData - object
+ * @param eventData - object
  * @returns null
  */
 
@@ -108,9 +106,10 @@ function _linearlyInterpolateBetween(
  * @param c2Interp - object,  The second reference contour.
  * @param sliceIndex - Number, The slice index to interpolate.
  * @param annotationPair - Number[], The slice indicies of the reference contours.
- * @param ROIContourData - object[], Data for the slice location of contours
+ * @param interpolationData - object[], Data for the slice location of contours
  *                                  for the ROIContour.
  * @param c1HasMoreNodes - boolean, True if c1 has more nodes than c2.
+ * @param eventData - object
  * @returns null
  */
 function _linearlyInterpolateContour(
@@ -154,9 +153,10 @@ function _linearlyInterpolateContour(
  * _addInterpolatedContour - Adds a new contour to the imageId.
  *
  * @param interpolated3DPoints - object, The polygon to add to the ROIContour.
- * @param imageId - string, The imageId to add the polygon to.
+ * @param sliceIndex - Number, The slice index to interpolate..
  * @param referencedToolData - The toolData of another polygon in the
  * ROIContour, to assign appropriate metadata to the new polygon.
+ * @param eventData - object
  * @returns null
  */
 function _addInterpolatedContour(
@@ -199,9 +199,10 @@ function _addInterpolatedContour(
  * that corresponds to the specified ROIContour.
  *
  * @param interpolated3DPoints - object, The polygon to add to the ROIContour.
- * @param imageId - String, The imageId to add the polygon to.
+ * @param sliceIndex - Number, The slice index to interpolate.
  * @param referencedToolData - type, The toolData of another polygon in the
  * ROIContour, to assign appropriate metadata to the new polygon.
+ * @param eventData - object
  * @returns null
  */
 function _editInterpolatedContour(
@@ -380,6 +381,7 @@ function _reduceContoursToOriginNodes(c1i, c2i) {
  * @param c1i - The contour to shift.
  * @param c2i - The reference contour.
  * modifies c1i
+ * @returns null
  */
 function _shiftSuperSampledContourInPlace(c1i, c2i) {
   const c1iLength = c1i.x.length;
