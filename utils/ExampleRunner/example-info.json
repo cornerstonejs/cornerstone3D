@@ -326,6 +326,10 @@
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
       },
+      "videoSplineROITools": {
+        "name": "Video Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline) on video"
+      },
       "segmentBidirectionalTool": {
         "name": "Segmentation Bidirectional Tool",
         "description": "Demonstrates the calculation of largest bidirectional diameters within segmented contours, akin to RECIST measurements for assessing changes in tumor sizes or anatomical structures over time in medical imaging."
