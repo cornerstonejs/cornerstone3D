@@ -234,8 +234,6 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     toolSpecificAnnotations.push(annotation);
     checkAndDefineIsLockedProperty(annotation);
     checkAndDefineIsVisibleProperty(annotation);
-
-    triggerAnnotationAddedForFOR(annotation);
   };
 
   /**
