@@ -15,7 +15,7 @@ export default function convertToGrayscale(
         const r = scalarData[offset];
         const g = scalarData[offset + 1];
         const b = scalarData[offset + 2];
-        newScalarData[destOffset] = Math.sqrt(r * r + g * g + b * b);
+        newScalarData[destOffset] = (r + g + b) / 3;
         offset += increment;
         destOffset++;
       }
