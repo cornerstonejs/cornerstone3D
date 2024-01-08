@@ -5,7 +5,6 @@ import {
   AnnotationState,
   GroupSpecificAnnotations,
 } from '../../types/AnnotationTypes';
-import { triggerAnnotationAddedForFOR } from './helpers/state';
 
 import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 
