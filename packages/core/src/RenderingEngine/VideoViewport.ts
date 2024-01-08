@@ -19,6 +19,8 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
+import CanvasActor from './CanvasActor';
+import cache from '../cache';
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -823,6 +825,27 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
     return transform;
   }
+
+  public addImages(stackInputs: Array<IStackInput>) {
+    const actors = this.getActors();
+    stackInputs.forEach((stackInput) => {
+      const image = cache.getImage(stackInput.imageId);
+
+      const imageActor = this.createActorMapper(image);
+      if (imageActor) {
+        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        if (stackInput.callback) {
+          stackInput.callback({ imageActor, imageId: stackInput.imageId });
+        }
+      }
+    });
+    this.setActors(actors);
+  }
+
+  protected createActorMapper(image) {
+    return new CanvasActor(image);
+  }
+
   private renderFrame = () => {
     const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
@@ -844,6 +867,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.videoHeight
     );
 
+    console.log('Should actors render right here', this.getActors().length);
+    for (const actor of this.getActors()) {
+      (actor.actor as ICanvasActor).render(this, this.canvasContext);
+    }
     this.canvasContext.resetTransform();
 
     triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
