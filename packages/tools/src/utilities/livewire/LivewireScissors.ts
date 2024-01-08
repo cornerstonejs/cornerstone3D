@@ -4,6 +4,14 @@ import { BucketQueue } from '../BucketQueue';
 const MAX_UINT32 = 4294967295;
 const TWO_THIRD_PI = 2 / (3 * Math.PI);
 
+type PixelDataTypedArray =
+  | Uint8Array
+  | Int8Array
+  | Uint16Array
+  | Int16Array
+  | Float32Array
+  | Float64Array;
+
 /**
  * Scissors
  *
@@ -28,7 +36,7 @@ export class LivewireScissors {
   public readonly height: number;
 
   /** Grayscale image */
-  private grayscalePixelData: Float32Array;
+  private grayscalePixelData: PixelDataTypedArray;
 
   // Laplace zero-crossings (either 0 or 1).
   private laplace: Float32Array;
@@ -57,7 +65,11 @@ export class LivewireScissors {
   /** Dijkstra - BucketQueue to sort items by priority */
   private priorityQueueNew: BucketQueue<number>;
 
-  constructor(grayscalePixelData: Float32Array, width: number, height: number) {
+  constructor(
+    grayscalePixelData: PixelDataTypedArray,
+    width: number,
+    height: number
+  ) {
     const numPixels = grayscalePixelData.length;
 
     this.searchGranularityBits = 8; // Bits of resolution for BucketQueue.

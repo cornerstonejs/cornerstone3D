@@ -224,8 +224,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       window.setTimeout(() => {
         this.pause();
         this.setFrameNumber(frameNumber || 1);
-      }, 25);
-      console.log('Ready to render now');
+      }, 50);
     });
   }
 
@@ -273,8 +272,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public async pause() {
-    await this.videoElement.pause();
-    this.isPlaying = false;
+    try {
+      await this.videoElement.pause();
+      this.isPlaying = false;
+    } catch (e) {
+      // No-op - sometimes this happens on startup
+    }
   }
 
   public async scroll(delta = 1) {
@@ -463,7 +466,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     const spacing = metadata.spacing;
 
-    return {
+    const imageData = {
       dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
@@ -492,6 +495,11 @@ class VideoViewport extends Viewport implements IVideoViewport {
         scaled: false,
       },
     };
+    Object.defineProperty(imageData, 'scalarData', {
+      get: () => this.getScalarData(),
+      enumerable: true,
+    });
+    return imageData;
   }
 
   /**

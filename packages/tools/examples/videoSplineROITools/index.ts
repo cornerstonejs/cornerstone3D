@@ -21,6 +21,7 @@ const DEFAULT_CARDINAL_SCALE = 0.5;
 
 const {
   SplineROITool,
+  LivewireContourTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -120,7 +121,7 @@ const Splines = {
 };
 
 const SplineToolNames = Object.keys(Splines);
-const toolsNames = [...SplineToolNames];
+const toolsNames = [...SplineToolNames, LivewireContourTool.toolName];
 let selectedToolName = toolsNames[0];
 
 addDropdownToToolbar({
@@ -224,6 +225,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SplineROITool);
+  cornerstoneTools.addTool(LivewireContourTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -257,6 +259,8 @@ async function run() {
       type: SplineROITool.SplineTypes.BSpline,
     },
   });
+
+  toolGroup.addTool(LivewireContourTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.

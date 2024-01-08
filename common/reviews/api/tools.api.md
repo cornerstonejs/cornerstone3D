@@ -1311,6 +1311,9 @@ function convertStackToVolumeSegmentation({ segmentationId, options, }: {
 }): Promise<void>;
 
 // @public (undocumented)
+function convertToGrayscale(scalarData: any, width: number, height: number): any;
+
+// @public (undocumented)
 function convertVolumeToStackSegmentation({ segmentationId, options, }: {
     segmentationId: string;
     options?: {
@@ -5277,6 +5280,7 @@ declare namespace utilities {
         throttle,
         orientation_2 as orientation,
         isObject,
+        convertToGrayscale,
         touch,
         triggerEvent,
         calibrateImageSpacing,

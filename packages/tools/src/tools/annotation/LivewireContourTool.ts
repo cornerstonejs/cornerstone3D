@@ -6,7 +6,6 @@ import {
   eventTarget,
   triggerEvent,
   utilities as csUtils,
-  StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -30,7 +29,11 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
+import {
+  math,
+  triggerAnnotationRenderForViewportIds,
+  convertToGrayscale,
+} from '../../utilities';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import {
   AnnotationCompletedEventDetail,
@@ -111,20 +114,19 @@ class LivewireContourTool extends AnnotationTool {
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
     const defaultActor = viewport.getDefaultActor();
 
-    if (!defaultActor || !csUtils.isImageActor(defaultActor)) {
-      throw new Error('Default actor must be an image actor');
-    }
+    // if (!defaultActor || !csUtils.isImageActor(defaultActor)) {
+    //   throw new Error('Default actor must be an image actor');
+    // }
 
     const viewportImageData = viewport.getImageData();
     const { imageData: vtkImageData } = viewportImageData;
     let worldToSlice: (point: Types.Point3) => Types.Point2;
     let sliceToWorld: (point: Types.Point2) => Types.Point3;
-    let scalarData;
+    let { scalarData } = viewportImageData;
     let width;
     let height;
 
-    if (viewport instanceof StackViewport) {
-      scalarData = viewportImageData.scalarData;
+    if (!(viewport instanceof VolumeViewport) && scalarData) {
       width = viewportImageData.dimensions[0];
       height = viewportImageData.dimensions[1];
 
@@ -174,12 +176,12 @@ class LivewireContourTool extends AnnotationTool {
     } else {
       throw new Error('Viewport not supported');
     }
-
+    scalarData = convertToGrayscale(scalarData, width, height);
     const { voiRange } = viewport.getProperties();
     const startPos = worldToSlice(worldPos);
 
     this.scissors = LivewireScissors.createInstanceFromRawPixelData(
-      scalarData,
+      scalarData as Float32Array,
       width,
       height,
       voiRange
