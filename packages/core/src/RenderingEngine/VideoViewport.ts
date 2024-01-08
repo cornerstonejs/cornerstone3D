@@ -156,6 +156,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       columnCosines[1],
       columnCosines[2]
     );
+
+    const { rows, columns } = imagePlaneModule;
+    this.videoWidth = columns;
+    this.videoHeight = rows;
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
@@ -216,10 +220,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
-      if (frameNumber !== undefined) {
+      this.play();
+      window.setTimeout(() => {
         this.pause();
-        this.setFrameNumber(frameNumber);
-      }
+        this.setFrameNumber(frameNumber || 1);
+      }, 25);
+      console.log('Ready to render now');
     });
   }
 

@@ -6,6 +6,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   addCheckboxToToolbar,
+  getLocalUrl,
   addNavigationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -20,8 +21,6 @@ const DEFAULT_CARDINAL_SCALE = 0.5;
 
 const {
   SplineROITool,
-  PanTool,
-  ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -29,12 +28,12 @@ const {
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
+const viewportId = 'VIDEO_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Spline Tools Stack',
-  'Spline tools for a stack viewport with some settings that can be changed such ' +
+  'Video Spline Tools Stack',
+  'Spline tools for a video viewport with some settings that can be changed such ' +
     'as resolution, scale (Cardinal Splines only) and it is also possible to ' +
     'enable/disable the preview when adding a control point to a spline'
 );
@@ -224,8 +223,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(SplineROITool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -270,16 +267,21 @@ async function run() {
       },
     ],
   });
+
   addNavigationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
+    SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
+
+  // Only one SOP instances is DICOM, so find it
+  const videoId = imageIds.find(
+    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
+  );
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -287,7 +289,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.VIDEO,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -300,18 +302,13 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
+  const viewport = <Types.IVideoViewport>(
     renderingEngine.getViewport(viewportId)
   );
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0]];
-
   // Set the stack on the viewport
-  viewport.setStack(stack);
-
-  // Render the image
-  viewport.render();
+  await viewport.setVideo(videoId, 25);
+  viewport.play();
 }
 
 run();

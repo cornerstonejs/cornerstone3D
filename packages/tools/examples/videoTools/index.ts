@@ -12,6 +12,7 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
+  addNavigationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -33,11 +34,7 @@ const {
   ArrowAnnotateTool,
   PlanarFreehandROITool,
 
-  PanTool,
-  ZoomTool,
   VideoRedactionTool,
-  StackScrollMouseWheelTool,
-  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -252,7 +249,6 @@ async function run() {
 
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
-  cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -262,13 +258,7 @@ async function run() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(VideoRedactionTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -286,12 +276,7 @@ async function run() {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
-  toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(KeyImageTool.toolName, {
     bindings: [
@@ -305,33 +290,6 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
@@ -363,8 +321,6 @@ async function run() {
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
   await viewport.setVideo(videoId, 25);
-
-  viewport.play();
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 
