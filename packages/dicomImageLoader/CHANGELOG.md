@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.4...v1.43.5) (2024-01-08)
+
+### Bug Fixes
+
+- condition default streaming value ([#973](https://github.com/cornerstonejs/cornerstone3D/issues/973)) ([e9edf3c](https://github.com/cornerstonejs/cornerstone3D/commit/e9edf3ccbda05e0ce98a5a872e9bf68b1737685f))
+
 ## [1.43.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.3...v1.43.4) (2024-01-08)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
