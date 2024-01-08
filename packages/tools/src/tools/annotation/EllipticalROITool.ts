@@ -13,7 +13,7 @@ import {
   getCalibratedAreaUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -785,9 +785,7 @@ class EllipticalROITool extends AnnotationTool {
       const rotation = Math.abs(
         viewport.getRotation() - (data.initialRotation || 0)
       );
-      let canvasCorners;
-
-      canvasCorners = <Array<Types.Point2>>(
+      const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
       );
 

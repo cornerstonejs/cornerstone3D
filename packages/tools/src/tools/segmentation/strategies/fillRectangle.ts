@@ -1,11 +1,15 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
+import {
+  getBoundingBoxAroundShapeIJK,
+  getBoundingBoxAroundShapeWorld,
+} from '../../../utilities/boundingBox';
 import { pointInShapeCallback } from '../../../utilities';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { LabelmapToolOperationData } from '../../../types';
 import { getStrategyData } from './utils/getStrategyData';
+import { isAxisAlignedRectangle } from '../../../utilities/rectangleROITool/isAxisAlignedRectangle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -18,7 +22,6 @@ type OperationData = LabelmapToolOperationData & {
  * the rectangle, set the scalar value to the segmentIndex
  * @param toolGroupId - string
  * @param operationData - OperationData
- * @param constraintFn - can be used to perform threshold segmentation
  * @param inside - boolean
  */
 // Todo: why we have another constraintFn? in addition to the one in the operationData?
@@ -27,9 +30,10 @@ function fillRectangle(
   operationData: OperationData,
   inside = true
 ): void {
-  const { points, segmentsLocked, segmentIndex, segmentationId, constraintFn } =
+  const { points, segmentsLocked, segmentIndex, segmentationId } =
     operationData;
 
+  const { viewport } = enabledElement;
   const strategyData = getStrategyData({
     operationData,
     viewport: enabledElement.viewport,
@@ -53,32 +57,65 @@ function fillRectangle(
     });
   });
 
-  const boundsIJK = getBoundingBoxAroundShape(
+  const boundsIJK = getBoundingBoxAroundShapeIJK(
     rectangleCornersIJK,
     segmentationImageData.getDimensions()
   );
 
-  // Since always all points inside the boundsIJK is inside the rectangle...
-  const pointInRectangle = () => true;
+  const isStackViewport = viewport instanceof StackViewport;
 
-  const callback = ({ value, index, pointIJK }) => {
+  // Are we working with 2D rectangle in axis aligned viewport view or not
+  const isAligned =
+    isStackViewport || isAxisAlignedRectangle(rectangleCornersIJK);
+
+  const direction = segmentationImageData.getDirection();
+  const spacing = segmentationImageData.getSpacing();
+  const { viewPlaneNormal } = viewport.getCamera();
+
+  // In case that we are working on oblique, our EPS is really the spacing in the
+  // normal direction, since we can't really test each voxel against a 2D rectangle
+  // we need some tolerance in the normal direction.
+  const EPS = csUtils.getSpacingInNormalDirection(
+    {
+      direction,
+      spacing,
+    },
+    viewPlaneNormal
+  );
+
+  const pointsBoundsLPS = getBoundingBoxAroundShapeWorld(points);
+  let [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = pointsBoundsLPS;
+
+  // Update the bounds with +/- EPS
+  xMin -= EPS;
+  xMax += EPS;
+  yMin -= EPS;
+  yMax += EPS;
+  zMin -= EPS;
+  zMax += EPS;
+
+  const pointInShapeFn = isAligned
+    ? () => true
+    : (pointLPS) => {
+        const [x, y, z] = pointLPS;
+        const xInside = x >= xMin && x <= xMax;
+        const yInside = y >= yMin && y <= yMax;
+        const zInside = z >= zMin && z <= zMax;
+
+        return xInside && yInside && zInside;
+      };
+
+  const callback = ({ value, index }) => {
     if (segmentsLocked.includes(value)) {
       return;
     }
 
-    if (!constraintFn) {
-      segmentationScalarData[index] = segmentIndex;
-      return;
-    }
-
-    if (constraintFn(pointIJK)) {
-      segmentationScalarData[index] = segmentIndex;
-    }
+    segmentationScalarData[index] = segmentIndex;
   };
 
   pointInShapeCallback(
     segmentationImageData,
-    pointInRectangle,
+    pointInShapeFn,
     callback,
     boundsIJK
   );
@@ -91,7 +128,6 @@ function fillRectangle(
  * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.
- * @param constraintFn - can be used to perform threshold segmentation
  */
 export function fillInsideRectangle(
   enabledElement: Types.IEnabledElement,
@@ -105,7 +141,6 @@ export function fillInsideRectangle(
  * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.
- * @param constraintFn - can be used to perform threshold segmentation
  */
 export function fillOutsideRectangle(
   enabledElement: Types.IEnabledElement,

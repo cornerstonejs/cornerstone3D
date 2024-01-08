@@ -42,6 +42,7 @@ import {
   SplineROITool,
   BidirectionalTool,
   PlanarFreehandROITool,
+  LivewireContourTool,
   ArrowAnnotateTool,
   KeyImageTool,
   CrosshairsTool,
@@ -55,6 +56,7 @@ import {
   BrushTool,
   AngleTool,
   CobbAngleTool,
+  UltrasoundDirectionalTool,
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,
@@ -64,6 +66,7 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
+  SegmentSelectTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -106,9 +109,11 @@ export {
   SplineROITool,
   BidirectionalTool,
   PlanarFreehandROITool,
+  LivewireContourTool,
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
+  UltrasoundDirectionalTool,
   KeyImageTool,
   MagnifyTool,
   AdvancedMagnifyTool,
@@ -125,6 +130,7 @@ export {
   RectangleROIStartEndThresholdTool,
   BrushTool,
   OrientationMarkerTool,
+  SegmentSelectTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

@@ -11,7 +11,7 @@ import {
   getCalibratedLengthUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -1348,19 +1348,23 @@ class BidirectionalTool extends AnnotationTool {
 }
 
 function defaultGetTextLines(data, targetId): string[] {
-  const { cachedStats } = data;
+  const { cachedStats, label } = data;
   const { length, width, unit } = cachedStats[targetId];
 
+  const textLines = [];
+  if (label) {
+    textLines.push(label);
+  }
   if (length === undefined) {
-    return;
+    return textLines;
   }
 
   // spaceBetweenSlices & pixelSpacing &
   // magnitude in each direction? Otherwise, this is "px"?
-  const textLines = [
+  textLines.push(
     `L: ${roundNumber(length)} ${unit}`,
-    `W: ${roundNumber(width)} ${unit}`,
-  ];
+    `W: ${roundNumber(width)} ${unit}`
+  );
 
   return textLines;
 }

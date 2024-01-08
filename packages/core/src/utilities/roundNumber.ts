@@ -1,3 +1,5 @@
+import { EPSILON } from '../constants';
+
 /**
  * Truncates decimal points to that there is at least 1+precision significant
  * digits.
@@ -41,4 +43,14 @@ function roundNumber(
   return value.toFixed(fixedPrecision);
 }
 
+/**
+ * Rounds a number to the nearest multiple of EPSILON.
+ * @param value - The number to round.
+ * @returns The rounded number.
+ */
+function roundToPrecision(value) {
+  return Math.round(value / EPSILON) * EPSILON;
+}
+
+export { roundToPrecision };
 export default roundNumber;

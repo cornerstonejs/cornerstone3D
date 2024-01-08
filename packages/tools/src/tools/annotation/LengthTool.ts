@@ -7,11 +7,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  getCalibratedLengthUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -818,12 +815,13 @@ class LengthTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const scale = getCalibratedScale(image);
-
-      const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
+      const handles = [index1, index2];
+      const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
+
+      const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)
@@ -836,7 +834,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
-        unit: getCalibratedLengthUnits(null, image),
+        unit: units,
       };
     }
 

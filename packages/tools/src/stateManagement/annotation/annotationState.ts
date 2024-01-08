@@ -126,6 +126,9 @@ function getNumberOfAnnotations(
  * @param annotationUID - The unique identifier for the annotation.
  */
 function removeAnnotation(annotationUID: string): void {
+  if (!annotationUID) {
+    return;
+  }
   const manager = getAnnotationManager();
   const annotation = manager.getAnnotation(annotationUID);
 

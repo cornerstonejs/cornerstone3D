@@ -18,7 +18,7 @@ import {
   isEqual,
 } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
-import { EPSILON, RENDERING_DEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
   ActorEntry,
@@ -55,10 +55,15 @@ class Viewport implements IViewport {
   readonly renderingEngineId: string;
   /** Type of viewport */
   readonly type: ViewportType;
+  /**
+   * The amount by which the images are inset in a viewport by default.
+   */
+  protected insetImageMultiplier = 1.1;
+
   protected flipHorizontal = false;
   protected flipVertical = false;
   public isDisabled: boolean;
-  /** Record the renddering status, mostly for testing purposes, but can also
+  /** Record the rendering status, mostly for testing purposes, but can also
    * be useful for knowing things like whether the viewport is initialized
    */
   public viewportStatus: ViewportStatus = ViewportStatus.NO_DATA;
@@ -369,6 +374,14 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Returns an array of unique identifiers for all the actors in the viewport.
+   * @returns An array of strings
+   */
+  public getActorUIDs(): Array<string> {
+    return Array.from(this._actors.keys());
+  }
+
+  /**
    * Get an actor by its UID
    * @param actorUID - The unique ID of the actor.
    * @returns An ActorEntry object.
@@ -584,14 +597,15 @@ class Viewport implements IViewport {
     const { storeAsInitialCamera } = displayArea;
 
     // make calculations relative to the fitToCanvasCamera view
-    this.setCamera(this.fitToCanvasCamera, false);
+    this.setCamera(this.fitToCanvasCamera, storeAsInitialCamera);
 
     const { imageArea, imageCanvasPoint } = displayArea;
 
+    let zoom = 1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      const zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      this.setZoom(zoom, storeAsInitialCamera);
+      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+      this.setZoom(this.insetImageMultiplier * zoom, storeAsInitialCamera);
     }
 
     // getting the image info
@@ -604,18 +618,22 @@ class Viewport implements IViewport {
       const validateCanvasPanY = this.sHeight / devicePixelRatio;
       const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
       const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
-
       const dimensions = imageData.getDimensions();
       const canvasZero = this.worldToCanvas([0, 0, 0]);
-      const canvasEdge = this.worldToCanvas(dimensions);
+      const canvasEdge = this.worldToCanvas([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+      ]);
       const canvasImage = [
         canvasEdge[0] - canvasZero[0],
         canvasEdge[1] - canvasZero[1],
       ];
       const [imgWidth, imgHeight] = canvasImage;
       const [imageX, imageY] = imagePoint;
-      const imagePanX = imgWidth * (0.5 - imageX);
-      const imagePanY = imgHeight * (0.5 - imageY);
+      const imagePanX =
+        (zoom * imgWidth * (0.5 - imageX) * validateCanvasPanY) / imgHeight;
+      const imagePanY = zoom * validateCanvasPanY * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
@@ -727,7 +745,7 @@ class Viewport implements IViewport {
     }
 
     //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = 1.1 * radius;
+    const parallelScale = this.insetImageMultiplier * radius;
 
     let w1 = bounds[1] - bounds[0];
     let w2 = bounds[3] - bounds[2];
@@ -743,7 +761,7 @@ class Viewport implements IViewport {
     // compute the radius of the enclosing sphere
     radius = Math.sqrt(radius) * 0.5;
 
-    const distance = 1.1 * radius;
+    const distance = this.insetImageMultiplier * radius;
 
     const viewUpToSet: Point3 =
       Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999
@@ -791,6 +809,10 @@ class Viewport implements IViewport {
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);
+    }
+
+    if (resetZoom) {
+      this.setZoom(1, storeAsInitialCamera);
     }
 
     const RESET_CAMERA_EVENT = {
@@ -1176,7 +1198,11 @@ class Viewport implements IViewport {
     updatedCamera: ICamera
   ): Promise<void> {
     const actorEntries = this.getActors();
-    const allPromises = actorEntries.map(async (actorEntry) => {
+    // Todo: this was using an async and promise wait all because of the
+    // new surface rendering use case, which broke the more important 3D
+    // volume rendering, so reverting this back for now until I can figure
+    // out a better way to handle this.
+    actorEntries.map((actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping. Update clipping planes only if the actor is
       // a vtkVolume
@@ -1214,7 +1240,6 @@ class Viewport implements IViewport {
       });
     });
 
-    await Promise.all(allPromises);
     this.posProcessNewActors();
   }
 

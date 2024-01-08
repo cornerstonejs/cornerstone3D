@@ -3,7 +3,6 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
-  StackViewport,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -14,7 +13,7 @@ import {
   getCalibratedAreaUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {

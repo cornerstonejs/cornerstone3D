@@ -56,6 +56,7 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type { Statistics } from './CalculatorTypes';
+import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
@@ -72,11 +73,14 @@ import type { ISpline } from './ISpline';
 import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
+import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
+  BidirectionalData,
+  CanvasCoordinates,
   IAnnotationManager,
   GroupSpecificAnnotations,
   AnnotationState,

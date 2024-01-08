@@ -28,9 +28,11 @@ import EllipticalROITool from './annotation/EllipticalROITool';
 import CircleROITool from './annotation/CircleROITool';
 import SplineROITool from './annotation/SplineROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
+import LivewireContourTool from './annotation/LivewireContourTool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
+import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
 
 // Segmentation DisplayTool
@@ -45,6 +47,7 @@ import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartE
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
+import SegmentSelectTool from './segmentation/SegmentSelectTool';
 
 export {
   // ~~ BASE
@@ -76,9 +79,11 @@ export {
   CircleROITool,
   SplineROITool,
   PlanarFreehandROITool,
+  LivewireContourTool,
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
+  UltrasoundDirectionalTool,
   KeyImageTool,
   // Segmentations Display
   SegmentationDisplayTool,
@@ -95,4 +100,5 @@ export {
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
+  SegmentSelectTool,
 };
