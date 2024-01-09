@@ -1,4 +1,5 @@
 import type { BoundsIJK, Point3, PixelDataTypedArray } from '../types';
+import RLEVoxelMap from './RLEVoxelMap';
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
@@ -13,7 +14,7 @@ export default class VoxelManager<T> {
 
   // Provide direct access to the underlying data, if any
   public scalarData: PixelDataTypedArray;
-  public map: Map<number, T>;
+  public map: Map<number, T> | RLEVoxelMap<T>;
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
@@ -328,6 +329,23 @@ export default class VoxelManager<T> {
         }
         layer[index % layerSize] = v;
       }
+    );
+    voxelManager.map = map;
+    return voxelManager;
+  }
+
+  /**
+   * Creates a RLE based voxel manager.  This is effective for storing
+   * segmentation maps.
+   */
+  public static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T> {
+    const [width, height, depth] = dimensions;
+    const map = new RLEVoxelMap<T>(width, height, depth);
+
+    const voxelManager = new VoxelManager(
+      dimensions,
+      (index) => map.get(index),
+      (index, v) => map.set(index, v)
     );
     voxelManager.map = map;
     return voxelManager;

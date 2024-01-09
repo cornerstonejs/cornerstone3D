@@ -3829,6 +3829,8 @@ class VoxelManager<T> {
     // (undocumented)
     static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
     // (undocumented)
+    static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
+    // (undocumented)
     static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
     // (undocumented)
     readonly dimensions: Point3;
@@ -3855,7 +3857,7 @@ class VoxelManager<T> {
     // (undocumented)
     isInObject: (pointIPS: any, pointIJK: any) => boolean;
     // (undocumented)
-    map: Map<number, T>;
+    map: Map<number, T> | RLEVoxelMap<T>;
     // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)

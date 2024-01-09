@@ -4,6 +4,7 @@ import type { ICanvasActor } from '../../types/IActor';
 export class CanvasProperties {
   private actor: CanvasActor;
   private opacity = 0.4;
+  private outlineOpacity = 0.4;
   private transferFunction = [];
 
   constructor(actor: CanvasActor) {

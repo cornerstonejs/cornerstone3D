@@ -613,7 +613,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const current = this.imageId.replace(
       '/frames/1',
       this.isPlaying
-        ? `/frames/1-${this.numberOfFrames}`
+        ? `/frames/${this.frameRange[0]}-${this.frameRange[1]}`
         : `/frames/${this.getFrameNumber()}`
     );
     return current;
