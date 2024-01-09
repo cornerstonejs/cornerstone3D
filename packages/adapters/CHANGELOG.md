@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.7](https://github.com/dcmjs-org/dcmjs/compare/v1.43.6...v1.43.7) (2024-01-09)
+
+### Bug Fixes
+
+-   **segmentation:** notify overlapping segments in generateToolState function ([#989](https://github.com/dcmjs-org/dcmjs/issues/989)) ([626cdbc](https://github.com/dcmjs-org/dcmjs/commit/626cdbc94d27c148ecd18ac8032174e2f202afbd))
+
 ## [1.43.6](https://github.com/dcmjs-org/dcmjs/compare/v1.43.5...v1.43.6) (2024-01-08)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
