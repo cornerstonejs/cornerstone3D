@@ -239,10 +239,17 @@ class RequestPoolManager {
         this.numRequests[type]++;
         this.awake = true;
 
-        requestDetails.requestFn()?.finally(() => {
+        const requestResult = requestDetails.requestFn();
+        if (requestResult?.finally) {
+          requestResult.finally(() => {
+            this.numRequests[type]--;
+            this.startAgain();
+          });
+        } else {
+          // Handle non-async request functions too - typically just short circuit ones
           this.numRequests[type]--;
-          this.startAgain();
-        });
+          i--;
+        }
       }
     }
 
