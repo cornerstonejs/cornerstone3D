@@ -435,6 +435,22 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
+    protected getAnnotationStyle(context: {
+        annotation: Annotation;
+        styleSpecifier: StyleSpecifier;
+    }): {
+        visibility: boolean;
+        locked: boolean;
+        color: string;
+        lineWidth: number;
+        lineDash: string;
+        lineOpacity: number;
+        fillColor: string;
+        fillOpacity: number;
+        shadow: boolean;
+        textbox: Record<string, unknown>;
+    };
+    // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
@@ -978,7 +994,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -1278,6 +1294,19 @@ export { CONSTANTS }
 // @public (undocumented)
 function contourAndFindLargestBidirectional(segmentation: any): any;
 
+// @public (undocumented)
+type ContourAnnotation = Annotation & ContourAnnotationData;
+
+// @public (undocumented)
+type ContourAnnotationData = {
+    data: {
+        contour: {
+            polyline: Types_2.Point3[];
+            closed: boolean;
+        };
+    };
+};
+
 declare namespace contours {
     export {
         _default_2 as contourFinder,
@@ -1289,8 +1318,23 @@ declare namespace contours {
 }
 
 // @public (undocumented)
+type ContourSegmentationAnnotation = ContourAnnotation & ContourSegmentationAnnotationData;
+
+// @public (undocumented)
+type ContourSegmentationAnnotationData = {
+    data: {
+        segmentation: {
+            segmentationId: string;
+            segmentIndex: number;
+            segmentationRepresentationUID: string;
+        };
+    };
+};
+
+// @public (undocumented)
 type ContourSegmentationData = {
-    geometryIds: string[];
+    geometryIds?: string[];
+    annotationUIDsMap?: Map<number, Set<string>>;
 };
 
 // @public (undocumented)
@@ -2254,6 +2298,7 @@ function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], ima
     topLeftWorld: Types_2.Point3;
     bottomRightWorld: Types_2.Point3;
 };
+function getSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
@@ -2864,25 +2909,32 @@ declare namespace lineSegment {
 }
 
 // @public (undocumented)
-interface LivewireContourAnnotation extends Annotation {
-    // (undocumented)
+type LivewireContourAnnotation = ContourAnnotation & {
     data: {
-        polyline: Types_2.Point3[];
         label?: string;
-        handles: {
-            points: Types_2.Point3[];
-            activeHandleIndex: number | null;
-        };
     };
+};
+
+// @public (undocumented)
+type LivewireContourSegmentationAnnotation = LivewireContourAnnotation & ContourSegmentationAnnotationData;
+
+// @public (undocumented)
+export class LivewireContourSegmentationTool extends LivewireContourTool {
+    // (undocumented)
+    protected isContourSegmentationTool(): boolean;
+    // (undocumented)
+    static toolName: any;
 }
 
 // @public (undocumented)
-export class LivewireContourTool extends AnnotationTool {
+export class LivewireContourTool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LivewireContourAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType): LivewireContourAnnotation;
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
+    // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
     editData: {
         annotation: LivewireContourAnnotation;
@@ -2902,6 +2954,8 @@ export class LivewireContourTool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation, handle: ToolHandle) => void;
     // (undocumented)
+    protected isContourSegmentationTool(): boolean;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
@@ -2910,7 +2964,15 @@ export class LivewireContourTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
+    // (undocumented)
+    protected renderAnnotationInstance(renderContext: {
+        enabledElement: Types_2.IEnabledElement;
+        targetId: string;
+        annotation: Annotation;
+        annotationStyle: Record<string, any>;
+        svgDrawingHelper: SVGDrawingHelper;
+    }): boolean;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -3290,56 +3352,47 @@ type PlanarBoundingBox = {
 };
 
 // @public (undocumented)
-interface PlanarFreehandROIAnnotation extends Annotation {
+type PlanarFreehandContourSegmentationAnnotation = PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
+
+// @public (undocumented)
+export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
+    constructor(toolProps: PublicToolProps);
     // (undocumented)
+    protected isContourSegmentationTool(): boolean;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
+type PlanarFreehandROIAnnotation = ContourAnnotation & {
     data: {
-        polyline: Types_2.Point3[];
         label?: string;
         isOpenContour?: boolean;
         isOpenUShapeContour?: boolean;
         openUShapeContourVectorToPeak?: Types_2.Point3[];
-        handles: {
-            points: Types_2.Point3[];
-            activeHandleIndex: number | null;
-            textBox: {
-                hasMoved: boolean;
-                worldPosition: Types_2.Point3;
-                worldBoundingBox: {
-                    topLeft: Types_2.Point3;
-                    topRight: Types_2.Point3;
-                    bottomLeft: Types_2.Point3;
-                    bottomRight: Types_2.Point3;
-                };
-            };
-        };
         cachedStats?: ROICachedStats;
     };
-    // (undocumented)
-    metadata: {
-        cameraPosition?: Types_2.Point3;
-        cameraFocalPoint?: Types_2.Point3;
-        viewPlaneNormal?: Types_2.Point3;
-        viewUp?: Types_2.Point3;
-        annotationUID?: string;
-        FrameOfReferenceUID: string;
-        referencedImageId?: string;
-        toolName: string;
-    };
-}
+};
 
 // @public (undocumented)
-export class PlanarFreehandROITool extends AnnotationTool {
+export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateStatsIfActive(annotation: PlanarFreehandROIAnnotation, targetId: string, viewport: any, renderingEngine: any, enabledElement: any): void;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
+    protected getAnnotationStyle(context: any): any;
+    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    protected isContourSegmentationTool(): boolean;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -3351,9 +3404,13 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
-    // (undocumented)
-    _renderStats: (annotation: any, viewport: any, enabledElement: any, svgDrawingHelper: any) => void;
+    protected renderAnnotationInstance(renderContext: {
+        enabledElement: Types_2.IEnabledElement;
+        targetId: string;
+        annotation: Annotation;
+        annotationStyle: Record<string, any>;
+        svgDrawingHelper: SVGDrawingHelper;
+    }): boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -4423,6 +4480,18 @@ export class SphereScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
+type SplineContourSegmentationAnnotation = SplineROIAnnotation & ContourSegmentationAnnotationData;
+
+// @public (undocumented)
+export class SplineContourSegmentationTool extends SplineROITool {
+    constructor(toolProps: PublicToolProps);
+    // (undocumented)
+    protected isContourSegmentationTool(): boolean;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 type SplineCurveSegment = {
     controlPoints: {
         p0: Types_2.Point2;
@@ -4454,30 +4523,13 @@ type SplineProps = {
 };
 
 // @public (undocumented)
-interface SplineROIAnnotation extends Annotation {
-    // (undocumented)
+type SplineROIAnnotation = ContourAnnotation & {
     data: {
         label?: string;
-        handles: {
-            points: Types_2.Point3[];
-            activeHandleIndex: number | null;
-            textBox?: {
-                hasMoved: boolean;
-                worldPosition: Types_2.Point3;
-                worldBoundingBox: {
-                    topLeft: Types_2.Point3;
-                    topRight: Types_2.Point3;
-                    bottomLeft: Types_2.Point3;
-                    bottomRight: Types_2.Point3;
-                };
-            };
-        };
         spline: {
             type: string;
             instance: ISpline;
             resolution: number;
-            polyline: Types_2.Point3[];
-            closed: boolean;
         };
         cachedStats?: {
             [targetId: string]: {
@@ -4487,19 +4539,21 @@ interface SplineROIAnnotation extends Annotation {
             };
         };
     };
-}
+};
 
 // @public (undocumented)
-export class SplineROITool extends AnnotationTool {
+export class SplineROITool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     static Actions: typeof SplineToolActions;
     // (undocumented)
     addControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => SplineROIAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType): SplineROIAnnotation;
     // (undocumented)
-    cancel: (element: HTMLDivElement) => string;
+    cancel(element: HTMLDivElement): string;
+    // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
     deleteControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
@@ -4517,6 +4571,8 @@ export class SplineROITool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
+    protected isContourSegmentationTool(): boolean;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
@@ -4525,9 +4581,13 @@ export class SplineROITool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
-    // (undocumented)
-    _renderStats: (annotation: any, viewport: any, enabledElement: any, svgDrawingHelper: any) => void;
+    protected renderAnnotationInstance(renderContext: {
+        enabledElement: Types_2.IEnabledElement;
+        targetId: string;
+        annotation: Annotation;
+        annotationStyle: Record<string, any>;
+        svgDrawingHelper: SVGDrawingHelper;
+    }): boolean;
     // (undocumented)
     static SplineTypes: typeof SplineTypesEnum;
     // (undocumented)
@@ -4950,12 +5010,15 @@ declare namespace ToolSpecificAnnotationTypes {
         AdvancedMagnifyAnnotation,
         CircleROIAnnotation,
         SplineROIAnnotation,
+        SplineContourSegmentationAnnotation,
         LivewireContourAnnotation,
+        LivewireContourSegmentationAnnotation,
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,
         RectangleROIStartEndThresholdAnnotation,
         PlanarFreehandROIAnnotation,
+        PlanarFreehandContourSegmentationAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
         UltrasoundDirectionalAnnotation,
@@ -5099,6 +5162,10 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
+        ContourAnnotationData,
+        ContourAnnotation,
+        ContourSegmentationAnnotationData,
+        ContourSegmentationAnnotation,
         BidirectionalData,
         CanvasCoordinates,
         IAnnotationManager,
@@ -5458,7 +5525,8 @@ declare namespace visibility_2 {
         setSegmentationVisibility,
         getSegmentationVisibility,
         setSegmentVisibility,
-        setSegmentsVisibility
+        setSegmentsVisibility,
+        getSegmentVisibility
     }
 }
 
