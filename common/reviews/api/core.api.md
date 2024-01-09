@@ -3288,7 +3288,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
-    play(): void;
+    play(): Promise<void>;
     // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)

@@ -266,9 +266,9 @@ async function run() {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addNavigationBindings(toolGroup);
 
   // Add tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
@@ -297,7 +297,6 @@ async function run() {
       },
     ],
   });
-  addNavigationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 

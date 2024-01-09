@@ -2,6 +2,7 @@ import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import Events from '../../enums/Events';
+import { MouseBindings } from '../../enums/ToolBindings';
 import mouseMoveListener from './mouseMoveListener';
 import { EventTypes, IPoints } from '../../types';
 import getMouseEventPoints from './getMouseEventPoints';
@@ -153,6 +154,11 @@ function mouseDownListener(evt: MouseEvent) {
     evt.buttons === 1 ? DOUBLE_CLICK_TOLERANCE_MS : MULTI_BUTTON_TOLERANCE_MS
   );
 
+  if (evt.buttons >= MouseBindings.Fourth_Button) {
+    // Need to prevent the default handling so these bindings work, otherwise
+    // browsers will just navigate
+    evt.preventDefault();
+  }
   // First mouse down of a potential double click. So save it and start
   // a timeout to determine a double click.
   doubleClickState.mouseDownEvent = evt;

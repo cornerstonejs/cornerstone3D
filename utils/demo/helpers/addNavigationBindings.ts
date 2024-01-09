@@ -35,6 +35,7 @@ export default function addNavigationBindings(toolGroup, register = true) {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(LengthTool.toolName);
 
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup.setToolActive(PanTool.toolName, {
@@ -62,7 +63,7 @@ export default function addNavigationBindings(toolGroup, register = true) {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Fourth_Button,
+        mouseButton: MouseBindings.Fifth_Button,
       },
     ],
   });

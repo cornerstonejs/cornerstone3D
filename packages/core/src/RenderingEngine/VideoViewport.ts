@@ -221,6 +221,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
       this.play();
+      // This is ugly, but without it, the video often fails to render initially
+      // so having a play, followed by a pause fixes things.
+      // 50 ms is a tested value that seems to work to prevent exceptions
       window.setTimeout(() => {
         this.pause();
         this.setFrameNumber(frameNumber || 1);
@@ -263,15 +266,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
-  public play() {
+  public async play() {
     try {
       if (!this.isPlaying) {
-        this.videoElement.play();
+        // Play returns a promise that is true when playing completes.
+        await this.videoElement.play();
         this.isPlaying = true;
         this.renderWhilstPlaying();
       }
     } catch (e) {
-      // No-op, this happens sometimes on startup
+      // No-op, an exception sometimes gets thrown on the initial play, not
+      // quite sure why.  Catching it prevents displaying an error
     }
   }
 
