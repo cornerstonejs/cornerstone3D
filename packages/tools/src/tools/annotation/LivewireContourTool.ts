@@ -29,11 +29,7 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import {
-  math,
-  triggerAnnotationRenderForViewportIds,
-  convertToGrayscale,
-} from '../../utilities';
+import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import {
   AnnotationCompletedEventDetail,
@@ -176,7 +172,7 @@ class LivewireContourTool extends AnnotationTool {
     } else {
       throw new Error('Viewport not supported');
     }
-    scalarData = convertToGrayscale(scalarData, width, height);
+    scalarData = csUtils.convertToGrayscale(scalarData, width, height);
     const { voiRange } = viewport.getProperties();
     const startPos = worldToSlice(worldPos);
 

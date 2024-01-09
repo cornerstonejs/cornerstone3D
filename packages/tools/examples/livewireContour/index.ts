@@ -10,7 +10,7 @@ import {
   setTitleAndDescription,
   createInfoSection,
   setCtTransferFunctionForVolumeActor,
-  addNavigationBindings,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -125,7 +125,7 @@ async function run() {
       },
     ],
   });
-  addNavigationBindings(toolGroup);
+  addManipulationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

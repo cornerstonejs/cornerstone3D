@@ -25,7 +25,6 @@ import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
-import convertToGrayscale from './convertToGrayscale';
 
 // name spaces
 import * as contours from './contours';
@@ -61,7 +60,6 @@ export {
   throttle,
   orientation,
   isObject,
-  convertToGrayscale,
   touch,
   triggerEvent,
   calibrateImageSpacing,

@@ -22,7 +22,7 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
  * * Stack Scroll on Mouse Wheel, Primary+Alt
  * * Length Tool on fourth button
  */
-export default function addNavigationBindings(toolGroup, register = true) {
+export default function addManipulationBindings(toolGroup, register = true) {
   if (register) {
     cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);

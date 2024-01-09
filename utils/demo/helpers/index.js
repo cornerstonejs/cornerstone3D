@@ -15,7 +15,7 @@ import addSliderToToolbar from './addSliderToToolbar';
 import createInfoSection from './createInfoSection';
 import camera from './camera';
 import getLocalUrl from './getLocalUrl';
-import addNavigationBindings from './addNavigationBindings';
+import addManipulationBindings from './addManipulationBindings';
 
 export {
   createImageIdsAndCacheMetaData,
@@ -23,7 +23,7 @@ export {
   initDemo,
   setTitleAndDescription,
   addButtonToToolbar,
-  addNavigationBindings,
+  addManipulationBindings,
   addCheckboxToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,

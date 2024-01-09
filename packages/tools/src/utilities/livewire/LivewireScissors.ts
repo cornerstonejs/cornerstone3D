@@ -1,16 +1,8 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { BucketQueue } from '../BucketQueue';
 
 const MAX_UINT32 = 4294967295;
 const TWO_THIRD_PI = 2 / (3 * Math.PI);
-
-type PixelDataTypedArray =
-  | Uint8Array
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Float32Array
-  | Float64Array;
 
 /**
  * Scissors
@@ -36,7 +28,7 @@ export class LivewireScissors {
   public readonly height: number;
 
   /** Grayscale image */
-  private grayscalePixelData: PixelDataTypedArray;
+  private grayscalePixelData: Types.PixelDataTypedArray;
 
   // Laplace zero-crossings (either 0 or 1).
   private laplace: Float32Array;
@@ -66,7 +58,7 @@ export class LivewireScissors {
   private priorityQueueNew: BucketQueue<number>;
 
   constructor(
-    grayscalePixelData: PixelDataTypedArray,
+    grayscalePixelData: Types.PixelDataTypedArray,
     width: number,
     height: number
   ) {
@@ -557,36 +549,6 @@ export class LivewireScissors {
         0,
         Math.min(1, (pixelData[i] - minPixelValue) / pixelRange)
       );
-    }
-
-    return new LivewireScissors(grayscalePixelData, width, height);
-  }
-
-  /**
-   * Create a livewire scissor instance from a RGBA image
-   * @param rgbaPixelData - RGBA pixel data
-   * @param width - Width of the image
-   * @param height - Height of the image
-   * @returns A LivewireScissors instance
-   */
-  public static createInstanceFromRGBAPixelData(
-    rgbaPixelData: Uint8ClampedArray,
-    width: number,
-    height: number
-  ): LivewireScissors {
-    const numPixels = rgbaPixelData.length / 4;
-    const grayscalePixelData = new Float32Array(numPixels);
-
-    // Multiplier to average an RGB sum and convert it to 0-1 range.
-    // 1/x because multiplication is faster than division.
-    const avgMultiplier = 1 / (3 * 255);
-
-    for (let i = 0, offset = 0; i < numPixels; i++, offset += 4) {
-      const red = rgbaPixelData[offset];
-      const green = rgbaPixelData[offset];
-      const blue = rgbaPixelData[offset];
-
-      grayscalePixelData[i] = (red + green + blue) * avgMultiplier;
     }
 
     return new LivewireScissors(grayscalePixelData, width, height);

@@ -12,7 +12,7 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
-  addNavigationBindings,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -266,7 +266,7 @@ async function run() {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addNavigationBindings(toolGroup);
+  addManipulationBindings(toolGroup);
 
   // Add tools to the tool group
   toolGroup.addTool(KeyImageTool.toolName);

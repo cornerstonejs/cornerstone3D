@@ -66,6 +66,7 @@ import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import roundNumber, { roundToPrecision } from './roundNumber';
+import convertToGrayscale from './convertToGrayscale';
 
 // name spaces
 import * as planar from './planar';
@@ -97,6 +98,7 @@ export {
   createInt16SharedArray,
   getViewportModality,
   windowLevel,
+  convertToGrayscale,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
