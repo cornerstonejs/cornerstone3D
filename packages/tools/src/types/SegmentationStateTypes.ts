@@ -256,7 +256,7 @@ export type SegmentationPublicInput = {
   segmentationId: string;
   representation: {
     type: Enums.SegmentationRepresentations;
-    data:
+    data?:
       | LabelmapSegmentationData
       | ContourSegmentationData
       | SurfaceSegmentationData;

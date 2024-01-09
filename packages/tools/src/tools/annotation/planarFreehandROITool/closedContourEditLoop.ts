@@ -38,7 +38,9 @@ function activateClosedContourEdit(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  const prevCanvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
+  const prevCanvasPoints = annotation.data.contour.polyline.map(
+    viewport.worldToCanvas
+  );
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
@@ -223,8 +225,8 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = false;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = true;
 
   this.triggerAnnotationModified(annotation, enabledElement);
 
@@ -441,8 +443,8 @@ function completeClosedContourEdit(element: HTMLDivElement) {
     const worldPoints = updatedPoints.map((canvasPoint) =>
       viewport.canvasToWorld(canvasPoint)
     );
-    annotation.data.polyline = worldPoints;
-    annotation.data.isOpenContour = false;
+    annotation.data.contour.polyline = worldPoints;
+    annotation.data.contour.closed = true;
 
     annotation.invalidated = true;
 
