@@ -197,7 +197,9 @@ async function run() {
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(CircleROIStartEndThresholdTool.toolName);
+  toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
+    calculatePointsInsideVolume: true,
+  });
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {

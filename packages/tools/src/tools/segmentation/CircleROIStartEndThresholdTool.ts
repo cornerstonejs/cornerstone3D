@@ -67,6 +67,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         numSlicesToPropagate: 10,
+        calculatePointsInsideVolume: false,
       },
     }
   ) {
@@ -141,8 +142,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       spacingInNormal,
       viewPlaneNormal
     );
-
-    console.log(endIndex);
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
@@ -375,9 +374,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
-    console.log(startIJK);
     startIJK[2] = startSlice;
-    console.log(startIJK);
 
     if (startIJK[2] !== startSlice) {
       throw new Error('Start slice does not match');
@@ -512,7 +509,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
-    this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    }
 
     annotation.invalidated = false;
 
@@ -538,8 +537,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
 
     const numSlicesToPropagateFromStart = Math.round(numSlicesToPropagate / 2);
-    console.log(numSlicesToPropagateFromStart);
-
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
     const startPos = vec3.create();

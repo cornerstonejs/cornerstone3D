@@ -67,6 +67,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     defaultToolProps: ToolProps = {
       configuration: {
         numSlicesToPropagate: 10,
+        calculatePointsInsideVolume: false,
       },
     }
   ) {
@@ -273,17 +274,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const pointsInsideVolume: Types.Point3[][] = [[]];
 
     for (let i = 0; i < projectionPoints.length; i++) {
-      const projectionPoint = projectionPoints[i][0];
-
-      const worldPos1 = data.handles.points[0];
-      const worldPos2 = data.handles.points[3];
-
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!imageVolume) {
         continue;
       }
+
+      const projectionPoint = projectionPoints[i][0];
+
+      const worldPos1 = data.handles.points[0];
+      const worldPos2 = data.handles.points[3];
 
       const { dimensions, imageData } = imageVolume;
 
@@ -350,7 +351,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
-    this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    }
 
     annotation.invalidated = false;
 
