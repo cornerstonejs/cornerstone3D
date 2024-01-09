@@ -3,19 +3,23 @@ import type { ICanvasActor } from '../../types/IActor';
 
 export class CanvasProperties {
   private actor: CanvasActor;
-  private opacity = 0.8;
+  private opacity = 0.4;
+  private transferFunction = [];
 
   constructor(actor: CanvasActor) {
     this.actor = actor;
   }
 
-  public setRGBTransferFunction() {
-    // No-op right now
-    console.log('Set RGB transfer function');
+  public setRGBTransferFunction(index, cfun) {
+    this.transferFunction[index] = cfun;
   }
 
   public setScalarOpacity(opacity: number) {
-    this.opacity = opacity;
+    if (opacity > 0.05) {
+      this.opacity = opacity;
+    } else {
+      this.opacity = 0.4;
+    }
   }
 
   public setInterpolationTypeToNearest() {
@@ -26,12 +30,21 @@ export class CanvasProperties {
     // No-op
   }
 
-  public setLabelOutlineOpacity() {
-    // No-op
+  public setLabelOutlineOpacity(opacity) {
+    this.outlineOpacity = opacity;
   }
 
   public setLabelOutlineThickness() {
     // No-op
+  }
+
+  public getColor(index: number) {
+    const cfun = this.transferFunction[0];
+    const r = cfun.getRedValue(index);
+    const g = cfun.getGreenValue(index);
+    const b = cfun.getBlueValue(index);
+    const a = cfun.getAlpha();
+    return `rgb(${r * 255},${g * 255},${b * 255},${a * this.opacity})`;
   }
 }
 
@@ -56,6 +69,7 @@ export default class CanvasActor implements ICanvasActor {
   private visibility = false;
   private mapper = new CanvasMapper(this);
   private viewport;
+  protected className = 'CanvasActor';
 
   constructor(viewport: IViewport, image) {
     this.image = image;
@@ -66,13 +80,27 @@ export default class CanvasActor implements ICanvasActor {
     if (!this.visibility) {
       return;
     }
-    console.log('Rendering canvas actor', viewport, this.image);
-    context.fillStyle = 'red';
-    context.fillRect(25, 25, 50, 50);
+    context.fillStyle = '#ff000040';
+    const { width, height } = this.image;
+    const data = this.image.getPixelData();
+    let offset = 0;
+    const fillVLast = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const v = data[offset++];
+        if (v) {
+          if (v !== fillVLast) {
+            const rgb = this.canvasProperties.getColor(v);
+            context.fillStyle = this.canvasProperties.getColor(v);
+          }
+          context.fillRect(x, y, 1, 1);
+        }
+      }
+    }
   }
 
   public getClassName() {
-    return 'CanvasActor';
+    return this.className;
   }
 
   public getProperty() {
@@ -88,8 +116,7 @@ export default class CanvasActor implements ICanvasActor {
   }
 
   public isA(actorType) {
-    console.log('Testing if this is a', actorType);
-    return false;
+    return actorType === this.className;
   }
 
   public getImage() {
@@ -103,9 +130,8 @@ export default class CanvasActor implements ICanvasActor {
     this.image.getDirection = () => imageData.direction;
     this.image.getSpacing = () => imageData.spacing;
     this.image.modified = () => {
-      console.log('Modified segdata');
+      // No-op
     };
-    console.log('imageData=', imageData, this.image);
     return this.image;
   }
 }

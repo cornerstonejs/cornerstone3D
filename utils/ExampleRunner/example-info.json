@@ -252,6 +252,10 @@
         "name": "Video Tools",
         "description": "Video annotation tools"
       },
+      "videoSegmentation": {
+        "name": "Video Labelmap Segmentation",
+        "description": "Video Labelmap Based Segmentation"
+      },
       "videoGroup": {
         "name": "Video Annotation Grouping",
         "description": "Annotation grouping tools"
