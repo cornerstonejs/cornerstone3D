@@ -2291,6 +2291,9 @@ function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentatio
 function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
 
 // @public (undocumented)
+function getSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): boolean;
+
+// @public (undocumented)
 function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData, viewport: any): {
     boundsIJK: BoundsIJK_2;
     centerWorld: Types_2.Point3;
@@ -2298,7 +2301,6 @@ function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], ima
     topLeftWorld: Types_2.Point3;
     bottomRightWorld: Types_2.Point3;
 };
-function getSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
