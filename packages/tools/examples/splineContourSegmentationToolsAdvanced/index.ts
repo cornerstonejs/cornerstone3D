@@ -217,10 +217,6 @@ async function addNewSegmentation() {
       segmentationId: newSegmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        data: {
-          geometryIds: [],
-          annotationUIDsMap: new Map(),
-        },
       },
     },
   ]);

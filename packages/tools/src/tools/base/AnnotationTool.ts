@@ -310,10 +310,14 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     return typeof scalingModule?.suvbw === 'number';
   }
 
+  /**
+   * Get the style that will be applied to all annotations such as length, cobb
+   * angle, arrow annotate, etc. when rendered on a canvas or svg layer
+   */
   protected getAnnotationStyle(context: {
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
-  }): Record<string, any> {
+  }) {
     const { annotation, styleSpecifier } = context;
     const getStyle = (property) =>
       this.getStyle(property, styleSpecifier, annotation);
@@ -324,6 +328,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const lineWidth = getStyle('lineWidth') as number;
     const lineDash = getStyle('lineDash') as string;
     const color = getStyle('color') as string;
+    const shadow = getStyle('shadow') as boolean;
     const textboxStyle = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
 
     return {
@@ -335,6 +340,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       lineOpacity: 1,
       fillColor: color,
       fillOpacity: 0,
+      shadow,
       textbox: textboxStyle,
     };
   }

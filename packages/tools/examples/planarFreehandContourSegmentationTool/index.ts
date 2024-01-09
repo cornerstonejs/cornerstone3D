@@ -544,10 +544,6 @@ async function run() {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        data: {
-          geometryIds: [],
-          annotationUIDsMap: new Map(),
-        },
       },
     },
   ]);

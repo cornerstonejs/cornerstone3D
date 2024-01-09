@@ -6,6 +6,7 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import {
   Annotation,
+  ContourAnnotation,
   EventTypes,
   PublicToolProps,
   ToolProps,
@@ -14,10 +15,10 @@ import {
 import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
-import { ContourAnnotation } from 'tools/src/types/ContourAnnotation';
 
 /**
- * A contour base class responsible for rendering contour instances
+ * A contour base class responsible for rendering contour instances such as
+ * spline, freehand and livewire.
  */
 abstract class ContourBaseTool extends AnnotationTool {
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
@@ -172,13 +173,15 @@ abstract class ContourBaseTool extends AnnotationTool {
   }
 
   /**
-   * Get polyline points in world space
+   * Get polyline points in world space.
+   * Just to give a chance for child classes to override it.
    * @param annotation - Contour annotation
    * @returns Polyline points in world space
    */
   protected getPolylinePoints(annotation: ContourAnnotation): Types.Point3[] {
-    // Just to give a chance for child classes to override it
-    return annotation.data.contour.polyline;
+    // Attenttion: `contour.polyline` is the new way to store a polyline but it
+    // may be undefined because it was `data.polyline` before (fallback)
+    return annotation.data.contour?.polyline ?? annotation.data.polyline;
   }
 
   /**

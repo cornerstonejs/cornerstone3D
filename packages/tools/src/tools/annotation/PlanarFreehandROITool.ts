@@ -114,6 +114,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  * });
  * ```
  *
+ *
  * Read more in the Docs section of the website.
  */
 
@@ -677,7 +678,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     renderingEngine,
     enabledElement
   ) => {
-    const { data } = <PlanarFreehandROIAnnotation>annotation;
+    const { data } = annotation;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
 

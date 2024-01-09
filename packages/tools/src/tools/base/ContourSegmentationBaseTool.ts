@@ -112,13 +112,19 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   }
 
   /**
-   * Return the annotation style based on global, toolGroup, segmentation
-   * and segment segmentation configurations.
+   * Get the annotation style that may or may not be merged with segmentation
+   * style so that it can be used by ROI and contour segmentation annotations
+   * when rendered on a canvas or svg layer.
+   *
+   * Segmentation style shall be a combination of four different configurations
+   * from different levels (global, toolGroup, segmentation and segment) and it
+   * shall not be used when isContourSegmentationTool() is overwritten and changed
+   * by a child class to return `false` when that class should work only as an ROI.
    */
   protected getAnnotationStyle(context: {
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
-  }): Record<string, any> {
+  }) {
     const annotationStyle = super.getAnnotationStyle(context);
 
     if (!this.isContourSegmentationTool()) {

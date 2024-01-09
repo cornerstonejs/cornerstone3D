@@ -37,11 +37,11 @@ function _getRenderingOptions(
   const { closed: isClosedContour } = annotation.data.contour;
 
   const options = {
-    color: color ?? <string>color,
-    width: lineWidth ?? <number>lineWidth,
-    lineDash: lineDash ?? <number[]>lineDash,
-    fillColor: fillColor ?? <string>fillColor,
-    fillOpacity: fillOpacity ?? <number>fillOpacity,
+    color,
+    width: lineWidth,
+    lineDash,
+    fillColor,
+    fillOpacity,
     connectLastToFirst: isClosedContour,
   };
 
