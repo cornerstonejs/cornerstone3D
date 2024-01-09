@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.6...v1.43.7) (2024-01-09)
+
+**Note:** Version bump only for package docs
+
+## [1.43.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.5...v1.43.6) (2024-01-08)
+
+**Note:** Version bump only for package docs
+
 ## [1.43.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.4...v1.43.5) (2024-01-08)
 
 **Note:** Version bump only for package docs

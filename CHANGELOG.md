@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.43.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.6...v1.43.7) (2024-01-09)
+
+### Bug Fixes
+
+- **segmentation:** notify overlapping segments in generateToolState function ([#989](https://github.com/cornerstonejs/cornerstone3D/issues/989)) ([626cdbc](https://github.com/cornerstonejs/cornerstone3D/commit/626cdbc94d27c148ecd18ac8032174e2f202afbd))
+
+## [1.43.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.5...v1.43.6) (2024-01-08)
+
+### Bug Fixes
+
+- **state manager:** Make viewport-related data optional for annotation event ([#950](https://github.com/cornerstonejs/cornerstone3D/issues/950)) ([9577cc0](https://github.com/cornerstonejs/cornerstone3D/commit/9577cc0a672397d6a146af85167e80764444a39d))
+
 ## [1.43.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.43.4...v1.43.5) (2024-01-08)
 
 ### Bug Fixes
