@@ -43,6 +43,7 @@ class FreehandROISculptorTool extends BaseTool {
         minSpacing: 1,
         selectedIndex: null,
         isEditingOpenContour: false,
+        viewportIdsToRender: [],
         referencedToolNames: ['PlanarFreehandROI', 'ContourROI'],
         referencedToolName: 'PlanarFreehandROI',
       },
@@ -51,60 +52,6 @@ class FreehandROISculptorTool extends BaseTool {
     super(toolProps, defaultToolProps);
     this._endCallback = this._endCallback.bind(this);
     this._dragCallback = this._dragCallback.bind(this);
-  }
-
-  renderAnnotation(
-    enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: SVGDrawingHelper
-  ): void {
-    const { viewport } = enabledElement;
-    const { element } = viewport;
-
-    if (!this.configuration.mouseLocation || this.mode !== ToolModes.Active) {
-      return;
-    }
-
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
-
-    if (!annotations?.length) {
-      return;
-    }
-
-    const styleSpecifier: StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
-
-    let color = getStyleProperty(
-      'color',
-      styleSpecifier,
-      AnnotationStyleStates.Default,
-      this.mode
-    );
-
-    if (this.isActive) {
-      color = getStyleProperty(
-        'color',
-        styleSpecifier,
-        AnnotationStyleStates.Highlighted,
-        this.mode
-      );
-    }
-
-    const circleUID = '0';
-
-    drawCircleSvg(
-      svgDrawingHelper,
-      '',
-      circleUID,
-      this.configuration.mouseLocation as Types.Point2,
-      this.toolSize,
-      {
-        color,
-      }
-    );
   }
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
@@ -125,68 +72,6 @@ class FreehandROISculptorTool extends BaseTool {
     this._activateSculpt(element);
     return true;
   };
-
-  /**
-   * Event handler for MOUSE_UP during the active loop.
-   *
-   * @param evt - The event
-   */
-  _endCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ): void => {
-    const eventData = evt.detail;
-    const { element } = eventData;
-    const config = this.configuration;
-    const enabledElement = getEnabledElement(element);
-
-    this.isActive = false;
-    this._deactivateSculpt(element);
-    resetElementCursor(element);
-
-    const { renderingEngineId, viewportId, viewport } = enabledElement;
-
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
-
-    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
-
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
-
-    if (toolInstance.configuration.calculateStats) {
-      annotations[config.selectedIndex].invalidated = true;
-    }
-
-    toolInstance.triggerAnnotationModified(
-      annotations[config.selectedIndex],
-      enabledElement
-    );
-  };
-
-  /**
-   * Event handler for MOUSE_DRAG during the active loop.
-   *
-   * @param evt - The event
-   */
-  _dragCallback(evt: EventTypes.InteractionEventType): void {
-    const config = this.configuration;
-    const eventData = evt.detail;
-    const element = eventData.element;
-    this._updateCursor(evt);
-
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
-
-    if (!annotations?.length || !this.isActive) {
-      return;
-    }
-
-    const points = annotations[config.selectedIndex].data.polyline;
-
-    this._sculpt(eventData, points);
-  }
 
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     if (this.mode === ToolModes.Active) {
@@ -210,6 +95,7 @@ class FreehandROISculptorTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
 
+    config.viewportIdsToRender = [viewport.id];
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       config.referencedToolName
@@ -585,6 +471,72 @@ class FreehandROISculptorTool extends BaseTool {
   }
 
   /**
+   * Event handler for MOUSE_UP during the active loop.
+   *
+   * @param evt - The event
+   */
+  _endCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ): void => {
+    const eventData = evt.detail;
+    const { element } = eventData;
+    const config = this.configuration;
+    const enabledElement = getEnabledElement(element);
+
+    this.isActive = false;
+    this._deactivateSculpt(element);
+    resetElementCursor(element);
+
+    const { renderingEngineId, viewportId, viewport } = enabledElement;
+
+    const toolGroup = ToolGroupManager.getToolGroupForViewport(
+      viewportId,
+      renderingEngineId
+    );
+
+    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
+
+    const annotations =
+      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+
+    if (toolInstance.configuration.calculateStats) {
+      annotations[config.selectedIndex].invalidated = true;
+    }
+
+    if (annotations[config.selectedIndex]?.autoGenerated) {
+      annotations[config.selectedIndex].autoGenerated = false;
+    }
+
+    toolInstance.triggerAnnotationModified(
+      annotations[config.selectedIndex],
+      enabledElement
+    );
+  };
+
+  /**
+   * Event handler for MOUSE_DRAG during the active loop.
+   *
+   * @param evt - The event
+   */
+  _dragCallback(evt: EventTypes.InteractionEventType): void {
+    const config = this.configuration;
+    const eventData = evt.detail;
+    const element = eventData.element;
+    this._updateCursor(evt);
+
+    const annotations =
+      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+
+    if (!annotations?.length || !this.isActive) {
+      return;
+    }
+
+    const points = annotations[config.selectedIndex].data.polyline;
+
+    this._sculpt(eventData, points);
+  }
+
+  /**
    * Attaches event listeners to the element such that is is visible, modifiable, and new data can be created.
    * @param element - - The viewport element to attach event listeners to.
    */
@@ -660,6 +612,67 @@ class FreehandROISculptorTool extends BaseTool {
     }
 
     return insertIndex;
+  }
+
+  renderAnnotation(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: SVGDrawingHelper
+  ): void {
+    const { viewport } = enabledElement;
+    const { element } = viewport;
+    const config = this.configuration;
+
+    const viewportIdsToRender = config.viewportIdsToRender;
+
+    if (
+      !config.mouseLocation ||
+      this.mode !== ToolModes.Active ||
+      !viewportIdsToRender.includes(viewport.id)
+    ) {
+      return;
+    }
+
+    const annotations =
+      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+
+    if (!annotations?.length) {
+      return;
+    }
+
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
+    let color = getStyleProperty(
+      'color',
+      styleSpecifier,
+      AnnotationStyleStates.Default,
+      this.mode
+    );
+
+    if (this.isActive) {
+      color = getStyleProperty(
+        'color',
+        styleSpecifier,
+        AnnotationStyleStates.Highlighted,
+        this.mode
+      );
+    }
+
+    const circleUID = '0';
+
+    drawCircleSvg(
+      svgDrawingHelper,
+      '',
+      circleUID,
+      this.configuration.mouseLocation as Types.Point2,
+      this.toolSize,
+      {
+        color,
+      }
+    );
   }
 }
 
