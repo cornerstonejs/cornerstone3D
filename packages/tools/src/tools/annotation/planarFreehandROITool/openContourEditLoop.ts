@@ -6,7 +6,8 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../../cursors/elementCursor';
-import type { EventTypes, Annotation } from '../../../types';
+import type { EventTypes } from '../../../types';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import {
@@ -23,7 +24,7 @@ const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
  */
 function activateOpenContourEdit(
   evt: EventTypes.InteractionEventType,
-  annotation: Annotation,
+  annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
   this.isEditingOpen = true;
@@ -34,7 +35,9 @@ function activateOpenContourEdit(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  const prevCanvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
+  const prevCanvasPoints = annotation.data.contour.polyline.map(
+    viewport.worldToCanvas
+  );
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
@@ -213,8 +216,8 @@ function openContourEditOverwriteEnd(
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = true;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = false;
   // Note: Contours generate from fusedCanvasPoints will be in the direction
   // with the last point being the current mouse position
   annotation.data.handles.points = [
@@ -495,8 +498,8 @@ function finishEditOpenOnSecondCrossing(
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = true;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = false;
   annotation.data.handles.points = [
     worldPoints[0],
     worldPoints[worldPoints.length - 1],
@@ -550,8 +553,8 @@ function completeOpenContourEdit(element: HTMLDivElement) {
     const worldPoints = updatedPoints.map((canvasPoint) =>
       viewport.canvasToWorld(canvasPoint)
     );
-    annotation.data.polyline = worldPoints;
-    annotation.data.isOpenContour = true;
+    annotation.data.contour.polyline = worldPoints;
+    annotation.data.contour.closed = false;
     annotation.data.handles.points = [
       worldPoints[0],
       worldPoints[worldPoints.length - 1],

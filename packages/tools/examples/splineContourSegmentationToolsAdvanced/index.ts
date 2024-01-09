@@ -35,7 +35,7 @@ const DEFAULT_SEGMENT_CONFIG = {
 };
 
 const {
-  SplineSegmentationROITool,
+  SplineContourSegmentationTool,
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -341,13 +341,13 @@ elements.forEach((element) => {
 
 const Splines = {
   CatmullRomSplineROI: {
-    splineType: SplineSegmentationROITool.SplineTypes.CatmullRom,
+    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
   },
   LinearSplineROI: {
-    splineType: SplineSegmentationROITool.SplineTypes.Linear,
+    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
   },
   BSplineROI: {
-    splineType: SplineSegmentationROITool.SplineTypes.BSpline,
+    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
   },
 };
 
@@ -544,7 +544,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(SplineSegmentationROITool);
+  cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -556,37 +556,37 @@ async function run() {
 
   [stackToolGroup, volumeToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.addTool(SplineSegmentationROITool.toolName);
+    toolGroup.addTool(SplineContourSegmentationTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
 
     toolGroup.addToolInstance(
       'CatmullRomSplineROI',
-      SplineSegmentationROITool.toolName,
+      SplineContourSegmentationTool.toolName,
       {
         spline: {
-          type: SplineSegmentationROITool.SplineTypes.CatmullRom,
+          type: SplineContourSegmentationTool.SplineTypes.CatmullRom,
         },
       }
     );
 
     toolGroup.addToolInstance(
       'LinearSplineROI',
-      SplineSegmentationROITool.toolName,
+      SplineContourSegmentationTool.toolName,
       {
         spline: {
-          type: SplineSegmentationROITool.SplineTypes.Linear,
+          type: SplineContourSegmentationTool.SplineTypes.Linear,
         },
       }
     );
 
     toolGroup.addToolInstance(
       'BSplineROI',
-      SplineSegmentationROITool.toolName,
+      SplineContourSegmentationTool.toolName,
       {
         spline: {
-          type: SplineSegmentationROITool.SplineTypes.BSpline,
+          type: SplineContourSegmentationTool.SplineTypes.BSpline,
         },
       }
     );

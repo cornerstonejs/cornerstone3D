@@ -310,6 +310,35 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     return typeof scalingModule?.suvbw === 'number';
   }
 
+  protected getAnnotationStyle(context: {
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+  }): Record<string, any> {
+    const { annotation, styleSpecifier } = context;
+    const getStyle = (property) =>
+      this.getStyle(property, styleSpecifier, annotation);
+    const { annotationUID } = annotation;
+    const visibility = isAnnotationVisible(annotationUID);
+    const locked = isAnnotationLocked(annotation);
+
+    const lineWidth = getStyle('lineWidth') as number;
+    const lineDash = getStyle('lineDash') as string;
+    const color = getStyle('color') as string;
+    const textboxStyle = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+
+    return {
+      visibility,
+      locked,
+      color,
+      lineWidth,
+      lineDash,
+      lineOpacity: 1,
+      fillColor: color,
+      fillOpacity: 0,
+      textbox: textboxStyle,
+    };
+  }
+
   /**
    * Returns true if the `canvasCoords` are near a handle or selectable part of the tool
    *

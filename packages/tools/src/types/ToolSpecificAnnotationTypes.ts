@@ -1,10 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
 import { ISpline } from './';
-import {
-  SegmentationAnnotation,
-  SegmentationAnnotationData,
-} from './SegmentationAnnotation';
+import { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
+import { ContourAnnotation } from './ContourAnnotation';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -122,15 +120,13 @@ export interface CircleROIAnnotation extends Annotation {
   };
 }
 
-export type SplineROIAnnotation = Annotation & {
+export type SplineROIAnnotation = ContourAnnotation & {
   data: {
     label?: string;
     spline: {
       type: string;
       instance: ISpline;
       resolution: number;
-      polyline: Types.Point3[];
-      closed: boolean;
     };
     cachedStats?: {
       [targetId: string]: {
@@ -142,19 +138,17 @@ export type SplineROIAnnotation = Annotation & {
   };
 };
 
-export type SplineSegmentationROIAnnotation = SplineROIAnnotation &
-  SegmentationAnnotationData;
+export type SplineContourSegmentationAnnotation = SplineROIAnnotation &
+  ContourSegmentationAnnotationData;
 
-export interface LivewireContourAnnotation extends Annotation {
+export type LivewireContourAnnotation = ContourAnnotation & {
   data: {
-    polyline: Types.Point3[];
     label?: string;
-    handles: {
-      points: Types.Point3[];
-      activeHandleIndex: number | null;
-    };
   };
-}
+};
+
+export type LivewireContourSegmentationAnnotation = LivewireContourAnnotation &
+  ContourSegmentationAnnotationData;
 
 export interface EllipticalROIAnnotation extends Annotation {
   data: {
@@ -256,9 +250,8 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   };
 }
 
-export type PlanarFreehandROIAnnotation = SegmentationAnnotation & {
+export type PlanarFreehandROIAnnotation = ContourAnnotation & {
   data: {
-    polyline: Types.Point3[];
     label?: string;
     isOpenContour?: boolean;
     isOpenUShapeContour?: boolean;
@@ -267,6 +260,9 @@ export type PlanarFreehandROIAnnotation = SegmentationAnnotation & {
     cachedStats?: ROICachedStats;
   };
 };
+
+export type PlanarFreehandContourSegmentationAnnotation =
+  PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
 
 export interface ArrowAnnotation extends Annotation {
   data: {

@@ -29,7 +29,7 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SplineSegmentationROITool,
+  SplineContourSegmentationTool,
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -177,13 +177,13 @@ element.addEventListener(
 
 const Splines = {
   CatmullRomSplineROI: {
-    splineType: SplineSegmentationROITool.SplineTypes.CatmullRom,
+    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
   },
   LinearSplineROI: {
-    splineType: SplineSegmentationROITool.SplineTypes.Linear,
+    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
   },
   BSplineROI: {
-    splineType: SplineSegmentationROITool.SplineTypes.BSpline,
+    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
   },
 };
 
@@ -318,7 +318,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(SplineSegmentationROITool);
+  cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -328,36 +328,40 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(SplineSegmentationROITool.toolName);
+  toolGroup.addTool(SplineContourSegmentationTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
   toolGroup.addToolInstance(
     'CatmullRomSplineROI',
-    SplineSegmentationROITool.toolName,
+    SplineContourSegmentationTool.toolName,
     {
       spline: {
-        type: SplineSegmentationROITool.SplineTypes.CatmullRom,
+        type: SplineContourSegmentationTool.SplineTypes.CatmullRom,
       },
     }
   );
 
   toolGroup.addToolInstance(
     'LinearSplineROI',
-    SplineSegmentationROITool.toolName,
+    SplineContourSegmentationTool.toolName,
     {
       spline: {
-        type: SplineSegmentationROITool.SplineTypes.Linear,
+        type: SplineContourSegmentationTool.SplineTypes.Linear,
       },
     }
   );
 
-  toolGroup.addToolInstance('BSplineROI', SplineSegmentationROITool.toolName, {
-    spline: {
-      type: SplineSegmentationROITool.SplineTypes.BSpline,
-    },
-  });
+  toolGroup.addToolInstance(
+    'BSplineROI',
+    SplineContourSegmentationTool.toolName,
+    {
+      spline: {
+        type: SplineContourSegmentationTool.SplineTypes.BSpline,
+      },
+    }
+  );
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
@@ -421,7 +425,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  stackViewport.setStack([imageIds[0]]);
+  stackViewport.setStack(imageIds.slice(0, 10));
 
   // Render the image
   renderingEngine.render();
@@ -433,8 +437,9 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
         data: {
+          // geometryIds may not be used anymore because it will be removed in a
+          // near future but it is still initialized for backward compatibility
           geometryIds: [],
-          annotationUIDsMap: new Map(),
         },
       },
     },

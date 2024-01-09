@@ -237,7 +237,6 @@
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
-
     },
     "video" : {
       "video": {
@@ -338,13 +337,21 @@
         "name": "Segment Select Tool",
         "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
       },
-      "splineSegmentationROITools": {
-        "name": "Spline Segmentation ROI Tools",
-        "description": "Demonstrates how to use spline segmentation ROI tools on a single viewport"
+      "splineContourSegmentationTools": {
+        "name": "Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool"
       },
-      "splineSegmentationROIToolsAdvanced": {
-        "name": "Advanced Spline Segmentation ROI Tools",
-        "description": "Demonstrates how to use spline segmentation ROI tools on multiple viewports (stack and volume), segmentations and different styles for active and inactive states"
+      "splineContourSegmentationToolsAdvanced": {
+        "name": "Advanced Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool on multiple viewports (stack and volume), segmentations and different styles for active and inactive states"
+      },
+      "planarFreehandContourSegmentationTool": {
+        "name": "Freehand Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using planarFreehandROITool tool"
+      },
+      "livewireContourSegmentation": {
+        "name": "Livewire Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using livewireContour tool"
       }
     },
     "tools-advanced": {

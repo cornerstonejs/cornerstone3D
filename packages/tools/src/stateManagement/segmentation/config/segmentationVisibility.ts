@@ -5,7 +5,7 @@ import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStat
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 
-function getSegmentationIndices(segmentationId) {
+function getUniqueSegmentIndices(segmentationId) {
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   if (segmentation.type === SegmentationRepresentations.Labelmap) {
@@ -76,7 +76,7 @@ function setSegmentationVisibility(
 
   const { segmentsHidden, segmentationId } = representation;
 
-  const indices = getSegmentationIndices(segmentationId);
+  const indices = getUniqueSegmentIndices(segmentationId);
 
   // if visibility is set to be true, we need to remove all the segments
   // from the segmentsHidden set, otherwise we need to add all the segments
@@ -122,10 +122,16 @@ function getSegmentationVisibility(
   }
 
   const { segmentsHidden, segmentationId } = representation;
-  const indices = getSegmentationIndices(segmentationId);
+  const indices = getUniqueSegmentIndices(segmentationId);
 
-  // TODO: check indices
-  return segmentsHidden.size !== indices.length;
+  // Create a set that contains all segments indices
+  const indicesSet = new Set(indices);
+
+  // Remove a indices that are hidden
+  segmentsHidden.forEach((segmentIndex) => indicesSet.delete(segmentIndex));
+
+  // Check if there is at least one segment visible
+  return !!indicesSet.size;
 }
 
 /**
@@ -168,6 +174,13 @@ function setSegmentsVisibility(
   );
 }
 
+/**
+ * @param toolGroupId - The Id of the tool group that contains the segmentation
+ * @param segmentationRepresentationUID - The id of the segmentation representation that contains the segment
+ * @param segmentIndex - Index of the segment that will be updated
+ * @param visibility - True to show the segment or false to hide it
+ * @returns True if the segment is visible or false otherwise
+ */
 function setSegmentVisibility(
   toolGroupId: string,
   segmentationRepresentationUID: string,
@@ -194,6 +207,12 @@ function setSegmentVisibility(
   );
 }
 
+/**
+ * @param toolGroupId - The Id of the tool group that contains the segmentation.
+ * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
+ * @param segmentIndex - Index of the segment
+ * @returns True if the segment is visible or false otherwise
+ */
 function getSegmentVisibility(
   toolGroupId: string,
   segmentationRepresentationUID: string,

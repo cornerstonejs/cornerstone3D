@@ -1,13 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
-import {
-  addAnnotation,
-  getAnnotations,
-} from '../../stateManagement/annotation/annotationState';
+import { utilities } from '@cornerstonejs/core';
 import {
   Annotation,
+  EventTypes,
   PublicToolProps,
   ToolProps,
-  SVGDrawingHelper,
 } from '../../types';
 import {
   config as segmentationConfig,
@@ -16,113 +12,42 @@ import {
   segmentIndex as segmentIndexController,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import {
-  SegmentationAnnotation,
-  SegmentationAnnotationData,
-} from '../../types/SegmentationAnnotation';
-import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
+import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { SegmentationRepresentations } from '../../enums';
-import AnnotationTool from './AnnotationTool';
+import ContourBaseTool from './ContourBaseTool';
 
-abstract class ContourSegmentationBaseTool extends AnnotationTool {
+/**
+ * A base contour segmentation class responsible for rendering, registering
+ * and unregistering contour segmentation annotations.
+ */
+abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
   }
 
   /**
-   * it is used to draw the annotation in each request animation frame. It
-   * calculates the updated cached statistics if data is invalidated and cache it.
-   *
-   * @param enabledElement - The Cornerstone's enabledElement.
-   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   * Allow children classes inherit from this one and disable contour segmentation
+   * behavior and children classes shall work like a normal contour instance which
+   * is useful for "hybrid" classes such as splineROI/splineSeg, livewire/livewireSeg,
+   * freehandROI/freehandSeg. When this method returns false:
+   *   - contour segmentation data is not added to new annotations
+   *   - annotations are not registered/unregistered as segmentations
+   *   - annotation style shall not contain any segmentation style
+   * @returns True if it is a contour segmentation class or false otherwise
    */
-  public renderAnnotation(
-    enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: SVGDrawingHelper
-  ): boolean {
-    let renderStatus = false;
-    const { viewport } = enabledElement;
-    const { element } = viewport;
-
-    // If rendering engine has been destroyed while rendering
-    if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
-      return renderStatus;
-    }
-
-    let annotations = getAnnotations(this.getToolName(), element);
-
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
-      annotations
-    );
-
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    const targetId = this.getTargetId(viewport);
-    const styleSpecifier: StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
-
-    for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as Annotation;
-
-      styleSpecifier.annotationUID = annotation.annotationUID;
-
-      const annotationStyle = this.getAnnotationStyle({
-        annotation,
-        styleSpecifier,
-      });
-
-      const annotationRendered = this.renderAnnotationInstance({
-        enabledElement,
-        targetId,
-        annotation,
-        annotationStyle,
-        svgDrawingHelper,
-      });
-
-      renderStatus ||= annotationRendered;
-    }
-
-    return renderStatus;
+  protected isContourSegmentationTool(): boolean {
+    return true;
   }
 
-  /**
-   * Check if an annotation is a contour segmentation annotation.
-   *
-   * This is helpful on classes that can work in a hybrid way as a normal
-   * annotation tool or as a segmentation tool such as spline ROI tool. In that
-   * the segmentation must not be registered/unregistered as a contour
-   * segmentation annotation.
-   *
-   * @param annotation - Annotation
-   * @returns True if the annotation is a contour segmentation annotation or false otherwise
-   */
-  protected isSegmentationAnnotation(
-    annotation: Annotation
-  ): annotation is SegmentationAnnotation {
-    return (
-      (annotation as SegmentationAnnotation).segmentationData !== undefined
-    );
-  }
-
-  /**
-   * Return the segmentation data that needs to be merged with annotation data
-   * in any child class to compose the annotation data.
-   * @returns Annotation segmentation data
-   */
-  protected getSegmentationAnnotationData(): SegmentationAnnotationData {
+  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
     const { toolGroupId } = this;
+    const contourAnnotation = super.createAnnotation(evt);
+
+    if (!this.isContourSegmentationTool()) {
+      return contourAnnotation;
+    }
+
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
 
@@ -143,24 +68,33 @@ abstract class ContourSegmentationBaseTool extends AnnotationTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
 
-    return {
-      segmentationData: {
-        segmentationId,
-        segmentIndex,
-        segmentationRepresentationUID,
-      },
-    };
+    return <ContourSegmentationAnnotation>utilities.deepMerge(
+      contourAnnotation,
+      {
+        data: {
+          segmentation: {
+            segmentationId,
+            segmentIndex,
+            segmentationRepresentationUID,
+          },
+        },
+      }
+    );
   }
 
-  protected addAnnotation(annotation: Annotation, element: HTMLDivElement) {
-    const isSegmentationAnnotation = this.isSegmentationAnnotation(annotation);
+  protected addAnnotation(
+    annotation: Annotation,
+    element: HTMLDivElement
+  ): string {
+    const annotationUID = super.addAnnotation(annotation, element);
 
-    // annotationUID is available only after calling addAnnotation
-    addAnnotation(annotation, element);
-
-    if (isSegmentationAnnotation) {
-      this._registerContourSegmentationAnnotation(annotation);
+    if (this.isContourSegmentationTool()) {
+      this._registerContourSegmentationAnnotation(
+        annotation as ContourSegmentationAnnotation
+      );
     }
+
+    return annotationUID;
   }
 
   /**
@@ -168,11 +102,13 @@ abstract class ContourSegmentationBaseTool extends AnnotationTool {
    * @param annotation - Contour segmentation annotation
    */
   protected cancelAnnotation(annotation: Annotation): void {
-    const isSegmentationAnnotation = this.isSegmentationAnnotation(annotation);
-
-    if (isSegmentationAnnotation) {
-      this._unregisterContourSegmentationAnnotation(annotation);
+    if (this.isContourSegmentationTool()) {
+      this._unregisterContourSegmentationAnnotation(
+        annotation as ContourSegmentationAnnotation
+      );
     }
+
+    super.cancelAnnotation(annotation);
   }
 
   /**
@@ -183,10 +119,29 @@ abstract class ContourSegmentationBaseTool extends AnnotationTool {
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
   }): Record<string, any> {
-    const annotation = context.annotation as SegmentationAnnotation;
+    const annotationStyle = super.getAnnotationStyle(context);
+
+    if (!this.isContourSegmentationTool()) {
+      return annotationStyle;
+    }
+
+    const contourSegmentationStyle = this._getContourSegmentationStyle(context);
+
+    return utilities.deepMerge(annotationStyle, contourSegmentationStyle);
+  }
+
+  /**
+   * Return the annotation style based on global, toolGroup, segmentation
+   * and segment segmentation configurations.
+   */
+  private _getContourSegmentationStyle(context: {
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+  }): Record<string, any> {
     const { toolGroupId } = this;
+    const annotation = context.annotation as ContourSegmentationAnnotation;
     const { segmentationRepresentationUID, segmentationId, segmentIndex } =
-      annotation.segmentationData;
+      annotation.data.segmentation;
     const segmentationRepresentation =
       segmentationState.getSegmentationRepresentationByUID(
         toolGroupId,
@@ -278,50 +233,10 @@ abstract class ContourSegmentationBaseTool extends AnnotationTool {
     };
   }
 
-  /**
-   * Get polyline points in canvas space
-   * @param annotation - Contour annotation
-   * @returns Polyline points in canvas space
-   */
-  protected abstract getPolylinePoints(annotation: Annotation): Types.Point2[];
-
-  /**
-   * Render the contour segmentation annotation
-   */
-  protected renderAnnotationInstance(renderContext: {
-    enabledElement: Types.IEnabledElement;
-    targetId: string;
-    annotation: Annotation;
-    annotationStyle: Record<string, any>;
-    svgDrawingHelper: SVGDrawingHelper;
-  }): boolean {
-    const { annotation, annotationStyle, svgDrawingHelper } = renderContext;
-    const { annotationUID } = annotation;
-    const polylineCanvas = this.getPolylinePoints(annotation);
-    const { lineWidth, lineDash, color, fillColor, fillOpacity } =
-      annotationStyle;
-
-    drawPolylineSvg(
-      svgDrawingHelper,
-      annotationUID,
-      'lineSegments',
-      polylineCanvas,
-      {
-        color,
-        lineDash,
-        lineWidth: Math.max(0.1, lineWidth),
-        fillColor: fillColor,
-        fillOpacity,
-      }
-    );
-
-    return true;
-  }
-
   private _registerContourSegmentationAnnotation(
-    annotation: SegmentationAnnotation
+    annotation: ContourSegmentationAnnotation
   ) {
-    const { segmentationId, segmentIndex } = annotation.segmentationData;
+    const { segmentationId, segmentIndex } = annotation.data.segmentation;
     const segmentation = segmentationState.getSegmentation(segmentationId);
     const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
 
@@ -336,9 +251,9 @@ abstract class ContourSegmentationBaseTool extends AnnotationTool {
   }
 
   private _unregisterContourSegmentationAnnotation(
-    annotation: SegmentationAnnotation
+    annotation: ContourSegmentationAnnotation
   ) {
-    const { segmentationId, segmentIndex } = annotation.segmentationData;
+    const { segmentationId, segmentIndex } = annotation.data.segmentation;
     const segmentation = segmentationState.getSegmentation(segmentationId);
     const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
     const annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);

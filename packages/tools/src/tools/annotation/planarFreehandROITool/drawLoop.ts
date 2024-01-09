@@ -227,8 +227,8 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = false;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = true;
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
@@ -297,8 +297,8 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = true;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = false;
   const { textBox } = annotation.data.handles;
 
   // Add the first and last points to the list of handles. These means they
