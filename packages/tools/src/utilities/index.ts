@@ -21,7 +21,7 @@ import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
 
 import pointInShapeCallback from './pointInShapeCallback';
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
+import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
@@ -71,7 +71,7 @@ export {
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRender,
   pointInShapeCallback,
-  pointInSurroundingSphereCallback,
+  getSphereBoundsInfo,
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,

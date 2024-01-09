@@ -184,6 +184,9 @@ enum BlendModes {
 type BoundsIJK = [Point2, Point2, Point2];
 
 // @public (undocumented)
+type BoundsLPS = [Point3, Point3, Point3];
+
+// @public (undocumented)
 export const cache: Cache_2;
 
 declare namespace cacheUtils {
@@ -2416,7 +2419,7 @@ type Plane = [number, number, number, number];
 function planeDistanceToPoint(plane: Plane, point: Point3, signed?: boolean): number;
 
 // @public (undocumented)
-function planeEquation(normal: Point3, point: Point3 | vec3): Plane;
+function planeEquation(normal: Point3, point: Point3 | vec3, normalized?: boolean): Plane;
 
 // @public (undocumented)
 type Point2 = [number, number];
@@ -3112,6 +3115,7 @@ declare namespace Types {
         InternalVideoCamera,
         VideoViewportInput,
         BoundsIJK,
+        BoundsLPS,
         Color,
         ColorLUT,
         VolumeProps
