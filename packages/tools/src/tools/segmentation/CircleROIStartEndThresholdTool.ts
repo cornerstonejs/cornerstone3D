@@ -417,6 +417,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const pointsInsideVolume: Types.Point3[][] = [[]];
 
     for (let i = 0; i < projectionPoints.length; i++) {
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!imageVolume) {
+        continue;
+      }
+
       const centerWorld = projectionPoints[i][0];
       const canvasCoordinates = projectionPoints[i].map((p) =>
         viewport.worldToCanvas(p)
@@ -431,13 +438,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       const worldPos1 = topLeftWorld;
       const worldPos2 = bottomRightWorld;
-
-      // If image does not exists for the targetId, skip. This can be due
-      // to various reasons such as if the target was a volumeViewport, and
-      // the volumeViewport has been decached in the meantime.
-      if (!imageVolume) {
-        continue;
-      }
 
       const { dimensions, imageData } = imageVolume;
 
