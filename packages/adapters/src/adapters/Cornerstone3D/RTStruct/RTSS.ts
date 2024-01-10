@@ -1,17 +1,14 @@
-import {
-    generateContourSetsFromLabelmap,
-    AnnotationToPointData
-} from "./utilities";
+import { utilities } from "@cornerstonejs/tools";
 import dcmjs from "dcmjs";
-import {
-    getPatientModule,
-    getReferencedFrameOfReferenceSequence,
-    getReferencedSeriesSequence,
-    getRTROIObservationsSequence,
-    getRTSeriesModule,
-    getStructureSetModule
-} from "./utilities";
+import getPatientModule from "./utilities/getPatientModule";
+import getReferencedFrameOfReferenceSequence from "./utilities/getReferencedFrameOfReferenceSequence";
+import getReferencedSeriesSequence from "./utilities/getReferencedSeriesSequence";
+import getRTROIObservationsSequence from "./utilities/getRTROIObservationsSequence";
+import getRTSeriesModule from "./utilities/getRTSeriesModule";
+import getStructureSetModule from "./utilities/getStructureSetModule";
 
+const { generateContourSetsFromLabelmap, AnnotationToPointData } =
+    utilities.contours;
 const { DicomMetaDictionary } = dcmjs.data;
 
 /**
@@ -30,19 +27,13 @@ const { DicomMetaDictionary } = dcmjs.data;
 function generateRTSSFromSegmentations(
     segmentations,
     metadataProvider,
-    DicomMetadataStore,
-    cornerstoneCache,
-    cornerstoneToolsEnums,
-    vtkUtils
+    DicomMetadataStore
 ) {
     // Convert segmentations to ROIContours
     const roiContours = [];
 
     const contourSets = generateContourSetsFromLabelmap({
-        segmentations,
-        cornerstoneCache,
-        cornerstoneToolsEnums,
-        vtkUtils
+        segmentations
     });
 
     contourSets.forEach((contourSet, segIndex) => {
@@ -146,7 +137,7 @@ function generateRTSSFromSegmentations(
         };
 
         dataset.StructureSetROISequence.push(
-            getStructureSetModule(contour, index, metadataProvider)
+            getStructureSetModule(contour, index)
         );
 
         dataset.ROIContourSequence.push(roiContour);
@@ -201,16 +192,14 @@ function generateRTSSFromSegmentations(
  * Note: The tool data needs to be formatted in a specific way, and currently
  * it is limited to the RectangleROIStartEndTool in the Cornerstone.
  *
- * @param annotations Array of Cornerstone tool annotation data
- * @param metadataProvider Metadata provider
- * @param options report generation options
+ * @param annotations - Array of Cornerstone tool annotation data
+ * @param metadataProvider -  Metadata provider
  * @returns Report object containing the dataset
  */
 function generateRTSSFromAnnotations(
     annotations,
     metadataProvider,
-    DicomMetadataStore,
-    options
+    DicomMetadataStore
 ) {
     const rtMetadata = {
         name: "RTSS from Annotations",
@@ -226,12 +215,11 @@ function generateRTSSFromAnnotations(
         const ContourSequence = AnnotationToPointData.convert(
             annotation,
             index,
-            metadataProvider,
-            options
+            metadataProvider
         );
 
         dataset.StructureSetROISequence.push(
-            getStructureSetModule(annotation, index, metadataProvider)
+            getStructureSetModule(annotation, index)
         );
 
         dataset.ROIContourSequence.push(ContourSequence);
@@ -331,7 +319,8 @@ function _initializeDataset(rtMetadata, imgMetadata, metadataProvider) {
         ReferringPhysicianName: "",
         OperatorsName: "",
         StructureSetDate: DicomMetaDictionary.date(),
-        StructureSetTime: DicomMetaDictionary.time()
+        StructureSetTime: DicomMetaDictionary.time(),
+        _meta: null
     };
 }
 

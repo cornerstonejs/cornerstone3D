@@ -185,6 +185,10 @@ export default class ToolGroup implements IToolGroup {
    * @param renderingEngineId - The rendering engine to use.
    */
   public addViewport(viewportId: string, renderingEngineId?: string): void {
+    if (typeof viewportId !== 'string') {
+      throw new Error('viewportId must be defined and be a string');
+    }
+
     const renderingEngines = getRenderingEngines();
 
     if (!renderingEngineId && renderingEngines.length > 1) {

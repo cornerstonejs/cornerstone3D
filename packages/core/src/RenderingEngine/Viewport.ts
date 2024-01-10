@@ -63,7 +63,7 @@ class Viewport implements IViewport {
   protected flipHorizontal = false;
   protected flipVertical = false;
   public isDisabled: boolean;
-  /** Record the renddering status, mostly for testing purposes, but can also
+  /** Record the rendering status, mostly for testing purposes, but can also
    * be useful for knowing things like whether the viewport is initialized
    */
   public viewportStatus: ViewportStatus = ViewportStatus.NO_DATA;
@@ -371,6 +371,14 @@ class Viewport implements IViewport {
    */
   public getActors(): Array<ActorEntry> {
     return Array.from(this._actors.values());
+  }
+
+  /**
+   * Returns an array of unique identifiers for all the actors in the viewport.
+   * @returns An array of strings
+   */
+  public getActorUIDs(): Array<string> {
+    return Array.from(this._actors.keys());
   }
 
   /**

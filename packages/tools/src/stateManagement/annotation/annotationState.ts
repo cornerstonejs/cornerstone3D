@@ -82,19 +82,19 @@ function addAnnotation(
   }
 
   const manager = getAnnotationManager();
-  const groupKey = manager.getGroupKey(annotationGroupSelector);
-
-  manager.addAnnotation(annotation, groupKey);
 
   if (!suppressEvents) {
     // if the annotation manager selector is an element, trigger the
     // annotation added event for that element.
     if (annotationGroupSelector instanceof HTMLDivElement) {
+      const groupKey = manager.getGroupKey(annotationGroupSelector);
+      manager.addAnnotation(annotation, groupKey);
       triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
     } else {
       // if no element is provided, render all viewports that have the
       // same frame of reference.
       // Todo: we should do something else here for other types of annotation managers.
+      manager.addAnnotation(annotation);
       triggerAnnotationAddedForFOR(annotation);
     }
   }
@@ -134,6 +134,9 @@ function removeAnnotation(
   annotationUID: string,
   suppressEvents?: boolean
 ): void {
+  if (!annotationUID) {
+    return;
+  }
   const manager = getAnnotationManager();
   const annotation = manager.getAnnotation(annotationUID);
 

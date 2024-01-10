@@ -1,13 +1,12 @@
-import { IViewport } from '../types';
-import { StackViewport, VolumeViewport } from '../RenderingEngine';
+import type { IViewport, IStackViewport, IVolumeViewport } from '../types';
 import cache from '../cache';
 
 function getViewportModality(viewport: IViewport, volumeId?: string): string {
-  if (viewport instanceof StackViewport) {
-    return viewport.modality;
+  if ((viewport as IStackViewport).modality) {
+    return (viewport as IStackViewport).modality;
   }
 
-  if (viewport instanceof VolumeViewport) {
+  if ((viewport as IVolumeViewport).setVolumes) {
     volumeId = volumeId ?? viewport.getDefaultActor()?.uid;
 
     if (!volumeId) {

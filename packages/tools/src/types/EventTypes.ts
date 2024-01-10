@@ -105,9 +105,9 @@ type ToolActivatedEventDetail = {
  */
 type AnnotationAddedEventDetail = {
   /** unique id of the viewport */
-  viewportId: string;
+  viewportId?: string;
   /** unique id of the rendering engine */
-  renderingEngineId: string;
+  renderingEngineId?: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
 };

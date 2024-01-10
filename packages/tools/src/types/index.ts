@@ -4,6 +4,14 @@ import type {
   AnnotationState,
   GroupSpecificAnnotations,
 } from './AnnotationTypes';
+import type {
+  ContourAnnotationData,
+  ContourAnnotation,
+} from './ContourAnnotation';
+import type {
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
+} from './ContourSegmentationAnnotation';
 import type * as EventTypes from './EventTypes';
 import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
@@ -73,11 +81,17 @@ import type { ISpline } from './ISpline';
 import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
+import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
+  ContourAnnotationData,
+  ContourAnnotation,
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
+  BidirectionalData,
   CanvasCoordinates,
   IAnnotationManager,
   GroupSpecificAnnotations,

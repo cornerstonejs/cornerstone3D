@@ -250,6 +250,7 @@ export default async function fetchAndAllocateNiftiVolume(
       direction,
       scalarData,
       sizeInBytes,
+      imageIds: [],
     },
     // Streaming properties
     {
