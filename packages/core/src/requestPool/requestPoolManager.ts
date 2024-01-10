@@ -230,10 +230,11 @@ class RequestPoolManager {
 
   private sendRequests(type) {
     const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
+    let syncImageCount = 0;
 
     for (
       let requestsStarted = 0;
-      requestsStarted < requestsToSend;
+      requestsStarted < requestsToSend + syncImageCount;
       requestsStarted++
     ) {
       const requestDetails = this.getNextRequest(type);
@@ -258,10 +259,7 @@ class RequestPoolManager {
         } else {
           // Handle non-async request functions too - typically just short circuit ones
           this.numRequests[type]--;
-          // Decrement the index counter to redo this loop index as
-          // this request was cancelled or failed, so we still
-          // want to do the same number of requests.
-          requestsStarted--;
+          syncImageCount++;
         }
       }
     }
