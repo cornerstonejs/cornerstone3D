@@ -10,6 +10,10 @@ export type ContourConfig = {
   outlineOpacity?: number;
   /** alpha of outline for inactive segmentation */
   outlineOpacityInactive?: number;
+  /** dash style of the outline when segmentation is active */
+  outlineDashActive?: string;
+  /** dash style of the outline when segmentation is inactive */
+  outlineDashInactive?: string;
   /** outline visibility */
   renderOutline?: boolean;
   /** render fill */
@@ -30,5 +34,8 @@ export type ContourRenderingConfig = {
 export type ContourSegmentationData = {
   // Ids of the contourSets that are part of this segmentation
   // in the cache
-  geometryIds: string[];
+  geometryIds?: string[];
+  // Ids of the annotations that are part of this segmentation
+  // grouped by segmentIndex
+  annotationUIDsMap?: Map<number, Set<string>>;
 };

@@ -645,11 +645,10 @@ class LengthTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      // Todo: move these into annotationTool class
-      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-      const color = this.getStyle('color', styleSpecifier, annotation);
-      const shadow = this.getStyle('shadow', styleSpecifier, annotation);
+      const { color, lineWidth, lineDash, shadow } = this.getAnnotationStyle({
+        annotation,
+        styleSpecifier,
+      });
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 

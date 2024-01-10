@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
@@ -9,20 +8,13 @@ import {
   VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import {
-  addAnnotation,
-  getAnnotations,
-  removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import {
-  drawHandles as drawHandlesSvg,
-  drawPolyline as drawPolylineSvg,
-} from '../../drawingSvg';
+import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
+import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store';
 import { Events } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import {
+  Annotation,
   EventTypes,
   ToolHandle,
   PublicToolProps,
@@ -35,15 +27,15 @@ import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
-class LivewireContourTool extends AnnotationTool {
+class LivewireContourTool extends ContourSegmentationBaseTool {
   public static toolName: string;
   private scissors: LivewireScissors;
 
@@ -85,9 +77,9 @@ class LivewireContourTool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
+  addNewAnnotation(
     evt: EventTypes.InteractionEventType
-  ): LivewireContourAnnotation => {
+  ): LivewireContourAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { world: worldPos, canvas: canvasPos } = currentPoints;
@@ -97,17 +89,6 @@ class LivewireContourTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
     const defaultActor = viewport.getDefaultActor();
 
     // if (!defaultActor || !csUtils.isImageActor(defaultActor)) {
@@ -191,26 +172,9 @@ class LivewireContourTool extends AnnotationTool {
     confirmedPath.addPoint(startPos);
     confirmedPath.addControlPoint(startPos);
 
-    const annotation: LivewireContourAnnotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-      },
-      data: {
-        polyline: [],
-        handles: {
-          points: [[...worldPos]],
-          activeHandleIndex: null,
-        },
-      },
-    };
+    const annotation = this.createAnnotation(evt) as LivewireContourAnnotation;
 
-    addAnnotation(annotation, element);
+    this.addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -235,7 +199,7 @@ class LivewireContourTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
-  };
+  }
 
   /**
    * It returns if the canvas point is near the provided annotation in the provided
@@ -257,7 +221,7 @@ class LivewireContourTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const proximitySquared = proximity * proximity;
-    const canvasPoints = annotation.data.polyline.map((p) =>
+    const canvasPoints = annotation.data.contour.polyline.map((p) =>
       viewport.worldToCanvas(p)
     );
 
@@ -513,7 +477,7 @@ class LivewireContourTool extends AnnotationTool {
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
       const worldPosDelta = deltaPoints.world;
 
-      const points = data.polyline;
+      const points = data.contour.polyline;
 
       points.forEach((point) => {
         point[0] += worldPosDelta[0];
@@ -634,129 +598,90 @@ class LivewireContourTool extends AnnotationTool {
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
   };
 
-  /**
-   * it is used to draw the circleROI annotation in each
-   * request animation frame. It calculates the updated cached statistics if
-   * data is invalidated and cache it.
-   *
-   * @param enabledElement - The Cornerstone's enabledElement.
-   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
-   */
-  renderAnnotation = (
+  public renderAnnotation(
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
-  ): boolean => {
-    let renderStatus = false;
+  ): boolean {
     const { viewport } = enabledElement;
-    const { worldToCanvas } = viewport;
     const { element } = viewport;
-
-    // If rendering engine has been destroyed while rendering
-    if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
-      return renderStatus;
-    }
-
-    let annotations = getAnnotations(this.getToolName(), element);
-
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
-      annotations
-    );
-
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    const newAnnotation = this.editData?.newAnnotation;
-    const styleSpecifier: StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
 
     // Update the annotation that is in editData (being edited)
     this._updateAnnotation(element, this.editData?.currentPath);
 
-    for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as LivewireContourAnnotation;
-      const { annotationUID, data } = annotation;
-      const { handles } = data;
-      const { points } = handles;
+    return super.renderAnnotation(enabledElement, svgDrawingHelper);
+  }
 
-      styleSpecifier.annotationUID = annotationUID;
+  protected isContourSegmentationTool(): boolean {
+    // Disable contour segmenatation behavior because it shall be activated only
+    // for LivewireContourSegmentationTool
+    return false;
+  }
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifier,
-        annotation
-      ) as number;
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifier,
-        annotation
-      ) as string;
-      const color = this.getStyle(
-        'color',
-        styleSpecifier,
-        annotation
-      ) as string;
+  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+    const contourSegmentationAnnotation = super.createAnnotation(evt);
+    const { world: worldPos } = evt.detail.currentPoints;
 
-      const canvasCoordinates = points.map((p) =>
-        worldToCanvas(p)
-      ) as Types.Point2[];
-
-      if (!isAnnotationVisible(annotationUID)) {
-        continue;
+    return <LivewireContourAnnotation>csUtils.deepMerge(
+      contourSegmentationAnnotation,
+      {
+        data: {
+          handles: {
+            points: [[...worldPos]],
+          },
+        },
       }
+    );
+  }
 
-      // Render the first control point only when the annotaion is drawn for the
-      // first time to make it easier to know where the user needs to click to
-      // to close the ROI.
-      if (
-        newAnnotation &&
-        annotation.annotationUID === this.editData?.annotation?.annotationUID
-      ) {
-        const handleGroupUID = '0';
-        drawHandlesSvg(
-          svgDrawingHelper,
-          annotationUID,
-          handleGroupUID,
-          [canvasCoordinates[0]],
-          {
-            color,
-            lineDash,
-            lineWidth,
-          }
-        );
-      }
+  /**
+   * Render an annotation instance
+   * @param renderContext - Render context that contains the annotation, enabledElement, etc.
+   * @returns True if the annotation is rendered or false otherwise
+   */
+  protected renderAnnotationInstance(renderContext: {
+    enabledElement: Types.IEnabledElement;
+    targetId: string;
+    annotation: Annotation;
+    annotationStyle: Record<string, any>;
+    svgDrawingHelper: SVGDrawingHelper;
+  }): boolean {
+    const { enabledElement, svgDrawingHelper, annotationStyle } = renderContext;
+    const { viewport } = enabledElement;
+    const { worldToCanvas } = viewport;
+    const annotation = renderContext.annotation as LivewireContourAnnotation;
+    const { annotationUID, data } = annotation;
+    const { handles } = data;
+    const newAnnotation = this.editData?.newAnnotation;
+    const { lineWidth, lineDash, color } = annotationStyle;
 
-      const canvasPolyline = data.polyline.map((worldPoint) =>
-        viewport.worldToCanvas(worldPoint)
-      );
+    // Render the first control point only when the annotaion is drawn for the
+    // first time to make it easier to know where the user needs to click to
+    // to close the ROI.
+    if (
+      newAnnotation &&
+      annotation.annotationUID === this.editData?.annotation?.annotationUID
+    ) {
+      const handleGroupUID = '0';
+      const startPoint = worldToCanvas(handles.points[0]);
 
-      drawPolylineSvg(
+      drawHandlesSvg(
         svgDrawingHelper,
         annotationUID,
-        'polyline',
-        canvasPolyline,
+        handleGroupUID,
+        [startPoint],
         {
           color,
           lineDash,
           lineWidth,
         }
       );
-
-      renderStatus = true;
-      annotation.invalidated = false;
     }
 
-    return renderStatus;
-  };
+    // Let the base class render the contour
+    super.renderAnnotationInstance(renderContext);
+
+    return true;
+  }
 
   private _updateAnnotation(
     element: HTMLDivElement,
@@ -768,7 +693,7 @@ class LivewireContourTool extends AnnotationTool {
 
     const { pointArray: imagePoints } = livewirePath;
     const worldPolylinePoints: Types.Point3[] = [];
-    const { sliceToWorld } = this.editData;
+    const { annotation, sliceToWorld } = this.editData;
 
     for (let i = 0, len = imagePoints.length; i < len; i++) {
       const imagePoint = imagePoints[i];
@@ -780,7 +705,7 @@ class LivewireContourTool extends AnnotationTool {
       worldPolylinePoints.push([...worldPolylinePoints[0]]);
     }
 
-    this.editData.annotation.data.polyline = worldPolylinePoints;
+    annotation.data.contour.polyline = worldPolylinePoints;
   }
 }
 

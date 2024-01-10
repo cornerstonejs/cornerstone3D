@@ -27,8 +27,11 @@ import RectangleROITool from './annotation/RectangleROITool';
 import EllipticalROITool from './annotation/EllipticalROITool';
 import CircleROITool from './annotation/CircleROITool';
 import SplineROITool from './annotation/SplineROITool';
+import SplineContourSegmentationTool from './annotation/SplineContourSegmentationTool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
+import PlanarFreehandContourSegmentationTool from './annotation/PlanarFreehandContourSegmentationTool';
 import LivewireContourTool from './annotation/LivewireContourTool';
+import LivewireContourSegmentationTool from './annotation/LivewireContourSegmentationTool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
@@ -79,7 +82,9 @@ export {
   CircleROITool,
   SplineROITool,
   PlanarFreehandROITool,
+  PlanarFreehandContourSegmentationTool,
   LivewireContourTool,
+  LivewireContourSegmentationTool,
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
@@ -93,6 +98,7 @@ export {
   SphereScissorsTool,
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
+  SplineContourSegmentationTool,
   BrushTool,
   MagnifyTool,
   AdvancedMagnifyTool,
