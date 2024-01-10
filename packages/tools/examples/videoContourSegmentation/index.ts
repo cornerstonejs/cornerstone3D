@@ -34,6 +34,7 @@ const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
   LivewireContourSegmentationTool,
+  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -204,6 +205,7 @@ const SplineToolNames = Object.keys(Splines);
 const splineToolsNames = [
   ...SplineToolNames,
   LivewireContourSegmentationTool.toolName,
+  PlanarFreehandContourSegmentationTool.toolName,
 ];
 let selectedToolName = splineToolsNames[0];
 
@@ -337,6 +339,7 @@ async function run() {
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(LivewireContourSegmentationTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -344,6 +347,8 @@ async function run() {
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
+  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(LivewireContourSegmentationTool.toolName);
 
   toolGroup.addToolInstance(

@@ -47,4 +47,5 @@ temp/
 
 # Report Output
 junit/
+junit.xml
 coverage/
