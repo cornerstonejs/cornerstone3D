@@ -254,6 +254,10 @@ class RequestPoolManager {
         } else {
           // Handle non-async request functions too - typically just short circuit ones
           this.numRequests[type]--;
+          // Decrement the index counter to add another request to the set of
+          // requests being sent on this sendRequests - usually an empty
+          // response here means that the request was cancelled so just add another
+          // request in it's place, without the "startAgain" handling.
           i--;
         }
       }
