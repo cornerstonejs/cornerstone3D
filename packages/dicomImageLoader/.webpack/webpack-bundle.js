@@ -30,14 +30,17 @@ module.exports = {
     filename: '[name].bundle.min.js',
   },
   devtool: 'source-map',
-  externals: {
-    'dicom-parser': {
-      commonjs: 'dicom-parser',
-      commonjs2: 'dicom-parser',
-      amd: 'dicom-parser',
-      root: 'dicomParser',
-    },
-  },
+  externals: [
+    '@cornerstonejs/core',
+    {
+      'dicom-parser': {
+        commonjs: 'dicom-parser',
+        commonjs2: 'dicom-parser',
+        amd: 'dicom-parser',
+        root: 'dicomParser',
+      },
+    }
+  ],
   resolve: {
     extensions: ['.ts', '.js'],
     fallback: {
