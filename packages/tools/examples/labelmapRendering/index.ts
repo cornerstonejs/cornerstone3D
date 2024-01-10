@@ -5,12 +5,14 @@ import {
   setVolumesForViewports,
   volumeLoader,
 } from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -65,48 +67,11 @@ content.appendChild(viewportGrid);
 
 // ============================= //
 
-/**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-function createMockEllipsoidSegmentation(segmentationVolume) {
-  const scalarData = segmentationVolume.scalarData;
-  const { dimensions } = segmentationVolume;
-
-  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
-  const outerRadius = 50;
-  const innerRadius = 10;
-
-  let voxelIndex = 0;
-
-  for (let z = 0; z < dimensions[2]; z++) {
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) +
-            (y - center[1]) * (y - center[1]) +
-            (z - center[2]) * (z - center[2])
-        );
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
-        }
-
-        voxelIndex++;
-      }
-    }
-  }
-}
-
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: segmentationId,
-    }
-  );
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    volumeId: segmentationId,
+  });
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -125,7 +90,10 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  createMockEllipsoidSegmentation(segmentationVolume);
+  fillVolumeSegmentationWithMockData({
+    volumeId: segmentationId,
+    cornerstone,
+  });
 }
 
 /**

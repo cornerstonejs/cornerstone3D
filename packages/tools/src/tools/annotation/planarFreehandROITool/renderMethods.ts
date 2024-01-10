@@ -28,17 +28,21 @@ function _getRenderingOptions(
     annotationUID: annotation.annotationUID,
   };
 
-  const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-  const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-  const color = this.getStyle('color', styleSpecifier, annotation);
+  const { lineWidth, lineDash, color, fillColor, fillOpacity } =
+    this.getAnnotationStyle({
+      annotation,
+      styleSpecifier,
+    });
 
-  const isOpenContour = annotation.data.isOpenContour;
+  const { closed: isClosedContour } = annotation.data.contour;
 
   const options = {
-    color: color === undefined ? undefined : <string>color,
-    width: lineWidth === undefined ? undefined : <number>lineWidth,
-    lineDash: lineDash === undefined ? undefined : <number[]>lineDash,
-    connectLastToFirst: !isOpenContour,
+    color,
+    width: lineWidth,
+    lineDash,
+    fillColor,
+    fillOpacity,
+    connectLastToFirst: isClosedContour,
   };
 
   return options;
@@ -57,7 +61,9 @@ function renderContour(
     return;
   }
   // Check if the contour is an open contour
-  if (annotation.data.isOpenContour) {
+  if (annotation.data.contour.closed) {
+    this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
+  } else {
     // If its an open contour, check i its a U-shaped contour
     if (annotation.data.isOpenUShapeContour) {
       calculateUShapeContourVectorToPeakIfNotPresent(
@@ -74,8 +80,6 @@ function renderContour(
       // If not a U-shaped contour, render standard open contour.
       this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
     }
-  } else {
-    this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
   }
 }
 
@@ -110,7 +114,7 @@ function renderClosedContour(
   // element on the tool? That feels very weird also as we'd need to manage
   // it/clean them up. Its a pre-optimisation for now and we can tackle it if it
   // becomes a problem.
-  const canvasPoints = annotation.data.polyline.map((worldPos) =>
+  const canvasPoints = annotation.data.contour.polyline.map((worldPos) =>
     viewport.worldToCanvas(worldPos)
   );
 
@@ -136,7 +140,7 @@ function renderOpenContour(
   const { viewport } = enabledElement;
   const options = this._getRenderingOptions(enabledElement, annotation);
 
-  const canvasPoints = annotation.data.polyline.map((worldPos) =>
+  const canvasPoints = annotation.data.contour.polyline.map((worldPos) =>
     viewport.worldToCanvas(worldPos)
   );
 
@@ -212,7 +216,8 @@ function renderOpenUShapedContour(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
-  const { polyline, openUShapeContourVectorToPeak } = annotation.data;
+  const { openUShapeContourVectorToPeak } = annotation.data;
+  const { polyline } = annotation.data.contour;
 
   this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
 

@@ -1,4 +1,4 @@
-import type { BoundsIJK, Point3, VolumeScalarData } from '../types';
+import type { BoundsIJK, Point3, PixelDataTypedArray } from '../types';
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
@@ -12,7 +12,7 @@ export default class VoxelManager<T> {
   ] as BoundsIJK;
 
   // Provide direct access to the underlying data, if any
-  public scalarData: VolumeScalarData;
+  public scalarData: PixelDataTypedArray;
   public map: Map<number, T>;
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;
@@ -216,10 +216,21 @@ export default class VoxelManager<T> {
    * Extends the bounds of this object to include the specified point
    */
   public static addBounds(bounds: BoundsIJK, point: Point3) {
-    bounds.forEach((bound, index) => {
-      bound[0] = Math.min(point[index], bound[0]);
-      bound[1] = Math.max(point[index], bound[1]);
-    });
+    if (!bounds) {
+      bounds = [
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+      ];
+    }
+
+    // Directly update the bounds for each axis
+    bounds[0][0] = Math.min(point[0], bounds[0][0]);
+    bounds[0][1] = Math.max(point[0], bounds[0][1]);
+    bounds[1][0] = Math.min(point[1], bounds[1][0]);
+    bounds[1][1] = Math.max(point[1], bounds[1][1]);
+    bounds[2][0] = Math.min(point[2], bounds[2][0]);
+    bounds[2][1] = Math.max(point[2], bounds[2][1]);
   }
 
   /**

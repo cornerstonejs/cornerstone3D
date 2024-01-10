@@ -79,6 +79,7 @@ async function render(
     console.warn(
       `No contours found for segmentationId ${segmentationId}. Skipping render.`
     );
+    return;
   }
 
   // add the contour sets to the viewport

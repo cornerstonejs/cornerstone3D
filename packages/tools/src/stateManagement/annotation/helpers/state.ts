@@ -41,14 +41,12 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
   const { toolName } = annotation.metadata;
 
   const toolGroups = getToolGroupsWithToolName(toolName);
-
   if (!toolGroups.length) {
     return;
   }
 
   // Find the viewports in the toolGroups who has the same FrameOfReferenceUID
   const viewportsToRender = [];
-
   toolGroups.forEach((toolGroup) => {
     toolGroup.viewportsInfo.forEach((viewportInfo) => {
       const { renderingEngineId, viewportId } = viewportInfo;
@@ -63,19 +61,17 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
     });
   });
 
+  const eventType = Events.ANNOTATION_ADDED;
+  const eventDetail: AnnotationAddedEventDetail = { annotation };
+
   if (!viewportsToRender.length) {
+    triggerEvent(eventTarget, eventType, eventDetail);
     return;
   }
 
-  const eventType = Events.ANNOTATION_ADDED;
-
   viewportsToRender.forEach(({ renderingEngineId, viewportId }) => {
-    const eventDetail: AnnotationAddedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-
+    eventDetail.viewportId = viewportId;
+    eventDetail.renderingEngineId = renderingEngineId;
     triggerEvent(eventTarget, eventType, eventDetail);
   });
 }

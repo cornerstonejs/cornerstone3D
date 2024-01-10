@@ -369,6 +369,22 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Removes all segmentation representations associated with a tool group.
+ * @param toolGroupId - The ID of the tool group.
+ */
+function removeSegmentationRepresentations(toolGroupId: string): void {
+  const segmentationRepresentations =
+    getSegmentationRepresentations(toolGroupId) || [];
+
+  segmentationRepresentations.forEach((representation) => {
+    removeSegmentationRepresentation(
+      toolGroupId,
+      representation.segmentationRepresentationUID
+    );
+  });
+}
+
+/**
  * Add a color LUT to the segmentation state manager
  * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
@@ -415,6 +431,7 @@ export {
   getSegmentationRepresentations,
   addSegmentationRepresentation,
   removeSegmentationRepresentation,
+  removeSegmentationRepresentations,
   // config
   getToolGroupSpecificConfig,
   setToolGroupSpecificConfig,

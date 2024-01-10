@@ -44,7 +44,7 @@ export default function pointInEllipse(
  * That is:
  *
  * ```
- *    const inverts = precalcualtePointInEllipse(ellipse);
+ *    const inverts = precalculatePointInEllipse(ellipse);
  *    if( inverts.precalculated(pointLPS) ) ...
  * ```
  */

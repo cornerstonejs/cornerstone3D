@@ -67,15 +67,14 @@ const stackViewportElement = createViewportElement('axial-element');
 const volumeCoronalViewportElement = createViewportElement('coronal-element');
 const volumeSagittalViewportElement = createViewportElement('sagittal-element');
 
-const info = createInfoSection(content);
-
-info.addInstruction(
-  'Viewports: Axial (Stack), Coronal (Volume), Sagittal (Volume)'
-);
-info.addInstruction('Left click to use the livewire tool');
-info.addInstruction('Middle click to use the pan tool');
-info.addInstruction('Right click to use the zoom tool');
-info.addInstruction('Press "escape" to cancel drawing');
+createInfoSection(content)
+  .addInstruction(
+    'Viewports: Axial (Stack), Coronal (Volume), Sagittal (Volume)'
+  )
+  .addInstruction('Left click to use the livewire tool')
+  .addInstruction('Middle click to use the pan tool')
+  .addInstruction('Right click to use the zoom tool')
+  .addInstruction('Press "escape" to cancel drawing');
 
 // ============================= //
 

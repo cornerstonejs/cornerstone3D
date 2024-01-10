@@ -154,7 +154,10 @@ class DragProbeTool extends ProbeTool {
 
     styleSpecifier.annotationUID = annotationUID;
 
-    const color = this.getStyle('color', styleSpecifier, annotation);
+    const { color } = this.getAnnotationStyle({
+      annotation,
+      styleSpecifier,
+    });
 
     const modalityUnitOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),
