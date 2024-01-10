@@ -172,9 +172,10 @@ function loadImage(
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);
-  // The options might have a loader, but it is a loader into the cache, so not
-  // the scheme loader, which is separate
+  // The loader isn't transferable, so ensure it is deleted
   delete options.loader;
+  // The options might have a loader above, but it is a loader into the cache,
+  // so not the scheme loader, which is separate and defined by the scheme here
   const schemeLoader = getLoaderForScheme(parsedImageId.scheme);
 
   // if the dataset for this url is already loaded, use it, in case of multiframe

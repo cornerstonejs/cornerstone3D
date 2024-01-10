@@ -239,7 +239,13 @@ class RequestPoolManager {
         this.numRequests[type]++;
         this.awake = true;
 
-        const requestResult = requestDetails.requestFn();
+        let requestResult;
+        try {
+          requestResult = requestDetails.requestFn();
+        } catch (e) {
+          // This is the only warning one will get, so need a warn message
+          console.warn('sendRequest failed', e);
+        }
         if (requestResult?.finally) {
           requestResult.finally(() => {
             this.numRequests[type]--;
