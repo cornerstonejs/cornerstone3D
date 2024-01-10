@@ -263,9 +263,9 @@
         "name": "Video Annotation Grouping",
         "description": "Annotation grouping tools"
       },
-      "videoLivewireContourSegmentation": {
-        "name": "Video Livewire Contour Segmentation",
-        "description": "Demonstrates livewire contour segmentation on video viewports"
+      "videoContourSegmentation": {
+        "name": "Video Contour Segmentation",
+        "description": "Demonstrates spline and livewire contour segmentation on video viewports"
       },
       "videoRange": {
         "name": "Video Range Selection",
