@@ -78,7 +78,7 @@ async function render(
   if (!SurfaceData) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await polySeg.getComputedSurfaceData(segmentation);
+    SurfaceData = await polySeg.getComputedSurfacesData(segmentation);
 
     if (!SurfaceData) {
       throw new Error(
@@ -87,37 +87,39 @@ async function render(
     }
   }
 
-  const { geometryId } = SurfaceData;
+  const { geometryIds } = SurfaceData;
 
-  if (!geometryId) {
+  if (!geometryIds.length) {
     console.warn(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );
   }
 
-  const geometry = cache.getGeometry(geometryId);
-  if (!geometry) {
-    throw new Error(`No Surfaces found for geometryId ${geometryId}`);
-  }
+  geometryIds.forEach((geometryId) => {
+    const geometry = cache.getGeometry(geometryId);
+    if (!geometry) {
+      throw new Error(`No Surfaces found for geometryId ${geometryId}`);
+    }
 
-  if (geometry.type !== Enums.GeometryType.SURFACE) {
-    // Todo: later we can support converting other geometries to Surfaces
-    throw new Error(
-      `Geometry type ${geometry.type} not supported for rendering.`
-    );
-  }
+    if (geometry.type !== Enums.GeometryType.SURFACE) {
+      // Todo: later we can support converting other geometries to Surfaces
+      throw new Error(
+        `Geometry type ${geometry.type} not supported for rendering.`
+      );
+    }
 
-  if (!geometry.data) {
-    console.warn(
-      `No Surfaces found for geometryId ${geometryId}. Skipping render.`
-    );
-    return;
-  }
+    if (!geometry.data) {
+      console.warn(
+        `No Surfaces found for geometryId ${geometryId}. Skipping render.`
+      );
+      return;
+    }
 
-  const surface = geometry.data;
+    const surface = geometry.data;
 
-  const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
-  _renderSurface(viewport, surface, surfaceUID);
+    const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
+    _renderSurface(viewport, surface, surfaceUID);
+  });
 
   viewport.resetCamera();
   viewport.render();

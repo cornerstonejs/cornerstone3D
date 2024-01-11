@@ -41,6 +41,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
+const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -81,30 +82,31 @@ async function addSegmentationsToState() {
   // and may take a while to download
   surfaces = await downloadSurfacesData();
 
-  surfaces.forEach((surface) => {
+  const geometryIds = surfaces.map((surface) => {
     const geometryId = surface.closedSurface.id;
-    const segmentationId = geometryId;
     geometryLoader.createAndCacheGeometry(geometryId, {
       type: GeometryType.SURFACE,
       geometryData: surface.closedSurface as Types.PublicSurfaceData,
     });
 
-    // Add the segmentations to state
-    segmentation.addSegmentations([
-      {
-        segmentationId,
-        representation: {
-          // The type of segmentation
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-          // The actual segmentation data, in the case of contour geometry
-          // this is a reference to the geometry data
-          data: {
-            geometryId,
-          },
+    return geometryId;
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          geometryIds,
         },
       },
-    ]);
-  });
+    },
+  ]);
 }
 
 /**
@@ -247,24 +249,20 @@ async function run() {
     viewport3d.render();
   });
 
-  surfaces.forEach(async (surface) => {
-    const segmentationId = surface.closedSurface.id;
+  // // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
-    // // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-
-    await segmentation.addSegmentationRepresentations(toolGroupId3d, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-  });
+  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
   // Render the image
   renderingEngine.render();
