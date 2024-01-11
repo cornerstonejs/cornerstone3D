@@ -98,6 +98,42 @@ function getAllSegmentationRepresentations(): Record<
 }
 
 /**
+ * Finds a segmentation representation by its UID.
+ *
+ * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
+ * @returns The found segmentation representation, or undefined if not found.
+ */
+function findSegmentationRepresentationByUID(
+  segmentationRepresentationUID: string
+): {
+  toolGroupId: string;
+  segmentationRepresentation: ToolGroupSpecificRepresentation;
+} {
+  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
+
+  const toolGroupIds = Object.keys(allToolGroupRepresentations);
+
+  for (let i = 0; i < toolGroupIds.length; i++) {
+    const toolGroupId = toolGroupIds[i];
+    const toolGroupRepresentations =
+      allToolGroupRepresentations[toolGroupId] || [];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) =>
+        representation.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    );
+
+    if (foundRepresentation) {
+      return {
+        segmentationRepresentation: foundRepresentation,
+        toolGroupId,
+      };
+    }
+  }
+}
+
+/**
  * Get the tool group IDs that have a segmentation representation with the given
  * segmentationId
  * @param segmentationId - The id of the segmentation
@@ -450,4 +486,6 @@ export {
   getColorLUT,
   getNextColorLUTIndex,
   removeColorLUT,
+  //
+  findSegmentationRepresentationByUID,
 };

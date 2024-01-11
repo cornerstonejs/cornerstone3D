@@ -78,7 +78,9 @@ async function render(
   if (!SurfaceData) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await polySeg.getComputedSurfacesData(segmentation);
+    SurfaceData = await polySeg.getComputedSurfacesData(
+      segmentationRepresentationUID
+    );
 
     if (!SurfaceData) {
       throw new Error(
