@@ -5,6 +5,7 @@ import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/
 import { getSegmentation } from './segmentationState';
 import addRepresentationData from './addRepresentationData';
 import { getUniqueSegmentIndices } from '../../utilities/segmentation';
+import { SurfaceSegmentationData } from '../../types/SurfaceTypes';
 
 /**
  * Class to control polymorphic segmentations
@@ -37,66 +38,73 @@ class PolySegManager {
     }
   }
 
-  async getComputedSurfaceData(segmentation, segmentIndices = []) {
+  async getComputedSurfacesData(
+    segmentation,
+    segmentIndices = []
+  ): Promise<SurfaceSegmentationData> {
     // need to check what is the underlying
     // representation and convert it to surface
     const representationData = segmentation.representationData;
 
     if (representationData.LABELMAP?.volumeId) {
       // convert volume labelmap to surface
-      let rawSurfaceData;
+      let rawSurfacesData;
       try {
-        rawSurfaceData = await this.convertLabelmapToSurface(
+        rawSurfacesData = await this.labelmapToSurfaceData(
           segmentation.segmentationId,
           segmentIndices
         );
       } catch (error) {
         console.warn('Error converting volume labelmap to surface');
         console.warn(error);
+        return;
       }
 
-      const surfaceSegmentationData = await this._surfacePostOp(
-        segmentation,
-        rawSurfaceData
-      );
+      const geometryIds = [];
+      const promises = rawSurfacesData.map((rawSurfaceData, index) => {
+        const closedSurface = {
+          id: `segmentation_${segmentation.segmentationId}_surface_${index}`,
+          color: [
+            Math.random() * 255,
+            Math.random() * 255,
+            Math.random() * 255,
+          ],
+          frameOfReferenceUID: 'test-frameOfReferenceUID',
+          data: {
+            points: rawSurfaceData.points,
+            polys: rawSurfaceData.polys,
+          },
+        };
 
-      return surfaceSegmentationData;
+        geometryIds.push(closedSurface.id);
+
+        const geometryId = closedSurface.id;
+        return geometryLoader.createAndCacheGeometry(geometryId, {
+          type: Enums.GeometryType.SURFACE,
+          geometryData: closedSurface as Types.PublicSurfaceData,
+        });
+      });
+
+      await Promise.all(promises);
+
+      addRepresentationData({
+        segmentationId: segmentation.segmentationId,
+        type: SegmentationRepresentations.Surface,
+        data: {
+          geometryIds,
+        },
+      });
+
+      return {
+        geometryIds,
+      };
     }
   }
 
-  async _surfacePostOp(segmentation, surfaceData) {
-    const closedSurface = {
-      // Todo: make configurable
-      id: 'closedSurface',
-      color: [200, 232, 20],
-      frameOfReferenceUID: 'test-frameOfReferenceUID',
-      data: {
-        points: surfaceData.points,
-        polys: surfaceData.polys,
-      },
-    };
-
-    const geometryId = closedSurface.id;
-    await geometryLoader.createAndCacheGeometry(geometryId, {
-      type: Enums.GeometryType.SURFACE,
-      geometryData: closedSurface as Types.PublicSurfaceData,
-    });
-
-    // Add the segmentations to state
-    addRepresentationData({
-      segmentationId: segmentation.segmentationId,
-      type: SegmentationRepresentations.Surface,
-      data: {
-        geometryId,
-      },
-    });
-
-    return {
-      geometryId,
-    };
-  }
-
-  async convertLabelmapToSurface(segmentationId, segmentIndices) {
+  async labelmapToSurfaceData(
+    segmentationId,
+    segmentIndices
+  ): Promise<Types.SurfaceData[]> {
     await this.initializeIfNecessary();
 
     // Todo: validate valid labelmap representation
@@ -110,14 +118,23 @@ class PolySegManager {
       ? segmentIndices
       : getUniqueSegmentIndices(segmentationId);
 
-    const surface = isVolume
-      ? await this._convertVolumeLabelmapToSurface(segmentation, indices)
-      : await this._convertStackLabelmapToSurface(segmentation, indices);
+    const promises = indices.map((index) => {
+      const surface = isVolume
+        ? this._convertVolumeLabelmapToSurface(segmentation, index)
+        : this._convertStackLabelmapToSurface(segmentation, index);
 
-    return surface;
+      return surface;
+    });
+
+    const surfaces = (await Promise.all(promises)) as Types.SurfaceData[];
+
+    return surfaces;
   }
 
-  async _convertVolumeLabelmapToSurface(segmentation, segmentIndices) {
+  async _convertVolumeLabelmapToSurface(
+    segmentation,
+    segmentIndex
+  ): Promise<Types.SurfaceData> {
     const volumeId = segmentation.representationData.LABELMAP.volumeId;
 
     const volume = cache.getVolume(volumeId);
@@ -131,11 +148,14 @@ class PolySegManager {
       spacing,
       direction,
       origin,
-      segmentIndices
-    );
+      [segmentIndex]
+    ) as Types.SurfaceData;
   }
 
-  async _convertStackLabelmapToSurface(segmentation, segmentIndices) {
+  async _convertStackLabelmapToSurface(
+    segmentation,
+    segmentIndices
+  ): Promise<Types.SurfaceData> {
     throw new Error('Not implemented yet');
   }
 }

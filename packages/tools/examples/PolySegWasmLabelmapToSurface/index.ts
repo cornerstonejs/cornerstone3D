@@ -266,16 +266,16 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+    [viewportId1, viewportId2]
   );
 
-  const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
-    .actor as Types.VolumeActor;
+  // const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
+  //   .actor as Types.VolumeActor;
 
-  utilities.applyPreset(
-    volumeActor,
-    CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-  );
+  // utilities.applyPreset(
+  //   volumeActor,
+  //   CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+  // );
 
   // Add some segmentations based on the source data volume
   // Create a segmentation of the same resolution as the source data
