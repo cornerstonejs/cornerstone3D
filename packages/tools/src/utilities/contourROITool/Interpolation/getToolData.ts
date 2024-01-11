@@ -34,14 +34,19 @@ export default function getToolData(eventData, points, referencedToolData) {
           },
         },
       },
-      polyline: [], // Polyline coordinates
+      contour: {
+        polyline: [], // Polyline coordinates
+        closed: true,
+      },
       label: referencedToolData.data.label,
       cachedStats: {},
     },
   };
 
+  const { polyline } = annotation.data.contour;
   for (let i = 0; i < points.length; i++) {
-    annotation.data.polyline.push([points[i][0], points[i][1], points[i][2]]);
+    polyline.push([points[i][0], points[i][1], points[i][2]]);
   }
+  console.log('Updated annotation', polyline.length, annotation);
   return annotation;
 }

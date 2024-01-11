@@ -73,7 +73,7 @@ function startInterpolation(viewportData: InterpolationViewportData) {
  * _linearlyInterpolateBetween - Linearly interpolate all the slices in the
  * indices array between the contourPair.
  *
- * @param indicies - Number[], An array of slice indices to interpolate.
+ * @param indices - Number[], An array of slice indices to interpolate.
  * @param annotationPair - Number[], The slice indicies of the reference contours.
  * @param interpolationData - object
  * @param eventData - object
@@ -81,22 +81,22 @@ function startInterpolation(viewportData: InterpolationViewportData) {
  */
 
 function _linearlyInterpolateBetween(
-  indicies,
+  indices,
   annotationPair,
   interpolationData,
   eventData
 ) {
   const c1 = _generateClosedContour(
-    interpolationData[annotationPair[0]].annotations[0].data.polyline
+    interpolationData[annotationPair[0]].annotations[0].data.contour.polyline
   );
   const c2 = _generateClosedContour(
-    interpolationData[annotationPair[1]].annotations[0].data.polyline
+    interpolationData[annotationPair[1]].annotations[0].data.contour.polyline
   );
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
 
   // Using the newly constructed contours, interpolate each ROI.
-  indicies.forEach(function (index) {
+  indices.forEach(function (index) {
     _linearlyInterpolateContour(
       c1Interp,
       c2Interp,
@@ -198,11 +198,7 @@ function _addInterpolatedContour(
     interpolatedAnnotation.metadata.referencedImageId = imageIds[sliceIndex];
   }
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
-  annotation.state.addAnnotation(
-    interpolatedAnnotation,
-    viewport.element,
-    true
-  );
+  annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
 }
 
 /**

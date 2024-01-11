@@ -28,10 +28,18 @@ console.warn(
 const {
   PanTool,
   StackScrollMouseWheelTool,
+  PlanarFreehandContourSegmentationTool,
+  PlanarFreehandROITool,
+  SplineContourSegmentationTool,
+  SplineROITool,
+  LivewireContourSegmentationTool,
+  LivewireContourTool,
+  SegmentationDisplayTool,
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   annotation,
+  segmentation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -43,6 +51,8 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
+const segmentationId = `SEGMENTATION_ID`;
+let segmentationRepresentationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -73,6 +83,35 @@ viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
+
+const toolsNames = [
+  ContourROITool.toolName,
+  PlanarFreehandROITool.toolName,
+  PlanarFreehandContourSegmentationTool.toolName,
+];
+let selectedToolName = toolsNames[0];
+
+addDropdownToToolbar({
+  options: { values: toolsNames, defaultValue: selectedToolName },
+  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
+    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+
+    // Set the old tool passive
+    toolGroup.setToolPassive(selectedToolName);
+
+    selectedToolName = <string>newSelectedToolName;
+  },
+});
 
 const instructions = document.createElement('p');
 instructions.innerText = `
@@ -190,6 +229,15 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(ContourROITool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(SplineContourSegmentationTool);
+  cornerstoneTools.addTool(SplineROITool);
+  cornerstoneTools.addTool(LivewireContourSegmentationTool);
+  cornerstoneTools.addTool(LivewireContourTool);
+
+  cornerstoneTools.addTool(SegmentationDisplayTool);
+
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
@@ -206,7 +254,16 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
+
   toolGroup.addTool(ContourROITool.toolName, { cachedStats: true });
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+  toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(SplineContourSegmentationTool.toolName);
+  toolGroup.addTool(SplineROITool.toolName);
+  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
+  toolGroup.addTool(LivewireContourTool.toolName);
+
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
@@ -333,6 +390,41 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+
+  // Add a segmentation that will contains the contour annotations
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+        data: {
+          // geometryIds may not be used anymore because it will be removed in a
+          // near future but it is still initialized for backward compatibility
+          geometryIds: [],
+        },
+      },
+    },
+  ]);
+
+  // Create a segmentation representation associated to the toolGroupId
+  const segmentationRepresentationUIDs =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
+
+  // Store the segmentation representation that was just created
+  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
+
+  // Make the segmentation created as the active one
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+
+  updateActiveSegmentIndex(1);
 }
 
 function getViewportDataBasedOnAnnotation(annotationData) {
@@ -366,6 +458,10 @@ function triggerLabelUpdateCallback(eventData, annotation) {
   };
 
   triggerEvent(eventTarget, Events.ANNOTATION_LABEL_CHANGE, eventDetail);
+}
+
+function updateActiveSegmentIndex(segmentIndex: number): void {
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, segmentIndex);
 }
 
 run();

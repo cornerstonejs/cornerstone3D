@@ -195,11 +195,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         // The proximity at which we fallback to the simplest grabbing logic for
         // determining what index of the contour to start editing.
         checkCanvasEditFallbackProximity: 6,
+        // For closed contours, make them clockwise
+        makeClockWise: true,
         // The relative distance that points should be dropped along the polyline
         // in units of the image pixel spacing. A value of 1 means that nodes must
         // be placed no closed than the image spacing apart. A value of 4 means that 4
         // nodes should be placed within the space of one image pixel size. A higher
-        // value gives more finese to the tool/smoother lines, but the value cannot
+        // value gives more finesse to the tool/smoother lines, but the value cannot
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
         interpolation: {
@@ -539,6 +541,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         cachedStats: {},
       },
     });
+    console.log('Contour annotation=', contourAnnotation);
   }
 
   protected getAnnotationStyle(context) {

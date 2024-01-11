@@ -1,5 +1,4 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -17,6 +16,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
+import reverseIfAntiClockwise from '../../../utilities/contourROITool/reverseIfAntiClockwise';
 
 const {
   addCanvasPointsToArray,
@@ -216,9 +216,13 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const updatedPoints = shouldInterpolate(this.configuration)
-    ? getInterpolatedPoints(this.configuration, canvasPoints)
+  const clockwise = this.configuration.makeClockWise
+    ? reverseIfAntiClockwise(canvasPoints)
     : canvasPoints;
+
+  const updatedPoints = shouldInterpolate(this.configuration)
+    ? getInterpolatedPoints(this.configuration, clockwise)
+    : clockwise;
 
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do

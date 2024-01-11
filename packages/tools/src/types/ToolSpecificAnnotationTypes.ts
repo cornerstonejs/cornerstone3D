@@ -264,8 +264,7 @@ export type PlanarFreehandROIAnnotation = ContourAnnotation & {
 export type PlanarFreehandContourSegmentationAnnotation =
   PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
 
-export interface InterpolationROIAnnotation
-  extends PlanarFreehandROIAnnotation {
+export type InterpolationROIAnnotation = PlanarFreehandROIAnnotation & {
   metadata: {
     cameraPosition?: Types.Point3;
     cameraFocalPoint?: Types.Point3;
@@ -278,7 +277,7 @@ export interface InterpolationROIAnnotation
     referencedSliceIndex?: number;
   };
   interpolationUID?: string;
-}
+};
 
 export interface ArrowAnnotation extends Annotation {
   data: {

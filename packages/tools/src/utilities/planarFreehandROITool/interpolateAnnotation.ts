@@ -65,7 +65,9 @@ export default function interpolateAnnotation(
   const { viewport } = enabledElement;
   // use only 2 dimensions on interpolation (what visually matters),
   // otherwise a 3d interpolation might have a totally different output as it consider one more dimension.
-  const canvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
+  const canvasPoints = annotation.data.contour.polyline.map(
+    viewport.worldToCanvas
+  );
   const interpolatedCanvasPoints = <Types.Point2[]>(
     interpolateSegmentPoints(
       canvasPoints,
@@ -79,7 +81,7 @@ export default function interpolateAnnotation(
     return false;
   }
 
-  annotation.data.polyline = interpolatedCanvasPoints.map(
+  annotation.data.contour.polyline = interpolatedCanvasPoints.map(
     viewport.canvasToWorld
   );
 
