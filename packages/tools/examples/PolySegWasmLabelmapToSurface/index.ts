@@ -100,38 +100,6 @@ const toolGroupId2 = '2';
 addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
-    const result = await segmentation.polySeg.convertLabelmapToSurface({
-      segmentationId,
-      segmentIndices: [1],
-    });
-
-    result.points = result.points || [];
-    result.polys = result.polys || [];
-
-    const closedSurface = {
-      id: 'closedSurface',
-      color: [200, 232, 20],
-      frameOfReferenceUID: 'test-frameOfReferenceUID',
-      data: {
-        points: result.points,
-        polys: result.polys,
-      },
-    };
-    const geometryId = closedSurface.id;
-    geometryLoader.createAndCacheGeometry(geometryId, {
-      type: Enums.GeometryType.SURFACE,
-      geometryData: closedSurface as Types.PublicSurfaceData,
-    });
-
-    // Add the segmentations to state
-    segmentation.addRepresentationData({
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
-      data: {
-        geometryId,
-      },
-    });
-
     // add the 3d representation to the 3d toolgroup
     await segmentation.addSegmentationRepresentations(toolGroupId2, [
       {

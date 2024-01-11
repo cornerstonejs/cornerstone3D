@@ -1,7 +1,9 @@
 import ICRPolySeg from '@icr/polyseg-wasm';
+import { Enums, Types, cache, geometryLoader } from '@cornerstonejs/core';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { getSegmentation } from './segmentationState';
-import { cache } from '@cornerstonejs/core';
+import addRepresentationData from './addRepresentationData';
 
 /**
  * Class to control polymorphic segmentations
@@ -34,13 +36,66 @@ class PolySegManager {
     }
   }
 
-  async convertLabelmapToSurface({
-    segmentationId,
-    segmentIndices,
-  }: {
-    segmentationId: string;
-    segmentIndices: number[];
-  }) {
+  async getComputedSurfaceData(segmentation) {
+    // need to check what is the underlying
+    // representation and convert it to surface
+    const representationData = segmentation.representationData;
+
+    if (representationData.LABELMAP?.volumeId) {
+      // convert volume labelmap to surface
+      let rawSurfaceData;
+      try {
+        rawSurfaceData = await this.convertLabelmapToSurface(
+          segmentation.segmentationId,
+          []
+        );
+      } catch (error) {
+        console.warn('Error converting volume labelmap to surface');
+        console.warn(error);
+      }
+
+      const surfaceSegmentationData = await this._surfacePostOp(
+        segmentation,
+        rawSurfaceData
+      );
+
+      return surfaceSegmentationData;
+    }
+  }
+
+  async _surfacePostOp(segmentation, surfaceData) {
+    const closedSurface = {
+      // Todo: make configurable
+      id: 'closedSurface',
+      color: [200, 232, 20],
+      frameOfReferenceUID: 'test-frameOfReferenceUID',
+      data: {
+        points: surfaceData.points,
+        polys: surfaceData.polys,
+      },
+    };
+
+    const geometryId = closedSurface.id;
+    await geometryLoader.createAndCacheGeometry(geometryId, {
+      type: Enums.GeometryType.SURFACE,
+      geometryData: closedSurface as Types.PublicSurfaceData,
+    });
+
+    // Add the segmentations to state
+    addRepresentationData({
+      segmentationId: segmentation.segmentationId,
+      type: SegmentationRepresentations.Surface,
+      data: {
+        geometryId,
+      },
+    });
+
+    return {
+      geometryId,
+    };
+  }
+
+  async convertLabelmapToSurface(segmentationId, segmentIndices) {
     await this.initializeIfNecessary();
 
     // Todo: validate valid labelmap representation

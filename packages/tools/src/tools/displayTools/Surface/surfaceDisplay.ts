@@ -15,6 +15,7 @@ import {
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
+import { polySeg } from '../../../stateManagement/segmentation';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -72,7 +73,20 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
-  const SurfaceData = segmentation.representationData[Representations.Surface];
+  let SurfaceData = segmentation.representationData[Representations.Surface];
+
+  if (!SurfaceData) {
+    // we need to check if we can request polySEG to convert the other
+    // underlying representations to Surface
+    SurfaceData = await polySeg.getComputedSurfaceData(segmentation);
+
+    if (!SurfaceData) {
+      throw new Error(
+        `No Surface data found for segmentationId ${segmentationId}.`
+      );
+    }
+  }
+
   const { geometryId } = SurfaceData;
 
   if (!geometryId) {
