@@ -6,8 +6,6 @@ import {
   volumeLoader,
   utilities,
   CONSTANTS,
-  geometryLoader,
-  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -15,6 +13,7 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -97,6 +96,8 @@ content.append(instructions);
 const toolGroupId = '1';
 const toolGroupId2 = '2';
 
+const segmentIndexes = [1, 2, 3, 4, 5];
+
 addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
@@ -107,6 +108,17 @@ addButtonToToolbar({
         type: csToolsEnums.SegmentationRepresentations.Surface,
       },
     ]);
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Segment Index',
+  options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      nameAsStringOrNumber as number
+    );
   },
 });
 

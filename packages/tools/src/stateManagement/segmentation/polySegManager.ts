@@ -4,6 +4,7 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { getSegmentation } from './segmentationState';
 import addRepresentationData from './addRepresentationData';
+import { getUniqueSegmentIndices } from '../../utilities/segmentation';
 
 /**
  * Class to control polymorphic segmentations
@@ -15,7 +16,7 @@ class PolySegManager {
   // constructor() {}
 
   /**
-   * Initialize the polyseg wasm module
+   * Initialize the polySeg wasm module
    * @returns {Promise<void>}
    */
   async init() {
@@ -36,7 +37,7 @@ class PolySegManager {
     }
   }
 
-  async getComputedSurfaceData(segmentation) {
+  async getComputedSurfaceData(segmentation, segmentIndices = []) {
     // need to check what is the underlying
     // representation and convert it to surface
     const representationData = segmentation.representationData;
@@ -47,7 +48,7 @@ class PolySegManager {
       try {
         rawSurfaceData = await this.convertLabelmapToSurface(
           segmentation.segmentationId,
-          []
+          segmentIndices
         );
       } catch (error) {
         console.warn('Error converting volume labelmap to surface');
@@ -105,9 +106,13 @@ class PolySegManager {
       segmentation.representationData.LABELMAP
     );
 
+    const indices = segmentIndices.length
+      ? segmentIndices
+      : getUniqueSegmentIndices(segmentationId);
+
     const surface = isVolume
-      ? await this._convertVolumeLabelmapToSurface(segmentation, segmentIndices)
-      : await this._convertStackLabelmapToSurface(segmentation, segmentIndices);
+      ? await this._convertVolumeLabelmapToSurface(segmentation, indices)
+      : await this._convertStackLabelmapToSurface(segmentation, indices);
 
     return surface;
   }

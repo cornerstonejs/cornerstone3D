@@ -20,6 +20,7 @@ import contourAndFindLargestBidirectional from './contourAndFindLargestBidirecti
 import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
+import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
 
 export {
   thresholdVolumeByRange,
@@ -40,4 +41,5 @@ export {
   createBidirectionalToolData,
   segmentContourAction,
   invalidateBrushCursor,
+  getUniqueSegmentIndices,
 };
