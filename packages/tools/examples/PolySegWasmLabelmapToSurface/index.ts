@@ -1,4 +1,3 @@
-import ICRPolySeg from '@icr/polyseg-wasm';
 import {
   RenderingEngine,
   Types,
@@ -95,29 +94,25 @@ instructions.innerText = `
 content.append(instructions);
 
 // ============================= //
-let polySeg = undefined;
 const toolGroupId = '1';
 const toolGroupId2 = '2';
 
 addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
-    if (!polySeg.instance) {
-      return;
-    }
-
     const labelmap = cache.getVolume(segmentationId);
 
     const int32Array = new Int32Array(labelmap.scalarData);
-    // const int32Array = new Int32Array(labelmap.data);
-    const result = polySeg.instance.convertLabelmapToSurface(
-      int32Array,
-      labelmap.dimensions,
-      labelmap.spacing,
-      labelmap.direction,
-      labelmap.origin,
-      [1]
-    );
+    const result = await segmentation.polySeg.convertLabelmapToSurface({
+      scalarData: int32Array,
+      metadata: {
+        dimensions: labelmap.dimensions,
+        spacing: labelmap.spacing,
+        direction: labelmap.direction,
+        origin: labelmap.origin,
+      },
+      segmentIndices: [1],
+    });
 
     result.points = result.points || [];
     result.polys = result.polys || [];
@@ -156,39 +151,12 @@ addButtonToToolbar({
   },
 });
 
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: segmentationId,
-  });
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: segmentationId,
-        },
-      },
-    },
-  ]);
-}
-
 /**
  * Runs the demo
  */
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  polySeg = await new ICRPolySeg();
-  polySeg.initialize();
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -275,9 +243,6 @@ async function run() {
     imageIds,
   });
 
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
-
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -341,8 +306,28 @@ async function run() {
     CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
   );
 
-  const viewport = renderingEngine.getViewport(viewportId3);
-  viewport.render();
+  // Add some segmentations based on the source data volume
+  // Create a segmentation of the same resolution as the source data
+  // using volumeLoader.createAndCacheDerivedVolume.
+  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add the segmentations to state
+  await segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
 
   // // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [

@@ -4,6 +4,7 @@ import addSegmentationRepresentations from './addSegmentationRepresentations';
 import addRepresentationData from './addRepresentationData';
 import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation';
 import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation';
+import { polySegManager } from './polySegManager';
 
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
@@ -27,4 +28,5 @@ export {
   triggerSegmentationEvents,
   convertStackToVolumeSegmentation,
   convertVolumeToStackSegmentation,
+  polySegManager as polySeg,
 };
