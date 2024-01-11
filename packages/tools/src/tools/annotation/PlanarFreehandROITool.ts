@@ -30,7 +30,7 @@ import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
-import {
+import type {
   EventTypes,
   ToolHandle,
   Annotation,
@@ -541,7 +541,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         cachedStats: {},
       },
     });
-    console.log('Contour annotation=', contourAnnotation);
   }
 
   protected getAnnotationStyle(context) {

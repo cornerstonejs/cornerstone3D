@@ -10,6 +10,8 @@ import EventTypes from '../../../../enums/Events';
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
+let interpolating = false;
+
 /**
  * interpolate - Interpolate missing contours in the ROIContours.
  * If input is tool data collection, it is expected to be sorted in the order of stack image in which it was drawn
@@ -18,8 +20,16 @@ const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-samplin
  * @returns null
  */
 function interpolate(viewportData: InterpolationViewportData) {
+  if (interpolating) {
+    return;
+  }
   setTimeout(() => {
-    startInterpolation(viewportData);
+    try {
+      interpolating = true;
+      startInterpolation(viewportData);
+    } finally {
+      interpolating = false;
+    }
   }, 1);
 }
 
