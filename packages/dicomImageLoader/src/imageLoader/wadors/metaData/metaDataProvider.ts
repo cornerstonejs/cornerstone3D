@@ -19,6 +19,7 @@ import {
   getInstanceModule,
   instanceModuleNames,
 } from '../../getInstanceModule';
+import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = external.cornerstone.Enums;
@@ -163,6 +164,20 @@ function metaDataProvider(type, imageId) {
       rowPixelSpacing,
       columnPixelSpacing,
     };
+  }
+  if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
+    return getUSEnhancedRegions(metaData);
+  }
+
+  if (type === MetadataModules.CALIBRATION) {
+    const modality = getValue(metaData['00080060']);
+
+    if (modality === 'US') {
+      const enhancedRegion = getUSEnhancedRegions(metaData);
+      return {
+        sequenceOfUltrasoundRegions: enhancedRegion,
+      };
+    }
   }
 
   if (type === MetadataModules.IMAGE_URL) {

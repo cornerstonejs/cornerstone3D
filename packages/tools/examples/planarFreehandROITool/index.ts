@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -71,29 +72,48 @@ viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-Drawing:
+createInfoSection(content, { title: 'Drawing' })
+  .addInstruction('Left click and drag to draw a contour')
+  .openNestedSection()
+  .addInstruction(
+    'If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)'
+  );
 
-- Left click and drag to draw a contour.
--- If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)
+createInfoSection(content, { title: 'Editing' })
+  .addInstruction(
+    'Left click and drag on the line of an existing contour to edit it'
+  )
+  .openNestedSection()
+  .addInstruction('Closed Contours')
+  .openNestedSection()
+  .addInstruction(
+    'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
+  )
+  .closeNestedSection()
+  .addInstruction('Open Contours')
+  .openNestedSection()
+  .addInstruction(
+    'Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).'
+  )
+  .addInstruction(
+    'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
+  )
+  .addInstruction(
+    'If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.'
+  )
+  .closeNestedSection();
 
-Editing:
-- Left click and drag on the line of an existing contour to edit it:
--- Closed Contours:
---- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
--- Open Contours:
---- Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).
---- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
---- If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.
-
-Setting an open annotation to join the endpoints and draw the longest line from the midpoint to the contour (for horseshoe shaped contours, e.g. in Cardiac workflows) (In the future this should likely be pulled out to its own tool):
-- Draw an open contour as a horseshow shape.
-- With the open contour selected, click the 'Render selected open contour with joined ends and midpoint line' button.
-- The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.
-`;
-
-content.append(instructions);
+createInfoSection(content, {
+  title:
+    'Setting an open annotation to join the endpoints and draw the longest line from the midpoint to the contour (for horseshoe shaped contours, e.g. in Cardiac workflows) (In the future this should likely be pulled out to its own tool)',
+})
+  .addInstruction('Draw an open contour as a horseshow shape.')
+  .addInstruction(
+    'With the open contour selected, click the "Render selected open contour with joined ends and midpoint line" button.'
+  )
+  .addInstruction(
+    'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
+  );
 
 addButtonToToolbar({
   title: 'Render selected open contour with joined ends and midpoint line',

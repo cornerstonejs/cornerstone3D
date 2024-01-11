@@ -41,9 +41,8 @@ function getPixelData(
     return rangeRequest(url, imageId, headers, options);
   }
 
-  // Default to streaming the response data so that it can be decoding in
-  // a streaming parser.
-  if (retrieveOptions.streaming !== false) {
+  // Use the streaming parser only when configured to do so
+  if (retrieveOptions.streaming) {
     return streamRequest(url, imageId, headers, options);
   }
 

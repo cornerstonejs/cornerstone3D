@@ -4,12 +4,12 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import {
   cache,
   getEnabledElementByIds,
+  StackViewport,
   Types,
-  utilities,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import type {
@@ -18,7 +18,6 @@ import type {
   LabelmapSegmentationData,
 } from '../../../types/LabelmapTypes';
 import {
-  RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
@@ -31,75 +30,14 @@ import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackV
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
-/**
- * For each viewport, in the toolGroup it adds the segmentation labelmap
- * representation to its viewports.
- * @param toolGroup - the tool group that contains the viewports
- * @param representationInput - The segmentation representation input
- * @param toolGroupSpecificConfig - The configuration object for toolGroup
- *
- * @returns The UID of the new segmentation representation
- */
-async function addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  const { segmentationId } = representationInput;
-  const segmentationRepresentationUID = utilities.uuidv4();
-
-  // Todo: make these configurable during representation input by user
-  const segmentsHidden = new Set() as Set<number>;
-  const colorLUTIndex = 0;
-  const active = true;
+function getRepresentationRenderingConfig() {
   const cfun = vtkColorTransferFunction.newInstance();
   const ofun = vtkPiecewiseFunction.newInstance();
-
   ofun.addPoint(0, 0);
-
-  const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
-    segmentationId,
-    segmentationRepresentationUID,
-    type: Representations.Labelmap,
-    segmentsHidden,
-    colorLUTIndex,
-    active,
-    segmentationRepresentationSpecificConfig: {},
-    segmentSpecificConfig: {},
-    config: {
-      cfun,
-      ofun,
-    },
+  return {
+    ofun,
+    cfun,
   };
-
-  // Update the toolGroup specific configuration
-  if (toolGroupSpecificConfig) {
-    // Since setting configuration on toolGroup will trigger a segmentationRepresentation
-    // update event, we don't want to trigger the event twice, so we suppress
-    // the first one
-    const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-
-    const mergedConfig = utilities.deepMerge(
-      currentToolGroupConfig,
-      toolGroupSpecificConfig
-    );
-
-    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations:
-        mergedConfig.renderInactiveSegmentations || true,
-      representations: {
-        ...mergedConfig.representations,
-      },
-    });
-  }
-
-  SegmentationState.addSegmentationRepresentation(
-    toolGroupId,
-    toolGroupSpecificRepresentation
-  );
-
-  return segmentationRepresentationUID;
 }
 
 /**
@@ -192,11 +130,21 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    console.warn('No segmentation found for segmentationId: ', segmentationId);
+    return;
+  }
+
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
 
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
   if (isVolumeSegmentation(labelmapData)) {
+    if (viewport instanceof StackViewport) {
+      return;
+    }
+
     const { volumeId: labelmapUID } = labelmapData;
 
     const labelmap = cache.getVolume(labelmapUID);
@@ -220,6 +168,10 @@ async function render(
 
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   } else {
+    if (viewport instanceof VolumeViewport) {
+      return;
+    }
+
     // stack segmentation
     const imageId = viewport.getCurrentImageId();
     const { imageIdReferenceMap } = labelmapData;
@@ -349,26 +301,38 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
-  const actor = actorEntry.actor as Types.Actor;
+  const actor = actorEntry.actor as Types.VolumeActor;
 
-  // @ts-ignore
   actor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
 
-  // @ts-ignore
   actor.getProperty().setScalarOpacity(0, ofun);
-  // @ts-ignore
   actor.getProperty().setInterpolationTypeToNearest();
+  actor.getProperty().setUseLabelOutline(renderOutline);
 
-  if (utilities.actorIsA(actorEntry, 'vtkVolume')) {
-    // @ts-ignore
-    actor.getProperty().setUseLabelOutline(renderOutline);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineThickness(outlineWidth);
+  // @ts-ignore - fix type in vtk
+  actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+
+  const { activeSegmentIndex } = SegmentationState.getSegmentation(
+    segmentationRepresentation.segmentationId
+  );
+
+  // create an array that contains all the segment indices and for the active
+  // segment index, use the activeSegmentOutlineWidthDelta, otherwise use the
+  // outlineWidth
+  // Pre-allocate the array with the required size to avoid dynamic resizing.
+  const outlineWidths = new Array(numColors - 1);
+
+  for (let i = 1; i < numColors; i++) {
+    // Start from 1 to skip the background segment index.
+    outlineWidths[i - 1] =
+      i === activeSegmentIndex
+        ? outlineWidth + toolGroupLabelmapConfig.activeSegmentOutlineWidthDelta
+        : outlineWidth;
   }
+
+  actor.getProperty().setLabelOutlineThickness(outlineWidths);
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
@@ -532,7 +496,13 @@ async function _addLabelmapToViewport(
 }
 
 export default {
+  getRepresentationRenderingConfig,
   render,
-  addSegmentationRepresentation,
+  removeSegmentationRepresentation,
+};
+
+export {
+  getRepresentationRenderingConfig,
+  render,
   removeSegmentationRepresentation,
 };

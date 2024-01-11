@@ -56,6 +56,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
     scalarDataArrays.push(volumeInfo.scalarData);
   });
 
+  const sortedImageIds = sortedImageIdsArrays.flat();
   let streamingImageVolume = new StreamingDynamicImageVolume(
     // ImageVolume properties
     {
@@ -67,10 +68,11 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       direction,
       scalarData: scalarDataArrays,
       sizeInBytes,
+      imageIds: sortedImageIds,
     },
     // Streaming properties
     {
-      imageIds: sortedImageIdsArrays.flat(),
+      imageIds: sortedImageIds,
       loadStatus: {
         // todo: loading and loaded should be on ImageVolume
         loaded: false,

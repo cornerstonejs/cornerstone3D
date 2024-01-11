@@ -35,6 +35,10 @@
         "name": "Stack Viewport API",
         "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
       },
+      "stackPosition": {
+        "name": "Stack Viewport Positioning",
+        "description": "Demonstrates basic positioning of the viewport image using display area and flip/rotation"
+      },
       "stackVoiSigmoid": {
         "name": "Stack Sigmoid LUT",
         "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
@@ -220,6 +224,18 @@
       "advancedColorBar": {
         "name": "Advanced Colorbar",
         "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
+      },
+      "ultrasoundenhancedregion": {
+        "name": "Ultrasound Enhanced Region",
+        "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
+      },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
+      "livewireContour": {
+        "name": "Livewire",
+        "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
     "video" : {
@@ -289,6 +305,10 @@
         "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
       },
+      "labelmapSegmentationDynamicThreshold": {
+        "name": "Labelmap Segmentation Dynamic Threshold and Preview",
+        "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
+      },
       "labelmapSegmentLocking": {
         "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
@@ -308,6 +328,30 @@
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
+      "segmentBidirectionalTool": {
+        "name": "Segmentation Bidirectional Tool",
+        "description": "Demonstrates the calculation of largest bidirectional diameters within segmented contours, akin to RECIST measurements for assessing changes in tumor sizes or anatomical structures over time in medical imaging."
+      },
+      "segmentSelect": {
+        "name": "Segment Select Tool",
+        "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
+      },
+      "splineContourSegmentationTools": {
+        "name": "Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool"
+      },
+      "splineContourSegmentationToolsAdvanced": {
+        "name": "Advanced Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool on multiple viewports (stack and volume), segmentations and different styles for active and inactive states"
+      },
+      "planarFreehandContourSegmentationTool": {
+        "name": "Freehand Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using planarFreehandROITool tool"
+      },
+      "livewireContourSegmentation": {
+        "name": "Livewire Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using livewireContour tool"
       }
     },
     "tools-advanced": {
@@ -343,6 +387,10 @@
         "name": "StackViewport <--> VolumeViewport ",
         "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
       },
+      "stackToVolumeWithSegmentations": {
+        "name": "Stack Segmentation <--> Volume Segmentation ",
+        "description": "Demonstrates how you can convert stack to volume segmentation and vice versa while the data is preserved and memory is optimized"
+      },
       "volumeViewportSynchronization": {
         "name": "Volume Viewport Synchronization",
         "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
@@ -357,7 +405,7 @@
       },
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
-        "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
+        "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
       }
     },
     "dicom-image-loader": {

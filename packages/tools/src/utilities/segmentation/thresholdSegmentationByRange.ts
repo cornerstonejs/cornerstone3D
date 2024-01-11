@@ -64,7 +64,7 @@ function thresholdSegmentationByRange(
 }
 
 function _handleDifferentSizeVolume(
-  scalarData: Types.VolumeScalarData,
+  scalarData: Types.PixelDataTypedArray,
   segmentationIndex: number,
   volumeInfo: any,
   volumeInfoList: any,
@@ -112,7 +112,7 @@ function _handleDifferentSizeVolume(
 }
 
 function _handleSameSizeVolume(
-  scalarData: Types.VolumeScalarData,
+  scalarData: Types.PixelDataTypedArray,
   segmentationIndex: number,
   volumeInfo: any
 ) {

@@ -4,6 +4,14 @@ import type {
   AnnotationState,
   GroupSpecificAnnotations,
 } from './AnnotationTypes';
+import type {
+  ContourAnnotationData,
+  ContourAnnotation,
+} from './ContourAnnotation';
+import type {
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
+} from './ContourSegmentationAnnotation';
 import type * as EventTypes from './EventTypes';
 import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
@@ -34,8 +42,6 @@ import type BoundsIJK from './BoundsIJK';
 import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
-  Color,
-  ColorLUT,
   RepresentationConfig,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
@@ -58,6 +64,7 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type { Statistics } from './CalculatorTypes';
+import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
@@ -74,11 +81,18 @@ import type { ISpline } from './ISpline';
 import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
+import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
+  ContourAnnotationData,
+  ContourAnnotation,
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
+  BidirectionalData,
+  CanvasCoordinates,
   IAnnotationManager,
   GroupSpecificAnnotations,
   AnnotationState,
@@ -120,8 +134,6 @@ export type {
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   RepresentationPublicInput,
-  Color,
-  ColorLUT,
   LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,

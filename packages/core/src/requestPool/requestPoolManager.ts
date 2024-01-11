@@ -230,6 +230,7 @@ class RequestPoolManager {
 
   private sendRequests(type) {
     const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
+    let syncImageCount = 0;
 
     for (let i = 0; i < requestsToSend; i++) {
       const requestDetails = this.getNextRequest(type);
@@ -239,11 +240,27 @@ class RequestPoolManager {
         this.numRequests[type]++;
         this.awake = true;
 
-        requestDetails.requestFn().finally(() => {
+        let requestResult;
+        try {
+          requestResult = requestDetails.requestFn();
+        } catch (e) {
+          // This is the only warning one will get, so need a warn message
+          console.warn('sendRequest failed', e);
+        }
+        if (requestResult?.finally) {
+          requestResult.finally(() => {
+            this.numRequests[type]--;
+            this.startAgain();
+          });
+        } else {
+          // Handle non-async request functions too - typically just short circuit ones
           this.numRequests[type]--;
-          this.startAgain();
-        });
+          syncImageCount++;
+        }
       }
+    }
+    if (syncImageCount) {
+      this.startAgain();
     }
 
     return true;

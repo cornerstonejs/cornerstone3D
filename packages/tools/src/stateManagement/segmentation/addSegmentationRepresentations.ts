@@ -2,18 +2,9 @@ import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes';
-import Representations from '../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../store/ToolGroupManager';
 
-import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { contourDisplay } from '../../tools/displayTools/Contour';
-import { surfaceDisplay } from '../../tools/displayTools/Surface';
-
-const displayFunctions = {
-  [Representations.Labelmap]: labelmapDisplay,
-  [Representations.Contour]: contourDisplay,
-  [Representations.Surface]: surfaceDisplay,
-};
+import { addSegmentationRepresentation } from './addSegmentationRepresentation';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -38,7 +29,7 @@ async function addSegmentationRepresentations(
   }
 
   const promises = representationInputArray.map((representationInput) => {
-    return _addSegmentationRepresentation(
+    return addSegmentationRepresentation(
       toolGroupId,
       representationInput,
       toolGroupSpecificRepresentationConfig
@@ -48,26 +39,6 @@ async function addSegmentationRepresentations(
   const segmentationRepresentationUIDs = await Promise.all(promises);
 
   return segmentationRepresentationUIDs;
-}
-
-async function _addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  const displayFunction = displayFunctions[representationInput.type];
-
-  if (!displayFunction) {
-    throw new Error(
-      `Unsupported representation type: ${representationInput.type}`
-    );
-  }
-
-  return displayFunction.addSegmentationRepresentation(
-    toolGroupId,
-    representationInput,
-    toolGroupSpecificRepresentationConfig
-  );
 }
 
 export default addSegmentationRepresentations;

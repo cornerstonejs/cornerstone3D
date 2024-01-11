@@ -125,6 +125,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
@@ -132,6 +134,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     hasVolumeId(volumeId: string): boolean;
     // (undocumented)
     protected initialTransferFunctionNodes: any;
+    // (undocumented)
+    protected initialViewUp: Point3;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -147,7 +151,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -177,7 +181,20 @@ enum BlendModes {
 }
 
 // @public (undocumented)
+type BoundsIJK = [Point2, Point2, Point2];
+
+// @public (undocumented)
+type BoundsLPS = [Point3, Point3, Point3];
+
+// @public (undocumented)
 export const cache: Cache_2;
+
+declare namespace cacheUtils {
+    export {
+        setupCacheOptimizationEventListener,
+        performCacheOptimizationForVolume
+    }
+}
 
 // @public (undocumented)
 function calculateViewportsSpatialRegistration(viewport1: IStackViewport | IVolumeViewport, viewport2: IStackViewport | IVolumeViewport): void;
@@ -224,6 +241,12 @@ function cancelLoadImages(imageIds: Array<string>): void;
 
 // @public (undocumented)
 function clamp(value: number, min: number, max: number): number;
+
+// @public (undocumented)
+type Color = [number, number, number, number];
+
+// @public (undocumented)
+type ColorLUT = Array<Color>;
 
 declare namespace colormap {
     export {
@@ -286,6 +309,26 @@ enum ContourType {
 }
 
 // @public (undocumented)
+function convertStackToVolumeViewport({ viewport, options, }: {
+    viewport: IStackViewport;
+    options: {
+        volumeId: string;
+        viewportId?: string;
+        background?: Point3;
+        orientation?: OrientationAxis;
+    };
+}): Promise<IVolumeViewport>;
+
+// @public (undocumented)
+function convertVolumeToStackViewport({ viewport, options, }: {
+    viewport: Types.IVolumeViewport;
+    options: {
+        viewportId?: string;
+        background?: Types.Point3;
+    };
+}): Promise<Types.IStackViewport>;
+
+// @public (undocumented)
 type Cornerstone3DConfig = {
     gpuTier?: TierResult;
     detectGPUConfig: GetGPUTier;
@@ -295,6 +338,7 @@ type Cornerstone3DConfig = {
         useCPURendering: boolean;
         strictZSpacingForVolumeViewport: boolean;
     };
+    enableCacheOptimization: boolean;
 };
 
 // @public (undocumented)
@@ -544,10 +588,22 @@ type CPUImageData = {
 function createAndCacheDerivedImage(referencedImageId: string, options?: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
 
 // @public (undocumented)
-function createAndCacheDerivedImages(referencedImageIds: Array<string>, getDerivedImageId?: (referencedImageId: string) => string): DerivedImages;
+function createAndCacheDerivedImages(referencedImageIds: Array<string>, options?: {
+    getDerivedImageId?: (referencedImageId: string) => string;
+    targetBufferType?: PixelDataTypedArrayString;
+}): DerivedImages;
 
 // @public (undocumented)
-function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<ImageVolume>;
+function createAndCacheDerivedSegmentationImage(referencedImageId: string, options?: DerivedImageOptions): Promise<IImage>;
+
+// @public (undocumented)
+function createAndCacheDerivedSegmentationImages(referencedImageIds: Array<string>, options?: DerivedImageOptions): DerivedImages;
+
+// @public (undocumented)
+function createAndCacheDerivedSegmentationVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
+
+// @public (undocumented)
+function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
 
 // @public (undocumented)
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
@@ -559,6 +615,12 @@ function createAndCacheLocalImage(options: LocalImageOptions, imageId: string, p
 function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
 
 // @public (undocumented)
+function createAndCacheVolumeFromImages(volumeId: string, imageIds: string[], options?: {
+    preventCache?: boolean;
+    additionalDetails?: Record<string, any>;
+}): Promise<IImageVolume>;
+
+// @public (undocumented)
 function createFloat32SharedArray(length: number): Float32Array;
 
 // @public (undocumented)
@@ -568,7 +630,7 @@ function createInt16SharedArray(length: number): Int16Array;
 function createLinearRGBTransferFunction(voiRange: VOIRange): vtkColorTransferFunction;
 
 // @public (undocumented)
-function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): ImageVolume;
+function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): IImageVolume;
 
 // @public (undocumented)
 function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): vtkColorTransferFunction;
@@ -805,6 +867,9 @@ type FlipDirection = {
     flipVertical?: boolean;
 };
 
+// @public (undocumented)
+function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): ImageVolumeProps;
+
 declare namespace geometryLoader {
     export {
         createAndCacheGeometry
@@ -843,6 +908,15 @@ function getColormapNames(): any[];
 
 // @public (undocumented)
 export function getConfiguration(): Cornerstone3DConfig;
+
+// @public (undocumented)
+function getCurrentVolumeViewportSlice(viewport: IVolumeViewport): {
+    width: number;
+    height: number;
+    scalarData: any;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+};
 
 // @public (undocumented)
 export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
@@ -910,6 +984,9 @@ function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera:
 
 // @public (undocumented)
 function getTransferFunctionNodes(transferFunction: any): any[];
+
+// @public (undocumented)
+function getUnknownVolumeLoaderSchema(): string;
 
 // @public (undocumented)
 function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
@@ -1116,7 +1193,7 @@ interface IContourSet {
 // @public (undocumented)
 interface IDynamicImageVolume extends IImageVolume {
     // (undocumented)
-    getScalarDataArrays(): VolumeScalarData[];
+    getScalarDataArrays(): PixelDataTypedArray[];
     // (undocumented)
     get numTimePoints(): number;
     // (undocumented)
@@ -1163,6 +1240,11 @@ interface IGeometryLoadObject {
 // @public (undocumented)
 interface IImage {
     // (undocumented)
+    bufferView?: {
+        buffer: ArrayBuffer;
+        offset: number;
+    };
+    // (undocumented)
     cachedLut?: {
         windowWidth?: number | number[];
         windowCenter?: number | number[];
@@ -1171,6 +1253,8 @@ interface IImage {
         modalityLUT?: unknown;
         voiLUT?: CPUFallbackLUT;
     };
+    // (undocumented)
+    calibration?: IImageCalibration;
     // (undocumented)
     color: boolean;
     // (undocumented)
@@ -1187,6 +1271,8 @@ interface IImage {
     getPixelData: () => PixelDataTypedArray;
     // (undocumented)
     height: number;
+    // (undocumented)
+    imageFrame?: any;
     // (undocumented)
     imageId: string;
     // (undocumented)
@@ -1340,9 +1426,15 @@ export interface IImagesLoader {
 // @public (undocumented)
 interface IImageVolume {
     // (undocumented)
+    additionalDetails?: Record<string, any>;
+    // (undocumented)
     cancelLoading?: () => void;
     // (undocumented)
     convertToCornerstoneImage?: (imageId: string, imageIdIndex: number) => IImageLoadObject;
+    // (undocumented)
+    convertToImageSlicesAndCache(): string[];
+    // (undocumented)
+    decache?: () => void;
     // (undocumented)
     destroy(): void;
     // (undocumented)
@@ -1354,9 +1446,11 @@ interface IImageVolume {
     // (undocumented)
     getImageURIIndex(imageURI: string): number;
     // (undocumented)
-    getScalarData(): VolumeScalarData;
+    getScalarData(): PixelDataTypedArray;
     // (undocumented)
     hasPixelSpacing: boolean;
+    // (undocumented)
+    get imageCacheOffsetMap(): Map<string, any>;
     // (undocumented)
     imageData?: vtkImageData;
     // (undocumented)
@@ -1373,6 +1467,8 @@ interface IImageVolume {
     numVoxels: number;
     // (undocumented)
     origin: Point3;
+    // (undocumented)
+    referencedImageIds?: Array<string>;
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
@@ -1447,6 +1543,8 @@ declare namespace imageLoader {
         registerImageLoader,
         registerUnknownImageLoader,
         unregisterAllImageLoaders,
+        createAndCacheDerivedSegmentationImages,
+        createAndCacheDerivedSegmentationImage,
         ImageLoaderOptions
     }
 }
@@ -1604,9 +1702,19 @@ function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | unde
 
 // @public (undocumented)
 export class ImageVolume implements IImageVolume {
-    constructor(props: IVolume);
+    constructor(props: ImageVolumeProps);
+    // (undocumented)
+    additionalDetails?: Record<string, any>;
     // (undocumented)
     cancelLoading: () => void;
+    // (undocumented)
+    convertToCornerstoneImage(imageId: string, imageIdIndex: number): IImageLoadObject;
+    // (undocumented)
+    convertToImageSlicesAndCache(): string[];
+    // (undocumented)
+    protected cornerstoneImageMetaData: any;
+    // (undocumented)
+    decache(completelyRemove?: boolean): void | Array<string>;
     // (undocumented)
     destroy(): void;
     // (undocumented)
@@ -1614,15 +1722,31 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     direction: Mat3;
     // (undocumented)
+    getCornerstoneImage(imageId: string, imageIdIndex: number): IImage;
+    // (undocumented)
+    getCornerstoneImageLoadObject(imageId: string, imageIdIndex: number): IImageLoadObject;
+    // (undocumented)
+    getCornerstoneImages(): IImage[];
+    // (undocumented)
     getImageIdIndex(imageId: string): number;
     // (undocumented)
     getImageURIIndex(imageURI: string): number;
     // (undocumented)
-    getScalarData(): VolumeScalarData;
+    getScalarData(): PixelDataTypedArray;
+    // (undocumented)
+    getScalarDataArrays(): PixelDataTypedArray[];
+    // (undocumented)
+    protected getScalarDataByImageIdIndex(imageIdIndex: number): PixelDataTypedArray;
+    // (undocumented)
+    getScalarDataLength(): number;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
+    imageCacheOffsetMap: Map<any, any>;
+    // (undocumented)
     imageData?: vtkImageData;
+    // (undocumented)
+    protected imageIdIndexToFrameIndex(imageIdIndex: number): number;
     // (undocumented)
     get imageIds(): Array<string>;
     set imageIds(newImageIds: Array<string>);
@@ -1635,13 +1759,19 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     metadata: Metadata;
     // (undocumented)
+    protected numFrames: number;
+    // (undocumented)
     numVoxels: number;
     // (undocumented)
     origin: Point3;
     // (undocumented)
+    referencedImageIds?: Array<string>;
+    // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
+    removeFromCache(): void;
+    // (undocumented)
+    protected scalarData: PixelDataTypedArray | Array<PixelDataTypedArray>;
     // (undocumented)
     scaling?: {
         PT?: {
@@ -1655,6 +1785,8 @@ export class ImageVolume implements IImageVolume {
     sizeInBytes?: number;
     // (undocumented)
     spacing: Point3;
+    // (undocumented)
+    protected totalNumFrames: number;
     // (undocumented)
     readonly volumeId: string;
     // (undocumented)
@@ -1678,6 +1810,14 @@ type ImageVolumeModifiedEventDetail = {
     imageVolume: IImageVolume;
     FrameOfReferenceUID: string;
 };
+
+// @public (undocumented)
+interface ImageVolumeProps extends VolumeProps {
+    // (undocumented)
+    imageIds: Array<string>;
+    // (undocumented)
+    referencedImageIds?: Array<string>;
+}
 
 // @public (undocumented)
 function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
@@ -1951,6 +2091,8 @@ interface IViewport {
     // (undocumented)
     getActorUIDByIndex(index: number): string;
     // (undocumented)
+    getActorUIDs(): Array<string>;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getCanvas(): HTMLCanvasElement;
@@ -2033,37 +2175,7 @@ interface IViewportId {
 }
 
 // @public (undocumented)
-interface IVolume {
-    // (undocumented)
-    dimensions: Point3;
-    // (undocumented)
-    direction: Mat3;
-    // (undocumented)
-    imageData?: vtkImageData;
-    // (undocumented)
-    metadata: Metadata;
-    // (undocumented)
-    origin: Point3;
-    // (undocumented)
-    referencedVolumeId?: string;
-    // (undocumented)
-    scalarData: VolumeScalarData | Array<VolumeScalarData>;
-    // (undocumented)
-    scaling?: {
-        PT?: {
-            SUVlbmFactor?: number;
-            SUVbsaFactor?: number;
-            suvbwToSuvlbm?: number;
-            suvbwToSuvbsa?: number;
-        };
-    };
-    // (undocumented)
-    sizeInBytes?: number;
-    // (undocumented)
-    spacing: Point3;
-    // (undocumented)
-    volumeId: string;
-}
+type IVolume = ImageVolumeProps;
 
 // @public (undocumented)
 interface IVolumeInput {
@@ -2088,7 +2200,7 @@ interface IVolumeLoadObject {
     // (undocumented)
     decache?: () => void;
     // (undocumented)
-    promise: Promise<ImageVolume>;
+    promise: Promise<IImageVolume>;
 }
 
 // @public (undocumented)
@@ -2128,7 +2240,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId: string): void;
     // (undocumented)
@@ -2165,7 +2277,7 @@ function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImag
 function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
 
 // @public (undocumented)
-function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
+function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<IImageVolume>;
 
 // @public (undocumented)
 function makeVolumeMetadata(imageIds: Array<string>): Metadata;
@@ -2205,6 +2317,8 @@ export { metaData }
 // @public (undocumented)
 enum MetadataModules {
     // (undocumented)
+    CALIBRATION = "calibrationModule",
+    // (undocumented)
     CINE = "cineModule",
     // (undocumented)
     GENERAL_SERIES = "generalSeriesModule",
@@ -2215,11 +2329,19 @@ enum MetadataModules {
     // (undocumented)
     IMAGE_URL = "imageUrlModule",
     // (undocumented)
+    MODALITY_LUT = "modalityLutModule",
+    // (undocumented)
     MULTIFRAME = "multiframeModule",
     // (undocumented)
     NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
     // (undocumented)
-    PATIENT_STUDY = "patientStudyModule"
+    PATIENT_STUDY = "patientStudyModule",
+    // (undocumented)
+    SOP_COMMON = "sopCommonModule",
+    // (undocumented)
+    ULTRASOUND_ENHANCED_REGION = "ultrasoundEnhancedRegionModule",
+    // (undocumented)
+    VOI_LUT = "voiLutModule"
 }
 
 // @public (undocumented)
@@ -2273,6 +2395,9 @@ type OrientationVectors = {
 };
 
 // @public (undocumented)
+function performCacheOptimizationForVolume(volume: any): void;
+
+// @public (undocumented)
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
 
 // @public (undocumented)
@@ -2294,7 +2419,7 @@ type Plane = [number, number, number, number];
 function planeDistanceToPoint(plane: Plane, point: Point3, signed?: boolean): number;
 
 // @public (undocumented)
-function planeEquation(normal: Point3, point: Point3 | vec3): Plane;
+function planeEquation(normal: Point3, point: Point3 | vec3, normalized?: boolean): Plane;
 
 // @public (undocumented)
 type Point2 = [number, number];
@@ -2421,10 +2546,10 @@ export function registerImageLoader(scheme: string, imageLoader: ImageLoaderFn):
 function registerUnknownImageLoader(imageLoader: ImageLoaderFn): ImageLoaderFn;
 
 // @public (undocumented)
-function registerUnknownVolumeLoader(volumeLoader: Types.VolumeLoaderFn): Types.VolumeLoaderFn | undefined;
+function registerUnknownVolumeLoader(volumeLoader: VolumeLoaderFn): VolumeLoaderFn | undefined;
 
 // @public (undocumented)
-function registerVolumeLoader(scheme: string, volumeLoader: Types.VolumeLoaderFn): void;
+function registerVolumeLoader(scheme: string, volumeLoader: VolumeLoaderFn): void;
 
 // @public (undocumented)
 function removeAllProviders(): void;
@@ -2538,6 +2663,12 @@ export interface RetrieveStage {
 type RGB = [number, number, number];
 
 // @public (undocumented)
+function roundNumber(value: string | number | (string | number)[], precision?: number): string;
+
+// @public (undocumented)
+function roundToPrecision(value: any): number;
+
+// @public (undocumented)
 function scaleRGBTransferFunction(rgbTransferFunction: any, scalingFactor: number): void;
 
 // @public (undocumented)
@@ -2592,6 +2723,9 @@ export class Settings {
 
 // @public (undocumented)
 function setTransferFunctionNodes(transferFunction: any, nodes: any): void;
+
+// @public (undocumented)
+function setupCacheOptimizationEventListener(volumeId: any): void;
 
 // @public (undocumented)
 export function setUseCPURendering(status: boolean): void;
@@ -2866,6 +3000,9 @@ declare namespace transferFunctionUtils {
 }
 
 // @public (undocumented)
+function transformIndexToWorld(imageData: any, voxelPos: Point3): any;
+
+// @public (undocumented)
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
@@ -2891,9 +3028,9 @@ declare namespace Types {
         IEnabledElement,
         ICache,
         IVolume,
-        VolumeScalarData,
         IViewportId,
         IImageVolume,
+        ImageVolumeProps,
         IDynamicImageVolume,
         IRenderingEngine,
         ScalingParameters,
@@ -2976,7 +3113,12 @@ declare namespace Types {
         AffineMatrix,
         ImageLoadListener,
         InternalVideoCamera,
-        VideoViewportInput
+        VideoViewportInput,
+        BoundsIJK,
+        BoundsLPS,
+        Color,
+        ColorLUT,
+        VolumeProps
     }
 }
 export { Types }
@@ -3019,6 +3161,7 @@ declare namespace utilities {
         getVolumeViewportsContainingSameVolumes,
         getViewportsWithVolumeId,
         transformWorldToIndex,
+        transformIndexToWorld,
         loadImageToCanvas,
         renderToCanvasCPU,
         renderToCanvasGPU,
@@ -3034,6 +3177,7 @@ declare namespace utilities {
         actorIsA,
         getViewportsWithImageURI,
         getClosestStackImageIndexForPoint,
+        getCurrentVolumeViewportSlice,
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld,
@@ -3054,7 +3198,14 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        getBufferConfiguration
+        getBufferConfiguration,
+        VoxelManager,
+        generateVolumePropsFromImageIds,
+        convertStackToVolumeViewport,
+        convertVolumeToStackViewport,
+        cacheUtils,
+        roundNumber,
+        roundToPrecision
     }
 }
 export { utilities }
@@ -3251,6 +3402,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getActorUIDByIndex(index: number): string;
     // (undocumented)
+    getActorUIDs(): Array<string>;
+    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getCanvas(): HTMLCanvasElement;
@@ -3291,6 +3444,8 @@ export class Viewport implements IViewport {
     readonly id: string;
     // (undocumented)
     protected initialCamera: ICamera;
+    // (undocumented)
+    protected insetImageMultiplier: number;
     // (undocumented)
     isDisabled: boolean;
     // (undocumented)
@@ -3409,6 +3564,7 @@ type ViewportProperties = {
     invert?: boolean;
     colormap?: ColormapPublic;
     interpolationType?: InterpolationType;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -3520,9 +3676,12 @@ declare namespace volumeLoader {
         createAndCacheVolume,
         createAndCacheDerivedVolume,
         createLocalVolume,
+        createAndCacheVolumeFromImages,
         registerVolumeLoader,
         getVolumeLoaderSchemes,
-        registerUnknownVolumeLoader
+        registerUnknownVolumeLoader,
+        getUnknownVolumeLoaderSchema,
+        createAndCacheDerivedSegmentationVolume
     }
 }
 export { volumeLoader }
@@ -3546,7 +3705,39 @@ type VolumeNewImageEventDetail = {
 };
 
 // @public (undocumented)
-type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
+interface VolumeProps {
+    // (undocumented)
+    additionalDetails?: Record<string, any>;
+    // (undocumented)
+    dimensions: Point3;
+    // (undocumented)
+    direction: Mat3;
+    // (undocumented)
+    imageData?: vtkImageData;
+    // (undocumented)
+    metadata: Metadata;
+    // (undocumented)
+    origin: Point3;
+    // (undocumented)
+    referencedVolumeId?: string;
+    // (undocumented)
+    scalarData: PixelDataTypedArray | Array<PixelDataTypedArray>;
+    // (undocumented)
+    scaling?: {
+        PT?: {
+            SUVlbmFactor?: number;
+            SUVbsaFactor?: number;
+            suvbwToSuvlbm?: number;
+            suvbwToSuvbsa?: number;
+        };
+    };
+    // (undocumented)
+    sizeInBytes?: number;
+    // (undocumented)
+    spacing: Point3;
+    // (undocumented)
+    volumeId: string;
+}
 
 // @public (undocumented)
 export class VolumeViewport extends BaseVolumeViewport {
@@ -3560,9 +3751,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getRotation: () => number;
-    // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
@@ -3600,7 +3789,75 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 type VolumeViewportProperties = ViewportProperties & {
     preset?: string;
     slabThickness?: number;
+    orientation?: OrientationAxis;
 };
+
+// @public (undocumented)
+class VoxelManager<T> {
+    constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean | void);
+    // (undocumented)
+    static addBounds(bounds: BoundsIJK, point: Point3): void;
+    // (undocumented)
+    addPoint(point: Point3 | number): void;
+    // (undocumented)
+    boundsIJK: BoundsIJK;
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
+    static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
+    // (undocumented)
+    static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
+    // (undocumented)
+    readonly dimensions: Point3;
+    // (undocumented)
+    forEach: (callback: any, options?: any) => void;
+    // (undocumented)
+    frameSize: number;
+    // (undocumented)
+    _get: (index: number) => T;
+    // (undocumented)
+    getArrayOfSlices(): number[];
+    // (undocumented)
+    getAtIJK: (i: any, j: any, k: any) => T;
+    // (undocumented)
+    getAtIJKPoint: ([i, j, k]: [any, any, any]) => T;
+    // (undocumented)
+    getAtIndex: (index: any) => T;
+    // (undocumented)
+    getBoundsIJK(): BoundsIJK;
+    // (undocumented)
+    getPointIndices(): number[];
+    // (undocumented)
+    getPoints(): Point3[];
+    // (undocumented)
+    isInObject: (pointIPS: any, pointIJK: any) => boolean;
+    // (undocumented)
+    map: Map<number, T>;
+    // (undocumented)
+    modifiedSlices: Set<number>;
+    // (undocumented)
+    points: Set<number>;
+    // (undocumented)
+    scalarData: PixelDataTypedArray;
+    // (undocumented)
+    _set: (index: number, v: T) => boolean | void;
+    // (undocumented)
+    setAtIJK: (i: number, j: number, k: number, v: any) => void;
+    // (undocumented)
+    setAtIJKPoint: ([i, j, k]: [any, any, any], v: any) => void;
+    // (undocumented)
+    setAtIndex: (index: any, v: any) => void;
+    // (undocumented)
+    sourceVoxelManager: VoxelManager<T>;
+    // (undocumented)
+    toIJK(index: number): Point3;
+    // (undocumented)
+    toIndex(ijk: Point3): number;
+    // (undocumented)
+    width: number;
+}
 
 declare namespace windowLevel {
     export {

@@ -21,7 +21,7 @@ const defaultConfig: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
 
 let config: Cornerstone3DConfig = {
@@ -35,7 +35,7 @@ let config: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
 
 let webWorkerManager = null;
@@ -124,7 +124,7 @@ async function init(configuration = config): Promise<boolean> {
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
       config.gpuTier
     );
-    if (config.gpuTier.tier < 1) {
+    if (config.gpuTier?.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );

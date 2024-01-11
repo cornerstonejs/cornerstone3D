@@ -12,6 +12,7 @@ import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
 import addSliderToToolbar from './addSliderToToolbar';
+import createInfoSection from './createInfoSection';
 import camera from './camera';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
@@ -26,6 +27,7 @@ export {
   addDropdownToToolbar,
   addSliderToToolbar,
   addToggleButtonToToolbar,
+  createInfoSection,
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   setCtTransferFunctionForVolumeActor,

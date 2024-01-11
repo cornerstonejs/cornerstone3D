@@ -6,12 +6,14 @@ import {
   volumeLoader,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -105,57 +107,16 @@ addToggleButtonToToolbar({
 
 // ============================= //
 
-/**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
-  const scalarData = segmentationVolume.scalarData;
-
-  let voxelIndex = 0;
-
-  const { dimensions } = segmentationVolume;
-
-  const innerRadius = dimensions[0] / 8;
-  const outerRadius = dimensions[0] / 4;
-
-  const center = [
-    dimensions[0] / 2 + centerOffset[0],
-    dimensions[1] / 2 + centerOffset[1],
-  ];
-
-  for (let z = 0; z < dimensions[2]; z++) {
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
-        );
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
-        }
-
-        voxelIndex++;
-      }
-    }
-  }
-}
-
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume1 = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
+  const segmentationVolume1 =
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: segmentationId1,
-    }
-  );
-  const segmentationVolume2 = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
+    });
+  const segmentationVolume2 =
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: segmentationId2,
-    }
-  );
+    });
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -183,8 +144,17 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(segmentationVolume1, [50, 50]);
-  fillSegmentationWithCircles(segmentationVolume2, [-50, -50]);
+  fillVolumeSegmentationWithMockData({
+    volumeId: segmentationVolume1.volumeId,
+    centerOffset: [50, 50, 0],
+    cornerstone,
+  });
+
+  fillVolumeSegmentationWithMockData({
+    volumeId: segmentationVolume2.volumeId,
+    centerOffset: [-50, -50, 0],
+    cornerstone,
+  });
 }
 
 /**

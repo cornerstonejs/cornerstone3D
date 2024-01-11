@@ -2,6 +2,8 @@ import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup
 import addSegmentations from './addSegmentations';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import addRepresentationData from './addRepresentationData';
+import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation';
+import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation';
 
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
@@ -23,4 +25,6 @@ export {
   config,
   segmentIndex,
   triggerSegmentationEvents,
+  convertStackToVolumeSegmentation,
+  convertVolumeToStackSegmentation,
 };
