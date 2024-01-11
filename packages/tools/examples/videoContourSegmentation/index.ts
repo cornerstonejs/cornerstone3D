@@ -50,7 +50,7 @@ const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
-let activeSegmentIndex = 0;
+let activeSegmentIndex = 1;
 
 // ======== Set up page ======== //
 
@@ -449,11 +449,6 @@ async function run() {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        data: {
-          // geometryIds may not be used anymore because it will be removed in a
-          // near future but it is still initialized for backward compatibility
-          geometryIds: [],
-        },
       },
     },
   ]);
@@ -471,12 +466,13 @@ async function run() {
   segmentationRepresentationUID = segmentationRepresentationUIDs[0];
 
   // Make the segmentation created as the active one
+  // This will add it to the specified tool group, which isn't already done here
+  // so is a necessary step.
   segmentation.activeSegmentation.setActiveSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   );
 
-  updateActiveSegmentIndex(1);
   initializeGlobalConfig();
   updateInputsForCurrentSegmentation();
 }

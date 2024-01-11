@@ -154,11 +154,6 @@ function mouseDownListener(evt: MouseEvent) {
     evt.buttons === 1 ? DOUBLE_CLICK_TOLERANCE_MS : MULTI_BUTTON_TOLERANCE_MS
   );
 
-  if (evt.buttons >= MouseBindings.Fourth_Button) {
-    // Need to prevent the default handling so these bindings work, otherwise
-    // browsers will just navigate
-    evt.preventDefault();
-  }
   // First mouse down of a potential double click. So save it and start
   // a timeout to determine a double click.
   doubleClickState.mouseDownEvent = evt;
@@ -320,6 +315,7 @@ function _onMouseUp(evt: MouseEvent): void {
 
     const currentPoints = getMouseEventPoints(evt, state.element);
     const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints);
+
     const eventDetail:
       | EventTypes.MouseUpEventDetail
       | EventTypes.MouseClickEventType = {
