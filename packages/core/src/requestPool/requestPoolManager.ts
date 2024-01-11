@@ -232,11 +232,7 @@ class RequestPoolManager {
     const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
     let syncImageCount = 0;
 
-    for (
-      let requestsStarted = 0;
-      requestsStarted < requestsToSend + syncImageCount;
-      requestsStarted++
-    ) {
+    for (let i = 0; i < requestsToSend; i++) {
       const requestDetails = this.getNextRequest(type);
       if (requestDetails === null) {
         return false;
@@ -262,6 +258,9 @@ class RequestPoolManager {
           syncImageCount++;
         }
       }
+    }
+    if (syncImageCount) {
+      this.startAgain();
     }
 
     return true;
