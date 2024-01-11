@@ -100,17 +100,8 @@ const toolGroupId2 = '2';
 addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
-    const labelmap = cache.getVolume(segmentationId);
-
-    const int32Array = new Int32Array(labelmap.scalarData);
     const result = await segmentation.polySeg.convertLabelmapToSurface({
-      scalarData: int32Array,
-      metadata: {
-        dimensions: labelmap.dimensions,
-        spacing: labelmap.spacing,
-        direction: labelmap.direction,
-        origin: labelmap.origin,
-      },
+      segmentationId,
       segmentIndices: [1],
     });
 
