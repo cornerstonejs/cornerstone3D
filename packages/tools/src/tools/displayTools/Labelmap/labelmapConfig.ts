@@ -4,6 +4,7 @@ const defaultLabelmapConfig: LabelmapConfig = {
   renderOutline: true,
   outlineWidthActive: 3,
   outlineWidthInactive: 2,
+  activeSegmentOutlineWidthDelta: 0,
   renderFill: true,
   renderFillInactive: true,
   fillAlpha: 0.7,
@@ -24,6 +25,7 @@ function isValidLabelmapConfig(config): boolean {
     typeof config.renderOutline === 'boolean' &&
     typeof config.outlineWidthActive === 'number' &&
     typeof config.outlineWidthInactive === 'number' &&
+    typeof config.activeSegmentOutlineWidthDelta === 'number' &&
     typeof config.renderFill === 'boolean' &&
     typeof config.renderFillInactive === 'boolean' &&
     typeof config.fillAlpha === 'number' &&

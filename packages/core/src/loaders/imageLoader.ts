@@ -1,4 +1,5 @@
 import cache from '../cache/cache';
+import { ImageVolume } from '../cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import {
@@ -120,11 +121,14 @@ function loadImageFromCacheOrVolume(
   // 2. Check if there exists a volume in the cache containing the imageId,
   // we copy the pixelData over.
   const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId);
-  if (cachedVolumeInfo && cachedVolumeInfo.volume.loadStatus.loaded) {
+  if (cachedVolumeInfo?.volume?.loadStatus?.loaded) {
     // 2.1 Convert the volume at the specific slice to a cornerstoneImage object.
     // this will copy the pixel data over.
     const { volume, imageIdIndex } = cachedVolumeInfo;
-    imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+
+    if (volume instanceof ImageVolume) {
+      imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+    }
     return imageLoadObject;
   }
   // 3. If no volume found, we search inside the imageCache for the imageId
@@ -285,11 +289,16 @@ export function createAndCacheDerivedImage(
  * Load and cache a list of imageIds
  *
  * @param referencedImageIds - list of imageIds
- * @param getDerivedImageId - optional function to generate derived imageId name however you want
+ * @param options
+ * @param options.getDerivedImageId - function to get the derived imageId
+ * @param options.targetBufferType - target buffer type
  */
 export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
-  getDerivedImageId?: (referencedImageId: string) => string
+  options: {
+    getDerivedImageId?: (referencedImageId: string) => string;
+    targetBufferType?: PixelDataTypedArrayString;
+  } = {}
 ): DerivedImages {
   if (referencedImageIds?.length === 0) {
     throw new Error(
@@ -298,14 +307,15 @@ export function createAndCacheDerivedImages(
   }
 
   const derivedImageIds = [];
-  const allPromises = referencedImageIds.map((referencedImageId, index) => {
-    const options: DerivedImageOptions = {
-      imageId: getDerivedImageId
-        ? getDerivedImageId(referencedImageId)
+  const allPromises = referencedImageIds.map((referencedImageId) => {
+    const newOptions: DerivedImageOptions = {
+      imageId: options.getDerivedImageId
+        ? options.getDerivedImageId(referencedImageId)
         : `derived:${uuidv4()}`,
+      ...options,
     };
-    derivedImageIds.push(options.imageId);
-    return createAndCacheDerivedImage(referencedImageId, options);
+    derivedImageIds.push(newOptions.imageId);
+    return createAndCacheDerivedImage(referencedImageId, newOptions);
   });
 
   return { imageIds: derivedImageIds, promises: allPromises };
@@ -496,4 +506,42 @@ export function unregisterAllImageLoaders(): void {
     (imageLoader) => delete imageLoaders[imageLoader]
   );
   unknownImageLoader = undefined;
+}
+
+/**
+ * Creates and caches derived segmentation images based on the referenced imageIds, this
+ * is a helper function, we don't have segmentation concept in the cornerstone core; however,
+ * this helper would make it clear that the segmentation images SHOULD be Uint8Array type
+ * always until we have a better solution.
+ *
+ * @param referencedImageIds - An array of referenced image IDs.
+ * @param options - The options for creating the derived images (default: { targetBufferType: 'Uint8Array' }).
+ * @returns The derived images.
+ */
+export function createAndCacheDerivedSegmentationImages(
+  referencedImageIds: Array<string>,
+  options: DerivedImageOptions = {
+    targetBufferType: 'Uint8Array',
+  }
+): DerivedImages {
+  return createAndCacheDerivedImages(referencedImageIds, options);
+}
+
+/**
+ * Creates and caches a derived segmentation image based on the referenced image ID.
+ * this is a helper function, we don't have segmentation concept in the cornerstone core; however,
+ * this helper would make it clear that the segmentation images SHOULD be Uint8Array type
+ * always until we have a better solution.
+ *
+ * @param referencedImageId The ID of the referenced image.
+ * @param options The options for creating the derived image (default: { targetBufferType: 'Uint8Array' }).
+ * @returns A promise that resolves to the created derived segmentation image.
+ */
+export function createAndCacheDerivedSegmentationImage(
+  referencedImageId: string,
+  options: DerivedImageOptions = {
+    targetBufferType: 'Uint8Array',
+  }
+): Promise<IImage> {
+  return createAndCacheDerivedImage(referencedImageId, options);
 }

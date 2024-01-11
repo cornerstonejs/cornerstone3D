@@ -6,7 +6,6 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
-import { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 /**
  * Viewport interface for cornerstone viewports
@@ -66,6 +65,8 @@ interface IViewport {
   addActors(actors: Array<ActorEntry>): void;
   /** add one actor */
   addActor(actorEntry: ActorEntry): void;
+  /** get actor UIDs */
+  getActorUIDs(): Array<string>;
   /** remove all actors from the viewport */
   removeAllActors(): void;
   /** remove array of uids */

@@ -220,8 +220,7 @@ addButtonToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
     volumeId: segmentationIdVolume,
   });
 

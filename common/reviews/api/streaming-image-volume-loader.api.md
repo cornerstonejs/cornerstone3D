@@ -8,7 +8,7 @@ import type { GetGPUTier } from 'detect-gpu';
 import type { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
@@ -43,13 +43,13 @@ export const helpers: {
 
 // @public (undocumented)
 export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
-    constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
+    constructor(imageVolumeProperties: Types.ImageVolumeProps, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageIdsToLoad(): string[];
     // (undocumented)
     getImageLoadRequests: (priority: number) => any[];
     // (undocumented)
-    getScalarData(): Types.VolumeScalarData;
+    getScalarData(): Types.PixelDataTypedArray;
     // (undocumented)
     isDynamicVolume(): boolean;
     // (undocumented)
@@ -61,13 +61,13 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
 
 // @public (undocumented)
 export class StreamingImageVolume extends BaseStreamingImageVolume {
-    constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
+    constructor(imageVolumeProperties: Types.ImageVolumeProps, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageIdsToLoad: () => string[];
     // (undocumented)
     getImageLoadRequests(priority: number): ImageLoadRequests[];
     // (undocumented)
-    getScalarData(): Types.VolumeScalarData;
+    getScalarData(): Types.PixelDataTypedArray;
 }
 
 // (No @packageDocumentation comment for this package)

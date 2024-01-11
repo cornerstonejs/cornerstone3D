@@ -5,6 +5,7 @@ import {
   cache,
   volumeLoader,
 } from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -12,6 +13,7 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -163,44 +165,6 @@ addDropdownToToolbar({
   },
 });
 
-/**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
-  const scalarData = segmentationVolume.scalarData;
-
-  const { dimensions } = segmentationVolume;
-  const pixelsPerSlice = dimensions[0] * dimensions[1];
-
-  const innerRadius = dimensions[0] / 32;
-  const outerRadius = dimensions[0] / 16;
-
-  const center = [
-    dimensions[0] / 2 + centerOffset[0],
-    dimensions[1] / 2 + centerOffset[1],
-    dimensions[2] / 2 + centerOffset[2],
-  ];
-
-  const [cX, cY, cZ] = center;
-
-  for (let z = 0; z < dimensions[2]; z++) {
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const voxelIndex = z * pixelsPerSlice + y * dimensions[0] + x;
-        const distanceFromCenter = Math.sqrt(
-          (x - cX) * (x - cX) + (y - cY) * (y - cY) + (z - cZ) * (z - cZ)
-        );
-
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
-        }
-      }
-    }
-  }
-}
-
 async function addSegmentationsToState(volumeId: string) {
   let segmentationVolume = cache.getVolume(segmentationId);
 
@@ -209,13 +173,11 @@ async function addSegmentationsToState(volumeId: string) {
   }
 
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
+  segmentationVolume =
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: segmentationId,
-    }
-  );
+    });
+
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
@@ -233,7 +195,10 @@ async function addSegmentationsToState(volumeId: string) {
   ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(segmentationVolume, [0, 0, 0]);
+  fillVolumeSegmentationWithMockData({
+    volumeId: segmentationVolume.volumeId,
+    cornerstone,
+  });
 }
 
 async function initializeVolumeViewport(
