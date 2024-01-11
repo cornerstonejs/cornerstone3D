@@ -246,10 +246,6 @@ async function run() {
       viewportId: viewportId3,
       type: ViewportType.VOLUME_3D,
       element: element3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
-      },
     },
   ];
 
