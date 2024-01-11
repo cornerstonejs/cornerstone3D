@@ -502,19 +502,6 @@ class Viewport implements IViewport {
     const renderer = this.getRenderer();
     renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
-
-    // We should reset the camera clipping range when an actor is getting added
-    // to the viewport
-    const camera = this.getCamera();
-    this.updateClippingPlanesForActors(camera);
-    renderer.resetCameraClippingRange();
-    this.render();
-
-    // not sure why this is needed really
-    setTimeout(() => {
-      renderer.resetCameraClippingRange();
-      this.render();
-    }, 0);
   }
 
   /**
@@ -1250,12 +1237,6 @@ class Viewport implements IViewport {
         viewport: this,
       });
     });
-
-    this.posProcessNewActors();
-  }
-
-  protected posProcessNewActors(): void {
-    this.newActorAdded = false;
   }
 
   public setOrientationOfClippingPlanes(

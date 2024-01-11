@@ -50,6 +50,11 @@ function addOrUpdateSurfaceToElement(
     clippingFilter.update();
     const filteredData = clippingFilter.getOutputData();
     mapper.setInputData(filteredData);
+
+    element.addEventListener(
+      Enums.Events.CLIPPING_PLANES_UPDATED,
+      updateSurfacePlanes
+    );
   } else {
     mapper.setInputData(polyData);
   }
@@ -60,16 +65,15 @@ function addOrUpdateSurfaceToElement(
   // sets the color of the surface actor
   actor.getProperty().setColor(color[0] / 255, color[1] / 255, color[2] / 255);
 
-  element.addEventListener(
-    Enums.Events.CLIPPING_PLANES_UPDATED,
-    updateSurfacePlanes
-  );
-
   viewport.addActor({
     actor,
     uid: actorUID,
     clippingFilter,
   });
+
+  setTimeout(() => {
+    viewport.getRenderer().resetCameraClippingRange();
+  }, 0);
 }
 
 /**
