@@ -15,6 +15,7 @@ import {
   addButtonToToolbar,
   addDropdownToToolbar,
   addToggleButtonToToolbar,
+  createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -35,6 +36,11 @@ const {
   TrackballRotateTool,
 } = cornerstoneTools;
 
+setTitleAndDescription(
+  'Volume Labelmap to Surface',
+  'This demonstration showcases the usage of PolySEG WASM module to convert a labelmap to a surface representation.'
+);
+
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
@@ -45,10 +51,6 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
-setTitleAndDescription(
-  'Basic manual labelmap Segmentation tools',
-  'Here we demonstrate manual segmentation tools'
-);
 
 const size = '500px';
 const content = document.getElementById('content');
@@ -79,15 +81,14 @@ viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
-  Middle Click: Pan
-  Right Click: Zoom
-  Mouse wheel: Scroll Stack
-  `;
-
-content.append(instructions);
+createInfoSection(content, { ordered: true })
+  .addInstruction('Use the Brush Tool for segmentation in MPR viewports')
+  .addInstruction(
+    'Toggle between different segmentation tools like Sphere Brush and Eraser'
+  )
+  .addInstruction('Convert the labelmap to a 3D surface representation')
+  .addInstruction('Manipulate the 3D view using the Trackball Rotate Tool')
+  .addInstruction('Toggle the visibility of the 3D anatomy model');
 
 // ============================= //
 const toolGroupId = 'ToolGroup_MPR';
