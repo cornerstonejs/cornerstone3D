@@ -4,6 +4,8 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
+  utilities,
+  Types,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -91,6 +93,11 @@ content.append(instructions);
 const toolGroupId = 'ToolGroup_MPR';
 const toolGroupId2 = 'ToolGroup_3D';
 let toolGroup1, toolGroup2;
+let renderingEngine;
+// Create the viewports
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_3D';
 
 const segmentIndexes = [1, 2, 3, 4, 5];
 
@@ -144,6 +151,23 @@ addToggleButtonToToolbar({
   },
 });
 
+addToggleButtonToToolbar({
+  title: 'Show 3D Anatomy',
+  defaultToggle: false,
+  onClick: async (toggle) => {
+    const viewport3 = renderingEngine.getViewport(viewportId3);
+    const volumeActor = viewport3.getDefaultActor().actor as Types.VolumeActor;
+
+    const visibility = toggle;
+    volumeActor.setVisibility(visibility);
+
+    // seems like we should reset camera, most likely this is clipping planes
+    // not critical but we should fix it later
+    viewport3.resetCamera();
+    viewport3.render();
+  },
+});
+
 /**
  * Runs the demo
  */
@@ -165,6 +189,7 @@ async function run() {
 
   // Manipulation Tools
   toolGroup1.addTool(PanTool.toolName);
+  toolGroup2.addTool(PanTool.toolName);
   toolGroup1.addTool(ZoomTool.toolName);
   toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
 
@@ -196,6 +221,20 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+  toolGroup1.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+  toolGroup2.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
       },
     ],
   });
@@ -233,12 +272,7 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_SAGITTAL';
-  const viewportId3 = 'CT_3D';
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   const viewportInputArray = [
     {
@@ -280,16 +314,17 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2]
+    [viewportId1, viewportId2, viewportId3]
   );
 
-  // const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
-  //   .actor as Types.VolumeActor;
-
-  // utilities.applyPreset(
-  //   volumeActor,
-  //   CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-  // );
+  // set the anatomy at first invisible
+  const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
+    .actor as Types.VolumeActor;
+  utilities.applyPreset(
+    volumeActor,
+    CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+  );
+  volumeActor.setVisibility(false);
 
   // Add some segmentations based on the source data volume
   // Create a segmentation of the same resolution as the source data
