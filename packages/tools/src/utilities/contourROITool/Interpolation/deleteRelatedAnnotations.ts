@@ -96,8 +96,7 @@ function deleteInterpolatedAnnotation(
       }
       removedAnnotations.push(interpolationAnn);
       annotationStateManagement.state.removeAnnotation(
-        interpolationAnn.annotationUID,
-        true
+        interpolationAnn.annotationUID
       );
     }
   }

@@ -268,11 +268,7 @@ function _editInterpolatedContour(
   interpolatedAnnotation.annotationUID = oldToolData.annotationUID;
   // Skip triggering events on removal of interpolated roi's.
   annotation.state.removeAnnotation(oldToolData.annotationUID, true);
-  annotation.state.addAnnotation(
-    interpolatedAnnotation,
-    viewport.element,
-    true
-  );
+  annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
 }
 
 /**

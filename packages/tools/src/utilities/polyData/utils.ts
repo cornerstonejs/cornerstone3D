@@ -1,14 +1,21 @@
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 /**
  * Gets a point from an array of numbers given its index
- * @param points array of number, each point defined by three consecutive numbers
- * @param idx index of the point to retrieve
+ * @param points - array of number, each point defined by three consecutive numbers
+ * @param idx - index of the point to retrieve
  * @returns
  */
-export function getPoint(points, idx) {
-  if (idx < points.length / 3) {
-    return [points[idx * 3], points[idx * 3 + 1], points[idx * 3 + 2]];
+export function getPoint(points, idx): Types.Point3 {
+  const idx3 = idx * 3;
+  if (idx3 < points.length) {
+    return vec3.fromValues(
+      points[idx3],
+      points[idx3 + 1],
+      points[idx3 + 2]
+    ) as Types.Point3;
   }
 }
 
