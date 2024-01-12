@@ -10,6 +10,7 @@ import {
   initDemo,
   setTitleAndDescription,
   addManipulationBindings,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -32,6 +33,8 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
+  LivewireContourSegmentationTool,
+  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -41,7 +44,7 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
-const toolGroupId = 'STACK_TOOLGROUP_ID';
+const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID = '';
@@ -52,18 +55,19 @@ let activeSegmentIndex = 1;
 // ======== Set up page ======== //
 
 setTitleAndDescription(
-  'Spline Segmentation ROI Tool',
-  'Here we demonstrate how to use spline segmentation ROI tools on a single viewport'
+  'Video Contour Segmentation Tools',
+  'Here we demonstrate how to use spline and livewire segmentation ROI tools on a video viewport'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
+let viewport;
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const viewportId = 'CT_STACK_ACQUISITION';
+const viewportId = 'VIDEO_VIEWPORT_ID';
 const element = document.createElement('div');
 
 element.oncontextmenu = () => false;
@@ -73,6 +77,18 @@ element.style.height = size;
 viewportGrid.appendChild(element);
 
 content.appendChild(viewportGrid);
+
+const rangeDiv = document.createElement('div');
+rangeDiv.innerHTML =
+  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
+content.appendChild(rangeDiv);
+const rangeElement = document.getElementById('range') as HTMLInputElement;
+rangeElement.onchange = () => {
+  viewport.setTime(Number(rangeElement.value));
+};
+rangeElement.oninput = () => {
+  viewport.setTime(Number(rangeElement.value));
+};
 
 createInfoSection(content, { ordered: true })
   .addInstruction('Select a segmentation index')
@@ -186,7 +202,11 @@ const Splines = {
 };
 
 const SplineToolNames = Object.keys(Splines);
-const splineToolsNames = [...SplineToolNames];
+const splineToolsNames = [
+  ...SplineToolNames,
+  LivewireContourSegmentationTool.toolName,
+  PlanarFreehandContourSegmentationTool.toolName,
+];
 let selectedToolName = splineToolsNames[0];
 
 addDropdownToToolbar({
@@ -318,6 +338,8 @@ async function run() {
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(LivewireContourSegmentationTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -325,6 +347,9 @@ async function run() {
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
+  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
 
   toolGroup.addToolInstance(
     'CatmullRomSplineROI',
@@ -366,14 +391,18 @@ async function run() {
     ],
   });
 
-  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
+    SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
+
+  // Only one SOP instances is DICOM, so find it
+  const videoId = imageIds.find(
+    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
+  );
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -383,7 +412,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.VIDEO,
       element: element,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -395,15 +424,24 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
 
   // Set the stack on the viewport
-  stackViewport.setStack(imageIds.slice(0, 10));
+  viewport.setVideo(videoId, 1);
 
   // Render the image
   renderingEngine.render();
+  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
+
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
+    const { time, duration } = evt.detail;
+    rangeElement.value = time;
+    rangeElement.max = duration;
+    const timeElement = document.getElementById('time');
+    timeElement.innerText = seconds(time);
+    const remainingElement = document.getElementById('remaining');
+    remainingElement.innerText = seconds(duration - time);
+  });
 
   // Add a segmentation that will contains the contour annotations
   segmentation.addSegmentations([
@@ -411,11 +449,6 @@ async function run() {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        data: {
-          // geometryIds may not be used anymore because it will be removed in a
-          // near future but it is still initialized for backward compatibility
-          geometryIds: [],
-        },
       },
     },
   ]);
@@ -430,13 +463,7 @@ async function run() {
     ]);
 
   // Store the segmentation representation that was just created
-  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  [segmentationRepresentationUID] = segmentationRepresentationUIDs;
 
   initializeGlobalConfig();
   updateInputsForCurrentSegmentation();

@@ -1051,11 +1051,9 @@ function defaultGetTextLines(data, targetId): string[] {
     stdDev,
     max,
     isEmptyArea,
-    Modality,
     areaUnit,
     modalityUnit,
   } = cachedVolumeStats;
-
   const textLines: string[] = [];
 
   if (radius) {

@@ -3553,6 +3553,9 @@ function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
 
 // @public (undocumented)
+function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
+
+// @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
 
 // @public (undocumented)
@@ -5436,6 +5439,7 @@ declare namespace utilities {
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
+        pointInSurroundingSphereCallback,
         viewport,
         cine,
         clip_2 as clip,

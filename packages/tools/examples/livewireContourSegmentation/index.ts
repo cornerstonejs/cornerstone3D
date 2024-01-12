@@ -14,6 +14,7 @@ import {
   setTitleAndDescription,
   createInfoSection,
   setCtTransferFunctionForVolumeActor,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
@@ -37,9 +38,6 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 const {
   SegmentationDisplayTool,
   LivewireContourSegmentationTool,
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -64,16 +62,16 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
-const viewoprtsContainer = document.createElement('div');
+const viewportsContainer = document.createElement('div');
 
-Object.assign(viewoprtsContainer.style, {
+Object.assign(viewportsContainer.style, {
   display: 'grid',
   height: '500px',
   gridTemplateColumns: '1fr 1fr 1fr',
   gap: '5px',
 });
 
-content.appendChild(viewoprtsContainer);
+content.appendChild(viewportsContainer);
 
 const createViewportElement = (id: string) => {
   const element = document.createElement('div');
@@ -82,7 +80,7 @@ const createViewportElement = (id: string) => {
   element.oncontextmenu = (e) => e.preventDefault();
 
   element.id = id;
-  viewoprtsContainer.appendChild(element);
+  viewportsContainer.appendChild(element);
 
   return element;
 };
@@ -144,7 +142,7 @@ addButtonToToolbar({
 
 addSliderToToolbar({
   id: 'outlineWidthActive',
-  title: 'Segment Thickness',
+  title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
@@ -189,7 +187,7 @@ addSliderToToolbar({
 
 // =============================================================================
 
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const toolGroupId = 'DEFAULT_TOOL_GROUP_ID';
 
 function initializeGlobalConfig() {
   const globalSegmentationConfig = segmentation.config.getGlobalConfig();
@@ -304,9 +302,6 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(LivewireContourSegmentationTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -315,9 +310,7 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  addManipulationBindings(toolGroup);
 
   // Set the initial state of the tools
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
@@ -329,26 +322,6 @@ async function run() {
       },
     ],
   });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
