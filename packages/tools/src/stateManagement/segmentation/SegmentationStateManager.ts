@@ -213,7 +213,7 @@ export default class SegmentationStateManager {
     const toolGroupSegRepresentations =
       this.getSegmentationRepresentations(toolGroupId);
 
-    const segmentationData = toolGroupSegRepresentations.find(
+    const segmentationData = toolGroupSegRepresentations?.find(
       (representation) =>
         representation.segmentationRepresentationUID ===
         segmentationRepresentationUID

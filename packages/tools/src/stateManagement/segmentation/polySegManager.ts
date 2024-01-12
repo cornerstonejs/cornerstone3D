@@ -1,16 +1,29 @@
 import ICRPolySeg from '@icr/polyseg-wasm';
-import { Enums, Types, cache, geometryLoader } from '@cornerstonejs/core';
+import {
+  Enums,
+  Types,
+  cache,
+  eventTarget,
+  geometryLoader,
+} from '@cornerstonejs/core';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import {
   findSegmentationRepresentationByUID,
   getSegmentation,
+  getSegmentationRepresentations,
+  getToolGroupIdsWithSegmentation,
 } from './segmentationState';
 import addRepresentationData from './addRepresentationData';
 import { getUniqueSegmentIndices } from '../../utilities/segmentation';
 import { SurfaceSegmentationData } from '../../types/SurfaceTypes';
 import { getColorForSegmentIndex } from './config/segmentationColor';
-import { LabelmapSegmentationDataVolume } from 'tools/src/types/LabelmapTypes';
+import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import { Events } from '../../enums';
+import { SegmentationDataModifiedEventDetail } from '../../types/EventTypes';
+import { debounce } from '../../utilities';
+import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import { ToolGroupSpecificRepresentations } from '../../types/SegmentationStateTypes';
 
 /**
  * Class to control polymorphic segmentations
@@ -18,8 +31,15 @@ import { LabelmapSegmentationDataVolume } from 'tools/src/types/LabelmapTypes';
 class PolySegManager {
   polySeg;
   initialized = false;
+  computedRepresentations = new Map<string, SegmentationRepresentations[]>();
+  _debouncedSegmentationModified;
 
-  // constructor() {}
+  constructor() {
+    this._debouncedSegmentationModified = debounce(
+      (event) => this.onSegmentationDataModified(event),
+      500
+    );
+  }
 
   /**
    * Initialize the polySeg wasm module
@@ -43,6 +63,46 @@ class PolySegManager {
     }
   }
 
+  unsubscribeFromSegmentationChanges() {
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      this._debouncedSegmentationModified
+    );
+  }
+
+  subscribeToSegmentationChanges() {
+    this.unsubscribeFromSegmentationChanges();
+
+    eventTarget.addEventListener(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      this._debouncedSegmentationModified
+    );
+  }
+
+  onSegmentationDataModified(event) {
+    const { segmentationId, modifiedSlicesToUse } =
+      event.detail as SegmentationDataModifiedEventDetail;
+
+    const computedRepresentations =
+      this.computedRepresentations.get(segmentationId);
+
+    if (!computedRepresentations.length) {
+      return;
+    }
+
+    const promises = computedRepresentations.map((representationType) => {
+      switch (representationType) {
+        case SegmentationRepresentations.Surface:
+          return this.updateSurfaceRepresentation(
+            segmentationId,
+            modifiedSlicesToUse
+          );
+      }
+    });
+
+    Promise.all(promises);
+  }
+
   async getComputedSurfacesData(
     segmentationRepresentationUID,
     segmentIndices = []
@@ -59,9 +119,7 @@ class PolySegManager {
     }
 
     const { segmentationId } = segmentationRepresentation;
-
     const segmentation = getSegmentation(segmentationId);
-
     const representationData = segmentation.representationData;
 
     if (
@@ -96,8 +154,8 @@ class PolySegManager {
           color,
           frameOfReferenceUID: 'test-frameOfReferenceUID',
           data: {
-            points: rawSurfaceData.surfaceData.points,
-            polys: rawSurfaceData.surfaceData.polys,
+            points: rawSurfaceData.data.points,
+            polys: rawSurfaceData.data.polys,
           },
         };
 
@@ -120,16 +178,37 @@ class PolySegManager {
         },
       });
 
+      this.addComputedRepresentation(
+        segmentationId,
+        SegmentationRepresentations.Surface
+      );
+
+      this.subscribeToSegmentationChanges();
+
       return {
         geometryIds,
       };
     }
   }
 
+  addComputedRepresentation(
+    segmentationId: string,
+    representationType: SegmentationRepresentations
+  ) {
+    if (!this.computedRepresentations.has(segmentationId)) {
+      this.computedRepresentations.set(segmentationId, []);
+    }
+
+    const representations = this.computedRepresentations.get(segmentationId);
+    if (!representations.includes(representationType)) {
+      representations.push(representationType);
+    }
+  }
+
   async labelmapToSurfaceData(
     segmentationId,
-    segmentIndices
-  ): Promise<{ segmentIndex: number; surfaceData: Types.SurfaceData }[]> {
+    segmentIndices = []
+  ): Promise<{ segmentIndex: number; data: Types.SurfaceData }[]> {
     await this.initializeIfNecessary();
 
     // Todo: validate valid labelmap representation
@@ -148,7 +227,7 @@ class PolySegManager {
         ? await this._convertVolumeLabelmapToSurface(segmentation, index)
         : await this._convertStackLabelmapToSurface(segmentation, index);
 
-      return { segmentIndex: index, surfaceData: surface };
+      return { segmentIndex: index, data: surface };
     });
 
     const surfaces = await Promise.all(promises);
@@ -182,6 +261,74 @@ class PolySegManager {
     segmentIndices
   ): Promise<Types.SurfaceData> {
     throw new Error('Not implemented yet');
+  }
+
+  async updateSurfaceRepresentation(segmentationId, modifiedSlicesToUse) {
+    const surfacesObj = await this.labelmapToSurfaceData(segmentationId);
+    const segmentation = getSegmentation(segmentationId);
+
+    const promises = surfacesObj.map((surfaceObj) => {
+      const { segmentIndex, data } = surfaceObj;
+
+      const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;
+
+      const geometry = cache.getGeometry(geometryId);
+
+      if (geometry) {
+        geometry.data.points = data.points;
+        geometry.data.polys = data.polys;
+        return;
+      }
+
+      // otherwise it means it is a new surface / segment
+
+      const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
+
+      return toolGroupIds.map((toolGroupId) => {
+        const segmentationRepresentations = getSegmentationRepresentations(
+          toolGroupId
+        ) as ToolGroupSpecificRepresentations;
+
+        return segmentationRepresentations.map((segmentationRepresentation) => {
+          if (
+            segmentationRepresentation.type !==
+            SegmentationRepresentations.Surface
+          ) {
+            return;
+          }
+
+          const color = getColorForSegmentIndex(
+            toolGroupId,
+            segmentationRepresentation.segmentationRepresentationUID,
+            Number(segmentIndex)
+          ).slice(0, 3);
+
+          const closedSurface = {
+            id: geometryId,
+            color,
+            frameOfReferenceUID: 'test-frameOfReferenceUID',
+            data: {
+              points: data.points,
+              polys: data.polys,
+            },
+          };
+
+          const promise = geometryLoader.createAndCacheGeometry(geometryId, {
+            type: Enums.GeometryType.SURFACE,
+            geometryData: closedSurface as Types.PublicSurfaceData,
+          });
+
+          // update the representation data also to include this new
+          // geometryId
+          segmentation.representationData.SURFACE.geometryIds.push(geometryId);
+          return promise;
+        });
+      });
+    });
+
+    Promise.all(promises);
+
+    triggerSegmentationModified(segmentationId);
   }
 }
 

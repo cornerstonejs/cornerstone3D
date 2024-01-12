@@ -97,6 +97,8 @@ async function render(
     );
   }
 
+  let newSurfaceForRendering = false;
+
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
     if (!geometry) {
@@ -120,20 +122,23 @@ async function render(
     const surface = geometry.data;
 
     const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
-    _renderSurface(viewport, surface, surfaceUID);
+    const actorUID = surfaceUID;
+
+    if (viewport.getActor(actorUID) === undefined) {
+      newSurfaceForRendering = true;
+    }
+
+    addOrUpdateSurfaceToElement(
+      viewport.element,
+      surface as Types.ISurface,
+      actorUID
+    );
   });
 
-  viewport.resetCamera();
+  if (newSurfaceForRendering) {
+    viewport.resetCamera();
+  }
   viewport.render();
-}
-
-function _renderSurface(
-  viewport: Types.IVolumeViewport,
-  surface: any,
-  surfaceUID: string
-): void {
-  const actorUID = surfaceUID;
-  addOrUpdateSurfaceToElement(viewport.element, surface, actorUID);
 }
 
 function _removeSurfaceFromToolGroupViewports(

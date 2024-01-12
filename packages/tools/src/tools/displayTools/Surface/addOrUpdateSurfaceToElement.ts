@@ -20,6 +20,52 @@ function addOrUpdateSurfaceToElement(
 ): void {
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
+  const surfaceActor = viewport.getActor(actorUID)?.actor as Types.Actor;
+
+  if (surfaceActor) {
+    // we already have an actor for this surface, we just need to update it
+
+    // Todo: figure out if the surface configuration has changed
+
+    const surfaceMapper = surfaceActor.getMapper();
+    const currentPolyData = surfaceMapper.getInputData();
+
+    // check if the new data is the same as the old data by checking the
+    // length of the points and the length of the polys
+
+    const newPoints = surface.getPoints();
+    const newPolys = surface.getPolys();
+
+    const currentPoints = currentPolyData.getPoints().getData();
+    const currentPolys = currentPolyData.getPolys().getData();
+
+    if (
+      newPoints.length === currentPoints.length &&
+      newPolys.length === currentPolys.length
+    ) {
+      // the data is the same, we don't need to update the actor
+
+      return;
+    }
+
+    const polyData = vtkPolyData.newInstance();
+    polyData.getPoints().setData(newPoints, 3);
+
+    const triangles = vtkCellArray.newInstance({
+      values: Float32Array.from(newPolys),
+    });
+
+    polyData.setPolys(triangles);
+
+    surfaceMapper.setInputData(polyData);
+    surfaceMapper.modified();
+
+    setTimeout(() => {
+      viewport.getRenderer().resetCameraClippingRange();
+    }, 0);
+
+    return;
+  }
 
   // Default to true since we are setting a new segmentation, however,
   // in the event listener, we will make other segmentations visible/invisible
