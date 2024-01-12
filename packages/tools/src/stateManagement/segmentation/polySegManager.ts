@@ -80,7 +80,7 @@ class PolySegManager {
   }
 
   onSegmentationDataModified(event) {
-    const { segmentationId, modifiedSlicesToUse } =
+    const { segmentationId } =
       event.detail as SegmentationDataModifiedEventDetail;
 
     const computedRepresentations =
@@ -93,10 +93,7 @@ class PolySegManager {
     const promises = computedRepresentations.map((representationType) => {
       switch (representationType) {
         case SegmentationRepresentations.Surface:
-          return this.updateSurfaceRepresentation(
-            segmentationId,
-            modifiedSlicesToUse
-          );
+          return this.updateSurfaceRepresentation(segmentationId);
       }
     });
 
@@ -212,7 +209,6 @@ class PolySegManager {
     await this.initializeIfNecessary();
 
     // Todo: validate valid labelmap representation
-
     const segmentation = getSegmentation(segmentationId);
     const isVolume = isVolumeSegmentation(
       segmentation.representationData.LABELMAP
@@ -263,9 +259,26 @@ class PolySegManager {
     throw new Error('Not implemented yet');
   }
 
-  async updateSurfaceRepresentation(segmentationId, modifiedSlicesToUse) {
+  async updateSurfaceRepresentation(segmentationId) {
     const surfacesObj = await this.labelmapToSurfaceData(segmentationId);
     const segmentation = getSegmentation(segmentationId);
+
+    const indices = getUniqueSegmentIndices(segmentationId);
+
+    if (!indices.length) {
+      // means all segments were removed so we need to empty out
+      // the geometry data
+      const geometryIds = segmentation.representationData.SURFACE.geometryIds;
+      geometryIds.forEach((geometryId) => {
+        const geometry = cache.getGeometry(geometryId);
+        geometry.data.points = [];
+        geometry.data.polys = [];
+      });
+
+      triggerSegmentationModified(segmentationId);
+
+      return;
+    }
 
     const promises = surfacesObj.map((surfaceObj) => {
       const { segmentIndex, data } = surfaceObj;
@@ -275,13 +288,20 @@ class PolySegManager {
       const geometry = cache.getGeometry(geometryId);
 
       if (geometry) {
-        geometry.data.points = data.points;
-        geometry.data.polys = data.polys;
-        return;
+        if (indices.includes(segmentIndex)) {
+          // if the geometry already exists and the segmentIndex is
+          // still present, update the geometry data
+          geometry.data.points = data.points;
+          geometry.data.polys = data.polys;
+          return;
+        } else {
+          geometry.data.points = [];
+          geometry.data.polys = [];
+          return;
+        }
       }
 
       // otherwise it means it is a new surface / segment
-
       const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
 
       return toolGroupIds.map((toolGroupId) => {
