@@ -16,6 +16,7 @@ import createInfoSection from './createInfoSection';
 import camera from './camera';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
+import addManipulationBindings from './addManipulationBindings';
 
 export {
   createImageIdsAndCacheMetaData,
@@ -23,6 +24,7 @@ export {
   initDemo,
   setTitleAndDescription,
   addButtonToToolbar,
+  addManipulationBindings,
   addCheckboxToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,

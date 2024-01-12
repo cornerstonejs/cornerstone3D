@@ -156,6 +156,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       columnCosines[1],
       columnCosines[2]
     );
+
+    const { rows, columns } = imagePlaneModule;
+    this.videoWidth = columns;
+    this.videoHeight = rows;
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
@@ -216,10 +220,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
-      if (frameNumber !== undefined) {
+      this.play();
+      // This is ugly, but without it, the video often fails to render initially
+      // so having a play, followed by a pause fixes things.
+      // 50 ms is a tested value that seems to work to prevent exceptions
+      window.setTimeout(() => {
         this.pause();
-        this.setFrameNumber(frameNumber);
-      }
+        this.setFrameNumber(frameNumber || 1);
+      }, 50);
     });
   }
 
@@ -258,17 +266,27 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
-  public play() {
-    if (!this.isPlaying) {
-      this.videoElement.play();
-      this.isPlaying = true;
-      this.renderWhilstPlaying();
+  public async play() {
+    try {
+      if (!this.isPlaying) {
+        // Play returns a promise that is true when playing completes.
+        await this.videoElement.play();
+        this.isPlaying = true;
+        this.renderWhilstPlaying();
+      }
+    } catch (e) {
+      // No-op, an exception sometimes gets thrown on the initial play, not
+      // quite sure why.  Catching it prevents displaying an error
     }
   }
 
   public async pause() {
-    await this.videoElement.pause();
-    this.isPlaying = false;
+    try {
+      await this.videoElement.pause();
+      this.isPlaying = false;
+    } catch (e) {
+      // No-op - sometimes this happens on startup
+    }
   }
 
   public async scroll(delta = 1) {
@@ -457,7 +475,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     const spacing = metadata.spacing;
 
-    return {
+    const imageData = {
       dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
@@ -486,6 +504,11 @@ class VideoViewport extends Viewport implements IVideoViewport {
         scaled: false,
       },
     };
+    Object.defineProperty(imageData, 'scalarData', {
+      get: () => this.getScalarData(),
+      enumerable: true,
+    });
+    return imageData;
   }
 
   /**

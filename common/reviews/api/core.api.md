@@ -320,6 +320,9 @@ function convertStackToVolumeViewport({ viewport, options, }: {
 }): Promise<IVolumeViewport>;
 
 // @public (undocumented)
+function convertToGrayscale(scalarData: any, width: number, height: number): any;
+
+// @public (undocumented)
 function convertVolumeToStackViewport({ viewport, options, }: {
     viewport: Types.IVolumeViewport;
     options: {
@@ -3153,6 +3156,7 @@ declare namespace utilities {
         createInt16SharedArray,
         getViewportModality,
         windowLevel,
+        convertToGrayscale,
         getClosestImageId,
         getSpacingInNormalDirection,
         getTargetVolumeAndSpacingInNormalDir,
@@ -3288,7 +3292,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
-    play(): void;
+    play(): Promise<void>;
     // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)
