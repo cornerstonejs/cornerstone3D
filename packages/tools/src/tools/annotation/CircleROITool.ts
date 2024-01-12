@@ -168,7 +168,6 @@ class CircleROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -1052,11 +1051,9 @@ function defaultGetTextLines(data, targetId): string[] {
     stdDev,
     max,
     isEmptyArea,
-    Modality,
     areaUnit,
     modalityUnit,
   } = cachedVolumeStats;
-
   const textLines: string[] = [];
 
   if (radius) {
