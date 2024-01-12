@@ -463,15 +463,7 @@ async function run() {
     ]);
 
   // Store the segmentation representation that was just created
-  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
-
-  // Make the segmentation created as the active one
-  // This will add it to the specified tool group, which isn't already done here
-  // so is a necessary step.
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  [segmentationRepresentationUID] = segmentationRepresentationUIDs;
 
   initializeGlobalConfig();
   updateInputsForCurrentSegmentation();
