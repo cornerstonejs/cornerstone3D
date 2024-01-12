@@ -37,7 +37,7 @@ class PolySegManager {
   constructor() {
     this._debouncedSegmentationModified = debounce(
       (event) => this.onSegmentationDataModified(event),
-      500
+      300
     );
   }
 

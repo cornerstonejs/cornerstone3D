@@ -1,10 +1,8 @@
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
@@ -134,10 +132,6 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(RectangleScissorsTool);
-  cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(SphereScissorsTool);
-  cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
@@ -152,12 +146,8 @@ async function run() {
 
   // Segmentation Tools
   toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup1.addTool(RectangleScissorsTool.toolName);
-  toolGroup1.addTool(CircleScissorsTool.toolName);
-  toolGroup1.addTool(SphereScissorsTool.toolName);
-  toolGroup1.addTool(PaintFillTool.toolName);
-  toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
-    activeStrategy: 'FILL_INSIDE_SPHERE',
+  toolGroup1.addToolInstance('CircularBrush', BrushTool.toolName, {
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
   });
 
   toolGroup2.addTool(TrackballRotateTool.toolName);
@@ -168,7 +158,7 @@ async function run() {
   toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup1.setToolActive('SphereBrush', {
+  toolGroup1.setToolActive('CircularBrush', {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Middle Click
@@ -230,7 +220,6 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
@@ -239,13 +228,15 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
       viewportId: viewportId3,
       type: ViewportType.VOLUME_3D,
       element: element3,
+      defaultOptions: {
+        background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
+      },
     },
   ];
 

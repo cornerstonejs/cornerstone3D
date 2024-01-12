@@ -305,6 +305,12 @@ class RenderingEngine implements IRenderingEngine {
 
     this.setVtkjsDrivenViewports(vtkDrivenViewportInputEntries);
     this.setCustomViewports(customRenderingViewportInputEntries);
+
+    viewportInputEntries.map((vp) => {
+      const canvas = getOrCreateCanvas(vp.element);
+      const { background } = vp.defaultOptions;
+      this.fillCanvasWithBackgroundColor(canvas, background);
+    });
   }
 
   /**
