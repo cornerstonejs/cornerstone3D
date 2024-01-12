@@ -443,7 +443,7 @@ addButtonToToolbar({
 
 addSliderToToolbar({
   id: 'outlineWidthActive',
-  title: 'Segment Thickness (active)',
+  title: 'Outline Thickness (active)',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
@@ -454,7 +454,7 @@ addSliderToToolbar({
 
 addSliderToToolbar({
   id: 'outlineWidthInactive',
-  title: 'Segment Thickness  (inactive)',
+  title: 'Outline Thickness  (inactive)',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
