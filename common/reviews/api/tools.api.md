@@ -36,7 +36,7 @@ declare namespace activeSegmentation {
 }
 
 // @public (undocumented)
-function addAnnotation(annotation: Annotation, annotationGroupSelector: AnnotationGroupSelector, suppressEvents?: boolean): string;
+function addAnnotation(annotation: Annotation, annotationGroupSelector: AnnotationGroupSelector): string;
 
 // @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
@@ -1343,12 +1343,8 @@ type ContourAnnotationData = {
 };
 
 // @public (undocumented)
-export class ContourROITool extends PlanarFreehandROITool {
-    constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
-    // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => InterpolationROIAnnotation;
-    // (undocumented)
-    getSliceData(viewport: any, referencedImageId: any): Types_2.ImageSliceData;
+export class ContourROITool extends PlanarFreehandContourSegmentationTool {
+    constructor(toolProps?: PublicToolProps);
 }
 
 declare namespace contours {
@@ -2308,7 +2304,7 @@ function getNumberOfAnnotations(toolName: string, annotationGroupSelector: Annot
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
-function getPoint(points: any, idx: any): any[];
+function getPoint(points: any, idx: any): Types_2.Point3;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
@@ -4083,7 +4079,7 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 function removeAllAnnotations(): void;
 
 // @public (undocumented)
-function removeAnnotation(annotationUID: string, suppressEvents?: boolean): void;
+function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
