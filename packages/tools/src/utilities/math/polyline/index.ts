@@ -7,6 +7,10 @@ import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourP
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
 import calculateAreaOfPoints from './calculateAreaOfPoints';
+import {
+  isPointInsidePolyline2D,
+  isPointInsidePolyline3D,
+} from './isPointInsidePolyline';
 
 export {
   getFirstIntersectionWithPolyline,
@@ -16,4 +20,6 @@ export {
   addCanvasPointsToArray,
   pointCanProjectOnLine,
   calculateAreaOfPoints,
+  isPointInsidePolyline2D,
+  isPointInsidePolyline3D,
 };

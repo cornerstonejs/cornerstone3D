@@ -6,7 +6,6 @@ import {
   PublicToolProps,
   ToolProps,
   EventTypes,
-  Segmentation,
   ToolGroupSpecificRepresentation,
 } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -15,6 +14,7 @@ import { getActiveSegmentationRepresentation } from '../../stateManagement/segme
 import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import { getSegmentAtWorldPoint } from '../../utilities/segmentation';
+import { state } from '../../store';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -64,6 +64,10 @@ class SegmentSelectTool extends BaseTool {
   };
 
   _setActiveSegment(evt = {} as EventTypes.InteractionEventType): void {
+    if (state.isInteractingWithTool) {
+      return;
+    }
+
     const { element, currentPoints } = evt.detail;
 
     const worldPoint = currentPoints.world;
@@ -80,8 +84,16 @@ class SegmentSelectTool extends BaseTool {
       this.toolGroupId
     );
 
-    if (activeSegmentationReps.type === RepresentationTypes.Labelmap) {
-      this._setActiveSegmentLabelmap(
+    if (!activeSegmentationReps) {
+      return;
+    }
+
+    if (
+      [RepresentationTypes.Labelmap, RepresentationTypes.Contour].includes(
+        activeSegmentationReps.type
+      )
+    ) {
+      this._setActiveSegmentForType(
         activeSegmentationReps,
         worldPoint,
         viewport
@@ -93,7 +105,7 @@ class SegmentSelectTool extends BaseTool {
     }
   }
 
-  _setActiveSegmentLabelmap(
+  _setActiveSegmentForType(
     activeSegmentationReps: ToolGroupSpecificRepresentation,
     worldPoint: Types.Point3,
     viewport: Types.IStackViewport | Types.IVolumeViewport

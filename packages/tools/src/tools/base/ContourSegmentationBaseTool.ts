@@ -52,7 +52,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
 
     if (!activeSegmentationRepresentation) {
-      throw new Error(
+      console.warn(
         'No active segmentation detected, create one before using scissors tool'
       );
     }

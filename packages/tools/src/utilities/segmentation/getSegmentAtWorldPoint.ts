@@ -11,6 +11,12 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
+import {
+  ContourSegmentationAnnotation,
+  ContourSegmentationData,
+} from 'tools/src/types';
+import { getAnnotation } from '../../stateManagement';
+import { isPointInsidePolyline3D } from '../math/polyline';
 
 /**
  * Get the segment at the specified world point in the viewport.
@@ -39,6 +45,17 @@ export function getSegmentAtWorldPoint(
       worldPoint,
       representationData,
       segmentationRepresentationUID
+    );
+  } else if (type === SegmentationRepresentations.Contour) {
+    const representationData = segmentation.representationData.CONTOUR;
+    return getSegmentAtWorldForContour(
+      viewport,
+      worldPoint,
+      representationData
+    );
+  } else {
+    throw new Error(
+      `Segmentation representation type ${type} is not supported by getSegmentAtWorldPoint.`
     );
   }
 }
@@ -87,4 +104,43 @@ function getSegmentAtWorldForLabelmap(
   const segmentIndex = scalars[flattenedIndex];
 
   return segmentIndex;
+}
+
+function getSegmentAtWorldForContour(
+  viewport: Types.IViewport,
+  worldPoint: Types.Point3,
+  contourData: ContourSegmentationData
+): number {
+  const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
+  const { viewPlaneNormal } = viewport.getCamera();
+
+  for (const segmentIndex of segmentIndices) {
+    const annotationsSet = contourData.annotationUIDsMap.get(segmentIndex);
+
+    if (!annotationsSet) {
+      continue;
+    }
+
+    for (const annotationUID of annotationsSet) {
+      const annotation = getAnnotation(
+        annotationUID
+      ) as ContourSegmentationAnnotation;
+
+      if (!annotation) {
+        continue;
+      }
+
+      const { polyline } = annotation.data.contour;
+
+      if (
+        !utilities.isEqual(viewPlaneNormal, annotation.metadata.viewPlaneNormal)
+      ) {
+        continue;
+      }
+
+      if (isPointInsidePolyline3D(worldPoint, polyline)) {
+        return Number(segmentIndex);
+      }
+    }
+  }
 }
