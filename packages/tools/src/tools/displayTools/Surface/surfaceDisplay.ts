@@ -75,7 +75,10 @@ async function render(
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   let SurfaceData = segmentation.representationData[Representations.Surface];
 
-  if (!SurfaceData) {
+  if (
+    !SurfaceData &&
+    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID)
+  ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
     SurfaceData = await polySeg.getComputedSurfacesData(
