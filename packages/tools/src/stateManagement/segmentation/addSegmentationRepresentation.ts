@@ -24,7 +24,7 @@ async function addSegmentationRepresentation(
     representationInput;
 
   const segmentationRepresentationUID =
-    representationInput.options.segmentationRepresentationUID ||
+    representationInput.options?.segmentationRepresentationUID ||
     utilities.uuidv4();
 
   // Todo: make segmentsHidden also an option that can get passed by
