@@ -40,6 +40,8 @@ import { getBoundingBoxAroundShapeWorld } from '../../utilities/boundingBox';
 import { validate as validateLabelmap } from '../../tools/displayTools/Labelmap/validateLabelmap';
 import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 
+type RawSurfacesData = { segmentIndex: number; data: Types.SurfaceData }[];
+
 /**
  * Class to control polymorphic segmentations
  */
@@ -249,23 +251,11 @@ class PolySegManager {
    */
   private addComputedRepresentationInternally(
     segmentationId: string,
-    segmentationRepresentationUID: string
+    representationType: SegmentationRepresentations
   ) {
     if (!this.computedRepresentations.has(segmentationId)) {
       this.computedRepresentations.set(segmentationId, []);
     }
-
-    const segmentationRepresentation = findSegmentationRepresentationByUID(
-      segmentationRepresentationUID
-    );
-
-    if (!segmentationRepresentation) {
-      return;
-    }
-
-    const {
-      segmentationRepresentation: { type: representationType },
-    } = segmentationRepresentation;
 
     const representations = this.computedRepresentations.get(segmentationId);
     if (!representations.includes(representationType)) {
@@ -273,37 +263,100 @@ class PolySegManager {
     }
   }
 
-  /**
-   * Retrieves the computed  surface data for a given segmentation representation.
-   * - If the underlying segmentation data is a labelmap, it converts the labelmap to a surface.
-   * - Todo: Contour -> Surface (not yet implemented)
-   *
-   * @param viewport - The viewport associated with the segmentation.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation. In fact
-   * the segmentationId is enough to identify the segmentation, BUT some of the properties
-   * such as colors are stored in the segmentation representation.
-   * @param segmentIndices - Optional array of segment indices to retrieve labelmap data for.
-   * If not provided, it will retrieve labelmap data for all segments.
-   *
-   * @returns A promise that resolves to the surface segmentation data.
-   */
-  public async computeAndAddSurfaceRepresentation(
-    viewport,
-    segmentationRepresentationUID,
-    segmentIndices = []
+  public async computeSurfaceRepresentation(
+    segmentationId: string,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+    } = {}
   ): Promise<SurfaceSegmentationData> {
-    // need to check what is the underlying
-    // representation and convert it to surface
-    const { segmentationRepresentation, toolGroupId } =
-      findSegmentationRepresentationByUID(segmentationRepresentationUID);
+    const rawSurfacesData = await this.createRawSurfaceData(
+      segmentationId,
+      options
+    );
 
-    if (!segmentationRepresentation) {
+    if (!rawSurfacesData) {
       throw new Error(
-        `No segmentation representation found for UID ${segmentationRepresentationUID}`
+        'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
       );
     }
 
-    const { segmentationId } = segmentationRepresentation;
+    const surfacesData = await this.createAndCacheSurfacesFromRaw(
+      segmentationId,
+      rawSurfacesData,
+      options
+    );
+
+    return surfacesData;
+  }
+
+  private async createAndCacheSurfacesFromRaw(
+    segmentationId: string,
+    rawSurfacesData: RawSurfacesData,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+    } = {}
+  ) {
+    let segmentationRepresentation, toolGroupId;
+    if (options.segmentationRepresentationUID) {
+      ({ segmentationRepresentation, toolGroupId } =
+        findSegmentationRepresentationByUID(
+          options.segmentationRepresentationUID
+        ));
+    }
+
+    const segmentation = getSegmentation(segmentationId);
+
+    const geometryIds = [];
+    const promises = Object.keys(rawSurfacesData).map((index) => {
+      const rawSurfaceData = rawSurfacesData[index];
+      const segmentIndex = rawSurfaceData.segmentIndex;
+
+      let color;
+      if (segmentationRepresentation) {
+        color = getColorForSegmentIndex(
+          toolGroupId,
+          segmentationRepresentation.segmentationRepresentationUID,
+          segmentIndex
+        ).slice(0, 3);
+      } else {
+        color = [Math.random() * 255, Math.random() * 255, Math.random() * 255];
+      }
+
+      const closedSurface = {
+        id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
+        color,
+        frameOfReferenceUID: 'test-frameOfReferenceUID',
+        data: {
+          points: rawSurfaceData.data.points,
+          polys: rawSurfaceData.data.polys,
+        },
+      };
+
+      geometryIds.push(closedSurface.id);
+
+      const geometryId = closedSurface.id;
+      return geometryLoader.createAndCacheGeometry(geometryId, {
+        type: Enums.GeometryType.SURFACE,
+        geometryData: closedSurface as Types.PublicSurfaceData,
+      });
+    });
+
+    await Promise.all(promises);
+
+    return {
+      geometryIds,
+    };
+  }
+
+  private async createRawSurfaceData(
+    segmentationId: string,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+    } = {}
+  ): Promise<RawSurfacesData> {
     const segmentation = getSegmentation(segmentationId);
     const representationData = segmentation.representationData;
 
@@ -313,9 +366,9 @@ class PolySegManager {
       // convert volume labelmap to surface
       let rawSurfacesDataObj;
       try {
-        rawSurfacesDataObj = await this.computeSurfacesFromLabelmapSegmentation(
+        rawSurfacesDataObj = await this.computeSurfaceFromLabelmapSegmentation(
           segmentation.segmentationId,
-          segmentIndices
+          options
         );
       } catch (error) {
         console.warn('Error converting volume labelmap to surface');
@@ -323,61 +376,58 @@ class PolySegManager {
         return;
       }
 
-      const geometryIds = [];
-      const promises = Object.keys(rawSurfacesDataObj).map((index) => {
-        const rawSurfaceData = rawSurfacesDataObj[index];
-        const segmentIndex = rawSurfaceData.segmentIndex;
-
-        const color = getColorForSegmentIndex(
-          toolGroupId,
-          segmentationRepresentationUID,
-          segmentIndex
-        ).slice(0, 3);
-
-        const closedSurface = {
-          id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
-          color,
-          frameOfReferenceUID: 'test-frameOfReferenceUID',
-          data: {
-            points: rawSurfaceData.data.points,
-            polys: rawSurfaceData.data.polys,
-          },
-        };
-
-        geometryIds.push(closedSurface.id);
-
-        const geometryId = closedSurface.id;
-        return geometryLoader.createAndCacheGeometry(geometryId, {
-          type: Enums.GeometryType.SURFACE,
-          geometryData: closedSurface as Types.PublicSurfaceData,
-        });
-      });
-
-      await Promise.all(promises);
-
-      addRepresentationData({
-        segmentationId: segmentation.segmentationId,
-        type: SegmentationRepresentations.Surface,
-        data: {
-          geometryIds,
-        },
-      });
-
-      this.addComputedRepresentationInternally(
-        segmentationId,
-        segmentationRepresentationUID
-      );
-
-      this.subscribeToSegmentationChanges();
-
-      return {
-        geometryIds,
-      };
+      return rawSurfacesDataObj;
     } else {
       throw new Error(
         'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
       );
     }
+  }
+
+  /**
+   * Retrieves the computed  surface data for a given segmentation representation.
+   * - If the underlying segmentation data is a labelmap, it converts the labelmap to a surface.
+   * - Todo: Contour -> Surface (not yet implemented)
+   *
+   * @param viewport - The viewport associated with the segmentation.
+   * @param segmentationId - The id of the segmentation
+   * @param options - Optional object containing additional options.
+   * @param [options.segmentIndices] - Optional array of segment indices to retrieve surface data for.
+   * If not provided, it will retrieve surface data for all segments.
+   * @param [options.segmentationRepresentationUID] - Optional segmentation representation UID to retrieve color data from.
+   *
+   * @returns A promise that resolves to the surface segmentation data.
+   */
+  public async computeAndAddSurfaceRepresentation(
+    segmentationId: string,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+    } = {}
+  ): Promise<SurfaceSegmentationData> {
+    const surfacesData = await this.computeSurfaceRepresentation(
+      segmentationId,
+      options
+    );
+
+    addRepresentationData({
+      segmentationId,
+      type: SegmentationRepresentations.Surface,
+      data: {
+        ...surfacesData,
+      },
+    });
+
+    this.addComputedRepresentationInternally(
+      segmentationId,
+      SegmentationRepresentations.Surface
+    );
+
+    this.subscribeToSegmentationChanges();
+
+    triggerSegmentationModified(segmentationId);
+
+    return surfacesData;
   }
 
   /**
@@ -471,10 +521,13 @@ class PolySegManager {
    * If not provided, all unique segment indices will be converted.
    * @returns A promise that resolves to an array of objects containing the segment index and the corresponding surface data.
    */
-  async computeSurfacesFromLabelmapSegmentation(
+  async computeSurfaceFromLabelmapSegmentation(
     segmentationId,
-    segmentIndices = []
-  ): Promise<{ segmentIndex: number; data: Types.SurfaceData }[]> {
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+    } = {}
+  ): Promise<RawSurfacesData> {
     await this.initializeIfNecessary();
 
     // Todo: validate valid labelmap representation
@@ -488,13 +541,13 @@ class PolySegManager {
       segmentation.representationData.LABELMAP
     );
 
-    const indices = segmentIndices.length
-      ? segmentIndices
+    const segmentIndices = options.segmentIndices?.length
+      ? options.segmentIndices
       : getUniqueSegmentIndices(segmentationId);
 
     const labelmapRepresentationData = segmentation.representationData.LABELMAP;
 
-    const promises = indices.map(async (index) => {
+    const promises = segmentIndices.map(async (index) => {
       const surface = isVolume
         ? await this._convertVolumeLabelmapToSurface(
             labelmapRepresentationData as LabelmapSegmentationDataVolume,
@@ -705,11 +758,7 @@ class PolySegManager {
   }
 
   async updateSurfaceRepresentation(segmentationId) {
-    // Todo: this should be general and not only for labelmap
-    // need to check what is the underlying available
-    const surfacesObj = await this.computeSurfacesFromLabelmapSegmentation(
-      segmentationId
-    );
+    const surfacesObj = await this.createRawSurfaceData(segmentationId);
     const segmentation = getSegmentation(segmentationId);
     const indices = getUniqueSegmentIndices(segmentationId);
 
@@ -729,74 +778,62 @@ class PolySegManager {
       return;
     }
 
-    const promises = surfacesObj.map((surfaceObj) => {
-      const { segmentIndex, data } = surfaceObj;
-
+    const promises = surfacesObj.map(({ data, segmentIndex }) => {
       const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;
 
       const geometry = cache.getGeometry(geometryId);
-      const surface = geometry.data as Types.ISurface;
 
-      if (geometry) {
+      if (!geometry) {
+        // means it is a new segment getting added while we were
+        // listening to the segmentation data modified event
+        const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
+
+        return toolGroupIds.map((toolGroupId) => {
+          const segmentationRepresentations = getSegmentationRepresentations(
+            toolGroupId
+          ) as ToolGroupSpecificRepresentations;
+
+          return segmentationRepresentations.map(
+            (segmentationRepresentation) => {
+              if (
+                segmentationRepresentation.type !==
+                SegmentationRepresentations.Surface
+              ) {
+                return;
+              }
+              segmentation.representationData.SURFACE.geometryIds.push(
+                geometryId
+              );
+
+              return this.createAndCacheSurfacesFromRaw(
+                segmentationId,
+                [{ segmentIndex, data }],
+                {
+                  segmentationRepresentationUID:
+                    segmentationRepresentation.segmentationRepresentationUID,
+                }
+              );
+            }
+          );
+        });
+      } else {
         if (indices.includes(segmentIndex)) {
           // if the geometry already exists and the segmentIndex is
           // still present, update the geometry data
+          const surface = geometry.data as Types.ISurface;
           surface.setPoints(data.points);
           surface.setPolys(data.polys);
           return;
         } else {
+          const surface = geometry.data as Types.ISurface;
           surface.setPoints([]);
           surface.setPolys([]);
           return;
         }
       }
-
-      // otherwise it means it is a new surface / segment
-      const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
-
-      return toolGroupIds.map((toolGroupId) => {
-        const segmentationRepresentations = getSegmentationRepresentations(
-          toolGroupId
-        ) as ToolGroupSpecificRepresentations;
-
-        return segmentationRepresentations.map((segmentationRepresentation) => {
-          if (
-            segmentationRepresentation.type !==
-            SegmentationRepresentations.Surface
-          ) {
-            return;
-          }
-
-          const color = getColorForSegmentIndex(
-            toolGroupId,
-            segmentationRepresentation.segmentationRepresentationUID,
-            Number(segmentIndex)
-          ).slice(0, 3);
-
-          const closedSurface = {
-            id: geometryId,
-            color,
-            frameOfReferenceUID: 'test-frameOfReferenceUID',
-            data: {
-              points: data.points,
-              polys: data.polys,
-            },
-          };
-
-          const promise = geometryLoader.createAndCacheGeometry(geometryId, {
-            type: Enums.GeometryType.SURFACE,
-            geometryData: closedSurface as Types.PublicSurfaceData,
-          });
-
-          // update the representation data also to include this new
-          // geometryId
-          segmentation.representationData.SURFACE.geometryIds.push(geometryId);
-          return promise;
-        });
-      });
     });
 
-    Promise.all(promises);
+    await Promise.all(promises);
 
     triggerSegmentationModified(segmentationId);
   }
