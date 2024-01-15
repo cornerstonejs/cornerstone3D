@@ -573,7 +573,7 @@ export function getUnknownVolumeLoaderSchema(): string {
  */
 export async function createAndCacheDerivedSegmentationVolume(
   referencedVolumeId: string,
-  options: DerivedVolumeOptions
+  options = {} as DerivedVolumeOptions
 ): Promise<IImageVolume> {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
