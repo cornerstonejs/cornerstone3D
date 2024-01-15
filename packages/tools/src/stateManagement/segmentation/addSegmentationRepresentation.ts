@@ -22,7 +22,10 @@ async function addSegmentationRepresentation(
 ): Promise<string> {
   const { segmentationId, options = {} as RepresentationPublicInputOptions } =
     representationInput;
-  const segmentationRepresentationUID = utilities.uuidv4();
+
+  const segmentationRepresentationUID =
+    representationInput.options.segmentationRepresentationUID ||
+    utilities.uuidv4();
 
   // Todo: make segmentsHidden also an option that can get passed by
   // the user

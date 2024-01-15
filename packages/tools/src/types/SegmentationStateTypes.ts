@@ -274,10 +274,11 @@ export type RepresentationPublicInput = {
 };
 
 export type RepresentationPublicInputOptions = {
+  segmentationRepresentationUID?: string;
   // color lut to use for this representation (optional), it can
   // be either a colorLUT array or the index of the colorLUT in the state
   colorLUTOrIndex?: Types.ColorLUT | number;
   // whether to use polymorphic segmentation utilities to convert
   // from other representations to this representation
-  polySeg: boolean;
+  polySeg?: boolean;
 };
