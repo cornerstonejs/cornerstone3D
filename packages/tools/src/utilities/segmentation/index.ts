@@ -21,6 +21,7 @@ import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
 import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
+import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
 
 export {
   thresholdVolumeByRange,
@@ -42,4 +43,5 @@ export {
   segmentContourAction,
   invalidateBrushCursor,
   getUniqueSegmentIndices,
+  getSegmentAtWorldPoint,
 };

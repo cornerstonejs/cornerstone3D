@@ -1,8 +1,4 @@
-import {
-  cache,
-  getEnabledElement,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -11,20 +7,14 @@ import {
   ToolProps,
   EventTypes,
   Segmentation,
+  ToolGroupSpecificRepresentation,
 } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
-import {
-  getActiveSegmentation,
-  getActiveSegmentationRepresentation,
-} from '../../stateManagement/segmentation/activeSegmentation';
+import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
 import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
+import { getSegmentAtWorldPoint } from '../../utilities/segmentation';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -86,10 +76,16 @@ class SegmentSelectTool extends BaseTool {
 
     const { viewport } = enabledElement;
 
-    const activeSegmentation = getActiveSegmentation(this.toolGroupId);
+    const activeSegmentationReps = getActiveSegmentationRepresentation(
+      this.toolGroupId
+    );
 
-    if (activeSegmentation.type === RepresentationTypes.Labelmap) {
-      this._setActiveSegmentLabelmap(activeSegmentation, worldPoint, viewport);
+    if (activeSegmentationReps.type === RepresentationTypes.Labelmap) {
+      this._setActiveSegmentLabelmap(
+        activeSegmentationReps,
+        worldPoint,
+        viewport
+      );
     } else {
       console.warn(
         'SegmentSelectTool does not support the current segmentation type.'
@@ -98,7 +94,7 @@ class SegmentSelectTool extends BaseTool {
   }
 
   _setActiveSegmentLabelmap(
-    activeSegmentation: Segmentation,
+    activeSegmentationReps: ToolGroupSpecificRepresentation,
     worldPoint: Types.Point3,
     viewport: Types.IStackViewport | Types.IVolumeViewport
   ): void {
@@ -108,71 +104,26 @@ class SegmentSelectTool extends BaseTool {
       return;
     }
 
-    const labelmapData = activeSegmentation.representationData.LABELMAP;
+    const { segmentationId, segmentationRepresentationUID } =
+      activeSegmentationReps;
 
-    let hoveredSegmentIndex;
-
-    if (isVolumeSegmentation(activeSegmentation.representationData.LABELMAP)) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-
-      const segmentationVolume = cache.getVolume(volumeId);
-
-      if (!segmentationVolume) {
-        return;
-      }
-
-      hoveredSegmentIndex =
-        segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
-    } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
-      const currentImageId = viewport.getCurrentImageId();
-      const segmentationImageId = imageIdReferenceMap.get(currentImageId);
-
-      const image = cache.getImage(segmentationImageId);
-
-      if (!image) {
-        return;
-      }
-
-      const activeSegmentationRepresentation =
-        getActiveSegmentationRepresentation(this.toolGroupId);
-
-      if (!activeSegmentationRepresentation) {
-        return;
-      }
-
-      const segmentationActor = viewport.getActor(
-        activeSegmentationRepresentation.segmentationRepresentationUID
-      );
-
-      const imageData = segmentationActor?.actor.getMapper().getInputData();
-
-      const indexIJK = csUtils.transformWorldToIndex(imageData, worldPoint);
-
-      // since it is a stack we don't need to check the z
-      const flattenedIndex = indexIJK[0] + indexIJK[1] * image.columns;
-
-      const scalars = imageData.getPointData().getScalars().getData();
-
-      hoveredSegmentIndex = scalars[flattenedIndex];
-    }
+    const hoveredSegmentIndex = getSegmentAtWorldPoint(
+      viewport,
+      worldPoint,
+      segmentationRepresentationUID
+    );
 
     // No need to select background
     if (!hoveredSegmentIndex || hoveredSegmentIndex === 0) {
       return;
     }
 
-    setActiveSegmentIndex(
-      activeSegmentation.segmentationId,
-      hoveredSegmentIndex
-    );
+    setActiveSegmentIndex(segmentationId, hoveredSegmentIndex);
 
     const renderingEngine = viewport.getRenderingEngine();
 
     // update states
-    triggerSegmentationModified(activeSegmentation.segmentationId);
+    triggerSegmentationModified(segmentationId);
     triggerAnnotationRenderForViewportIds(
       renderingEngine,
       renderingEngine.getViewports().map((v) => v.id)

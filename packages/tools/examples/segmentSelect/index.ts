@@ -120,7 +120,7 @@ cornerstoneTools.addTool(BrushTool);
 cornerstoneTools.addTool(SegmentSelectTool);
 cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
-function setupLabelmapTools(toolGroupId) {
+function setupTools(toolGroupId, isContour = false) {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -130,59 +130,9 @@ function setupLabelmapTools(toolGroupId) {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
-  // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(SegmentSelectTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularBrush,
-    }
-  );
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup.setToolActive(SegmentSelectTool.toolName);
-
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-
-  return toolGroup;
-}
-function setupContourTools(toolGroupId) {
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Manipulation Tools
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+  if (isContour) {
+    toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+  }
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -221,13 +171,19 @@ function setupContourTools(toolGroupId) {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  toolGroup.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-      },
-    ],
-  });
+  if (isContour) {
+    toolGroup.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+      ],
+    });
+  } else {
+    toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  }
 
   return toolGroup;
 }
@@ -239,14 +195,10 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const stackLabelmapToolGroup = setupLabelmapTools(
-    stackSegLabelmapToolGroupId
-  );
-  const volumeLabelmapToolGroup = setupLabelmapTools(
-    volumeSegLabelmapToolGroupId
-  );
-  const stackContourToolGroup = setupContourTools(stackSegContourToolGroupId);
-  const volumeContourToolGroup = setupContourTools(volumeSegContourToolGroupId);
+  const stackLabelmapToolGroup = setupTools(stackSegLabelmapToolGroupId);
+  const volumeLabelmapToolGroup = setupTools(volumeSegLabelmapToolGroupId);
+  const stackContourToolGroup = setupTools(stackSegContourToolGroupId, true);
+  const volumeContourToolGroup = setupTools(volumeSegContourToolGroupId, true);
 
   const stackImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
