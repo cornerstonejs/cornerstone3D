@@ -282,7 +282,7 @@ class PolySegManager {
    *
    * @returns A promise that resolves to the surface segmentation data.
    */
-  public async getComputedSurfacesData(
+  public async computeAndAddSurfaceRepresentation(
     viewport,
     segmentationRepresentationUID,
     segmentIndices = []
@@ -308,7 +308,7 @@ class PolySegManager {
       // convert volume labelmap to surface
       let rawSurfacesDataObj;
       try {
-        rawSurfacesDataObj = await this.labelmapToSurfaceData(
+        rawSurfacesDataObj = await this.computeSurfacesFromLabelmapSegmentation(
           segmentation.segmentationId,
           segmentIndices
         );
@@ -389,15 +389,16 @@ class PolySegManager {
    *
    * @returns A promise that resolves to the labelmap segmentation data.
    */
-  public async getComputedLabelmapData(
+  public async computeAndAddLabelmapRepresentation(
     viewport,
     segmentationRepresentationUID,
     segmentIndices = []
   ): Promise<LabelmapSegmentationData> {
     // need to check what is the underlying
     // representation and convert it to surface
-    const { segmentationRepresentation, toolGroupId } =
-      findSegmentationRepresentationByUID(segmentationRepresentationUID);
+    const { segmentationRepresentation } = findSegmentationRepresentationByUID(
+      segmentationRepresentationUID
+    );
 
     if (!segmentationRepresentation) {
       throw new Error(
@@ -407,15 +408,15 @@ class PolySegManager {
 
     const { segmentationId } = segmentationRepresentation;
     const segmentation = getSegmentation(segmentationId);
-    const representationData = segmentation.representationData;
+    const { representationData } = segmentation;
 
     if (representationData.CONTOUR as ContourSegmentationData) {
       // convert volume labelmap to surface
       let rawLabelmapData;
       try {
-        rawLabelmapData = await this.contourToLabelmapData(
+        rawLabelmapData = await this.computeLabelmapFromContourSegmentation(
           viewport,
-          segmentation.segmentationId
+          segmentationId
         );
       } catch (error) {
         console.warn('Error converting  contour to labelmap');
@@ -432,7 +433,7 @@ class PolySegManager {
       }
 
       addRepresentationData({
-        segmentationId: segmentation.segmentationId,
+        segmentationId,
         type: SegmentationRepresentations.Labelmap,
         data: {
           volumeId,
@@ -465,7 +466,7 @@ class PolySegManager {
    * If not provided, all unique segment indices will be converted.
    * @returns A promise that resolves to an array of objects containing the segment index and the corresponding surface data.
    */
-  async labelmapToSurfaceData(
+  async computeSurfacesFromLabelmapSegmentation(
     segmentationId,
     segmentIndices = []
   ): Promise<{ segmentIndex: number; data: Types.SurfaceData }[]> {
@@ -473,6 +474,11 @@ class PolySegManager {
 
     // Todo: validate valid labelmap representation
     const segmentation = getSegmentation(segmentationId);
+
+    if (!segmentation?.representationData?.LABELMAP) {
+      throw new Error('No labelmap data found for segmentation');
+    }
+
     const isVolume = isVolumeSegmentation(
       segmentation.representationData.LABELMAP
     );
@@ -481,10 +487,18 @@ class PolySegManager {
       ? segmentIndices
       : getUniqueSegmentIndices(segmentationId);
 
+    const labelmapRepresentationData = segmentation.representationData.LABELMAP;
+
     const promises = indices.map(async (index) => {
       const surface = isVolume
-        ? await this._convertVolumeLabelmapToSurface(segmentation, index)
-        : await this._convertStackLabelmapToSurface(segmentation, index);
+        ? await this._convertVolumeLabelmapToSurface(
+            labelmapRepresentationData as LabelmapSegmentationDataVolume,
+            index
+          )
+        : await this._convertStackLabelmapToSurface(
+            labelmapRepresentationData as LabelmapSegmentationData,
+            index
+          );
 
       return { segmentIndex: index, data: surface };
     });
@@ -494,9 +508,18 @@ class PolySegManager {
     return surfaces;
   }
 
-  async contourToLabelmapData(
+  /**
+   * Computes a labelmap segmentation data volume from contour segmentation.
+   *
+   * @param viewport - The viewport.
+   * @param segmentationId - The ID of the segmentation.
+   * @param segmentationIndices - Optional array of segmentation indices.
+   * @returns A promise that resolves to a LabelmapSegmentationDataVolume object containing the volume ID.
+   */
+  async computeLabelmapFromContourSegmentation(
     viewport,
-    segmentationId
+    segmentationId,
+    segmentationIndices = []
   ): Promise<LabelmapSegmentationDataVolume> {
     await this.initializeIfNecessary();
 
@@ -514,17 +537,17 @@ class PolySegManager {
   }
 
   async _convertVolumeLabelmapToSurface(
-    segmentation,
-    segmentIndex
+    labelmapRepresentationData: LabelmapSegmentationDataVolume,
+    segmentIndex: number
   ): Promise<Types.SurfaceData> {
-    const volumeId = segmentation.representationData.LABELMAP.volumeId;
+    const volumeId = labelmapRepresentationData.volumeId;
 
     const volume = cache.getVolume(volumeId);
 
     const scalarData = volume.getScalarData();
     const { dimensions, spacing, origin, direction } = volume;
 
-    return this.polySeg.instance.convertLabelmapToSurface(
+    const results = this.polySeg.instance.convertLabelmapToSurface(
       scalarData,
       dimensions,
       spacing,
@@ -532,15 +555,23 @@ class PolySegManager {
       origin,
       [segmentIndex]
     ) as Types.SurfaceData;
+
+    return results;
   }
 
   async _convertStackLabelmapToSurface(
-    segmentation,
-    segmentIndices
+    segmentation: LabelmapSegmentationData,
+    segmentIndice: number
   ): Promise<Types.SurfaceData> {
     throw new Error('Not implemented yet');
   }
 
+  /**
+   * Convert contour representation to labelmap representation.
+   * @param viewport - The viewport where the point resides.
+   * @param segmentation - The segmentation data being converted.
+   * @returns A Promise that resolves to a LabelmapSegmentationDataVolume containing the volumeId of the new labelmap.
+   */
   async _convertContourToLabelmap(
     viewport,
     segmentation
@@ -561,12 +592,12 @@ class PolySegManager {
       );
 
     const indices = getUniqueSegmentIndices(segmentation.segmentationId);
-    indices.forEach((index) => {
+
+    for (const index of indices) {
       const annotationUIDsInSegment = annotationMap.get(index);
 
-      Array.from(annotationUIDsInSegment).forEach((annotationUID) => {
+      for (const annotationUID of Array.from(annotationUIDsInSegment)) {
         const annotation = getAnnotation(annotationUID);
-
         const pointsBoundsLPS = getBoundingBoxAroundShapeWorld(
           annotation.data.contour.polyline
         );
@@ -602,8 +633,8 @@ class PolySegManager {
             [kMin, kMax],
           ]
         );
-      });
-    });
+      }
+    }
 
     return {
       volumeId: segmentationVolume.volumeId,
@@ -611,7 +642,9 @@ class PolySegManager {
   }
 
   async updateSurfaceRepresentation(segmentationId) {
-    const surfacesObj = await this.labelmapToSurfaceData(segmentationId);
+    const surfacesObj = await this.computeSurfacesFromLabelmapSegmentation(
+      segmentationId
+    );
     const segmentation = getSegmentation(segmentationId);
 
     const indices = getUniqueSegmentIndices(segmentationId);

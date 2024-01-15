@@ -34,6 +34,9 @@ const {
   ZoomTool,
   StackScrollMouseWheelTool,
   TrackballRotateTool,
+  utilities: {
+    segmentation: { setBrushSizeForToolGroup },
+  },
 } = cornerstoneTools;
 
 setTitleAndDescription(
@@ -111,7 +114,7 @@ addButtonToToolbar({
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,
         options: {
-          usePolySeg: true,
+          polySeg: true,
         },
       },
     ]);
@@ -360,6 +363,8 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
+
+  // setBrushSizeForToolGroup(toolGroupId, 100);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

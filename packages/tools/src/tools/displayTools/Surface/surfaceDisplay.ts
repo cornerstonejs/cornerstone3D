@@ -81,7 +81,7 @@ async function render(
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await polySeg.getComputedSurfacesData(
+    SurfaceData = await polySeg.computeAndAddSurfaceRepresentation(
       viewport,
       segmentationRepresentationUID
     );

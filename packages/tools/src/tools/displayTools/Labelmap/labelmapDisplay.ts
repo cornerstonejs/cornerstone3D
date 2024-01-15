@@ -149,14 +149,14 @@ async function render(
     // another representation to labelmap
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    labelmapData = await polySeg.getComputedLabelmapData(
+    labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
       viewport,
       segmentationRepresentationUID
     );
 
     if (!labelmapData) {
       throw new Error(
-        `No Surface data found for segmentationId ${segmentationId}.`
+        `No labelmap data found for segmentationId ${segmentationId}.`
       );
     }
   }
