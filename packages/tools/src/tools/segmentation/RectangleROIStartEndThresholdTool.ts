@@ -67,7 +67,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     defaultToolProps: ToolProps = {
       configuration: {
         numSlicesToPropagate: 10,
-        calculatePointsInsideVolume: false,
+        computePointsInsideVolume: false,
       },
     }
   ) {
@@ -267,6 +267,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     data.cachedStats.projectionPointsImageIds = projectionPointsImageIds;
   }
 
+  //This function return all the points inside the ROI for every slices between startSlice and endSlice
   _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
     const { data } = annotation;
     const projectionPoints = data.cachedStats.projectionPoints;
@@ -351,7 +352,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
-    if (this.configuration.calculatePointsInsideVolume) {
+    if (this.configuration.computePointsInsideVolume) {
       this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
     }
 
