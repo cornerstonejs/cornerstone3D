@@ -286,7 +286,7 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
   };
 }
 
-export interface PlanarFreehandROIAnnotation extends Annotation {
+export type PlanarFreehandROIAnnotation = ContourAnnotation & {
   data: {
     label?: string;
     isOpenContour?: boolean;
@@ -295,8 +295,7 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
     openUShapeContourVectorToPeak?: Types.Point3[];
     cachedStats?: ROICachedStats;
   };
-}
-
+};
 export type PlanarFreehandContourSegmentationAnnotation =
   PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
 
