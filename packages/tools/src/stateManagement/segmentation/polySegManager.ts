@@ -230,6 +230,8 @@ class PolySegManager {
       switch (representationType) {
         case SegmentationRepresentations.Surface:
           return this.updateSurfaceRepresentation(segmentationId);
+        case SegmentationRepresentations.Labelmap:
+          return this.updateLabelmapRepresentation(segmentationId);
       }
     });
 
@@ -703,11 +705,12 @@ class PolySegManager {
   }
 
   async updateSurfaceRepresentation(segmentationId) {
+    // Todo: this should be general and not only for labelmap
+    // need to check what is the underlying available
     const surfacesObj = await this.computeSurfacesFromLabelmapSegmentation(
       segmentationId
     );
     const segmentation = getSegmentation(segmentationId);
-
     const indices = getUniqueSegmentIndices(segmentationId);
 
     if (!indices.length) {
@@ -716,8 +719,9 @@ class PolySegManager {
       const geometryIds = segmentation.representationData.SURFACE.geometryIds;
       geometryIds.forEach((geometryId) => {
         const geometry = cache.getGeometry(geometryId);
-        geometry.data.points = [];
-        geometry.data.polys = [];
+        const surface = geometry.data as Types.ISurface;
+        surface.setPoints([]);
+        surface.setPolys([]);
       });
 
       triggerSegmentationModified(segmentationId);
@@ -731,17 +735,18 @@ class PolySegManager {
       const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;
 
       const geometry = cache.getGeometry(geometryId);
+      const surface = geometry.data as Types.ISurface;
 
       if (geometry) {
         if (indices.includes(segmentIndex)) {
           // if the geometry already exists and the segmentIndex is
           // still present, update the geometry data
-          geometry.data.points = data.points;
-          geometry.data.polys = data.polys;
+          surface.setPoints(data.points);
+          surface.setPolys(data.polys);
           return;
         } else {
-          geometry.data.points = [];
-          geometry.data.polys = [];
+          surface.setPoints([]);
+          surface.setPolys([]);
           return;
         }
       }

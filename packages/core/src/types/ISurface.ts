@@ -8,4 +8,6 @@ export interface ISurface {
   getPoints(): number[];
   getPolys(): number[];
   getSizeInBytes(): number;
+  setPoints(points: number[]): void;
+  setPolys(polys: number[]): void;
 }

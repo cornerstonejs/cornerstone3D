@@ -1,4 +1,4 @@
-import { SurfaceData, Point3 } from '../../types';
+import { SurfaceData, Point3, ISurface } from '../../types';
 
 type SurfaceProps = {
   id: string;
@@ -10,7 +10,7 @@ type SurfaceProps = {
 /**
  * Surface class for storing surface data
  */
-export class Surface {
+export class Surface implements ISurface {
   readonly id: string;
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;
