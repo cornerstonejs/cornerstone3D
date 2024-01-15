@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/streaming-image-volume-loader",
-  "version": "1.41.0",
+  "version": "1.45.1",
   "description": "",
   "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
@@ -23,12 +23,13 @@
     "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
     "build": "yarn run build:all",
     "build:update-api": "yarn run build && api-extractor run --local",
+    "clean": "shx rm -rf dist",
     "dev": "tsc --project ./tsconfig.esm.json --watch",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.41.0",
+    "@cornerstonejs/core": "^1.45.1",
     "comlink": "^4.4.1"
   },
   "contributors": [

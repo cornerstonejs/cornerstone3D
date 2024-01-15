@@ -80,6 +80,13 @@ const fakeImageLoader = (imageId) => {
  * @returns metadata based on the imageId and type
  */
 function fakeMetaDataProvider(type, imageId) {
+  // don't try to provide incorrect information for derived
+  // images, as it will cause errors, rather let the rest of providers
+  // handle it
+  if (imageId.startsWith('derived')) {
+    return;
+  }
+
   if (Array.isArray(imageId)) {
     return;
   }

@@ -11,7 +11,7 @@ import {
   getCalibratedLengthUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -1064,10 +1064,10 @@ class BidirectionalTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-      const color = this.getStyle('color', styleSpecifier, annotation);
-      const shadow = this.getStyle('shadow', styleSpecifier, annotation);
+      const { color, lineWidth, lineDash, shadow } = this.getAnnotationStyle({
+        annotation,
+        styleSpecifier,
+      });
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -1348,19 +1348,23 @@ class BidirectionalTool extends AnnotationTool {
 }
 
 function defaultGetTextLines(data, targetId): string[] {
-  const { cachedStats } = data;
+  const { cachedStats, label } = data;
   const { length, width, unit } = cachedStats[targetId];
 
+  const textLines = [];
+  if (label) {
+    textLines.push(label);
+  }
   if (length === undefined) {
-    return;
+    return textLines;
   }
 
   // spaceBetweenSlices & pixelSpacing &
   // magnitude in each direction? Otherwise, this is "px"?
-  const textLines = [
+  textLines.push(
     `L: ${roundNumber(length)} ${unit}`,
-    `W: ${roundNumber(width)} ${unit}`,
-  ];
+    `W: ${roundNumber(width)} ${unit}`
+  );
 
   return textLines;
 }

@@ -51,6 +51,18 @@ type Cornerstone3DConfig = {
      */
     strictZSpacingForVolumeViewport: boolean;
   };
+  /**
+   * This flag controls whether to enable cache optimization or not. Basically,
+   * when we have a stack viewport (image stack) and we convert it to a volume
+   * the volume will be cached as well as the stack. However, if we can optimize this
+   * by going back to the image cache and create a view at the correct offset
+   * of the bigger volume array buffer, this will save memory. This will get enabled
+   * if cornerstone3D is configured to use SharedArrayBuffer, the reason is that
+   * when we modify the image cache then the images are referring to a different
+   * buffer (SharedArrayBuffer) and some systems don't support shared array
+   * buffers.
+   */
+  enableCacheOptimization: boolean;
 };
 
 export default Cornerstone3DConfig;

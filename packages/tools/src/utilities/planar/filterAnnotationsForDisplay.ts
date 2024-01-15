@@ -77,11 +77,7 @@ export default function filterAnnotationsForDisplay(
       if (Array.isArray(range)) {
         return frameNumber >= range[0] && frameNumber <= range[1];
       }
-      // Arbitrary 5 frames of slop on the video for matching single frame
-      // number to position - this allows the annotation to display  when
-      // the video element is not exactly the same timing as expected or when
-      // playing video back.
-      return Math.abs(frameNumber - range) <= 5;
+      return Math.abs(frameNumber - range) < 1;
     });
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();

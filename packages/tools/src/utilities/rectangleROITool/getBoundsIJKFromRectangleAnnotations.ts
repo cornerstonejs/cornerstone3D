@@ -1,6 +1,6 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape';
+import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
 import extend2DBoundingBoxInViewAxis from '../boundingBox/extend2DBoundingBoxInViewAxis';
 
 type Options = {
@@ -29,7 +29,10 @@ function getBoundsIJKFromRectangleAnnotations(
     const rectangleCornersIJK = pointsToUse.map(
       (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
     );
-    let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
+    let boundsIJK = getBoundingBoxAroundShapeIJK(
+      rectangleCornersIJK,
+      dimensions
+    );
 
     // If the tool is 2D but it is configured to project to X amount of slices
     // Don't project the slices if projectionPoints have been used to define the extents

@@ -384,7 +384,10 @@ class KeyImageTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const color = this.getStyle('color', styleSpecifier, annotation);
+      const { color } = this.getAnnotationStyle({
+        annotation,
+        styleSpecifier,
+      });
 
       const { canvasPosition, canvasSize } = this.configuration;
       if (canvasPosition?.length) {
