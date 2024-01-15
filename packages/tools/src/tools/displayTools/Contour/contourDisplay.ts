@@ -66,6 +66,11 @@ async function render(
 ): Promise<void> {
   const { segmentationId } = representationConfig;
   const segmentation = SegmentationState.getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    return;
+  }
+
   const contourData = segmentation.representationData[Representations.Contour];
   const { geometryIds } = contourData;
 

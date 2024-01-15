@@ -91,7 +91,9 @@ class SegmentSelectTool extends BaseTool {
     if (activeSegmentation.type === RepresentationTypes.Labelmap) {
       this._setActiveSegmentLabelmap(activeSegmentation, worldPoint, viewport);
     } else {
-      throw Error('non-labelmap segmentation not supported yet');
+      console.warn(
+        'SegmentSelectTool does not support the current segmentation type.'
+      );
     }
   }
 
