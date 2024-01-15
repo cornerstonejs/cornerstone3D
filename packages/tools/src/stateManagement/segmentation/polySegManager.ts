@@ -7,6 +7,8 @@ import {
   geometryLoader,
   volumeLoader,
   utilities,
+  StackViewport,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import {
@@ -21,6 +23,7 @@ import { SurfaceSegmentationData } from '../../types/SurfaceTypes';
 import { getColorForSegmentIndex } from './config/segmentationColor';
 import {
   LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { Events, SegmentationRepresentations } from '../../enums';
@@ -520,20 +523,33 @@ class PolySegManager {
     viewport,
     segmentationId,
     segmentationIndices = []
-  ): Promise<LabelmapSegmentationDataVolume> {
+  ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
     await this.initializeIfNecessary();
 
     // Todo: validate valid labelmap representation
     const segmentation = getSegmentation(segmentationId);
+    const segmentIndices = segmentationIndices.length
+      ? segmentationIndices
+      : getUniqueSegmentIndices(segmentationId);
 
-    const { volumeId } = await this._convertContourToLabelmap(
-      viewport,
-      segmentation
-    );
+    let result;
+    if (viewport instanceof VolumeViewport) {
+      result = this._convertContourToVolumeLabelmap(
+        viewport,
+        segmentation.representationData.CONTOUR,
+        segmentIndices
+      );
+    } else if (viewport instanceof StackViewport) {
+      result = this._convertContourToStackLabelmap(
+        viewport,
+        segmentation.representationData.CONTOUR,
+        segmentIndices
+      );
+    } else {
+      throw new Error('Unsupported viewport type');
+    }
 
-    return {
-      volumeId,
-    };
+    return result;
   }
 
   async _convertVolumeLabelmapToSurface(
@@ -568,20 +584,20 @@ class PolySegManager {
 
   /**
    * Convert contour representation to labelmap representation.
-   * @param viewport - The viewport where the point resides.
+   * @param viewport - The viewport where the point resides. We need the viewport
+   * to assume some default values for the labelmap.
    * @param segmentation - The segmentation data being converted.
    * @returns A Promise that resolves to a LabelmapSegmentationDataVolume containing the volumeId of the new labelmap.
    */
-  async _convertContourToLabelmap(
-    viewport,
-    segmentation
-  ): Promise<LabelmapSegmentationDataVolume> {
-    const annotationMap = segmentation.representationData.CONTOUR
-      .annotationUIDsMap as Map<number, Set<string>>;
+  async _convertContourToVolumeLabelmap(
+    viewport: Types.IVolumeViewport,
+    contourRepresentationData: ContourSegmentationData,
+    segmentIndices: number[]
+  ) {
+    const annotationMap = contourRepresentationData.annotationUIDsMap;
 
     const defaultActor = viewport.getDefaultActor();
     const { uid: volumeId } = defaultActor;
-
     const segmentationVolume =
       await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
 
@@ -591,54 +607,99 @@ class PolySegManager {
         segmentationVolume.getScalarData()
       );
 
-    const indices = getUniqueSegmentIndices(segmentation.segmentationId);
-
-    for (const index of indices) {
+    for (const index of segmentIndices) {
       const annotationUIDsInSegment = annotationMap.get(index);
 
-      for (const annotationUID of Array.from(annotationUIDsInSegment)) {
-        const annotation = getAnnotation(annotationUID);
-        const pointsBoundsLPS = getBoundingBoxAroundShapeWorld(
+      // Combine bounding boxes for all annotations in the segment
+      const combinedBoundingBox = [
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+      ];
+
+      const annotations = Array.from(annotationUIDsInSegment).map((uid) => {
+        const annotation = getAnnotation(uid);
+        const bounds = getBoundingBoxAroundShapeWorld(
           annotation.data.contour.polyline
         );
-        const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = pointsBoundsLPS;
 
-        const [iMin, jMin, kMin] = utilities.transformWorldToIndex(
-          segmentationVolume.imageData,
-          [xMin, yMin, zMin]
-        );
+        // Update combined bounding box
+        for (let dim = 0; dim < 3; dim++) {
+          combinedBoundingBox[dim][0] = Math.min(
+            combinedBoundingBox[dim][0],
+            bounds[dim][0]
+          );
+          combinedBoundingBox[dim][1] = Math.max(
+            combinedBoundingBox[dim][1],
+            bounds[dim][1]
+          );
+        }
 
-        const [iMax, jMax, kMax] = utilities.transformWorldToIndex(
-          segmentationVolume.imageData,
-          [xMax, yMax, zMax]
-        );
+        return annotation;
+      });
 
-        pointInShapeCallback(
-          segmentationVolume.imageData,
-          (pointLPS) => {
-            return isPointInsidePolyline3D(
+      const [iMin, jMin, kMin] = utilities.transformWorldToIndex(
+        segmentationVolume.imageData,
+        [
+          combinedBoundingBox[0][0],
+          combinedBoundingBox[1][0],
+          combinedBoundingBox[2][0],
+        ]
+      );
+
+      const [iMax, jMax, kMax] = utilities.transformWorldToIndex(
+        segmentationVolume.imageData,
+        [
+          combinedBoundingBox[0][1],
+          combinedBoundingBox[1][1],
+          combinedBoundingBox[2][1],
+        ]
+      );
+
+      // Run the pointInShapeCallback for the combined bounding box
+      pointInShapeCallback(
+        segmentationVolume.imageData,
+        (pointLPS) => {
+          // Check if the point is inside any of the polylines for this segment
+          return annotations.some((annotation) =>
+            isPointInsidePolyline3D(
               pointLPS as Types.Point3,
               annotation.data.contour.polyline
-            );
-          },
-          ({ pointIJK }) => {
-            segmentationVoxelManager.setAtIJKPoint(
-              pointIJK as Types.Point3,
-              index
-            );
-          },
-          [
-            [iMin, iMax],
-            [jMin, jMax],
-            [kMin, kMax],
-          ]
-        );
-      }
+            )
+          );
+        },
+        ({ pointIJK }) => {
+          segmentationVoxelManager.setAtIJKPoint(
+            pointIJK as Types.Point3,
+            index
+          );
+        },
+        [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ]
+      );
     }
 
     return {
       volumeId: segmentationVolume.volumeId,
     };
+  }
+
+  /**
+   * Convert contour representation to stack labelmap representation.
+   * @param viewport - The viewport where the point resides. We need the viewport
+   * to assume some default values for the labelmap.
+   * @param segmentation - The segmentation data being converted.
+   * @returns A Promise that resolves to a LabelmapSegmentationDataStack containing the imageIdReferenceMap of the new labelmap.
+   */
+  async _convertContourToStackLabelmap(
+    viewport: Types.IStackViewport,
+    contourRepresentationData: ContourSegmentationData,
+    segmentIndices: number[]
+  ) {
+    throw new Error('Not implemented yet');
   }
 
   async updateSurfaceRepresentation(segmentationId) {
