@@ -23,9 +23,9 @@ import {
 } from '../../../types/SegmentationStateTypes';
 
 import addLabelmapToElement from './addLabelmapToElement';
-
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
+import { polySeg } from '../../../stateManagement/segmentation';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -136,10 +136,31 @@ async function render(
     return;
   }
 
-  const labelmapData =
-    segmentation.representationData[Representations.Labelmap];
+  let labelmapData = segmentation.representationData[Representations.Labelmap];
 
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
+
+  if (
+    !actorEntry &&
+    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID)
+  ) {
+    // meaning the requested segmentation representationUID does not have
+    // labelmap data, BUT we might be able to request a conversion from
+    // another representation to labelmap
+    // we need to check if we can request polySEG to convert the other
+    // underlying representations to Surface
+    labelmapData = await polySeg.getComputedLabelmapData(
+      viewport,
+      segmentationRepresentationUID
+    );
+
+    if (!labelmapData) {
+      throw new Error(
+        `No Surface data found for segmentationId ${segmentationId}.`
+      );
+    }
+  }
+
   if (isVolumeSegmentation(labelmapData)) {
     if (viewport instanceof StackViewport) {
       return;

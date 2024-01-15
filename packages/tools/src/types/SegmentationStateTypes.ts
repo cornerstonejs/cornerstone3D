@@ -107,6 +107,10 @@ export type ToolGroupSpecificRepresentationState = {
    * using to render
    */
   colorLUTIndex: number;
+  /**
+   * Poly Seg generated
+   */
+  polySeg?: boolean;
 };
 
 /**
@@ -266,9 +270,14 @@ export type SegmentationPublicInput = {
 export type RepresentationPublicInput = {
   segmentationId: string;
   type: Enums.SegmentationRepresentations;
-  options?: {
-    // color lut to use for this representation (optional), it can
-    // be either a colorLUT array or the index of the colorLUT in the state
-    colorLUTOrIndex?: Types.ColorLUT | number;
-  };
+  options?: RepresentationPublicInputOptions;
+};
+
+export type RepresentationPublicInputOptions = {
+  // color lut to use for this representation (optional), it can
+  // be either a colorLUT array or the index of the colorLUT in the state
+  colorLUTOrIndex?: Types.ColorLUT | number;
+  // whether to use polymorphic segmentation utilities to convert
+  // from other representations to this representation
+  polySeg: boolean;
 };

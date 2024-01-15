@@ -4,6 +4,7 @@ import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
   ToolGroupSpecificRepresentation,
+  RepresentationPublicInputOptions,
 } from '../../types/SegmentationStateTypes';
 import * as SegmentationConfig from './config/segmentationConfig';
 import {
@@ -19,26 +20,15 @@ async function addSegmentationRepresentation(
   representationInput: RepresentationPublicInput,
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
-  const { segmentationId, options = {} } = representationInput;
+  const { segmentationId, options = {} as RepresentationPublicInputOptions } =
+    representationInput;
   const segmentationRepresentationUID = utilities.uuidv4();
 
   // Todo: make segmentsHidden also an option that can get passed by
   // the user
   const segmentsHidden = new Set() as Set<number>;
 
-  const colorLUTOrIndexInput = options.colorLUTOrIndex;
-  let colorLUTIndexToUse;
-
-  if (typeof colorLUTOrIndexInput === 'number') {
-    colorLUTIndexToUse = colorLUTOrIndexInput;
-  } else {
-    const nextIndex = getNextColorLUTIndex();
-    const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
-      ? colorLUTOrIndexInput
-      : CORNERSTONE_COLOR_LUT;
-    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
-    colorLUTIndexToUse = nextIndex;
-  }
+  const colorLUTIndexToUse = getColorLUTIndex(options);
 
   const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
     segmentationId,
@@ -50,6 +40,7 @@ async function addSegmentationRepresentation(
     segmentationRepresentationSpecificConfig: {},
     segmentSpecificConfig: {},
     config: getRepresentationSpecificConfig(representationInput),
+    polySeg: options.polySeg,
   };
 
   // Update the toolGroup specific configuration
@@ -80,6 +71,23 @@ async function addSegmentationRepresentation(
   );
 
   return segmentationRepresentationUID;
+}
+
+function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
+  const colorLUTOrIndexInput = options.colorLUTOrIndex;
+  let colorLUTIndexToUse;
+
+  if (typeof colorLUTOrIndexInput === 'number') {
+    colorLUTIndexToUse = colorLUTOrIndexInput;
+  } else {
+    const nextIndex = getNextColorLUTIndex();
+    const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
+      ? colorLUTOrIndexInput
+      : CORNERSTONE_COLOR_LUT;
+    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+    colorLUTIndexToUse = nextIndex;
+  }
+  return colorLUTIndexToUse;
 }
 
 export { addSegmentationRepresentation };
