@@ -5,8 +5,9 @@ import {
   cache,
   eventTarget,
   geometryLoader,
+  volumeLoader,
+  utilities,
 } from '@cornerstonejs/core';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import {
   findSegmentationRepresentationByUID,
@@ -18,12 +19,23 @@ import addRepresentationData from './addRepresentationData';
 import { getUniqueSegmentIndices } from '../../utilities/segmentation';
 import { SurfaceSegmentationData } from '../../types/SurfaceTypes';
 import { getColorForSegmentIndex } from './config/segmentationColor';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { Events } from '../../enums';
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
+import { Events, SegmentationRepresentations } from '../../enums';
 import { SegmentationDataModifiedEventDetail } from '../../types/EventTypes';
-import { debounce } from '../../utilities';
+import { debounce, pointInShapeCallback } from '../../utilities';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
-import { ToolGroupSpecificRepresentations } from '../../types/SegmentationStateTypes';
+import {
+  SegmentationRepresentationData,
+  ToolGroupSpecificRepresentations,
+} from '../../types/SegmentationStateTypes';
+import { ContourSegmentationData } from '../../types/ContourTypes';
+import { getAnnotation } from '../annotation/annotationState';
+import { getBoundingBoxAroundShapeWorld } from '../../utilities/boundingBox';
+import { validate as validateLabelmap } from '../../tools/displayTools/Labelmap/validateLabelmap';
+import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 
 /**
  * Class to control polymorphic segmentations
@@ -33,6 +45,22 @@ class PolySegManager {
   initialized = false;
   computedRepresentations = new Map<string, SegmentationRepresentations[]>();
   _debouncedSegmentationModified;
+
+  // Map of conversion paths between source and target representations
+  // You should read it as "source" -> "targets"
+  conversionPaths = new Map<
+    SegmentationRepresentations,
+    Set<SegmentationRepresentations>
+  >([
+    [
+      SegmentationRepresentations.Labelmap,
+      new Set([SegmentationRepresentations.Surface]),
+    ],
+    [
+      SegmentationRepresentations.Contour,
+      new Set([SegmentationRepresentations.Labelmap]),
+    ],
+  ]);
 
   constructor() {
     this._debouncedSegmentationModified = debounce(
@@ -45,7 +73,7 @@ class PolySegManager {
    * Initialize the polySeg wasm module
    * @returns {Promise<void>}
    */
-  async init() {
+  public async init() {
     if (this.initialized) {
       return;
     }
@@ -63,14 +91,21 @@ class PolySegManager {
     }
   }
 
-  unsubscribeFromSegmentationChanges() {
+  /**
+   * Unsubscribes from segmentation changes by removing the event listener for segmentation data modification.
+   */
+  private unsubscribeFromSegmentationChanges() {
     eventTarget.removeEventListener(
       Events.SEGMENTATION_DATA_MODIFIED,
       this._debouncedSegmentationModified
     );
   }
 
-  subscribeToSegmentationChanges() {
+  /**
+   * Subscribes to segmentation changes by adding an event listener for the SEGMENTATION_DATA_MODIFIED event.
+   * If there is an existing listener, it will be unsubscribed before adding the new listener.
+   */
+  private subscribeToSegmentationChanges() {
     this.unsubscribeFromSegmentationChanges();
 
     eventTarget.addEventListener(
@@ -79,7 +114,105 @@ class PolySegManager {
     );
   }
 
-  onSegmentationDataModified(event) {
+  /**
+   * Determines whether the requested representation can be computed, based on
+   * the existing representation types and available conversion paths.
+   *
+   * @param segmentationRepresentationUID - The UID of the desired segmentation representation.
+   * @returns true if the requested representation can be computed, otherwise false.
+   */
+  public canComputeRequestedRepresentation(
+    segmentationRepresentationUID: string
+  ): boolean {
+    const representationInfo = findSegmentationRepresentationByUID(
+      segmentationRepresentationUID
+    );
+
+    if (!representationInfo?.segmentationRepresentation) {
+      return false;
+    }
+
+    const { segmentationRepresentation } = representationInfo;
+    const { type: representationType, polySeg } = segmentationRepresentation;
+
+    if (!polySeg) {
+      return false;
+    }
+
+    const { representationData } = getSegmentation(
+      segmentationRepresentation.segmentationId
+    );
+
+    const existingRepresentationTypes =
+      this.getExistingRepresentationTypes(representationData);
+
+    return existingRepresentationTypes.some((existingRepresentationType) =>
+      this.canConvertFromTo(existingRepresentationType, representationType)
+    );
+  }
+
+  /**
+   * Checks whether a conversion path exists between two given representation types.
+   *
+   * @param fromRepresentationType - The starting representation type.
+   * @param toRepresentationType - The target representation type.
+   * @returns true if the conversion is available, otherwise false.
+   */
+  public canConvertFromTo(fromRepresentationType, toRepresentationType) {
+    const availablePaths = this.conversionPaths.get(fromRepresentationType);
+
+    if (!availablePaths) {
+      return false;
+    }
+
+    return availablePaths.has(toRepresentationType);
+  }
+
+  /**
+   * Retrieves the existing representation types for the given representationData
+   * by verifying the validity of each representation type.
+   *
+   * @param representationData - The representation data
+   * @returns supportedTypes - An array of valid representation types
+   */
+  private getExistingRepresentationTypes(
+    representationData: SegmentationRepresentationData
+  ): string[] {
+    const supportedTypes: string[] = [];
+
+    Object.keys(representationData).forEach((representationType) => {
+      const representationTypeData = representationData[representationType];
+
+      let validateFn;
+      switch (representationType) {
+        case SegmentationRepresentations.Labelmap:
+          validateFn = validateLabelmap;
+          break;
+        // Todo: add validation for other representation types
+      }
+
+      if (validateFn) {
+        try {
+          validateFn(representationTypeData);
+          supportedTypes.push(representationType);
+        } catch (error) {
+          console.warn(
+            `Validation failed for labelmap of type ${representationType}`
+          );
+        }
+      } else {
+        supportedTypes.push(representationType);
+      }
+    });
+
+    return supportedTypes;
+  }
+  /**
+   * Handles the event when segmentation data is modified.
+   * @param event - The event object containing the segmentation data.
+   * @returns void
+   */
+  private onSegmentationDataModified(event) {
     const { segmentationId } =
       event.detail as SegmentationDataModifiedEventDetail;
 
@@ -100,7 +233,57 @@ class PolySegManager {
     Promise.all(promises);
   }
 
-  async getComputedSurfacesData(
+  /**
+   * Adds a computed representation to the polySegManager for a given segmentation.
+   * The purpose of this is to keep track of which representations have been computed
+   * for a given segmentation so that we can update them when the segmentation data
+   * is modified.
+   *
+   * @param segmentationId - The ID of the segmentation.
+   * @param representationType - The type of the computed representation to add.
+   */
+  private addComputedRepresentationInternally(
+    segmentationId: string,
+    segmentationRepresentationUID: string
+  ) {
+    if (!this.computedRepresentations.has(segmentationId)) {
+      this.computedRepresentations.set(segmentationId, []);
+    }
+
+    const segmentationRepresentation = findSegmentationRepresentationByUID(
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    const {
+      segmentationRepresentation: { type: representationType },
+    } = segmentationRepresentation;
+
+    const representations = this.computedRepresentations.get(segmentationId);
+    if (!representations.includes(representationType)) {
+      representations.push(representationType);
+    }
+  }
+
+  /**
+   * Retrieves the computed  surface data for a given segmentation representation.
+   * - If the underlying segmentation data is a labelmap, it converts the labelmap to a surface.
+   * - Todo: Contour -> Surface (not yet implemented)
+   *
+   * @param viewport - The viewport associated with the segmentation.
+   * @param segmentationRepresentationUID - The UID of the segmentation representation. In fact
+   * the segmentationId is enough to identify the segmentation, BUT some of the properties
+   * such as colors are stored in the segmentation representation.
+   * @param segmentIndices - Optional array of segment indices to retrieve labelmap data for.
+   * If not provided, it will retrieve labelmap data for all segments.
+   *
+   * @returns A promise that resolves to the surface segmentation data.
+   */
+  public async getComputedSurfacesData(
+    viewport,
     segmentationRepresentationUID,
     segmentIndices = []
   ): Promise<SurfaceSegmentationData> {
@@ -175,9 +358,9 @@ class PolySegManager {
         },
       });
 
-      this.addComputedRepresentation(
+      this.addComputedRepresentationInternally(
         segmentationId,
-        SegmentationRepresentations.Surface
+        segmentationRepresentationUID
       );
 
       this.subscribeToSegmentationChanges();
@@ -185,23 +368,103 @@ class PolySegManager {
       return {
         geometryIds,
       };
+    } else {
+      throw new Error(
+        'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
+      );
     }
   }
 
-  addComputedRepresentation(
-    segmentationId: string,
-    representationType: SegmentationRepresentations
-  ) {
-    if (!this.computedRepresentations.has(segmentationId)) {
-      this.computedRepresentations.set(segmentationId, []);
+  /**
+   * Retrieves the computed labelmap data for a given segmentation representation.
+   * - If the underlying segmentation data is a contour, it converts the contour to a labelmap.
+   * - Todo: Surface -> Contour (not yet implemented)
+   *
+   * @param viewport - The viewport associated with the segmentation.
+   * @param segmentationRepresentationUID - The UID of the segmentation representation. In fact
+   * the segmentationId is enough to identify the segmentation, BUT some of the properties
+   * such as colors are stored in the segmentation representation.
+   * @param segmentIndices - Optional array of segment indices to retrieve labelmap data for.
+   * If not provided, it will retrieve labelmap data for all segments.
+   *
+   * @returns A promise that resolves to the labelmap segmentation data.
+   */
+  public async getComputedLabelmapData(
+    viewport,
+    segmentationRepresentationUID,
+    segmentIndices = []
+  ): Promise<LabelmapSegmentationData> {
+    // need to check what is the underlying
+    // representation and convert it to surface
+    const { segmentationRepresentation, toolGroupId } =
+      findSegmentationRepresentationByUID(segmentationRepresentationUID);
+
+    if (!segmentationRepresentation) {
+      throw new Error(
+        `No segmentation representation found for UID ${segmentationRepresentationUID}`
+      );
     }
 
-    const representations = this.computedRepresentations.get(segmentationId);
-    if (!representations.includes(representationType)) {
-      representations.push(representationType);
+    const { segmentationId } = segmentationRepresentation;
+    const segmentation = getSegmentation(segmentationId);
+    const representationData = segmentation.representationData;
+
+    if (representationData.CONTOUR as ContourSegmentationData) {
+      // convert volume labelmap to surface
+      let rawLabelmapData;
+      try {
+        rawLabelmapData = await this.contourToLabelmapData(
+          viewport,
+          segmentation.segmentationId
+        );
+      } catch (error) {
+        console.warn('Error converting  contour to labelmap');
+        console.warn(error);
+        return;
+      }
+
+      const { volumeId } = rawLabelmapData;
+
+      if (!volumeId) {
+        throw new Error(
+          'Currently only supporting volume labelmap to convert from contour to labelmap'
+        );
+      }
+
+      addRepresentationData({
+        segmentationId: segmentation.segmentationId,
+        type: SegmentationRepresentations.Labelmap,
+        data: {
+          volumeId,
+        },
+      });
+
+      this.addComputedRepresentationInternally(
+        segmentationId,
+        SegmentationRepresentations.Surface
+      );
+
+      this.subscribeToSegmentationChanges();
+
+      triggerSegmentationModified(segmentationId);
+
+      return {
+        volumeId,
+      };
+    } else {
+      throw new Error(
+        'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
+      );
     }
   }
 
+  /**
+   * Converts labelmap data to surface data for the specified segmentation.
+   * @param segmentationId - The ID of the segmentation.
+   * @param segmentIndices - An optional array of segment indices to convert.
+   * If not provided, all unique segment indices will be converted.
+   * @returns A promise that resolves to an array of objects containing the segment index and the corresponding surface data.
+   */
   async labelmapToSurfaceData(
     segmentationId,
     segmentIndices = []
@@ -231,6 +494,25 @@ class PolySegManager {
     return surfaces;
   }
 
+  async contourToLabelmapData(
+    viewport,
+    segmentationId
+  ): Promise<LabelmapSegmentationDataVolume> {
+    await this.initializeIfNecessary();
+
+    // Todo: validate valid labelmap representation
+    const segmentation = getSegmentation(segmentationId);
+
+    const { volumeId } = await this._convertContourToLabelmap(
+      viewport,
+      segmentation
+    );
+
+    return {
+      volumeId,
+    };
+  }
+
   async _convertVolumeLabelmapToSurface(
     segmentation,
     segmentIndex
@@ -257,6 +539,75 @@ class PolySegManager {
     segmentIndices
   ): Promise<Types.SurfaceData> {
     throw new Error('Not implemented yet');
+  }
+
+  async _convertContourToLabelmap(
+    viewport,
+    segmentation
+  ): Promise<LabelmapSegmentationDataVolume> {
+    const annotationMap = segmentation.representationData.CONTOUR
+      .annotationUIDsMap as Map<number, Set<string>>;
+
+    const defaultActor = viewport.getDefaultActor();
+    const { uid: volumeId } = defaultActor;
+
+    const segmentationVolume =
+      await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
+
+    const segmentationVoxelManager =
+      utilities.VoxelManager.createVolumeVoxelManager(
+        segmentationVolume.dimensions,
+        segmentationVolume.getScalarData()
+      );
+
+    const indices = getUniqueSegmentIndices(segmentation.segmentationId);
+    indices.forEach((index) => {
+      const annotationUIDsInSegment = annotationMap.get(index);
+
+      Array.from(annotationUIDsInSegment).forEach((annotationUID) => {
+        const annotation = getAnnotation(annotationUID);
+
+        const pointsBoundsLPS = getBoundingBoxAroundShapeWorld(
+          annotation.data.contour.polyline
+        );
+        const [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = pointsBoundsLPS;
+
+        const [iMin, jMin, kMin] = utilities.transformWorldToIndex(
+          segmentationVolume.imageData,
+          [xMin, yMin, zMin]
+        );
+
+        const [iMax, jMax, kMax] = utilities.transformWorldToIndex(
+          segmentationVolume.imageData,
+          [xMax, yMax, zMax]
+        );
+
+        pointInShapeCallback(
+          segmentationVolume.imageData,
+          (pointLPS) => {
+            return isPointInsidePolyline3D(
+              pointLPS as Types.Point3,
+              annotation.data.contour.polyline
+            );
+          },
+          ({ pointIJK }) => {
+            segmentationVoxelManager.setAtIJKPoint(
+              pointIJK as Types.Point3,
+              index
+            );
+          },
+          [
+            [iMin, iMax],
+            [jMin, jMax],
+            [kMin, kMax],
+          ]
+        );
+      });
+    });
+
+    return {
+      volumeId: segmentationVolume.volumeId,
+    };
   }
 
   async updateSurfaceRepresentation(segmentationId) {

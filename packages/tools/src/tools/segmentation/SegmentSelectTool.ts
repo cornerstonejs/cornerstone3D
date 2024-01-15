@@ -133,13 +133,11 @@ class SegmentSelectTool extends BaseTool {
     setActiveSegmentIndex(segmentationId, hoveredSegmentIndex);
 
     const renderingEngine = viewport.getRenderingEngine();
+    const viewportIds = renderingEngine.getViewports().map((v) => v.id);
 
     // update states
     triggerSegmentationModified(segmentationId);
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      renderingEngine.getViewports().map((v) => v.id)
-    );
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
   }
 }
 

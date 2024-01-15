@@ -34,6 +34,7 @@ const {
   PlanarFreehandContourSegmentationTool,
   StackScrollMouseWheelTool,
   TrackballRotateTool,
+  SegmentSelectTool,
 } = cornerstoneTools;
 
 setTitleAndDescription(
@@ -122,10 +123,10 @@ addButtonToToolbar({
 addDropdownToToolbar({
   labelText: 'Segment Index',
   options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
+  onSelectedValueChange: (number) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,
-      nameAsStringOrNumber as number
+      Number(number) as number
     );
   },
 });
@@ -143,6 +144,7 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
+  cornerstoneTools.addTool(SegmentSelectTool);
 
   // Define tool groups to add the segmentation display tool to
   toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
@@ -154,6 +156,7 @@ async function run() {
   toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup1.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup1.addTool(SegmentationDisplayTool.toolName);
+  toolGroup1.addTool(SegmentSelectTool.toolName);
 
   // Segmentation Tools
   toolGroup2.addTool(PanTool.toolName);
@@ -197,6 +200,7 @@ async function run() {
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup1.setToolActive(SegmentSelectTool.toolName);
   toolGroup2.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup2.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
