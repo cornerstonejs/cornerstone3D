@@ -70,7 +70,6 @@ import {
   OverlayGridTool,
   SegmentationIntersectionTool,
   SegmentSelectTool,
-  ContourROITool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -115,7 +114,6 @@ export {
   BidirectionalTool,
   PlanarFreehandROITool,
   PlanarFreehandContourSegmentationTool,
-  ContourROITool,
   LivewireContourTool,
   LivewireContourSegmentationTool,
   ArrowAnnotateTool,

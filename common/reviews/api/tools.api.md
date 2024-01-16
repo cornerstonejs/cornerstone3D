@@ -1342,11 +1342,6 @@ type ContourAnnotationData = {
     };
 };
 
-// @public (undocumented)
-export class ContourROITool extends PlanarFreehandContourSegmentationTool {
-    constructor(toolProps?: PublicToolProps);
-}
-
 declare namespace contours {
     export {
         _default_2 as contourFinder,

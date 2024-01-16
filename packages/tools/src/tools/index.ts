@@ -30,7 +30,6 @@ import SplineROITool from './annotation/SplineROITool';
 import SplineContourSegmentationTool from './annotation/SplineContourSegmentationTool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import PlanarFreehandContourSegmentationTool from './annotation/PlanarFreehandContourSegmentationTool';
-import ContourROITool from './annotation/ContourROITool';
 import LivewireContourTool from './annotation/LivewireContourTool';
 import LivewireContourSegmentationTool from './annotation/LivewireContourSegmentationTool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
@@ -84,7 +83,6 @@ export {
   SplineROITool,
   PlanarFreehandROITool,
   PlanarFreehandContourSegmentationTool,
-  ContourROITool,
   LivewireContourTool,
   LivewireContourSegmentationTool,
   ArrowAnnotateTool,

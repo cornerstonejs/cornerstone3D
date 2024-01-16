@@ -21,7 +21,7 @@ const {
 } = cornerstone3D;
 
 const {
-  ContourROITool,
+  PlanarFreehandContourSegmentationTool,
   SegmentationDisplayTool,
   ToolGroupManager,
   annotation,
@@ -47,6 +47,7 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 const toolGroupId = 'toolGroup';
 let segmentationRepresentationUID = '';
+const interpolationToolName = 'FreeformInterpolation';
 
 const interpolated1 = [
   [9, 9, 1],
@@ -143,7 +144,7 @@ const firstSliceAnnotation = {
     viewUp: [],
     FrameOfReferenceUID: undefined,
     referencedImageId: '',
-    toolName: 'ContourROI',
+    toolName: interpolationToolName,
   },
   data: {
     handles: {
@@ -205,17 +206,25 @@ describe('Contours Interpolation: ', () => {
   describe('Planar Freeform Tool: ', () => {
     beforeEach(async function () {
       csTools3d.init();
-      csTools3d.addTool(ContourROITool);
+      csTools3d.addTool(PlanarFreehandContourSegmentationTool);
       csTools3d.addTool(SegmentationDisplayTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.stackToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.stackToolGroup.addTool(ContourROITool.toolName, {
-        configuration: { volumeId: volumeId },
-        calculateStats: true,
-      });
-      this.stackToolGroup.setToolActive(ContourROITool.toolName, {
+      this.stackToolGroup.addTool(
+        PlanarFreehandContourSegmentationTool.toolName
+      );
+      this.stackToolGroup.addToolInstance(
+        interpolationToolName,
+        PlanarFreehandContourSegmentationTool.toolName,
+        {
+          interpolation: { enabled: true },
+          volumeId: volumeId,
+          calculateStats: true,
+        }
+      );
+      this.stackToolGroup.setToolActive(interpolationToolName, {
         bindings: [{ mouseButton: 1 }],
         calculateStats: true,
       });
@@ -346,7 +355,7 @@ describe('Contours Interpolation: ', () => {
 
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const contourAnnotations = annotation.state.getAnnotations(
-          ContourROITool.toolName,
+          interpolationToolName,
           element
         );
 
@@ -355,9 +364,7 @@ describe('Contours Interpolation: ', () => {
 
         const contourAnnotation = contourAnnotations[expectedContourCount - 1];
 
-        expect(contourAnnotation.metadata.toolName).toBe(
-          ContourROITool.toolName
-        );
+        expect(contourAnnotation.metadata.toolName).toBe(interpolationToolName);
 
         // Mouse Up instantly after
         const evt = new MouseEvent('mouseup');
@@ -378,7 +385,7 @@ describe('Contours Interpolation: ', () => {
         EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
         (evt) => {
           const contourAnnotations = annotation.state.getAnnotations(
-            ContourROITool.toolName,
+            interpolationToolName,
             element
           );
           contourAnnotations.forEach((x) => {
@@ -435,7 +442,7 @@ describe('Contours Interpolation: ', () => {
         EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
         (evt) => {
           let contourAnnotations = annotation.state.getAnnotations(
-            ContourROITool.toolName,
+            interpolationToolName,
             element
           );
           contourAnnotations = contourAnnotations.sort((a, b) => {
@@ -488,7 +495,7 @@ describe('Contours Interpolation: ', () => {
         annotation.state.addAnnotation(lastSliceAnnotation, element);
 
         const contourAnnotations = annotation.state.getAnnotations(
-          ContourROITool.toolName,
+          interpolationToolName,
           element
         );
 
@@ -544,7 +551,7 @@ describe('Contours Interpolation: ', () => {
             FrameOfReferenceUID,
             referencedImageId: imageIds[index],
             referencedSliceIndex: index,
-            toolName: ContourROITool.toolName,
+            toolName: interpolationToolName,
           },
           data: {
             handles: {
@@ -610,7 +617,7 @@ describe('Contours Interpolation: ', () => {
               EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
               function () {
                 let addedAnnotations = annotation.state.getAnnotations(
-                  ContourROITool.toolName,
+                  interpolationToolName,
                   element
                 );
                 expect(addedAnnotations).toBeDefined();
@@ -632,7 +639,7 @@ describe('Contours Interpolation: ', () => {
               EventTypes.INTERPOLATED_ANNOTATIONS_REMOVED,
               function () {
                 let addedAnnotations = annotation.state.getAnnotations(
-                  ContourROITool.toolName,
+                  interpolationToolName,
                   element
                 );
                 expect(addedAnnotations.length).toBe(1);
@@ -682,7 +689,7 @@ describe('Contours Interpolation: ', () => {
         (evt) => {
           console.log('annotation interpolation process complete', evt);
           let contourAnnotations = annotation.state.getAnnotations(
-            ContourROITool.toolName,
+            interpolationToolName,
             element
           );
           contourAnnotations = contourAnnotations.sort((a, b) => {
@@ -757,7 +764,7 @@ describe('Contours Interpolation: ', () => {
         annotation.state.addAnnotation(lastSliceAnnotation, element);
 
         const contourAnnotations = annotation.state.getAnnotations(
-          ContourROITool.toolName,
+          interpolationToolName,
           element
         );
 

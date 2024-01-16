@@ -50,6 +50,7 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID;
+const interpolationToolName = 'InterpolateFreeform';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -82,7 +83,7 @@ viewportGrid.appendChild(element2);
 content.appendChild(viewportGrid);
 
 const toolsNames = [
-  'InterpolateFreehand',
+  interpolationToolName,
   PlanarFreehandROITool.toolName,
   PlanarFreehandContourSegmentationTool.toolName,
 ];
@@ -143,7 +144,7 @@ function addToggleInterpolationButton(toolGroup) {
     onClick: () => {
       shouldInterpolate = !shouldInterpolate;
 
-      toolGroup.setToolConfiguration('InterpolateFreehand', {
+      toolGroup.setToolConfiguration(interpolationToolName, {
         interpolation: {
           enabled: shouldInterpolate,
         },
@@ -162,7 +163,7 @@ function addContourDeleteButton(toolGroup) {
         alert('Please select any Contour ROI');
         return;
       }
-      toolGroup.setToolConfiguration(ContourROITool.toolName, {});
+      toolGroup.setToolConfiguration(interpolationToolName, {});
       cornerstoneTools.annotation.state.removeAnnotation(
         annotationData.annotationUID
       );
@@ -230,7 +231,7 @@ async function run() {
   toolGroup.addTool(SegmentationDisplayTool.toolName);
 
   toolGroup.addToolInstance(
-    'InterpolateFreehand',
+    interpolationToolName,
     PlanarFreehandContourSegmentationTool.toolName,
     {
       interpolation: {
@@ -246,7 +247,7 @@ async function run() {
   toolGroup.addTool(LivewireContourTool.toolName);
 
   // Set the initial state of the tools.
-  toolGroup.setToolActive('InterpolateFreehand', {
+  toolGroup.setToolActive(interpolationToolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
