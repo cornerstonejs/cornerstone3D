@@ -10,6 +10,7 @@ class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
       {
         configuration: {
           calculateStats: false,
+          allowOpenContours: false,
         },
       },
       toolProps

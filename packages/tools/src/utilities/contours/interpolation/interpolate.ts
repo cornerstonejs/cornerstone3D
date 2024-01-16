@@ -1,7 +1,6 @@
 import { StackViewport, triggerEvent } from '@cornerstonejs/core';
-import getToolData from './getToolData';
-import generateInterpolationData from './generateInterpolationData';
-import TOOL_NAMES from './toolNames';
+import createInterpolatedToolData from './createInterpolatedToolData';
+import generateInterpolationData from './findInterpolationList';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
@@ -25,13 +24,11 @@ function interpolate(viewportData: InterpolationViewportData) {
     return;
   }
   interpolating = true;
-  setTimeout(() => {
-    try {
-      startInterpolation(viewportData);
-    } finally {
-      interpolating = false;
-    }
-  }, 1);
+  try {
+    startInterpolation(viewportData);
+  } finally {
+    interpolating = false;
+  }
 }
 
 /**
@@ -198,7 +195,7 @@ function _addInterpolatedContour(
     ]);
   }
 
-  const interpolatedAnnotation = getToolData(
+  const interpolatedAnnotation = createInterpolatedToolData(
     eventData,
     points,
     referencedToolData
@@ -236,7 +233,7 @@ function _editInterpolatedContour(
 ) {
   const { viewport } = eventData;
   const annotations = annotation.state.getAnnotations(
-    TOOL_NAMES.CONTOUR_ROI_TOOL,
+    referencedToolData.metadata.toolName,
     viewport.element
   );
 
@@ -273,7 +270,11 @@ function _editInterpolatedContour(
       interpolated3DPoints.z[i],
     ]);
   }
-  const interpolatedAnnotation = getToolData(eventData, points, oldToolData);
+  const interpolatedAnnotation = createInterpolatedToolData(
+    eventData,
+    points,
+    oldToolData
+  );
   console.log('interpolatedAnnotation', interpolatedAnnotation, oldToolData);
   console.log(
     'Copying referencedSliceIndex',

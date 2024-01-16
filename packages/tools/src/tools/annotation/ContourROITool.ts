@@ -5,8 +5,9 @@ import InterpolationManager from '../../utilities/segmentation/InterpolationMana
 class ContourROITool extends PlanarFreehandContourSegmentationTool {
   constructor(toolProps: PublicToolProps = {}) {
     super(toolProps);
-    this.configuration.interpolation.interpolateOnAdd = false;
-    this.configuration.interpolation.interpolateOnEdit = false;
+    this.configuration.interpolation.enable = true;
+    this.configuration.smoothing.smoothOnAdd = false;
+    this.configuration.smoothing.smoothOnEdit = false;
     InterpolationManager.addTool(this.getToolName());
   }
 }

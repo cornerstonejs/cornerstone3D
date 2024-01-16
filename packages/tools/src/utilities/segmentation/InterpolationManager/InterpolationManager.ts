@@ -56,6 +56,7 @@ export default class InterpolationManager {
     if (-1 === this.toolNames.indexOf(toolName)) {
       this.toolNames.push(toolName);
     }
+    console.log('Adding tool', toolName, 'for interpolation');
   }
 
   static handleAnnotationLabelChange = (
@@ -69,6 +70,7 @@ export default class InterpolationManager {
     const { toolName } = annotation.metadata;
 
     if (-1 === this.toolNames.indexOf(toolName)) {
+      console.log('Tool not interpolation', toolName);
       return;
     }
 
@@ -133,6 +135,7 @@ export default class InterpolationManager {
     const { toolName } = annotation.metadata;
 
     if (-1 === this.toolNames.indexOf(toolName)) {
+      console.log('Tool not interpolation', toolName);
       return;
     }
 

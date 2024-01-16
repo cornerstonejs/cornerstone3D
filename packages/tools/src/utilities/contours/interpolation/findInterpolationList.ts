@@ -2,7 +2,7 @@ import getInterpolationData from './getInterpolationData';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
 
 /**
- * generateInterpolationList - Generate the list of contours to interpolate,
+ * findInterpolationList - Finds the list of contours to interpolate,
  * including whether they are new contours, or auto generated contours that need
  * to be updated.
  *
@@ -35,7 +35,11 @@ function generateInterpolationData(
   // Check if contours between the extent can be interpolated.
   for (let i = extent[0] + 1; i <= extent[1] - 1; i++) {
     if (_sliceNeedsInterpolating(interpolationData, i)) {
-      console.log('Slice needs interpolating', i, interpolationData[i]);
+      console.log(
+        'Slice needs interpolating',
+        i,
+        JSON.stringify(interpolationData[i])
+      );
       const contourPair = _getBoundingPair(i, extent, interpolationData);
 
       if (
@@ -44,12 +48,6 @@ function generateInterpolationData(
       ) {
         _appendInterpolationList(contourPair, interpolationList, i);
       }
-    } else {
-      console.log(
-        'Slice does not need interpolating',
-        i,
-        JSON.stringify(interpolationData[i])
-      );
     }
   }
 

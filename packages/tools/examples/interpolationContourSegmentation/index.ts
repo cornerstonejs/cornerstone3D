@@ -17,7 +17,6 @@ import {
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import ContourROITool from '../../src/tools/annotation/ContourROITool';
 import { Events } from '../../src/enums';
 import { AnnotationLabelChangeEventDetail } from '../../src/types/EventTypes';
 
@@ -83,7 +82,7 @@ viewportGrid.appendChild(element2);
 content.appendChild(viewportGrid);
 
 const toolsNames = [
-  ContourROITool.toolName,
+  'InterpolateFreehand',
   PlanarFreehandROITool.toolName,
   PlanarFreehandContourSegmentationTool.toolName,
 ];
@@ -144,23 +143,10 @@ function addToggleInterpolationButton(toolGroup) {
     onClick: () => {
       shouldInterpolate = !shouldInterpolate;
 
-      toolGroup.setToolConfiguration(ContourROITool.toolName, {
+      toolGroup.setToolConfiguration('InterpolateFreehand', {
         interpolation: {
           enabled: shouldInterpolate,
         },
-      });
-    },
-  });
-}
-
-let shouldCalculateStats = false;
-function addToggleCalculateStatsButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'Toggle calculate stats',
-    onClick: () => {
-      shouldCalculateStats = !shouldCalculateStats;
-      toolGroup.setToolConfiguration(ContourROITool.toolName, {
-        calculateStats: shouldCalculateStats,
       });
     },
   });
@@ -226,7 +212,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(ContourROITool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
@@ -244,7 +229,15 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(SegmentationDisplayTool.toolName);
 
-  toolGroup.addTool(ContourROITool.toolName, { cachedStats: true });
+  toolGroup.addToolInstance(
+    'InterpolateFreehand',
+    PlanarFreehandContourSegmentationTool.toolName,
+    {
+      interpolation: {
+        enabled: true,
+      },
+    }
+  );
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
@@ -253,7 +246,7 @@ async function run() {
   toolGroup.addTool(LivewireContourTool.toolName);
 
   // Set the initial state of the tools.
-  toolGroup.setToolActive(ContourROITool.toolName, {
+  toolGroup.setToolActive('InterpolateFreehand', {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -263,9 +256,6 @@ async function run() {
 
   // set up toggle interpolation tool button.
   addToggleInterpolationButton(toolGroup);
-
-  // set up toggle calculate stats tool button.
-  addToggleCalculateStatsButton(toolGroup);
 
   // delete button for contour ROI
   addContourDeleteButton(toolGroup);

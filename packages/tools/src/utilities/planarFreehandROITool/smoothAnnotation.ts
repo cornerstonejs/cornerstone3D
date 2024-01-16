@@ -50,7 +50,7 @@ function shouldPreventInterpolation(
  * The param knotsRatioPercentage defines the percentage of points to be considered as knots on the interpolation process.
  * Interpolation will be skipped in case: annotation is not present in enabledElement (or there is no toolGroup associated with it), related tool is being modified.
  */
-export default function interpolateAnnotation(
+export default function smoothAnnotation(
   enabledElement: Types.IEnabledElement,
   annotation: PlanarFreehandROIAnnotation,
   knotsRatioPercentage: number

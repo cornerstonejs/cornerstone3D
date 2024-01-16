@@ -12,8 +12,8 @@ import { vec3, vec2 } from 'gl-matrix';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import {
   getInterpolatedPoints,
-  shouldInterpolate,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
+  shouldSmooth,
+} from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 const {
@@ -436,7 +436,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
-    const updatedPoints = shouldInterpolate(this.configuration)
+    const updatedPoints = shouldSmooth(this.configuration, annotation)
       ? getInterpolatedPoints(
           this.configuration,
           fusedCanvasPoints,

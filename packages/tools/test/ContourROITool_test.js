@@ -6,7 +6,6 @@ import {
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import EventTypes from '../src/enums/Events';
-import { InterpolationROIAnnotation } from '../src/types/ToolSpecificAnnotationTypes';
 
 const {
   cache,
@@ -32,6 +31,7 @@ const {
 const { Events, ViewportType } = Enums;
 const { Events: csToolsEvents } = csToolsEnums;
 const { scroll } = toolsUtilities;
+const { isEqual } = utilities;
 
 const segmentationId = `SEGMENTATION_ID`;
 
@@ -253,12 +253,16 @@ describe('Contours Interpolation: ', () => {
       this.renderingEngine.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup('stack');
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
+      ToolGroupManager.destroyToolGroup(toolGroupId);
+      try {
+        this.DOMElements.forEach((el) => {
+          if (el.parentNode) {
+            el.parentNode.removeChild(el);
+          }
+        });
+      } catch (e) {
+        console.warn('Unable to remove child', e);
+      }
     });
 
     it('Should successfully create a interpolated annotations on slices', function (done) {
@@ -531,7 +535,7 @@ describe('Contours Interpolation: ', () => {
         slicePoints.forEach((x) => {
           worldPoints.push(imageData.indexToWorld(x));
         });
-        const contourAnnotation: InterpolationROIAnnotation = {
+        const contourAnnotation = {
           highlighted: true,
           invalidated: true,
           metadata: {
@@ -721,7 +725,7 @@ describe('Contours Interpolation: ', () => {
               (point, pIndex) => {
                 return x.data.contour.polyline[pIndex].every(
                   (polylinePoint, pointIndex) => {
-                    return point[pointIndex] === polylinePoint;
+                    return isEqual(point[pointIndex], polylinePoint);
                   }
                 );
               }

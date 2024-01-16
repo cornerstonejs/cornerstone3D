@@ -16,6 +16,7 @@ import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAn
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { SegmentationRepresentations } from '../../enums';
 import ContourBaseTool from './ContourBaseTool';
+import { InterpolationManager } from '../../utilities/contours/interpolation';
 
 /**
  * A base contour segmentation class responsible for rendering, registering
@@ -24,6 +25,9 @@ import ContourBaseTool from './ContourBaseTool';
 abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
+    if (this.configuration.interpolation?.enabled) {
+      InterpolationManager.addTool(this.getToolName());
+    }
   }
 
   /**
@@ -76,6 +80,9 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
             segmentationId,
             segmentIndex,
             segmentationRepresentationUID,
+          },
+          contour: {
+            closed: true,
           },
         },
       }

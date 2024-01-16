@@ -1,7 +1,11 @@
 import { Types, utilities as csUtils } from '@cornerstonejs/core';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
-export default function getToolData(eventData, points, referencedToolData) {
+export default function createInterpolatedToolData(
+  eventData,
+  points,
+  referencedToolData
+) {
   const annotation: InterpolationROIAnnotation =
     structuredClone(referencedToolData);
   Object.assign(annotation, {
@@ -31,11 +35,6 @@ export default function getToolData(eventData, points, referencedToolData) {
       closed: true,
     },
   });
-  console.log(
-    'getToolData FrameOfReferenceUID',
-    referencedToolData.metadata.FrameOfReferenceUID,
-    annotation.metadata.FrameOfReferenceUID
-  );
   annotation.metadata.referencedImageId = undefined;
   annotation.metadata.referencedSliceIndex = undefined;
 

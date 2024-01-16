@@ -8,9 +8,9 @@ import { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
-  shouldInterpolate,
+  shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
@@ -220,7 +220,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
     ? reverseIfAntiClockwise(canvasPoints)
     : canvasPoints;
 
-  const updatedPoints = shouldInterpolate(this.configuration)
+  const updatedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, clockwise)
     : clockwise;
 
@@ -290,7 +290,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
-  const updatedPoints = shouldInterpolate(this.configuration)
+  const updatedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
 

@@ -68,23 +68,23 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  * or similar methods.
  *
  * PlanarFreehandROITool annotation can be smoothed on drawing completion. This is a configured based approach.
- * The interpolation process uses b-spline algorithm and consider 4 configurations properties:
- * - interpolation.interpolateOnAdd: to tell whether it should be interpolated or not (for editing it is considered the property interpolateOnEdit) (default: false)
- * - interpolation.interpolateOnEdit: to tell whether it should be interpolated or not when editing (default: false)
- * - interpolation.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during interpolation (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
- * - interpolation.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
+ * The smoothing process uses b-spline algorithm and consider 4 configurations properties:
+ * - smoothing.smoothOnAdd: to tell whether it should be smoothed or not (for editing it is considered the property smoothOnEdit) (default: false)
+ * - smoothing.smoothOnEdit: to tell whether it should be smoothed or not when editing (default: false)
+ * - smoothing.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during smoothing (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
+ * - smoothing.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
  *
- * So, with that said the interpolation might occur when:
- * - drawing is done (i.e mouse is released) and interpolation.interpolateOnAdd is true. Interpolation algorithm uses knotsRatioPercentageOnAdd
- * - edit drawing is done (i.e mouse is released) and interpolation.interpolateOnEdit is true. Interpolation algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
- * Interpolation does not occur when:
- * - interpolation.interpolateOnAdd is false and drawing is completed
- * - interpolation.interpolateOnEdit is false and edit is completed
+ * So, with that said the smoothing might occur when:
+ * - drawing is done (i.e mouse is released) and smoothing.smoothOnAdd is true. smoothing algorithm uses knotsRatioPercentageOnAdd
+ * - edit drawing is done (i.e mouse is released) and smoothing.smoothOnEdit is true. smoothing algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
+ * smoothing does not occur when:
+ * - smoothing.smoothOnAdd is false and drawing is completed
+ * - smoothing.smoothOnEdit is false and edit is completed
  * - drawing still happening (editing or not)
  *
- * The result of interpolation will be a smoother set of segments.
- * Changing tool configuration (see below) you can fine-tune the interpolation process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive interpolation.
- * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more agressive interpolation.
+ * The result of smoothing will be removal of some of the outliers
+ * Changing tool configuration (see below) you can fine-tune the smoothing process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive smoothing.
+ * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more agressive smoothing.
  *
  * ```js
  * cornerstoneTools.addTool(PlanarFreehandROITool)
@@ -103,14 +103,14 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *   ],
  * })
  *
- * // set interpolation agressiveness while adding new annotation (ps: this does not change if interpolation is ON or OFF)
+ * // set smoothing agressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { knotsRatioPercentageOnAdd: 30 },
+ *   smoothing: { knotsRatioPercentageOnAdd: 30 },
  * });
  *
- * // set interpolation to be ON while editing only
+ * // set smoothing to be ON while editing only
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { interpolateOnAdd: false, interpolateOnEdit: true  },
+ *   smoothing: { smoothOnAdd: false, smoothOnEdit: true  },
  * });
  * ```
  *
@@ -204,11 +204,25 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         // value gives more finesse to the tool/smoother lines, but the value cannot
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
-        interpolation: {
-          interpolateOnAdd: false,
-          interpolateOnEdit: false, // used for edit only
+        /**
+         * Smoothing is used to remove jagged irregularities in the polyline,
+         * as opposed to interpolation, which is used to create new polylines
+         * between existing polylines.
+         */
+        smoothing: {
+          smoothOnAdd: false,
+          smoothOnEdit: false, // used for edit only
           knotsRatioPercentageOnAdd: 40,
           knotsRatioPercentageOnEdit: 40,
+        },
+        /**
+         * Interpolation is the creation of new segmentations in between the
+         * existing segmentations/indices
+         */
+        interpolation: {
+          enabled: false,
+          // Callback to be made after interpolation is completed
+          postProcess: null,
         },
         calculateStats: false,
         getTextLines: defaultGetTextLines,
