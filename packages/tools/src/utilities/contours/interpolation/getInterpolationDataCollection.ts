@@ -2,7 +2,7 @@ import getInterpolationData from './getInterpolationData';
 import type {
   InterpolationViewportData,
   ImageInterpolationData,
-} from './InterpolationTypes';
+} from '../../../types/InterpolationTypes';
 
 /**
  * getInterpolationDataCollection - Generates a collection of the 2D

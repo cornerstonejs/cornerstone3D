@@ -1,6 +1,6 @@
 import { Types } from '@cornerstonejs/core';
-import { Annotation } from '../../../types/AnnotationTypes';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import { Annotation } from './AnnotationTypes';
+import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
 
 export type InterpolationViewportData = {
   /** The annotation that is being updated with a change in label. */

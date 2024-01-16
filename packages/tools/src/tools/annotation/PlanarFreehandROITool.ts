@@ -918,7 +918,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats;
+    cachedVolumeStats || {};
 
   const textLines: string[] = [];
 

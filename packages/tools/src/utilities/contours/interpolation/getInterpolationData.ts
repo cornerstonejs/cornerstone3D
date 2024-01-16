@@ -1,7 +1,7 @@
 import type {
   InterpolationViewportData,
   ImageInterpolationData,
-} from './InterpolationTypes';
+} from '../../../types/InterpolationTypes';
 import * as annotationStateManagement from '../../../stateManagement/annotation';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
@@ -56,6 +56,11 @@ export default function getInterpolationData(
         }
       );
 
+      console.log(
+        'filtered annotations image data',
+        i,
+        filteredInterpolatedAnnotations?.[0]?.metadata
+      );
       const annotationsOnImage: ImageInterpolationData = {
         sliceIndex: i,
         annotations: filteredInterpolatedAnnotations.length

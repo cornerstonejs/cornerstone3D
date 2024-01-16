@@ -1,8 +1,8 @@
 import { triggerEvent } from '@cornerstonejs/core';
 import * as annotationStateManagement from '../../../stateManagement/annotation';
-import interpolate from './freehandInterpolate/interpolate';
-import type { InterpolationViewportData } from './InterpolationTypes';
-import getInterpolationDataCollection from './getInterpolationDataCollection';
+import interpolate from '../../contours/interpolation/interpolate';
+import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
+import getInterpolationDataCollection from '../../contours/interpolation/getInterpolationDataCollection';
 import { AnnotationInterpolationRemovedEventDetail } from '../../../types/EventTypes';
 import EventTypes from '../../../enums/Events';
 

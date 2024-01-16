@@ -2442,6 +2442,12 @@ type IDistance = {
 };
 
 // @public (undocumented)
+type ImageInterpolationData = {
+    sliceIndex: number;
+    annotations?: Annotation[];
+};
+
+// @public (undocumented)
 class ImageMouseCursor extends MouseCursor {
     constructor(url: string, x?: number, y?: number, name?: string | undefined, fallback?: MouseCursor | undefined);
     // (undocumented)
@@ -2485,6 +2491,14 @@ type InterpolationROIAnnotation = PlanarFreehandROIAnnotation & {
         referencedSliceIndex?: number;
     };
     interpolationUID?: string;
+};
+
+// @public (undocumented)
+type InterpolationViewportData = {
+    annotation: InterpolationROIAnnotation;
+    interpolationUID: string;
+    viewport: Types_2.IViewport;
+    sliceData: Types_2.ImageSliceData;
 };
 
 // @public (undocumented)
@@ -5245,6 +5259,8 @@ declare namespace Types {
         BidirectionalData,
         CanvasCoordinates,
         IAnnotationManager,
+        InterpolationViewportData,
+        ImageInterpolationData,
         GroupSpecificAnnotations,
         AnnotationState,
         AnnotationStyle,

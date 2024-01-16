@@ -1,6 +1,6 @@
 import type { PublicToolProps, ToolProps } from '../../types';
 import PlanarFreehandContourSegmentationTool from './PlanarFreehandContourSegmentationTool';
-import InterpolationManager from '../../utilities/contourROITool/InterpolationManager';
+import InterpolationManager from '../../utilities/segmentation/InterpolationManager/InterpolationManager';
 
 class ContourROITool extends PlanarFreehandContourSegmentationTool {
   constructor(toolProps: PublicToolProps = {}) {

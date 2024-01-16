@@ -33,6 +33,7 @@ export default {
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{js,jsx}',
     // Not
+    '!<rootDir>/src/RenderingEngine/vtkClasses/**',
     '!<rootDir>/src/**/*.test.js',
     '!**/node_modules/**',
     '!**/__tests__/**',

@@ -1,6 +1,6 @@
 import { eventTarget } from '@cornerstonejs/core';
 import Events from '../enums/Events';
-import InterpolationManager from '../utilities/contourROITool/InterpolationManager';
+import InterpolationManager from '../utilities/segmentation/InterpolationManager/InterpolationManager';
 
 const enable = function (element: HTMLDivElement) {
   eventTarget.addEventListener(

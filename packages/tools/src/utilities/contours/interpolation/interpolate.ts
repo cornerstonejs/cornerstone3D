@@ -1,12 +1,13 @@
 import { StackViewport, triggerEvent } from '@cornerstonejs/core';
-import getToolData from '../getToolData';
+import getToolData from './getToolData';
 import generateInterpolationData from './generateInterpolationData';
-import TOOL_NAMES from '../toolNames';
-import type { InterpolationViewportData } from '../InterpolationTypes';
-import { InterpolationROIAnnotation } from '../../../../types/ToolSpecificAnnotationTypes';
-import { AnnotationInterpolationCompletedEventDetail } from '../../../../types/EventTypes';
-import { annotation } from '../../../../index';
-import EventTypes from '../../../../enums/Events';
+import TOOL_NAMES from './toolNames';
+import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
+import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
+import EventTypes from '../../../enums/Events';
+// TODO - move this circular reference
+import { annotation } from '../../../index';
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
@@ -23,9 +24,9 @@ function interpolate(viewportData: InterpolationViewportData) {
   if (interpolating) {
     return;
   }
+  interpolating = true;
   setTimeout(() => {
     try {
-      interpolating = true;
       startInterpolation(viewportData);
     } finally {
       interpolating = false;
@@ -207,6 +208,11 @@ function _addInterpolatedContour(
     const imageIds = eventData.viewport.getImageIds();
     interpolatedAnnotation.metadata.referencedImageId = imageIds[sliceIndex];
   }
+  console.log(
+    'Assigning new slice index',
+    sliceIndex,
+    JSON.stringify(interpolatedAnnotation)
+  );
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
   annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
 }
@@ -248,6 +254,14 @@ function _editInterpolatedContour(
       break;
     }
   }
+  if (toolDataIndex === undefined) {
+    console.warn(
+      'Unable to find referenced slice index in the tool data',
+      sliceIndex,
+      annotations
+    );
+    return;
+  }
 
   const oldToolData = annotations[toolDataIndex] as InterpolationROIAnnotation;
   const points = [];
@@ -260,6 +274,12 @@ function _editInterpolatedContour(
     ]);
   }
   const interpolatedAnnotation = getToolData(eventData, points, oldToolData);
+  console.log('interpolatedAnnotation', interpolatedAnnotation, oldToolData);
+  console.log(
+    'Copying referencedSliceIndex',
+    oldToolData.metadata.referencedImageId.substring(50),
+    oldToolData.metadata.referencedSliceIndex
+  );
   interpolatedAnnotation.metadata.referencedImageId =
     oldToolData.metadata.referencedImageId;
   interpolatedAnnotation.metadata.referencedSliceIndex =

@@ -16,7 +16,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
-import reverseIfAntiClockwise from '../../../utilities/contourROITool/reverseIfAntiClockwise';
+import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClockwise';
 
 const {
   addCanvasPointsToArray,
