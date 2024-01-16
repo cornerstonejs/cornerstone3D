@@ -1,12 +1,12 @@
 import { SurfaceRenderingConfig } from '../../../types/SurfaceTypes';
 
-const defaultContourConfig: SurfaceRenderingConfig = {
+const defaultSurfaceConfig: SurfaceRenderingConfig = {
   renderFill: true,
   fillAlpha: 1,
 };
 
 function getDefaultSurfaceConfig(): SurfaceRenderingConfig {
-  return defaultContourConfig;
+  return defaultSurfaceConfig;
 }
 
 export default getDefaultSurfaceConfig;

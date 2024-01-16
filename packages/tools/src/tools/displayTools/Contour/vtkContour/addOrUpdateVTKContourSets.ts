@@ -3,11 +3,11 @@ import { Types } from '@cornerstonejs/core';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
-} from '../../../types';
+} from '../../../../types';
 import { addContourSetsToElement } from './addContourSetsToElement';
-import { updateContourSets } from './updateContourSets';
+import { updateVTKContourSets } from './updateVTKContourSets';
 
-export function addOrUpdateContourSets(
+export function addOrUpdateVTKContourSets(
   viewport: Types.IVolumeViewport,
   geometryIds: string[],
   contourRepresentation: ToolGroupSpecificContourRepresentation,
@@ -17,7 +17,7 @@ export function addOrUpdateContourSets(
   const actorUID = `CONTOUR_${segmentationRepresentationUID}`;
   const actor = viewport.getActor(actorUID);
 
-  const addOrUpdateFn = actor ? updateContourSets : addContourSetsToElement;
+  const addOrUpdateFn = actor ? updateVTKContourSets : addContourSetsToElement;
   addOrUpdateFn(
     viewport,
     geometryIds,

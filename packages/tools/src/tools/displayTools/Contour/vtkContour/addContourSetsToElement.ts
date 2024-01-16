@@ -13,7 +13,7 @@ import {
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
-} from '../../../types';
+} from '../../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
 
 export function addContourSetsToElement(

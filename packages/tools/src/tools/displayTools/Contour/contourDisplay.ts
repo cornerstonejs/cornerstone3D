@@ -11,9 +11,9 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-import { addOrUpdateContourSets } from './addOrUpdateContourSets';
+import { addOrUpdateVTKContourSets } from './vtkContour/addOrUpdateVTKContourSets';
 import removeContourFromElement from './removeContourFromElement';
-import { deleteConfigCache } from './contourConfigCache';
+import { deleteConfigCache } from './vtkContour/contourConfigCache';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -72,28 +72,28 @@ async function render(
   }
 
   const contourData = segmentation.representationData[Representations.Contour];
-  const { geometryIds } = contourData;
 
-  // We don't have a good way to handle stack viewports for contours at the moment.
-  // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
-  if (viewport instanceof StackViewport) {
-    return;
+  if (!contourData) {
   }
 
-  if (!geometryIds?.length) {
-    console.warn(
-      `No contours found for segmentationId ${segmentationId}. Skipping render.`
+  if (contourData?.geometryIds?.length) {
+    // this means we would like to use vtk actors for contour data
+    // Note: We really should get out of
+
+    if (viewport instanceof StackViewport) {
+      // We don't have a good way to handle stack viewports for contours at the moment.
+      // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
+      return;
+    }
+
+    // add the contour sets to the viewport
+    addOrUpdateVTKContourSets(
+      viewport,
+      contourData.geometryIds,
+      representationConfig,
+      toolGroupConfig
     );
-    return;
   }
-
-  // add the contour sets to the viewport
-  addOrUpdateContourSets(
-    viewport,
-    geometryIds,
-    representationConfig,
-    toolGroupConfig
-  );
 }
 
 function _removeContourFromToolGroupViewports(
