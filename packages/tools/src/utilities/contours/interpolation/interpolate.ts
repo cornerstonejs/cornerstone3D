@@ -20,7 +20,7 @@ let interpolating = false;
  * @returns null
  */
 function interpolate(viewportData: InterpolationViewportData) {
-  if (interpolating) {
+  if (interpolating || !viewportData.annotation) {
     return;
   }
   interpolating = true;
@@ -205,11 +205,6 @@ function _addInterpolatedContour(
     const imageIds = eventData.viewport.getImageIds();
     interpolatedAnnotation.metadata.referencedImageId = imageIds[sliceIndex];
   }
-  console.log(
-    'Assigning new slice index',
-    sliceIndex,
-    JSON.stringify(interpolatedAnnotation)
-  );
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
   annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
 }

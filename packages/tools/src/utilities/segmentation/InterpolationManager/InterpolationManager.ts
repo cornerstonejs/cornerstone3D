@@ -94,16 +94,20 @@ export default class InterpolationManager {
     }
     if (!annotation.interpolationUID) {
       const filterData = [
-        { key: 'label', value: annotation.data.label, parentKey: 'data' },
+        {
+          key: 'segmentIndex',
+          value: annotation.data.segmentation.segmentIndex,
+          parentKey: (annotation) => annotation.data.segmentation,
+        },
         {
           key: 'viewPlaneNormal',
           value: annotation.metadata.viewPlaneNormal,
-          parentKey: 'metadata',
+          parentKey: (annotation) => annotation.metadata,
         },
         {
           key: 'viewUp',
           value: annotation.metadata.viewUp,
-          parentKey: 'metadata',
+          parentKey: (annotation) => annotation.metadata,
         },
       ];
       let interpolationAnnotations = getInterpolationDataCollection(

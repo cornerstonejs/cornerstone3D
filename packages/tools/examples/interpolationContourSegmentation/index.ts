@@ -50,7 +50,25 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID;
-const interpolationToolName = 'InterpolateFreeform';
+const interpolationTools = new Map<string, any>();
+const configuration = {
+  interpolation: { enabled: true },
+};
+interpolationTools.set('FreeformInterpolation', {
+  baseTool: PlanarFreehandContourSegmentationTool.toolName,
+  configuration,
+});
+interpolationTools.set('SplineInterpolation', {
+  baseTool: SplineContourSegmentationTool.toolName,
+  configuration,
+});
+interpolationTools.set('LivewireInterpolation', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration,
+});
+const interpolationToolName = [...interpolationTools.keys()][0];
+
+const segmentIndexes = [1, 2, 3, 4, 5];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -82,10 +100,22 @@ viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
+addDropdownToToolbar({
+  labelText: 'Segment Index',
+  options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    updateActiveSegmentIndex(Number(nameAsStringOrNumber));
+  },
+});
+
 const toolsNames = [
-  interpolationToolName,
+  ...interpolationTools.keys(),
   PlanarFreehandROITool.toolName,
   PlanarFreehandContourSegmentationTool.toolName,
+  SplineContourSegmentationTool.toolName,
+  SplineROITool.toolName,
+  LivewireContourSegmentationTool.toolName,
+  LivewireContourTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -174,34 +204,6 @@ function addContourDeleteButton(toolGroup) {
   });
 }
 
-const dropdownOptions = ['label 1', 'label 2', 'label 3', 'label 4', 'label 5'];
-let dropDownValue = dropdownOptions[0];
-
-function onSelectedValueChange(value) {
-  dropDownValue = value;
-  const annotationData = annotation.state.getAnnotation(selectedAnnotationId);
-  if (!selectedAnnotationId || !annotationData) {
-    alert('Please select any Contour ROI');
-    return;
-  }
-  annotationData.data.label = dropDownValue;
-  const { viewport, element } =
-    getViewportDataBasedOnAnnotation(annotationData);
-  triggerLabelUpdateCallback({ viewport, element }, annotationData);
-}
-
-function setDropDownTollbar() {
-  addDropdownToToolbar({
-    labelText: 'Labels',
-    options: {
-      values: dropdownOptions,
-      defaultValue: dropDownValue,
-    },
-    onSelectedValueChange: onSelectedValueChange,
-  });
-}
-// ============================= //
-
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 let selectedAnnotationId = '';
 
@@ -230,15 +232,9 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(SegmentationDisplayTool.toolName);
 
-  toolGroup.addToolInstance(
-    interpolationToolName,
-    PlanarFreehandContourSegmentationTool.toolName,
-    {
-      interpolation: {
-        enabled: true,
-      },
-    }
-  );
+  for (const [toolName, config] of interpolationTools.entries()) {
+    toolGroup.addToolInstance(toolName, config.baseTool, config.configuration);
+  }
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
@@ -260,9 +256,6 @@ async function run() {
 
   // delete button for contour ROI
   addContourDeleteButton(toolGroup);
-
-  // set up the labels
-  setDropDownTollbar(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({
@@ -286,7 +279,7 @@ async function run() {
 
   eventTarget.addEventListener(Events.ANNOTATION_COMPLETED, (evt) => {
     const { annotation } = evt.detail;
-    annotation.data.label = dropDownValue;
+    // annotation.data.label = 'Label';
     const { viewport, element } = getViewportDataBasedOnAnnotation(annotation);
     triggerLabelUpdateCallback({ viewport, element }, annotation);
   });

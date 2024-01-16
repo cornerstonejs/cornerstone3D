@@ -43,15 +43,14 @@ export default function getInterpolationData(
       const filteredInterpolatedAnnotations = imageAnnotations.filter(
         (imageAnnotation) => {
           return filterParams.every((x) => {
-            if (x.parentKey && imageAnnotation[x.parentKey][x.key]) {
-              if (Array.isArray(imageAnnotation[x.parentKey][x.key])) {
-                return imageAnnotation[x.parentKey][x.key].every(
-                  (item, index) => item === x.value[index]
-                );
-              }
-              return imageAnnotation[x.parentKey][x.key] === x.value;
+            const parent = x.parentKey
+              ? x.parentKey(imageAnnotation)
+              : imageAnnotation;
+            const value = parent?.[x.key];
+            if (Array.isArray(value)) {
+              return value.every((item, index) => item === x.value[index]);
             }
-            return imageAnnotation[x.key] === x.value;
+            return value === x.value;
           });
         }
       );

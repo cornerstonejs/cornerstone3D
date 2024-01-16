@@ -571,6 +571,7 @@ describe('Contours Interpolation: ', () => {
             contour: {
               polyline: worldPoints, // Polyline coordinates
             },
+            segmentation: dataSegmentation,
             label,
             cachedStats: {},
           },
