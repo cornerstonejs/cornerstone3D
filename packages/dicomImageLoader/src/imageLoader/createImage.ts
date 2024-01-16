@@ -242,7 +242,14 @@ function createImage(
             imageFrame.columns,
             imageFrame.rows
           );
-
+          const pixelDataLength =
+            imageFrame.columns * imageFrame.rows * imageFrame.samplesPerPixel;
+          if (imageFrame.pixelData.length > pixelDataLength) {
+            imageFrame.pixelData = imageFrame.pixelData.slice(
+              0,
+              pixelDataLength
+            );
+          }
           convertColorSpace(imageFrame, imageData.data, useRGBA);
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
