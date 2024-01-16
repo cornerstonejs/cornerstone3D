@@ -207,6 +207,10 @@ function _addInterpolatedContour(
   }
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
   annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
+  referencedToolData.postInterpolateAction?.(
+    interpolatedAnnotation,
+    referencedToolData
+  );
 }
 
 /**
@@ -270,19 +274,12 @@ function _editInterpolatedContour(
     points,
     oldToolData
   );
-  console.log('interpolatedAnnotation', interpolatedAnnotation, oldToolData);
-  console.log(
-    'Copying referencedSliceIndex',
-    oldToolData.metadata.referencedImageId.substring(50),
-    oldToolData.metadata.referencedSliceIndex
-  );
   interpolatedAnnotation.metadata.referencedImageId =
     oldToolData.metadata.referencedImageId;
   interpolatedAnnotation.metadata.referencedSliceIndex =
     oldToolData.metadata.referencedSliceIndex;
   // To update existing annotation, not intend to add or remove
   interpolatedAnnotation.annotationUID = oldToolData.annotationUID;
-  // Skip triggering events on removal of interpolated roi's.
   annotation.state.removeAnnotation(oldToolData.annotationUID);
   annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
 }

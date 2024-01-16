@@ -81,9 +81,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
             segmentIndex,
             segmentationRepresentationUID,
           },
-          contour: {
-            closed: true,
-          },
         },
       }
     );

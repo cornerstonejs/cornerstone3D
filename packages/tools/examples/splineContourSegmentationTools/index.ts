@@ -47,7 +47,7 @@ const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
-let activeSegmentIndex = 1;
+let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //
 
@@ -438,6 +438,7 @@ async function run() {
     segmentationRepresentationUID
   );
 
+  updateActiveSegmentIndex(1);
   initializeGlobalConfig();
   updateInputsForCurrentSegmentation();
 }

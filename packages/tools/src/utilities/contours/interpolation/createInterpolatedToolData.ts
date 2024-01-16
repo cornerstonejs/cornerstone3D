@@ -6,8 +6,13 @@ export default function createInterpolatedToolData(
   points,
   referencedToolData
 ) {
-  const annotation: InterpolationROIAnnotation =
-    structuredClone(referencedToolData);
+  const annotation: InterpolationROIAnnotation = csUtils.deepMerge(
+    {
+      data: {},
+      metadata: {},
+    },
+    referencedToolData
+  );
   Object.assign(annotation, {
     highlighted: false,
     invalidated: true,

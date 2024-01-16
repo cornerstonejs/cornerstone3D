@@ -49,7 +49,6 @@ create Annotations for the interaction. Example `AnnotationTool`s include:
 - Probe
 - RectangleROI
 - PlanarFreehandROI
-- ContourROI
 
 ## Next steps
 

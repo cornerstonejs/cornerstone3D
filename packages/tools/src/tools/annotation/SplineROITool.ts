@@ -46,6 +46,7 @@ import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { inc } from 'semver';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -724,25 +725,56 @@ class SplineROITool extends ContourSegmentationBaseTool {
     return true;
   }
 
+  protected createInterpolatedSplineControl(annotation, sourceAnnotation) {
+    console.log(
+      'TODO: Create interpolated spline control points',
+      annotation,
+      sourceAnnotation
+    );
+    const { polyline } = annotation.data.contour;
+    if (!polyline || !polyline.length) {
+      return;
+    }
+    annotation.data.handles.points = [];
+    const { points } = annotation.data.handles;
+    const increment = Math.max(10, Math.floor(polyline.length / 20));
+    for (let i = 0; i < polyline.length - increment; i += increment) {
+      points.push(polyline[i]);
+    }
+    points.push(polyline[polyline.length - 1]);
+  }
+
   protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
     const contourAnnotation = super.createAnnotation(evt);
     const { world: worldPos } = evt.detail.currentPoints;
     const { type: splineType } = this.configuration.spline;
     const splineConfig = this._getSplineConfig(splineType);
     const spline = new splineConfig.Class();
+    const createSpline = () => ({
+      type: splineConfig.type,
+      instance: spline,
+      resolution: splineConfig.resolution,
+    });
+
+    // Add an action to create a new spline data on creating an interpolated
+    // instance.
+    let postInterpolateAction;
+    if (this.configuration.interpolation.enabled) {
+      postInterpolateAction = (annotation, sourceAnnotation) => {
+        annotation.data.spline ||= createSpline();
+        this.createInterpolatedSplineControl(annotation, sourceAnnotation);
+      };
+    }
 
     return <SplineROIAnnotation>utilities.deepMerge(contourAnnotation, {
       data: {
         handles: {
           points: [[...worldPos]],
         },
-        spline: {
-          type: splineConfig.type,
-          instance: spline,
-          resolution: splineConfig.resolution,
-        },
+        spline: createSpline(),
         cachedStats: {},
       },
+      postInterpolateAction,
     });
   }
 
