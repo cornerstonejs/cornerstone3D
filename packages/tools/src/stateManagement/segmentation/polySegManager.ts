@@ -7,7 +7,6 @@ import {
   geometryLoader,
   volumeLoader,
   utilities,
-  StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
@@ -28,7 +27,7 @@ import {
 } from '../../types/LabelmapTypes';
 import { Events, SegmentationRepresentations } from '../../enums';
 import { SegmentationDataModifiedEventDetail } from '../../types/EventTypes';
-import { debounce, pointInShapeCallback, viewport } from '../../utilities';
+import { debounce, pointInShapeCallback } from '../../utilities';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import {
   SegmentationRepresentationData,
@@ -303,12 +302,7 @@ class PolySegManager {
     // We don't need to cache the labelmap data since it is already cached
     // by the converter, since it needed to write it to the cache in order
     // to create the geometry
-
-    // await this.createAndCacheLabelmapFromRaw(
-    //   segmentationId,
-    //   rawLabelmapData,
-    //   options
-    // );
+    await this.createAndCacheLabelmapFromRaw(segmentationId, rawLabelmapData);
 
     return rawLabelmapData;
   }
@@ -497,16 +491,8 @@ class PolySegManager {
     segmentationId: string,
     rawLabelmapData:
       | LabelmapSegmentationDataVolume
-      | LabelmapSegmentationDataStack,
-    options: {
-      segmentIndices?: number[];
-      segmentationRepresentationUID?: string;
-      isVolume?: boolean;
-      viewport?: Types.IVolumeViewport | Types.IStackViewport;
-    } = {}
+      | LabelmapSegmentationDataStack
   ) {
-    const segmentation = getSegmentation(segmentationId);
-
     const labelmapData = {
       volumeId: rawLabelmapData,
     };
