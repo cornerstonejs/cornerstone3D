@@ -759,6 +759,10 @@ class Viewport implements IViewport {
     // compute the radius of the enclosing sphere
     radius = Math.sqrt(radius) * 0.5;
 
+    // For 3D viewport, we should increase the radius to make sure the whole
+    // volume is visible and we don't get clipping artifacts.
+    radius = this.type === ViewportType.VOLUME_3D ? radius * 10 : radius;
+
     const distance = this.insetImageMultiplier * radius;
 
     const viewUpToSet: Point3 =
