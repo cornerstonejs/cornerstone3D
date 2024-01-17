@@ -71,10 +71,20 @@ export const getTypedNiftiArray = (datatypeCode, niftiImageBuffer) => {
   switch (datatypeCode) {
     case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
       return new Uint8Array(niftiImageBuffer);
-    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT32:
-      return new Float32Array(niftiImageBuffer);
     case NIFTICONSTANTS.NIFTI_TYPE_INT16:
       return new Int16Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_INT32:
+      return new Int32Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT32:
+      return new Float32Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT64:
+      return new Float64Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_INT8:
+      return new Int8Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_UINT16:
+      return new Uint16Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_UINT32:
+      return new Uint32Array(niftiImageBuffer);
     default:
       throw new Error(`datatypeCode ${datatypeCode} is not yet supported`);
   }
