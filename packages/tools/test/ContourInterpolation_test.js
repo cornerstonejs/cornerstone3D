@@ -769,10 +769,6 @@ describe('Contours Interpolation: ', () => {
           element
         );
 
-        console.log(
-          '***** Triggering contour update callback',
-          contourAnnotations.map((it) => it.metadata.referencedSliceIndex)
-        );
         triggerContourUpdateCallback(
           { element, viewport: vp },
           contourAnnotations[contourAnnotations.length - 1]
@@ -807,7 +803,7 @@ function triggerContourUpdateCallback(eventData, annotation) {
 
   triggerEvent(
     eventTarget,
-    csToolsEnums.Events.ANNOTATION_LABEL_CHANGE,
+    csToolsEnums.Events.ANNOTATION_COMPLETED,
     eventDetail
   );
 }

@@ -275,7 +275,10 @@ type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDeta
 
 // @public (undocumented)
 type AnnotationCompletedEventDetail = {
+    viewportId?: string;
+    renderingEngineId?: string;
     annotation: Annotation;
+    changeType?: ChangeTypes.Completed;
 };
 
 // @public (undocumented)
@@ -368,16 +371,6 @@ type AnnotationInterpolationRemovedEventDetail = {
 type AnnotationInterpolationRemovedEventType = Types_2.CustomEventType<AnnotationInterpolationRemovedEventDetail>;
 
 // @public (undocumented)
-type AnnotationLabelChangeEventDetail = {
-    annotation: Annotation;
-    viewportId: string;
-    renderingEngineId: string;
-};
-
-// @public (undocumented)
-type AnnotationLabelChangeEventType = Types_2.CustomEventType<AnnotationLabelChangeEventDetail>;
-
-// @public (undocumented)
 type AnnotationLockChangeEventDetail = {
     added: Array<Annotation>;
     removed: Array<Annotation>;
@@ -392,6 +385,7 @@ type AnnotationModifiedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     annotation: Annotation;
+    changeType?: ChangeTypes;
 };
 
 // @public (undocumented)
@@ -867,6 +861,20 @@ type CardinalSplineProps = SplineProps & {
     scale?: number;
     fixedScale?: boolean;
 };
+
+// @public (undocumented)
+enum ChangeTypes {
+    // (undocumented)
+    Completed = "Completed",
+    // (undocumented)
+    HandlesUpdated = "HandlesUpdated",
+    // (undocumented)
+    InitialSetup = "InitialSetup",
+    // (undocumented)
+    Interaction = "Interaction",
+    // (undocumented)
+    StatsUpdated = "StatsUpdated"
+}
 
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
@@ -1892,7 +1900,8 @@ declare namespace Enums {
         Events,
         SegmentationRepresentations,
         Swipe,
-        StrategyCallbacks
+        StrategyCallbacks,
+        ChangeTypes
     }
 }
 export { Enums }
@@ -1911,8 +1920,6 @@ enum Events {
     ANNOTATION_COMPLETED = "CORNERSTONE_TOOLS_ANNOTATION_COMPLETED",
     // (undocumented)
     ANNOTATION_INTERPOLATION_PROCESS_COMPLETED = "CORNERSTONE_TOOLS_ANNOTATION_INTERPOLATION_PROCESS_COMPLETED",
-    // (undocumented)
-    ANNOTATION_LABEL_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LABEL_CHANGE",
     // (undocumented)
     ANNOTATION_LOCK_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE",
     // (undocumented)
@@ -2015,8 +2022,6 @@ declare namespace EventTypes_2 {
         AnnotationVisibilityChangeEventDetail,
         AnnotationLockChangeEventType,
         AnnotationVisibilityChangeEventType,
-        AnnotationLabelChangeEventDetail,
-        AnnotationLabelChangeEventType,
         AnnotationInterpolationCompletedEventDetail,
         AnnotationInterpolationCompletedEventType,
         AnnotationInterpolationRemovedEventDetail,
@@ -3499,7 +3504,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
+    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation, enabledElement?: Types_2.IEnabledElement) => void;
     // (undocumented)
     triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
@@ -4686,7 +4691,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
+    triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
 }
 
 // @public (undocumented)

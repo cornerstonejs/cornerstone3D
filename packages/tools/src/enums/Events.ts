@@ -97,14 +97,6 @@ enum Events {
   ANNOTATION_RENDERED = 'CORNERSTONE_TOOLS_ANNOTATION_RENDERED',
 
   /**
-   * Triggers on the eventTarget when an annotation label added or updated.
-   * Make use of {@link EventTypes.AnnotationLabelChangeEventType | Annotation Label Change Event Type}
-   * for typing your event listeners for this annotation label change event, and see what
-   * event detail is included in {@link EventTypes.AnnotationLabelChangeEventDetail | Annotation Label Change Event Detail}.
-   */
-  ANNOTATION_LABEL_CHANGE = 'CORNERSTONE_TOOLS_ANNOTATION_LABEL_CHANGE',
-
-  /**
    * Triggers on the eventTarget when an annotation interpolation process completed.
    * Make use of {@link EventTypes.AnnotationInterpolationCompletedEventType | Annotation Interpolation process Completed Event Type}
    * for typing your event listeners for this annotation interpolation complete event, and see what

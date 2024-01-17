@@ -7,7 +7,7 @@ import { SetToolBindingsType } from './ISetToolModeOptions';
 import { Swipe } from '../enums/Touch';
 import { ToolModes } from '../enums';
 import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
-import ChangeTypes from '../enums';
+import { ChangeTypes } from '../enums';
 
 /**
  * The normalized interaction event detail
@@ -713,8 +713,6 @@ export {
   AnnotationVisibilityChangeEventDetail,
   AnnotationLockChangeEventType,
   AnnotationVisibilityChangeEventType,
-  AnnotationLabelChangeEventDetail,
-  AnnotationLabelChangeEventType,
   AnnotationInterpolationCompletedEventDetail,
   AnnotationInterpolationCompletedEventType,
   AnnotationInterpolationRemovedEventDetail,

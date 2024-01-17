@@ -36,6 +36,10 @@ function activateClosedContourEdit(
   const { currentPoints, element } = eventDetail;
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
+  if (!enabledElement) {
+    // Occurs on shutdown
+    return;
+  }
   const { viewport } = enabledElement;
 
   const prevCanvasPoints = annotation.data.contour.polyline.map(

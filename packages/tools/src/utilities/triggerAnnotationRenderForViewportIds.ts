@@ -10,7 +10,12 @@ export function triggerAnnotationRenderForViewportIds(
   }
 
   viewportIdsToRender.forEach((viewportId) => {
-    const { element } = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    if (!viewport) {
+      // Happens on shutdown sometimes
+      return;
+    }
+    const { element } = viewport;
     triggerAnnotationRender(element);
   });
 }

@@ -1,13 +1,11 @@
 import {
   getEnabledElements,
   utilities as csUtils,
-  VolumeViewport,
   getRenderingEngine,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   AnnotationCompletedEventType,
-  AnnotationLabelChangeEventType,
   AnnotationModifiedEventType,
   AnnotationRemovedEventType,
 } from '../../../types/EventTypes';
@@ -17,7 +15,9 @@ import interpolate from '../../contours/interpolation/interpolate';
 import updateRelatedAnnotations from './updateRelatedAnnotations';
 import deleteRelatedAnnotations from './deleteRelatedAnnotations';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-const { uuidv4, getImageSliceDataForVolumeViewport, isEqual } = csUtils;
+import ChangeTypes from '../../../enums/ChangeTypes';
+
+const { uuidv4, isEqual } = csUtils;
 
 function getSliceData(viewport): Types.ImageSliceData {
   const sliceData: Types.ImageSliceData = {
@@ -53,7 +53,6 @@ export default class InterpolationManager {
   }
 
   static handleAnnotationCompleted = (evt: AnnotationCompletedEventType) => {
-    console.log('handleAnnotationCompleted', evt);
     const { renderingEngineId, viewportId } = evt.detail;
     const annotation = evt.detail.annotation as InterpolationROIAnnotation;
     if (!annotation?.metadata) {
@@ -62,7 +61,6 @@ export default class InterpolationManager {
     const { toolName } = annotation.metadata;
 
     if (-1 === this.toolNames.indexOf(toolName)) {
-      console.log('Tool not interpolation', toolName);
       return;
     }
 
@@ -118,16 +116,17 @@ export default class InterpolationManager {
   };
 
   static handleAnnotationUpdate = (evt: AnnotationModifiedEventType) => {
-    console.log('handleAnnotationUpdate');
-    const { renderingEngineId, viewportId } = evt.detail;
+    const { renderingEngineId, viewportId, changeType } = evt.detail;
     const annotation = evt.detail.annotation as InterpolationROIAnnotation;
     if (!annotation?.metadata) {
       return;
     }
     const { toolName } = annotation.metadata;
 
-    if (-1 === this.toolNames.indexOf(toolName)) {
-      console.log('Tool not interpolation', toolName);
+    if (
+      -1 === this.toolNames.indexOf(toolName) ||
+      changeType === ChangeTypes.StatsUpdated
+    ) {
       return;
     }
 
