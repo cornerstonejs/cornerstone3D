@@ -20,6 +20,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/fillVolumeSegmentationWithMockData';
+import { points } from './points';
 
 // This is for debugging purposes
 console.warn(
@@ -37,6 +38,8 @@ const {
   StackScrollMouseWheelTool,
   TrackballRotateTool,
   SegmentSelectTool,
+  PlanarFreehandROITool,
+  ProbeTool,
 } = cornerstoneTools;
 
 setTitleAndDescription(
@@ -147,6 +150,8 @@ async function run() {
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(SegmentSelectTool);
+  cornerstoneTools.addTool(ProbeTool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
 
   // Define tool groups to add the segmentation display tool to
   toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
@@ -162,22 +167,27 @@ async function run() {
 
   // Segmentation Tools
   toolGroup2.addTool(PanTool.toolName);
+  toolGroup2.addTool(ProbeTool.toolName);
   toolGroup2.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup2.addTool(TrackballRotateTool.toolName);
   toolGroup2.addTool(ZoomTool.toolName);
   toolGroup2.addTool(SegmentationDisplayTool.toolName);
+  toolGroup2.addTool(PlanarFreehandContourSegmentationTool.toolName);
+  toolGroup2.addTool(PlanarFreehandROITool.toolName);
 
   // activations
   toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup2.setToolEnabled(PlanarFreehandContourSegmentationTool.toolName);
+  toolGroup2.setToolEnabled(PlanarFreehandROITool.toolName);
 
-  toolGroup1.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-      },
-    ],
-  });
+  // toolGroup1.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
+  //   bindings: [
+  //     {
+  //       mouseButton: MouseBindings.Primary,
+  //     },
+  //   ],
+  // });
   toolGroup1.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
@@ -204,7 +214,7 @@ async function run() {
   toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup1.setToolActive(SegmentSelectTool.toolName);
   toolGroup2.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup2.setToolActive(TrackballRotateTool.toolName, {
+  toolGroup2.setToolActive(ProbeTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -251,7 +261,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
+        orientation: Enums.OrientationAxis.ACQUISITION,
       },
     },
   ];
@@ -279,8 +289,8 @@ async function run() {
     volumeId: segmentationId,
     cornerstone,
     centerOffset: [0, 0, 0],
-    innerRadius: 30,
-    outerRadius: 50,
+    // innerRadius: 30,
+    // outerRadius: 50,
   });
 
   // Add the segmentations to state
@@ -296,6 +306,14 @@ async function run() {
       },
     },
   ]);
+
+  // await segmentation.addRepresentationData({
+  //   segmentationId,
+  //   type: csToolsEnums.SegmentationRepresentations.Contour,
+  //   data: {
+  //     // points,
+  //   },
+  // });
 
   // // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId1, [

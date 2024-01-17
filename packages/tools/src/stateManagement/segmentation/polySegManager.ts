@@ -75,7 +75,10 @@ class PolySegManager {
     ],
     [
       SegmentationRepresentations.Contour,
-      new Set([SegmentationRepresentations.Labelmap]),
+      new Set([
+        SegmentationRepresentations.Labelmap,
+        SegmentationRepresentations.Surface,
+      ]),
     ],
     [
       SegmentationRepresentations.Labelmap,
@@ -525,6 +528,45 @@ class PolySegManager {
   }
 
   /**
+   * Converts contour data to surface data for the specified segmentation.
+   * @param segmentationId - The ID of the segmentation.
+   * @param segmentIndices - An optional array of segment indices to convert.
+   * If not provided, all unique segment indices will be converted.
+   * @returns A promise that resolves to an array of objects containing the segment index and the corresponding surface data.
+   */
+  public async computeSurfaceFromContourSegmentation(
+    segmentationId,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+    } = {}
+  ): Promise<RawSurfacesData> {
+    await this.initializeIfNecessary();
+
+    // Todo: validate valid labelmap representation
+    const segmentation = getSegmentation(segmentationId);
+
+    const segmentIndices = options.segmentIndices?.length
+      ? options.segmentIndices
+      : getUniqueSegmentIndices(segmentationId);
+
+    const contourRepresentationData = segmentation.representationData.CONTOUR;
+
+    const promises = segmentIndices.map(async (index) => {
+      const surface = await this._convertContourToSurface(
+        contourRepresentationData as ContourSegmentationData,
+        index
+      );
+
+      return { segmentIndex: index, data: surface };
+    });
+
+    const surfaces = await Promise.all(promises);
+
+    return surfaces;
+  }
+
+  /**
    * Computes a labelmap segmentation data volume from contour segmentation.
    *
    * @param viewport - The viewport.
@@ -766,6 +808,24 @@ class PolySegManager {
       }
 
       return rawSurfacesDataObj;
+    } else if (
+      (representationData.CONTOUR as ContourSegmentationData)?.annotationUIDsMap
+        ?.size
+    ) {
+      // convert volume labelmap to surface
+      let rawSurfacesDataObj;
+      try {
+        rawSurfacesDataObj = await this.computeSurfaceFromContourSegmentation(
+          segmentation.segmentationId,
+          options
+        );
+      } catch (error) {
+        console.warn('Error converting volume labelmap to surface');
+        console.warn(error);
+        return;
+      }
+
+      return rawSurfacesDataObj;
     } else {
       throw new Error(
         'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
@@ -868,6 +928,32 @@ class PolySegManager {
     segmentIndice: number
   ): Promise<Types.SurfaceData> {
     throw new Error('Not implemented yet');
+  }
+
+  private async _convertContourToSurface(
+    contourRepresentationData: ContourSegmentationData,
+    segmentIndex: number
+  ): Promise<Types.SurfaceData> {
+    const { annotationUIDsMap } = contourRepresentationData;
+
+    // loop over all annotations in the segment and flatten their polylines
+    const polylines = [];
+    const numPointsArray = [];
+    const annotationUIDs = annotationUIDsMap.get(segmentIndex);
+
+    for (const annotationUID of annotationUIDs) {
+      const annotation = getAnnotation(annotationUID);
+      const polyline = annotation.data.contour.polyline;
+      numPointsArray.push(polyline.length);
+      polyline.forEach((polyline) => polylines.push(...polyline));
+    }
+
+    const results = this.polySeg.instance.convertContourRoiToSurface(
+      polylines,
+      numPointsArray
+    ) as Types.SurfaceData;
+
+    return results;
   }
 
   /**
