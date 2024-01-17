@@ -1,5 +1,5 @@
 import contourFinder from './contourFinder';
-import mergePoints from './mergePoints';
+import { getDeduplicatedVTKPolyDataPoints } from './getDeduplicatedVTKPolyDataPoints';
 import detectContourHoles from './detectContourHoles';
 import { generateContourSetsFromLabelmap } from './generateContourSetsFromLabelmap';
 
@@ -7,7 +7,7 @@ import AnnotationToPointData from './AnnotationToPointData';
 
 export {
   contourFinder,
-  mergePoints,
+  getDeduplicatedVTKPolyDataPoints,
   detectContourHoles,
   generateContourSetsFromLabelmap,
   AnnotationToPointData,

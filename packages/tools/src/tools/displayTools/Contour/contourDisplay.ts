@@ -6,6 +6,7 @@ import {
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
+import { polySeg } from '../../../stateManagement/segmentation';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
   SegmentationRepresentationConfig,
@@ -71,29 +72,78 @@ async function render(
     return;
   }
 
-  const contourData = segmentation.representationData[Representations.Contour];
+  let contourData = segmentation.representationData[Representations.Contour];
 
-  if (!contourData) {
+  if (
+    !contourData &&
+    polySeg.canComputeRequestedRepresentation(
+      representationConfig.segmentationRepresentationUID
+    )
+  ) {
+    contourData = await polySeg.computeAndAddContourRepresentation(
+      segmentationId,
+      {
+        segmentationRepresentationUID:
+          representationConfig.segmentationRepresentationUID,
+        viewport,
+      }
+    );
   }
 
   if (contourData?.geometryIds?.length) {
-    // this means we would like to use vtk actors for contour data
-    // Note: We really should get out of
-
-    if (viewport instanceof StackViewport) {
-      // We don't have a good way to handle stack viewports for contours at the moment.
-      // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
-      return;
-    }
-
-    // add the contour sets to the viewport
-    addOrUpdateVTKContourSets(
+    handleVTKContour({
       viewport,
-      contourData.geometryIds,
       representationConfig,
-      toolGroupConfig
+      toolGroupConfig,
+      geometryIds: contourData.geometryIds,
+    });
+  } else if (contourData.annotationUIDsMap?.size) {
+    handleContourAnnotationSegmentation({
+      viewport,
+      representationConfig,
+      toolGroupConfig,
+      annotationUIDsMap: contourData.annotationUIDsMap,
+    });
+  } else {
+    throw new Error(
+      'No contour data or annotation data found for the given segmentation'
     );
   }
+}
+
+function handleContourAnnotationSegmentation({
+  viewport,
+  representationConfig,
+  toolGroupConfig,
+  annotationUIDsMap,
+}) {
+  // this means we would like to use vtk actors for contour data
+  // Note: We really should get out of
+
+  if (viewport instanceof StackViewport) {
+    // We don't have a good way to handle stack viewports for contours at the moment.
+    // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
+    return;
+  }
+
+  // add the contour sets to the viewport
+  addOrUpdateVTKContourSets(
+    viewport,
+    annotationUIDsMap,
+    representationConfig,
+    toolGroupConfig
+  );
+}
+
+function handleVTKContour({
+  viewport,
+  representationConfig,
+  toolGroupConfig,
+  geometryIds,
+}) {
+  // this means we would like to use vtk actors for contour data
+  // Note: We really should get out of
+  console.debug('here i am');
 }
 
 function _removeContourFromToolGroupViewports(

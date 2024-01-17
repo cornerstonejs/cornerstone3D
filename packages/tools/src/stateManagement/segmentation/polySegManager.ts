@@ -45,10 +45,13 @@ type RawSurfacesData = { segmentIndex: number; data: Types.SurfaceData }[];
  * Class to control polymorphic segmentations
  */
 class PolySegManager {
-  polySeg;
   initialized = false;
-  computedRepresentations = new Map<string, SegmentationRepresentations[]>();
-  _debouncedSegmentationModified;
+  private polySeg;
+  private computedRepresentations = new Map<
+    string,
+    SegmentationRepresentations[]
+  >();
+  private _debouncedSegmentationModified;
 
   // Map of conversion paths between source and target representations
   // You should read it as "source" -> "targets"
@@ -63,6 +66,10 @@ class PolySegManager {
     [
       SegmentationRepresentations.Contour,
       new Set([SegmentationRepresentations.Labelmap]),
+    ],
+    [
+      SegmentationRepresentations.Labelmap,
+      new Set([SegmentationRepresentations.Contour]),
     ],
   ]);
 
@@ -227,6 +234,52 @@ class PolySegManager {
   }
 
   /**
+   * Retrieves the computed contour data for a given segmentation representation.
+   * - If the underlying segmentation data is a labelmap, it converts it to the contour
+   *
+   * @param segmentationId - The id of the segmentation
+   * @param options - Optional object containing additional options.
+   * @param [options.segmentIndices] - Optional array of segment indices to retrieve labelmap data for.
+   * If not provided, it will retrieve labelmap data for all segments.
+   * @param [options.segmentationRepresentationUID] - Optional segmentation representation UID to retrieve color data from.
+   * @param [options.viewport] - Optional viewport to use for default values.
+   *
+   * @returns A promise that resolves to the labelmap segmentation data.
+   */
+  public async computeAndAddContourRepresentation(
+    segmentationId: string,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+      viewport?: Types.IVolumeViewport | Types.IStackViewport;
+    } = {}
+  ): Promise<ContourSegmentationData> {
+    const contourData = await this.computeContourRepresentation(
+      segmentationId,
+      options
+    );
+
+    addRepresentationData({
+      segmentationId,
+      type: SegmentationRepresentations.Contour,
+      data: {
+        ...contourData,
+      },
+    });
+
+    this.addComputedRepresentationInternally(
+      segmentationId,
+      SegmentationRepresentations.Contour
+    );
+
+    this.subscribeToSegmentationChanges();
+
+    triggerSegmentationModified(segmentationId);
+
+    return contourData;
+  }
+
+  /**
    * Computes the surface representation of a segmentation.
    * It will find the right conversion path based on the existing representation types and available conversion paths.
    *
@@ -266,6 +319,44 @@ class PolySegManager {
     return surfacesData;
   }
 
+  /**
+   * Computes the labelmap representation for a given segmentation.
+   * It will find the right conversion path based on the existing representation types and available conversion paths.
+   *
+   * @param segmentationId - The ID of the segmentation.
+   * @param options - Optional parameters for the computation.
+   * @param [options.segmentIndices] - Optional array of segment indices to convert.
+   * If not provided, all unique segment indices will be converted.
+   * @param [options.segmentationRepresentationUID] - Optional segmentation representation UID to retrieve color data from.
+   * @param [options.viewport] - Optional viewport to use for default values.
+   * @returns A promise that resolves to the labelmap segmentation data.
+   */
+  public async computeContourRepresentation(
+    segmentationId: string,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+      viewport?: Types.IVolumeViewport | Types.IStackViewport;
+    } = {}
+  ): Promise<ContourSegmentationData> {
+    const rawContourData = await this.createRawContourData(
+      segmentationId,
+      options
+    );
+
+    if (!rawContourData) {
+      throw new Error(
+        'Not enough data to convert to labelmap, currently only support converting contour to labelmap if available'
+      );
+    }
+
+    // We don't need to cache the labelmap data since it is already cached
+    // by the converter, since it needed to write it to the cache in order
+    // to create the geometry
+    await this.createAndCacheLabelmapFromRaw(segmentationId, rawContourData);
+
+    return rawContourData;
+  }
   /**
    * Computes the labelmap representation for a given segmentation.
    * It will find the right conversion path based on the existing representation types and available conversion paths.
@@ -421,6 +512,62 @@ class PolySegManager {
           segmentIndices,
           segmentationRepresentationUID: options.segmentationRepresentationUID,
         }
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Computes a contour segmentation data from labelmap segmentation.
+   *
+   * @param viewport - The viewport.
+   * @param segmentationId - The ID of the segmentation.
+   * @param segmentationIndices - Optional array of segmentation indices.
+   * @returns A promise that resolves to a LabelmapSegmentationDataVolume object containing the volume ID.
+   */
+  public async computeContourFromLabelmapSegmentation(
+    segmentationId,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+      viewport?: Types.IVolumeViewport | Types.IStackViewport;
+    } = {}
+  ): Promise<ContourSegmentationData> {
+    await this.initializeIfNecessary();
+
+    const isVolume = options.viewport instanceof VolumeViewport ?? true;
+
+    if (isVolume && !options.viewport) {
+      // Todo: we don't have support for volume viewport without providing the
+      // viewport, since we need to get the referenced volumeId from the viewport
+      // but we can alternatively provide the volumeId directly, or even better
+      // the target metadata for the volume (spacing, origin, dimensions, etc.)
+      // and then we can create the volume from that
+      throw new Error(
+        'Cannot compute labelmap from contour segmentation without providing the viewport yet'
+      );
+    }
+
+    const segmentIndices = options.segmentIndices?.length
+      ? options.segmentIndices
+      : getUniqueSegmentIndices(segmentationId);
+
+    const segmentation = getSegmentation(segmentationId);
+    const representationData = segmentation.representationData.LABELMAP;
+
+    let result;
+    if (isVolume) {
+      result = this._convertVolumeLabelmapToContour(
+        <LabelmapSegmentationDataVolume>representationData,
+        {
+          segmentIndices,
+          segmentationRepresentationUID: options.segmentationRepresentationUID,
+        }
+      );
+    } else {
+      throw new Error(
+        'Labelmap to contour conversion for stack viewport not yet implemented'
       );
     }
 
@@ -585,7 +732,40 @@ class PolySegManager {
     }
   }
 
-  async _convertVolumeLabelmapToSurface(
+  private async createRawContourData(
+    segmentationId: string,
+    options: {
+      segmentIndices?: number[];
+      segmentationRepresentationUID?: string;
+      viewport?: Types.IVolumeViewport | Types.IStackViewport;
+    } = {}
+  ): Promise<ContourSegmentationData> {
+    const segmentation = getSegmentation(segmentationId);
+    const { representationData } = segmentation;
+
+    if (representationData.LABELMAP as LabelmapSegmentationDataVolume) {
+      // convert volume labelmap to surface
+      let contourData;
+      try {
+        contourData = await this.computeContourFromLabelmapSegmentation(
+          segmentationId,
+          options
+        );
+      } catch (error) {
+        console.warn('Error converting labelmap to contour');
+        console.warn(error);
+        return;
+      }
+
+      return contourData;
+    } else {
+      throw new Error(
+        'Not enough data to convert to contour, currently only support converting volume labelmap to contour if available'
+      );
+    }
+  }
+
+  private async _convertVolumeLabelmapToSurface(
     labelmapRepresentationData: LabelmapSegmentationDataVolume,
     segmentIndex: number
   ): Promise<Types.SurfaceData> {
@@ -608,7 +788,7 @@ class PolySegManager {
     return results;
   }
 
-  async _convertStackLabelmapToSurface(
+  private async _convertStackLabelmapToSurface(
     segmentation: LabelmapSegmentationData,
     segmentIndice: number
   ): Promise<Types.SurfaceData> {
@@ -622,7 +802,7 @@ class PolySegManager {
    * @param segmentation - The segmentation data being converted.
    * @returns A Promise that resolves to a LabelmapSegmentationDataVolume containing the volumeId of the new labelmap.
    */
-  async _convertContourToVolumeLabelmap(
+  private async _convertContourToVolumeLabelmap(
     contourRepresentationData: ContourSegmentationData,
     segmentationVolume: Types.IImageVolume,
     options: {
@@ -729,7 +909,7 @@ class PolySegManager {
    * @param segmentation - The segmentation data being converted.
    * @returns A Promise that resolves to a LabelmapSegmentationDataStack containing the imageIdReferenceMap of the new labelmap.
    */
-  async _convertContourToStackLabelmap(
+  private async _convertContourToStackLabelmap(
     contourRepresentationData: ContourSegmentationData,
     cachedImages: Map<string, Types.IImage>,
     options: {
@@ -738,6 +918,36 @@ class PolySegManager {
     } = {}
   ) {
     throw new Error('Not implemented yet');
+  }
+
+  private async _convertVolumeLabelmapToContour(
+    labelmapRepresentationData: LabelmapSegmentationDataVolume,
+    options: {
+      segmentIndices: number[];
+      segmentationRepresentationUID?: string;
+    }
+  ): Promise<ContourSegmentationData> {
+    const volumeId = labelmapRepresentationData.volumeId;
+
+    const volume = cache.getVolume(volumeId);
+
+    const scalarData = volume.getScalarData();
+    const { dimensions, spacing, origin, direction } = volume;
+
+    options.segmentIndices.forEach((segmentIndex) => {
+      const results = this.polySeg.instance.convertLabelmapToSurface(
+        scalarData,
+        dimensions,
+        spacing,
+        direction,
+        origin,
+        [segmentIndex]
+      ) as Types.SurfaceData;
+
+      debugger;
+    });
+
+    return results;
   }
 
   private async updateSurfaceRepresentation(segmentationId) {

@@ -5,7 +5,7 @@
  * @param bypass - bypass the duplicate point removal
  * @returns the updated polyData
  */
-export function removeDuplicatePoints(polyData, bypass = false) {
+export function getDeduplicatedVTKPolyDataPoints(polyData, bypass = false) {
   const points = polyData.getPoints();
   const lines = polyData.getLines();
 
@@ -58,4 +58,4 @@ export function removeDuplicatePoints(polyData, bypass = false) {
   return { points: newPoints, lines: newLines };
 }
 
-export default { removeDuplicatePoints };
+export default { getDeduplicatedVTKPolyDataPoints };

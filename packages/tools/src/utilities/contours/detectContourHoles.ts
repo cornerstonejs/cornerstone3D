@@ -18,6 +18,7 @@
  * @returns
  */
 const getIsPointInsidePolygon = (point, vertices) => {
+  // Todo: this is a duplicated logic we should merge it with the other one
   const x = point[0];
   const y = point[1];
 

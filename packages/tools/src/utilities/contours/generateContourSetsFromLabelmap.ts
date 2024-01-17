@@ -3,7 +3,7 @@ import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchi
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
-import { removeDuplicatePoints } from './mergePoints';
+import { getDeduplicatedVTKPolyDataPoints } from '../contours';
 import { findContoursFromReducedSet } from './contourFinder';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 
@@ -107,8 +107,9 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         const msOutput = mSquares.getOutputData();
 
         // Clean up output from marching squares
-        const reducedSet = removeDuplicatePoints(msOutput);
+        const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
         if (reducedSet.points?.length) {
+          debugger;
           const contours = findContoursFromReducedSet(reducedSet.lines);
 
           sliceContours.push({
