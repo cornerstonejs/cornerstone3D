@@ -1,12 +1,12 @@
 import {
   getEnabledElements,
-  Types,
   utilities as csUtils,
-  StackViewport,
   VolumeViewport,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
+  AnnotationCompletedEventType,
   AnnotationLabelChangeEventType,
   AnnotationModifiedEventType,
   AnnotationRemovedEventType,
@@ -19,15 +19,11 @@ import deleteRelatedAnnotations from './deleteRelatedAnnotations';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 const { uuidv4, getImageSliceDataForVolumeViewport, isEqual } = csUtils;
 
-function getSliceData(viewport, referencedImageId): Types.ImageSliceData {
-  let sliceData: Types.ImageSliceData = { numberOfSlices: 0, imageIndex: 0 };
-  if (viewport instanceof VolumeViewport) {
-    sliceData = getImageSliceDataForVolumeViewport(viewport);
-  } else if (viewport instanceof StackViewport) {
-    const imageIds = viewport.getImageIds();
-    sliceData.numberOfSlices = imageIds.length;
-    sliceData.imageIndex = imageIds.findIndex((x) => x === referencedImageId);
-  }
+function getSliceData(viewport): Types.ImageSliceData {
+  const sliceData: Types.ImageSliceData = {
+    numberOfSlices: viewport.getNumberOfSlices(),
+    imageIndex: viewport.getCurrentImageIdIndex(),
+  };
   return sliceData;
 }
 
@@ -54,13 +50,10 @@ export default class InterpolationManager {
     if (-1 === this.toolNames.indexOf(toolName)) {
       this.toolNames.push(toolName);
     }
-    console.log('Adding tool', toolName, 'for interpolation');
   }
 
-  static handleAnnotationLabelChange = (
-    evt: AnnotationLabelChangeEventType
-  ) => {
-    console.log('handleAnnotationLabelChange', evt);
+  static handleAnnotationCompleted = (evt: AnnotationCompletedEventType) => {
+    console.log('handleAnnotationCompleted', evt);
     const { renderingEngineId, viewportId } = evt.detail;
     const annotation = evt.detail.annotation as InterpolationROIAnnotation;
     if (!annotation?.metadata) {
@@ -75,10 +68,7 @@ export default class InterpolationManager {
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
-    const sliceData: Types.ImageSliceData = getSliceData(
-      viewport,
-      annotation.metadata.referencedImageId
-    );
+    const sliceData: Types.ImageSliceData = getSliceData(viewport);
     const viewportData: InterpolationViewportData = {
       viewport,
       sliceData,
@@ -143,10 +133,7 @@ export default class InterpolationManager {
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
-    const sliceData: Types.ImageSliceData = getSliceData(
-      viewport,
-      annotation.metadata.referencedImageId
-    );
+    const sliceData: Types.ImageSliceData = getSliceData(viewport);
     const viewportData: InterpolationViewportData = {
       viewport,
       sliceData,
@@ -173,10 +160,7 @@ export default class InterpolationManager {
       return;
     }
 
-    const sliceData: Types.ImageSliceData = getSliceData(
-      viewport,
-      annotation.metadata.referencedImageId
-    );
+    const sliceData: Types.ImageSliceData = getSliceData(viewport);
     const viewportData: InterpolationViewportData = {
       viewport,
       sliceData,

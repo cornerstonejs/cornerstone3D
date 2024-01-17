@@ -7,6 +7,7 @@ import { SetToolBindingsType } from './ISetToolModeOptions';
 import { Swipe } from '../enums/Touch';
 import { ToolModes } from '../enums';
 import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
+import ChangeTypes from '../enums';
 
 /**
  * The normalized interaction event detail
@@ -117,8 +118,13 @@ type AnnotationAddedEventDetail = {
  * drawing on the viewport.
  */
 type AnnotationCompletedEventDetail = {
+  /** unique id of the viewport */
+  viewportId?: string;
+  /** unique id of the rendering engine */
+  renderingEngineId?: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
+  changeType?: ChangeTypes.Completed;
 };
 
 /**
@@ -131,6 +137,8 @@ type AnnotationModifiedEventDetail = {
   renderingEngineId: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
+  /** The type of this change */
+  changeType?: ChangeTypes;
 };
 
 /**
@@ -182,15 +190,6 @@ type AnnotationVisibilityChangeEventDetail = {
 type AnnotationRenderedEventDetail = {
   /** The HTML element that the annotation was rendered on. */
   element: HTMLDivElement;
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
-};
-
-type AnnotationLabelChangeEventDetail = {
-  /** The annotation that is being updated. */
-  annotation: Annotation;
   /** unique id of the viewport */
   viewportId: string;
   /** unique id of the rendering engine */
@@ -529,12 +528,6 @@ type AnnotationLockChangeEventType =
  */
 type AnnotationVisibilityChangeEventType =
   Types.CustomEventType<AnnotationVisibilityChangeEventDetail>;
-
-/**
- * The Annotation label change event type
- */
-type AnnotationLabelChangeEventType =
-  Types.CustomEventType<AnnotationLabelChangeEventDetail>;
 
 /**
  * The Annotation interpolation process completed event type

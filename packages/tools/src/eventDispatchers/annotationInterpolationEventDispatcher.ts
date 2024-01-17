@@ -4,8 +4,8 @@ import InterpolationManager from '../utilities/segmentation/InterpolationManager
 
 const enable = function (element: HTMLDivElement) {
   eventTarget.addEventListener(
-    Events.ANNOTATION_LABEL_CHANGE,
-    InterpolationManager.handleAnnotationLabelChange as EventListener
+    Events.ANNOTATION_COMPLETED,
+    InterpolationManager.handleAnnotationCompleted as EventListener
   );
   eventTarget.addEventListener(
     Events.ANNOTATION_MODIFIED,
@@ -19,8 +19,8 @@ const enable = function (element: HTMLDivElement) {
 
 const disable = function (element: HTMLDivElement) {
   eventTarget.removeEventListener(
-    Events.ANNOTATION_LABEL_CHANGE,
-    InterpolationManager.handleAnnotationLabelChange as EventListener
+    Events.ANNOTATION_COMPLETED,
+    InterpolationManager.handleAnnotationCompleted as EventListener
   );
   eventTarget.removeEventListener(
     Events.ANNOTATION_MODIFIED,

@@ -5,8 +5,6 @@ import {
   volumeLoader,
   getRenderingEngine,
   eventTarget,
-  getEnabledElement,
-  triggerEvent,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -18,7 +16,6 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { Events } from '../../src/enums';
-import { AnnotationLabelChangeEventDetail } from '../../src/types/EventTypes';
 
 // This is for debugging purposes
 console.warn(
@@ -35,7 +32,6 @@ const {
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
-  annotation,
   segmentation,
 } = cornerstoneTools;
 
@@ -184,27 +180,6 @@ function addToggleInterpolationButton(toolGroup) {
   });
 }
 
-function addContourDeleteButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'Delete Contour',
-    onClick: () => {
-      const annotationData =
-        annotation.state.getAnnotation(selectedAnnotationId);
-      if (!selectedAnnotationId || !annotationData) {
-        alert('Please select any Contour ROI');
-        return;
-      }
-      toolGroup.setToolConfiguration(interpolationToolName, {});
-      cornerstoneTools.annotation.state.removeAnnotation(
-        annotationData.annotationUID
-      );
-      const { viewport, element } =
-        getViewportDataBasedOnAnnotation(annotationData);
-      triggerLabelUpdateCallback({ viewport, element }, annotationData);
-    },
-  });
-}
-
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 let selectedAnnotationId = '';
 
@@ -255,9 +230,6 @@ async function run() {
   // set up toggle interpolation tool button.
   addToggleInterpolationButton(toolGroup);
 
-  // delete button for contour ROI
-  addContourDeleteButton(toolGroup);
-
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -277,13 +249,6 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  eventTarget.addEventListener(Events.ANNOTATION_COMPLETED, (evt) => {
-    const { annotation } = evt.detail;
-    // annotation.data.label = 'Label';
-    const { viewport, element } = getViewportDataBasedOnAnnotation(annotation);
-    triggerLabelUpdateCallback({ viewport, element }, annotation);
-  });
 
   eventTarget.addEventListener(Events.ANNOTATION_SELECTION_CHANGE, (evt) => {
     const { selection } = evt.detail;
@@ -388,23 +353,6 @@ function getViewportDataBasedOnAnnotation(annotationData) {
     element = viewports[1].element;
   }
   return { viewport, element };
-}
-
-function triggerLabelUpdateCallback(eventData, annotation) {
-  const { element } = eventData;
-
-  if (!element) {
-    return;
-  }
-  const { viewportId, renderingEngineId } = getEnabledElement(element);
-
-  const eventDetail: AnnotationLabelChangeEventDetail = {
-    annotation,
-    renderingEngineId,
-    viewportId,
-  };
-
-  triggerEvent(eventTarget, Events.ANNOTATION_LABEL_CHANGE, eventDetail);
 }
 
 function updateActiveSegmentIndex(segmentIndex: number): void {

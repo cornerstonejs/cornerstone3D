@@ -420,12 +420,16 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    * Triggers an annotation completed event.
    */
   triggerAnnotationCompleted = (
-    annotation: PlanarFreehandROIAnnotation
+    annotation: PlanarFreehandROIAnnotation,
+    enabledElement?: Types.IEnabledElement
   ): void => {
     const eventType = Events.ANNOTATION_COMPLETED;
+    const { viewportId, renderingEngineId } = enabledElement || {};
 
     const eventDetail: AnnotationCompletedEventDetail = {
       annotation,
+      viewportId,
+      renderingEngineId,
     };
 
     triggerEvent(eventTarget, eventType, eventDetail);

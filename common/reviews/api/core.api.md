@@ -109,8 +109,6 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     abstract getCurrentImageId(): string;
     // (undocumented)
-    abstract getCurrentImageIdIndex(): number;
-    // (undocumented)
     getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -124,6 +122,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     protected _getOrientationVectors(orientation: OrientationAxis | OrientationVectors): OrientationVectors;
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
+    // (undocumented)
+    getReferencedImageId(specifier?: ReferencedImageSpecifier): string;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -2102,6 +2102,8 @@ interface IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
     getDisplayArea(): DisplayArea | undefined;
@@ -2111,6 +2113,8 @@ interface IViewport {
     getNumberOfSlices(): number;
     // (undocumented)
     getPan(): Point2;
+    // (undocumented)
+    getReferencedImageId(forImage?: ReferencedImageSpecifier): string;
     // (undocumented)
     getRenderer(): void;
     // (undocumented)
@@ -2540,6 +2544,13 @@ type RangeRetrieveOptions = BaseRetrieveOptions & {
 };
 
 // @public (undocumented)
+type ReferencedImageSpecifier = {
+    imageIdIndex?: number;
+    forFrameOfReference?: boolean;
+    points?: Point3[];
+};
+
+// @public (undocumented)
 function registerColormap(colormap: ColormapRegistration): void;
 
 // @public (undocumented)
@@ -2870,6 +2881,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
+    getReferencedImageId(specifier?: ReferencedImageSpecifier): string;
+    // (undocumented)
     getRenderer: () => any;
     // (undocumented)
     getRotation: () => number;
@@ -3051,6 +3064,7 @@ declare namespace Types {
         IRegisterImageLoader,
         IStreamingVolumeProperties,
         IViewport,
+        ReferencedImageSpecifier,
         StackViewportProperties,
         VolumeViewportProperties,
         ViewportProperties,
@@ -3276,6 +3290,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
+    getReferencedImageId(specifier?: ReferencedImageSpecifier): string;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
@@ -3416,6 +3432,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
     getDisplayArea(): DisplayArea | undefined;
@@ -3434,6 +3452,8 @@ export class Viewport implements IViewport {
     getPan(): Point2;
     // (undocumented)
     getProperties: () => void;
+    // (undocumented)
+    getReferencedImageId(specifier?: ReferencedImageSpecifier): string;
     // (undocumented)
     getRenderer(): any;
     // (undocumented)

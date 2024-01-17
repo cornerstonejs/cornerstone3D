@@ -13,7 +13,12 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
-import { Events, MouseBindings, KeyboardBindings } from '../../enums';
+import {
+  Events,
+  MouseBindings,
+  KeyboardBindings,
+  ChangeTypes,
+} from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import {
   Annotation,
@@ -46,7 +51,6 @@ import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import { inc } from 'semver';
 import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
 
 const SPLINE_MIN_POINTS = 3;
@@ -323,6 +327,12 @@ class SplineROITool extends ContourSegmentationBaseTool {
       };
 
       triggerEvent(eventTarget, eventType, eventDetail);
+    } else {
+      this.triggerAnnotationModified(
+        annotation,
+        enabledElement,
+        ChangeTypes.HandlesUpdated
+      );
     }
 
     this.editData = null;
@@ -507,7 +517,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
    */
   triggerAnnotationModified = (
     annotation: SplineROIAnnotation,
-    enabledElement: Types.IEnabledElement
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.StatsUpdated
   ): void => {
     const { viewportId, renderingEngineId } = enabledElement;
     const eventType = Events.ANNOTATION_MODIFIED;
@@ -516,6 +527,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       annotation,
       viewportId,
       renderingEngineId,
+      changeType,
     };
 
     triggerEvent(eventTarget, eventType, eventDetail);
@@ -721,10 +733,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
       svgDrawingHelper,
       annotationStyle.textbox
     );
-
-    if (annotation.invalidated) {
-      this.triggerAnnotationModified(annotation, enabledElement);
-    }
 
     annotation.invalidated = false;
     return true;
@@ -1054,7 +1062,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    this.triggerAnnotationModified(
+      annotation,
+      enabledElement,
+      ChangeTypes.StatsUpdated
+    );
 
     return cachedStats;
   };
