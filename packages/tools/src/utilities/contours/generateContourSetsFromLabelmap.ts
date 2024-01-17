@@ -109,7 +109,6 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         // Clean up output from marching squares
         const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
         if (reducedSet.points?.length) {
-          debugger;
           const contours = findContoursFromReducedSet(reducedSet.lines);
 
           sliceContours.push({

@@ -1,4 +1,9 @@
 import ICRPolySeg from '@icr/polyseg-wasm';
+import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkProperty from '@kitware/vtk.js/Rendering/Core/Property';
+
 import {
   Enums,
   Types,
@@ -34,10 +39,15 @@ import {
   ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes';
 import { ContourSegmentationData } from '../../types/ContourTypes';
-import { getAnnotation } from '../annotation/annotationState';
+import { addAnnotation, getAnnotation } from '../annotation/annotationState';
 import { getBoundingBoxAroundShapeWorld } from '../../utilities/boundingBox';
 import { validate as validateLabelmap } from '../../tools/displayTools/Labelmap/validateLabelmap';
 import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
+import { getDeduplicatedVTKPolyDataPoints } from '../../utilities/contours/getDeduplicatedVTKPolyDataPoints';
+import { findContoursFromReducedSet } from '../../utilities/contours/contourFinder';
+import { generateContourSetsFromLabelmap } from '../../utilities/contours';
+import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 type RawSurfacesData = { segmentIndex: number; data: Types.SurfaceData }[];
 
@@ -254,17 +264,81 @@ class PolySegManager {
       viewport?: Types.IVolumeViewport | Types.IStackViewport;
     } = {}
   ): Promise<ContourSegmentationData> {
-    const contourData = await this.computeContourRepresentation(
+    let contourData = await this.computeContourRepresentation(
       segmentationId,
       options
     );
 
+    contourData = contourData.filter((contour) => contour.length > 2);
+
+    const uids = [];
+    contourData.forEach((contour, index) => {
+      // chop each contour instead of a flat array to array of x,y,z (3 elements)
+      // const polyline = [];
+      // for (let i = 0; i < contour.length; i += 3) {
+      //   polyline.push([contour[i], contour[i + 1], contour[i + 2]]);
+      // }
+
+      const uid = utilities.uuidv4();
+      uids.push(uid);
+      // const contourSegmentationAnnotation = {
+      //   annotationUID: uid,
+      //   data: {
+      //     contour: {
+      //       closed: true,
+      //       polyline,
+      //     },
+      //     segmentation: {
+      //       segmentationId,
+      //       segmentIndex: 1, // Todo
+      //       segmentationRepresentationUID:
+      //         options.segmentationRepresentationUID,
+      //     },
+      //   },
+      //   highlighted: false,
+      //   invalidated: false,
+      //   isLocked: false,
+      //   isVisible: true,
+      //   metadata: {
+      //     toolName: 'PlanarFreehandContourSegmentationTool',
+      //     FrameOfReferenceUID: options.viewport.getFrameOfReferenceUID(),
+      //     viewPlaneNormal: options.viewport.getCamera().viewPlaneNormal,
+      //   },
+      // };
+
+      const contourSegmentationAnnotation = {
+        annotationUID: uid,
+        data: {
+          contour: {
+            polyline: contour,
+          },
+          handles: {
+            activeHandleIndex: 0,
+          },
+        },
+        highlighted: false,
+        invalidated: false,
+        isLocked: false,
+        isVisible: true,
+        metadata: {
+          toolName: 'PlanarFreehandROI',
+          FrameOfReferenceUID: options.viewport.getFrameOfReferenceUID(),
+          viewPlaneNormal: options.viewport.getCamera().viewPlaneNormal,
+        },
+      };
+
+      addAnnotation(
+        contourSegmentationAnnotation,
+        options.viewport.getFrameOfReferenceUID()
+      );
+    });
+
+    const annotationUIDsMap = new Map();
+    annotationUIDsMap.set(1, uids);
     addRepresentationData({
       segmentationId,
       type: SegmentationRepresentations.Contour,
-      data: {
-        ...contourData,
-      },
+      data: { annotationUIDsMap },
     });
 
     this.addComputedRepresentationInternally(
@@ -346,14 +420,14 @@ class PolySegManager {
 
     if (!rawContourData) {
       throw new Error(
-        'Not enough data to convert to labelmap, currently only support converting contour to labelmap if available'
+        'Not enough data to convert to contour, currently only support converting labelmap to contour if available'
       );
     }
 
     // We don't need to cache the labelmap data since it is already cached
     // by the converter, since it needed to write it to the cache in order
     // to create the geometry
-    await this.createAndCacheLabelmapFromRaw(segmentationId, rawContourData);
+    // await this.createAndCacheLabelmapFromRaw(segmentationId, rawContourData);
 
     return rawContourData;
   }
@@ -563,6 +637,7 @@ class PolySegManager {
         {
           segmentIndices,
           segmentationRepresentationUID: options.segmentationRepresentationUID,
+          viewport: options.viewport,
         }
       );
     } else {
@@ -925,6 +1000,7 @@ class PolySegManager {
     options: {
       segmentIndices: number[];
       segmentationRepresentationUID?: string;
+      viewport;
     }
   ): Promise<ContourSegmentationData> {
     const volumeId = labelmapRepresentationData.volumeId;
@@ -933,21 +1009,182 @@ class PolySegManager {
 
     const scalarData = volume.getScalarData();
     const { dimensions, spacing, origin, direction } = volume;
+    const slicesContours = [];
 
-    options.segmentIndices.forEach((segmentIndex) => {
-      const results = this.polySeg.instance.convertLabelmapToSurface(
-        scalarData,
-        dimensions,
-        spacing,
-        direction,
-        origin,
-        [segmentIndex]
-      ) as Types.SurfaceData;
+    /**
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     * Soulution 1
+     */
+    // for (const segmentIndex of [1]) {
+    //   const results = (await this.polySeg.instance.convertLabelmapToSurface(
+    //     scalarData,
+    //     dimensions,
+    //     spacing,
+    //     direction,
+    //     origin,
+    //     [segmentIndex]
+    //   )) as Types.SurfaceData;
 
-      debugger;
-    });
+    //   const { points, polys } = results;
 
-    return results;
+    //   const polyData = vtkPolyData.newInstance();
+    //   polyData.getPoints().setData(points, 3);
+    //   polyData.getPolys().setData(polys);
+
+    //   const cutter = vtkCutter.newInstance();
+    //   cutter.setCutFunction(vtkPlane.newInstance());
+
+    //   cutter.setInputData(polyData);
+
+    //   const planeNormal = direction.slice(6, 9);
+    //   cutter.getCutFunction().setNormal(planeNormal);
+
+    //   for (let i = 0; i < dimensions[2]; i++) {
+    //     const planeOrigin = [
+    //       origin[0] + spacing[0] * i * planeNormal[0],
+    //       origin[1] + spacing[1] * i * planeNormal[1],
+    //       origin[2] + spacing[2] * i * planeNormal[2],
+    //     ];
+
+    //     cutter.getCutFunction().setOrigin(planeOrigin);
+
+    //     cutter.update();
+
+    //     // Retrieve the resulting contour data
+    //     const contourData = cutter.getOutputData();
+
+    //     const { points, lines } = getDeduplicatedVTKPolyDataPoints(contourData);
+
+    //     const contours = findContoursFromReducedSet(lines);
+    //     debugger;
+
+    //     // const points = contourData.getPoints().getData();
+    //     // debugger;
+    //     // const lines = contourData.getLines()?.getData();
+
+    //     // let i = 0;
+    //     // while (i < lines?.length) {
+    //     //   const n = lines[i];
+    //     //   const linePtIdxs = lines.slice(i + 1, i + 1 + n);
+    //     //   const linePts = linePtIdxs.map((idx) =>
+    //     //     points.slice(idx * 3, (idx + 1) * 3)
+    //     //   );
+    //     //   i += n + 1;
+    //     // }
+
+    //     slicesContours.push(points);
+    //   }
+    // }
+
+    // return slicesContours;
+
+    /**
+     * Soulution 2
+     * Soulution 2
+     * Soulution 2
+     * Soulution 2
+     * Soulution 2
+     * Soulution 2
+     * Soulution 2
+     */
+    // const results = generateContourSetsFromLabelmap({
+    //   segmentations: {
+    //     representationData: {
+    //       LABELMAP: labelmapRepresentationData,
+    //     },
+    //   },
+    // });
+
+    // return results[0].sliceContours.map((res) => {
+    //   return res.polyData.points;
+    // });
+    /**
+     * Soulution 3
+     * Soulution 3
+     * Soulution 3
+     * Soulution 3
+     * Soulution 3
+     * Soulution 3
+     * Soulution 3
+     */
+    // for (const segmentIndex of [1]) {
+    //   const results = (await this.polySeg.instance.convertLabelmapToSurface(
+    //     scalarData,
+    //     dimensions,
+    //     spacing,
+    //     direction,
+    //     origin,
+    //     [segmentIndex]
+    //   )) as Types.SurfaceData;
+
+    //   const { points, polys } = results;
+
+    //   const polyData = vtkPolyData.newInstance();
+    //   polyData.getPoints().setData(points, 3);
+    //   polyData.getPolys().setData(polys);
+
+    //   const clippingFilter = vtkClipClosedSurface.newInstance({
+    //     clippingPlanes: [],
+    //     activePlaneId: 2,
+    //     passPointData: false,
+    //   });
+    //   clippingFilter.setInputData(polyData);
+    //   clippingFilter.setGenerateOutline(true);
+    //   clippingFilter.setGenerateFaces(false);
+    //   // clippingFilter.update();
+
+    //   const { viewPlaneNormal, slabThickness } = options.viewport.getCamera();
+
+    //   const vtkPlanes = [vtkPlane.newInstance({}), vtkPlane.newInstance({})];
+    //   const scaledDistance = [
+    //     viewPlaneNormal[0],
+    //     viewPlaneNormal[1],
+    //     viewPlaneNormal[2],
+    //   ];
+    //   vtkMath.multiplyScalar(scaledDistance, slabThickness);
+    //   vtkPlanes[0].setNormal(viewPlaneNormal);
+    //   vtkPlanes[1].setNormal(
+    //     -viewPlaneNormal[0],
+    //     -viewPlaneNormal[1],
+    //     -viewPlaneNormal[2]
+    //   );
+
+    //   for (let i = 0; i < dimensions[2]; i++) {
+    //     const newOrigin1 = [
+    //       origin[0] + spacing[0] * i * viewPlaneNormal[0],
+    //       origin[1] + spacing[1] * i * viewPlaneNormal[1],
+    //       origin[2] + spacing[2] * i * viewPlaneNormal[2],
+    //     ];
+
+    //     const newOrigin2 = [
+    //       origin[0] + spacing[0] * (i + 1) * viewPlaneNormal[0],
+    //       origin[1] + spacing[1] * (i + 1) * viewPlaneNormal[1],
+    //       origin[2] + spacing[2] * (i + 1) * viewPlaneNormal[2],
+    //     ];
+
+    //     vtkPlanes[0].setOrigin(newOrigin1);
+    //     vtkPlanes[1].setOrigin(newOrigin2);
+
+    //     clippingFilter.setClippingPlanes(vtkPlanes);
+
+    //     clippingFilter.update();
+
+    //     const points = clippingFilter.getOutputData().getPoints().getData();
+    //     console.debug('🚀 ~ points:', points);
+
+    //     slicesContours.push(points);
+    //   }
+    // }
+
+    return slicesContours;
   }
 
   private async updateSurfaceRepresentation(segmentationId) {

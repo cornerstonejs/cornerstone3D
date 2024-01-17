@@ -2,11 +2,15 @@ import {
   getEnabledElementByIds,
   Types,
   StackViewport,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { polySeg } from '../../../stateManagement/segmentation';
+import {
+  addRepresentationData,
+  polySeg,
+} from '../../../stateManagement/segmentation';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
   SegmentationRepresentationConfig,
@@ -15,6 +19,7 @@ import {
 import { addOrUpdateVTKContourSets } from './vtkContour/addOrUpdateVTKContourSets';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './vtkContour/contourConfigCache';
+import { addAnnotation } from '../../../stateManagement';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -72,9 +77,38 @@ async function render(
     return;
   }
 
-  let contourData = segmentation.representationData[Representations.Contour];
+  const representationData = segmentation.representationData.CONTOUR;
+  let contourData = representationData;
 
-  if (
+  if (contourData?.points?.length) {
+    // contourData = createAnnotationsFromPoints(contourData.points);
+    const contourSegmentationAnnotation = {
+      annotationUID: csUtils.uuidv4(),
+      data: {
+        contour: {
+          closed: true,
+          polyline: contourData.points,
+        },
+        segmentation: {
+          segmentationId,
+          segmentIndex: 1, // Todo
+          segmentationRepresentationUID:
+            representationConfig.segmentationRepresentationUID,
+        },
+      },
+      highlighted: false,
+      invalidated: false,
+      isLocked: false,
+      isVisible: true,
+      metadata: {
+        toolName: 'PlanarFreehandContourSegmentationTool',
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        viewPlaneNormal: viewport.getCamera().viewPlaneNormal,
+      },
+    };
+
+    addAnnotation(contourSegmentationAnnotation, viewport.element);
+  } else if (
     !contourData &&
     polySeg.canComputeRequestedRepresentation(
       representationConfig.segmentationRepresentationUID
@@ -90,25 +124,21 @@ async function render(
     );
   }
 
-  if (contourData?.geometryIds?.length) {
-    handleVTKContour({
-      viewport,
-      representationConfig,
-      toolGroupConfig,
-      geometryIds: contourData.geometryIds,
-    });
-  } else if (contourData.annotationUIDsMap?.size) {
-    handleContourAnnotationSegmentation({
-      viewport,
-      representationConfig,
-      toolGroupConfig,
-      annotationUIDsMap: contourData.annotationUIDsMap,
-    });
-  } else {
-    throw new Error(
-      'No contour data or annotation data found for the given segmentation'
-    );
-  }
+  // if (contourData?.geometryIds?.length) {
+  //   handleVTKContour({
+  //     viewport,
+  //     representationConfig,
+  //     toolGroupConfig,
+  //     geometryIds: contourData.geometryIds,
+  //   });
+  // } else if (contourData.annotationUIDsMap?.size) {
+  //   handleContourAnnotationSegmentation({
+  //     viewport,
+  //     representationConfig,
+  //     toolGroupConfig,
+  //     annotationUIDsMap: contourData.annotationUIDsMap,
+  //   });
+  // }
 }
 
 function handleContourAnnotationSegmentation({
