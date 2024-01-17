@@ -639,9 +639,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return current;
   }
 
+  /**
+   * Gets the 1 based frame number (ala DICOM value), eg `1+ currentImageIdIndex`
+   */
   public getFrameNumber() {
     // Need to round this as the fps/time isn't exact
-    return 1 + Math.round(this.videoElement.currentTime * this.fps);
+    return 1 + this.getCurrentImageIdIndex();
+  }
+
+  /**
+   * Gets the 0 based image id index, that is the `frameNumber -1`
+   */
+  public getCurrentImageIdIndex() {
+    return Math.round(this.videoElement.currentTime * this.fps);
   }
 
   public getCamera(): ICamera {

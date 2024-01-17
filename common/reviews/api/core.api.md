@@ -3237,6 +3237,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCurrentImageId(): string;
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;

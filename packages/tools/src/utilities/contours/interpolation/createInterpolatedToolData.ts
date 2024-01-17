@@ -1,9 +1,20 @@
 import { Types, utilities as csUtils } from '@cornerstonejs/core';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
+/**
+ * Creates a new annotation instance given the tool data, based on the referenced tool
+ * data type.
+ * Note that this object takes ownership of the polyline and handlePoints data, that is,
+ * directly assigns them internally to the result.
+ *
+ * @param polyline - data for the polyline, owned hereafter by the annotation
+ * @param handlePoints - data for the edit handles, if any, owned hereafter by the annotation
+ * @param referencedToolData
+
+ */
 export default function createInterpolatedToolData(
-  eventData,
-  points,
+  polyline,
+  handlePoints,
   referencedToolData
 ) {
   const annotation: InterpolationROIAnnotation = csUtils.deepMerge(
@@ -22,7 +33,7 @@ export default function createInterpolatedToolData(
   });
   Object.assign(annotation.data, {
     handles: {
-      points: [],
+      points: handlePoints || [],
       activeHandleIndex: null,
       textBox: {
         hasMoved: false,
@@ -36,16 +47,12 @@ export default function createInterpolatedToolData(
       },
     },
     contour: {
-      polyline: [],
+      polyline,
       closed: true,
     },
   });
   annotation.metadata.referencedImageId = undefined;
   annotation.metadata.referencedSliceIndex = undefined;
 
-  const { polyline } = annotation.data.contour;
-  for (let i = 0; i < points.length; i++) {
-    polyline.push([points[i][0], points[i][1], points[i][2]]);
-  }
   return annotation;
 }

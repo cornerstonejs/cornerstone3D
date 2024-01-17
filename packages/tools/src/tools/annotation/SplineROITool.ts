@@ -47,6 +47,7 @@ import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { inc } from 'semver';
+import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -616,12 +617,12 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const splineType = annotation.data.spline.type;
     const splineConfig = this._getSplineConfig(splineType);
     const spline = this._updateSplineInstance(element, annotation);
-    const splinePolylineCanvas = spline.getPolylinePoints();
-    const splinePolylineWorld = [];
-
-    for (let i = 0, len = splinePolylineCanvas.length; i < len; i++) {
-      splinePolylineWorld.push(viewport.canvasToWorld(splinePolylineCanvas[i]));
-    }
+    const splinePolylineCanvas = reverseIfAntiClockwise(
+      spline.getPolylinePoints()
+    );
+    const splinePolylineWorld = splinePolylineCanvas.map((point2) =>
+      viewport.canvasToWorld(point2)
+    );
 
     data.contour.polyline = splinePolylineWorld;
 
@@ -721,16 +722,24 @@ class SplineROITool extends ContourSegmentationBaseTool {
       annotationStyle.textbox
     );
 
+    if (annotation.invalidated) {
+      this.triggerAnnotationModified(annotation, enabledElement);
+    }
+
     annotation.invalidated = false;
     return true;
   }
 
-  protected createInterpolatedSplineControl(annotation, sourceAnnotation) {
-    console.log(
-      'TODO: Create interpolated spline control points',
-      annotation,
-      sourceAnnotation
-    );
+  /**
+   * Creates new interpolated handles for the spline control given the
+   * polyline data.  This allows creating the spline from polyline data
+   * directly.
+   */
+  protected createInterpolatedSplineControl(annotation) {
+    if (annotation.data.handles.points?.length) {
+      // The interpolation itself created the handles
+      return;
+    }
     const { polyline } = annotation.data.contour;
     if (!polyline || !polyline.length) {
       return;
@@ -760,9 +769,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // instance.
     let postInterpolateAction;
     if (this.configuration.interpolation.enabled) {
-      postInterpolateAction = (annotation, sourceAnnotation) => {
+      postInterpolateAction = (annotation) => {
         annotation.data.spline ||= createSpline();
-        this.createInterpolatedSplineControl(annotation, sourceAnnotation);
+        this.createInterpolatedSplineControl(annotation);
       };
     }
 

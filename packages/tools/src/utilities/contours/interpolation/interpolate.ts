@@ -1,12 +1,20 @@
-import { StackViewport, triggerEvent } from '@cornerstonejs/core';
+import {
+  StackViewport,
+  triggerEvent,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
+
 import createInterpolatedToolData from './createInterpolatedToolData';
 import generateInterpolationData from './findInterpolationList';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
 import EventTypes from '../../../enums/Events';
-// TODO - move this circular reference
-import { annotation } from '../../../index';
+import * as annotationState from '../../../stateManagement/annotation';
+
+const { isEqual } = csUtils;
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
@@ -81,8 +89,8 @@ function startInterpolation(viewportData: InterpolationViewportData) {
  * _linearlyInterpolateBetween - Linearly interpolate all the slices in the
  * indices array between the contourPair.
  *
- * @param indices - Number[], An array of slice indices to interpolate.
- * @param annotationPair - Number[], The slice indicies of the reference contours.
+ * @param indices - natural[], An array of slice indices to interpolate.
+ * @param annotationPair - natural[2], The slice indices of the reference contours.
  * @param interpolationData - object
  * @param eventData - object
  * @returns null
@@ -149,23 +157,59 @@ function _linearlyInterpolateContour(
     c1HasMoreNodes
   );
 
-  const c1Metadata = interpolationData[annotationPair[0]].annotations[0];
+  const nearestAnnotation =
+    interpolationData[annotationPair[zInterp > 0.5 ? 1 : 0]].annotations[0];
+
+  // A bit adhoc figuring out how many handles to use, but this seems to generate
+  // enough handles for use.
+  const handleCount = Math.round(
+    Math.max(
+      6,
+      interpolationData[annotationPair[0]].annotations[0].data.handles.points
+        .length * 1.5,
+      interpolationData[annotationPair[1]].annotations[0].data.handles.points
+        .length * 1.5
+    )
+  );
+  const handlePoints = _subselect(interpolated3DPoints, handleCount);
 
   if (interpolationData[sliceIndex].annotations) {
     _editInterpolatedContour(
       interpolated3DPoints,
+      handlePoints,
       sliceIndex,
-      c1Metadata,
+      nearestAnnotation,
       eventData
     );
   } else {
     _addInterpolatedContour(
       interpolated3DPoints,
+      handlePoints,
       sliceIndex,
-      c1Metadata,
+      nearestAnnotation,
       eventData
     );
   }
+}
+
+function _subselect(points, count = 10) {
+  const handles = [];
+  const { length } = points.x;
+  if (!length) {
+    return handles;
+  }
+  const increment = Math.ceil(length / count);
+  for (let i = 0; i < length - increment / 2; i += increment) {
+    handles.push(vec3.fromValues(points.x[i], points.y[i], points.z[i]));
+  }
+  handles.push(
+    vec3.fromValues(
+      points.x[length - 1],
+      points.y[length - 1],
+      points.z[length - 1]
+    )
+  );
+  return handles;
 }
 
 /**
@@ -180,6 +224,7 @@ function _linearlyInterpolateContour(
  */
 function _addInterpolatedContour(
   interpolated3DPoints: { x: number[]; y: number[]; z: number[] },
+  handlePoints: Types.Point3[],
   sliceIndex: number,
   referencedToolData,
   eventData
@@ -196,8 +241,8 @@ function _addInterpolatedContour(
   }
 
   const interpolatedAnnotation = createInterpolatedToolData(
-    eventData,
     points,
+    handlePoints,
     referencedToolData
   );
 
@@ -206,7 +251,7 @@ function _addInterpolatedContour(
     interpolatedAnnotation.metadata.referencedImageId = imageIds[sliceIndex];
   }
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
-  annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
+  annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
   referencedToolData.postInterpolateAction?.(
     interpolatedAnnotation,
     referencedToolData
@@ -226,12 +271,13 @@ function _addInterpolatedContour(
  */
 function _editInterpolatedContour(
   interpolated3DPoints: { x: number[]; y: number[]; z: number[] },
+  handlePoints: Types.Point3[],
   sliceIndex,
   referencedToolData,
   eventData
 ) {
   const { viewport } = eventData;
-  const annotations = annotation.state.getAnnotations(
+  const annotations = annotationState.state.getAnnotations(
     referencedToolData.metadata.toolName,
     viewport.element
   );
@@ -270,8 +316,8 @@ function _editInterpolatedContour(
     ]);
   }
   const interpolatedAnnotation = createInterpolatedToolData(
-    eventData,
     points,
+    handlePoints,
     oldToolData
   );
   interpolatedAnnotation.metadata.referencedImageId =
@@ -280,8 +326,8 @@ function _editInterpolatedContour(
     oldToolData.metadata.referencedSliceIndex;
   // To update existing annotation, not intend to add or remove
   interpolatedAnnotation.annotationUID = oldToolData.annotationUID;
-  annotation.state.removeAnnotation(oldToolData.annotationUID);
-  annotation.state.addAnnotation(interpolatedAnnotation, viewport.element);
+  annotationState.state.removeAnnotation(oldToolData.annotationUID);
+  annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
 }
 
 /**
@@ -652,8 +698,6 @@ function _generateClosedContour(points) {
     y: [],
     z: [],
   };
-
-  // NOTE: For z positions we only need the relative difference for interpolation, thus use frame index as Z.
   for (let i = 0; i < points.length; i++) {
     c.x[i] = points[i][0];
     c.y[i] = points[i][1];

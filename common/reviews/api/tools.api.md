@@ -4640,6 +4640,8 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
+    protected createInterpolatedSplineControl(annotation: any): void;
+    // (undocumented)
     deleteControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
     editData: {

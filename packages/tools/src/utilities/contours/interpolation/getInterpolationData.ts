@@ -55,11 +55,6 @@ export default function getInterpolationData(
         }
       );
 
-      console.log(
-        'filtered annotations image data',
-        i,
-        filteredInterpolatedAnnotations?.[0]?.metadata
-      );
       const annotationsOnImage: ImageInterpolationData = {
         sliceIndex: i,
         annotations: filteredInterpolatedAnnotations.length

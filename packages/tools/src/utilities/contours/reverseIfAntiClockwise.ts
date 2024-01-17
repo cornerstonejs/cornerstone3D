@@ -20,6 +20,9 @@ function getSumReducer(total: number, num: number): number {
  */
 export default function reverseIfAntiClockwise(points: Types.Point2[]) {
   const length = points.length;
+  if (!length) {
+    return points;
+  }
   const xMean = points.map((point) => point[0]).reduce(getSumReducer) / length;
   let checkSum = 0;
 

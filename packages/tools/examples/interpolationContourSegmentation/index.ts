@@ -50,6 +50,7 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID;
+
 const interpolationTools = new Map<string, any>();
 const configuration = {
   interpolation: { enabled: true },
