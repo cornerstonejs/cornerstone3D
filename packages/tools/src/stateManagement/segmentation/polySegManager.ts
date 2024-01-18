@@ -71,7 +71,10 @@ class PolySegManager {
   >([
     [
       SegmentationRepresentations.Labelmap,
-      new Set([SegmentationRepresentations.Surface]),
+      new Set([
+        SegmentationRepresentations.Surface,
+        SegmentationRepresentations.Contour,
+      ]),
     ],
     [
       SegmentationRepresentations.Contour,
@@ -79,10 +82,6 @@ class PolySegManager {
         SegmentationRepresentations.Labelmap,
         SegmentationRepresentations.Surface,
       ]),
-    ],
-    [
-      SegmentationRepresentations.Labelmap,
-      new Set([SegmentationRepresentations.Contour]),
     ],
   ]);
 
@@ -277,10 +276,10 @@ class PolySegManager {
     const uids = [];
     contourData.forEach((contour, index) => {
       // chop each contour instead of a flat array to array of x,y,z (3 elements)
-      // const polyline = [];
-      // for (let i = 0; i < contour.length; i += 3) {
-      //   polyline.push([contour[i], contour[i + 1], contour[i + 2]]);
-      // }
+      const polyline = [];
+      for (let i = 0; i < contour.length; i += 3) {
+        polyline.push([contour[i], contour[i + 1], contour[i + 2]]);
+      }
 
       const uid = utilities.uuidv4();
       uids.push(uid);
@@ -313,7 +312,7 @@ class PolySegManager {
         annotationUID: uid,
         data: {
           contour: {
-            polyline: contour,
+            polyline,
           },
           handles: {
             activeHandleIndex: 0,
@@ -1109,68 +1108,64 @@ class PolySegManager {
      * Soulution 1
      * Soulution 1
      */
-    // for (const segmentIndex of [1]) {
-    //   const results = (await this.polySeg.instance.convertLabelmapToSurface(
-    //     scalarData,
-    //     dimensions,
-    //     spacing,
-    //     direction,
-    //     origin,
-    //     [segmentIndex]
-    //   )) as Types.SurfaceData;
+    for (const segmentIndex of [1]) {
+      const results = (await this.polySeg.instance.convertLabelmapToSurface(
+        scalarData,
+        dimensions,
+        spacing,
+        direction,
+        origin,
+        [segmentIndex]
+      )) as Types.SurfaceData;
 
-    //   const { points, polys } = results;
+      const { points, polys } = results;
 
-    //   const polyData = vtkPolyData.newInstance();
-    //   polyData.getPoints().setData(points, 3);
-    //   polyData.getPolys().setData(polys);
+      const polyData = vtkPolyData.newInstance();
+      polyData.getPoints().setData(points, 3);
+      polyData.getPolys().setData(polys);
 
-    //   const cutter = vtkCutter.newInstance();
-    //   cutter.setCutFunction(vtkPlane.newInstance());
+      for (let i = 0; i < dimensions[2]; i++) {
+        const cutter = vtkCutter.newInstance();
+        cutter.setCutFunction(vtkPlane.newInstance());
 
-    //   cutter.setInputData(polyData);
+        cutter.setInputData(polyData);
 
-    //   const planeNormal = direction.slice(6, 9);
-    //   cutter.getCutFunction().setNormal(planeNormal);
+        const planeNormal = direction.slice(6, 9);
+        cutter.getCutFunction().setNormal(planeNormal);
 
-    //   for (let i = 0; i < dimensions[2]; i++) {
-    //     const planeOrigin = [
-    //       origin[0] + spacing[0] * i * planeNormal[0],
-    //       origin[1] + spacing[1] * i * planeNormal[1],
-    //       origin[2] + spacing[2] * i * planeNormal[2],
-    //     ];
+        const planeOrigin = [
+          origin[0] + spacing[0] * i * planeNormal[0],
+          origin[1] + spacing[1] * i * planeNormal[1],
+          origin[2] + spacing[2] * i * planeNormal[2],
+        ];
 
-    //     cutter.getCutFunction().setOrigin(planeOrigin);
+        cutter.getCutFunction().setOrigin(planeOrigin);
 
-    //     cutter.update();
+        cutter.update();
 
-    //     // Retrieve the resulting contour data
-    //     const contourData = cutter.getOutputData();
+        // Retrieve the resulting contour data
+        const contourData = cutter.getOutputData();
 
-    //     const { points, lines } = getDeduplicatedVTKPolyDataPoints(contourData);
+        // const { points, lines } = getDeduplicatedVTKPolyDataPoints(contourData);
 
-    //     const contours = findContoursFromReducedSet(lines);
-    //     debugger;
+        // const contours = findContoursFromReducedSet(lines);
 
-    //     // const points = contourData.getPoints().getData();
-    //     // debugger;
-    //     // const lines = contourData.getLines()?.getData();
+        const points = contourData.getPoints().getData();
+        // let i = 0;
+        // while (i < lines?.length) {
+        //   const n = lines[i];
+        //   const linePtIdxs = lines.slice(i + 1, i + 1 + n);
+        //   const linePts = linePtIdxs.map((idx) =>
+        //     points.slice(idx * 3, (idx + 1) * 3)
+        //   );
+        //   i += n + 1;
+        // }
 
-    //     // let i = 0;
-    //     // while (i < lines?.length) {
-    //     //   const n = lines[i];
-    //     //   const linePtIdxs = lines.slice(i + 1, i + 1 + n);
-    //     //   const linePts = linePtIdxs.map((idx) =>
-    //     //     points.slice(idx * 3, (idx + 1) * 3)
-    //     //   );
-    //     //   i += n + 1;
-    //     // }
+        slicesContours.push(points);
+      }
+    }
 
-    //     slicesContours.push(points);
-    //   }
-    // }
-
-    // return slicesContours;
+    return slicesContours;
 
     /**
      * Soulution 2
