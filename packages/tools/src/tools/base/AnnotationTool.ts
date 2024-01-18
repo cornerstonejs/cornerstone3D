@@ -301,7 +301,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = targetId.split(/volumeId:|\?/)[1];
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }
