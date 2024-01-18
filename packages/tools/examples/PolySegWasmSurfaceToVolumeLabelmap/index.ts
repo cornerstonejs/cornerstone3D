@@ -6,8 +6,8 @@ import {
   CONSTANTS,
   utilities,
   Types,
+  geometryLoader,
 } from '@cornerstonejs/core';
-import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -17,10 +17,9 @@ import {
   addDropdownToToolbar,
   addToggleButtonToToolbar,
   createInfoSection,
+  downloadSurfacesData,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/fillVolumeSegmentationWithMockData';
-import { points } from './points';
 
 // This is for debugging purposes
 console.warn(
@@ -32,31 +31,17 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
+  BrushTool,
   PanTool,
   ZoomTool,
-  PlanarFreehandContourSegmentationTool,
   StackScrollMouseWheelTool,
   TrackballRotateTool,
-  SegmentSelectTool,
-  PlanarFreehandROITool,
-  ProbeTool,
 } = cornerstoneTools;
 
 setTitleAndDescription(
-  'Volume Labelmap Segmentation to Contour Segmentation',
-  'This demonstration showcases the usage of PolySEG WASM module to convert a volume labelmap segmentation to a contour segmentation. Use the left viewport to draw a labelmap segmentation and then click on the button to convert it to a contour segmentation. The right viewport shows the contour segmentation. The dropdown allows you to select the segment index to convert to a contour segmentation.'
+  'Surface to Volume Labelmap',
+  'This demonstration showcases the usage of PolySEG WASM module to convert a surface to a labelmap. The labelmap can then be used for further processing, such as 3D rendering.'
 );
-
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 1,
-  outlineDashActive: undefined,
-  outlineDashInactive: undefined,
-};
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
@@ -79,44 +64,54 @@ viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
+const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
 element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault();
 element2.oncontextmenu = (e) => e.preventDefault();
+element3.oncontextmenu = (e) => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
 createInfoSection(content, { ordered: true })
-  .addInstruction('Draw a contour segmentation on the left viewport')
+  .addInstruction('Use the Brush Tool for segmentation in MPR viewports')
   .addInstruction(
-    'Click on the button to convert the contour segmentation to a volume labelmap segmentation'
-  );
+    'Toggle between different segmentation tools like Sphere Brush and Eraser'
+  )
+  .addInstruction('Convert the labelmap to a 3D surface representation')
+  .addInstruction('Manipulate the 3D view using the Trackball Rotate Tool')
+  .addInstruction('Toggle the visibility of the 3D anatomy model');
 
 // ============================= //
+const toolGroupId = 'ToolGroup_MPR';
+const toolGroupId2 = 'ToolGroup_3D';
 let toolGroup1, toolGroup2;
 let renderingEngine;
-const toolGroupId1 = 'ToolGroup_Contour';
-const toolGroupId2 = 'ToolGroup_Labelmap';
-const viewportId1 = 'CT_SAGITTAL_CONTOUR';
-const viewportId2 = 'CT_SAGITTAL_LABELMAP';
+// Create the viewports
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_3D';
 
 const segmentIndexes = [1, 2, 3, 4, 5];
 
 addButtonToToolbar({
-  title: 'Convert labelmap segmentation to contour segmentation',
+  title: 'Convert surface to labelmap',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
     await segmentation.addSegmentationRepresentations(toolGroupId2, [
       {
         segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
         options: {
           polySeg: true,
         },
@@ -124,17 +119,6 @@ addButtonToToolbar({
     ]);
   },
 });
-
-// addDropdownToToolbar({
-//   labelText: 'Segment Index',
-//   options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
-//   onSelectedValueChange: (number) => {
-//     segmentation.segmentIndex.setActiveSegmentIndex(
-//       segmentationId,
-//       Number(number) as number
-//     );
-//   },
-// });
 
 /**
  * Runs the demo
@@ -148,46 +132,38 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-  cornerstoneTools.addTool(SegmentSelectTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(BrushTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
-  toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
+  toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId);
   toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
 
   // Manipulation Tools
   toolGroup1.addTool(PanTool.toolName);
+  toolGroup2.addTool(PanTool.toolName);
   toolGroup1.addTool(ZoomTool.toolName);
+  toolGroup1.addTool(TrackballRotateTool.toolName);
   toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup1.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup1.addTool(SegmentSelectTool.toolName);
+  toolGroup2.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup2.addTool(PanTool.toolName);
-  toolGroup2.addTool(ProbeTool.toolName);
-  toolGroup2.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup2.addTool(TrackballRotateTool.toolName);
-  toolGroup2.addTool(ZoomTool.toolName);
+  toolGroup1.addTool(SegmentationDisplayTool.toolName);
+
   toolGroup2.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup2.addTool(PlanarFreehandROITool.toolName);
+  toolGroup2.addTool(ZoomTool.toolName);
 
   // activations
   toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(PlanarFreehandContourSegmentationTool.toolName);
-  // toolGroup2.setToolEnabled(PlanarFreehandROITool.toolName);
 
-  // toolGroup1.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
-  //   bindings: [
-  //     {
-  //       mouseButton: MouseBindings.Primary,
-  //     },
-  //   ],
-  // });
+  toolGroup1.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Middle Click
+      },
+    ],
+  });
   toolGroup1.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
@@ -212,15 +188,7 @@ async function run() {
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup1.setToolActive(SegmentSelectTool.toolName);
   toolGroup2.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup2.setToolActive(PlanarFreehandROITool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
   toolGroup2.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
@@ -250,10 +218,10 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_3D,
       element: element1,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
       },
     },
     {
@@ -261,7 +229,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.ACQUISITION,
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
     },
   ];
@@ -278,48 +246,51 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2]
+    [viewportId2]
   );
 
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-    volumeId: segmentationId,
-  });
+  // // set the anatomy at first invisible
+  // const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
+  //   .actor as Types.VolumeActor;
+  // utilities.applyPreset(
+  //   volumeActor,
+  //   CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+  // );
+  // volumeActor.setVisibility(false);
 
-  fillVolumeSegmentationWithMockData({
-    volumeId: segmentationId,
-    cornerstone,
-    centerOffset: [0, 0, 0],
-    // innerRadius: 30,
-    // outerRadius: 50,
+  const surfaces = await downloadSurfacesData();
+
+  const geometryIds = surfaces.map((surface) => {
+    const geometryId = surface.closedSurface.id;
+    geometryLoader.createAndCacheGeometry(geometryId, {
+      type: Enums.GeometryType.SURFACE,
+      geometryData: surface.closedSurface as Types.PublicSurfaceData,
+    });
+
+    return geometryId;
   });
 
   // Add the segmentations to state
-  await segmentation.addSegmentations([
+  segmentation.addSegmentations([
     {
       segmentationId,
       representation: {
         // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
         data: {
-          volumeId: segmentationId,
+          geometryIds,
         },
       },
     },
   ]);
 
-  // await segmentation.addRepresentationData({
-  //   segmentationId,
-  //   type: csToolsEnums.SegmentationRepresentations.Contour,
-  //   data: {
-  //     // points,
-  //   },
-  // });
-
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId1, [
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
     },
   ]);
 

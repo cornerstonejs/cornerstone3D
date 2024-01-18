@@ -221,7 +221,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
     : canvasPoints;
 
   // Note: -> This is pretty expensive and may not scale well with hundreds of
-  // contours. A future optimisation if we use this for segmentation is to re-do
+  // contours. A future optimization if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
   const worldPoints = updatedPoints.map((canvasPoint) =>
     viewport.canvasToWorld(canvasPoint)
@@ -231,7 +231,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   annotation.data.contour.closed = true;
   const { textBox } = annotation.data.handles;
 
-  if (!textBox.hasMoved) {
+  if (!textBox?.hasMoved) {
     this.triggerAnnotationCompleted(annotation);
   }
 

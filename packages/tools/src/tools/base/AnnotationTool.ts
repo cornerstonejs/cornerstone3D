@@ -223,7 +223,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       }
     }
 
-    for (let i = 0; i < points.length; i++) {
+    for (let i = 0; i < points?.length; i++) {
       const point = points[i];
       const annotationCanvasCoordinate = viewport.worldToCanvas(point);
 

@@ -12482,6 +12482,11 @@ https-proxy-agent@5.0.1, https-proxy-agent@^5.0.0, https-proxy-agent@^5.0.1:
     agent-base "6"
     debug "4"
 
+hull.js@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/hull.js/-/hull.js-1.0.4.tgz#3266cb6180cceae101723f539b2c020a37d4038a"
+  integrity sha512-p7oV4LVNo8wokDXRAF/20WN0Nd02eRLWJI6KlEC5Ih/vBiy3fGtGeeRQIVUANIpu0AXLTDOsy0naJiNZpDL5OQ==
+
 human-signals@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/human-signals/-/human-signals-2.1.0.tgz#dc91fcba42e4d06e4abaed33b3e7a3c02f514ea0"
@@ -17641,7 +17646,7 @@ pkg-up@^3.1.0:
   version "1.1.0"
   resolved "https://codeload.github.com/ataft/plugin-image-zoom/tar.gz/8e1b866c79ed6d42cefc4c52f851f1dfd1d0c7de"
   dependencies:
-    medium-zoom "^1.0.8"
+    medium-zoom "^1.0.4"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
