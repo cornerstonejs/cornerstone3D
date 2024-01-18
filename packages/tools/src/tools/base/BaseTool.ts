@@ -206,7 +206,10 @@ abstract class BaseTool implements IBaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = targetId.split('volumeId:')[1];
+      const query = targetId.indexOf('?');
+      const volumeId = targetId
+        .substring(0, query === -1 ? undefined : query)
+        .split('volumeId:')[1];
       const viewports = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
@@ -248,17 +251,14 @@ abstract class BaseTool implements IBaseTool {
    * @returns targetId
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
-    if (viewport instanceof StackViewport) {
-      return `imageId:${viewport.getCurrentImageId()}`;
-    } else if (viewport instanceof BaseVolumeViewport) {
-      return `volumeId:${this.getTargetVolumeId(viewport)}`;
-    } else if (viewport instanceof VideoViewport) {
-      return `videoId:${viewport.getCurrentImageId()}`;
-    } else {
-      throw new Error(
-        'getTargetId: viewport must be a StackViewport or VolumeViewport'
-      );
+    const targetId = viewport.getTargetId?.();
+    if (targetId) {
+      return targetId;
     }
+    if (viewport instanceof BaseVolumeViewport) {
+      return `volumeId:${this.getTargetVolumeId(viewport)}`;
+    }
+    throw new Error('getTargetId: viewport must have a getTargetId method');
   }
 }
 
