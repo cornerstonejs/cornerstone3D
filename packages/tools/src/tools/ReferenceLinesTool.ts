@@ -254,6 +254,10 @@ class ReferenceLines extends AnnotationDisplayTool {
       );
     }
 
+    if (canvasCoordinates.length < 2) {
+      return renderStatus;
+    }
+
     const dataId = `${annotationUID}-line`;
     const lineUID = '1';
     drawLineSvg(
