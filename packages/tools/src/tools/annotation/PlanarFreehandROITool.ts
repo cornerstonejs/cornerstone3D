@@ -1,8 +1,6 @@
 import {
   CONSTANTS,
   getEnabledElement,
-  triggerEvent,
-  eventTarget,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -14,7 +12,6 @@ import {
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
 import { roundNumber } from '../../utilities';
-import { Events } from '../../enums';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -27,10 +24,6 @@ import registerOpenContourEditLoop from './planarFreehandROITool/openContourEdit
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
 import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
-import {
   EventTypes,
   ToolHandle,
   Annotation,
@@ -40,6 +33,7 @@ import {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -382,40 +376,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   };
 
   /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: PlanarFreehandROIAnnotation,
-    enabledElement: Types.IEnabledElement
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
-   * Triggers an annotation completed event.
-   */
-  triggerAnnotationCompleted = (
-    annotation: PlanarFreehandROIAnnotation
-  ): void => {
-    const eventType = Events.ANNOTATION_COMPLETED;
-
-    const eventDetail: AnnotationCompletedEventDetail = {
-      annotation,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
    * @override We need to override this method as the tool doesn't always have
    * `handles`, which means `filterAnnotationsForDisplay` fails inside
    * `filterAnnotationsWithinSlice`.
@@ -679,6 +639,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     enabledElement
   ) => {
     const { data } = annotation;
+    const { element } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
 
@@ -844,7 +805,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(annotation, element);
 
     annotation.invalidated = false;
 

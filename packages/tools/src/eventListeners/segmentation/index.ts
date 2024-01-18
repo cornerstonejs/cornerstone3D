@@ -3,6 +3,7 @@ import segmentationDataModifiedEventListener from './segmentationDataModifiedEve
 import segmentationRepresentationRemovedEventListener from './segmentationRepresentationRemovedEventListener';
 import segmentationModifiedListener from './segmentationModifiedEventListener';
 import imageChangeEventListener from './imageChangeEventListener';
+import contourAnnotationEventListener from './contourSegmentationEventListener';
 
 export {
   segmentationRepresentationModifiedEventListener,
@@ -10,4 +11,5 @@ export {
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
   imageChangeEventListener,
+  contourAnnotationEventListener,
 };

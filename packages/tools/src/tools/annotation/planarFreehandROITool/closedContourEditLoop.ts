@@ -1,3 +1,4 @@
+import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../../../store';
@@ -8,13 +9,13 @@ import {
 } from '../../../cursors/elementCursor';
 import { EventTypes } from '../../../types';
 import { polyline } from '../../../utilities/math';
-import { vec3, vec2 } from 'gl-matrix';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import {
   getInterpolatedPoints,
   shouldInterpolate,
 } from '../../../utilities/planarFreehandROITool/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
 const {
   getSubPixelSpacingAndXYDirections,
@@ -228,7 +229,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
   annotation.data.contour.polyline = worldPoints;
   annotation.data.contour.closed = true;
 
-  this.triggerAnnotationModified(annotation, enabledElement);
+  triggerAnnotationModified(annotation, element);
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
@@ -448,7 +449,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
 
     annotation.invalidated = true;
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(annotation, element);
   }
 
   this.isEditingClosed = false;

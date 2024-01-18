@@ -2,14 +2,13 @@ import { vec3 } from 'gl-matrix';
 
 import {
   getEnabledElement,
-  eventTarget,
-  triggerEvent,
   utilities as csUtils,
   StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
 import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store';
 import { Events } from '../../enums';
@@ -24,10 +23,6 @@ import {
 } from '../../types';
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
@@ -336,12 +331,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation, element);
     }
 
     this.editData = null;
@@ -529,25 +519,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.editData = null;
     this.scissors = null;
     return annotation.annotationUID;
-  };
-
-  /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: LivewireContourAnnotation,
-    enabledElement: Types.IEnabledElement
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
   };
 
   private _activateModify = (element) => {

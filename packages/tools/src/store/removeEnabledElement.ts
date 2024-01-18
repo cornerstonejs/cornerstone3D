@@ -4,6 +4,8 @@ import {
   wheelEventListener,
   touchEventListeners,
   keyEventListener,
+  imageChangeEventListener,
+  contourAnnotationEventListener,
 } from '../eventListeners';
 import {
   imageRenderedEventDispatcher,
@@ -23,7 +25,6 @@ import { removeAnnotation } from '../stateManagement';
 import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersForViewport';
 import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport';
 import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender';
-import imageChangeEventListener from '../eventListeners/segmentation/imageChangeEventListener';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 
@@ -52,6 +53,10 @@ function removeEnabledElement(
   imageRenderedEventDispatcher.disable(element);
   cameraModifiedEventDispatcher.disable(element);
   imageSpacingCalibratedEventDispatcher.disable(element);
+
+  // Contour annotations
+  contourAnnotationEventListener.disable(element);
+
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(element);
   keyboardToolEventDispatcher.disable(element);

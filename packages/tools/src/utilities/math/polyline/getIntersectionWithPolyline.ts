@@ -1,12 +1,12 @@
 import { vec2 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
+import * as math from '..';
 
 /**
- * Orientation algoritm to determine if two lines cross.
- * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+ * Get all intersection between a polyline and a line segment.
  */
 
-function getAllIntersectionsWithPolyline(
+function getLineSegmentIntersections(
   points: Types.Point2[],
   p1: Types.Point2,
   q1: Types.Point2,
@@ -28,7 +28,9 @@ function getAllIntersectionsWithPolyline(
     const p2 = points[j];
     const q2 = points[i];
 
-    if (doesIntersect(p1, q1, p2, q2)) {
+    const intersectionPoint = math.lineSegment.intersectLine(p1, q1, p2, q2);
+
+    if (intersectionPoint) {
       intersections.push([j, i]);
     }
 
@@ -49,12 +51,7 @@ function getIntersectionCoordinatesWithPolyline(
   closed = true
 ): Types.Point2[] {
   const result = [];
-  const polylineIndexes = getAllIntersectionsWithPolyline(
-    points,
-    p1,
-    q1,
-    closed
-  );
+  const polylineIndexes = getLineSegmentIntersections(points, p1, q1, closed);
 
   for (let i = 0; i < polylineIndexes.length; i++) {
     const p2 = points[polylineIndexes[i][0]];
@@ -68,6 +65,13 @@ function getIntersectionCoordinatesWithPolyline(
 /**
  * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
  * `points`, and returns the first value.
+ *
+ * @param points - Polyline points
+ * @param p1 - First point of the line segment that is being tested
+ * @param q1 - Second point of the line segment that is being tested
+ * @param closed - Test the intersection with the line segment that connects
+ *   the last and first points of the polyline
+ * @returns Indexes of the line segment points from the polyline that intersects [p1, q1]
  */
 function getFirstIntersectionWithPolyline(
   points: Types.Point2[],
@@ -164,6 +168,7 @@ function getClosestIntersectionWithPolyline(
 
 /**
  * Checks whether the line (`p1`,`q1`) intersects the line (`p2`,`q2`) via an orientation algorithm.
+ * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
  */
 function doesIntersect(
   p1: Types.Point2,
@@ -212,6 +217,7 @@ function orientation(
   q: Types.Point2,
   r: Types.Point2
 ): number {
+  // Take the cross product between vectors PQ and QR
   const orientationValue =
     (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
 
@@ -268,7 +274,7 @@ function getIntersection(
 }
 
 export {
-  getAllIntersectionsWithPolyline,
+  getLineSegmentIntersections,
   getFirstIntersectionWithPolyline,
   getClosestIntersectionWithPolyline,
   getIntersectionCoordinatesWithPolyline,

@@ -116,6 +116,10 @@ type AnnotationAddedEventDetail = {
  * drawing on the viewport.
  */
 type AnnotationCompletedEventDetail = {
+  /** unique id of the viewport */
+  viewportId: string;
+  /** unique id of the rendering engine */
+  renderingEngineId: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
 };

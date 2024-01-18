@@ -21,6 +21,7 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -46,12 +47,6 @@ import {
 } from '../../types';
 import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-  MouseDragEventType,
-  MouseMoveEventType,
-} from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
@@ -416,8 +411,7 @@ class BidirectionalTool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { renderingEngine } = getEnabledElement(element);
 
     if (this.editData.handleIndex !== undefined) {
       const { points } = data.handles;
@@ -489,13 +483,7 @@ class BidirectionalTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation, element);
     }
 
     this.editData = null;
@@ -907,8 +895,7 @@ class BidirectionalTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
+      const { renderingEngine } = getEnabledElement(element);
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
@@ -916,13 +903,7 @@ class BidirectionalTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation, element);
       }
 
       this.editData = null;
@@ -1318,14 +1299,7 @@ class BidirectionalTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   };

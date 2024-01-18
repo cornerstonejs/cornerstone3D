@@ -1,12 +1,12 @@
 import { utilities } from '@cornerstonejs/core';
-import {
-  getEnabledElement,
-  eventTarget,
-  triggerEvent,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
@@ -36,10 +36,6 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
 import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 import { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
@@ -315,12 +311,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation, element);
     }
 
     this.editData = null;
@@ -499,25 +490,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     this.editData = null;
     return annotation.annotationUID;
   }
-
-  /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: SplineROIAnnotation,
-    enabledElement: Types.IEnabledElement
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
 
   private _activateModify = (element) => {
     state.isInteractingWithTool = true;
@@ -1013,7 +985,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   };

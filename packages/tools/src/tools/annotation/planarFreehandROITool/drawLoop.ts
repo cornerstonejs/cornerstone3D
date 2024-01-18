@@ -1,5 +1,4 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -13,6 +12,7 @@ import {
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
@@ -232,7 +232,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerAnnotationCompleted(annotation, element);
   }
 
   this.isDrawing = false;
@@ -315,7 +315,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   }
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerAnnotationCompleted(annotation, element);
   }
 
   this.isDrawing = false;
