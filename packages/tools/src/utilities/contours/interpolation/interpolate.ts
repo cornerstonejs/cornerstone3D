@@ -246,10 +246,13 @@ function _addInterpolatedContour(
     referencedToolData
   );
 
-  if (eventData.viewport instanceof StackViewport) {
-    const imageIds = eventData.viewport.getImageIds();
-    interpolatedAnnotation.metadata.referencedImageId = imageIds[sliceIndex];
-  }
+  const targetId = viewport.getTargetId({ sliceIndex });
+  // Should be able to handle a targetId instead of a full reference imageID
+  // but seems to fail on the imageId prefix.  TODO - fix this
+  interpolatedAnnotation.metadata.referencedImageId = targetId.replace(
+    'imageId:',
+    ''
+  );
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
   annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
   referencedToolData.postInterpolateAction?.(
