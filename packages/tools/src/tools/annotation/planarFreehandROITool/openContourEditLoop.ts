@@ -1,3 +1,4 @@
+import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../../../store';
@@ -8,7 +9,6 @@ import {
 } from '../../../cursors/elementCursor';
 import type { EventTypes } from '../../../types';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import {
   shouldSmooth,
@@ -16,6 +16,7 @@ import {
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
@@ -226,7 +227,7 @@ function openContourEditOverwriteEnd(
   ];
   annotation.data.handles.activeHandleIndex = 1;
 
-  this.triggerAnnotationModified(annotation, enabledElement);
+  triggerAnnotationModified(annotation, element);
 
   this.isEditingOpen = false;
   this.editData = undefined;
@@ -505,7 +506,7 @@ function finishEditOpenOnSecondCrossing(
     worldPoints[worldPoints.length - 1],
   ];
 
-  this.triggerAnnotationModified(annotation, enabledElement);
+  triggerAnnotationModified(annotation, element);
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
@@ -568,7 +569,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
 
     annotation.invalidated = true;
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(annotation, element);
   }
 
   this.isEditingOpen = false;

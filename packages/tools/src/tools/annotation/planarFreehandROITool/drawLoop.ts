@@ -12,6 +12,7 @@ import {
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
@@ -21,7 +22,7 @@ import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClo
 const {
   addCanvasPointsToArray,
   pointsAreWithinCloseContourProximity,
-  getFirstIntersectionWithPolyline,
+  getFirstLineSegmentIntersectionIndexes,
   getSubPixelSpacingAndXYDirections,
 } = polyline;
 
@@ -236,7 +237,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerAnnotationCompleted(annotation, element);
   }
 
   this.isDrawing = false;
@@ -261,7 +262,7 @@ function removeCrossedLinesOnCompleteDraw(): void {
   const endToStart = [canvasPoints[0], canvasPoints[numPoints - 1]];
   const canvasPointsMinusEnds = canvasPoints.slice(0, -1).slice(1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     canvasPointsMinusEnds,
     endToStart[0],
     endToStart[1],
@@ -319,7 +320,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   }
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerAnnotationCompleted(annotation, element);
   }
 
   this.isDrawing = false;
@@ -349,7 +350,7 @@ function findCrossingIndexDuringCreate(
   const { canvasPoints } = this.drawData;
   const pointsLessLastOne = canvasPoints.slice(0, -1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     pointsLessLastOne,
     canvasPos,
     lastCanvasPoint,

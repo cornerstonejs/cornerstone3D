@@ -10,6 +10,7 @@ import {
   imageChangeEventListener,
 } from './segmentation';
 import {
+  annotationCompletedListener,
   annotationSelectionListener,
   annotationModifiedListener,
 } from './annotations';
@@ -25,6 +26,7 @@ export {
   segmentationRepresentationRemovedEventListener,
   segmentationDataModifiedEventListener,
   imageChangeEventListener,
+  annotationCompletedListener,
   annotationSelectionListener,
   annotationModifiedListener,
 };

@@ -7,7 +7,11 @@ import {
 import { Events } from '../../../enums';
 import { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
-import { AnnotationAddedEventDetail } from '../../../types/EventTypes';
+import {
+  AnnotationAddedEventDetail,
+  AnnotationModifiedEventDetail,
+  AnnotationCompletedEventDetail,
+} from '../../../types/EventTypes';
 
 /**
  * It triggers an event for the element when an annotation is added
@@ -76,4 +80,48 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
   });
 }
 
-export { triggerAnnotationAddedForElement, triggerAnnotationAddedForFOR };
+/**
+ * Triggers an annotation modified event.
+ */
+function triggerAnnotationModified(
+  annotation: Annotation,
+  element: HTMLDivElement
+): void {
+  const enabledElement = getEnabledElement(element);
+  const { viewportId, renderingEngineId } = enabledElement;
+  const eventType = Events.ANNOTATION_MODIFIED;
+  const eventDetail: AnnotationModifiedEventDetail = {
+    annotation,
+    viewportId,
+    renderingEngineId,
+  };
+
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event.
+ */
+function triggerAnnotationCompleted(
+  annotation: Annotation,
+  element: HTMLDivElement
+): void {
+  const enabledElement = getEnabledElement(element);
+  const { viewport } = enabledElement;
+  const { id: viewportId, renderingEngineId } = viewport;
+  const eventType = Events.ANNOTATION_COMPLETED;
+  const eventDetail: AnnotationCompletedEventDetail = {
+    viewportId,
+    renderingEngineId,
+    annotation,
+  };
+
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+export {
+  triggerAnnotationAddedForElement,
+  triggerAnnotationAddedForFOR,
+  triggerAnnotationModified,
+  triggerAnnotationCompleted,
+};

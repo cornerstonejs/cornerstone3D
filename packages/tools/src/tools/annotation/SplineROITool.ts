@@ -7,6 +7,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
@@ -331,6 +332,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
       ? ChangeTypes.Completed
       : ChangeTypes.HandlesUpdated;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      triggerAnnotationCompleted(annotation, element);
+    }
 
     this.editData = null;
     this.isDrawing = false;
