@@ -30,7 +30,11 @@ import type {
   EventTypes,
   DisplayArea,
 } from '../types';
-import type { ViewportInput, IViewport } from '../types/IViewport';
+import type {
+  ViewportInput,
+  IViewport,
+  TargetSpecifier,
+} from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
@@ -882,6 +886,14 @@ class Viewport implements IViewport {
       vec2.subtract(vec2.create(), initialCanvasFocal, currentCanvasFocal)
     );
     return result;
+  }
+
+  public getCurrentImageIdIndex(): number {
+    throw new Error('Not implemented');
+  }
+
+  public getTargetId(specifier?: TargetSpecifier): string {
+    return null;
   }
 
   /**

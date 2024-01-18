@@ -35,7 +35,7 @@ import type {
   VOIRange,
   VolumeActor,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
+import { TargetSpecifier, ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -2811,6 +2811,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public getCurrentImageIdIndex = (): number => {
     return this.currentImageIdIndex;
   };
+
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
+    return `imageId:${this.imageIds[imageIdIndex]}`;
+  }
 
   /**
    *
