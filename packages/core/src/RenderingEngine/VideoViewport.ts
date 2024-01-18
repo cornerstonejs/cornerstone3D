@@ -4,7 +4,7 @@ import {
   VideoViewport as VideoViewportEnum,
   MetadataModules,
 } from '../enums';
-import {
+import type {
   IVideoViewport,
   VideoViewportProperties,
   Point3,
@@ -13,6 +13,7 @@ import {
   InternalVideoCamera,
   VideoViewportInput,
   VOIRange,
+  TargetSpecifier,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -633,10 +634,22 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const current = this.imageId.replace(
       '/frames/1',
       this.isPlaying
-        ? `/frames/1-${this.numberOfFrames}`
+        ? `/frames/${this.frameRange[0]}-${this.frameRange[1]}`
         : `/frames/${this.getFrameNumber()}`
     );
     return current;
+  }
+
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    const { sliceIndex } = specifier;
+    if (sliceIndex === undefined) {
+      return `videoId:${this.getCurrentImageId()}`;
+    }
+    const baseTarget = this.imageId.replace(
+      '/frames/1',
+      `/frames/${1 + sliceIndex}`
+    );
+    return `videoId:${baseTarget}`;
   }
 
   /**
@@ -647,9 +660,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return 1 + this.getCurrentImageIdIndex();
   }
 
-  /**
-   * Gets the 0 based image id index, that is the `frameNumber -1`
-   */
   public getCurrentImageIdIndex() {
     return Math.round(this.videoElement.currentTime * this.fps);
   }

@@ -42,7 +42,7 @@ class StackScrollTool extends BaseTool {
     const deltaPointY = deltaPoints.canvas[1];
     let volumeId;
     if (viewport instanceof VolumeViewport) {
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
     }
 
     const pixelsPerImage = this._getPixelPerImage(viewport);
