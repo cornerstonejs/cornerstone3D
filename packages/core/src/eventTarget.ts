@@ -12,6 +12,20 @@ class CornerstoneEventTarget implements EventTarget {
     this.listeners = {};
   }
 
+  public addEventListenerOnce(type, callback) {
+    // Create a wrapper function to encapsulate the original callback
+    const onceWrapper = (event) => {
+      // Remove the listener after its first invocation
+      this.removeEventListener(type, onceWrapper);
+
+      // Call the original callback
+      callback.call(this, event);
+    };
+
+    // Add the wrapper as the listener
+    this.addEventListener(type, onceWrapper);
+  }
+
   public addEventListener(type, callback) {
     if (!this.listeners[type]) {
       this.listeners[type] = [];
@@ -52,7 +66,11 @@ class CornerstoneEventTarget implements EventTarget {
     const stackLength = stack.length;
 
     for (let i = 0; i < stackLength; i++) {
-      stack[i].call(this, event);
+      try {
+        stack[i].call(this, event);
+      } catch (error) {
+        console.error(`error in event listener of type:  ${event.type}`, error);
+      }
     }
 
     return !event.defaultPrevented;

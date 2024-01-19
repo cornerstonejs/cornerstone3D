@@ -382,7 +382,10 @@ export default class SegmentationStateManager {
   setSegmentSpecificConfig(
     toolGroupId: string,
     segmentationRepresentationUID: string,
-    config: SegmentSpecificRepresentationConfig
+    config: SegmentSpecificRepresentationConfig,
+    options?: {
+      clear: false;
+    }
   ): void {
     const segmentationRepresentation = this.getSegmentationRepresentationByUID(
       toolGroupId,
@@ -393,7 +396,13 @@ export default class SegmentationStateManager {
       return;
     }
 
-    segmentationRepresentation.segmentSpecificConfig = config;
+    if (!segmentationRepresentation.segmentSpecificConfig || options?.clear) {
+      segmentationRepresentation.segmentSpecificConfig = {};
+    }
+
+    Object.keys(config).forEach((key) => {
+      segmentationRepresentation.segmentSpecificConfig[key] = config[key];
+    });
   }
 
   /**

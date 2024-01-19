@@ -3,7 +3,7 @@ import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
-import type { IVolume, VolumeScalarData } from './IVolume';
+import type { IVolume } from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type DisplayArea from './displayArea';
 import type ImageLoaderFn from './ImageLoaderFn';
@@ -13,7 +13,11 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
-import type { IViewport, PublicViewportInput } from './IViewport';
+import type {
+  IViewport,
+  PublicViewportInput,
+  TargetSpecifier,
+} from './IViewport';
 import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
 import type {
   IImageLoadObject,
@@ -106,6 +110,9 @@ import type {
   VideoViewportInput,
 } from './VideoViewportTypes';
 import type BoundsIJK from './BoundsIJK';
+import type { ImageVolumeProps } from './ImageVolumeProps';
+import type { VolumeProps } from './VolumeProps';
+import type BoundsLPS from './BoundsLPS';
 
 export type {
   // config
@@ -118,9 +125,9 @@ export type {
   IEnabledElement,
   ICache,
   IVolume,
-  VolumeScalarData,
   IViewportId,
   IImageVolume,
+  ImageVolumeProps,
   IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
@@ -138,6 +145,7 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  TargetSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -214,6 +222,8 @@ export type {
   InternalVideoCamera,
   VideoViewportInput,
   BoundsIJK,
+  BoundsLPS,
   Color,
   ColorLUT,
+  VolumeProps,
 };

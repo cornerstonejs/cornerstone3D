@@ -51,7 +51,7 @@ class WindowLevelTool extends BaseTool {
     const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
@@ -73,11 +73,12 @@ class WindowLevelTool extends BaseTool {
       throw new Error('Viewport is not a valid type');
     }
 
-    // If modality is PT, treat it special to not include the canvas delta in
+    // If modality is PT an the viewport is pre-scaled (SUV),
+    // treat it special to not include the canvas delta in
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT) {
+    if (modality === PT && isPreScaled) {
       newRange = this.getPTScaledNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,
@@ -190,12 +191,7 @@ class WindowLevelTool extends BaseTool {
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
 
-    let multiplier = DEFAULT_MULTIPLIER;
-
-    if (ratio > 1) {
-      multiplier = Math.round(ratio);
-    }
-    return multiplier;
+    return ratio > 1 ? Math.round(ratio) : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {

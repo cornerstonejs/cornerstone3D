@@ -6,7 +6,20 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
-import { IRetrieveConfiguration } from './IRetrieveConfiguration';
+
+/**
+ * Specifies what image to get a reference for.
+ */
+export type TargetSpecifier = {
+  /** The slice index within the current viewport camera to get a reference for */
+  sliceIndex?: number;
+  /** True to get a frame of reference UID reference instead of a regular image one */
+  forFrameOfReference?: boolean;
+  /** Set of points to get a reference for, in world space */
+  points?: Point3[];
+  /** The volumeId to reference */
+  volumeId?: string;
+};
 
 /**
  * Viewport interface for cornerstone viewports
@@ -66,6 +79,8 @@ interface IViewport {
   addActors(actors: Array<ActorEntry>): void;
   /** add one actor */
   addActor(actorEntry: ActorEntry): void;
+  /** get actor UIDs */
+  getActorUIDs(): Array<string>;
   /** remove all actors from the viewport */
   removeAllActors(): void;
   /** remove array of uids */
@@ -106,6 +121,10 @@ interface IViewport {
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
   /** Gets the number of slices in the current camera orientation */
   getNumberOfSlices(): number;
+  /** Gets the current slice in the current camera orientation */
+  getCurrentImageIdIndex(): number;
+  /** Gets a referenced image url of some sort - could be a real image id, or could be a URL with parameters */
+  getTargetId(forTarget?: TargetSpecifier): string;
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
