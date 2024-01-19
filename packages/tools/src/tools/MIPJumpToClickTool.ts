@@ -54,7 +54,7 @@ class MIPJumpToClickTool extends BaseTool {
       );
     }
 
-    const volumeId = targetId.split('volumeId:')[1];
+    const volumeId = targetId.split(/volumeId:|\?/)[1];
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity;

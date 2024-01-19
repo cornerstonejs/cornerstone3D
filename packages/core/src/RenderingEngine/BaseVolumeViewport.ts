@@ -35,6 +35,7 @@ import type {
   VOIRange,
   EventTypes,
   VolumeViewportProperties,
+  TargetSpecifier,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -1382,9 +1383,27 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return imageVolume.imageIds;
   };
 
-  abstract getCurrentImageIdIndex(): number;
-
   abstract getCurrentImageId(): string;
+
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    let { volumeId, sliceIndex } = specifier;
+    if (!volumeId) {
+      const actorEntries = this.getActors();
+      if (!actorEntries) {
+        return;
+      }
+      // find the first image actor of instance type vtkVolume
+      volumeId = actorEntries.find(
+        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      )?.uid;
+    }
+
+    sliceIndex ??= this.getCurrentImageIdIndex();
+    const { viewPlaneNormal, focalPoint } = this.getCamera();
+    return `volumeId:${volumeId}?sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
+      ','
+    )}&focalPoint=${focalPoint.join(',')}`;
+  }
 
   abstract setBlendMode(
     blendMode: BlendModes,

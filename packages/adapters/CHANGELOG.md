@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.47.1](https://github.com/dcmjs-org/dcmjs/compare/v1.47.0...v1.47.1) (2024-01-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.47.0](https://github.com/dcmjs-org/dcmjs/compare/v1.46.0...v1.47.0) (2024-01-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.46.0](https://github.com/dcmjs-org/dcmjs/compare/v1.45.1...v1.46.0) (2024-01-16)
+
+### Features
+
+-   **UltrasoundDirectionalTool:** add us directional adapter ([#999](https://github.com/dcmjs-org/dcmjs/issues/999)) ([1f78fd2](https://github.com/dcmjs-org/dcmjs/commit/1f78fd2859865ad19200096378ff7ce224209fb5))
+
 ## [1.45.1](https://github.com/dcmjs-org/dcmjs/compare/v1.45.0...v1.45.1) (2024-01-12)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
