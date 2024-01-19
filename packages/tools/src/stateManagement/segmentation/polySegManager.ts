@@ -2,7 +2,6 @@ import ICRPolySeg from '@icr/polyseg-wasm';
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkProperty from '@kitware/vtk.js/Rendering/Core/Property';
 import hull from 'hull.js';
 
 import {
@@ -44,13 +43,14 @@ import { addAnnotation, getAnnotation } from '../annotation/annotationState';
 import { getBoundingBoxAroundShapeWorld } from '../../utilities/boundingBox';
 import { validate as validateLabelmap } from '../../tools/displayTools/Labelmap/validateLabelmap';
 import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
-import { getDeduplicatedVTKPolyDataPoints } from '../../utilities/contours/getDeduplicatedVTKPolyDataPoints';
-import { findContoursFromReducedSet } from '../../utilities/contours/contourFinder';
-import { generateContourSetsFromLabelmap } from '../../utilities/contours';
-import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 type RawSurfacesData = { segmentIndex: number; data: Types.SurfaceData }[];
+type RawContoursData = {
+  segmentIndex: number;
+  data: {
+    contours: number[];
+  };
+}[];
 
 /**
  * Class to control polymorphic segmentations
@@ -271,81 +271,17 @@ class PolySegManager {
       viewport?: Types.IVolumeViewport | Types.IStackViewport;
     } = {}
   ): Promise<ContourSegmentationData> {
-    let contourData = await this.computeContourRepresentation(
+    const contourSegmentationData = await this.computeContourRepresentation(
       segmentationId,
       options
     );
 
-    contourData = contourData.filter((contour) => contour.length > 2);
-
-    const uids = [];
-    contourData.forEach((contour, index) => {
-      // chop each contour instead of a flat array to array of x,y,z (3 elements)
-      // const polyline = [];
-      // for (let i = 0; i < contour.length; i += 3) {
-      //   polyline.push([contour[i], contour[i + 1], contour[i + 2]]);
-      // }
-
-      const uid = utilities.uuidv4();
-      uids.push(uid);
-      // const contourSegmentationAnnotation = {
-      //   annotationUID: uid,
-      //   data: {
-      //     contour: {
-      //       closed: true,
-      //       polyline: contour,
-      //     },
-      //     segmentation: {
-      //       segmentationId,
-      //       segmentIndex: 1, // Todo
-      //       segmentationRepresentationUID:
-      //         options.segmentationRepresentationUID,
-      //     },
-      //   },
-      //   highlighted: false,
-      //   invalidated: false,
-      //   isLocked: false,
-      //   isVisible: true,
-      //   metadata: {
-      //     toolName: 'PlanarFreehandContourSegmentationTool',
-      //     FrameOfReferenceUID: options.viewport.getFrameOfReferenceUID(),
-      //     viewPlaneNormal: options.viewport.getCamera().viewPlaneNormal,
-      //   },
-      // };
-
-      const contourSegmentationAnnotation = {
-        annotationUID: uid,
-        data: {
-          contour: {
-            polyline: contour,
-          },
-          handles: {
-            activeHandleIndex: null,
-          },
-        },
-        highlighted: false,
-        invalidated: false,
-        isLocked: false,
-        isVisible: true,
-        metadata: {
-          toolName: 'PlanarFreehandROI',
-          FrameOfReferenceUID: options.viewport.getFrameOfReferenceUID(),
-          viewPlaneNormal: options.viewport.getCamera().viewPlaneNormal,
-        },
-      };
-
-      addAnnotation(
-        contourSegmentationAnnotation,
-        options.viewport.getFrameOfReferenceUID()
-      );
-    });
-
-    const annotationUIDsMap = new Map();
-    annotationUIDsMap.set(1, uids);
     addRepresentationData({
       segmentationId,
       type: SegmentationRepresentations.Contour,
-      data: { annotationUIDsMap },
+      data: {
+        ...contourSegmentationData,
+      },
     });
 
     this.addComputedRepresentationInternally(
@@ -357,7 +293,7 @@ class PolySegManager {
 
     triggerSegmentationModified(segmentationId);
 
-    return contourData;
+    return contourSegmentationData;
   }
 
   /**
@@ -420,12 +356,12 @@ class PolySegManager {
       viewport?: Types.IVolumeViewport | Types.IStackViewport;
     } = {}
   ): Promise<ContourSegmentationData> {
-    const rawContourData = await this.createRawContourData(
+    const rawContoursData = await this.createRawContourData(
       segmentationId,
       options
     );
 
-    if (!rawContourData) {
+    if (!rawContoursData) {
       throw new Error(
         'Not enough data to convert to contour, currently only support converting labelmap to contour if available'
       );
@@ -434,9 +370,13 @@ class PolySegManager {
     // We don't need to cache the labelmap data since it is already cached
     // by the converter, since it needed to write it to the cache in order
     // to create the geometry
-    // await this.createAndCacheLabelmapFromRaw(segmentationId, rawContourData);
+    const contourSegmentationData = this.createAndCacheContoursFromRaw(
+      segmentationId,
+      rawContoursData,
+      options
+    );
 
-    return rawContourData;
+    return contourSegmentationData;
   }
   /**
    * Computes the labelmap representation for a given segmentation.
@@ -721,7 +661,7 @@ class PolySegManager {
       segmentationRepresentationUID?: string;
       viewport?: Types.IVolumeViewport | Types.IStackViewport;
     } = {}
-  ): Promise<ContourSegmentationData> {
+  ): Promise<RawContoursData> {
     await this.initializeIfNecessary();
 
     const isVolume = options.viewport instanceof VolumeViewport ?? true;
@@ -853,6 +793,90 @@ class PolySegManager {
     return labelmapData;
   }
 
+  private createAndCacheContoursFromRaw(
+    segmentationId: string,
+    rawContoursData: RawContoursData,
+    options: {
+      segmentationRepresentationUID?: string;
+      viewport?: Types.IVolumeViewport | Types.IStackViewport;
+    } = {}
+  ): ContourSegmentationData {
+    const annotationUIDsMap = new Map();
+
+    rawContoursData.forEach((rawContourData) => {
+      const { segmentIndex, data } = rawContourData;
+      const { contours } = data;
+
+      contours.forEach((contour) => {
+        const uid = utilities.uuidv4();
+
+        const contourSegmentationAnnotation = {
+          annotationUID: uid,
+          data: {
+            contour: {
+              closed: true,
+              polyline: contour,
+            },
+            handles: {
+              activeHandleIndex: null,
+            },
+            segmentation: {
+              segmentationId,
+              segmentIndex,
+              segmentationRepresentationUID:
+                options.segmentationRepresentationUID,
+            },
+          },
+          highlighted: false,
+          invalidated: false,
+          isLocked: false,
+          isVisible: true,
+          metadata: {
+            toolName: 'PlanarFreehandContourSegmentationTool',
+            FrameOfReferenceUID: options.viewport.getFrameOfReferenceUID(),
+            viewPlaneNormal: options.viewport.getCamera().viewPlaneNormal,
+          },
+        };
+
+        const map = annotationUIDsMap.get(segmentIndex);
+
+        if (!map) {
+          annotationUIDsMap.set(segmentIndex, new Set([uid]));
+        } else {
+          map.add(uid);
+        }
+
+        // const contourSegmentationAnnotation = {
+        //   annotationUID: uid,
+        //   data: {
+        //     contour: {
+        //       polyline: contour,
+        //     },
+        //     handles: {
+        //       activeHandleIndex: null,
+        //     },
+        //   },
+        //   highlighted: false,
+        //   invalidated: false,
+        //   isLocked: false,
+        //   isVisible: true,
+        //   metadata: {
+        //     toolName: 'PlanarFreehandROI',
+        //     FrameOfReferenceUID: options.viewport.getFrameOfReferenceUID(),
+        //     viewPlaneNormal: options.viewport.getCamera().viewPlaneNormal,
+        //   },
+        // };
+
+        addAnnotation(
+          contourSegmentationAnnotation,
+          options.viewport.getFrameOfReferenceUID()
+        );
+      });
+    });
+
+    return { annotationUIDsMap };
+  }
+
   private async createRawSurfaceData(
     segmentationId: string,
     options: {
@@ -961,15 +985,15 @@ class PolySegManager {
       segmentationRepresentationUID?: string;
       viewport?: Types.IVolumeViewport | Types.IStackViewport;
     } = {}
-  ): Promise<ContourSegmentationData> {
+  ): Promise<RawContoursData> {
     const segmentation = getSegmentation(segmentationId);
     const { representationData } = segmentation;
 
     if (representationData.LABELMAP as LabelmapSegmentationDataVolume) {
       // convert volume labelmap to surface
-      let contourData;
+      let rawContoursData;
       try {
-        contourData = await this.computeContourFromLabelmapSegmentation(
+        rawContoursData = await this.computeContourFromLabelmapSegmentation(
           segmentationId,
           options
         );
@@ -979,7 +1003,7 @@ class PolySegManager {
         return;
       }
 
-      return contourData;
+      return rawContoursData;
     } else {
       throw new Error(
         'Not enough data to convert to contour, currently only support converting volume labelmap to contour if available'
@@ -1246,28 +1270,23 @@ class PolySegManager {
       segmentationRepresentationUID?: string;
       viewport;
     }
-  ): Promise<ContourSegmentationData> {
+  ): Promise<RawContoursData> {
     const volumeId = labelmapRepresentationData.volumeId;
 
     const volume = cache.getVolume(volumeId);
 
     const scalarData = volume.getScalarData();
     const { dimensions, spacing, origin, direction } = volume;
-    const slicesContours = [];
 
-    /**
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     * Soulution 1
-     */
-    for (const segmentIndex of [1, 2]) {
+    const rawContoursData = [];
+    for (const segmentIndex of options.segmentIndices) {
+      const segmentContours = {
+        segmentIndex,
+        data: {
+          contours: [],
+        },
+      };
+
       const results = (await this.polySeg.instance.convertLabelmapToSurface(
         scalarData,
         dimensions,
@@ -1305,11 +1324,10 @@ class PolySegManager {
         // Retrieve the resulting contour data
         const contourData = cutter.getOutputData();
 
-        // const { points, lines } = getDeduplicatedVTKPolyDataPoints(contourData);
-
-        // const contours = findContoursFromReducedSet(lines);
-
         const points = contourData.getPoints().getData();
+
+        // Todo: this does not work for the oblique planes or other planes
+        // than axial right now, generalize it by projecting to the plane
 
         // remove every 3rd element and group them into [ [x, y] , [x, y] , ...]
         const points2D = [];
@@ -1323,126 +1341,18 @@ class PolySegManager {
 
         const convexHull = hull(points2D, 100);
 
-        // put back the z coordinate
+        // // put back the z coordinate
         const contour = convexHull.map((pt) => {
           return [pt[0], pt[1], points[2]];
         });
 
-        // let i = 0;
-        // while (i < lines?.length) {
-        //   const n = lines[i];
-        //   const linePtIdxs = lines.slice(i + 1, i + 1 + n);
-        //   const linePts = linePtIdxs.map((idx) =>
-        //     points.slice(idx * 3, (idx + 1) * 3)
-        //   );
-        //   i += n + 1;
-        // }
-
-        slicesContours.push(contour);
+        segmentContours.data.contours.push(contour);
       }
+
+      rawContoursData.push(segmentContours);
     }
 
-    return slicesContours;
-
-    /**
-     * Soulution 2
-     * Soulution 2
-     * Soulution 2
-     * Soulution 2
-     * Soulution 2
-     * Soulution 2
-     * Soulution 2
-     */
-    // const results = generateContourSetsFromLabelmap({
-    //   segmentations: {
-    //     representationData: {
-    //       LABELMAP: labelmapRepresentationData,
-    //     },
-    //   },
-    // });
-
-    // return results[0].sliceContours.map((res) => {
-    //   return res.polyData.points;
-    // });
-    /**
-     * Soulution 3
-     * Soulution 3
-     * Soulution 3
-     * Soulution 3
-     * Soulution 3
-     * Soulution 3
-     * Soulution 3
-     */
-    // for (const segmentIndex of [1]) {
-    //   const results = (await this.polySeg.instance.convertLabelmapToSurface(
-    //     scalarData,
-    //     dimensions,
-    //     spacing,
-    //     direction,
-    //     origin,
-    //     [segmentIndex]
-    //   )) as Types.SurfaceData;
-
-    //   const { points, polys } = results;
-
-    //   const polyData = vtkPolyData.newInstance();
-    //   polyData.getPoints().setData(points, 3);
-    //   polyData.getPolys().setData(polys);
-
-    //   const clippingFilter = vtkClipClosedSurface.newInstance({
-    //     clippingPlanes: [],
-    //     activePlaneId: 2,
-    //     passPointData: false,
-    //   });
-    //   clippingFilter.setInputData(polyData);
-    //   clippingFilter.setGenerateOutline(true);
-    //   clippingFilter.setGenerateFaces(false);
-    //   // clippingFilter.update();
-
-    //   const { viewPlaneNormal, slabThickness } = options.viewport.getCamera();
-
-    //   const vtkPlanes = [vtkPlane.newInstance({}), vtkPlane.newInstance({})];
-    //   const scaledDistance = [
-    //     viewPlaneNormal[0],
-    //     viewPlaneNormal[1],
-    //     viewPlaneNormal[2],
-    //   ];
-    //   vtkMath.multiplyScalar(scaledDistance, slabThickness);
-    //   vtkPlanes[0].setNormal(viewPlaneNormal);
-    //   vtkPlanes[1].setNormal(
-    //     -viewPlaneNormal[0],
-    //     -viewPlaneNormal[1],
-    //     -viewPlaneNormal[2]
-    //   );
-
-    //   for (let i = 0; i < dimensions[2]; i++) {
-    //     const newOrigin1 = [
-    //       origin[0] + spacing[0] * i * viewPlaneNormal[0],
-    //       origin[1] + spacing[1] * i * viewPlaneNormal[1],
-    //       origin[2] + spacing[2] * i * viewPlaneNormal[2],
-    //     ];
-
-    //     const newOrigin2 = [
-    //       origin[0] + spacing[0] * (i + 1) * viewPlaneNormal[0],
-    //       origin[1] + spacing[1] * (i + 1) * viewPlaneNormal[1],
-    //       origin[2] + spacing[2] * (i + 1) * viewPlaneNormal[2],
-    //     ];
-
-    //     vtkPlanes[0].setOrigin(newOrigin1);
-    //     vtkPlanes[1].setOrigin(newOrigin2);
-
-    //     clippingFilter.setClippingPlanes(vtkPlanes);
-
-    //     clippingFilter.update();
-
-    //     const points = clippingFilter.getOutputData().getPoints().getData();
-    //     console.debug('🚀 ~ points:', points);
-
-    //     slicesContours.push(points);
-    //   }
-    // }
-
-    return slicesContours;
+    return rawContoursData;
   }
 
   private async updateSurfaceRepresentation(segmentationId) {
