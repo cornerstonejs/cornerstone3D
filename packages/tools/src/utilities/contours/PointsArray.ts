@@ -6,14 +6,12 @@ export type PolyDataPointConfiguration = {
   initialSize?: number;
 };
 
-type Point23 = Types.Point2 | Types.Point3;
-
 /**
  * PointsArray is a TypedArray based representation of 2 or 3d points with
  * custom sub-classes to represent the specific 2 or 3d values and to extract
  * values as Types.Point2/Point3 values.
  * This representation is efficient for storing large numbers of points and for
- * transferring them amongs systems.
+ * transferring them amongst systems.
  */
 export abstract class PointsArray<T> {
   data: Float32Array;
@@ -22,7 +20,7 @@ export abstract class PointsArray<T> {
 
   constructor(configuration: PolyDataPointConfiguration = {}) {
     const { initialSize = 1024, dimensions = 3 } = configuration;
-    this.data = new Float32Array(initialSize);
+    this.data = new Float32Array(initialSize * dimensions);
     this.dimensions = dimensions;
   }
 
@@ -58,6 +56,19 @@ export abstract class PointsArray<T> {
     }
     return mapData;
   }
+
+  /** Create an PointsArray3 from the x,y,z individual arrays */
+  public static fromXYZ({ x, y, z }): PointsArray3 {
+    const array = new PointsArray3({ initialSize: x.length });
+    let offset = 0;
+    for (let i = 0; i < x.length; i++) {
+      array.data[offset++] = x[i];
+      array.data[offset++] = y[i];
+      array.data[offset++] = z[i];
+    }
+    array.length = x.length;
+    return array;
+  }
 }
 
 /**
@@ -85,10 +96,56 @@ export class PolyDataPoints2 extends PointsArray<Types.Point2> {
     return point;
   }
 
-  public get point2() {
+  public get points() {
     return this.map(
       (point) => point,
       () => vec2.create() as Types.Point2
     );
+  }
+}
+
+/**
+ * A version of this based on Types.Point3 and vec3
+ */
+export class PointsArray3 extends PointsArray<Types.Point3> {
+  constructor(configuration = {}) {
+    super({ ...configuration, dimensions: 3 });
+  }
+
+  public forEach(
+    func: (value: Types.Point3, index: number) => void,
+    point = vec3.create() as Types.Point3
+  ) {
+    super.forEach(func, point);
+  }
+
+  public getPoint(index: number, point = vec3.create() as Types.Point3) {
+    if (index >= this.length) {
+      return;
+    }
+    const index2 = index * 3;
+    point[0] = this.data[index2];
+    point[1] = this.data[index2 + 1];
+    point[2] = this.data[index2 + 2];
+    return point;
+  }
+
+  public get points() {
+    return this.map(
+      (point) => point,
+      () => vec3.create() as Types.Point3
+    );
+  }
+
+  public getXYZ(): { x: number[]; y: number[]; z: number[] } {
+    const x = [];
+    const y = [];
+    const z = [];
+    this.forEach((point) => {
+      x.push(point[0]);
+      y.push(point[1]);
+      z.push(point[2]);
+    });
+    return { x, y, z };
   }
 }

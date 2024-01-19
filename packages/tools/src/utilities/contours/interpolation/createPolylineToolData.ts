@@ -9,7 +9,7 @@ import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotatio
  *
  * @param polyline - data for the polyline, owned hereafter by the annotation
  * @param handlePoints - data for the edit handles, if any, owned hereafter by the annotation
- * @param referencedToolData
+ * @param referencedToolData - for base data for the new tool
 
  */
 export default function createPolylineToolData(
@@ -51,8 +51,6 @@ export default function createPolylineToolData(
       closed: true,
     },
   });
-  annotation.metadata.referencedImageId = undefined;
-  annotation.metadata.referencedSliceIndex = undefined;
 
   return annotation;
 }

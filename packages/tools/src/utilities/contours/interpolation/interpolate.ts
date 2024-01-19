@@ -1,8 +1,4 @@
-import {
-  StackViewport,
-  triggerEvent,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { triggerEvent } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
@@ -13,8 +9,7 @@ import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotatio
 import { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
 import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
-
-const { isEqual } = csUtils;
+import { PointsArray } from '../PointsArray';
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
@@ -229,16 +224,8 @@ function _addInterpolatedContour(
   referencedToolData,
   eventData
 ) {
-  const points = [];
+  const points = PointsArray.fromXYZ(interpolated3DPoints).points;
   const { viewport } = eventData;
-
-  for (let i = 0; i < interpolated3DPoints.x.length; i++) {
-    points.push([
-      interpolated3DPoints.x[i],
-      interpolated3DPoints.y[i],
-      interpolated3DPoints.z[i],
-    ]);
-  }
 
   const interpolatedAnnotation = createPolylineToolData(
     points,
@@ -247,12 +234,7 @@ function _addInterpolatedContour(
   );
 
   const targetId = viewport.getTargetId({ sliceIndex });
-  // Should be able to handle a targetId instead of a full reference imageID
-  // but seems to fail on the imageId prefix.  TODO - fix this
-  interpolatedAnnotation.metadata.referencedImageId = targetId.replace(
-    'imageId:',
-    ''
-  );
+  interpolatedAnnotation.metadata.referencedImageId = targetId;
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
   annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
   referencedToolData.postInterpolateAction?.(
@@ -309,24 +291,12 @@ function _editInterpolatedContour(
   }
 
   const oldToolData = annotations[toolDataIndex] as InterpolationROIAnnotation;
-  const points = [];
-
-  for (let i = 0; i < interpolated3DPoints.x.length; i++) {
-    points.push([
-      interpolated3DPoints.x[i],
-      interpolated3DPoints.y[i],
-      interpolated3DPoints.z[i],
-    ]);
-  }
+  const points = PointsArray.fromXYZ(interpolated3DPoints).points;
   const interpolatedAnnotation = createPolylineToolData(
     points,
     handlePoints,
     oldToolData
   );
-  interpolatedAnnotation.metadata.referencedImageId =
-    oldToolData.metadata.referencedImageId;
-  interpolatedAnnotation.metadata.referencedSliceIndex =
-    oldToolData.metadata.referencedSliceIndex;
   // To update existing annotation, not intend to add or remove
   interpolatedAnnotation.annotationUID = oldToolData.annotationUID;
   annotationState.state.removeAnnotation(oldToolData.annotationUID);
@@ -354,10 +324,10 @@ function _generateInterpolatedOpenContour(c1ir, c2ir, zInterp, c1HasMoreNodes) {
     z: [],
   };
 
-  const indicies = c1HasMoreNodes ? c1ir.I : c2ir.I;
+  const indices = c1HasMoreNodes ? c1ir.I : c2ir.I;
 
   for (let i = 0; i < c1ir.x.length; i++) {
-    if (indicies[i]) {
+    if (indices[i]) {
       cInterp.x.push(c1ir.x[i] + (c2ir.x[i] - c1ir.x[i]) * zInterp);
       cInterp.y.push(c1ir.y[i] + (c2ir.y[i] - c1ir.y[i]) * zInterp);
       cInterp.z.push(c1ir.z[i] + (c2ir.z[i] - c1ir.z[i]) * zInterp);
@@ -452,7 +422,7 @@ function _reduceContoursToOriginNodes(c1i, c2i) {
 }
 
 /**
- * _shiftSuperSampledContourInPlace - Shifts the indicies of c1i around to
+ * _shiftSuperSampledContourInPlace - Shifts the indices of c1i around to
  * minimize: SUM (|c1i[i]-c2i[i]|) from 0 to N.
  *
  * @param c1i - The contour to shift.
@@ -584,7 +554,7 @@ function _getNodesPerSegment(perimInterp, perimInd) {
     perimIndSorted.push(perimInd[idx[i]]);
   }
 
-  const indiciesOfOriginNodes = perimIndSorted.reduce(function (
+  const indicesOfOriginNodes = perimIndSorted.reduce(function (
     arr,
     elementValue,
     i
@@ -598,10 +568,8 @@ function _getNodesPerSegment(perimInterp, perimInd) {
 
   const nodesPerSegment = [];
 
-  for (let i = 0; i < indiciesOfOriginNodes.length - 1; i++) {
-    nodesPerSegment.push(
-      indiciesOfOriginNodes[i + 1] - indiciesOfOriginNodes[i]
-    );
+  for (let i = 0; i < indicesOfOriginNodes.length - 1; i++) {
+    nodesPerSegment.push(indicesOfOriginNodes[i + 1] - indicesOfOriginNodes[i]);
   }
 
   return nodesPerSegment;

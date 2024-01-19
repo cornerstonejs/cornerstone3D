@@ -389,7 +389,7 @@ describe('Contours Interpolation: ', () => {
             element
           );
           contourAnnotations.forEach((x) => {
-            expect(x.metadata.referencedImageId).toBe(
+            expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
               imageIds[x.metadata.referencedSliceIndex]
             );
           });
@@ -457,7 +457,7 @@ describe('Contours Interpolation: ', () => {
             return 0;
           });
           contourAnnotations.forEach((x, xIndex) => {
-            expect(x.metadata.referencedImageId).toBe(
+            expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
               imageIds[x.metadata.referencedSliceIndex]
             );
             const hasSamePoint = expectedContourSet[xIndex].every(
@@ -726,7 +726,7 @@ describe('Contours Interpolation: ', () => {
           }
           console.log('Should be processing modified data now');
           contourAnnotations.forEach((x, xIndex) => {
-            expect(x.metadata.referencedImageId).toBe(
+            expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
               imageIds[x.metadata.referencedSliceIndex]
             );
             const hasSamePoint = expectedContourEditSet[xIndex].every(

@@ -42,7 +42,10 @@ export default function filterAnnotationsForDisplay(
         return false;
       }
 
-      const imageId = annotation.metadata.referencedImageId;
+      const imageId = annotation.metadata.referencedImageId?.replace(
+        'imageId:',
+        ''
+      );
 
       if (imageId === undefined) {
         // This annotation was not drawn on a non-coplanar reformat, and such does
