@@ -242,7 +242,7 @@ function createImage(
             imageFrame.columns,
             imageFrame.rows
           );
-          
+
           convertColorSpace(imageFrame, imageData.data, useRGBA);
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
