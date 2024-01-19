@@ -1,8 +1,4 @@
-import {
-  getEnabledElements,
-  utilities as csUtils,
-  getRenderingEngine,
-} from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   AnnotationCompletedEventType,
@@ -16,32 +12,9 @@ import updateRelatedAnnotations from './updateRelatedAnnotations';
 import deleteRelatedAnnotations from './deleteRelatedAnnotations';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import ChangeTypes from '../../../enums/ChangeTypes';
+import getMatchingViewport from '../../getMatchingViewport';
 
-const { uuidv4, isEqual } = csUtils;
-
-function getSliceData(viewport): Types.ImageSliceData {
-  const sliceData: Types.ImageSliceData = {
-    numberOfSlices: viewport.getNumberOfSlices(),
-    imageIndex: viewport.getCurrentImageIdIndex(),
-  };
-  return sliceData;
-}
-
-function getMatchingViewport(annotation: InterpolationROIAnnotation) {
-  const { metadata } = annotation;
-  const enabledElement = getEnabledElements().find((enabledElement) => {
-    if (enabledElement.FrameOfReferenceUID === metadata.FrameOfReferenceUID) {
-      const viewport = enabledElement.viewport;
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
-      return (
-        isEqual(viewPlaneNormal, metadata.viewPlaneNormal) &&
-        isEqual(viewUp, metadata.viewUp)
-      );
-    }
-    return;
-  });
-  return enabledElement?.viewport;
-}
+const { uuidv4 } = csUtils;
 
 export default class InterpolationManager {
   static toolNames = [];
@@ -53,7 +26,6 @@ export default class InterpolationManager {
   }
 
   static handleAnnotationCompleted = (evt: AnnotationCompletedEventType) => {
-    const { renderingEngineId, viewportId } = evt.detail;
     const annotation = evt.detail.annotation as InterpolationROIAnnotation;
     if (!annotation?.metadata) {
       return;
@@ -64,8 +36,11 @@ export default class InterpolationManager {
       return;
     }
 
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = getMatchingViewport(annotation);
+    if (!viewport) {
+      console.warn('Unable to find viewport for', viewport);
+      return;
+    }
     const sliceData: Types.ImageSliceData = getSliceData(viewport);
     const viewportData: InterpolationViewportData = {
       viewport,
@@ -79,45 +54,46 @@ export default class InterpolationManager {
     if (!isInitializeLabel) {
       updateRelatedAnnotations(viewportData, true);
     }
-    if (!annotation.interpolationUID) {
-      const filterData = [
-        {
-          key: 'segmentIndex',
-          value: annotation.data.segmentation.segmentIndex,
-          parentKey: (annotation) => annotation.data.segmentation,
-        },
-        {
-          key: 'viewPlaneNormal',
-          value: annotation.metadata.viewPlaneNormal,
-          parentKey: (annotation) => annotation.metadata,
-        },
-        {
-          key: 'viewUp',
-          value: annotation.metadata.viewUp,
-          parentKey: (annotation) => annotation.metadata,
-        },
-      ];
-      let interpolationAnnotations = getInterpolationDataCollection(
-        viewportData,
-        filterData,
-        true
-      );
-      // Skip other type of annotations with same location
-      interpolationAnnotations = interpolationAnnotations.filter(
-        (interpolationAnnotation) => interpolationAnnotation.interpolationUID
-      );
-      if (!annotation.interpolationUID) {
-        annotation.interpolationUID =
-          interpolationAnnotations[0]?.interpolationUID || uuidv4();
-        viewportData.interpolationUID = annotation.interpolationUID;
-      }
-      interpolate(viewportData);
+    if (annotation.interpolationUID) {
+      return;
     }
+    const filterData = [
+      {
+        key: 'segmentIndex',
+        value: annotation.data.segmentation.segmentIndex,
+        parentKey: (annotation) => annotation.data.segmentation,
+      },
+      {
+        key: 'viewPlaneNormal',
+        value: annotation.metadata.viewPlaneNormal,
+        parentKey: (annotation) => annotation.metadata,
+      },
+      {
+        key: 'viewUp',
+        value: annotation.metadata.viewUp,
+        parentKey: (annotation) => annotation.metadata,
+      },
+    ];
+    let interpolationAnnotations = getInterpolationDataCollection(
+      viewportData,
+      filterData,
+      true
+    );
+    // Skip other type of annotations with same location
+    interpolationAnnotations = interpolationAnnotations.filter(
+      (interpolationAnnotation) => interpolationAnnotation.interpolationUID
+    );
+    if (!annotation.interpolationUID) {
+      annotation.interpolationUID =
+        interpolationAnnotations[0]?.interpolationUID || uuidv4();
+      viewportData.interpolationUID = annotation.interpolationUID;
+    }
+    interpolate(viewportData);
   };
 
   static handleAnnotationUpdate = (evt: AnnotationModifiedEventType) => {
-    const { renderingEngineId, viewportId, changeType } = evt.detail;
     const annotation = evt.detail.annotation as InterpolationROIAnnotation;
+    const { changeType = ChangeTypes.HandlesUpdated } = evt.detail;
     if (!annotation?.metadata) {
       return;
     }
@@ -125,13 +101,20 @@ export default class InterpolationManager {
 
     if (
       -1 === this.toolNames.indexOf(toolName) ||
-      changeType === ChangeTypes.StatsUpdated
+      changeType !== ChangeTypes.HandlesUpdated
     ) {
       return;
     }
 
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = getMatchingViewport(annotation);
+    if (!viewport) {
+      console.warn(
+        'Unable to find matching viewport for annotation interpolation',
+        annotation
+      );
+      return;
+    }
+
     const sliceData: Types.ImageSliceData = getSliceData(viewport);
     const viewportData: InterpolationViewportData = {
       viewport,
@@ -155,7 +138,10 @@ export default class InterpolationManager {
     const viewport = getMatchingViewport(annotation);
 
     if (!viewport) {
-      console.log("No viewport, can't delete");
+      console.warn(
+        "No viewport, can't delete interpolated results",
+        annotation
+      );
       return;
     }
 
@@ -170,4 +156,12 @@ export default class InterpolationManager {
     annotation.autoGenerated = false;
     deleteRelatedAnnotations(viewportData);
   };
+}
+
+function getSliceData(viewport): Types.ImageSliceData {
+  const sliceData: Types.ImageSliceData = {
+    numberOfSlices: viewport.getNumberOfSlices(),
+    imageIndex: viewport.getCurrentImageIdIndex(),
+  };
+  return sliceData;
 }

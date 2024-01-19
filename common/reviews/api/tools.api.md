@@ -7,6 +7,8 @@
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
+import { IVolumeViewport as IVolumeViewport_2 } from 'packages/core/dist/types/types';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
@@ -275,8 +277,6 @@ type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDeta
 
 // @public (undocumented)
 type AnnotationCompletedEventDetail = {
-    viewportId?: string;
-    renderingEngineId?: string;
     annotation: Annotation;
     changeType?: ChangeTypes.Completed;
 };
@@ -2290,6 +2290,9 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 function getLockedSegments(segmentationId: string): number[] | [];
 
 // @public (undocumented)
+function getMatchingViewport(annotation: Annotation): IVolumeViewport_2 | IStackViewport_2;
+
+// @public (undocumented)
 function getMeanPoints(points: IPoints[]): IPoints;
 
 // @public (undocumented)
@@ -3504,7 +3507,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation, enabledElement?: Types_2.IEnabledElement) => void;
+    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
@@ -5452,6 +5455,7 @@ declare namespace utilities {
         pointInShapeCallback,
         getSphereBoundsInfo,
         getAnnotationNearPoint,
+        getMatchingViewport,
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
         pointInSurroundingSphereCallback,

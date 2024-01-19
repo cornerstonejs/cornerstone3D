@@ -323,11 +323,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     if (newAnnotation) {
       const eventType = Events.ANNOTATION_COMPLETED;
-      const { viewportId, renderingEngineId } = enabledElement;
       const eventDetail: AnnotationCompletedEventDetail = {
         annotation,
-        viewportId,
-        renderingEngineId,
         changeType: ChangeTypes.Completed,
       };
 

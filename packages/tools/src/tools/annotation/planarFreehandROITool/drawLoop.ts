@@ -236,7 +236,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation, enabledElement);
+    this.triggerAnnotationCompleted(annotation);
   }
 
   this.isDrawing = false;
@@ -319,7 +319,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   }
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation, enabledElement);
+    this.triggerAnnotationCompleted(annotation);
   }
 
   this.isDrawing = false;

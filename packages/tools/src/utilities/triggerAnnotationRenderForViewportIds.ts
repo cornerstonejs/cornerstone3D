@@ -12,7 +12,7 @@ export function triggerAnnotationRenderForViewportIds(
   viewportIdsToRender.forEach((viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId);
     if (!viewport) {
-      // Happens on shutdown sometimes
+      console.warn(`Viewport not available for ${viewportId}`);
       return;
     }
     const { element } = viewport;

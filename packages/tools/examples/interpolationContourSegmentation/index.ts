@@ -3,8 +3,6 @@ import {
   Types,
   Enums,
   volumeLoader,
-  getRenderingEngine,
-  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -15,7 +13,6 @@ import {
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { Events } from '../../src/enums';
 
 // This is for debugging purposes
 console.warn(
@@ -45,7 +42,6 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID;
 
 const interpolationTools = new Map<string, any>();
 const configuration = {
@@ -145,7 +141,7 @@ Drawing:
 - Left click and drag to draw a contour.
 - The default label will be assigned or you can select any label from label list (dropdown).
 - Draw a contour in one slice and move to another slice (skip some slice in between) and draw contour there. After drawing the second contour, the interpolated contours will be created in intermediate slices.
-- To create the interpolated contour there should be atleast 1 or more slices in between manually drawn contours and the contours should be assigned with same label.
+- To create the interpolated contour there should be at least 1 or more slices in between manually drawn contours and the contours should be assigned with same label.
 - Interpolated contours will not be created if more than one contour with same label is on a single slice.
 
 --- Example:
@@ -158,7 +154,7 @@ Editing:
 - Check related contours are adjusted based on the edited contour. If you are editing the interpolated contour then that contour will be considered as manually drawn.
 
 Deleting:
-- When manuallay drawn contour is deleted, then it will delete other interpolated contours connected to this contour.
+- When manually drawn contour is deleted, then it will delete other interpolated contours connected to this contour.
 - If the deleted the contour is in between two slices having manually drawn contours with same label, interpolated contours will be regenerated to connect those contours.
 `;
 
@@ -181,7 +177,6 @@ function addToggleInterpolationButton(toolGroup) {
 }
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-let selectedAnnotationId = '';
 
 /**
  * Runs the demo
@@ -250,11 +245,6 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  eventTarget.addEventListener(Events.ANNOTATION_SELECTION_CHANGE, (evt) => {
-    const { selection } = evt.detail;
-    selectedAnnotationId = selection[0];
-  });
-
   // Create a stack and a volume viewport
   const viewportInputArray = [
     {
@@ -319,40 +309,12 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]);
-
-  // Store the segmentation representation that was just created
-  [segmentationRepresentationUID] = segmentationRepresentationUIDs;
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-
-  updateActiveSegmentIndex(1);
-}
-
-function getViewportDataBasedOnAnnotation(annotationData) {
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewports: Types.IViewport[] = renderingEngine.getViewports();
-
-  let viewport = null;
-  let element = null;
-  if (annotationData.metadata.referencedImageId) {
-    viewport = viewports[0];
-    element = viewports[0].element;
-  } else {
-    viewport = viewports[1];
-    element = viewports[1].element;
-  }
-  return { viewport, element };
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 }
 
 function updateActiveSegmentIndex(segmentIndex: number): void {

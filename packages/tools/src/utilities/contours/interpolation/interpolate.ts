@@ -6,7 +6,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import createInterpolatedToolData from './createInterpolatedToolData';
+import createPolylineToolData from './createPolylineToolData';
 import generateInterpolationData from './findInterpolationList';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
@@ -240,7 +240,7 @@ function _addInterpolatedContour(
     ]);
   }
 
-  const interpolatedAnnotation = createInterpolatedToolData(
+  const interpolatedAnnotation = createPolylineToolData(
     points,
     handlePoints,
     referencedToolData
@@ -318,7 +318,7 @@ function _editInterpolatedContour(
       interpolated3DPoints.z[i],
     ]);
   }
-  const interpolatedAnnotation = createInterpolatedToolData(
+  const interpolatedAnnotation = createPolylineToolData(
     points,
     handlePoints,
     oldToolData

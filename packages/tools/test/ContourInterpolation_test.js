@@ -140,8 +140,8 @@ const firstSliceAnnotation = {
   highlighted: true,
   invalidated: true,
   metadata: {
-    viewPlaneNormal: [],
-    viewUp: [],
+    viewPlaneNormal: [0, 0, -1],
+    viewUp: [0, -1, 0],
     FrameOfReferenceUID: undefined,
     referencedImageId: '',
     toolName: interpolationToolName,
@@ -793,12 +793,9 @@ function triggerContourUpdateCallback(eventData, annotation) {
   if (!element) {
     return;
   }
-  const { viewportId, renderingEngineId } = getEnabledElement(element);
 
   const eventDetail = {
     annotation,
-    renderingEngineId,
-    viewportId,
   };
 
   triggerEvent(

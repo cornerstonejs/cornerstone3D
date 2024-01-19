@@ -8,7 +8,6 @@ import ArrowAnnotate from "./ArrowAnnotate";
 import CobbAngle from "./CobbAngle";
 import Angle from "./Angle";
 import RectangleRoi from "./RectangleRoi";
-import ContourRoi from "./ContourRoi";
 
 // Segmentation
 import Segmentation from "./Segmentation";
@@ -23,8 +22,7 @@ const CornerstoneSR = {
     MeasurementReport,
     CobbAngle,
     Angle,
-    RectangleRoi,
-    ContourRoi
+    RectangleRoi
 };
 
 const CornerstoneSEG = {

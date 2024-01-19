@@ -196,6 +196,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         // determining what index of the contour to start editing.
         checkCanvasEditFallbackProximity: 6,
         // For closed contours, make them clockwise
+        // This can be useful if contours are compared between slices, eg for
+        // interpolation, and does not cause problems otherwise so defaulting to true.
         makeClockWise: true,
         // The relative distance that points should be dropped along the polyline
         // in units of the image pixel spacing. A value of 1 means that nodes must
@@ -221,8 +223,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
          */
         interpolation: {
           enabled: false,
-          // Callback to be made after interpolation is completed
-          postProcess: null,
+          // Callback to update the annotation or perform other action when the
+          // interpolation is complete.
+          onInterpolationComplete: null,
         },
         calculateStats: false,
         getTextLines: defaultGetTextLines,
@@ -420,16 +423,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    * Triggers an annotation completed event.
    */
   triggerAnnotationCompleted = (
-    annotation: PlanarFreehandROIAnnotation,
-    enabledElement?: Types.IEnabledElement
+    annotation: PlanarFreehandROIAnnotation
   ): void => {
     const eventType = Events.ANNOTATION_COMPLETED;
-    const { viewportId, renderingEngineId } = enabledElement || {};
 
     const eventDetail: AnnotationCompletedEventDetail = {
       annotation,
-      viewportId,
-      renderingEngineId,
     };
 
     triggerEvent(eventTarget, eventType, eventDetail);

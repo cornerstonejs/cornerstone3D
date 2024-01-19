@@ -12,7 +12,7 @@ import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotatio
  * @param referencedToolData
 
  */
-export default function createInterpolatedToolData(
+export default function createPolylineToolData(
   polyline,
   handlePoints,
   referencedToolData

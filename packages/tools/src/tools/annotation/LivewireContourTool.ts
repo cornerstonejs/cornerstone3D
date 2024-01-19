@@ -328,12 +328,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const { viewportId, renderingEngineId } = enabledElement;
       const eventType = Events.ANNOTATION_COMPLETED;
       const eventDetail: AnnotationCompletedEventDetail = {
         annotation,
-        viewportId,
-        renderingEngineId,
         changeType: ChangeTypes.Completed,
       };
 
