@@ -75,7 +75,6 @@ function _addCornerstoneEventListeners(): void {
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement);
-  console.log('Enabling cornerstone event listeners');
   annotationInterpolationEventDispatcher.enable();
 }
 
@@ -90,7 +89,6 @@ function _removeCornerstoneEventListeners(): void {
 
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement);
-  console.log('Removing interpolation event dispatcher/listener');
   annotationInterpolationEventDispatcher.disable();
 }
 
