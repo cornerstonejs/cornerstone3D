@@ -1,9 +1,24 @@
-import { Types, utilities } from '@cornerstonejs/core';
-import { ContourSegmentationData } from '../../../../types';
+import { Types, getWebWorkerManager } from '@cornerstonejs/core';
+import { Annotation, ContourSegmentationData } from '../../../../types';
 import { getAnnotation } from '../../..';
-import { getBoundingBoxAroundShapeWorld } from '../../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../../utilities';
-import { isPointInsidePolyline3D } from '../../../../utilities/math/polyline';
+
+const workerFn = () => {
+  return new Worker(
+    new URL('./workers/ContourToLabelmap.js', import.meta.url),
+    {
+      name: 'ContourToLabelmap',
+    }
+  );
+};
+
+const workerManager = getWebWorkerManager();
+
+const options = {
+  maxWorkerInstances: 1,
+  autoTerminationOnIdle: 10000,
+};
+
+workerManager.registerWorker('polySeg-contour-to-labelmap', workerFn, options);
 
 export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ContourSegmentationData,
@@ -19,83 +34,49 @@ export async function convertContourToVolumeLabelmap(
     ? options.segmentIndices
     : Array.from(annotationMap.keys());
 
-  const segmentationVoxelManager =
-    utilities.VoxelManager.createVolumeVoxelManager(
-      segmentationVolume.dimensions,
-      segmentationVolume.getScalarData()
-    );
+  const { dimensions, origin, direction, spacing } = segmentationVolume;
+  const scalarData = segmentationVolume.getScalarData();
 
-  for (const index of segmentIndices) {
+  const annotationUIDsInSegmentMap = new Map<number, Annotation[]>();
+
+  segmentIndices.forEach((index) => {
     const annotationUIDsInSegment = annotationMap.get(index);
-
-    // Combine bounding boxes for all annotations in the segment
-    const combinedBoundingBox = [
-      [Infinity, -Infinity],
-      [Infinity, -Infinity],
-      [Infinity, -Infinity],
-    ];
 
     const annotations = Array.from(annotationUIDsInSegment).map((uid) => {
       const annotation = getAnnotation(uid);
-      const bounds = getBoundingBoxAroundShapeWorld(
-        annotation.data.contour.polyline
-      );
-
-      // Update combined bounding box
-      for (let dim = 0; dim < 3; dim++) {
-        combinedBoundingBox[dim][0] = Math.min(
-          combinedBoundingBox[dim][0],
-          bounds[dim][0]
-        );
-        combinedBoundingBox[dim][1] = Math.max(
-          combinedBoundingBox[dim][1],
-          bounds[dim][1]
-        );
-      }
 
       return annotation;
     });
 
-    const [iMin, jMin, kMin] = utilities.transformWorldToIndex(
-      segmentationVolume.imageData,
-      [
-        combinedBoundingBox[0][0],
-        combinedBoundingBox[1][0],
-        combinedBoundingBox[2][0],
-      ]
-    );
+    annotationUIDsInSegmentMap.set(index, annotations);
+  });
 
-    const [iMax, jMax, kMax] = utilities.transformWorldToIndex(
-      segmentationVolume.imageData,
-      [
-        combinedBoundingBox[0][1],
-        combinedBoundingBox[1][1],
-        combinedBoundingBox[2][1],
-      ]
-    );
+  const newScalarData = await workerManager.executeTask(
+    'polySeg-contour-to-labelmap',
+    'compute',
+    {
+      segmentIndices,
+      dimensions,
+      scalarData,
+      origin,
+      direction,
+      spacing,
+      annotationUIDsInSegmentMap,
+    },
+    {
+      callbacks: [
+        (progress) => {
+          console.debug('progress', progress);
+        },
+      ],
+    }
+  );
 
-    // Run the pointInShapeCallback for the combined bounding box
-    pointInShapeCallback(
-      segmentationVolume.imageData,
-      (pointLPS) => {
-        // Check if the point is inside any of the polylines for this segment
-        return annotations.some((annotation) =>
-          isPointInsidePolyline3D(
-            pointLPS as Types.Point3,
-            annotation.data.contour.polyline
-          )
-        );
-      },
-      ({ pointIJK }) => {
-        segmentationVoxelManager.setAtIJKPoint(pointIJK as Types.Point3, index);
-      },
-      [
-        [iMin, iMax],
-        [jMin, jMax],
-        [kMin, kMax],
-      ]
-    );
-  }
+  segmentationVolume.imageData
+    .getPointData()
+    .getScalars()
+    .setData(newScalarData);
+  segmentationVolume.imageData.modified();
 
   return {
     volumeId: segmentationVolume.volumeId,

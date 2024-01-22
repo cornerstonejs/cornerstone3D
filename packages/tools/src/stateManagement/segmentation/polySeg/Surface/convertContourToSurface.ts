@@ -4,12 +4,9 @@ import { ContourSegmentationData } from '../../../../types';
 import { getAnnotation } from '../../../annotation/annotationState';
 
 const workerFn = () => {
-  return new Worker(
-    new URL('./workers/ContourRoiToSurface.js', import.meta.url),
-    {
-      name: 'contourRoiToSurface',
-    }
-  );
+  return new Worker(new URL('./workers/ContourToSurface.js', import.meta.url), {
+    name: 'ContourToSurface',
+  });
 };
 
 const workerManager = getWebWorkerManager();
