@@ -24,7 +24,8 @@ export async function createAndCacheSurfacesFromRaw(
     segmentationRepresentationUID?: string;
   } = {}
 ) {
-  let segmentationRepresentation, toolGroupId;
+  // Initialize segmentationRepresentation and toolGroupId if a representation UID is provided
+  let segmentationRepresentation: any, toolGroupId: any;
   if (options.segmentationRepresentationUID) {
     ({ segmentationRepresentation, toolGroupId } =
       findSegmentationRepresentationByUID(
@@ -34,21 +35,21 @@ export async function createAndCacheSurfacesFromRaw(
 
   const segmentation = getSegmentation(segmentationId);
 
-  const geometryIds = [];
-  const promises = Object.keys(rawSurfacesData).map((index) => {
+  const geometryIds: string[] = [];
+
+  // Loop through raw surfaces data and create surfaces
+  const promises = Object.keys(rawSurfacesData).map(async (index: string) => {
     const rawSurfaceData = rawSurfacesData[index];
     const segmentIndex = rawSurfaceData.segmentIndex;
 
-    let color;
-    if (segmentationRepresentation) {
-      color = getColorForSegmentIndex(
-        toolGroupId,
-        segmentationRepresentation.segmentationRepresentationUID,
-        segmentIndex
-      ).slice(0, 3);
-    } else {
-      color = [Math.random() * 255, Math.random() * 255, Math.random() * 255];
-    }
+    // Get the color either from the segmentation representation or randomly generated
+    const color = segmentationRepresentation
+      ? getColorForSegmentIndex(
+          toolGroupId,
+          segmentationRepresentation.segmentationRepresentationUID,
+          segmentIndex
+        ).slice(0, 3)
+      : [Math.random() * 255, Math.random() * 255, Math.random() * 255];
 
     const closedSurface = {
       id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
