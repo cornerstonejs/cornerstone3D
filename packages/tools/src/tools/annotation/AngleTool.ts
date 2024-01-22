@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -823,7 +824,15 @@ class AngleTool extends AnnotationTool {
         [worldPos1, worldPos2],
         [worldPos2, worldPos3]
       );
+      const { dimensions, imageData } = this.getTargetIdImage(
+        targetId,
+        renderingEngine
+      );
 
+      // Decide if there's at least one handle is outside of image
+      this.isHandleOutsideImage = [worldPos1, worldPos2, worldPos3]
+        .map((worldPos) => csUtils.transformWorldToIndex(imageData, worldPos))
+        .some((index) => !csUtils.indexWithinDimensions(index, dimensions));
       cachedStats[targetId] = {
         angle: isNaN(angle) ? 'Incomplete Angle' : angle,
       };
