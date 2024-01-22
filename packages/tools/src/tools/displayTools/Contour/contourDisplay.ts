@@ -78,7 +78,7 @@ async function render(
   }
 
   const representationData = segmentation.representationData.CONTOUR;
-  let contourData = representationData;
+  const contourData = representationData;
 
   if (contourData?.points?.length) {
     // contourData = createAnnotationsFromPoints(contourData.points);
@@ -114,14 +114,14 @@ async function render(
       representationConfig.segmentationRepresentationUID
     )
   ) {
-    contourData = await polySeg.computeAndAddContourRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID:
-          representationConfig.segmentationRepresentationUID,
-        viewport,
-      }
-    );
+    // contourData = await polySeg.computeAndAddContourRepresentation(
+    //   segmentationId,
+    //   {
+    //     segmentationRepresentationUID:
+    //       representationConfig.segmentationRepresentationUID,
+    //     viewport,
+    //   }
+    // );
   }
 
   // if (contourData?.geometryIds?.length) {

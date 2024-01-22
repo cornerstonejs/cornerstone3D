@@ -4,6 +4,15 @@ import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
+} from '../../../../types/LabelmapTypes';
+import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
+import {
+  convertStackLabelmapToSurface,
+  convertVolumeLabelmapToSurface,
+} from './convertVolumeLabelmapToSurface';
 
 export type RawSurfacesData = {
   segmentIndex: number;
@@ -28,11 +37,11 @@ export async function computeSurfaceData(
     ? options.segmentIndices
     : getUniqueSegmentIndices(segmentationId);
 
-  try {
-    const segmentation = getSegmentation(segmentationId);
-    const representationData = segmentation.representationData;
+  let rawSurfacesData: RawSurfacesData;
+  const segmentation = getSegmentation(segmentationId);
+  const representationData = segmentation.representationData;
 
-    let rawSurfacesData;
+  try {
     if (representationData.CONTOUR) {
       rawSurfacesData = await computeSurfaceFromContourSegmentation(
         segmentationId,
@@ -41,29 +50,75 @@ export async function computeSurfaceData(
           ...options,
         }
       );
-    } else {
-      throw new Error(
-        `No Surface data found for segmentationId ${segmentationId}.`
+    } else if (
+      (representationData.LABELMAP as LabelmapSegmentationDataVolume)?.volumeId
+    ) {
+      // convert volume labelmap to surface
+      rawSurfacesData = await computeSurfaceFromLabelmapSegmentation(
+        segmentation.segmentationId,
+        {
+          segmentIndices,
+          ...options,
+        }
       );
     }
-
-    if (!rawSurfacesData) {
-      throw new Error(
-        'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
-      );
-    }
-
-    const surfacesData = await createAndCacheSurfacesFromRaw(
-      segmentationId,
-      rawSurfacesData,
-      options
-    );
-
-    return surfacesData;
   } catch (error) {
     console.error(error);
     throw error;
   }
+
+  if (!rawSurfacesData) {
+    throw new Error(
+      'Not enough data to convert to surface, currently only support converting volume labelmap to surface if available'
+    );
+  }
+
+  const surfacesData = await createAndCacheSurfacesFromRaw(
+    segmentationId,
+    rawSurfacesData,
+    options
+  );
+
+  return surfacesData;
+}
+
+async function computeSurfaceFromLabelmapSegmentation(
+  segmentationId,
+  options: {
+    segmentIndices?: number[];
+    segmentationRepresentationUID?: string;
+  } = {}
+): Promise<RawSurfacesData> {
+  // Todo: validate valid labelmap representation
+  const segmentation = getSegmentation(segmentationId);
+
+  if (!segmentation?.representationData?.LABELMAP) {
+    throw new Error('No labelmap data found for segmentation');
+  }
+
+  const isVolume = isVolumeSegmentation(
+    segmentation.representationData.LABELMAP
+  );
+
+  const labelmapRepresentationData = segmentation.representationData.LABELMAP;
+
+  const promises = options.segmentIndices.map(async (index) => {
+    const surface = isVolume
+      ? await convertVolumeLabelmapToSurface(
+          labelmapRepresentationData as LabelmapSegmentationDataVolume,
+          index
+        )
+      : await convertStackLabelmapToSurface(
+          labelmapRepresentationData as LabelmapSegmentationData,
+          index
+        );
+
+    return { segmentIndex: index, data: surface };
+  });
+
+  const surfaces = await Promise.all(promises);
+
+  return surfaces;
 }
 
 /**

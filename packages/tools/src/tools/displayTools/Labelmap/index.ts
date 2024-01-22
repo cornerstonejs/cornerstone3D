@@ -1,5 +1,13 @@
 import labelmapDisplay from './labelmapDisplay';
 import labelmapConfig from './labelmapConfig';
-import { validatePublic as validateLabelmap } from './validateLabelmap';
+import {
+  validate as validateLabelmap,
+  validatePublic as validateLabelmapPublic,
+} from './validateLabelmap';
 
-export { labelmapDisplay, labelmapConfig, validateLabelmap };
+export {
+  labelmapDisplay,
+  labelmapConfig,
+  validateLabelmap,
+  validateLabelmapPublic,
+};

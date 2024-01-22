@@ -136,7 +136,8 @@ async function render(
     return;
   }
 
-  let labelmapData = segmentation.representationData[Representations.Labelmap];
+  const labelmapData =
+    segmentation.representationData[Representations.Labelmap];
 
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
 
@@ -149,13 +150,13 @@ async function render(
     // another representation to labelmap
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID,
-        viewport,
-      }
-    );
+    // labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
+    //   segmentationId,
+    //   {
+    //     segmentationRepresentationUID,
+    //     viewport,
+    //   }
+    // );
 
     if (!labelmapData) {
       throw new Error(
