@@ -121,7 +121,10 @@ class CentralizedWorkerManager {
    *
    * @param workerName - The name of the worker to execute the task on.
    * @param methodName - The name of the method to execute on the worker.
-   * @param args - The arguments to pass to the method. Default is an empty object.
+   * @param args - The arguments to pass to the method. Default is an array
+   * You should put your transferable objects in the first argument as object
+   * and from the second argument you can put your non-transferable objects such
+   * as functions, classes, etc.
    * @param options - An object containing options for the request. Default is an empty object.
    * @param options.requestType - The type of the request. Default is RequestType.Compute.
    * @param options.priority - The priority of the request. Default is 0.
@@ -133,7 +136,12 @@ class CentralizedWorkerManager {
     workerName,
     methodName,
     args = {},
-    { requestType = RequestType.Compute, priority = 0, options = {} } = {}
+    {
+      requestType = RequestType.Compute,
+      priority = 0,
+      options = {},
+      callbacks = [],
+    } = {}
   ) {
     return new Promise((resolve, reject) => {
       const requestFn = async () => {
@@ -148,7 +156,15 @@ class CentralizedWorkerManager {
         }
 
         try {
-          const results = await api[methodName](args);
+          // fix if any of the args keys are a function then we need to proxy it
+          // for the worker to be able to call it
+          let finalCallbacks;
+          if (callbacks.length) {
+            finalCallbacks = callbacks.map((cb) => {
+              return Comlink.proxy(cb);
+            });
+          }
+          const results = await api[methodName](args, ...finalCallbacks);
 
           const workerProperties = this.workerRegistry[workerName];
           workerProperties.lastActiveTime[index] = Date.now();
