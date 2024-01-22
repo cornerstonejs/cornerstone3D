@@ -354,7 +354,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const { currentPoints } = eventDetail;
-    const { canvas: canvasPos, world: worldPos } = currentPoints;
+    const { canvas: canvasPos, world: worldPosOriginal } = currentPoints;
+    let worldPos = worldPosOriginal;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
@@ -403,9 +404,19 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       console.log(
         'Removing',
         smoothPathCount,
-        'items because the gradient is too high'
+        'items because the gradient is too high',
+        this.editData.currentPath.pointArray.length,
+        annotation.data.contour.polyline.length
       );
       this.editData.currentPath.removeLastPoints(smoothPathCount);
+      annotation.data.contour.polyline.splice(
+        annotation.data.contour.polyline.length - smoothPathCount,
+        smoothPathCount
+      );
+      worldPos =
+        annotation.data.contour.polyline[
+          annotation.data.contour.polyline.length - 1
+        ];
     }
 
     // Add the current cursor position as a new control point after clicking

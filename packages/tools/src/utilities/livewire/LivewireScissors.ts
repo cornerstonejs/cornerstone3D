@@ -115,7 +115,7 @@ export class LivewireScissors {
     pathPoints: Types.Point2[],
     lastPoint: Types.Point2,
     count = 5,
-    clipValue = 0.75
+    clipValue = 0.85
   ) {
     const lastIndex =
       (lastPoint &&

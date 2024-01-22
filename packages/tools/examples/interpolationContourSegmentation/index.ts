@@ -49,16 +49,16 @@ const interpolationTools = new Map<string, any>();
 const configuration = {
   interpolation: { enabled: true },
 };
+interpolationTools.set('LivewireInterpolation', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration,
+});
 interpolationTools.set('FreeformInterpolation', {
   baseTool: PlanarFreehandContourSegmentationTool.toolName,
   configuration,
 });
 interpolationTools.set('SplineInterpolation', {
   baseTool: SplineContourSegmentationTool.toolName,
-  configuration,
-});
-interpolationTools.set('LivewireInterpolation', {
-  baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
 });
 const interpolationToolName = [...interpolationTools.keys()][0];
