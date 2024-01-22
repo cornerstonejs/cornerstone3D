@@ -13,7 +13,11 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
-import type { IViewport, PublicViewportInput } from './IViewport';
+import type {
+  IViewport,
+  PublicViewportInput,
+  TargetSpecifier,
+} from './IViewport';
 import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
 import type {
   IImageLoadObject,
@@ -142,6 +146,7 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  TargetSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,

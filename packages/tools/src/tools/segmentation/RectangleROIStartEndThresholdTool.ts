@@ -104,7 +104,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -269,8 +269,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const volumeId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(volumeId.split('volumeId:')[1]);
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to

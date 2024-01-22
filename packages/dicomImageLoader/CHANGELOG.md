@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.47.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.47.1...v1.47.2) (2024-01-19)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.47.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.47.0...v1.47.1) (2024-01-18)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.47.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.46.0...v1.47.0) (2024-01-18)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.46.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.45.1...v1.46.0) (2024-01-16)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [1.45.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.45.0...v1.45.1) (2024-01-12)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
