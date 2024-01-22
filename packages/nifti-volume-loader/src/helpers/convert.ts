@@ -44,7 +44,7 @@ const invertDataPerFrame = (dimensions, imageDataArray) => {
 
   // Make a copy of the data first using the browser native fast TypedArray.set().
   const newImageDataArray = new TypedArrayConstructor(
-    imageDataArray.byteLength
+    imageDataArray.byteLength / bytesPerVoxel
   );
 
   const view = new TypedArrayConstructor(imageDataArray);

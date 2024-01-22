@@ -237,8 +237,7 @@ export default async function fetchAndAllocateNiftiVolume(
 
       break;
 
-    case 16:
-    case 32:
+    default:
       scalarData = createFloat32SharedArray(
         dimensions[0] * dimensions[1] * dimensions[2]
       );
