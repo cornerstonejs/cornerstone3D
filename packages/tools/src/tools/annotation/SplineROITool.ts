@@ -1,8 +1,8 @@
-import { utilities } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   eventTarget,
   triggerEvent,
+  utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -304,6 +304,16 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
+
+    // Decide whether there's at least one point is outside image
+    const image = this.getTargetIdImage(
+      this.getTargetId(enabledElement.viewport),
+      enabledElement.renderingEngine
+    );
+    const { imageData, dimensions } = image;
+    this.isHandleOutsideImage = data.handles.points
+      .map((p) => utilities.transformWorldToIndex(imageData, p))
+      .some((index) => !utilities.indexWithinDimensions(index, dimensions));
 
     if (
       this.isHandleOutsideImage &&
