@@ -395,10 +395,24 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.editData.closed = this.editData.closed || closePath;
     this.editData.confirmedPath = this.editData.currentPath;
 
-    // Add the current cursor position as a new control point after clicking
-    this.editData.confirmedPath.addControlPoint(
-      this.editData.currentPath.getLastPoint()
+    const smoothPathCount = this.scissors.smoothPathCount(
+      this.editData.confirmedPath.pointArray,
+      this.editData.currentPath.getLastControlPoint()
     );
+    if (smoothPathCount) {
+      console.log(
+        'Removing',
+        smoothPathCount,
+        'items because the gradient is too high'
+      );
+      this.editData.currentPath.removeLastPoints(smoothPathCount);
+    }
+
+    // Add the current cursor position as a new control point after clicking
+    const lastPoint = this.editData.currentPath.getLastPoint();
+
+    this.editData.confirmedPath.addControlPoint(lastPoint);
+    annotation.data.handles.points.push(sliceToWorld(lastPoint));
 
     // Start a new search starting at the last control point
     this.scissors.startSearch(worldToSlice(worldPos));
@@ -649,7 +663,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const newAnnotation = this.editData?.newAnnotation;
     const { lineWidth, lineDash, color } = annotationStyle;
 
-    // Render the first control point only when the annotaion is drawn for the
+    // Render the first control point only when the annotation is drawn for the
     // first time to make it easier to know where the user needs to click to
     // to close the ROI.
     if (
@@ -657,13 +671,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation.annotationUID === this.editData?.annotation?.annotationUID
     ) {
       const handleGroupUID = '0';
-      const startPoint = worldToCanvas(handles.points[0]);
+      const canvasHandles = handles.points.map(worldToCanvas);
 
       drawHandlesSvg(
         svgDrawingHelper,
         annotationUID,
         handleGroupUID,
-        [startPoint],
+        canvasHandles,
         {
           color,
           lineDash,
