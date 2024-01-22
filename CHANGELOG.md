@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.48.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.48.0...v1.48.1) (2024-01-22)
+
+### Bug Fixes
+
+- **VolumeViewport:** Set properties invert ([#1015](https://github.com/cornerstonejs/cornerstone3D/issues/1015)) ([69a8f6b](https://github.com/cornerstonejs/cornerstone3D/commit/69a8f6bf26f583ef9728c85bada614ac87a32fe4))
+
 # [1.48.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.47.5...v1.48.0) (2024-01-22)
 
 ### Features
