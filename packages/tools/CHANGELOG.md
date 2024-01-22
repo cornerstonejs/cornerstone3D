@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.48.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.47.5...v1.48.0) (2024-01-22)
+
+### Features
+
+- **Segmentation:** Add stack to segmentation visibility ([#1014](https://github.com/cornerstonejs/cornerstone3D/issues/1014)) ([649eb8e](https://github.com/cornerstonejs/cornerstone3D/commit/649eb8e61a4ae298752189aedf53b76b4d3a50b1))
+
 ## [1.47.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.47.4...v1.47.5) (2024-01-22)
 
 ### Bug Fixes
