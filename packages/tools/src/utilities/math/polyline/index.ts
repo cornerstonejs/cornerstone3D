@@ -3,6 +3,7 @@ import containsPoint from './containsPoint';
 import getNormal3 from './getNormal3';
 import { mergePolylines, subtractPolylines } from './combinePolyline';
 import intersectPolyline from './intersectPolyline';
+import getLineSegmentsIntersection from './getLineSegmentsIntersection';
 import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes';
 import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
 import getLineSegmentIntersectionsCoordinates from './getLineSegmentIntersectionsCoordinates';
@@ -29,4 +30,7 @@ export {
   calculateAreaOfPoints,
   mergePolylines,
   subtractPolylines,
+
+  // DELETE ////////////////////////////////////////////////////////////////////
+  getLineSegmentsIntersection,
 };

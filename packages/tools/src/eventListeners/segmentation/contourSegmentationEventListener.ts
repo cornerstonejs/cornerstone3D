@@ -46,13 +46,16 @@ import testTargetPolyline from './testTargetPolyline';
 let attachedEventListenersCount = 0;
 
 const getDistPointLine = (p1, q1, point) => {
-  const vecLineDir = vec2.normalize(
-    vec2.create(),
-    vec2.sub(vec2.create(), q1, p1)
-  );
-  const vecPoint = vec2.sub(vec2.create(), point, q1);
-  const dot = vec2.dot(vecLineDir, vecPoint);
-  console.log('>>>>> :: dot:', dot);
+  const vecP1Q1 = vec2.sub(vec2.create(), q1, p1);
+  const vecLineDir = vec2.normalize(vec2.create(), vecP1Q1);
+  const vecPoint = vec2.sub(vec2.create(), point, p1);
+  const dot = vec2.dot(vecPoint, vecLineDir);
+  const projectedPoint = vec2.scaleAndAdd(vec2.create(), p1, vecLineDir, dot);
+  console.log('>>>>> :: projectedPoint:', projectedPoint);
+  const dist = vec2.len(vec2.sub(vec2.create(), point, projectedPoint));
+  // console.log('>>>>> dist:', dist);
+
+  return dist;
 };
 
 setTimeout(() => {
@@ -61,8 +64,15 @@ setTimeout(() => {
   const p2 = vec2.fromValues(312.24999999572145, 235.3749999957214);
   const q2 = vec2.fromValues(312, 235.125);
 
-  const distP2 = getDistPointLine(p1, p1, p2);
-  const distQ2 = getDistPointLine(p1, p1, q2);
+  const lenP1Q1 = vec2.len(vec2.sub(vec2.create(), q1, p1));
+  console.log('>>>>> lenP1Q1:', lenP1Q1);
+  const lenP2Q2 = vec2.len(vec2.sub(vec2.create(), q2, p2));
+  console.log('>>>>> lenP2Q2:', lenP2Q2);
+
+  const distP2 = getDistPointLine(p1, q1, p2);
+  console.log('>>>>> distP2:', distP2);
+  const distQ2 = getDistPointLine(p1, q1, q2);
+  console.log('>>>>> distQ2:', distQ2);
 
   (window as any).vec2 = vec2;
   (window as any).p1 = p1;
@@ -70,13 +80,22 @@ setTimeout(() => {
   (window as any).p2 = p2;
   (window as any).q2 = q2;
 
-  const intersection = math.lineSegment.intersectLine(
+  const intersection1 = math.lineSegment.intersectLine(
     p1 as Types.Point2,
     q1 as Types.Point2,
     p2 as Types.Point2,
     q2 as Types.Point2
   );
-  console.log('>>>>> :: intersection:', intersection);
+
+  const intersection2 = math.polyline.getLineSegmentsIntersection(
+    p1 as Types.Point2,
+    q1 as Types.Point2,
+    p2 as Types.Point2,
+    q2 as Types.Point2
+  );
+
+  console.log('>>>>> intersection 1:', intersection1);
+  console.log('>>>>> intersection 2:', intersection2);
 }, 2000);
 
 function enable(): void {

@@ -5,6 +5,7 @@ import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsInd
 import containsPoint from './containsPoint';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
+import getLineSegmentsIntersection from './getLineSegmentsIntersection';
 
 enum VertexTypes {
   None = 0,
@@ -173,6 +174,12 @@ function getSourceAndTargetPointsList(
       const sourceLineSegmentId: number = intersectedLineSegment[0];
       const p2 = sourcePolyline[intersectedLineSegment[0]];
       const q2 = sourcePolyline[intersectedLineSegment[1]];
+
+      // lineSegment.intersectLine returns `undefined` when the intersection
+      // is at one of the line vertices.
+      // Examples:
+      //   - [(0, 0), (1, 1)] x [(1, 1), (1, 2)]
+      //   - [(0, 1), (2, 1)] x [(1, 1), (1, 2)]
       let intersectionCoordinate = math.lineSegment.intersectLine(
         p1,
         q1,
@@ -189,23 +196,40 @@ function getSourceAndTargetPointsList(
       //     - p2: (184, 108.125)
       //     - q2: (184, 108.375)
       if (!intersectionCoordinate) {
-        const lineSegment1 = [p1, q1];
-        const lineSegment2 = [p2, q2];
-        let minDist = Infinity;
+        // debugger;
 
-        for (let i = 0; i < lineSegment1.length; i++) {
-          const pi = lineSegment1[i];
-          for (let j = 0; j < lineSegment1.length; j++) {
-            const pj = lineSegment2[j];
-            const dist = math.point.distanceToPoint(pi, pj);
+        // DEBUG
+        math.lineSegment.intersectLine(p1, q1, p2, q2) as Types.Point2;
 
-            if (dist < minDist) {
-              minDist = dist;
-              intersectionCoordinate = pi; // or pj
-            }
-            console.log('>>>>> :: points (i, j) distance:', dist);
-          }
-        }
+        // DEBUG
+        const newIntersectionCoordinates = getLineSegmentsIntersection(
+          p1,
+          q1,
+          p2,
+          q2
+        );
+
+        console.log('>>>>> intersectionCoordinate was UNDEFINED');
+
+        intersectionCoordinate = newIntersectionCoordinates;
+
+        // const lineSegment1 = [p1, q1];
+        // const lineSegment2 = [p2, q2];
+        // let minDist = Infinity;
+        //
+        // for (let i = 0; i < lineSegment1.length; i++) {
+        //   const pi = lineSegment1[i];
+        //   for (let j = 0; j < lineSegment1.length; j++) {
+        //     const pj = lineSegment2[j];
+        //     const dist = math.point.distanceToPoint(pi, pj);
+        //
+        //     if (dist < minDist) {
+        //       minDist = dist;
+        //       intersectionCoordinate = pi; // or pj
+        //     }
+        //     console.log('>>>>> :: points (i, j) distance:', dist);
+        //   }
+        // }
       }
 
       const targetStartPointDistSquared = math.point.distanceToPointSquared(
@@ -379,7 +403,7 @@ function mergePolylines(
     currentPoint = currentPoint.next;
     debugCounter++;
 
-    // if (debugCounter === 10000) {
+    // if (debugCounter === 30000) {
     //   debugger;
     // }
   }
