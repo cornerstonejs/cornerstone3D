@@ -161,6 +161,144 @@ const obj = {
 
     return imageData.getPointData().getScalars().getData();
   },
+  async convertSurfaceToVolumeLabelmap(args, ...callbacks) {
+    const [progressCallback] = callbacks;
+    await this.initializePolySeg(progressCallback);
+
+    const results = this.polySeg.instance.convertSurfaceToLabelmap(
+      args.points,
+      args.polys,
+      args.dimensions,
+      args.spacing,
+      args.direction,
+      args.origin
+    );
+
+    return results;
+  },
+  async convertSurfacesToVolumeLabelmap(args, ...callbacks) {
+    const [progressCallback] = callbacks;
+    await this.initializePolySeg(progressCallback);
+
+    const { segmentsInfo } = args;
+
+    const promises = Array.from(segmentsInfo.keys()).map((segmentIndex) => {
+      const { points, polys } = segmentsInfo.get(segmentIndex);
+      return this.polySeg.instance.convertSurfaceToLabelmap(
+        points,
+        polys,
+        args.dimensions,
+        args.spacing,
+        args.direction,
+        args.origin
+      );
+    });
+
+    const results = await Promise.all(promises);
+
+    const targetImageData = vtkImageData.newInstance();
+    targetImageData.setDimensions(args.dimensions);
+    targetImageData.setOrigin(args.origin);
+    targetImageData.setSpacing(args.spacing);
+    targetImageData.setDirection(args.direction);
+
+    const totalSize =
+      args.dimensions[0] * args.dimensions[1] * args.dimensions[2];
+
+    const scalarArray = vtkDataArray.newInstance({
+      name: 'Pixels',
+      numberOfComponents: 1,
+      values: new Uint8Array(totalSize),
+    });
+
+    targetImageData.getPointData().setScalars(scalarArray);
+    targetImageData.modified();
+
+    // we need to then consolidate the results into a single volume
+    // by looping into each voxel with pointInShapeCallback
+    // and check if the voxel is inside any of the reconstructed
+    // labelmaps
+
+    const segmentationVoxelManager =
+      utilities.VoxelManager.createVolumeVoxelManager(
+        args.dimensions,
+        targetImageData.getPointData().getScalars().getData()
+      );
+
+    const outputVolumesInfo = results.map((result) => {
+      const { data, dimensions, direction, origin, spacing } = result;
+      const volume = vtkImageData.newInstance();
+      volume.setDimensions(dimensions);
+      volume.setOrigin(origin);
+      volume.setSpacing(spacing);
+      volume.setDirection(direction);
+
+      const scalarArray = vtkDataArray.newInstance({
+        name: 'Pixels',
+        numberOfComponents: 1,
+        values: data,
+      });
+
+      volume.getPointData().setScalars(scalarArray);
+
+      volume.modified();
+
+      const voxelManager = utilities.VoxelManager.createVolumeVoxelManager(
+        dimensions,
+        data
+      );
+
+      const extent = volume.getExtent(); // e.g., [0, 176, 0, 268, 0, 337] for dimensions of [177, 269, 338]
+
+      return { volume, voxelManager, extent, scalarData: data };
+    });
+
+    pointInShapeCallback(
+      targetImageData,
+      () => true, // we want to loop into all voxels
+      ({ pointIJK, pointLPS }) => {
+        // Check if the point is inside any of the reconstructed labelmaps
+        // Todo: we can optimize this by returning early if the bounding box
+        // of the point is outside the bounding box of the labelmap
+
+        try {
+          for (
+            let segmentIndex = 0;
+            segmentIndex < outputVolumesInfo.length;
+            segmentIndex++
+          ) {
+            const volumeInfo = outputVolumesInfo[segmentIndex];
+            const { volume, extent, voxelManager } = volumeInfo;
+
+            const index = volume.worldToIndex(pointLPS);
+
+            // check if the ijk point is inside the volume
+            if (
+              index[0] < extent[0] ||
+              index[0] > extent[1] ||
+              index[1] < extent[2] ||
+              index[1] > extent[3] ||
+              index[2] < extent[4] ||
+              index[2] > extent[5]
+            ) {
+              continue;
+            }
+
+            const roundedIndex = index.map(Math.round);
+            const value = voxelManager.getAtIJK(...roundedIndex);
+            if (value > 0) {
+              segmentationVoxelManager.setAtIJKPoint(pointIJK, segmentIndex);
+              break;
+            }
+          }
+        } catch (error) {
+          // right now there is weird error if the point is outside the volume
+        }
+      }
+    );
+
+    return segmentationVoxelManager.scalarData;
+  },
 };
 
 expose(obj);

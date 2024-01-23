@@ -20,8 +20,9 @@ export function computeAndAddLabelmapRepresentation(
 ) {
   return computeAndAddRepresentation(
     segmentationId,
-    SegmentationRepresentations.Surface,
+    SegmentationRepresentations.Labelmap,
     () => computeLabelmapData(segmentationId, options),
+    () => {},
     options
   );
 }

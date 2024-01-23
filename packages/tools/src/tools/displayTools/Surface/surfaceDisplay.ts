@@ -97,7 +97,7 @@ async function render(
 
   const { geometryIds } = SurfaceData;
 
-  if (!geometryIds.length) {
+  if (!geometryIds?.length) {
     console.warn(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );

@@ -241,6 +241,10 @@ export default class VoxelManager<T> {
     dimensions: Point3,
     scalarData
   ): VoxelManager<number> {
+    if (dimensions.length !== 3) {
+      throw new Error('Dimensions must be 3D');
+    }
+
     const voxels = new VoxelManager(
       dimensions,
       (index) => scalarData[index],

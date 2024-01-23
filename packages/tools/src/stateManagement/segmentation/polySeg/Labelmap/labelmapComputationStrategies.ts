@@ -6,6 +6,10 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
 import { convertContourToVolumeLabelmap } from './convertContourToLabelmap';
+import {
+  convertSurfaceToStackLabelmap,
+  convertSurfaceToVolumeLabelmap,
+} from './convertSurfaceToLabelmap';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume
@@ -36,14 +40,13 @@ export async function computeLabelmapData(
         }
       );
     } else if (representationData.SURFACE) {
-      // convert volume labelmap to surface
-      // rawLabelmapData = await computeSurfaceFromLabelmapSegmentation(
-      //   segmentation.segmentationId,
-      //   {
-      //     segmentIndices,
-      //     ...options,
-      //   }
-      // );
+      rawLabelmapData = await computeLabelmapFromSurfaceSegmentation(
+        segmentation.segmentationId,
+        {
+          segmentIndices,
+          ...options,
+        }
+      );
     }
   } catch (error) {
     console.error(error);
@@ -112,4 +115,55 @@ async function computeLabelmapFromContourSegmentation(
 
   return result;
 }
+
+async function computeLabelmapFromSurfaceSegmentation(
+  segmentationId,
+  options: {
+    segmentIndices?: number[];
+    segmentationRepresentationUID?: string;
+    viewport?: Types.IVolumeViewport | Types.IStackViewport;
+  } = {}
+): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
+  const isVolume = options.viewport instanceof VolumeViewport ?? true;
+
+  if (isVolume && !options.viewport) {
+    // Todo: we don't have support for volume viewport without providing the
+    // viewport, since we need to get the referenced volumeId from the viewport
+    // but we can alternatively provide the volumeId directly, or even better
+    // the target metadata for the volume (spacing, origin, dimensions, etc.)
+    // and then we can create the volume from that
+    throw new Error(
+      'Cannot compute labelmap from surface segmentation without providing the viewport'
+    );
+  }
+
+  const segmentIndices = options.segmentIndices?.length
+    ? options.segmentIndices
+    : getUniqueSegmentIndices(segmentationId);
+
+  const segmentation = getSegmentation(segmentationId);
+  const representationData = segmentation.representationData.SURFACE;
+
+  let result;
+  if (isVolume) {
+    const defaultActor = options.viewport.getDefaultActor();
+    const { uid: volumeId } = defaultActor;
+    const segmentationVolume =
+      await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
+
+    result = convertSurfaceToVolumeLabelmap(
+      representationData,
+      segmentationVolume
+    );
+  } else {
+    const cachedImages = new Map();
+    result = convertSurfaceToStackLabelmap(representationData, cachedImages, {
+      segmentIndices,
+      segmentationRepresentationUID: options.segmentationRepresentationUID,
+    });
+  }
+
+  return result;
+}
+
 export { computeLabelmapFromContourSegmentation };
