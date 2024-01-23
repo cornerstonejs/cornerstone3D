@@ -1,8 +1,4 @@
-import type {
-  InterpolationViewportData,
-  ImageInterpolationData,
-  Annotation,
-} from '../../../types';
+import type { InterpolationViewportData, Annotation } from '../../../types';
 import { getAnnotations } from '../../../stateManagement/annotation/annotationState';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
@@ -23,7 +19,7 @@ export type FilterParam = {
   /**
    * The comparison value to compare against.  If an array, will compare sub-values.
    */
-  value: any;
+  value: unknown;
 };
 
 /**

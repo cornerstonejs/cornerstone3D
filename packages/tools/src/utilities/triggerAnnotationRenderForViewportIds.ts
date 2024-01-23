@@ -5,7 +5,7 @@ export function triggerAnnotationRenderForViewportIds(
   renderingEngine: Types.IRenderingEngine,
   viewportIdsToRender: string[]
 ): void {
-  if (!viewportIdsToRender.length) {
+  if (!viewportIdsToRender.length || !renderingEngine) {
     return;
   }
 

@@ -41,10 +41,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
 import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
@@ -96,6 +93,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
+  fireChangeOnUpdate: ChangeTypes = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -329,23 +327,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
       removeAnnotation(annotation.annotationUID);
     }
 
+    this.fireChangeOnUpdate ||= newAnnotation
+      ? ChangeTypes.Completed
+      : ChangeTypes.HandlesUpdated;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-        changeType: ChangeTypes.Completed,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
-    } else {
-      this.triggerAnnotationModified(
-        annotation,
-        enabledElement,
-        ChangeTypes.HandlesUpdated
-      );
-    }
 
     this.editData = null;
     this.isDrawing = false;
@@ -533,7 +518,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     changeType = ChangeTypes.StatsUpdated
   ): void => {
     const { viewportId, renderingEngineId } = enabledElement;
-    const eventType = Events.ANNOTATION_MODIFIED;
+    const eventType =
+      changeType === ChangeTypes.Completed
+        ? Events.ANNOTATION_COMPLETED
+        : Events.ANNOTATION_MODIFIED;
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
@@ -745,6 +733,15 @@ class SplineROITool extends ContourSegmentationBaseTool {
       svgDrawingHelper,
       annotationStyle.textbox
     );
+
+    if (this.fireChangeOnUpdate) {
+      this.triggerAnnotationModified(
+        annotation,
+        enabledElement,
+        this.fireChangeOnUpdate
+      );
+      this.fireChangeOnUpdate = null;
+    }
 
     annotation.invalidated = false;
     return true;

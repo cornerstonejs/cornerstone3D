@@ -4691,6 +4691,8 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
+    fireChangeOnUpdate: ChangeTypes;
+    // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     protected isContourSegmentationTool(): boolean;

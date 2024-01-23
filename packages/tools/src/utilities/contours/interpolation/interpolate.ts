@@ -166,9 +166,9 @@ function _linearlyInterpolateContour(
   // enough handles for use.
   const handleCount = Math.round(
     Math.max(
-      6,
-      interpolationData.get(startIndex)[0].data.handles.points.length * 1.5,
-      interpolationData.get(endIndex)[0].data.handles.points.length * 1.5
+      8,
+      interpolationData.get(startIndex)[0].data.handles.points.length * 2,
+      interpolationData.get(endIndex)[0].data.handles.points.length * 2
     )
   );
   const handlePoints = _subselect(interpolated3DPoints, handleCount);
@@ -198,17 +198,16 @@ function _subselect(points, count = 10) {
   if (!length) {
     return handles;
   }
-  const increment = Math.ceil(length / count);
-  for (let i = 0; i < length - increment / 2; i += increment) {
-    handles.push(vec3.fromValues(points.x[i], points.y[i], points.z[i]));
+  for (let i = 0; i < count; i++) {
+    const handleIndex = Math.floor((length * i) / count);
+    handles.push(
+      vec3.fromValues(
+        points.x[handleIndex],
+        points.y[handleIndex],
+        points.z[handleIndex]
+      )
+    );
   }
-  handles.push(
-    vec3.fromValues(
-      points.x[length - 1],
-      points.y[length - 1],
-      points.z[length - 1]
-    )
-  );
   return handles;
 }
 
