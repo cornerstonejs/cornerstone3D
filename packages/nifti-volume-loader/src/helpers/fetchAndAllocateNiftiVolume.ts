@@ -159,7 +159,6 @@ export default async function fetchAndAllocateNiftiVolume(
 
   const {
     BitsAllocated,
-    PixelRepresentation,
     PhotometricInterpretation,
     ImageOrientationPatient,
     Columns,
@@ -194,7 +193,6 @@ export default async function fetchAndAllocateNiftiVolume(
     scanAxisNormal[1],
     scanAxisNormal[2],
   ]) as Types.Mat3;
-  const signed = PixelRepresentation === 1;
 
   // Check if it fits in the cache before we allocate data
   // TODO Improve this when we have support for more types
@@ -223,17 +221,11 @@ export default async function fetchAndAllocateNiftiVolume(
 
   let scalarData;
 
-  switch (BitsAllocated) {
-    case 8:
-      if (signed) {
-        throw new Error(
-          '8 Bit signed images are not yet supported by this plugin.'
-        );
-      } else {
-        scalarData = createUint8SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        );
-      }
+  switch (niftiHeader.datatypeCode) {
+    case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
+      scalarData = createUint8SharedArray(
+        dimensions[0] * dimensions[1] * dimensions[2]
+      );
 
       break;
 
