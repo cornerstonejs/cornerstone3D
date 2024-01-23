@@ -11,9 +11,9 @@ import type { Types } from '@cornerstonejs/core';
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
 import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store';
-import { Events } from '../../enums';
+import { Events, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
-import {
+import type {
   Annotation,
   EventTypes,
   ToolHandle,
@@ -88,12 +88,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
-
-    const defaultActor = viewport.getDefaultActor();
-
-    // if (!defaultActor || !csUtils.isImageActor(defaultActor)) {
-    //   throw new Error('Default actor must be an image actor');
-    // }
 
     const viewportImageData = viewport.getImageData();
     const { imageData: vtkImageData } = viewportImageData;
@@ -337,6 +331,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const eventType = Events.ANNOTATION_COMPLETED;
       const eventDetail: AnnotationCompletedEventDetail = {
         annotation,
+        changeType: ChangeTypes.Completed,
       };
 
       triggerEvent(eventTarget, eventType, eventDetail);

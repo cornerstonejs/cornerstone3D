@@ -70,6 +70,10 @@ import {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from './LabelmapToolOperationData';
+import type {
+  InterpolationViewportData,
+  ImageInterpolationData,
+} from './InterpolationTypes';
 
 // Splines
 import type { CardinalSplineProps } from './CardinalSplineProps';
@@ -94,6 +98,8 @@ export type {
   BidirectionalData,
   CanvasCoordinates,
   IAnnotationManager,
+  InterpolationViewportData,
+  ImageInterpolationData,
   GroupSpecificAnnotations,
   AnnotationState,
   AnnotationStyle,
