@@ -21,7 +21,7 @@ import { removeAnnotation } from '../../../stateManagement/annotation/annotation
 const {
   addCanvasPointsToArray,
   pointsAreWithinCloseContourProximity,
-  getFirstIntersectionWithPolyline,
+  getFirstLineSegmentIntersectionIndexes,
   getSubPixelSpacingAndXYDirections,
 } = polyline;
 
@@ -257,7 +257,7 @@ function removeCrossedLinesOnCompleteDraw(): void {
   const endToStart = [canvasPoints[0], canvasPoints[numPoints - 1]];
   const canvasPointsMinusEnds = canvasPoints.slice(0, -1).slice(1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     canvasPointsMinusEnds,
     endToStart[0],
     endToStart[1],
@@ -345,7 +345,7 @@ function findCrossingIndexDuringCreate(
   const { canvasPoints } = this.drawData;
   const pointsLessLastOne = canvasPoints.slice(0, -1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     pointsLessLastOne,
     canvasPos,
     lastCanvasPoint,

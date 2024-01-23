@@ -1,20 +1,21 @@
 import { Types } from '@cornerstonejs/core';
-import { getFirstIntersectionWithPolyline } from './getIntersectionWithPolyline';
-import { intersectLine } from '../line';
+import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes';
+// import { intersectLine } from '../line';
 
 function intersectPolyline(
   sourcePolyline: Types.Point2[],
   targetPolyline: Types.Point2[]
 ): boolean {
-  // Naive way to detect intersection between polylines.
-  // TODO: implement using R-Trees to make it run faster
-  const startTime = performance.now();
+  // Naive way to detect intersection between polylines in O(n^2).
+  // TODO: Implement Bentley Ottmann sweep line algorithm or maybe some
+  // algorithm that uses r-tree may make it run faster
+  // const startTime = performance.now();
   for (let i = 0, sourceLen = sourcePolyline.length; i < sourceLen; i++) {
     const sourceP1 = sourcePolyline[i];
     const sourceP2Index = i === sourceLen - 1 ? 0 : i + 1;
     const sourceP2 = sourcePolyline[sourceP2Index];
 
-    const intersectionPointIndexes = getFirstIntersectionWithPolyline(
+    const intersectionPointIndexes = getFirstLineSegmentIntersectionIndexes(
       targetPolyline,
       sourceP1,
       sourceP2
@@ -45,14 +46,13 @@ function intersectPolyline(
 
     if (intersect) {
       // prettier-ignore
-      console.log(`>>>>> time :: intersectPolyline (true, ${sourcePolyline.length}, ${targetPolyline.length}):`, performance.now() - startTime);
+      // console.log(`>>>>> time :: intersectPolyline (true, ${sourcePolyline.length}, ${targetPolyline.length}):`, performance.now() - startTime);
+      return true;
     }
-
-    return intersect;
   }
 
   // prettier-ignore
-  console.log(`>>>>> time :: intersectPolyline (false, ${sourcePolyline.length}, ${targetPolyline.length}):`, performance.now() - startTime);
+  // console.log(`>>>>> time :: intersectPolyline (false, ${sourcePolyline.length}, ${targetPolyline.length}):`, performance.now() - startTime);
 
   return false;
 }

@@ -1,4 +1,4 @@
-import { glMatrix, mat4, vec3 } from 'gl-matrix';
+import { glMatrix, mat4, vec2, vec3 } from 'gl-matrix';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
@@ -8,7 +8,7 @@ import {
   Enums,
   getEnabledElementByIds,
   cache,
-  utilities,
+  utilities as csUtils,
   Types,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -22,14 +22,62 @@ import triggerSegmentationRender from '../../utilities/segmentation/triggerSegme
 import { Annotation } from '../../types';
 import { ContourAnnotation } from '../../types/ContourAnnotation';
 import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
-import * as math from '../../utilities/math';
-
-import { getAnnotations } from '../../stateManagement/annotation/annotationState';
+// import * as math from '../../utilities/math';
+import {
+  math,
+  throttle,
+  roundNumber,
+  triggerAnnotationRenderForViewportIds,
+  getCalibratedScale,
+  getCalibratedAreaUnits,
+} from '../../utilities';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import {
+  getAnnotations,
+  addAnnotation,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { AnnotationCompletedEventType } from '../../types/EventTypes';
 import testSourcePolyline from './testSourcePolyline';
 import testTargetPolyline from './testTargetPolyline';
 
+(window as any).math = math;
 let attachedEventListenersCount = 0;
+
+const getDistPointLine = (p1, q1, point) => {
+  const vecLineDir = vec2.normalize(
+    vec2.create(),
+    vec2.sub(vec2.create(), q1, p1)
+  );
+  const vecPoint = vec2.sub(vec2.create(), point, q1);
+  const dot = vec2.dot(vecLineDir, vecPoint);
+  console.log('>>>>> :: dot:', dot);
+};
+
+setTimeout(() => {
+  const p1 = vec2.fromValues(312.17647063655795, 234.94852936344205);
+  const q1 = vec2.fromValues(311.9411765229378, 235.18382347706222);
+  const p2 = vec2.fromValues(312.24999999572145, 235.3749999957214);
+  const q2 = vec2.fromValues(312, 235.125);
+
+  const distP2 = getDistPointLine(p1, p1, p2);
+  const distQ2 = getDistPointLine(p1, p1, q2);
+
+  (window as any).vec2 = vec2;
+  (window as any).p1 = p1;
+  (window as any).q1 = q1;
+  (window as any).p2 = p2;
+  (window as any).q2 = q2;
+
+  const intersection = math.lineSegment.intersectLine(
+    p1 as Types.Point2,
+    q1 as Types.Point2,
+    p2 as Types.Point2,
+    q2 as Types.Point2
+  );
+  console.log('>>>>> :: intersection:', intersection);
+}, 2000);
 
 function enable(): void {
   if (attachedEventListenersCount++ > 0) {
@@ -165,6 +213,7 @@ function _getPolylineAABB(polyline: Types.Point2[]): Types.AABB2 {
   for (let i = 0, len = polyline.length; i < len; i++) {
     const [x, y] = polyline[i];
 
+    // No Math.min/max calls for better performance
     minX = minX < x ? minX : x;
     minY = minY < y ? minY : y;
     maxX = maxX > x ? maxX : x;
@@ -232,24 +281,31 @@ function getTargetAnnotation(
   contourSegmentationAnnotations: ContourSegmentationAnnotation[]
 ): ContourSegmentationAnnotation {
   const sourcePolyline = getProjectedPolyline(sourceAnnotation, viewport);
-  const sourceStartPoint = sourcePolyline[0];
-  // const sourceAABB = _getPolylineAABB(sourcePolyline);
+  // const sourceStartPoint = sourcePolyline[0];
+  const sourceAABB = _getPolylineAABB(sourcePolyline);
 
   for (let i = 0; i < contourSegmentationAnnotations.length; i++) {
     const targetAnnotation = contourSegmentationAnnotations[i];
     const targetPolyline = getProjectedPolyline(targetAnnotation, viewport);
-    const containsStartPoint = math.polyline.containsPoint(
-      targetPolyline,
-      sourceStartPoint
-    );
+    // const containsStartPoint = math.polyline.containsPoint(
+    //   targetPolyline,
+    //   sourceStartPoint
+    // );
 
     // const targetAABB = _getPolylineAABB(targetPolyline);
+    // const intersectAABB = math.aabb.intersectAABB(sourceAABB, targetAABB);
+    // console.log('>>>>> intersectAABB:', intersectAABB);
+    const polylinesIntersect = math.polyline.intersectPolyline(
+      sourcePolyline,
+      targetPolyline
+    );
+    // console.log('>>>>> polylinesIntersect:', polylinesIntersect);
     // const polylinesIntersect =
-    //   // _aabbsIntersect(sourceAABB, targetAABB) &&
-    //   math.polyline.containsPoint(targetPolyline, sourceStartPoint) &&
+    //   math.aabb.intersectAABB(sourceAABB, targetAABB) &&
+    //   // math.polyline.containsPoint(targetPolyline, sourceStartPoint) &&
     //   math.polyline.intersectPolyline(sourcePolyline, targetPolyline);
 
-    if (containsStartPoint) {
+    if (polylinesIntersect) {
       return targetAnnotation;
     }
   }
@@ -304,8 +360,105 @@ function getContourAnnotationDirection(
     : ContourDirection.CW;
 }
 
+function processContours(
+  viewport: Types.IViewport,
+  sourceAnnotation: ContourSegmentationAnnotation,
+  targetAnnotation: ContourSegmentationAnnotation
+) {
+  const sourcePolyline = getProjectedPolyline(sourceAnnotation, viewport);
+  const targetPolyline = getProjectedPolyline(targetAnnotation, viewport);
+
+  // DEBUG /////////////////////////////////////////////////////////////////////
+  // prettier-ignore
+  // const sourcePolyline: Types.Point2[] = [[12, 1], [9, 1], [7, 0], [6, 5]].reverse() as Types.Point2[]; // CCW (wrong)
+  // prettier-ignore
+  // const targetPolyline: Types.Point2[] = [[1, 1], [0, 4], [3, 5], [10, 3], [5, 0]]; // CW
+  // const targetPolyline: Types.Point2[] = [[1, 1], [0, 4], [3, 5], [7, 3.5], [10, 3], [5, 0]]; // CW
+
+  const sourceStartPoint = sourcePolyline[0];
+  // const mergePolylines = true;
+  const mergePolylines = math.polyline.containsPoint(
+    targetPolyline,
+    sourceStartPoint
+  );
+
+  const newPolylines = [];
+
+  if (mergePolylines) {
+    console.log('>>>>> MERGE');
+    const mergedPolyline = math.polyline.mergePolylines(
+      targetPolyline,
+      sourcePolyline
+    );
+    // console.log('>>>>> mergedPolyline:', mergedPolyline);
+
+    newPolylines.push(mergedPolyline);
+    // triggerAnnotationModified(targetAnnotation, viewport.element);
+  } else {
+    console.log('>>>>> SUBTRACT');
+    const subtractedPolylines = math.polyline.subtractPolylines(
+      targetPolyline,
+      sourcePolyline
+    );
+    // console.log('>>>>> subtractedPolylines:', subtractedPolylines);
+
+    subtractedPolylines.forEach((newPolyline) =>
+      newPolylines.push(newPolyline)
+    );
+  }
+
+  removeAnnotation(sourceAnnotation.annotationUID);
+  removeAnnotation(targetAnnotation.annotationUID);
+
+  const { element } = viewport;
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine } = enabledElement;
+
+  newPolylines.forEach((newPolyline) => {
+    const newAnnotation = {
+      ...targetAnnotation,
+      annotationUID: csUtils.uuidv4() as string,
+    };
+
+    newAnnotation.data.contour.polyline = newPolyline.map((p) =>
+      viewport.canvasToWorld(p)
+    );
+
+    addAnnotation(newAnnotation, element);
+  });
+
+  const { toolName } = targetAnnotation.metadata;
+  const viewportIdsToRender = getViewportIdsWithToolToRender(element, toolName);
+
+  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+}
+
+// function processContoursDebug(
+//   viewport: Types.IViewport,
+//   sourceAnnotation: ContourSegmentationAnnotation,
+//   targetAnnotation: ContourSegmentationAnnotation
+// ) {
+//   const debugSourceAnnotation: ContourSegmentationAnnotation = JSON.parse(
+//     JSON.stringify(sourceAnnotation)
+//   );
+//   const debugTargetAnnotation: ContourSegmentationAnnotation = JSON.parse(
+//     JSON.stringify(targetAnnotation)
+//   );
+//
+//   debugSourceAnnotation.data.contour = [
+//     [12, 1],
+//     [6, 5],
+//   ] as Types.Point2[];
+//
+//   processContours(viewport, debugSourceAnnotation, debugTargetAnnotation);
+// }
+
 function _annotationCompleted(evt: AnnotationCompletedEventType) {
   console.clear();
+
+  // testPerformance();
+  // return;
+
   console.log('>>>>> completed :: evt:', evt);
   const sourceAnnotation = evt.detail
     .annotation as ContourSegmentationAnnotation;
@@ -343,15 +496,15 @@ function _annotationCompleted(evt: AnnotationCompletedEventType) {
     return;
   }
 
-  const direction = getContourAnnotationDirection(sourceAnnotation);
-  //prettier-ignore
-  console.log(`>>>>> direction: ${direction === ContourDirection.CW ? 'CW' : 'CCW'}`);
+  // const direction = getContourAnnotationDirection(sourceAnnotation);
+  // if (direction === ContourDirection.CW) {
+  //   console.log('MERGE');
+  // } else {
+  //   console.log('DELETE');
+  // }
 
-  if (direction === ContourDirection.CW) {
-    console.log('MERGE');
-  } else {
-    console.log('DELETE');
-  }
+  processContours(viewport, sourceAnnotation, targetAnnotation);
+  // processContoursDebug(viewport, sourceAnnotation, targetAnnotation);
 
   // math.polyline.getFirstIntersectionWithPolyline;
 

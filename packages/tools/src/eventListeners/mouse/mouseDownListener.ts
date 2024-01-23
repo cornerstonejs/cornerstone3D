@@ -180,9 +180,6 @@ function mouseDownListener(evt: MouseEvent) {
   state.startPoints = _copyPoints(startPoints);
   state.lastPoints = _copyPoints(startPoints);
 
-  // console.debug('>>>> mousePoint.canvas: ', startPoints.canvas);
-  // console.debug('>>>> mousePoint.world: ', startPoints.world);
-
   document.addEventListener('mouseup', _onMouseUp);
   document.addEventListener('mousemove', _onMouseDrag);
 }

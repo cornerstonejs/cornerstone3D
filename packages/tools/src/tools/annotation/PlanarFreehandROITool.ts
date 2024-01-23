@@ -39,7 +39,7 @@ import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationT
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
+import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
@@ -745,7 +745,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           if (point[1] != curRow) {
             intersectionCounter = 0;
             curRow = point[1];
-            intersections = getIntersectionCoordinatesWithPolyline(
+            intersections = getLineSegmentIntersectionsCoordinates(
               canvasCoordinates,
               point,
               [canvasPosEnd[0], point[1]]
