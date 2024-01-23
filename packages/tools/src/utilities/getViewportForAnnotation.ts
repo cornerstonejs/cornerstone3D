@@ -12,7 +12,7 @@ const { isEqual } = csUtils;
  * @param annotation - to find a viewport that it could display in
  * @returns The viewport to display in
  */
-export default function getMatchingViewport(annotation: Annotation) {
+export default function getViewportForAnnotation(annotation: Annotation) {
   const { metadata } = annotation;
   const enabledElement = getEnabledElements().find((enabledElement) => {
     if (enabledElement.FrameOfReferenceUID === metadata.FrameOfReferenceUID) {

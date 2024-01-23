@@ -15,10 +15,6 @@ function generateInterpolationData(
   toolData,
   viewportData: InterpolationViewportData
 ) {
-  console.log(
-    'generateInterpolationData on key interpolationUID',
-    viewportData.interpolationUID
-  );
   const interpolationData = getInterpolationData(viewportData, [
     {
       key: 'interpolationUID',
@@ -35,7 +31,6 @@ function generateInterpolationData(
   // Check if contours between the extent can be interpolated.
   for (let i = extent[0] + 1; i <= extent[1] - 1; i++) {
     if (_sliceNeedsInterpolating(interpolationData, i)) {
-      console.log('Slice needs interpolating', i);
       const contourPair = _getBoundingPair(i, extent, interpolationData);
 
       if (

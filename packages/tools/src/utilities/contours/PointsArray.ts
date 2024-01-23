@@ -36,7 +36,7 @@ export abstract class PointsArray<T> {
    * Reverse the points in place
    */
   public reverse() {
-    const midLength = Math.floor(length / 2);
+    const midLength = Math.floor(this.length / 2);
 
     for (let i = 0; i < midLength; i++) {
       const indexStart = i * this.dimensions;
@@ -74,7 +74,7 @@ export abstract class PointsArray<T> {
 /**
  * A version of this based on Types.Point2 and vec2
  */
-export class PolyDataPoints2 extends PointsArray<Types.Point2> {
+export class PointsArray2 extends PointsArray<Types.Point2> {
   constructor(configuration = {}) {
     super({ ...configuration, dimensions: 2 });
   }

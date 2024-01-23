@@ -219,7 +219,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         },
         /**
          * Interpolation is the creation of new segmentations in between the
-         * existing segmentations/indices
+         * existing segmentations/indices.  Note that this does not apply to
+         * ROI values, since those annotations are individual annotations, not
+         * connected in any way to each other, whereas segmentations are intended
+         * to be connected 2d + 1 dimension (time or space or other) volumes.
          */
         interpolation: {
           enabled: false,

@@ -42,6 +42,8 @@ export default function filterAnnotationsForDisplay(
         return false;
       }
 
+      // The referenced image id can be a targetId, so handle removing the
+      // imageId portion to make the base comparison work.
       const imageId = annotation.metadata.referencedImageId?.replace(
         'imageId:',
         ''
