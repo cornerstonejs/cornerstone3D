@@ -3,6 +3,7 @@ import { Events, SegmentationRepresentations } from '../../../enums';
 import addRepresentationData from '../addRepresentationData';
 import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 import { debounce } from '../../../utilities';
+import { registerPolySegWorker } from './registerPolySegWorker';
 
 const computedRepresentations = new Map<
   string,
@@ -26,6 +27,9 @@ async function computeAndAddRepresentation<T>(
   updateFunction?: () => void,
   options: any
 ): Promise<T> {
+  // register the worker if it hasn't been registered yet
+  registerPolySegWorker();
+
   // Compute the specific representation data
   const data = await computeFunction();
 
