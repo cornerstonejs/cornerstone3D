@@ -2,6 +2,10 @@ import { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
 import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
 
+/**
+ * A base viewport and annotation information used to start interpolating
+ * between slices.
+ */
 export type InterpolationViewportData = {
   /** The annotation that was just completed. */
   annotation: InterpolationROIAnnotation;

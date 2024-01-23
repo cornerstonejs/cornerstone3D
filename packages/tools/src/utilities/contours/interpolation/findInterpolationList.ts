@@ -1,5 +1,15 @@
 import getInterpolationData from './getInterpolationData';
-import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
+import type {
+  ImageInterpolationData,
+  InterpolationViewportData,
+} from '../../../types/InterpolationTypes';
+
+/**
+ * A pair of slice indices for contours, typically indicating the
+ * pair of contours to interpolate between, or for a possible range to
+ * compare against.
+ */
+export type ContourPair = [number, number];
 
 /**
  * findInterpolationList - Finds the list of contours to interpolate,
@@ -7,8 +17,9 @@ import type { InterpolationViewportData } from '../../../types/InterpolationType
  * to be updated.
  *
  * @param toolData - object, The tool data of the roi contour.
- * @returns object, An object containing the ROIContourData and the
- * interpolationList.
+ * @param viewportData - the annotation/viewport to start the interpolation from
+ * @returns An object containing the interpolationData and the
+ *       interpolationList.
  */
 
 function generateInterpolationData(
@@ -21,7 +32,7 @@ function generateInterpolationData(
       value: viewportData.interpolationUID,
     },
   ]);
-  const extent = _getExtentOfRegion(interpolationData);
+  const rangeToInterpolate = getRangeToInterpolate(interpolationData);
   const sliceEdited = _getSlicePositionOfToolData(
     interpolationData,
     toolData.annotationUID
@@ -29,13 +40,17 @@ function generateInterpolationData(
   const interpolationList = [];
 
   // Check if contours between the extent can be interpolated.
-  for (let i = extent[0] + 1; i <= extent[1] - 1; i++) {
+  for (let i = rangeToInterpolate[0] + 1; i < rangeToInterpolate[1]; i++) {
     if (_sliceNeedsInterpolating(interpolationData, i)) {
-      const contourPair = _getBoundingPair(i, extent, interpolationData);
+      const contourPair = _getBoundingPair(
+        i,
+        rangeToInterpolate,
+        interpolationData
+      );
 
       if (
-        contourPair &&
-        (contourPair[0] === sliceEdited || contourPair[1] === sliceEdited)
+        contourPair?.[0] === sliceEdited ||
+        contourPair?.[1] === sliceEdited
       ) {
         _appendInterpolationList(contourPair, interpolationList, i);
       }
@@ -49,15 +64,17 @@ function generateInterpolationData(
 }
 
 /**
- * _getExtentOfRegion - Returns a 2 element array with the slice locations of
- * top and bottom polygon of the ROIContour.
+ * Gets the range of interpolation data which has
+ * annotations in it, as indices into the interpolationData
  *
- * @param ROIContourData - object, Data on the slice location of contours
- *                                  for the ROIContour.
+ * @param interpolationData - Data on the slice location of contours to be
+ *       interpolated.
  * @returns Number[], The slice locations of the top and bottom polygon of the ROIContour.
  */
 
-function _getExtentOfRegion(interpolationData) {
+function getRangeToInterpolate(
+  interpolationData: ImageInterpolationData[]
+): ContourPair {
   const extent = [];
 
   for (let i = 0; i < interpolationData.length; i++) {
@@ -74,17 +91,21 @@ function _getExtentOfRegion(interpolationData) {
     }
   }
 
-  return extent;
+  return extent as ContourPair;
 }
 
 /**
  * _getSlicePositionOfToolData - Finds the slice that was edited.
  *
- * @param ROIContourData - description
- * @param polygonUid - description
- * @returns description
+ * @param interpolationData - Data on the slice location of contours to be
+ *       interpolated.
+ * @param annotationUID - the UID to find the slice position for
+ * @returns index in the interpolationData containing that annotationUID
  */
-function _getSlicePositionOfToolData(interpolationData, annotationUID) {
+function _getSlicePositionOfToolData(
+  interpolationData: ImageInterpolationData[],
+  annotationUID: string
+): number {
   for (let i = 0; i < interpolationData.length; i++) {
     if (interpolationData[i].annotations) {
       const annotations = interpolationData[i].annotations;
@@ -101,63 +122,66 @@ function _getSlicePositionOfToolData(interpolationData, annotationUID) {
 }
 
 /**
- * _sliceNeedsInterpolating - Check whether there are no contours on this
- * slice, or one which is an interpolated contour.
+ * Slices need interpolation when either:
+ *   * There are no contours on this slice
+ *   * There is a contour which is an interpolated contour.
  *
- * @param ROIContourData - object, Data on the slice location of contours
- *                                  for the ROIContour.
- * @param sliceIndex - Number, The slice index.
- * @returns boolean, Whether or not the slice needs interpolating.
+ * @param interpolationData - Data on the slice location of contours to be
+ *       interpolated.
+ * @param itemIndex - The slice index.
+ * @returns Whether or not the slice needs interpolating.
  */
-function _sliceNeedsInterpolating(interpolationData, sliceIndex) {
+function _sliceNeedsInterpolating(
+  interpolationData: ImageInterpolationData[],
+  itemIndex: number
+): boolean {
+  const { annotations } = interpolationData[itemIndex];
   return (
-    !interpolationData[sliceIndex].annotations ||
-    (interpolationData[sliceIndex].annotations.length === 1 &&
-      interpolationData[sliceIndex].annotations[0].autoGenerated)
+    !annotations || (annotations.length === 1 && annotations[0].autoGenerated)
   );
 }
 
 /**
- * _appendInterpolationList - If the contour on slice i can be updated, add it to the
+ * If the contour on slice i can be updated, add it to the
  * interpolationList.
  *
- * @param sliceIndex - Number, The slice index.
- * @param extent - Number[], The extent of slice occupancy of the
- *                                  ROIContour.
- * @param ROIContourData - object[],  Data for the slice location of contours
- *                                  for the ROIContour.
- * @param interpolationList - object[],  The list of contours to be interpolated.
- * @returns null
+ * @param contourPair - the pair of items to append to
+ * @param interpolationList - The list of contours to be interpolated.
+ * @param itemIndex - the item index to append data to
  */
-function _appendInterpolationList(contourPair, interpolationList, i) {
-  if (!interpolationList[contourPair[0]]) {
-    interpolationList[contourPair[0]] = {
-      pair: contourPair,
-      list: [],
-    };
-  }
+function _appendInterpolationList(contourPair, interpolationList, itemIndex) {
+  const [startIndex] = contourPair;
+  interpolationList[startIndex] ||= {
+    pair: contourPair,
+    list: [],
+  };
 
-  interpolationList[contourPair[0]].list.push(i);
+  interpolationList[startIndex].list.push(itemIndex);
 }
 
 /**
- * _getBoundingPair - Given the slice index and extent of the ROIContour,
- * get the pair of polygons to use for interpolation of the slice. Returns
- * undefined if there is an ambiguity and interpolation can't take place.
+ * _getBoundingPair - Given the slice index and range of indices to apply the contour to,
+ * get the pair of polygons to use for interpolation of the slice.
+ * Returns undefined if there is an ambiguity and interpolation can't take place.
  *
- * @param sliceIndex - Number, The slice index.
- * @param extent - Number[], The extent of slice occupancy of the ROIContour.
- * @param ROIContourData - object[], Data for the slice location of contours for the ROIContour.
- * @returns Number[] || undefined, The pair of slice indices, or undefined if
- * the contours to use for interpolation is ambiguous.
+ * @param sliceIndex - The slice index.
+ * @param sliceRange - The extent of slice occupancy of the ROIContour.
+ * @param interpolationData - Data on the slice location of contours to be
+ *       interpolated.
+ * @returns The pair of slice indices, or undefined if
+ *       the contours to use for interpolation is ambiguous.
  */
 
-function _getBoundingPair(sliceIndex, extent, interpolationData) {
+function _getBoundingPair(
+  sliceIndex,
+  sliceRange: ContourPair,
+  interpolationData
+): ContourPair {
   const annotationPair = [];
   let canInterpolate = true;
 
   // Check for nearest lowest sliceIndex containing contours.
-  for (let i = sliceIndex - 1; i >= extent[0]; i--) {
+  for (let i = sliceIndex - 1; i >= sliceRange[0]; i--) {
     if (interpolationData[i].annotations) {
       const annotations = interpolationData[i].annotations;
 
@@ -182,7 +206,7 @@ function _getBoundingPair(sliceIndex, extent, interpolationData) {
   }
 
   // Check for nearest upper sliceIndex containing contours.
-  for (let i = sliceIndex + 1; i <= extent[1]; i++) {
+  for (let i = sliceIndex + 1; i <= sliceRange[1]; i++) {
     if (interpolationData[i].annotations) {
       const annotations = interpolationData[i].annotations;
 
@@ -205,7 +229,7 @@ function _getBoundingPair(sliceIndex, extent, interpolationData) {
     return;
   }
 
-  return annotationPair;
+  return annotationPair as ContourPair;
 }
 
 export default generateInterpolationData;

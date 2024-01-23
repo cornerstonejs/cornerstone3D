@@ -5,11 +5,19 @@ import { vec3 } from 'gl-matrix';
 import createPolylineToolData from './createPolylineToolData';
 import generateInterpolationData from './findInterpolationList';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
 import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
 import { PointsArray } from '../PointsArray';
+
+/**
+ * An XYZ encoded points that also includes an indicator I for whether the
+ * point is included in the original contour.
+ */
+type PointsXYZI = Types.PointsXYZ & {
+  I?: boolean[];
+};
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
@@ -218,7 +226,7 @@ function _subselect(points, count = 10) {
  * @returns null
  */
 function _addInterpolatedContour(
-  interpolated3DPoints: { x: number[]; y: number[]; z: number[] },
+  interpolated3DPoints: Types.PointsXYZ,
   handlePoints: Types.Point3[],
   sliceIndex: number,
   referencedToolData,
@@ -255,7 +263,7 @@ function _addInterpolatedContour(
  * @returns null
  */
 function _editInterpolatedContour(
-  interpolated3DPoints: { x: number[]; y: number[]; z: number[] },
+  interpolated3DPoints: Types.PointsXYZ,
   handlePoints: Types.Point3[],
   sliceIndex,
   referencedToolData,
@@ -317,7 +325,12 @@ function _editInterpolatedContour(
  *                                  than c2.
  * @returns object, The interpolated contour at z=zInterp.
  */
-function _generateInterpolatedOpenContour(c1ir, c2ir, zInterp, c1HasMoreNodes) {
+function _generateInterpolatedOpenContour(
+  c1ir,
+  c2ir,
+  zInterp,
+  c1HasMoreNodes
+): PointsXYZI {
   const cInterp = {
     x: [],
     y: [],
@@ -387,7 +400,7 @@ function _generateInterpolationContourPair(c1, c2) {
  * @param c2i - The second super-sampled contour.
  * @returns  An object containing the two reduced contours.
  */
-function _reduceContoursToOriginNodes(c1i, c2i) {
+function _reduceContoursToOriginNodes(c1i: PointsXYZI, c2i: PointsXYZI) {
   const c1Interp = {
     x: [],
     y: [],
@@ -638,9 +651,9 @@ function _normalisedCumulativePerimeter(cumPerim) {
  * each node of the contour.
  *
  * @param contour - The contour.
- * @returns Number[], An array of the cumulative perimeter at each node.
+ * @returns An array of the cumulative perimeter at each node.
  */
-function _getCumulativePerimeter(contour) {
+function _getCumulativePerimeter(contour: Types.PointsXYZ): number[] {
   const cumulativePerimeter = [0];
 
   for (let i = 1; i < contour.x.length; i++) {
@@ -663,7 +676,7 @@ function _getCumulativePerimeter(contour) {
  * @param  points - The points to generate the contour from.
  * @returns The generated contour object.
  */
-function _generateClosedContour(points) {
+function _generateClosedContour(points): Types.PointsXYZ {
   const c = {
     x: [],
     y: [],

@@ -1,25 +1,23 @@
 import getInterpolationData from './getInterpolationData';
-import type {
-  InterpolationViewportData,
-  ImageInterpolationData,
-} from '../../../types/InterpolationTypes';
+import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
+import type { FilterParam } from './getInterpolationData';
 
 /**
- * getInterpolationDataCollection - Generates a collection of the 2D
- * polygons in difference slices that make up the interpolated annotations.
+ * getInterpolationDataCollection - Gets the array of annotations which match the
+ * filter parameters.
  *
- * @param eventData - Object, cornerstone viewport.
- * @param filterParams - Object, \{key: propertyName to compare, value: value of property, parentKey: \}.
+ * @param viewportData - the annotation/viewport to start the interpolation from
+ * @param filterParams - A selector for annotations for interpolation
  * @param onlyAnnotationImage - boolean, if true include interpolated annotation existing images only.
  * @returns object[], The list of interpolated locations in the stack.
  */
 
 export default function getInterpolationDataCollection(
   viewportData: InterpolationViewportData,
-  filterParams,
+  filterParams: FilterParam[],
   onlyAnnotationImage = false
 ) {
-  const imageAnnotations: ImageInterpolationData[] = getInterpolationData(
+  const imageAnnotations = getInterpolationData(
     viewportData,
     filterParams,
     onlyAnnotationImage
