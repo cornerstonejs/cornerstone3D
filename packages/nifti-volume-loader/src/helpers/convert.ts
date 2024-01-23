@@ -38,7 +38,7 @@ const invertDataPerFrame = (dimensions, imageDataArray) => {
     bytesPerVoxel = 4;
   } else {
     throw new Error(
-      'imageDataArray needs to be a Uint8Array, Int16Array or Float32Array.'
+      'imageDataArray needs to be a Uint8Array, Int16Array, Int32Array, Float32Array, Float64Array, Int8Array, Uint16Array or Uint32Array.'
     );
   }
 
