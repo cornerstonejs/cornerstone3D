@@ -18,8 +18,7 @@ export default function deleteRelatedAnnotations(
   const { annotation } = viewportData;
   const interpolationAnnotations = getInterpolationDataCollection(
     viewportData,
-    [{ key: 'interpolationUID', value: viewportData.interpolationUID }],
-    true
+    [{ key: 'interpolationUID', value: viewportData.interpolationUID }]
   );
 
   const referencedSliceIndex = annotation.metadata.referencedSliceIndex;

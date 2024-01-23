@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import createPolylineToolData from './createPolylineToolData';
-import generateInterpolationData from './findInterpolationList';
+import findAnnotationsForInterpolation from './findAnnotationForInterpolation';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
 import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import type { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
@@ -49,10 +49,8 @@ function interpolate(viewportData: InterpolationViewportData) {
  */
 function startInterpolation(viewportData: InterpolationViewportData) {
   const toolData = viewportData.annotation;
-  const { interpolationData, interpolationList } = generateInterpolationData(
-    toolData,
-    viewportData
-  );
+  const { interpolationData, interpolationList } =
+    findAnnotationsForInterpolation(toolData, viewportData);
 
   const eventData = {
     toolName: toolData.metadata.toolName,
@@ -106,10 +104,10 @@ function _linearlyInterpolateBetween(
   eventData
 ) {
   const c1 = _generateClosedContour(
-    interpolationData[annotationPair[0]].annotations[0].data.contour.polyline
+    interpolationData.get(annotationPair[0])[0].data.contour.polyline
   );
   const c2 = _generateClosedContour(
-    interpolationData[annotationPair[1]].annotations[0].data.contour.polyline
+    interpolationData.get(annotationPair[1])[0].data.contour.polyline
   );
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
@@ -151,8 +149,8 @@ function _linearlyInterpolateContour(
   c1HasMoreNodes,
   eventData
 ) {
-  const zInterp =
-    (sliceIndex - annotationPair[0]) / (annotationPair[1] - annotationPair[0]);
+  const [startIndex, endIndex] = annotationPair;
+  const zInterp = (sliceIndex - startIndex) / (endIndex - startIndex);
   const interpolated3DPoints = _generateInterpolatedOpenContour(
     c1Interp,
     c2Interp,
@@ -160,23 +158,22 @@ function _linearlyInterpolateContour(
     c1HasMoreNodes
   );
 
-  const nearestAnnotation =
-    interpolationData[annotationPair[zInterp > 0.5 ? 1 : 0]].annotations[0];
+  const nearestAnnotation = interpolationData.get(
+    annotationPair[zInterp > 0.5 ? 1 : 0]
+  )[0];
 
   // A bit adhoc figuring out how many handles to use, but this seems to generate
   // enough handles for use.
   const handleCount = Math.round(
     Math.max(
       6,
-      interpolationData[annotationPair[0]].annotations[0].data.handles.points
-        .length * 1.5,
-      interpolationData[annotationPair[1]].annotations[0].data.handles.points
-        .length * 1.5
+      interpolationData.get(startIndex)[0].data.handles.points.length * 1.5,
+      interpolationData.get(endIndex)[0].data.handles.points.length * 1.5
     )
   );
   const handlePoints = _subselect(interpolated3DPoints, handleCount);
 
-  if (interpolationData[sliceIndex].annotations) {
+  if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
       interpolated3DPoints,
       handlePoints,

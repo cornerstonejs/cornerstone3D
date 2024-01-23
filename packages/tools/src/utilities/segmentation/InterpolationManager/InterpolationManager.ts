@@ -116,8 +116,7 @@ export default class InterpolationManager {
     ];
     let interpolationAnnotations = getInterpolationDataCollection(
       viewportData,
-      filterData,
-      true
+      filterData
     );
     // Skip other type of annotations with same location
     interpolationAnnotations = interpolationAnnotations.filter(

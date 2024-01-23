@@ -2506,7 +2506,7 @@ class InterpolationManager {
 }
 
 // @public (undocumented)
-type InterpolationROIAnnotation = PlanarFreehandROIAnnotation & {
+type InterpolationROIAnnotation = ContourAnnotation & {
     metadata: {
         cameraPosition?: Types_2.Point3;
         cameraFocalPoint?: Types_2.Point3;

@@ -1,7 +1,8 @@
 import type {
   InterpolationViewportData,
   ImageInterpolationData,
-} from '../../../types/InterpolationTypes';
+  Annotation,
+} from '../../../types';
 import { getAnnotations } from '../../../stateManagement/annotation/annotationState';
 import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
@@ -32,17 +33,15 @@ export type FilterParam = {
  *
  * @param viewportData - the annotation/viewport to start the interpolation from
  * @param filterParams - A selector for annotations for interpolation
- * @param onlyAnnotationImage - boolean, if true include interpolated annotation existing images only.
  * @returns The list of interpolated locations in the stack
  */
 
 export default function getInterpolationData(
   viewportData: InterpolationViewportData,
-  filterParams = [],
-  onlyAnnotationImage = false
-): ImageInterpolationData[] {
+  filterParams = []
+): Map<number, Annotation[]> {
   const { viewport, sliceData, annotation } = viewportData;
-  const interpolationDatas: ImageInterpolationData[] = [];
+  const interpolationDatas = new Map<number, Annotation[]>();
   const annotations = getAnnotations(
     annotation.metadata.toolName,
     viewport.element
@@ -54,37 +53,26 @@ export default function getInterpolationData(
         (x as InterpolationROIAnnotation).metadata.referencedSliceIndex === i
     );
 
-    if (!imageAnnotations || !imageAnnotations.length) {
-      if (!onlyAnnotationImage) {
-        interpolationDatas.push({
-          sliceIndex: i,
+    if (!imageAnnotations?.length) {
+      continue;
+    }
+
+    const filteredInterpolatedAnnotations = imageAnnotations.filter(
+      (imageAnnotation) => {
+        return filterParams.every((x) => {
+          const parent = x.parentKey
+            ? x.parentKey(imageAnnotation)
+            : imageAnnotation;
+          const value = parent?.[x.key];
+          if (Array.isArray(value)) {
+            return value.every((item, index) => item === x.value[index]);
+          }
+          return value === x.value;
         });
       }
-    } else {
-      const filteredInterpolatedAnnotations = imageAnnotations.filter(
-        (imageAnnotation) => {
-          return filterParams.every((x) => {
-            const parent = x.parentKey
-              ? x.parentKey(imageAnnotation)
-              : imageAnnotation;
-            const value = parent?.[x.key];
-            if (Array.isArray(value)) {
-              return value.every((item, index) => item === x.value[index]);
-            }
-            return value === x.value;
-          });
-        }
-      );
+    );
 
-      const annotationsOnImage: ImageInterpolationData = {
-        sliceIndex: i,
-        annotations: filteredInterpolatedAnnotations.length
-          ? filteredInterpolatedAnnotations
-          : undefined,
-      };
-
-      interpolationDatas.push(annotationsOnImage);
-    }
+    interpolationDatas.set(i, filteredInterpolatedAnnotations);
   }
 
   return interpolationDatas;
