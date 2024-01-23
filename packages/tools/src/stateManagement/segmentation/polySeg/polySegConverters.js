@@ -1,16 +1,48 @@
 import { expose } from 'comlink';
-import ICRPolySeg from '@icr/polyseg-wasm';
-import { utilities } from '@cornerstonejs/core';
-import { getAnnotation } from '../../../..';
-import { getBoundingBoxAroundShapeWorld } from '../../../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../../../utilities';
-import { isPointInsidePolyline3D } from '../../../../../utilities/math/polyline';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import ICRPolySeg from '@icr/polyseg-wasm';
+import { utilities } from '@cornerstonejs/core';
+import { getBoundingBoxAroundShapeWorld } from '../../../utilities/boundingBox';
+import { pointInShapeCallback } from '../../../utilities';
+import { isPointInsidePolyline3D } from '../../../utilities/math/polyline';
 
 const obj = {
-  polySeg: {},
-  async compute(args, ...callbacks) {
+  polySeg: null,
+  async initializePolySeg(progressCallback) {
+    if (!this.polySeg) {
+      this.polySeg = await new ICRPolySeg();
+      await this.polySeg.initialize({
+        updateProgress: progressCallback,
+      });
+    }
+  },
+  async convertContourToSurface(args, ...callbacks) {
+    const { polylines, numPointsArray } = args;
+    const [progressCallback] = callbacks;
+    await this.initializePolySeg(progressCallback);
+    const results = await this.polySeg.instance.convertContourRoiToSurface(
+      polylines,
+      numPointsArray
+    );
+
+    return results;
+  },
+  async convertLabelmapToSurface(args, ...callbacks) {
+    const [progressCallback] = callbacks;
+    await this.initializePolySeg(progressCallback);
+
+    const results = this.polySeg.instance.convertLabelmapToSurface(
+      args.scalarData,
+      args.dimensions,
+      args.spacing,
+      args.direction,
+      args.origin,
+      [args.segmentIndex]
+    );
+    return results;
+  },
+  async convertContourToLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
     const polySeg = await new ICRPolySeg();
     await polySeg.initialize({

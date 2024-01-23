@@ -3,20 +3,7 @@ import { getWebWorkerManager } from '@cornerstonejs/core';
 import { ContourSegmentationData } from '../../../../types';
 import { getAnnotation } from '../../../annotation/annotationState';
 
-const workerFn = () => {
-  return new Worker(new URL('./workers/ContourToSurface.js', import.meta.url), {
-    name: 'ContourToSurface',
-  });
-};
-
 const workerManager = getWebWorkerManager();
-
-const options = {
-  maxWorkerInstances: 1,
-  autoTerminationOnIdle: 10000,
-};
-
-workerManager.registerWorker('polySeg-contour-to-surface', workerFn, options);
 
 export async function convertContourToSurface(
   contourRepresentationData: ContourSegmentationData,
@@ -37,8 +24,8 @@ export async function convertContourToSurface(
   }
 
   const results = await workerManager.executeTask(
-    'polySeg-contour-to-surface',
-    'compute',
+    'polySeg',
+    'convertContourToSurface',
     {
       polylines,
       numPointsArray,

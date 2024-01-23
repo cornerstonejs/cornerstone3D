@@ -2,23 +2,7 @@ import { Types, getWebWorkerManager } from '@cornerstonejs/core';
 import { Annotation, ContourSegmentationData } from '../../../../types';
 import { getAnnotation } from '../../..';
 
-const workerFn = () => {
-  return new Worker(
-    new URL('./workers/ContourToLabelmap.js', import.meta.url),
-    {
-      name: 'ContourToLabelmap',
-    }
-  );
-};
-
 const workerManager = getWebWorkerManager();
-
-const options = {
-  maxWorkerInstances: 1,
-  autoTerminationOnIdle: 10000,
-};
-
-workerManager.registerWorker('polySeg-contour-to-labelmap', workerFn, options);
 
 export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ContourSegmentationData,
@@ -52,8 +36,8 @@ export async function convertContourToVolumeLabelmap(
   });
 
   const newScalarData = await workerManager.executeTask(
-    'polySeg-contour-to-labelmap',
-    'compute',
+    'polySeg',
+    'convertContourToLabelmap',
     {
       segmentIndices,
       dimensions,
