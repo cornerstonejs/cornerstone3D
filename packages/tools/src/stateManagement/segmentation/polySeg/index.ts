@@ -15,7 +15,7 @@ const options = {
   maxWorkerInstances: 1, // Todo, make this configurable
   autoTerminateOnIdle: {
     enabled: true,
-    idleTimeThreshold: 3000,
+    idleTimeThreshold: 2000,
   },
 };
 

@@ -9,6 +9,7 @@ import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
 import { ToolGroupSpecificRepresentations } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
+import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 
 export async function updateSurfaceData(segmentationId) {
   const surfacesObj = await computeSurfaceFromLabelmapSegmentation(
@@ -58,7 +59,7 @@ export async function updateSurfaceData(segmentationId) {
           }
           segmentation.representationData.SURFACE.geometryIds.push(geometryId);
 
-          return this.createAndCacheSurfacesFromRaw(
+          return createAndCacheSurfacesFromRaw(
             segmentationId,
             [{ segmentIndex, data }],
             {

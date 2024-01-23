@@ -9,13 +9,32 @@ import { isPointInsidePolyline3D } from '../../../utilities/math/polyline';
 
 const obj = {
   polySeg: null,
+  polySegInitializing: false,
+  polySegInitializingPromise: null,
   async initializePolySeg(progressCallback) {
-    if (!this.polySeg) {
-      this.polySeg = await new ICRPolySeg();
-      await this.polySeg.initialize({
-        updateProgress: progressCallback,
-      });
+    if (this.polySegInitializing) {
+      await this.polySegInitializingPromise;
+      return;
     }
+
+    if (this.polySeg?.instance) {
+      return;
+    }
+
+    this.polySegInitializing = true;
+    this.polySegInitializingPromise = new Promise((resolve) => {
+      this.polySeg = new ICRPolySeg();
+      this.polySeg
+        .initialize({
+          updateProgress: progressCallback,
+        })
+        .then(() => {
+          this.polySegInitializing = false;
+          resolve();
+        });
+    });
+
+    await this.polySegInitializingPromise;
   },
   async convertContourToSurface(args, ...callbacks) {
     const { polylines, numPointsArray } = args;
