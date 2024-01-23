@@ -28,10 +28,15 @@ function getValidContourSegmentationAnnotations(
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
   const { annotationUID: sourceAnnotationUID } = sourceAnnotation;
-  const { FrameOfReferenceUID, toolName } = sourceAnnotation.metadata;
+  const { FrameOfReferenceUID } = sourceAnnotation.metadata;
 
-  return <ContourSegmentationAnnotation[]>(
-    getAnnotations(toolName, FrameOfReferenceUID).filter(
+  // Get all annotations and filter all contour segmentations locally
+  const toolName = undefined;
+  const annotationsGroups = getAnnotations(toolName, FrameOfReferenceUID);
+  const toolNames = Object.keys(annotationsGroups);
+
+  return toolNames.reduce((validAnnotations, toolName) => {
+    const toolAnnotations = annotationsGroups[toolName].filter(
       (targetAnnotation) =>
         targetAnnotation.annotationUID &&
         !targetAnnotation.parentAnnotationUID &&
@@ -39,8 +44,10 @@ function getValidContourSegmentationAnnotations(
         isContourSegmentationAnnotation(targetAnnotation) &&
         areContoursFromSameSegmentIndex(targetAnnotation, sourceAnnotation) &&
         areCoplanarContours(targetAnnotation, sourceAnnotation)
-    )
-  );
+    );
+
+    return validAnnotations.concat(toolAnnotations);
+  }, []);
 }
 
 function getTargetAnnotation(
@@ -111,7 +118,7 @@ function processContours(
   const { renderingEngine } = enabledElement;
   const { metadata, data } = targetAnnotation;
   const { handles, segmentation } = data;
-  const { textbox } = handles;
+  const { textBox } = handles;
 
   newPolylines.forEach((newPolyline) => {
     const polyline = newPolyline.map((p) => viewport.canvasToWorld(p));
@@ -126,7 +133,7 @@ function processContours(
         cachedStats: {},
         handles: {
           points: [startPoint, endPoint],
-          textbox: { ...textbox },
+          textBox: textBox ? { ...textBox } : undefined,
         },
         contour: {
           polyline,
