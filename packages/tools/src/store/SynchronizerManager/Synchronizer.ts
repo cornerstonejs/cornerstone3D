@@ -319,15 +319,14 @@ class Synchronizer {
     };
 
     viewports.forEach(function (vUid) {
-      const renderingEngine = getRenderingEngine(
-        vUid.renderingEngineId
-      ).getViewport(vUid.viewportId);
+      const renderingEngine = getRenderingEngine(vUid.renderingEngineId);
 
       if (!renderingEngine) {
         return;
       }
 
-      const { element } = renderingEngine;
+      const viewport = renderingEngine.getViewport(vUid.viewportId);
+      const { element } = viewport;
 
       element.removeEventListener(
         Enums.Events.ELEMENT_DISABLED,
