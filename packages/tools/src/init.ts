@@ -5,12 +5,13 @@ import { Events as TOOLS_EVENTS } from './enums';
 import { addEnabledElement, removeEnabledElement } from './store';
 import { resetCornerstoneToolsState } from './store/state';
 import {
+  annotationCompletedListener,
   annotationSelectionListener,
+  annotationModifiedListener,
   segmentationDataModifiedEventListener,
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
-  annotationModifiedListener,
 } from './eventListeners';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
@@ -101,6 +102,11 @@ function _addCornerstoneToolsEventListeners() {
    * Annotation
    */
   eventTarget.addEventListener(
+    TOOLS_EVENTS.ANNOTATION_COMPLETED,
+    annotationCompletedListener
+  );
+
+  eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_MODIFIED,
     annotationModifiedListener
   );
@@ -145,6 +151,11 @@ function _removeCornerstoneToolsEventListeners() {
   /**
    * Annotation
    */
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.ANNOTATION_COMPLETED,
+    annotationCompletedListener
+  );
+
   eventTarget.removeEventListener(
     TOOLS_EVENTS.ANNOTATION_MODIFIED,
     annotationModifiedListener

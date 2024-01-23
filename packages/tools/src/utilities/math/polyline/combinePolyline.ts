@@ -1,96 +1,10 @@
 import { Types } from '@cornerstonejs/core';
 import * as math from '..';
-import { intersectLine } from '../line';
 import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
 import containsPoint from './containsPoint';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
 import getLineSegmentsIntersection from './getLineSegmentsIntersection';
-
-enum VertexTypes {
-  None = 0,
-  Entering = 1,
-  Exiting = -1,
-}
-
-type PolylineContext = {
-  polyline: Types.Point2[];
-  verticesType: VertexTypes[];
-  segmentIndex: number;
-};
-
-function createPolylineContext(polyline: Types.Point2[]): PolylineContext {
-  const verticesType = new Array(polyline.length).fill(VertexTypes.None);
-
-  // Clone the polyline because line segments will be split on every intersection
-  return {
-    polyline: polyline.slice(),
-    verticesType,
-    segmentIndex: 0,
-  };
-}
-
-function _getClosestIntersectionToStartPoint(
-  startPoint: Types.Point2,
-  endPoint: Types.Point2,
-  intersectedLineSegmentsIndexes: Types.Point2[],
-  intersectedPolyline: Types.Point2[]
-) {
-  if (!intersectedLineSegmentsIndexes.length) {
-    return;
-  }
-
-  const closestDistanceSquared = Infinity;
-  const closestPoint = null;
-
-  for (let i = 0, len = intersectedLineSegmentsIndexes.length; i < len; i++) {
-    const [lineSegStart, lineSegEnd] = intersectedLineSegmentsIndexes[i];
-    // const lineSegment = intersectedPolyline[lineSegmentIndex];
-  }
-}
-
-function runCombinePolyline(
-  activePolylineContext: PolylineContext,
-  otherPolylineContext: PolylineContext,
-  combinedPolyline: Types.Point2[]
-): void {
-  const { polyline, segmentIndex: segmentIndex } = activePolylineContext;
-  const { polyline: otherPolyline } = otherPolylineContext;
-  const numLineSegments = polyline.length - 1;
-
-  for (let i = segmentIndex; i < numLineSegments; i++) {
-    const p1 = polyline[i];
-    // DO NOT use % (mod) operator because it is much slower
-    const p2Index = i === numLineSegments - 1 ? 0 : i + 1;
-    const p2 = polyline[p2Index];
-    const intersectedLineSegmentsIndexes = getLineSegmentIntersectionsIndexes(
-      otherPolyline,
-      p1,
-      p2
-    );
-
-    if (intersectedLineSegmentsIndexes.length) {
-      //
-    }
-
-    combinedPolyline.push();
-
-    // const intersectionPointIndices = getFirstIntersectionWithPolyline(
-    //   targetPolyline,
-    //   sourceP1,
-    //   sourceP2
-    // );
-    //
-
-    if (intersect) {
-      runCombinePolyline(
-        otherPolylineContext,
-        activePolylineContext,
-        combinedPolyline
-      );
-    }
-  }
-}
 
 enum PolylinePointType {
   Vertex,
@@ -180,57 +94,12 @@ function getSourceAndTargetPointsList(
       // Examples:
       //   - [(0, 0), (1, 1)] x [(1, 1), (1, 2)]
       //   - [(0, 1), (2, 1)] x [(1, 1), (1, 2)]
-      let intersectionCoordinate = math.lineSegment.intersectLine(
+      const intersectionCoordinate = getLineSegmentsIntersection(
         p1,
         q1,
         p2,
         q2
       ) as Types.Point2;
-
-      // TODO: Investigate why it returns `undefined` for some line segments
-      // when an one of the points of each line segment are very close enough
-      // being almost at the same place (workaround)
-      //   Example:
-      //     - p1: (184, 108.125)
-      //     - q1: (183.75000000427858, 107.87500000427855)
-      //     - p2: (184, 108.125)
-      //     - q2: (184, 108.375)
-      if (!intersectionCoordinate) {
-        // debugger;
-
-        // DEBUG
-        math.lineSegment.intersectLine(p1, q1, p2, q2) as Types.Point2;
-
-        // DEBUG
-        const newIntersectionCoordinates = getLineSegmentsIntersection(
-          p1,
-          q1,
-          p2,
-          q2
-        );
-
-        console.log('>>>>> intersectionCoordinate was UNDEFINED');
-
-        intersectionCoordinate = newIntersectionCoordinates;
-
-        // const lineSegment1 = [p1, q1];
-        // const lineSegment2 = [p2, q2];
-        // let minDist = Infinity;
-        //
-        // for (let i = 0; i < lineSegment1.length; i++) {
-        //   const pi = lineSegment1[i];
-        //   for (let j = 0; j < lineSegment1.length; j++) {
-        //     const pj = lineSegment2[j];
-        //     const dist = math.point.distanceToPoint(pi, pj);
-        //
-        //     if (dist < minDist) {
-        //       minDist = dist;
-        //       intersectionCoordinate = pi; // or pj
-        //     }
-        //     console.log('>>>>> :: points (i, j) distance:', dist);
-        //   }
-        // }
-      }
 
       const targetStartPointDistSquared = math.point.distanceToPointSquared(
         p1,
@@ -372,11 +241,10 @@ function mergePolylines(
     sourcePolyline = sourcePolyline.reverse();
   }
 
-  const startTime = performance.now();
-  const { targetPolylinePoints, sourcePolylinePoints } =
-    getSourceAndTargetPointsList(targetPolyline, sourcePolyline);
-  // console.log('>>>>> :: targetPolylinePoints:', targetPolylinePoints);
-  // console.log('>>>>> :: sourcePolylinePoints:', sourcePolylinePoints);
+  const { targetPolylinePoints } = getSourceAndTargetPointsList(
+    targetPolyline,
+    sourcePolyline
+  );
   const startPoint: PolylinePoint =
     getUnvisitedOutsidePoint(targetPolylinePoints);
 
@@ -387,8 +255,6 @@ function mergePolylines(
 
   const mergedPolyline = [startPoint.coordinates];
   let currentPoint = startPoint.next;
-
-  let debugCounter = 0;
 
   while (currentPoint !== startPoint) {
     if (
@@ -401,17 +267,7 @@ function mergePolylines(
 
     mergedPolyline.push(currentPoint.coordinates);
     currentPoint = currentPoint.next;
-    debugCounter++;
-
-    // if (debugCounter === 30000) {
-    //   debugger;
-    // }
   }
-
-  console.log(
-    '>>>>> time :: mergePolyline (false):',
-    performance.now() - startTime
-  );
 
   return mergedPolyline;
 }
@@ -434,7 +290,6 @@ function subtractPolylines(
     sourcePolyline = sourcePolyline.reverse();
   }
 
-  const startTime = performance.now();
   const { targetPolylinePoints } = getSourceAndTargetPointsList(
     targetPolyline,
     sourcePolyline
@@ -459,20 +314,12 @@ function subtractPolylines(
         continue;
       }
 
-      (window as any).currentPoint = currentPoint;
-      (window as any).subtractedPolyline = subtractedPolyline;
       subtractedPolyline.push(currentPoint.coordinates);
       currentPoint = currentPoint.next;
     }
 
-    console.log('>>>>> :: subtractedPolyline:', subtractedPolyline);
     subtractedPolylines.push(subtractedPolyline);
   }
-
-  console.log(
-    '>>>>> time :: mergePolyline (false):',
-    performance.now() - startTime
-  );
 
   return subtractedPolylines;
 }

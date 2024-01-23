@@ -5,7 +5,6 @@ import {
   touchEventListeners,
   keyEventListener,
   imageChangeEventListener,
-  contourAnnotationEventListener,
 } from '../eventListeners';
 import {
   imageRenderedEventDispatcher,
@@ -53,9 +52,6 @@ function removeEnabledElement(
   imageRenderedEventDispatcher.disable(element);
   cameraModifiedEventDispatcher.disable(element);
   imageSpacingCalibratedEventDispatcher.disable(element);
-
-  // Contour annotations
-  contourAnnotationEventListener.disable(element);
 
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(element);

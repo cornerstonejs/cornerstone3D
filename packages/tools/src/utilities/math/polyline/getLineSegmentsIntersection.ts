@@ -1,7 +1,21 @@
 import { Types } from '@cornerstonejs/core';
 
+// ATTENTION: this is an internal function and it should not be added to "polyline"
+// namespace because there is another one from lineSegment.intersectLine that also
+// finds an intersection between two line segments. This one should be removed but
+// it is faster and able to find intersections when the intersection is one of the
+// two points of a line segment.
+//
+// Example:
+//   Line 1: (0, 0), (1, 1) x Line 2 (1, 1), (1, 2)
+//   Line 1: (0, 1), (2, 1) x Line 2 (1, 1), (1, 2)
+//
+// This function must replace `lineSegment.intersectLine` but it requires some
+// tests first
+
 /**
  * Gets the intersection between the line (`p1`,`q1`) and the line (`p2`,`q2`)
+ *
  * http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
  * https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
  */

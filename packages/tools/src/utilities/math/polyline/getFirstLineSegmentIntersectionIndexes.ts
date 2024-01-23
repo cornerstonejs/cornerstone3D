@@ -33,17 +33,6 @@ export default function getFirstLineSegmentIntersectionIndexes(
     const p2 = points[j];
     const q2 = points[i];
 
-    // const intersects1 = lineSegmentsIntersect(p1, q1, p2, q2);
-    // const intersects2 = math.lineSegment.intersectLine(p1, q1, p2, q2);
-
-    // if (!!intersects1 !== !!intersects2) {
-    //   console.log('>>>>> :: intersects1:', intersects1);
-    //   console.log('>>>>> :: intersects2:', intersects2);
-    //   debugger;
-    //   math.lineSegment.intersectLine(p1, q1, p2, q2);
-    //   lineSegmentsIntersect(p1, q1, p2, q2);
-    // }
-
     if (lineSegmentsIntersect(p1, q1, p2, q2)) {
       return [j, i];
     }

@@ -1,12 +1,17 @@
 import type { Types } from '@cornerstonejs/core';
 
+// ATTENTION: this is an internal function and it should not be added to "polyline"
+// namespace.
+//
 // TODO: there is a similar function in math.lineSegment.intersectLine but we
 // need to investigate why it is 6x slower than this one when thousands of
 // intersections are calculated. Also that one may return [NaN, NaN] for
 // collinear points.
 
 /**
- * Checks whether the line (`p1`,`q1`) intersects the line (`p2`,`q2`) via an orientation algorithm.
+ * Checks whether the line (`p1`,`q1`) intersects the line (`p2`,`q2`) via an
+ * orientation algorithm.
+ *
  * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
  */
 function lineSegmentsIntersect(

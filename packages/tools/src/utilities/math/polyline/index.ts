@@ -1,9 +1,10 @@
 import isClosed from './isClosed';
 import containsPoint from './containsPoint';
+import getAABB from './getAABB';
 import getNormal3 from './getNormal3';
+import getNormal2 from './getNormal2';
 import { mergePolylines, subtractPolylines } from './combinePolyline';
 import intersectPolyline from './intersectPolyline';
-import getLineSegmentsIntersection from './getLineSegmentsIntersection';
 import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes';
 import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
 import getLineSegmentIntersectionsCoordinates from './getLineSegmentIntersectionsCoordinates';
@@ -17,7 +18,9 @@ import calculateAreaOfPoints from './calculateAreaOfPoints';
 export {
   isClosed,
   containsPoint,
+  getAABB,
   getNormal3,
+  getNormal2,
   intersectPolyline,
   getFirstLineSegmentIntersectionIndexes,
   getLineSegmentIntersectionsIndexes,
@@ -30,7 +33,4 @@ export {
   calculateAreaOfPoints,
   mergePolylines,
   subtractPolylines,
-
-  // DELETE ////////////////////////////////////////////////////////////////////
-  getLineSegmentsIntersection,
 };

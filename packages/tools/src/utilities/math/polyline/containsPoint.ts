@@ -22,7 +22,6 @@ export default function containsPoint(
   }
 
   const numPolylinePoints = polyline.length;
-  // const startTime = performance.now();
   let numIntersections = 0;
 
   // Test intersection agains [end, start] line segment if it should be closed
@@ -37,7 +36,7 @@ export default function containsPoint(
     const p2Index = i === numPolylinePoints - 1 ? 0 : i + 1;
     const p2 = polyline[p2Index];
 
-    // Calculating min/max without using Math.min/max to make it 3% faster
+    // Calculating min/max without using Math.min/max to make it ~3% faster
     const maxX = p1[0] >= p2[0] ? p1[0] : p2[0];
     const maxY = p1[1] >= p2[1] ? p1[1] : p2[1];
     const minY = p1[1] <= p2[1] ? p1[1] : p2[1];
@@ -59,8 +58,6 @@ export default function containsPoint(
       numIntersections += intersects ? 1 : 0;
     }
   }
-  // prettier-ignore
-  // console.log(`>>>>> time :: containsPoint (${polyline.length}, ${!!(numIntersections % 2)}):`, performance.now() - startTime);
 
   return !!(numIntersections % 2);
 }

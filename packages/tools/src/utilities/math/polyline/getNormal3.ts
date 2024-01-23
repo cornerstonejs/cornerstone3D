@@ -7,7 +7,6 @@ import { Types } from '@cornerstonejs/core';
  * @returns Normal of the 3D planar polyline
  */
 export default function getNormal3(polyline: Types.Point3[]): Types.Point3 {
-  const startTime = performance.now();
   const vecCrossProd = vec3.create();
   const vecP1P2 = vec3.create();
   const vecP2P3 = vec3.create();
@@ -34,7 +33,5 @@ export default function getNormal3(polyline: Types.Point3[]): Types.Point3 {
 
   vec3.normalize(vecNormal, vecNormal);
 
-  // prettier-ignore
-  console.log('>>>>> time :: getNormal3:', performance.now() - startTime);
   return vecNormal as Types.Point3;
 }

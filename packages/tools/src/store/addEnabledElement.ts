@@ -5,7 +5,6 @@ import {
   touchEventListeners,
   keyEventListener,
   imageChangeEventListener,
-  contourAnnotationEventListener,
 } from '../eventListeners';
 import {
   imageRenderedEventDispatcher,
@@ -44,7 +43,6 @@ export default function addEnabledElement(
   touchEventListeners.enable(element);
   keyEventListener.enable(element);
   imageChangeEventListener.enable(element);
-  contourAnnotationEventListener.enable(element);
 
   // Dispatchers: renderer
   imageRenderedEventDispatcher.enable(element);
