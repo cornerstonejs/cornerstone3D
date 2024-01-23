@@ -6,11 +6,6 @@ class CentralizedWorkerManager {
   constructor() {
     this.workerRegistry = {};
     this.workerPoolManager = new RequestPoolManager('webworker');
-    this.checkIntervalForIdleWorkers = 1000;
-  }
-
-  setCheckIntervalForIdleWorkers(value) {
-    this.checkIntervalForIdleWorkers = value;
   }
 
   /**
@@ -29,7 +24,10 @@ class CentralizedWorkerManager {
     const {
       maxWorkerInstances = 1,
       overwrite = false,
-      autoTerminateOnIdle = false,
+      autoTerminateOnIdle = {
+        enabled: false,
+        idleTimeThreshold: 3000, // 3 seconds
+      },
     } = options;
 
     if (this.workerRegistry[workerName] && !overwrite) {
@@ -43,24 +41,14 @@ class CentralizedWorkerManager {
 
     const workerProperties = {
       workerFn: null,
-      idleCheckIntervalId: null,
       instances: [],
       loadCounters: [],
       lastActiveTime: [],
       // used for termination
       nativeWorkers: [],
+      idleCheckIntervalId: null,
+      idleTimeThreshold: autoTerminateOnIdle.idleTimeThreshold,
     };
-
-    if (
-      (autoTerminateOnIdle && !workerProperties.idleCheckIntervalId) ||
-      overwrite
-    ) {
-      const idleCheckIntervalId = setInterval(() => {
-        this.terminateIdleWorkers(workerName, autoTerminateOnIdle);
-      }, this.checkIntervalForIdleWorkers);
-
-      workerProperties.idleCheckIntervalId = idleCheckIntervalId;
-    }
 
     workerProperties.loadCounters = Array(maxWorkerInstances).fill(0);
     workerProperties.lastActiveTime = Array(maxWorkerInstances).fill(null);
@@ -168,6 +156,19 @@ class CentralizedWorkerManager {
 
           const workerProperties = this.workerRegistry[workerName];
           workerProperties.lastActiveTime[index] = Date.now();
+
+          // If auto termination is enabled and the interval is not set, set it.
+          if (
+            !workerProperties.idleCheckIntervalId &&
+            workerProperties.idleTimeThreshold
+          ) {
+            workerProperties.idleCheckIntervalId = setInterval(() => {
+              this.terminateIdleWorkers(
+                workerName,
+                workerProperties.idleTimeThreshold
+              );
+            }, workerProperties.idleTimeThreshold);
+          }
 
           resolve(results);
         } catch (err) {

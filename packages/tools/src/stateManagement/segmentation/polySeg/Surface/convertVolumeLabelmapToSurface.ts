@@ -17,7 +17,7 @@ export async function convertVolumeLabelmapToSurface(
 
   const results = await workerManager.executeTask(
     'polySeg',
-    'computeLabelmapToSurface',
+    'convertLabelmapToSurface',
     {
       scalarData,
       dimensions,

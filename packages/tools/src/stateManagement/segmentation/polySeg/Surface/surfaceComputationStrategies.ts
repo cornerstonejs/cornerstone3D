@@ -102,7 +102,10 @@ async function computeSurfaceFromLabelmapSegmentation(
 
   const labelmapRepresentationData = segmentation.representationData.LABELMAP;
 
-  const promises = options.segmentIndices.map(async (index) => {
+  const segmentIndices =
+    options.segmentIndices || getUniqueSegmentIndices(segmentationId);
+
+  const promises = segmentIndices.map(async (index) => {
     const surface = isVolume
       ? await convertVolumeLabelmapToSurface(
           labelmapRepresentationData as LabelmapSegmentationDataVolume,
@@ -138,7 +141,10 @@ async function computeSurfaceFromContourSegmentation(
 
   const contourRepresentationData = segmentation.representationData.CONTOUR;
 
-  const promises = options.segmentIndices.map(async (index) => {
+  const segmentIndices =
+    options.segmentIndices || getUniqueSegmentIndices(segmentationId);
+
+  const promises = segmentIndices.map(async (index) => {
     const surface = await convertContourToSurface(
       contourRepresentationData as ContourSegmentationData,
       index
@@ -152,4 +158,7 @@ async function computeSurfaceFromContourSegmentation(
   return surfaces;
 }
 
-export { computeSurfaceFromContourSegmentation };
+export {
+  computeSurfaceFromContourSegmentation,
+  computeSurfaceFromLabelmapSegmentation,
+};

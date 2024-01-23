@@ -13,7 +13,10 @@ const workerManager = getWebWorkerManager();
 
 const options = {
   maxWorkerInstances: 1, // Todo, make this configurable
-  autoTerminationOnIdle: 3000,
+  autoTerminateOnIdle: {
+    enabled: true,
+    idleTimeThreshold: 3000,
+  },
 };
 
 workerManager.registerWorker('polySeg', workerFn, options);

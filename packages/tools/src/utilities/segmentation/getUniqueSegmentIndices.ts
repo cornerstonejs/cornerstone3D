@@ -9,7 +9,7 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
  * @returns An array of unique segment indices.
  * @throws If no geometryIds are found for the segmentationId.
  */
-function getUniqueSegmentIndices(segmentationId) {
+function getUniqueSegmentIndices(segmentationId): number[] {
   const segmentation = getSegmentation(segmentationId);
 
   if (segmentation.type === SegmentationRepresentations.Labelmap) {

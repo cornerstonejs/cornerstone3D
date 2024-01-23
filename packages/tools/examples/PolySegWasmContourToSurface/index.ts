@@ -107,7 +107,6 @@ const segmentIndexes = [1, 2, 3, 4, 5];
 addButtonToToolbar({
   title: 'Convert contour segmentation to closed surface segmentation',
   onClick: async () => {
-    // add the 3d representation to the 3d toolgroup
     await segmentation.addSegmentationRepresentations(toolGroupId2, [
       {
         segmentationId,

@@ -9,15 +9,6 @@ const computedRepresentations = new Map<
   SegmentationRepresentations[]
 >();
 
-// const debouncedSegmentationModified = debounce((event: CustomEvent) => {
-//   const segmentationId = event.detail.segmentationId;
-//   const representations = computedRepresentations.get(segmentationId);
-
-//   if (representations?.length) {
-//     triggerSegmentationModified(segmentationId);
-//   }
-// }, 300);
-
 /**
  * Computes a representation using the provided computation function, adds the computed data,
  * subscribes to segmentation changes, and triggers segmentation modification.
@@ -32,6 +23,7 @@ async function computeAndAddRepresentation<T>(
   segmentationId: string,
   representationType: SegmentationRepresentations,
   computeFunction: () => Promise<T>,
+  updateFunction?: () => void,
   options: any
 ): Promise<T> {
   // Compute the specific representation data
@@ -55,7 +47,7 @@ async function computeAndAddRepresentation<T>(
   }
 
   // Subscribe to any changes in the segmentation data for real-time updates
-  // subscribeToSegmentationChanges();
+  subscribeToSegmentationChanges(updateFunction);
 
   // Notify other system parts that segmentation data has been modified
   triggerSegmentationModified(segmentationId);
@@ -63,24 +55,41 @@ async function computeAndAddRepresentation<T>(
   return data;
 }
 
-function unsubscribeFromSegmentationChanges() {
-  eventTarget.removeEventListener(
-    Events.SEGMENTATION_DATA_MODIFIED,
-    this._debouncedSegmentationModified
-  );
-}
-
 /**
  * Subscribes to segmentation changes by adding an event listener for the SEGMENTATION_DATA_MODIFIED event.
  * If there is an existing listener, it will be unsubscribed before adding the new listener.
  */
-function subscribeToSegmentationChanges() {
-  this.unsubscribeFromSegmentationChanges();
+function subscribeToSegmentationChanges(updateFunction) {
+  // Named function for handling the event
+  const handleSegmentationChange = (event) => {
+    _debouncedSegmentationModified(event, updateFunction);
+  };
 
+  // Remove the event listener for cleanup
+  eventTarget.removeEventListener(
+    Events.SEGMENTATION_DATA_MODIFIED,
+    handleSegmentationChange
+  );
+
+  // Add the event listener
   eventTarget.addEventListener(
     Events.SEGMENTATION_DATA_MODIFIED,
-    this._debouncedSegmentationModified
+    handleSegmentationChange
   );
 }
+
+const _debouncedSegmentationModified = debounce((event, updateFunction) => {
+  const segmentationId = event.detail.segmentationId;
+  const representations = computedRepresentations.get(segmentationId);
+  if (!representations || !representations.length) {
+    return;
+  }
+
+  updateFunction(segmentationId);
+
+  if (representations.length) {
+    triggerSegmentationModified(segmentationId);
+  }
+}, 300);
 
 export { computeAndAddRepresentation };
