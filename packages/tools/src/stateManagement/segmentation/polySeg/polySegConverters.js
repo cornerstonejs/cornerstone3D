@@ -184,7 +184,7 @@ const obj = {
 
     const promises = Array.from(segmentsInfo.keys()).map((segmentIndex) => {
       const { points, polys } = segmentsInfo.get(segmentIndex);
-      return this.polySeg.instance.convertSurfaceToLabelmap(
+      const result = this.polySeg.instance.convertSurfaceToLabelmap(
         points,
         polys,
         args.dimensions,
@@ -192,6 +192,11 @@ const obj = {
         args.direction,
         args.origin
       );
+
+      return {
+        ...result,
+        segmentIndex,
+      };
     });
 
     const results = await Promise.all(promises);
@@ -250,7 +255,13 @@ const obj = {
 
       const extent = volume.getExtent(); // e.g., [0, 176, 0, 268, 0, 337] for dimensions of [177, 269, 338]
 
-      return { volume, voxelManager, extent, scalarData: data };
+      return {
+        volume,
+        voxelManager,
+        extent,
+        scalarData: data,
+        segmentIndex: result.segmentIndex,
+      };
     });
 
     pointInShapeCallback(
@@ -262,13 +273,8 @@ const obj = {
         // of the point is outside the bounding box of the labelmap
 
         try {
-          for (
-            let segmentIndex = 0;
-            segmentIndex < outputVolumesInfo.length;
-            segmentIndex++
-          ) {
-            const volumeInfo = outputVolumesInfo[segmentIndex];
-            const { volume, extent, voxelManager } = volumeInfo;
+          for (const volumeInfo of outputVolumesInfo) {
+            const { volume, extent, voxelManager, segmentIndex } = volumeInfo;
 
             const index = volume.worldToIndex(pointLPS);
 

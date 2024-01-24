@@ -13,7 +13,7 @@ export async function convertSurfaceToVolumeLabelmap(
   segmentationVolume: Types.IImageVolume
 ) {
   const { geometryIds } = surfaceRepresentationData;
-  if (!geometryIds?.length) {
+  if (!geometryIds?.size) {
     throw new Error('No geometry IDs found for surface representation');
   }
 
@@ -25,18 +25,17 @@ export async function convertSurfaceToVolumeLabelmap(
     }
   >;
 
-  for (let i = 0; i < geometryIds.length; i++) {
-    const geometryId = geometryIds[i];
+  geometryIds.forEach((geometryId, segmentIndex) => {
     const geometry = cache.getGeometry(geometryId);
     const geometryData = geometry.data as Types.ISurface;
     const points = geometryData.getPoints();
     const polys = geometryData.getPolys();
 
-    segmentsInfo.set(i, {
+    segmentsInfo.set(segmentIndex, {
       points,
       polys,
     });
-  }
+  });
 
   const { dimensions, direction, origin, spacing } = segmentationVolume;
   const results = await workerManager.executeTask(

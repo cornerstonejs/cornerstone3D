@@ -110,7 +110,9 @@ async function render(
 
   let newSurfaceForRendering = false;
 
-  geometryIds.forEach((geometryId) => {
+  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+
+  geometryIds.forEach((geometryId, segmentIndex) => {
     const geometry = cache.getGeometry(geometryId);
     if (!geometry) {
       throw new Error(`No Surfaces found for geometryId ${geometryId}`);
@@ -131,6 +133,9 @@ async function render(
     }
 
     const surface = geometry.data;
+
+    const color = colorLUT[segmentIndex];
+    surface.setColor(color);
 
     const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
     const actorUID = surfaceUID;

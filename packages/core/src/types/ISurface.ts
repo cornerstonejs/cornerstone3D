@@ -5,6 +5,7 @@ export interface ISurface {
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;
   getColor(): Point3;
+  setColor(color: Point3): void;
   getPoints(): number[];
   getPolys(): number[];
   getSizeInBytes(): number;
