@@ -1350,6 +1350,9 @@ type ContourAnnotationData = {
             polyline: Types_2.Point3[];
             closed: boolean;
         };
+        handles?: {
+            handleContourIndex?: number[];
+        };
     };
 };
 
@@ -3057,10 +3060,14 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         lastCanvasPoint?: Types_2.Point2;
         confirmedPath?: LivewirePath;
         currentPath?: LivewirePath;
+        confirmedPathRight?: LivewirePath;
         closed?: boolean;
         worldToSlice?: (point: Types_2.Point3) => Types_2.Point2;
         sliceToWorld?: (point: Types_2.Point2) => Types_2.Point3;
+        originalPath?: Types_2.Point3[];
     } | null;
+    // (undocumented)
+    editHandle(worldPos: Types_2.Point3, element: any, annotation: any, handleIndex: number): void;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
@@ -3085,6 +3092,8 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         annotationStyle: Record<string, any>;
         svgDrawingHelper: SVGDrawingHelper;
     }): boolean;
+    // (undocumented)
+    protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any): void;
     // (undocumented)
     static toolName: string;
     // (undocumented)

@@ -538,7 +538,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       );
       const rightIndex =
         handleIndex === numHandles - 1
-          ? 0
+          ? polyline.length
           : polyline.findIndex((point) => isEqual(point, rightHandle));
 
       if (rightIndex < leftIndex) {
