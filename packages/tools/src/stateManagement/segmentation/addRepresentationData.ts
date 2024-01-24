@@ -1,4 +1,3 @@
-import { cache } from '@cornerstonejs/core';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import { ContourSegmentationData } from '../../types/ContourTypes';
 import { SurfaceSegmentationData } from '../../types/SurfaceTypes';

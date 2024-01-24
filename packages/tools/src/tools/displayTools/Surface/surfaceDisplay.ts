@@ -73,6 +73,11 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    return;
+  }
+
   let SurfaceData = segmentation.representationData[Representations.Surface];
 
   if (
@@ -97,7 +102,7 @@ async function render(
 
   const { geometryIds } = SurfaceData;
 
-  if (!geometryIds?.length) {
+  if (!geometryIds?.size) {
     console.warn(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );

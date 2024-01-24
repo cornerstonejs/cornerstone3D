@@ -6,10 +6,7 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
 import { convertContourToVolumeLabelmap } from './convertContourToLabelmap';
-import {
-  convertSurfaceToStackLabelmap,
-  convertSurfaceToVolumeLabelmap,
-} from './convertSurfaceToLabelmap';
+import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume
@@ -106,11 +103,9 @@ async function computeLabelmapFromContourSegmentation(
       }
     );
   } else {
-    const cachedImages = new Map();
-    // result = convertContourToStackLabelmap(representationData, cachedImages, {
-    //   segmentIndices,
-    //   segmentationRepresentationUID: options.segmentationRepresentationUID,
-    // });
+    throw new Error(
+      'Cannot compute labelmap from contour segmentation for stack viewport yet'
+    );
   }
 
   return result;
@@ -137,10 +132,6 @@ async function computeLabelmapFromSurfaceSegmentation(
     );
   }
 
-  const segmentIndices = options.segmentIndices?.length
-    ? options.segmentIndices
-    : getUniqueSegmentIndices(segmentationId);
-
   const segmentation = getSegmentation(segmentationId);
   const representationData = segmentation.representationData.SURFACE;
 
@@ -156,11 +147,9 @@ async function computeLabelmapFromSurfaceSegmentation(
       segmentationVolume
     );
   } else {
-    const cachedImages = new Map();
-    result = convertSurfaceToStackLabelmap(representationData, cachedImages, {
-      segmentIndices,
-      segmentationRepresentationUID: options.segmentationRepresentationUID,
-    });
+    throw new Error(
+      'Cannot compute labelmap from surface segmentation for stack viewport yet'
+    );
   }
 
   return result;

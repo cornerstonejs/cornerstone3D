@@ -82,15 +82,21 @@ async function addSegmentationsToState() {
   // and may take a while to download
   surfaces = await downloadSurfacesData();
 
-  const geometryIds = surfaces.map((surface) => {
-    const geometryId = surface.closedSurface.id;
-    geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.SURFACE,
-      geometryData: surface.closedSurface as Types.PublicSurfaceData,
-    });
+  const geometriesInfo = surfaces.reduce(
+    (acc: Map<number, string>, surface, index) => {
+      const geometryId = surface.closedSurface.id;
+      geometryLoader.createAndCacheGeometry(geometryId, {
+        type: GeometryType.SURFACE,
+        geometryData: surface.closedSurface as Types.PublicSurfaceData,
+      });
 
-    return geometryId;
-  });
+      const segmentIndex = index + 1;
+      acc.set(segmentIndex, geometryId);
+
+      return acc;
+    },
+    new Map()
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -102,7 +108,7 @@ async function addSegmentationsToState() {
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
         data: {
-          geometryIds,
+          geometryIds: geometriesInfo,
         },
       },
     },
