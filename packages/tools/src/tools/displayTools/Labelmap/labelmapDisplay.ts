@@ -153,7 +153,6 @@ async function render(
       segmentationId,
       {
         segmentationRepresentationUID,
-        viewport,
       }
     );
 
@@ -164,7 +163,7 @@ async function render(
     }
   }
 
-  if (isVolumeSegmentation(labelmapData)) {
+  if (isVolumeSegmentation(labelmapData, viewport)) {
     if (viewport instanceof StackViewport) {
       return;
     }

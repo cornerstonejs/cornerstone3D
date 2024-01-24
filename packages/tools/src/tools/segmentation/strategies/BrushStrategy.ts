@@ -196,7 +196,7 @@ export default class BrushStrategy {
       return operationData.preview;
     }
 
-    if (isVolumeSegmentation(operationData)) {
+    if (isVolumeSegmentation(operationData, viewport)) {
       const { referencedVolumeId, volumeId } =
         operationData as LabelmapToolOperationDataVolume;
 

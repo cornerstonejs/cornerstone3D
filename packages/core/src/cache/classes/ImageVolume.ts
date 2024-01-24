@@ -667,7 +667,18 @@ export class ImageVolume implements IImageVolume {
       );
     }
     // 5. When as much of the Volume is processed into Images as possible
-    //    without breaching the cache limit, remove the Volume
+    // without breaching the cache limit, remove the Volume
+    // but first check if the volume is referenced as a derived
+    // volume by another volume, then we need to update their referencedVolumeId
+    // to be now the referencedImageIds of this volume
+    const otherVolumes = cache.filterVolumesByReferenceId(this.volumeId);
+
+    if (otherVolumes.length) {
+      otherVolumes.forEach((volume) => {
+        volume.referencedImageIds = this.imageIds;
+      });
+    }
+
     this.removeFromCache();
 
     return this.imageIds;

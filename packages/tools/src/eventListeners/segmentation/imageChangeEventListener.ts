@@ -100,7 +100,7 @@ function _imageChangeEventListener(evt) {
     const labelmapData =
       segmentation.representationData[Representations.Labelmap];
 
-    if (isVolumeSegmentation(labelmapData)) {
+    if (isVolumeSegmentation(labelmapData, viewport)) {
       return;
     }
 

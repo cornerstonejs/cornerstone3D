@@ -66,7 +66,7 @@ function getSegmentAtWorldForLabelmap(
   labelmapData: LabelmapSegmentationData,
   segmentationRepresentationUID: string
 ): number | undefined {
-  if (isVolumeSegmentation(labelmapData)) {
+  if (isVolumeSegmentation(labelmapData, viewport)) {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
     const segmentationVolume = cache.getVolume(volumeId);
 

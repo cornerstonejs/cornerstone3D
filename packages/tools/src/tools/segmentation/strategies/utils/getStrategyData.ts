@@ -8,7 +8,7 @@ const { VoxelManager } = utilities;
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
   let dimensions: Types.Point3;
-  if (isVolumeSegmentation(operationData)) {
+  if (isVolumeSegmentation(operationData, viewport)) {
     const { volumeId, referencedVolumeId } = operationData;
 
     const segmentationVolume = cache.getVolume(volumeId);

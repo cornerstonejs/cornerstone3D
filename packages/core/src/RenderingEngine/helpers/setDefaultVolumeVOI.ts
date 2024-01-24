@@ -175,7 +175,10 @@ async function getVOIFromMinMax(
   // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
   // slice for the imageScalarData, and for the second scenario we use the getPixelData
   // on the Cornerstone IImage object to get the pixel data.
-  const image = await loadAndCacheImage(imageId, options);
+  let image;
+  if (!imageId.startsWith('derived') && !imageId.startsWith('generated')) {
+    image = await loadAndCacheImage(imageId, options);
+  }
 
   let imageScalarData;
   if (!image) {

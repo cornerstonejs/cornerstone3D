@@ -62,8 +62,8 @@ content.append(instructions);
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_VIEWPORT';
 
-const stackSegmentationId = 'stackSegId';
-const volumeSegmentationId = 'volumeSegId';
+const segmentationId = 'SegId';
+const segmentationVolumeId = 'SegVolumeId';
 const stackToolGroupId = 'stackToolGroupId';
 const volumeToolGroupId = 'volumeToolGroupId';
 
@@ -101,11 +101,10 @@ addButtonToToolbar({
       }
 
       segmentation.convertStackToVolumeSegmentation({
-        segmentationId: stackSegmentationId,
+        segmentationId,
         options: {
           toolGroupId: volumeToolGroupId,
           volumeId: `cornerstoneStreamingImageVolume:segMyVolume`,
-          newSegmentationId: volumeSegmentationId,
         },
       });
 
@@ -124,18 +123,17 @@ addButtonToToolbar({
     } else {
       segmentation.state.removeSegmentationRepresentations(stackToolGroupId);
 
-      segmentation.convertVolumeToStackSegmentation({
-        segmentationId: volumeSegmentationId,
-        options: {
-          toolGroupId: stackToolGroupId,
-          newSegmentationId: stackSegmentationId,
-        },
-      });
-
       newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0, 0.4],
+        },
+      });
+
+      segmentation.convertVolumeToStackSegmentation({
+        segmentationId,
+        options: {
+          toolGroupId: stackToolGroupId,
         },
       });
 
@@ -302,7 +300,7 @@ async function _startFromVolume(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      // orientation: Enums.OrientationAxis.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
       background: <Types.Point3>[0, 0.4, 0],
     },
   };
@@ -316,7 +314,6 @@ async function _startFromVolume(
   const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
   const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
   const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
   // Define a volume in memory
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -335,17 +332,17 @@ async function _startFromVolume(
   await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
     volumeId,
     {
-      volumeId: volumeSegmentationId,
+      volumeId: segmentationVolumeId,
     }
   );
 
   await segmentation.addSegmentations([
     {
-      segmentationId: volumeSegmentationId,
+      segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          volumeId: volumeSegmentationId,
+          volumeId: segmentationVolumeId,
         },
       },
     },
@@ -353,7 +350,7 @@ async function _startFromVolume(
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
     {
-      segmentationId: volumeSegmentationId,
+      segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
@@ -409,7 +406,7 @@ async function _startFromStack(
 
   await segmentation.addSegmentations([
     {
-      segmentationId: stackSegmentationId,
+      segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
@@ -425,7 +422,7 @@ async function _startFromStack(
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(stackToolGroupId, [
     {
-      segmentationId: stackSegmentationId,
+      segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);

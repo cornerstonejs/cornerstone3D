@@ -81,7 +81,7 @@ interface IImageVolume {
   destroy(): void;
 
   /** decache */
-  decache?: () => void;
+  decache?: (completelyRemove?: boolean) => void;
 
   /** */
   get imageCacheOffsetMap(): Map<string, any>;
