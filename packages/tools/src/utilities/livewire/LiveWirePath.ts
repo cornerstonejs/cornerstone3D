@@ -140,4 +140,16 @@ export class LivewirePath {
     this._controlPointIndexes =
       other._controlPointIndexes.concat(shiftedIndexArray);
   }
+
+  /**
+   * Append a path to this one.
+   *
+   * @param other - The path to append.
+   */
+  public appendPath(other: LivewirePath): void {
+    this.addPoints(other.pointArray);
+    other._controlPointIndexes.forEach((point) =>
+      this._controlPointIndexes.push(point)
+    );
+  }
 }

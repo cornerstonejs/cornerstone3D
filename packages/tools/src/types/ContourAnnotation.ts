@@ -7,6 +7,13 @@ export type ContourAnnotationData = {
       polyline: Types.Point3[];
       closed: boolean;
     };
+    handles?: {
+      /**
+       * An index of the handle to contour points.  This allows associating
+       * the handle data to the polyline position data.
+       */
+      handleContourIndex?: number[];
+    };
   };
 };
 

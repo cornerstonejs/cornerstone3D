@@ -33,11 +33,15 @@ import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 
+const { isEqual } = csUtils;
+
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
 class LivewireContourTool extends ContourSegmentationBaseTool {
   public static toolName: string;
   private scissors: LivewireScissors;
+  /** The scissors from the right handle, used for editing */
+  private scissorsRight: LivewireScissors;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -50,9 +54,12 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     lastCanvasPoint?: Types.Point2;
     confirmedPath?: LivewirePath;
     currentPath?: LivewirePath;
+    /** The next path segment, on the other side of the handle */
+    confirmedPathRight?: LivewirePath;
     closed?: boolean;
     worldToSlice?: (point: Types.Point3) => Types.Point2;
     sliceToWorld?: (point: Types.Point2) => Types.Point3;
+    originalPath?: Types.Point3[];
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -69,23 +76,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  /**
-   * Based on the current position of the mouse and the current imageId to create
-   * a CircleROI Annotation and stores it in the annotationManager
-   *
-   * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
-   *
-   */
-  addNewAnnotation(
-    evt: EventTypes.InteractionEventType
-  ): LivewireContourAnnotation {
-    const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
-    const { world: worldPos, canvas: canvasPos } = currentPoints;
-
+  protected setupBaseEditData(worldPos, element, annotation, rightPos?) {
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
@@ -157,40 +150,79 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       height,
       voiRange
     );
+    if (rightPos) {
+      this.scissorsRight = LivewireScissors.createInstanceFromRawPixelData(
+        scalarData as Float32Array,
+        width,
+        height,
+        voiRange
+      );
+      this.scissorsRight.startSearch(worldToSlice(rightPos));
+    }
 
+    // Scissors always start at the startPos for both editing handles and
+    // for initial rendering
     this.scissors.startSearch(startPos);
+
+    const newAnnotation = !rightPos;
 
     const confirmedPath = new LivewirePath();
     const currentPath = new LivewirePath();
+    const currentPathNext = newAnnotation ? undefined : new LivewirePath();
 
     confirmedPath.addPoint(startPos);
     confirmedPath.addControlPoint(startPos);
-
-    const annotation = this.createAnnotation(evt) as LivewireContourAnnotation;
-
-    this.addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
     );
 
+    const lastCanvasPoint = viewport.worldToCanvas(worldPos);
+
     this.editData = {
       annotation,
       viewportIdsToRender,
-      newAnnotation: true,
+      newAnnotation,
       hasMoved: false,
-      lastCanvasPoint: canvasPos,
-      confirmedPath: confirmedPath,
-      currentPath: currentPath,
+      lastCanvasPoint,
+      confirmedPath,
+      currentPath,
+      confirmedPathRight: currentPathNext,
       closed: false,
+      handleIndex:
+        this.editData?.handleIndex ?? annotation.handles?.activeHandleIndex,
       worldToSlice,
       sliceToWorld,
     };
+  }
+
+  /**
+   * Based on the current position of the mouse and the current imageId to create
+   * a CircleROI Annotation and stores it in the annotationManager
+   *
+   * @param evt -  EventTypes.NormalizedMouseEventType
+   * @returns The annotation object.
+   *
+   */
+  addNewAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): LivewireContourAnnotation {
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const { world: worldPos } = currentPoints;
+    const { renderingEngine } = getEnabledElement(element);
+    const annotation = this.createAnnotation(evt) as LivewireContourAnnotation;
+
+    this.setupBaseEditData(worldPos, element, annotation);
+    this.addAnnotation(annotation, element);
 
     this._activateDraw(element);
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(
+      renderingEngine,
+      this.editData.viewportIdsToRender
+    );
 
     return annotation;
   }
@@ -460,10 +492,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     const pathPoints = this.scissors.findPathToPoint(slicePoint);
     const currentPath = new LivewirePath();
-
-    for (let i = 0, len = pathPoints.length; i < len; i++) {
-      currentPath.addPoint(pathPoints[i]);
-    }
+    currentPath.addPoints(pathPoints);
 
     // Merge the "confirmed" path that goes from the first control point to the
     // last one with the current path that goes from the last control point to
@@ -477,14 +506,88 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     evt.preventDefault();
   };
 
+  public editHandle(
+    worldPos: Types.Point3,
+    element,
+    annotation,
+    handleIndex: number
+  ) {
+    const { data } = annotation;
+    const { points: handlePoints } = data.handles;
+    const { length: numHandles } = handlePoints;
+    const leftHandle =
+      handlePoints[(handleIndex - 1 + numHandles) % numHandles];
+    const rightHandle = handlePoints[(handleIndex + 1) % numHandles];
+
+    if (!this.editData?.confirmedPathRight) {
+      this.setupBaseEditData(leftHandle, element, annotation, rightHandle);
+      const { polyline } = data.contour;
+      const confirmedPath = new LivewirePath();
+      const confirmedPathRight = new LivewirePath();
+      const { worldToSlice } = this.editData;
+      const leftIndex = polyline.findIndex((point) =>
+        isEqual(point, leftHandle)
+      );
+      const rightIndex = polyline.findIndex((point) =>
+        isEqual(point, rightHandle)
+      );
+      for (let i = 0; i < leftIndex; i++) {
+        confirmedPath.addPoint(worldToSlice(polyline[i]));
+      }
+      for (let i = rightIndex + 1; i < polyline.length; i++) {
+        confirmedPathRight.addPoint(worldToSlice(polyline[i]));
+      }
+      this.editData.confirmedPath = confirmedPath;
+      this.editData.confirmedPathRight = confirmedPathRight;
+    }
+    const { editData } = this;
+    const { worldToSlice } = editData;
+
+    const { activeHandleIndex } = data.handles;
+    if (activeHandleIndex === null || activeHandleIndex === undefined) {
+      console.log('Setting up editing', handleIndex);
+      data.handle.activeHandleIndex = handleIndex;
+    } else if (activeHandleIndex !== handleIndex) {
+      throw new Error(
+        `Trying to edit a different handle than the one currently being edited ${handleIndex}!==${data.handles.activeHandleIndex}`
+      );
+    }
+    handlePoints[handleIndex] = [...worldPos];
+    const leftCanvas = worldToSlice(leftHandle);
+    const rightCanvas = worldToSlice(rightHandle);
+    const centerCanvas = worldToSlice(worldPos);
+
+    console.log(
+      'Looking for path to point',
+      centerCanvas,
+      leftCanvas,
+      rightCanvas
+    );
+    const pathPointsLeft = this.scissors.findPathToPoint(centerCanvas);
+    const pathPointsRight = this.scissorsRight.findPathToPoint(centerCanvas);
+    const currentPath = new LivewirePath();
+    currentPath.addPoints(pathPointsLeft);
+    currentPath.addPoints(pathPointsRight.reverse());
+
+    // Merge the "confirmed" path that goes from the first control point to the
+    // last one with the current path that goes from the last control point to
+    // the cursor point
+    currentPath.prependPath(this.editData.confirmedPath);
+    currentPath.appendPath(this.editData.confirmedPathRight);
+
+    // Store the new path
+    this.editData.currentPath = currentPath;
+
+    annotation.invalidated = true;
+    editData.hasMoved = true;
+  }
+
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
     const { annotation, viewportIdsToRender, handleIndex } = this.editData;
-    const { data } = annotation;
-
     if (handleIndex === undefined) {
       // Drag mode - moving object
       console.warn('No drag implemented for livewire');
@@ -492,13 +595,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
-      console.log('Dragging handle', worldPos);
-
-      data.handles.points[handleIndex] = [...worldPos];
-      annotation.invalidated = true;
+      this.editHandle(worldPos, element, annotation, handleIndex);
     }
-
-    this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -696,9 +794,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       return;
     }
 
+    const { annotation, sliceToWorld, confirmedPathRight } = this.editData;
+    if (confirmedPathRight) {
+      console.log('Hello edit handle data');
+    }
+
     const { pointArray: imagePoints } = livewirePath;
     const worldPolylinePoints: Types.Point3[] = [];
-    const { annotation, sliceToWorld } = this.editData;
 
     for (let i = 0, len = imagePoints.length; i < len; i++) {
       const imagePoint = imagePoints[i];
