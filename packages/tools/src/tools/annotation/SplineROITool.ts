@@ -813,7 +813,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
 
-    if (!data.spline.closed || !textboxStyle.visibility) {
+    if (!data.spline.instance.closed || !textboxStyle.visibility) {
       return;
     }
 
