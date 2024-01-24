@@ -26,6 +26,7 @@ import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTyp
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
+  AnnotationModifiedEventType,
 } from '../../types/EventTypes';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
@@ -116,7 +117,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       worldToSlice = (point: Types.Point3) => {
         const ijkPoint = csUtils.transformWorldToIndex(vtkImageData, point);
         const slicePoint = vec3.transformMat4(
-          [0, 0, 0],
+          vec3.create(),
           ijkPoint,
           indexToSliceMatrix
         );
@@ -126,8 +127,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
       sliceToWorld = (point: Types.Point2) => {
         const ijkPoint = vec3.transformMat4(
-          [0, 0, 0],
-          [point[0], point[1], 0],
+          vec3.create(),
+          vec3.fromValues(point[0], point[1], 0),
           sliceToIndexMatrix
         ) as Types.Point3;
 
@@ -359,18 +360,25 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-        changeType: ChangeTypes.Completed,
-      };
+    const eventType = newAnnotation
+      ? Events.ANNOTATION_COMPLETED
+      : Events.ANNOTATION_MODIFIED;
+    const { viewportId, renderingEngineId } = enabledElement;
+    const eventDetailModified: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+      changeType: newAnnotation
+        ? ChangeTypes.Completed
+        : ChangeTypes.HandlesUpdated,
+    };
 
-      triggerEvent(eventTarget, eventType, eventDetail);
-    }
+    console.log('TriggeringEvent', eventDetailModified.changeType);
+    triggerEvent(eventTarget, eventType, eventDetailModified);
 
     this.editData = null;
     this.scissors = null;
+    this.scissorsRight = null;
     this.isDrawing = false;
   };
 
@@ -528,52 +536,62 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const leftIndex = polyline.findIndex((point) =>
         isEqual(point, leftHandle)
       );
-      const rightIndex = polyline.findIndex((point) =>
-        isEqual(point, rightHandle)
-      );
-      for (let i = 0; i < leftIndex; i++) {
-        confirmedPath.addPoint(worldToSlice(polyline[i]));
+      const rightIndex =
+        handleIndex === numHandles - 1
+          ? 0
+          : polyline.findIndex((point) => isEqual(point, rightHandle));
+
+      if (rightIndex < leftIndex) {
+        confirmedPathRight.addPoints(
+          polyline.slice(rightIndex + 1, leftIndex).map(worldToSlice)
+        );
+      } else {
+        confirmedPath.addPoints(
+          polyline.slice(0, leftIndex + 1).map(worldToSlice)
+        );
+        confirmedPathRight.addPoints(
+          polyline.slice(rightIndex, polyline.length).map(worldToSlice)
+        );
       }
-      for (let i = rightIndex + 1; i < polyline.length; i++) {
-        confirmedPathRight.addPoint(worldToSlice(polyline[i]));
-      }
+      // for (let i = 0; i < leftIndex; i++) {
+      //   confirmedPath.addPoint(worldToSlice(polyline[i]));
+      // }
+      // for (let i = rightIndex + 1; i < polyline.length; i++) {
+      //   confirmedPathRight.addPoint(worldToSlice(polyline[i]));
+      // }
       this.editData.confirmedPath = confirmedPath;
       this.editData.confirmedPathRight = confirmedPathRight;
     }
     const { editData } = this;
-    const { worldToSlice } = editData;
+    const { worldToSlice, sliceToWorld } = editData;
 
     const { activeHandleIndex } = data.handles;
     if (activeHandleIndex === null || activeHandleIndex === undefined) {
-      console.log('Setting up editing', handleIndex);
       data.handle.activeHandleIndex = handleIndex;
     } else if (activeHandleIndex !== handleIndex) {
       throw new Error(
         `Trying to edit a different handle than the one currently being edited ${handleIndex}!==${data.handles.activeHandleIndex}`
       );
     }
-    handlePoints[handleIndex] = [...worldPos];
-    const leftCanvas = worldToSlice(leftHandle);
-    const rightCanvas = worldToSlice(rightHandle);
-    const centerCanvas = worldToSlice(worldPos);
+    const canvasPos = worldToSlice(worldPos);
+    handlePoints[handleIndex] = sliceToWorld(canvasPos);
 
-    console.log(
-      'Looking for path to point',
-      centerCanvas,
-      leftCanvas,
-      rightCanvas
-    );
-    const pathPointsLeft = this.scissors.findPathToPoint(centerCanvas);
-    const pathPointsRight = this.scissorsRight.findPathToPoint(centerCanvas);
+    const pathPointsLeft = this.scissors.findPathToPoint(canvasPos);
+    const pathPointsRight = this.scissorsRight.findPathToPoint(canvasPos);
     const currentPath = new LivewirePath();
-    currentPath.addPoints(pathPointsLeft);
-    currentPath.addPoints(pathPointsRight.reverse());
 
     // Merge the "confirmed" path that goes from the first control point to the
     // last one with the current path that goes from the last control point to
     // the cursor point
     currentPath.prependPath(this.editData.confirmedPath);
+    if (handleIndex !== 0) {
+      currentPath.addPoints(pathPointsLeft);
+    }
+    currentPath.addPoints(pathPointsRight.reverse());
     currentPath.appendPath(this.editData.confirmedPathRight);
+    if (handleIndex === 0) {
+      currentPath.addPoints(pathPointsLeft);
+    }
 
     // Store the new path
     this.editData.currentPath = currentPath;
@@ -794,10 +812,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       return;
     }
 
-    const { annotation, sliceToWorld, confirmedPathRight } = this.editData;
-    if (confirmedPathRight) {
-      console.log('Hello edit handle data');
-    }
+    const { annotation, sliceToWorld } = this.editData;
 
     const { pointArray: imagePoints } = livewirePath;
     const worldPolylinePoints: Types.Point3[] = [];
