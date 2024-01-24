@@ -23,7 +23,12 @@ export default function reverseIfAntiClockwise(points: Types.Point2[]) {
   if (!length) {
     return points;
   }
-  const xMean = points.map((point) => point[0]).reduce(getSumReducer) / length;
+  let xSum = 0;
+  for (const point of points) {
+    xSum += point[0];
+  }
+  const xMean = xSum / length;
+
   let checkSum = 0;
 
   for (let k = 0, i = 1, j = 2; k < length; k++) {

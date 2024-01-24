@@ -1,8 +1,8 @@
-import { utilities } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   eventTarget,
   triggerEvent,
+  utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -41,10 +41,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
 import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
@@ -96,6 +93,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
+  fireChangeOnUpdate: ChangeTypes = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -312,6 +310,16 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
+    // Decide whether there's at least one point is outside image
+    const image = this.getTargetIdImage(
+      this.getTargetId(enabledElement.viewport),
+      enabledElement.renderingEngine
+    );
+    const { imageData, dimensions } = image;
+    this.isHandleOutsideImage = data.handles.points
+      .map((p) => utilities.transformWorldToIndex(imageData, p))
+      .some((index) => !utilities.indexWithinDimensions(index, dimensions));
+
     if (
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
@@ -319,23 +327,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
       removeAnnotation(annotation.annotationUID);
     }
 
+    this.fireChangeOnUpdate ||= newAnnotation
+      ? ChangeTypes.Completed
+      : ChangeTypes.HandlesUpdated;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-        changeType: ChangeTypes.Completed,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
-    } else {
-      this.triggerAnnotationModified(
-        annotation,
-        enabledElement,
-        ChangeTypes.HandlesUpdated
-      );
-    }
 
     this.editData = null;
     this.isDrawing = false;
@@ -523,7 +518,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     changeType = ChangeTypes.StatsUpdated
   ): void => {
     const { viewportId, renderingEngineId } = enabledElement;
-    const eventType = Events.ANNOTATION_MODIFIED;
+    const eventType =
+      changeType === ChangeTypes.Completed
+        ? Events.ANNOTATION_COMPLETED
+        : Events.ANNOTATION_MODIFIED;
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
@@ -736,6 +734,15 @@ class SplineROITool extends ContourSegmentationBaseTool {
       annotationStyle.textbox
     );
 
+    if (this.fireChangeOnUpdate) {
+      this.triggerAnnotationModified(
+        annotation,
+        enabledElement,
+        this.fireChangeOnUpdate
+      );
+      this.fireChangeOnUpdate = null;
+    }
+
     annotation.invalidated = false;
     return true;
   }
@@ -778,7 +785,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // Add an action to create a new spline data on creating an interpolated
     // instance.
     let postInterpolateAction;
-    if (this.configuration.interpolation.enabled) {
+    if (this.configuration.interpolation?.enabled) {
       postInterpolateAction = (annotation) => {
         annotation.data.spline ||= createSpline();
         this.createInterpolatedSplineControl(annotation);

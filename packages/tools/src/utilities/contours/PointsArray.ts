@@ -7,11 +7,12 @@ export type PolyDataPointConfiguration = {
 };
 
 /**
- * PointsArray is a TypedArray based representation of 2 or 3d points with
- * custom sub-classes to represent the specific 2 or 3d values and to extract
- * values as Types.Point2/Point3 values.
+ * PointsArray is a TypedArray based representation of n dimensional points with
+ * custom sub-classes to represent the version of this based on Point2 and Point3
+ * gl-matrix implementation.
  * This representation is efficient for storing large numbers of points and for
- * transferring them amongst systems.
+ * transferring them amongst systems and is planned to have more methods added
+ * for generic manipulation of data.
  */
 export abstract class PointsArray<T> {
   data: Float32Array;
@@ -36,7 +37,7 @@ export abstract class PointsArray<T> {
    * Reverse the points in place
    */
   public reverse() {
-    const midLength = Math.floor(length / 2);
+    const midLength = Math.floor(this.length / 2);
 
     for (let i = 0; i < midLength; i++) {
       const indexStart = i * this.dimensions;
@@ -58,7 +59,7 @@ export abstract class PointsArray<T> {
   }
 
   /** Create an PointsArray3 from the x,y,z individual arrays */
-  public static fromXYZ({ x, y, z }): PointsArray3 {
+  public static fromXYZ({ x, y, z }: Types.PointsXYZ): PointsArray3 {
     const array = new PointsArray3({ initialSize: x.length });
     let offset = 0;
     for (let i = 0; i < x.length; i++) {
@@ -72,9 +73,12 @@ export abstract class PointsArray<T> {
 }
 
 /**
- * A version of this based on Types.Point2 and vec2
+ * A version of this with support for Types.Point2 and vec2 generation and extraction.
+ *
+ * This class is designed to allow for efficient storage and manipulation of
+ * large sets of Point2 type data but stored as a single Float32Array.
  */
-export class PolyDataPoints2 extends PointsArray<Types.Point2> {
+export class PointsArray2 extends PointsArray<Types.Point2> {
   constructor(configuration = {}) {
     super({ ...configuration, dimensions: 2 });
   }
@@ -105,7 +109,17 @@ export class PolyDataPoints2 extends PointsArray<Types.Point2> {
 }
 
 /**
- * A version of this based on Types.Point3 and vec3
+ * A version of PointsArray designed to work with Types.Point3 and vec3 data,
+ * but efficiently storing the data internally as a Float32Array.
+ * A good use case for this would be storing contour data or function results
+ * of type `(number)=>Point3` as these can be quite large and can benefit from
+ * directly using the Float32Array representation for both the Point3 values and
+ * the internal storage of the Point3[] data.
+ *
+ * For example, a 64k length array of `PointsArray3` data is just a bit over 256k of data as
+ * stored with this class, but when stored as a Point3[], is at least 1 meg in size
+ * because each number is 64 bits, and each Point3[] requires a list of values, adding
+ * at least another 8 bytes per value, and at least another 64 bytes per array.
  */
 export class PointsArray3 extends PointsArray<Types.Point3> {
   constructor(configuration = {}) {
@@ -137,7 +151,7 @@ export class PointsArray3 extends PointsArray<Types.Point3> {
     );
   }
 
-  public getXYZ(): { x: number[]; y: number[]; z: number[] } {
+  public getXYZ(): Types.PointsXYZ {
     const x = [];
     const y = [];
     const z = [];

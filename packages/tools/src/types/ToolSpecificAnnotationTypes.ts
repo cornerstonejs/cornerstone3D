@@ -264,7 +264,7 @@ export type PlanarFreehandROIAnnotation = ContourAnnotation & {
 export type PlanarFreehandContourSegmentationAnnotation =
   PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
 
-export type InterpolationROIAnnotation = PlanarFreehandROIAnnotation & {
+export type InterpolationROIAnnotation = ContourAnnotation & {
   metadata: {
     cameraPosition?: Types.Point3;
     cameraFocalPoint?: Types.Point3;

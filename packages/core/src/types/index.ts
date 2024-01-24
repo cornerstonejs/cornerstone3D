@@ -30,6 +30,7 @@ import type AABB2 from './AABB2';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
+import type { PointsXYZ } from './Point3';
 import type Mat3 from './Mat3';
 import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
@@ -167,6 +168,7 @@ export type {
   AABB2,
   Point2,
   Point3,
+  PointsXYZ,
   Point4,
   Mat3,
   Plane,

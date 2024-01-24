@@ -1,34 +1,31 @@
 import getInterpolationData from './getInterpolationData';
-import type {
-  InterpolationViewportData,
-  ImageInterpolationData,
-} from '../../../types/InterpolationTypes';
+import type { InterpolationViewportData } from '../../../types';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { FilterParam } from './getInterpolationData';
 
 /**
- * getInterpolationDataCollection - Generates a collection of the 2D
- * polygons in difference slices that make up the interpolated annotations.
+ * getInterpolationDataCollection - Gets the array of annotations which match the
+ * filter parameters, mapped by slice index.
  *
- * @param eventData - Object, cornerstone viewport.
- * @param filterParams - Object, \{key: propertyName to compare, value: value of property, parentKey: \}.
+ * @param viewportData - the annotation/viewport to start the interpolation from
+ * @param filterParams - A selector for annotations for interpolation
  * @param onlyAnnotationImage - boolean, if true include interpolated annotation existing images only.
- * @returns object[], The list of interpolated locations in the stack.
+ * @returns The list of interpolated locations in the stack.
  */
 
 export default function getInterpolationDataCollection(
   viewportData: InterpolationViewportData,
-  filterParams,
-  onlyAnnotationImage = false
-) {
-  const imageAnnotations: ImageInterpolationData[] = getInterpolationData(
-    viewportData,
-    filterParams,
-    onlyAnnotationImage
-  );
+  filterParams: FilterParam[]
+): InterpolationROIAnnotation[] {
+  const imageAnnotations = getInterpolationData(viewportData, filterParams);
   const interpolatedDataCollection = [];
-  (imageAnnotations || []).forEach((annotationsOnSlice) => {
-    (annotationsOnSlice.annotations || []).forEach((annotation) => {
+  if (!imageAnnotations?.size) {
+    return interpolatedDataCollection;
+  }
+  for (const annotations of imageAnnotations.values()) {
+    annotations.forEach((annotation) => {
       interpolatedDataCollection.push(annotation);
     });
-  });
+  }
   return interpolatedDataCollection;
 }

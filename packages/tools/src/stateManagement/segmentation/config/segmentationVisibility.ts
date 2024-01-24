@@ -4,21 +4,41 @@ import { getSegmentationRepresentations } from '../../../stateManagement/segment
 import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import { isVolumeSegmentation } from '../../../tools/segmentation/strategies/utils/stackVolumeCheck';
 
 function getUniqueSegmentIndices(segmentationId) {
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   if (segmentation.type === SegmentationRepresentations.Labelmap) {
-    const volume = cache.getVolume(segmentationId);
-    const scalarData = volume.getScalarData();
+    const labelmapData =
+      segmentation.representationData[SegmentationRepresentations.Labelmap];
 
     const keySet = {};
-    for (let i = 0; i < scalarData.length; i++) {
-      const segmentIndex = scalarData[i];
-      if (segmentIndex !== 0 && !keySet[segmentIndex]) {
-        keySet[segmentIndex] = true;
+
+    if (isVolumeSegmentation(labelmapData)) {
+      const volume = cache.getVolume(segmentationId);
+      const scalarData = volume.getScalarData();
+
+      for (let i = 0; i < scalarData.length; i++) {
+        const segmentIndex = scalarData[i];
+        if (segmentIndex !== 0 && !keySet[segmentIndex]) {
+          keySet[segmentIndex] = true;
+        }
       }
+    } else {
+      labelmapData.imageIdReferenceMap.forEach((segmentationImageId) => {
+        const image = cache.getImage(segmentationImageId);
+        const scalarData = image.getPixelData();
+
+        for (let i = 0; i < scalarData.length; i++) {
+          const segmentIndex = scalarData[i];
+          if (segmentIndex !== 0 && !keySet[segmentIndex]) {
+            keySet[segmentIndex] = true;
+          }
+        }
+      });
     }
+
     return Object.keys(keySet).map((it) => parseInt(it, 10));
   } else if (segmentation.type === SegmentationRepresentations.Contour) {
     const annotationUIDsMap =

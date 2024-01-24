@@ -401,13 +401,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this.editData.currentPath.getLastControlPoint()
     );
     if (smoothPathCount) {
-      console.log(
-        'Removing',
-        smoothPathCount,
-        'items because the gradient is too high',
-        this.editData.currentPath.pointArray.length,
-        annotation.data.contour.polyline.length
-      );
       this.editData.currentPath.removeLastPoints(smoothPathCount);
       annotation.data.contour.polyline.splice(
         annotation.data.contour.polyline.length - smoothPathCount,
@@ -493,22 +486,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { data } = annotation;
 
     if (handleIndex === undefined) {
-      // Drag mode - moving handle
-      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
-      const worldPosDelta = deltaPoints.world;
-
-      const points = data.contour.polyline;
-
-      points.forEach((point) => {
-        point[0] += worldPosDelta[0];
-        point[1] += worldPosDelta[1];
-        point[2] += worldPosDelta[2];
-      });
-      annotation.invalidated = true;
+      // Drag mode - moving object
+      console.warn('No drag implemented for livewire');
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
+      console.log('Dragging handle', worldPos);
 
       data.handles.points[handleIndex] = [...worldPos];
       annotation.invalidated = true;
@@ -669,7 +653,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
     const annotation = renderContext.annotation as LivewireContourAnnotation;
-    const { annotationUID, data } = annotation;
+    const { annotationUID, data, highlighted } = annotation;
     const { handles } = data;
     const newAnnotation = this.editData?.newAnnotation;
     const { lineWidth, lineDash, color } = annotationStyle;
@@ -678,8 +662,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // first time to make it easier to know where the user needs to click to
     // to close the ROI.
     if (
-      newAnnotation &&
-      annotation.annotationUID === this.editData?.annotation?.annotationUID
+      highlighted ||
+      (newAnnotation &&
+        annotation.annotationUID === this.editData?.annotation?.annotationUID)
     ) {
       const handleGroupUID = '0';
       const canvasHandles = handles.points.map(worldToCanvas);

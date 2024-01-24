@@ -3,13 +3,21 @@ import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import createPolylineToolData from './createPolylineToolData';
-import generateInterpolationData from './findInterpolationList';
+import findAnnotationsForInterpolation from './findAnnotationForInterpolation';
 import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
 import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
 import { PointsArray } from '../PointsArray';
+
+/**
+ * An XYZ encoded points that also includes an indicator I for whether the
+ * point is included in the original contour.
+ */
+type PointsXYZI = Types.PointsXYZ & {
+  I?: boolean[];
+};
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
@@ -41,10 +49,8 @@ function interpolate(viewportData: InterpolationViewportData) {
  */
 function startInterpolation(viewportData: InterpolationViewportData) {
   const toolData = viewportData.annotation;
-  const { interpolationData, interpolationList } = generateInterpolationData(
-    toolData,
-    viewportData
-  );
+  const { interpolationData, interpolationList } =
+    findAnnotationsForInterpolation(toolData, viewportData);
 
   const eventData = {
     toolName: toolData.metadata.toolName,
@@ -98,10 +104,10 @@ function _linearlyInterpolateBetween(
   eventData
 ) {
   const c1 = _generateClosedContour(
-    interpolationData[annotationPair[0]].annotations[0].data.contour.polyline
+    interpolationData.get(annotationPair[0])[0].data.contour.polyline
   );
   const c2 = _generateClosedContour(
-    interpolationData[annotationPair[1]].annotations[0].data.contour.polyline
+    interpolationData.get(annotationPair[1])[0].data.contour.polyline
   );
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
@@ -143,8 +149,8 @@ function _linearlyInterpolateContour(
   c1HasMoreNodes,
   eventData
 ) {
-  const zInterp =
-    (sliceIndex - annotationPair[0]) / (annotationPair[1] - annotationPair[0]);
+  const [startIndex, endIndex] = annotationPair;
+  const zInterp = (sliceIndex - startIndex) / (endIndex - startIndex);
   const interpolated3DPoints = _generateInterpolatedOpenContour(
     c1Interp,
     c2Interp,
@@ -152,23 +158,22 @@ function _linearlyInterpolateContour(
     c1HasMoreNodes
   );
 
-  const nearestAnnotation =
-    interpolationData[annotationPair[zInterp > 0.5 ? 1 : 0]].annotations[0];
+  const nearestAnnotation = interpolationData.get(
+    annotationPair[zInterp > 0.5 ? 1 : 0]
+  )[0];
 
   // A bit adhoc figuring out how many handles to use, but this seems to generate
   // enough handles for use.
   const handleCount = Math.round(
     Math.max(
-      6,
-      interpolationData[annotationPair[0]].annotations[0].data.handles.points
-        .length * 1.5,
-      interpolationData[annotationPair[1]].annotations[0].data.handles.points
-        .length * 1.5
+      8,
+      interpolationData.get(startIndex)[0].data.handles.points.length * 2,
+      interpolationData.get(endIndex)[0].data.handles.points.length * 2
     )
   );
   const handlePoints = _subselect(interpolated3DPoints, handleCount);
 
-  if (interpolationData[sliceIndex].annotations) {
+  if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
       interpolated3DPoints,
       handlePoints,
@@ -193,17 +198,16 @@ function _subselect(points, count = 10) {
   if (!length) {
     return handles;
   }
-  const increment = Math.ceil(length / count);
-  for (let i = 0; i < length - increment / 2; i += increment) {
-    handles.push(vec3.fromValues(points.x[i], points.y[i], points.z[i]));
+  for (let i = 0; i < count; i++) {
+    const handleIndex = Math.floor((length * i) / count);
+    handles.push(
+      vec3.fromValues(
+        points.x[handleIndex],
+        points.y[handleIndex],
+        points.z[handleIndex]
+      )
+    );
   }
-  handles.push(
-    vec3.fromValues(
-      points.x[length - 1],
-      points.y[length - 1],
-      points.z[length - 1]
-    )
-  );
   return handles;
 }
 
@@ -218,7 +222,7 @@ function _subselect(points, count = 10) {
  * @returns null
  */
 function _addInterpolatedContour(
-  interpolated3DPoints: { x: number[]; y: number[]; z: number[] },
+  interpolated3DPoints: Types.PointsXYZ,
   handlePoints: Types.Point3[],
   sliceIndex: number,
   referencedToolData,
@@ -255,7 +259,7 @@ function _addInterpolatedContour(
  * @returns null
  */
 function _editInterpolatedContour(
-  interpolated3DPoints: { x: number[]; y: number[]; z: number[] },
+  interpolated3DPoints: Types.PointsXYZ,
   handlePoints: Types.Point3[],
   sliceIndex,
   referencedToolData,
@@ -317,7 +321,12 @@ function _editInterpolatedContour(
  *                                  than c2.
  * @returns object, The interpolated contour at z=zInterp.
  */
-function _generateInterpolatedOpenContour(c1ir, c2ir, zInterp, c1HasMoreNodes) {
+function _generateInterpolatedOpenContour(
+  c1ir,
+  c2ir,
+  zInterp,
+  c1HasMoreNodes
+): PointsXYZI {
   const cInterp = {
     x: [],
     y: [],
@@ -387,7 +396,7 @@ function _generateInterpolationContourPair(c1, c2) {
  * @param c2i - The second super-sampled contour.
  * @returns  An object containing the two reduced contours.
  */
-function _reduceContoursToOriginNodes(c1i, c2i) {
+function _reduceContoursToOriginNodes(c1i: PointsXYZI, c2i: PointsXYZI) {
   const c1Interp = {
     x: [],
     y: [],
@@ -638,9 +647,9 @@ function _normalisedCumulativePerimeter(cumPerim) {
  * each node of the contour.
  *
  * @param contour - The contour.
- * @returns Number[], An array of the cumulative perimeter at each node.
+ * @returns An array of the cumulative perimeter at each node.
  */
-function _getCumulativePerimeter(contour) {
+function _getCumulativePerimeter(contour: Types.PointsXYZ): number[] {
   const cumulativePerimeter = [0];
 
   for (let i = 1; i < contour.x.length; i++) {
@@ -663,7 +672,7 @@ function _getCumulativePerimeter(contour) {
  * @param  points - The points to generate the contour from.
  * @returns The generated contour object.
  */
-function _generateClosedContour(points) {
+function _generateClosedContour(points): Types.PointsXYZ {
   const c = {
     x: [],
     y: [],
