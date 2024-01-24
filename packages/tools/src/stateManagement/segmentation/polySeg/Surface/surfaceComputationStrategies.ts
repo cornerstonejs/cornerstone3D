@@ -6,13 +6,14 @@ import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 import {
   LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import {
   convertStackLabelmapToSurface,
   convertVolumeLabelmapToSurface,
-} from './convertVolumeLabelmapToSurface';
+} from './convertLabelmapToSurface';
 
 export type RawSurfacesData = {
   segmentIndex: number;
@@ -104,7 +105,6 @@ async function computeSurfaceFromLabelmapSegmentation(
 
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);
-
   const promises = segmentIndices.map(async (index) => {
     const surface = isVolume
       ? await convertVolumeLabelmapToSurface(
@@ -112,7 +112,7 @@ async function computeSurfaceFromLabelmapSegmentation(
           index
         )
       : await convertStackLabelmapToSurface(
-          labelmapRepresentationData as LabelmapSegmentationData,
+          labelmapRepresentationData as LabelmapSegmentationDataStack,
           index
         );
 

@@ -1,6 +1,9 @@
 import { Types, cache } from '@cornerstonejs/core';
 import { getWebWorkerManager } from '@cornerstonejs/core';
-import { LabelmapSegmentationDataVolume } from '../../../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../../../types/LabelmapTypes';
 
 const workerManager = getWebWorkerManager();
 
@@ -39,9 +42,10 @@ export async function convertVolumeLabelmapToSurface(
 }
 
 export async function convertStackLabelmapToSurface(
-  labelmapRepresentationData: LabelmapSegmentationDataVolume,
+  labelmapRepresentationData: LabelmapSegmentationDataStack,
   segmentIndex: number
-): Types.SurfaceData {
+): Promise<Types.SurfaceData> {
+  debugger;
   const volumeId = labelmapRepresentationData.volumeId;
 
   const volume = cache.getVolume(volumeId);

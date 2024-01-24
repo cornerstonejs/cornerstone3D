@@ -40,7 +40,7 @@ const {
 } = cornerstoneTools;
 
 setTitleAndDescription(
-  'Volume Labelmap to Surface',
+  'Stack Labelmap to Surface',
   'This demonstration showcases the usage of PolySEG WASM module to convert a labelmap to a surface representation.'
 );
 
@@ -78,7 +78,7 @@ content.appendChild(viewportGrid);
 createInfoSection(content, { ordered: true })
   .addInstruction('Use the Brush Tool for segmentation in Stack viewports')
   .addInstruction(
-    'Toggle between different segmentation tools like Sphere Brush and Eraser'
+    'Toggle between different segmentation tools like Circle Brush and Eraser'
   )
   .addInstruction('Convert the labelmap to a 3D surface representation')
   .addInstruction('Manipulate the 3D view using the Trackball Rotate Tool')
@@ -169,7 +169,6 @@ async function run() {
 
   // Manipulation Tools
   toolGroup1.addTool(PanTool.toolName);
-  toolGroup2.addTool(PanTool.toolName);
   toolGroup1.addTool(ZoomTool.toolName);
   toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
 
@@ -182,6 +181,7 @@ async function run() {
     activeStrategy: 'ERASE_INSIDE_CIRCLE',
   });
 
+  toolGroup2.addTool(PanTool.toolName);
   toolGroup2.addTool(TrackballRotateTool.toolName);
   toolGroup2.addTool(SegmentationDisplayTool.toolName);
   toolGroup2.addTool(ZoomTool.toolName);
@@ -244,8 +244,8 @@ async function run() {
     wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
-  // since this series has some other sop that is not really relevnat
-  stackImageIds = stackImageIds.slice(0, 20);
+  // since this series has some other sop that is not really relevant
+  stackImageIds = stackImageIds.slice(0, 2);
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -270,7 +270,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup1.addViewport(viewportId1, renderingEngineId);
-  toolGroup1.addViewport(viewportId2, renderingEngineId);
+  toolGroup2.addViewport(viewportId2, renderingEngineId);
 
   const viewport1 = renderingEngine.getViewport(viewportId1);
   await viewport1.setStack(stackImageIds, 0);
