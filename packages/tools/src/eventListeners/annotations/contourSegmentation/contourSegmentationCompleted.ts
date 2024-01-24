@@ -39,7 +39,6 @@ function getValidContourSegmentationAnnotations(
     const toolAnnotations = annotationsGroups[toolName].filter(
       (targetAnnotation) =>
         targetAnnotation.annotationUID &&
-        !targetAnnotation.parentAnnotationUID &&
         targetAnnotation.annotationUID !== sourceAnnotationUID &&
         isContourSegmentationAnnotation(targetAnnotation) &&
         areContoursFromSameSegmentIndex(targetAnnotation, sourceAnnotation) &&
