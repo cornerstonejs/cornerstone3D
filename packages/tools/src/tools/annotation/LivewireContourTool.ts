@@ -25,6 +25,7 @@ import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
@@ -353,6 +354,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this.configuration.preventHandleOutsideImage
     ) {
       removeAnnotation(annotation.annotationUID);
+    }
+
+    // Reverse the points if needed, ensuring both the handles and the
+    // polyline is also reversed.
+    const { worldToSlice } = this.editData;
+    if (worldToSlice) {
+      reverseIfAntiClockwise(
+        data.handles.points.map(worldToSlice),
+        data.handles.points,
+        data.contour.polyline
+      );
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);

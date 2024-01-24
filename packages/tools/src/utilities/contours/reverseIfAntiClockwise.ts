@@ -1,24 +1,18 @@
 import { Types } from '@cornerstonejs/core';
 
 /**
- * getSumReducer - A reducer function that calculates the sum of an array.
- *
- * @param total - The running total.
- * @param num - The numerical value of the array element.
- * @returns The updated running total.
- */
-function getSumReducer(total: number, num: number): number {
-  return total + num;
-}
-
-/**
  * _reverseIfAntiClockwise - If the contour's nodes run anti-clockwise,
  * reverse them.
  *
  * @param points - The points array.
+ * @param otherListsToReverse - any number of additional lists to also reverse
+ *       when the primary list is anti-clockwise.
  * @returns The contour, corrected to be clockwise if appropriate.
  */
-export default function reverseIfAntiClockwise(points: Types.Point2[]) {
+export default function reverseIfAntiClockwise(
+  points: Types.Point2[],
+  ...otherListsToReverse: unknown[][]
+) {
   const length = points.length;
   if (!length) {
     return points;
@@ -43,7 +37,11 @@ export default function reverseIfAntiClockwise(points: Types.Point2[]) {
     }
   }
 
-  if (checkSum > 0) {
+  // Checksum will be less than zero for anti-clockwise
+  if (checkSum < 0) {
+    if (otherListsToReverse) {
+      otherListsToReverse.forEach((list) => list.reverse());
+    }
     return points.slice().reverse();
   }
   return points;
