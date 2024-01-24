@@ -237,15 +237,15 @@ async function run() {
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  let stackImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
+  let imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  // since this series has some other sop that is not really relevant
-  stackImageIds = stackImageIds.slice(0, 2);
+  imageIds = imageIds.slice(0, 2);
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -273,18 +273,12 @@ async function run() {
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
   const viewport1 = renderingEngine.getViewport(viewportId1);
-  await viewport1.setStack(stackImageIds, 0);
+  await viewport1.setStack(imageIds, 0);
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 
   const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(stackImageIds);
-
-  fillStackSegmentationWithMockData({
-    imageIds: stackImageIds,
-    segmentationImageIds,
-    cornerstone,
-  });
+    await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
 
   segmentation.addSegmentations([
     {
@@ -294,7 +288,7 @@ async function run() {
         data: {
           imageIdReferenceMap:
             cornerstoneTools.utilities.segmentation.createImageIdReferenceMap(
-              stackImageIds,
+              imageIds,
               segmentationImageIds
             ),
         },

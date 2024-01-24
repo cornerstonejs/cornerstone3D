@@ -10,10 +10,7 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import {
-  convertStackLabelmapToSurface,
-  convertVolumeLabelmapToSurface,
-} from './convertLabelmapToSurface';
+import { convertLabelmapToSurface } from './convertLabelmapToSurface';
 import { convertStackToVolumeSegmentation } from '../../convertStackToVolumeSegmentation';
 
 export type RawSurfacesData = {
@@ -104,23 +101,26 @@ async function computeSurfaceFromLabelmapSegmentation(
 
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);
-  const promises = segmentIndices.map(async (index) => {
-    const surface = isVolume
-      ? await convertVolumeLabelmapToSurface(
-          labelmapRepresentationData as LabelmapSegmentationDataVolume,
-          index
-        )
-      : await convertStackLabelmapToSurface(
-          labelmapRepresentationData as LabelmapSegmentationDataStack,
-          index
-        );
 
-    return { segmentIndex: index, data: surface };
+  const promises = segmentIndices.map((index) => {
+    const surface = convertLabelmapToSurface(
+      labelmapRepresentationData as
+        | LabelmapSegmentationDataVolume
+        | LabelmapSegmentationDataStack,
+      index,
+      isVolume
+    );
+
+    return surface;
   });
 
   const surfaces = await Promise.all(promises);
 
-  return surfaces;
+  const rawSurfacesData = surfaces.map((surface, index) => {
+    return { segmentIndex: segmentIndices[index], data: surface };
+  });
+
+  return rawSurfacesData;
 }
 
 /**

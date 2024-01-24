@@ -16,18 +16,11 @@ import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 // This function is responsible for the conversion calculations
 async function computeStackSegmentationFromVolume({
-  segmentationId,
+  volumeId,
 }: {
-  segmentationId: string;
+  volumeId: string;
 }): Promise<{ imageIdReferenceMap: Map<any, any> }> {
-  const segmentation = getSegmentation(segmentationId);
-
-  const data = segmentation.representationData
-    .LABELMAP as LabelmapSegmentationDataVolume;
-
-  const segmentationVolume = cache.getVolume(
-    data.volumeId
-  ) as Types.IImageVolume;
+  const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
   // we need to decache the segmentation Volume so that we use it
   // for the conversion
@@ -54,7 +47,7 @@ async function computeStackSegmentationFromVolume({
   const renderingEngine = getRenderingEngines()[0];
   const volumeUsedInOtherViewports = renderingEngine
     .getVolumeViewports()
-    .find((vp) => vp.hasVolumeId(data.volumeId));
+    .find((vp) => vp.hasVolumeId(volumeId));
 
   segmentationVolume.decache(!volumeUsedInOtherViewports && isAllImagesCached);
 
@@ -78,8 +71,12 @@ export async function convertVolumeToStackSegmentation({
     removeOriginal?: boolean;
   };
 }): Promise<void> {
+  const segmentation = getSegmentation(segmentationId);
+
+  const data = segmentation.representationData
+    .LABELMAP as LabelmapSegmentationDataVolume;
   const { imageIdReferenceMap } = await computeStackSegmentationFromVolume({
-    segmentationId,
+    volumeId: data.volumeId,
   });
 
   await updateStackSegmentationState({

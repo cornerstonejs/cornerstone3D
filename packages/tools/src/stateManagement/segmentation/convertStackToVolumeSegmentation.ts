@@ -12,20 +12,14 @@ import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 async function computeVolumeSegmentationFromStack({
-  segmentationId,
+  imageIdReferenceMap,
   options,
 }: {
-  segmentationId: string;
+  imageIdReferenceMap: Map<string, string>;
   options?: {
     volumeId?: string;
   };
 }): Promise<{ volumeId: string }> {
-  const segmentation = getSegmentation(segmentationId);
-
-  const data = segmentation.representationData
-    .LABELMAP as LabelmapSegmentationDataStack;
-
-  const imageIdReferenceMap = data.imageIdReferenceMap;
   const segmentationImageIds = Array.from(imageIdReferenceMap.values());
 
   const additionalDetails = {
@@ -69,8 +63,13 @@ async function convertStackToVolumeSegmentation({
     removeOriginal?: boolean;
   };
 }): Promise<void> {
+  const segmentation = getSegmentation(segmentationId);
+
+  const data = segmentation.representationData
+    .LABELMAP as LabelmapSegmentationDataStack;
+
   const { volumeId } = await computeVolumeSegmentationFromStack({
-    segmentationId,
+    imageIdReferenceMap: data.imageIdReferenceMap,
     options,
   });
 
