@@ -1,10 +1,15 @@
 import type { Types } from '@cornerstonejs/core';
-import lineSegmentsIntersect from './lineSegmentsIntersect';
+import areLineSegmentsIntersecting from './areLineSegmentsIntersecting';
 
 /**
  * Get all intersections between a polyline and a line segment.
+ * @param polyline - Polyline points
+ * @param p1 - Start point of line segment
+ * @param q1 - End point of line segment
+ * @param closed - Test the intersection against the line segment that connects
+ * the last to the first point when set to true
+ * @returns Start/end point indexes of all line segments that intersect (p1, q1)
  */
-
 export default function getLineSegmentIntersectionsIndexes(
   polyline: Types.Point2[],
   p1: Types.Point2,
@@ -21,7 +26,7 @@ export default function getLineSegmentIntersectionsIndexes(
     const j = i === numPoints - 1 ? 0 : i + 1;
     const q2 = polyline[j];
 
-    if (lineSegmentsIntersect(p1, q1, p2, q2)) {
+    if (areLineSegmentsIntersecting(p1, q1, p2, q2)) {
       intersections.push([i, j]);
     }
   }

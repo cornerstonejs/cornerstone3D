@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import lineSegmentsIntersect from './lineSegmentsIntersect';
+import areLineSegmentsIntersecting from './areLineSegmentsIntersecting';
 
 /**
  * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
@@ -33,7 +33,7 @@ export default function getFirstLineSegmentIntersectionIndexes(
     const p2 = points[j];
     const q2 = points[i];
 
-    if (lineSegmentsIntersect(p1, q1, p2, q2)) {
+    if (areLineSegmentsIntersecting(p1, q1, p2, q2)) {
       return [j, i];
     }
 

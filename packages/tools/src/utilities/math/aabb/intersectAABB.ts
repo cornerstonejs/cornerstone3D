@@ -1,5 +1,11 @@
 import { Types } from '@cornerstonejs/core';
 
+/**
+ * Check if two axis-aligned bounding boxes intersect
+ * @param aabb1 - First AABB
+ * @param aabb2 - Second AABB
+ * @returns True if they intersect or false otherwise
+ */
 export default function intersectAABB(
   aabb1: Types.AABB2,
   aabb2: Types.AABB2

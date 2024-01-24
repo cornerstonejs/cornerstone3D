@@ -1,7 +1,13 @@
 import { Types } from '@cornerstonejs/core';
 import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes';
 
-function intersectPolyline(
+/**
+ * Check if two polylines intersect comparing line segment by line segment.
+ * @param sourcePolyline - Source polyline
+ * @param targetPolyline - Target polyline
+ * @returns True if the polylines intersect or false otherwise
+ */
+export default function intersectPolyline(
   sourcePolyline: Types.Point2[],
   targetPolyline: Types.Point2[]
 ): boolean {
@@ -26,5 +32,3 @@ function intersectPolyline(
 
   return false;
 }
-
-export { intersectPolyline as default };

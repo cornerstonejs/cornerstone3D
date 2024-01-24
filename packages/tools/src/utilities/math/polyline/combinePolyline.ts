@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import * as math from '..';
+import * as mathPoint from '../point';
 import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
 import containsPoint from './containsPoint';
 import getNormal2 from './getNormal2';
@@ -39,6 +39,11 @@ type PolylineIntersectionPoint = PolylinePoint & {
   cloned?: boolean;
 };
 
+/**
+ * Ensure all polyline point objects are pointing to the next object in case
+ * it is still not point to anyone.
+ * @param polylinePoints - Array that contains all polyline points (vertices and intersections)
+ */
 function ensuresNextPointers(polylinePoints: PolylinePoint[]) {
   // Make sure all nodes point to a valid node
   for (let i = 0, len = polylinePoints.length; i < len; i++) {
@@ -50,6 +55,14 @@ function ensuresNextPointers(polylinePoints: PolylinePoint[]) {
   }
 }
 
+/**
+ * Creates one linked list per polyline that contains all vertices and intersections
+ * found while walking along the edges.
+ *
+ * @param targetPolyline - Target polyline
+ * @param sourcePolyline - Source polyline
+ * @returns Two linked lists with all vertices and intersections.
+ */
 function getSourceAndTargetPointsList(
   targetPolyline: Types.Point2[],
   sourcePolyline: Types.Point2[]
@@ -101,7 +114,7 @@ function getSourceAndTargetPointsList(
         q2
       ) as Types.Point2;
 
-      const targetStartPointDistSquared = math.point.distanceToPointSquared(
+      const targetStartPointDistSquared = mathPoint.distanceToPointSquared(
         p1,
         intersectionCoordinate
       );
@@ -193,7 +206,7 @@ function getSourceAndTargetPointsList(
     sourceIntersectionPoints
       .map((intersectionPoint) => ({
         intersectionPoint,
-        lineSegStartDistSquared: math.point.distanceToPointSquared(
+        lineSegStartDistSquared: mathPoint.distanceToPointSquared(
           p1,
           intersectionPoint.coordinates
         ),
@@ -214,6 +227,12 @@ function getSourceAndTargetPointsList(
   return { targetPolylinePoints, sourcePolylinePoints };
 }
 
+/**
+ * Get the next unvisited polyline points that is outside the intersection region.
+ * @param polylinePoints - All polyline points (vertices and intersections)
+ * @returns Any unvisited point that is outside the intersection region if it
+ * exists or `undefined` otherwise
+ */
 function getUnvisitedOutsidePoint(polylinePoints: PolylinePoint[]) {
   for (let i = 0, len = polylinePoints.length; i < len; i++) {
     const point = polylinePoints[i];

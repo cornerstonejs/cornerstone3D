@@ -13,8 +13,14 @@ import type { Types } from '@cornerstonejs/core';
  * orientation algorithm.
  *
  * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+ *
+ * @param p1 - Start point of line segment 1
+ * @param q1 - End point of line segment 1
+ * @param p2 - Start point of line segment 2
+ * @param q2 - End point of line segment 2
+ * @returns True if the line segments intersect or false otherwise
  */
-function lineSegmentsIntersect(
+export default function areLineSegmentsIntersecting(
   p1: Types.Point2,
   q1: Types.Point2,
   p2: Types.Point2,
@@ -110,5 +116,3 @@ function onSegment(p: Types.Point2, q: Types.Point2, r: Types.Point2): boolean {
 
   return false;
 }
-
-export { lineSegmentsIntersect as default };

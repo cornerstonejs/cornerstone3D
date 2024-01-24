@@ -1,10 +1,15 @@
 import { vec2 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import lineSegmentsIntersect from './lineSegmentsIntersect';
+import areLineSegmentsIntersecting from './areLineSegmentsIntersecting';
 
 /**
  * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
  * `points`, and returns the closest value.
+ * @param points - Polyline points
+ * @param p1 - Start point of the line segment
+ * @param q1 - End point of the line segment
+ * @param closed - Test the intersection against the line that connects the first to the last when closed
+ * @returns The closest line segment from polyline that intersects the line segment [p1, q1]
  */
 export default function getClosestLineSegmentIntersection(
   points: Types.Point2[],
@@ -12,28 +17,28 @@ export default function getClosestLineSegmentIntersection(
   q1: Types.Point2,
   closed = true
 ): { segment: Types.Point2; distance: number } | undefined {
-  let initialI;
-  let j;
+  let initialQ2Index;
+  let p2Index;
 
   if (closed) {
-    j = points.length - 1;
-    initialI = 0;
+    p2Index = points.length - 1;
+    initialQ2Index = 0;
   } else {
-    j = 0;
-    initialI = 1;
+    p2Index = 0;
+    initialQ2Index = 1;
   }
 
   const intersections = [];
 
-  for (let i = initialI; i < points.length; i++) {
-    const p2 = points[j];
-    const q2 = points[i];
+  for (let q2Index = initialQ2Index; q2Index < points.length; q2Index++) {
+    const p2 = points[p2Index];
+    const q2 = points[q2Index];
 
-    if (lineSegmentsIntersect(p1, q1, p2, q2)) {
-      intersections.push([j, i]);
+    if (areLineSegmentsIntersecting(p1, q1, p2, q2)) {
+      intersections.push([p2Index, q2Index]);
     }
 
-    j = i;
+    p2Index = q2Index;
   }
 
   if (intersections.length === 0) {

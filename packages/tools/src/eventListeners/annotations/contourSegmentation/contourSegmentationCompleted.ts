@@ -24,6 +24,80 @@ import {
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
+export default function contourSegmentationCompletedListener(
+  evt: AnnotationCompletedEventType
+) {
+  const sourceAnnotation = evt.detail
+    .annotation as ContourSegmentationAnnotation;
+
+  if (!isContourSegmentationAnnotation(sourceAnnotation)) {
+    return;
+  }
+
+  const { renderingEngineId, viewportId } = evt.detail;
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  const viewport = renderingEngine.getViewport(viewportId);
+  const contourSegmentationAnnotations =
+    getValidContourSegmentationAnnotations(sourceAnnotation);
+
+  if (!contourSegmentationAnnotations.length) {
+    return;
+  }
+
+  const sourcePolyline = convertContourPolylineToCanvasSpace(
+    sourceAnnotation.data.contour.polyline,
+    viewport
+  );
+
+  const targetAnnotationInfo = getTargetAnnotation(
+    viewport,
+    sourcePolyline,
+    contourSegmentationAnnotations
+  );
+
+  if (!targetAnnotationInfo) {
+    return;
+  }
+
+  const { targetAnnotation, targetPolyline } = targetAnnotationInfo;
+
+  processContours(
+    viewport,
+    sourceAnnotation,
+    sourcePolyline,
+    targetAnnotation,
+    targetPolyline
+  );
+}
+
+function convertContourPolylineToCanvasSpace(
+  polyline: Types.Point3[],
+  viewport: Types.IViewport
+): Types.Point2[] {
+  const numPoints = polyline.length;
+  const projectedPolyline = new Array(numPoints);
+
+  for (let i = 0; i < numPoints; i++) {
+    projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
+  }
+
+  return projectedPolyline;
+}
+
+function convertPolylineToWorldSpace(
+  polyline: Types.Point2[],
+  viewport: Types.IViewport
+): Types.Point3[] {
+  const numPoints = polyline.length;
+  const projectedPolyline = new Array(numPoints);
+
+  for (let i = 0; i < numPoints; i++) {
+    projectedPolyline[i] = viewport.canvasToWorld(polyline[i]);
+  }
+
+  return projectedPolyline;
+}
+
 function getValidContourSegmentationAnnotations(
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
@@ -61,8 +135,9 @@ function getTargetAnnotation(
 
   for (let i = 0; i < contourSegmentationAnnotations.length; i++) {
     const targetAnnotation = contourSegmentationAnnotations[i];
-    const targetPolyline = targetAnnotation.data.contour.polyline.map((point) =>
-      viewport.worldToCanvas(point)
+    const targetPolyline = convertContourPolylineToCanvasSpace(
+      targetAnnotation.data.contour.polyline,
+      viewport
     );
 
     const targetAABB = math.polyline.getAABB(targetPolyline);
@@ -119,8 +194,8 @@ function processContours(
   const { handles, segmentation } = data;
   const { textBox } = handles;
 
-  newPolylines.forEach((newPolyline) => {
-    const polyline = newPolyline.map((p) => viewport.canvasToWorld(p));
+  for (let i = 0; i < newPolylines.length; i++) {
+    const polyline = convertPolylineToWorldSpace(newPolylines[i], viewport);
     const startPoint = polyline[0];
     const endPoint = polyline[polyline.length - 1];
     const newAnnotation = {
@@ -167,50 +242,5 @@ function processContours(
         viewportIdsToRender
       );
     }
-  });
-}
-
-export default function contourSegmentationCompletedListener(
-  evt: AnnotationCompletedEventType
-) {
-  const sourceAnnotation = evt.detail
-    .annotation as ContourSegmentationAnnotation;
-  const { renderingEngineId, viewportId } = evt.detail;
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId);
-
-  if (!isContourSegmentationAnnotation(sourceAnnotation)) {
-    return;
   }
-
-  const contourSegmentationAnnotations =
-    getValidContourSegmentationAnnotations(sourceAnnotation);
-
-  if (!contourSegmentationAnnotations.length) {
-    return;
-  }
-
-  const sourcePolyline = sourceAnnotation.data.contour.polyline.map((point) =>
-    viewport.worldToCanvas(point)
-  );
-
-  const targetAnnotationInfo = getTargetAnnotation(
-    viewport,
-    sourcePolyline,
-    contourSegmentationAnnotations
-  );
-
-  if (!targetAnnotationInfo) {
-    return;
-  }
-
-  const { targetAnnotation, targetPolyline } = targetAnnotationInfo;
-
-  processContours(
-    viewport,
-    sourceAnnotation,
-    sourcePolyline,
-    targetAnnotation,
-    targetPolyline
-  );
 }
