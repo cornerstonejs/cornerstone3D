@@ -24,6 +24,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace aabb {
     export {
+        intersectAABB,
         distanceToPoint,
         distanceToPointSquared
     }
@@ -280,6 +281,8 @@ type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDeta
 
 // @public (undocumented)
 type AnnotationCompletedEventDetail = {
+    viewportId: string;
+    renderingEngineId: string;
     annotation: Annotation;
     changeType?: ChangeTypes.Completed;
 };
@@ -1338,6 +1341,9 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
+function containsPoint(polyline: Types_2.Point2[], point: Types_2.Point2, closed?: boolean): boolean;
+
+// @public (undocumented)
 function contourAndFindLargestBidirectional(segmentation: any): any;
 
 // @public (undocumented)
@@ -2169,6 +2175,9 @@ function generateContourSetsFromLabelmap({ segmentations }: {
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
 
 // @public (undocumented)
+function getAABB(polyline: Types_2.Point2[]): Types_2.AABB2;
+
+// @public (undocumented)
 function getActiveSegmentation(toolGroupId: string): Segmentation;
 
 // @public (undocumented)
@@ -2244,7 +2253,7 @@ const getCalibratedScale: (image: any, handles?: any[]) => any;
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
-function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
+function getClosestLineSegmentIntersection(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
     segment: Types_2.Point2;
     distance: number;
 } | undefined;
@@ -2281,7 +2290,7 @@ function getDeltaPoints(currentPoints: IPoints[], lastPoints: IPoints[]): IPoint
 function getDeltaRotation(currentPoints: ITouchPoints[], lastPoints: ITouchPoints[]): void;
 
 // @public (undocumented)
-function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
+function getFirstLineSegmentIntersectionIndexes(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
 function getFont(styleSpecifier: StyleSpecifier, state?: AnnotationStyleStates, mode?: ToolModes): string;
@@ -2296,6 +2305,12 @@ function getGlobalConfig_2(): SegmentationRepresentationConfig;
 function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
 
 // @public (undocumented)
+function getLineSegmentIntersectionsCoordinates(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2[];
+
+// @public (undocumented)
+function getLineSegmentIntersectionsIndexes(polyline: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2[];
+
+// @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
 
 // @public (undocumented)
@@ -2306,6 +2321,12 @@ function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
 function getNextColorLUTIndex(): number;
+
+// @public (undocumented)
+function getNormal2(polyline: Types_2.Point2[]): Types_2.Point3;
+
+// @public (undocumented)
+function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 
 // @public (undocumented)
 function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
@@ -2534,7 +2555,13 @@ type InterpolationViewportData = {
 };
 
 // @public (undocumented)
+function intersectAABB(aabb1: Types_2.AABB2, aabb2: Types_2.AABB2): boolean;
+
+// @public (undocumented)
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+
+// @public (undocumented)
+function intersectPolyline(sourcePolyline: Types_2.Point2[], targetPolyline: Types_2.Point2[]): boolean;
 
 // @public (undocumented)
 function invalidateBrushCursor(toolGroupId: string): void;
@@ -2561,6 +2588,9 @@ function isAnnotationVisible(annotationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function isAxisAlignedRectangle(rectangleCornersIJK: any): boolean;
+
+// @public (undocumented)
+function isClosed(polyline: Types_2.Point2[]): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3101,8 +3131,6 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
-    // (undocumented)
-    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
 
 declare namespace locking {
@@ -3161,6 +3189,9 @@ declare namespace math {
         vec2
     }
 }
+
+// @public (undocumented)
+function mergePolylines(targetPolyline: Types_2.Point2[], sourcePolyline: Types_2.Point2[]): Types_2.Point2[];
 
 // @public (undocumented)
 export class MIPJumpToClickTool extends BaseTool {
@@ -3543,10 +3574,6 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
-    // (undocumented)
-    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
-    // (undocumented)
-    triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
 }
 
 declare namespace planarFreehandROITool {
@@ -3619,13 +3646,23 @@ declare namespace polyDataUtils {
 
 declare namespace polyline {
     export {
-        getFirstIntersectionWithPolyline,
-        getClosestIntersectionWithPolyline,
+        isClosed,
+        containsPoint,
+        getAABB,
+        getNormal3,
+        getNormal2,
+        intersectPolyline,
+        getFirstLineSegmentIntersectionIndexes,
+        getLineSegmentIntersectionsIndexes,
+        getLineSegmentIntersectionsCoordinates,
+        getClosestLineSegmentIntersection,
         getSubPixelSpacingAndXYDirections,
         pointsAreWithinCloseContourProximity,
         addCanvasPointsToArray,
         pointCanProjectOnLine,
-        calculateAreaOfPoints
+        calculateAreaOfPoints,
+        mergePolylines,
+        subtractPolylines
     }
 }
 
@@ -4889,6 +4926,9 @@ type StyleSpecifier = {
     toolName?: string;
     annotationUID?: string;
 };
+
+// @public (undocumented)
+function subtractPolylines(targetPolyline: Types_2.Point2[], sourcePolyline: Types_2.Point2[]): Types_2.Point2[][];
 
 // @public (undocumented)
 type SVGCursorDescriptor = {
