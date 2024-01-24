@@ -1350,9 +1350,6 @@ type ContourAnnotationData = {
             polyline: Types_2.Point3[];
             closed: boolean;
         };
-        handles?: {
-            handleContourIndex?: number[];
-        };
     };
 };
 

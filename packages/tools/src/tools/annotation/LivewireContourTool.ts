@@ -115,7 +115,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       worldToSlice = (point: Types.Point3) => {
         const ijkPoint = csUtils.transformWorldToIndex(vtkImageData, point);
         const slicePoint = vec3.transformMat4(
-          vec3.create(),
+          [0, 0, 0],
           ijkPoint,
           indexToSliceMatrix
         );
@@ -125,8 +125,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
       sliceToWorld = (point: Types.Point2) => {
         const ijkPoint = vec3.transformMat4(
-          vec3.create(),
-          vec3.fromValues(point[0], point[1], 0),
+          [0, 0, 0],
+          [point[0], point[1], 0],
           sliceToIndexMatrix
         ) as Types.Point3;
 
