@@ -22,12 +22,9 @@ import type {
   SVGDrawingHelper,
 } from '../../types';
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
+import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-  AnnotationModifiedEventType,
-} from '../../types/EventTypes';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
@@ -373,7 +370,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         : ChangeTypes.HandlesUpdated,
     };
 
-    console.log('TriggeringEvent', eventDetailModified.changeType);
     triggerEvent(eventTarget, eventType, eventDetailModified);
 
     this.editData = null;
@@ -533,17 +529,22 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const confirmedPath = new LivewirePath();
       const confirmedPathRight = new LivewirePath();
       const { worldToSlice } = this.editData;
-      const leftIndex = polyline.findIndex((point) =>
-        isEqual(point, leftHandle)
-      );
-      const rightIndex =
-        handleIndex === numHandles - 1
-          ? polyline.length
-          : polyline.findIndex((point) => isEqual(point, rightHandle));
-
-      if (rightIndex < leftIndex) {
+      const leftIndex = findHandlePolylineIndex(annotation, handleIndex - 1);
+      const rightIndex = findHandlePolylineIndex(annotation, handleIndex + 1);
+      if (rightIndex === -1 || leftIndex === -1) {
+        throw new Error(
+          `Can't find handle index ${rightIndex === -1 && rightHandle} ${
+            leftIndex === -1 && leftHandle
+          }`
+        );
+      }
+      if (handleIndex === 0) {
         confirmedPathRight.addPoints(
           polyline.slice(rightIndex + 1, leftIndex).map(worldToSlice)
+        );
+      } else if (rightIndex < leftIndex) {
+        throw new Error(
+          `Expected right index after left index, but were: ${leftIndex} ${rightIndex}`
         );
       } else {
         confirmedPath.addPoints(
@@ -553,12 +554,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
           polyline.slice(rightIndex, polyline.length).map(worldToSlice)
         );
       }
-      // for (let i = 0; i < leftIndex; i++) {
-      //   confirmedPath.addPoint(worldToSlice(polyline[i]));
-      // }
-      // for (let i = rightIndex + 1; i < polyline.length; i++) {
-      //   confirmedPathRight.addPoint(worldToSlice(polyline[i]));
-      // }
       this.editData.confirmedPath = confirmedPath;
       this.editData.confirmedPathRight = confirmedPathRight;
     }
@@ -573,11 +568,20 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         `Trying to edit a different handle than the one currently being edited ${handleIndex}!==${data.handles.activeHandleIndex}`
       );
     }
-    const canvasPos = worldToSlice(worldPos);
-    handlePoints[handleIndex] = sliceToWorld(canvasPos);
+    const slicePos = worldToSlice(worldPos);
+    if (
+      slicePos[0] < 0 ||
+      slicePos[0] >= this.scissors.width ||
+      slicePos[1] < 0 ||
+      slicePos[1] >= this.scissors.height
+    ) {
+      // Find path to point hangs if the position is outside the image data
+      return;
+    }
+    handlePoints[handleIndex] = sliceToWorld(slicePos);
 
-    const pathPointsLeft = this.scissors.findPathToPoint(canvasPos);
-    const pathPointsRight = this.scissorsRight.findPathToPoint(canvasPos);
+    const pathPointsLeft = this.scissors.findPathToPoint(slicePos);
+    const pathPointsRight = this.scissorsRight.findPathToPoint(slicePos);
     const currentPath = new LivewirePath();
 
     // Merge the "confirmed" path that goes from the first control point to the
