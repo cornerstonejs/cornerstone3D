@@ -531,45 +531,51 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { data } = annotation;
     const { points: handlePoints } = data.handles;
     const { length: numHandles } = handlePoints;
-    const leftHandle =
+    const previousHandle =
       handlePoints[(handleIndex - 1 + numHandles) % numHandles];
-    const rightHandle = handlePoints[(handleIndex + 1) % numHandles];
+    const nextHandle = handlePoints[(handleIndex + 1) % numHandles];
 
     if (!this.editData?.confirmedPathRight) {
-      this.setupBaseEditData(leftHandle, element, annotation, rightHandle);
+      this.setupBaseEditData(previousHandle, element, annotation, nextHandle);
       const { polyline } = data.contour;
       const confirmedPath = new LivewirePath();
       const confirmedPathRight = new LivewirePath();
       const { worldToSlice } = this.editData;
-      const leftIndex = findHandlePolylineIndex(annotation, handleIndex - 1);
-      const rightIndex = findHandlePolylineIndex(annotation, handleIndex + 1);
-      if (rightIndex === -1 || leftIndex === -1) {
+      const previousIndex = findHandlePolylineIndex(
+        annotation,
+        handleIndex - 1
+      );
+      const nextIndex = findHandlePolylineIndex(annotation, handleIndex + 1);
+      if (nextIndex === -1 || previousIndex === -1) {
         throw new Error(
-          `Can't find handle index ${rightIndex === -1 && rightHandle} ${
-            leftIndex === -1 && leftHandle
+          `Can't find handle index ${nextIndex === -1 && nextHandle} ${
+            previousIndex === -1 && previousHandle
           }`
         );
       }
       if (handleIndex === 0) {
+        // For this case, the next/previous indices are swapped, and the
+        // path data gets inserted in between the newly generated data, so
+        // handle this case specially
         confirmedPathRight.addPoints(
-          polyline.slice(rightIndex + 1, leftIndex).map(worldToSlice)
+          polyline.slice(nextIndex + 1, previousIndex).map(worldToSlice)
         );
-      } else if (rightIndex < leftIndex) {
+      } else if (nextIndex < previousIndex) {
         throw new Error(
-          `Expected right index after left index, but were: ${leftIndex} ${rightIndex}`
+          `Expected right index after left index, but were: ${previousIndex} ${nextIndex}`
         );
       } else {
         confirmedPath.addPoints(
-          polyline.slice(0, leftIndex + 1).map(worldToSlice)
+          polyline.slice(0, previousIndex + 1).map(worldToSlice)
         );
         confirmedPathRight.addPoints(
-          polyline.slice(rightIndex, polyline.length).map(worldToSlice)
+          polyline.slice(nextIndex, polyline.length).map(worldToSlice)
         );
       }
       this.editData.confirmedPath = confirmedPath;
       this.editData.confirmedPathRight = confirmedPathRight;
     }
-    const { editData } = this;
+    const { editData, scissors } = this;
     const { worldToSlice, sliceToWorld } = editData;
 
     const { activeHandleIndex } = data.handles;
@@ -583,34 +589,34 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const slicePos = worldToSlice(worldPos);
     if (
       slicePos[0] < 0 ||
-      slicePos[0] >= this.scissors.width ||
+      slicePos[0] >= scissors.width ||
       slicePos[1] < 0 ||
-      slicePos[1] >= this.scissors.height
+      slicePos[1] >= scissors.height
     ) {
       // Find path to point hangs if the position is outside the image data
       return;
     }
     handlePoints[handleIndex] = sliceToWorld(slicePos);
 
-    const pathPointsLeft = this.scissors.findPathToPoint(slicePos);
+    const pathPointsLeft = scissors.findPathToPoint(slicePos);
     const pathPointsRight = this.scissorsRight.findPathToPoint(slicePos);
     const currentPath = new LivewirePath();
 
     // Merge the "confirmed" path that goes from the first control point to the
     // last one with the current path that goes from the last control point to
     // the cursor point
-    currentPath.prependPath(this.editData.confirmedPath);
+    currentPath.prependPath(editData.confirmedPath);
     if (handleIndex !== 0) {
       currentPath.addPoints(pathPointsLeft);
     }
     currentPath.addPoints(pathPointsRight.reverse());
-    currentPath.appendPath(this.editData.confirmedPathRight);
+    currentPath.appendPath(editData.confirmedPathRight);
     if (handleIndex === 0) {
       currentPath.addPoints(pathPointsLeft);
     }
 
     // Store the new path
-    this.editData.currentPath = currentPath;
+    editData.currentPath = currentPath;
 
     annotation.invalidated = true;
     editData.hasMoved = true;
