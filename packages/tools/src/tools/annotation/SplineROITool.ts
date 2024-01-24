@@ -334,7 +334,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;

@@ -16,9 +16,9 @@ export default function distanceToPointSquared(p1: Point, p2: Point): number {
 
   const [x1, y1, z1 = 0] = p1;
   const [x2, y2, z2 = 0] = p2;
-  const dx = x1 - x2;
-  const dy = y1 - y2;
-  const dz = z1 - z2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dz = z2 - z1;
 
   // Time to square 10M numbers:
   //   (n * n) = 161ms | (n ** 2) = 199ms | Math.pow(n, 2) = 29529ms

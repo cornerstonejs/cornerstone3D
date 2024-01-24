@@ -6,6 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
 import {
+  getViewportForAnnotation,
   math,
   triggerAnnotationRenderForViewportIds,
 } from '../../../utilities';
@@ -34,9 +35,7 @@ export default function contourSegmentationCompletedListener(
     return;
   }
 
-  const { renderingEngineId, viewportId } = evt.detail;
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId);
+  const viewport = getViewportForAnnotation(sourceAnnotation);
   const contourSegmentationAnnotations =
     getValidContourSegmentationAnnotations(sourceAnnotation);
 

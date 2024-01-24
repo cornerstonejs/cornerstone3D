@@ -361,7 +361,7 @@ class LengthTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -443,7 +443,7 @@ class LengthTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

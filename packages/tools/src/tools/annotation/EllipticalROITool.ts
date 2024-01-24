@@ -459,7 +459,7 @@ class EllipticalROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
   };
 
@@ -651,7 +651,7 @@ class EllipticalROITool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

@@ -144,7 +144,7 @@ class KeyImageTool extends AnnotationTool {
       }
       annotation.data.text = text;
 
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,

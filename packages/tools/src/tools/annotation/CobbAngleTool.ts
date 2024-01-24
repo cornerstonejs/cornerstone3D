@@ -348,7 +348,7 @@ class CobbAngleTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -503,7 +503,7 @@ class CobbAngleTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;

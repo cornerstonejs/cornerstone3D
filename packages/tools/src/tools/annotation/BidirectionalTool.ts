@@ -481,7 +481,7 @@ class BidirectionalTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -901,7 +901,7 @@ class BidirectionalTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

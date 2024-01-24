@@ -401,7 +401,7 @@ class CircleROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
   };
 
@@ -535,7 +535,7 @@ class CircleROITool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

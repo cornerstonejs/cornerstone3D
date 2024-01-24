@@ -382,7 +382,7 @@ class RectangleROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation, element);
+      triggerAnnotationCompleted(annotation);
     }
   };
 
@@ -519,7 +519,7 @@ class RectangleROITool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

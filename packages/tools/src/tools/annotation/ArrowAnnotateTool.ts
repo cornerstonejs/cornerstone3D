@@ -330,7 +330,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         }
         annotation.data.text = text;
 
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
 
         triggerAnnotationRenderForViewportIds(
           renderingEngine,
@@ -487,7 +487,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        triggerAnnotationCompleted(annotation, element);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

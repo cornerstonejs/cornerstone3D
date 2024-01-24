@@ -102,17 +102,9 @@ function triggerAnnotationModified(
 /**
  * Triggers an annotation completed event.
  */
-function triggerAnnotationCompleted(
-  annotation: Annotation,
-  element: HTMLDivElement
-): void {
-  const enabledElement = getEnabledElement(element);
-  const { viewport } = enabledElement;
-  const { id: viewportId, renderingEngineId } = viewport;
+function triggerAnnotationCompleted(annotation: Annotation): void {
   const eventType = Events.ANNOTATION_COMPLETED;
   const eventDetail: AnnotationCompletedEventDetail = {
-    viewportId,
-    renderingEngineId,
     annotation,
   };
 
