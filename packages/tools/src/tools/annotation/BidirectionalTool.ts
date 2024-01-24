@@ -1,10 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
@@ -21,7 +16,10 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -1251,7 +1249,7 @@ class BidirectionalTool extends AnnotationTool {
 
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { element } = enabledElement;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
