@@ -2438,6 +2438,13 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
+type PointsXYZ = {
+    x: number[];
+    y: number[];
+    z: number[];
+};
+
+// @public (undocumented)
 const presets: ViewportPreset[];
 
 // @public (undocumented)
@@ -3086,6 +3093,7 @@ declare namespace Types {
         AABB2,
         Point2,
         Point3,
+        PointsXYZ,
         Point4,
         Mat3,
         Plane,
