@@ -46,7 +46,7 @@ export { helpers }
 function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any): Types.Metadata;
 
 // @public (undocumented)
-function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
+function modalityScaleNifti(array: Uint8Array | Int16Array | Int32Array | Float32Array | Float64Array | Int8Array | Uint16Array | Uint32Array, niftiHeader: any): void;
 
 // @public (undocumented)
 export class NiftiImageVolume extends ImageVolume {
