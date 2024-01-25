@@ -83,25 +83,49 @@ Drawing:
 
 - Left click and drag to draw a contour.
 - The default label will be assigned or you can select any label from label list (dropdown).
-- Draw a contour in one slice and move to another slice (skip some slice in between) and draw contour there. After drawing the second contour, the interpolated contours will be created in intermediate slices.
-- To create the interpolated contour there should be atleast 1 or more slices in between manually drawn contours and the contours should be assigned with same label.
-- Interpolated contours will not be created if more than one contour with same label is on a single slice.
+- Once draw the contour in one slice move to another slice and draw contour there. After completing contour the interpolated contour will be created in intermediate slices.
+- To create the interpolated contour there should be atleast 1 or more slice differences.
 
 --- Example:
 -- 1) draw the contour in slice 1
--- 2) draw another contour in slice 5 with same label drawn in slice 1.
+-- 2) draw another contour in slice 5
 -- 3) check interpolated contours are created in intermediate slices.
+-- 4) Also both drawn contour should contain same label
 
 Editing:
-- Left click and drag on the line of an existing contour to edit it.
-- Check related contours are adjusted based on the edited contour. If you are editing the interpolated contour then that contour will be considered as manually drawn.
+- Left click and drag on the line of an existing contour to edit it:
+- Check related contours are adjusted based on edited contour. If you are editing the interpolated contour then that contour will be taken as manually edited.
+- Also if you are trying to draw another contour
 
 Deleting:
-- When manuallay drawn contour is deleted, then it will delete other interpolated contours connected to this contour.
-- If the deleted the contour is in between two slices having manually drawn contours with same label, interpolated contours will be regenerated to connect those contours.
+-
+
+
 `;
 
 content.append(instructions);
+
+addButtonToToolbar({
+  title: 'Render selected open contour with joined ends and midpoint line',
+  onClick: () => {
+    const annotationUIDs = selection.getAnnotationsSelected();
+
+    if (annotationUIDs && annotationUIDs.length) {
+      const annotationUID = annotationUIDs[0];
+      const annotation =
+        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
+          annotationUID
+        );
+
+      annotation.data.isOpenUShapeContour = true;
+
+      // Render the image to see it was selected
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      renderingEngine.renderViewports(viewportIds);
+    }
+  },
+});
 
 let shouldInterpolate = false;
 function addToggleInterpolationButton(toolGroup) {

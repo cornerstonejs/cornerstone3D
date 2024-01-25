@@ -196,6 +196,17 @@ type AnnotationLabelChangeEventDetail = {
   renderingEngineId: string;
 };
 
+type AnnotationInterpolationItemDeleteEventDetail = {
+  /** The annotation that is being updated with a change in label. */
+  annotation: Annotation;
+  /** The HTML element that the annotation was rendered on. */
+  element: HTMLDivElement;
+  /** unique id of the viewport */
+  viewportId: string;
+  /** unique id of the rendering engine */
+  renderingEngineId: string;
+};
+
 type AnnotationInterpolationCompletedEventDetail = {
   /** The annotation that is being updated with a change in label. */
   annotation: Annotation;
@@ -525,6 +536,12 @@ type AnnotationLabelChangeEventType =
   Types.CustomEventType<AnnotationLabelChangeEventDetail>;
 
 /**
+ * The Annotation delete event type
+ */
+type AnnotationInterpolationItemDeleteEventType =
+  Types.CustomEventType<AnnotationInterpolationItemDeleteEventDetail>;
+
+/**
  * The Annotation interpolation process completed event type
  */
 type AnnotationInterpolationCompletedEventType =
@@ -704,7 +721,8 @@ export {
   AnnotationVisibilityChangeEventType,
   AnnotationLabelChangeEventDetail,
   AnnotationLabelChangeEventType,
-  AnnotationInterpolationCompletedEventDetail,
+  AnnotationInterpolationItemDeleteEventDetail,
+  AnnotationInterpolationItemDeleteEventType,
   AnnotationInterpolationCompletedEventType,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,

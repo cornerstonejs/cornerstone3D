@@ -277,6 +277,27 @@ describe('Contour Tool: ', () => {
         });
       }
 
+      function triggerContourUpdateCallback(eventData, annotation) {
+        const { element } = eventData;
+
+        if (!element) {
+          return;
+        }
+        const { viewportId, renderingEngineId } = getEnabledElement(element);
+
+        const eventDetail = {
+          annotation,
+          renderingEngineId,
+          viewportId,
+        };
+
+        triggerEvent(
+          element,
+          csToolsEnums.Events.ANNOTATION_LABEL_CHANGE,
+          eventDetail
+        );
+      }
+
       function renderEventHandler() {
         drawAnnotation(firstSlicePoints);
         expectedContourCount++;
@@ -432,6 +453,27 @@ describe('Contour Tool: ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
+      function triggerContourUpdateCallback(eventData, annotation) {
+        const { element } = eventData;
+
+        if (!element) {
+          return;
+        }
+        const { viewportId, renderingEngineId } = getEnabledElement(element);
+
+        const eventDetail = {
+          annotation,
+          renderingEngineId,
+          viewportId,
+        };
+
+        triggerEvent(
+          element,
+          csToolsEnums.Events.ANNOTATION_LABEL_CHANGE,
+          eventDetail
+        );
+      }
+
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         // first slice points
         firstSliceAnnotation.metadata.referencedSliceIndex = 0;
@@ -483,6 +525,27 @@ describe('Contour Tool: ', () => {
       ];
       const vp = this.renderingEngine.getViewport(viewportId);
       let expectedContourCount = 0;
+
+      function triggerContourUpdateCallback(eventData, annotation) {
+        const { element } = eventData;
+
+        if (!element) {
+          return;
+        }
+        const { viewportId, renderingEngineId } = getEnabledElement(element);
+
+        const eventDetail: AnnotationLabelChangeEventDetail = {
+          annotation,
+          renderingEngineId,
+          viewportId,
+        };
+
+        triggerEvent(
+          eventTarget,
+          csToolsEvents.ANNOTATION_LABEL_CHANGE,
+          eventDetail
+        );
+      }
 
       function addAnnotation(slicePoints, index, label) {
         const { imageData } = vp.getImageData();
@@ -677,6 +740,27 @@ describe('Contour Tool: ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
+      function triggerContourUpdateCallback(eventData, annotation) {
+        const { element } = eventData;
+
+        if (!element) {
+          return;
+        }
+        const { viewportId, renderingEngineId } = getEnabledElement(element);
+
+        const eventDetail = {
+          annotation,
+          renderingEngineId,
+          viewportId,
+        };
+
+        triggerEvent(
+          element,
+          csToolsEnums.Events.ANNOTATION_LABEL_CHANGE,
+          eventDetail
+        );
+      }
+
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         // first slice points
         firstSliceAnnotation.metadata.referencedSliceIndex = 0;
@@ -712,24 +796,3 @@ describe('Contour Tool: ', () => {
     });
   });
 });
-
-function triggerContourUpdateCallback(eventData, annotation) {
-  const { element } = eventData;
-
-  if (!element) {
-    return;
-  }
-  const { viewportId, renderingEngineId } = getEnabledElement(element);
-
-  const eventDetail = {
-    annotation,
-    renderingEngineId,
-    viewportId,
-  };
-
-  triggerEvent(
-    element,
-    csToolsEnums.Events.ANNOTATION_LABEL_CHANGE,
-    eventDetail
-  );
-}

@@ -48,8 +48,6 @@ create Annotations for the interaction. Example `AnnotationTool`s include:
 - Length
 - Probe
 - RectangleROI
-- PlanarFreehandROI
-- ContourROI
 
 ## Next steps
 
