@@ -728,6 +728,7 @@ class Cache implements ICache {
     this.incrementImageCacheSize(-cachedImage.sizeInBytes);
 
     const eventDetails = {
+      image: cachedImage,
       imageId,
     };
 
