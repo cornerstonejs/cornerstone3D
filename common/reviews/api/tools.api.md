@@ -3108,7 +3108,9 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement) => void;
+    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    // (undocumented)
+    updateInterpolatedAnnotation(annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement): void;
 }
 
 declare namespace locking {

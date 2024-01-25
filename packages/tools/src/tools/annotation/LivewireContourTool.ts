@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-
 import {
   getEnabledElement,
   eventTarget,
@@ -8,6 +7,7 @@ import {
   VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
 import {
   drawHandles as drawHandlesSvg,
@@ -33,9 +33,6 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import { IEnabledElement } from 'core/dist/types/types';
-
-const { isEqual } = csUtils;
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -765,11 +762,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   }
 
   protected onInterpolationComplete = (annotation) => {
-    console.log(
-      'Hello onInterpolationComplete',
-      annotation,
-      this.configuration
-    );
+    // TODO - see if we can interpolate this node on complete rather than waiting
   };
 
   protected createAnnotation(evt: EventTypes.InteractionEventType) {
@@ -792,16 +785,12 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
   public updateInterpolatedAnnotation(
     annotation: LivewireContourAnnotation,
-    enabledElement: IEnabledElement
+    enabledElement: Types.IEnabledElement
   ) {
     const { interpolationSources, points } = annotation.data.handles;
     if (this.editData || !annotation.invalidated || !interpolationSources) {
       return;
     }
-    console.log(
-      'Updating interpolated annotation from interpolationSources',
-      annotation
-    );
     const { element } = enabledElement.viewport;
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
