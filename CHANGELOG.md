@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.50.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.49.2...v1.50.0) (2024-01-25)
+
+### Features
+
+- Livewire editing ([#1035](https://github.com/cornerstonejs/cornerstone3D/issues/1035)) ([655a241](https://github.com/cornerstonejs/cornerstone3D/commit/655a241b213e9f9eb00c295407cc53df2d4954ea))
+
 ## [1.49.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.49.1...v1.49.2) (2024-01-24)
 
 ### Bug Fixes
