@@ -21,14 +21,14 @@ import {
   ChangeTypes,
 } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
-import {
+import type {
   Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
 import {
   math,
@@ -601,13 +601,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
    * @param renderContext - Render context that contains the annotation, enabledElement, etc.
    * @returns True if the annotation is rendered or false otherwise
    */
-  protected renderAnnotationInstance(renderContext: {
-    enabledElement: Types.IEnabledElement;
-    targetId: string;
-    annotation: Annotation;
-    annotationStyle: Record<string, any>;
-    svgDrawingHelper: SVGDrawingHelper;
-  }): boolean {
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
     const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
       renderContext;
     const { viewport } = enabledElement;

@@ -554,6 +554,8 @@ function completeOpenContourEdit(element: HTMLDivElement) {
     const worldPoints = updatedPoints.map((canvasPoint) =>
       viewport.canvasToWorld(canvasPoint)
     );
+
+    annotation.invalidated = true;
     annotation.data.contour.polyline = worldPoints;
     annotation.data.contour.closed = false;
     annotation.data.handles.points = [
@@ -566,8 +568,6 @@ function completeOpenContourEdit(element: HTMLDivElement) {
       annotation.data.openUShapeContourVectorToPeak =
         findOpenUShapedContourVectorToPeak(fusedCanvasPoints, viewport);
     }
-
-    annotation.invalidated = true;
 
     triggerAnnotationModified(annotation, element);
   }

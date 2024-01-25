@@ -32,6 +32,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
@@ -529,13 +530,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return super.getAnnotationStyle(context);
   }
 
-  protected renderAnnotationInstance(renderContext: {
-    enabledElement: Types.IEnabledElement;
-    targetId: string;
-    annotation: Annotation;
-    annotationStyle: Record<string, any>;
-    svgDrawingHelper: SVGDrawingHelper;
-  }): boolean {
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
     const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
       renderContext;
     const annotation = renderContext.annotation as PlanarFreehandROIAnnotation;
