@@ -2074,6 +2074,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
     return this.imagesLoader.loadImages([imageId], this).then((v) => {
+      if (Array.isArray(v)) {
+        if (v[0]?.status === 'rejected') {
+          throw new RangeError(v[0]?.reason);
+        }
+      }
       return imageId;
     });
   }
