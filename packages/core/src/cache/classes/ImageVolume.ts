@@ -238,6 +238,21 @@ export class ImageVolume implements IImageVolume {
       : [<PixelDataTypedArray>this.scalarData];
   }
 
+  public modified() {
+    this.imageData.modified();
+
+    if (this.isDynamicVolume()) {
+      throw new Error('Not implemented');
+    } else {
+      this.scalarData = this.imageData
+        .getPointData()
+        .getScalars()
+        .getData() as PixelDataTypedArray;
+    }
+
+    this.numFrames = this._getNumFrames();
+  }
+
   /**
    * If completelyRemove is true, remove the volume completely from the cache. Otherwise,
    * convert the volume to cornerstone images (stack images) and store it in the cache

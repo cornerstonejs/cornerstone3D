@@ -61,7 +61,7 @@ const obj = {
     );
     return results;
   },
-  async convertContourToLabelmap(args, ...callbacks) {
+  async convertContourToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
     const polySeg = await new ICRPolySeg();
     await polySeg.initialize({
@@ -100,66 +100,140 @@ const obj = {
     for (const index of segmentIndices) {
       const annotations = annotationUIDsInSegmentMap.get(index);
 
-      // Combine bounding boxes for all annotations in the segment
-      const combinedBoundingBox = [
-        [Infinity, -Infinity],
-        [Infinity, -Infinity],
-        [Infinity, -Infinity],
-      ];
-
-      Array.from(annotations).forEach((annotation) => {
+      for (const annotation of annotations) {
         const bounds = getBoundingBoxAroundShapeWorld(
           annotation.data.contour.polyline
         );
 
-        // Update combined bounding box
-        for (let dim = 0; dim < 3; dim++) {
-          combinedBoundingBox[dim][0] = Math.min(
-            combinedBoundingBox[dim][0],
-            bounds[dim][0]
-          );
-          combinedBoundingBox[dim][1] = Math.max(
-            combinedBoundingBox[dim][1],
-            bounds[dim][1]
-          );
-        }
+        const [iMin, jMin, kMin] = utilities.transformWorldToIndex(imageData, [
+          bounds[0][0],
+          bounds[1][0],
+          bounds[2][0],
+        ]);
 
-        return annotation;
-      });
+        const [iMax, jMax, kMax] = utilities.transformWorldToIndex(imageData, [
+          bounds[0][1],
+          bounds[1][1],
+          bounds[2][1],
+        ]);
 
-      const [iMin, jMin, kMin] = utilities.transformWorldToIndex(imageData, [
-        combinedBoundingBox[0][0],
-        combinedBoundingBox[1][0],
-        combinedBoundingBox[2][0],
-      ]);
-
-      const [iMax, jMax, kMax] = utilities.transformWorldToIndex(imageData, [
-        combinedBoundingBox[0][1],
-        combinedBoundingBox[1][1],
-        combinedBoundingBox[2][1],
-      ]);
-
-      // Run the pointInShapeCallback for the combined bounding box
-      pointInShapeCallback(
-        imageData,
-        (pointLPS) => {
-          // Check if the point is inside any of the polylines for this segment
-          return annotations.some((annotation) =>
-            isPointInsidePolyline3D(pointLPS, annotation.data.contour.polyline)
-          );
-        },
-        ({ pointIJK }) => {
-          segmentationVoxelManager.setAtIJKPoint(pointIJK, index);
-        },
-        [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ]
-      );
+        // Run the pointInShapeCallback for the combined bounding box
+        pointInShapeCallback(
+          imageData,
+          (pointLPS) => {
+            // Check if the point is inside any of the polylines for this segment
+            return isPointInsidePolyline3D(
+              pointLPS,
+              annotation.data.contour.polyline
+            );
+          },
+          ({ pointIJK }) => {
+            segmentationVoxelManager.setAtIJKPoint(pointIJK, index);
+          },
+          [
+            [iMin, iMax],
+            [jMin, jMax],
+            [kMin, kMax],
+          ]
+        );
+      }
     }
 
-    return imageData.getPointData().getScalars().getData();
+    return segmentationVoxelManager.scalarData;
+  },
+  async convertContourToStackLabelmap(args, ...callbacks) {
+    const [progressCallback] = callbacks;
+    const polySeg = await new ICRPolySeg();
+    await polySeg.initialize({
+      updateProgress: progressCallback,
+    });
+
+    const { segmentationsInfo, annotationUIDsInSegmentMap, segmentIndices } =
+      args;
+
+    const segmentationVoxelManagers = new Map();
+
+    segmentationsInfo.forEach((segmentationInfo, referencedImageId) => {
+      const { dimensions, scalarData, direction, spacing, origin } =
+        segmentationInfo;
+      const manager = utilities.VoxelManager.createVolumeVoxelManager(
+        dimensions,
+        scalarData
+      );
+
+      const imageData = vtkImageData.newInstance();
+      imageData.setDimensions(dimensions);
+      imageData.setOrigin(origin);
+      imageData.setDirection(direction);
+      imageData.setSpacing(spacing);
+
+      const scalarArray = vtkDataArray.newInstance({
+        name: 'Pixels',
+        numberOfComponents: 1,
+        values: scalarData,
+      });
+
+      imageData.getPointData().setScalars(scalarArray);
+
+      imageData.modified();
+
+      segmentationVoxelManagers.set(referencedImageId, { manager, imageData });
+    });
+
+    for (const index of segmentIndices) {
+      const annotations = annotationUIDsInSegmentMap.get(index);
+
+      for (const annotation of annotations) {
+        const bounds = getBoundingBoxAroundShapeWorld(
+          annotation.data.contour.polyline
+        );
+
+        const { referencedImageId } = annotation.metadata;
+
+        const { manager: segmentationVoxelManager, imageData } =
+          segmentationVoxelManagers.get(referencedImageId);
+
+        const [iMin, jMin, kMin] = utilities.transformWorldToIndex(imageData, [
+          bounds[0][0],
+          bounds[1][0],
+          bounds[2][0],
+        ]);
+
+        const [iMax, jMax, kMax] = utilities.transformWorldToIndex(imageData, [
+          bounds[0][1],
+          bounds[1][1],
+          bounds[2][1],
+        ]);
+
+        // Run the pointInShapeCallback for the combined bounding box
+        pointInShapeCallback(
+          imageData,
+          (pointLPS) => {
+            // Check if the point is inside any of the polylines for this segment
+            return isPointInsidePolyline3D(
+              pointLPS,
+              annotation.data.contour.polyline
+            );
+          },
+          ({ pointIJK }) => {
+            segmentationVoxelManager.setAtIJKPoint(pointIJK, index);
+          },
+          [
+            [iMin, iMax],
+            [jMin, jMax],
+            [kMin, kMax],
+          ]
+        );
+      }
+    }
+
+    segmentationsInfo.forEach((segmentationInfo, referencedImageId) => {
+      const { manager: segmentationVoxelManager } =
+        segmentationVoxelManagers.get(referencedImageId);
+
+      segmentationInfo.scalarData = segmentationVoxelManager.scalarData;
+    });
+    return segmentationsInfo;
   },
   async convertSurfaceToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;

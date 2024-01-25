@@ -42,17 +42,6 @@ setTitleAndDescription(
   'This demonstration showcases the usage of PolySEG WASM module to convert a contour segmentation to a closed surface labelmap segmentation. Use the left viewport to draw a contour segmentation and then click on the button to convert it to a volume labelmap segmentation. The right viewport shows the volume labelmap segmentation.'
 );
 
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 1,
-  outlineDashActive: undefined,
-  outlineDashInactive: undefined,
-};
-
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
@@ -313,15 +302,6 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
-
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2]);

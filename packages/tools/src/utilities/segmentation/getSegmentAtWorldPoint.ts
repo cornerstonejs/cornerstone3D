@@ -30,7 +30,7 @@ export function getSegmentAtWorldPoint(
   viewport: Types.IViewport,
   worldPoint: Types.Point3,
   segmentationRepresentationUID: string
-) {
+): number {
   const { segmentationRepresentation } = findSegmentationRepresentationByUID(
     segmentationRepresentationUID
   );

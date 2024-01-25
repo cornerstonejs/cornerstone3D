@@ -1,3 +1,4 @@
+import { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
 import { computeLabelmapData } from './labelmapComputationStrategies';
@@ -16,6 +17,7 @@ export function computeAndAddLabelmapRepresentation(
   options: {
     segmentIndices?: number[];
     segmentationRepresentationUID?: string;
+    viewport?: Types.IVolumeViewport | Types.IStackViewport;
   } = {}
 ) {
   return computeAndAddRepresentation(

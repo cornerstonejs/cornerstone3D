@@ -5,7 +5,10 @@ import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { convertContourToVolumeLabelmap } from './convertContourToLabelmap';
+import {
+  convertContourToStackLabelmap,
+  convertContourToVolumeLabelmap,
+} from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 
 export type RawLabelmapData =
@@ -17,6 +20,7 @@ export async function computeLabelmapData(
   options: {
     segmentIndices?: number[];
     segmentationRepresentationUID?: string;
+    viewport?: Types.IVolumeViewport | Types.IStackViewport;
   }
 ) {
   const segmentIndices = options.segmentIndices?.length
@@ -88,24 +92,19 @@ async function computeLabelmapFromContourSegmentation(
   const representationData = segmentation.representationData.CONTOUR;
 
   let result;
-  if (isVolume) {
-    const defaultActor = options.viewport.getDefaultActor();
-    const { uid: volumeId } = defaultActor;
-    const segmentationVolume =
-      await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
 
-    result = await convertContourToVolumeLabelmap(
-      representationData,
-      segmentationVolume,
-      {
-        segmentIndices,
-        segmentationRepresentationUID: options.segmentationRepresentationUID,
-      }
-    );
+  if (isVolume) {
+    result = await convertContourToVolumeLabelmap(representationData, {
+      segmentIndices,
+      segmentationRepresentationUID: options.segmentationRepresentationUID,
+      viewport: options.viewport,
+    });
   } else {
-    throw new Error(
-      'Cannot compute labelmap from contour segmentation for stack viewport yet'
-    );
+    result = await convertContourToStackLabelmap(representationData, {
+      segmentIndices,
+      segmentationRepresentationUID: options.segmentationRepresentationUID,
+      viewport: options.viewport,
+    });
   }
 
   return result;

@@ -40,6 +40,8 @@ function getRepresentationRenderingConfig() {
   };
 }
 
+let polySegConversionInProgress = false;
+
 /**
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
  * Initializes the global and viewport specific state for the segmentation in the
@@ -142,17 +144,21 @@ async function render(
 
   if (
     !actorEntry &&
-    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID)
+    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID) &&
+    !polySegConversionInProgress
   ) {
     // meaning the requested segmentation representationUID does not have
     // labelmap data, BUT we might be able to request a conversion from
     // another representation to labelmap
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
+    polySegConversionInProgress = true;
+
     labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
       segmentationId,
       {
         segmentationRepresentationUID,
+        viewport,
       }
     );
 
@@ -161,6 +167,12 @@ async function render(
         `No labelmap data found for segmentationId ${segmentationId}.`
       );
     }
+
+    polySegConversionInProgress = false;
+  }
+
+  if (!labelmapData) {
+    return;
   }
 
   if (isVolumeSegmentation(labelmapData, viewport)) {

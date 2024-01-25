@@ -15,7 +15,7 @@ import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 // This function is responsible for the conversion calculations
-async function computeStackSegmentationFromVolume({
+export async function computeStackSegmentationFromVolume({
   volumeId,
 }: {
   volumeId: string;

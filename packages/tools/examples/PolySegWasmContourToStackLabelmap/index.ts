@@ -46,9 +46,6 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
@@ -207,18 +204,23 @@ async function run() {
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  const usImageId = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
+    SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
+  const mgImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
+  const imageIds = [usImageId[0], mgImageIds[0]];
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -227,19 +229,13 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.STACK,
       element: element1,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-      },
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.STACK,
       element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-      },
     },
   ];
 
@@ -248,16 +244,13 @@ async function run() {
   toolGroup1.addViewport(viewportId1, renderingEngineId);
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
-  // Set the volume to load
-  volume.load();
+  const viewport1 = renderingEngine.getViewport(viewportId1);
+  await viewport1.setStack(imageIds, 0);
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2]
-  );
+  const viewport2 = renderingEngine.getViewport(viewportId2);
+  await viewport2.setStack(imageIds, 0);
 
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   // Add the segmentations to state
   await segmentation.addSegmentations([
     {

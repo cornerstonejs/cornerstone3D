@@ -47,17 +47,6 @@ setTitleAndDescription(
   'This demonstration showcases the usage of PolySEG WASM module to convert a volume labelmap segmentation to a contour segmentation. Use the left viewport to draw a labelmap segmentation and then click on the button to convert it to a contour segmentation. The right viewport shows the contour segmentation. The dropdown allows you to select the segment index to convert to a contour segmentation.'
 );
 
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 1,
-  outlineDashActive: undefined,
-  outlineDashInactive: undefined,
-};
-
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
