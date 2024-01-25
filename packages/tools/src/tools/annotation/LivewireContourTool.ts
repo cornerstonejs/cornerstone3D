@@ -33,6 +33,7 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { IEnabledElement } from 'core/dist/types/types';
 
 const { isEqual } = csUtils;
 
@@ -582,7 +583,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     const { activeHandleIndex } = data.handles;
     if (activeHandleIndex === null || activeHandleIndex === undefined) {
-      data.handle.activeHandleIndex = handleIndex;
+      data.handles.activeHandleIndex = handleIndex;
     } else if (activeHandleIndex !== handleIndex) {
       throw new Error(
         `Trying to edit a different handle than the one currently being edited ${handleIndex}!==${data.handles.activeHandleIndex}`
@@ -787,6 +788,32 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return annotation;
   }
 
+  public updateInterpolatedAnnotation(
+    annotation: LivewireContourAnnotation,
+    enabledElement: IEnabledElement
+  ) {
+    const { interpolationSources, points } = annotation.data.handles;
+    if (this.editData || !annotation.invalidated || !interpolationSources) {
+      return;
+    }
+    console.log(
+      'Updating interpolated annotation from interpolationSources',
+      annotation
+    );
+    const { element } = enabledElement.viewport;
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      this.editHandle(point, element, annotation, i);
+      this._updateAnnotation(element, this.editData.currentPath);
+      this.scissors = null;
+      this.scissorsRight = null;
+      this.editData = null;
+      annotation.data.handles.activeHandleIndex = null;
+    }
+
+    annotation.data.handles.interpolationSources = null;
+  }
+
   /**
    * Render an annotation instance
    * @param renderContext - Render context that contains the annotation, enabledElement, etc.
@@ -799,10 +826,12 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotationStyle: Record<string, any>;
     svgDrawingHelper: SVGDrawingHelper;
   }): boolean {
-    const { enabledElement, svgDrawingHelper, annotationStyle } = renderContext;
+    const { annotation, enabledElement, svgDrawingHelper, annotationStyle } =
+      renderContext;
+    this.updateInterpolatedAnnotation(annotation, enabledElement);
+
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
-    const annotation = renderContext.annotation as LivewireContourAnnotation;
     const { annotationUID, data, highlighted } = annotation;
     const { handles } = data;
     const newAnnotation = this.editData?.newAnnotation;
@@ -833,19 +862,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
       const { interpolationSources: sources } = handles;
       if (sources) {
-        console.log('canvasHandles', canvasHandles);
         const sourceCanvas = sources.map((source) => source.map(worldToCanvas));
         for (let i = 0; i < sourceCanvas[0].length; i++) {
           const p0 = sourceCanvas[0][i];
           const p1 = sourceCanvas[1][i];
-          const pInterp = canvasHandles[i];
-          console.log(
-            'Drawing line from',
-            p0,
-            p1,
-            'should be through',
-            pInterp
-          );
           drawLineSvg(svgDrawingHelper, annotationUID, `ortho-${i}`, p0, p1);
         }
       }
