@@ -176,8 +176,9 @@ function _linearlyInterpolateContour(
   const handleCount = Math.round(
     Math.max(
       8,
-      interpolationData.get(startIndex)[0].data.handles.points.length * 2,
-      interpolationData.get(endIndex)[0].data.handles.points.length * 2
+      interpolationData.get(startIndex)[0].data.handles.points.length,
+      interpolationData.get(endIndex)[0].data.handles.points.length,
+      interpolated3DPoints.x.length / 50
     )
   );
   const handlePoints = interpolated3DPoints.subselect(handleCount);

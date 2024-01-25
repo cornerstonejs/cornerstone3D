@@ -1045,7 +1045,7 @@ class EllipticalROITool extends AnnotationTool {
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
         this.isHandleOutsideImage = false;
-        
+
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
 
