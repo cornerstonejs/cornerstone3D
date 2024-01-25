@@ -276,8 +276,8 @@ describe('Synchronizer Manager: ', () => {
     ]);
 
     let canvasesRendered = 0;
-    const [pageX1, pageY1] = [316, 125];
-    const [pageX2, pageY2] = [211, 20];
+    const [pageX1, pageY1] = [16, 125];
+    const [pageX2, pageY2] = [16, -500];
 
     const addEventListenerForVOI = () => {
       element2.addEventListener(Events.IMAGE_RENDERED, () => {

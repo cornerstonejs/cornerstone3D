@@ -3,6 +3,7 @@ import {
   Types,
   Enums,
   getRenderingEngine,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,10 +13,6 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import {
-  _convertVolumeToStackViewport,
-  _convertStackToVolumeViewport,
-} from './_setViewports';
 
 // This is for debugging purposes
 console.warn(
@@ -24,17 +21,12 @@ console.warn(
 
 const {
   LengthTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
+  PanTool,
+  ZoomTool,
   ToolGroupManager,
-  ArrowAnnotateTool,
   StackScrollMouseWheelTool,
   Enums: csToolsEnums,
+  utilities,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -66,17 +58,7 @@ content.append(instructions);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
-const toolsNames = [
-  LengthTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-];
+const toolsNames = [LengthTool.toolName];
 let selectedToolName = toolsNames[0];
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_VIEWPORT';
@@ -105,27 +87,34 @@ addDropdownToToolbar({
 
 addButtonToToolbar({
   title: 'Switch StackViewport to VolumeViewport, and vice versa',
-  onClick: () => {
+  onClick: async () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     const viewport = renderingEngine.getViewport(viewportId);
 
+    let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      _convertStackToVolumeViewport(
-        renderingEngine,
-        viewport as Types.IStackViewport,
-        toolGroup
-      );
-      return;
+      newViewport = await csUtils.convertStackToVolumeViewport({
+        viewport: viewport as Types.IStackViewport,
+        options: {
+          background: <Types.Point3>[0, 0.4, 0],
+          volumeId: `cornerstoneStreamingImageVolume:myVolume`,
+        },
+      });
+    } else {
+      newViewport = await csUtils.convertVolumeToStackViewport({
+        viewport: viewport as Types.IVolumeViewport,
+        options: {
+          background: <Types.Point3>[0.4, 0.0, 0.4],
+        },
+      });
     }
 
-    // convert to stack
-    _convertVolumeToStackViewport(
-      renderingEngine,
-      viewport as Types.IVolumeViewport,
-      toolGroup
-    );
+    // Set the tool group on the viewport
+    if (toolGroup) {
+      toolGroup.addViewport(newViewport.id, renderingEngineId);
+    }
   },
 });
 
@@ -138,15 +127,9 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -154,15 +137,9 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -173,17 +150,23 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolPassive(ProbeTool.toolName);
-  toolGroup.setToolPassive(RectangleROITool.toolName);
-  toolGroup.setToolPassive(EllipticalROITool.toolName);
-  toolGroup.setToolPassive(CircleROITool.toolName);
-  toolGroup.setToolPassive(BidirectionalTool.toolName);
-  toolGroup.setToolPassive(AngleTool.toolName);
-  toolGroup.setToolPassive(CobbAngleTool.toolName);
-  toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -221,10 +204,11 @@ async function run() {
   const stack = imageIds;
 
   // Set the stack on the viewport
-  viewport.setStack(stack, 0);
+  viewport.setStack(stack, 80);
 
-  // Render the image
-  viewport.render();
+  utilities.stackContextPrefetch.enable(viewport.element);
+
+  renderingEngine.render();
 }
 
 run();

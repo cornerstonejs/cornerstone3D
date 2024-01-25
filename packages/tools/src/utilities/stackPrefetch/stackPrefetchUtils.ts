@@ -52,9 +52,13 @@ export function getStackData(element) {
   const { viewport } = enabledElement;
 
   if (!(viewport instanceof StackViewport)) {
-    throw new Error(
+    // we shouldn't throw error here, since the viewport might have
+    // changed from stack to volume during prefetch
+    console.warn(
       'stackPrefetch: element must be a StackViewport, VolumeViewport stackPrefetch not yet implemented'
     );
+
+    return null;
   }
 
   return {

@@ -189,18 +189,18 @@ async function run() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ctVolumeId }],
     [viewportIds[0]]
   );
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
     [viewportIds[1]]
   );
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {

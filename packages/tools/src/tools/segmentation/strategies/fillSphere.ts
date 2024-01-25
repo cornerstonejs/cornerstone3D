@@ -2,16 +2,13 @@ import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { getCanvasEllipseCorners } from '../../../utilities/math/ellipse';
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { InitializedOperationData, Composition } from './BrushStrategy';
-import type { CanvasCoordinates } from '../../../types';
 import compositions from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';
 import { createEllipseInPoint } from './fillCircle';
 const { transformWorldToIndex } = csUtils;
-
+import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
@@ -38,43 +35,18 @@ const sphereComposition = {
       segmentationImageData,
       center as Types.Point3
     );
-    const canvasCoordinates = points.map((p) =>
-      viewport.worldToCanvas(p)
-    ) as CanvasCoordinates;
 
-    // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
-    // corners in canvas coordinates
-    const [topLeftCanvas, bottomRightCanvas] =
-      getCanvasEllipseCorners(canvasCoordinates);
-
-    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
-    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
-    // This will be 2d, now expand to 3d
-    const diameters = topLeftWorld.map((left, index) =>
-      Math.abs(bottomRightWorld[index] - left)
+    const {
+      boundsIJK: newBoundsIJK,
+      topLeftWorld,
+      bottomRightWorld,
+    } = getSphereBoundsInfo(
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
+      segmentationImageData,
+      viewport
     );
-    const radius = Math.max(...diameters) / 2;
-    // Make 3d sphere
-    topLeftWorld.forEach((left, index) => {
-      const right = bottomRightWorld[index];
-      if (left === right) {
-        topLeftWorld[index] = left - radius;
-        bottomRightWorld[index] = left + radius;
-      }
-    });
 
-    const ellipsoidCornersIJK = [
-      <Types.Point3>transformWorldToIndex(segmentationImageData, topLeftWorld),
-      <Types.Point3>(
-        transformWorldToIndex(segmentationImageData, bottomRightWorld)
-      ),
-    ];
-
-    segmentationVoxelManager.boundsIJK = getBoundingBoxAroundShape(
-      ellipsoidCornersIJK,
-      segmentationVoxelManager.dimensions
-    );
+    segmentationVoxelManager.boundsIJK = newBoundsIJK;
 
     imageVoxelManager.isInObject = createEllipseInPoint({
       topLeftWorld,

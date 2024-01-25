@@ -35,7 +35,6 @@ import type {
   VOIRange,
   EventTypes,
   VolumeViewportProperties,
-  ICamera,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -1000,6 +999,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const initialViewUp = flipVertical
       ? vec3.negate(vec3.create(), this.initialViewUp)
       : this.initialViewUp;
+
+    if (!initialViewUp) {
+      return 0;
+    }
 
     // The angle between the initial and current view up vectors.
     // TODO: check with VTK about rounding errors here.

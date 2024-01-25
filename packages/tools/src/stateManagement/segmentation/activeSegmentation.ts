@@ -1,5 +1,8 @@
 import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
-import { getDefaultSegmentationStateManager } from './segmentationState';
+import {
+  getDefaultSegmentationStateManager,
+  getSegmentation,
+} from './segmentationState';
 import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
 
 /**
@@ -25,6 +28,25 @@ function getActiveSegmentationRepresentation(
   );
 
   return activeRepresentation;
+}
+
+/**
+ * Retrieves the active segmentation for a given tool group.
+ * @param toolGroupId - The ID of the tool group.
+ * @returns The active segmentation Id, or undefined if no active segmentation is found.
+ */
+function getActiveSegmentation(toolGroupId: string) {
+  const activeRepresentation = getActiveSegmentationRepresentation(toolGroupId);
+
+  if (!activeRepresentation) {
+    return;
+  }
+
+  const activeSegmentation = getSegmentation(
+    activeRepresentation.segmentationId
+  );
+
+  return activeSegmentation;
 }
 
 /**
@@ -55,6 +77,7 @@ function setActiveSegmentationRepresentation(
 export {
   // get
   getActiveSegmentationRepresentation,
+  getActiveSegmentation,
   // set
   setActiveSegmentationRepresentation,
 };

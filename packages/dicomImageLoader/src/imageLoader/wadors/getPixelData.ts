@@ -42,7 +42,7 @@ function getPixelData(
   }
 
   // Use the streaming parser only when configured to do so
-  if (retrieveOptions.streaming !== undefined) {
+  if (retrieveOptions.streaming) {
     return streamRequest(url, imageId, headers, options);
   }
 

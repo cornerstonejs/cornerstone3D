@@ -48,6 +48,7 @@ import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartE
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
+import SegmentSelectTool from './segmentation/SegmentSelectTool';
 
 export {
   // ~~ BASE
@@ -101,4 +102,5 @@ export {
   ScaleOverlayTool,
   OrientationMarkerTool,
   FreehandROISculptorTool,
+  SegmentSelectTool,
 };
