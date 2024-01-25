@@ -68,7 +68,7 @@ jobs:
           at: ~/repo
       - run: mkdir ~/junit
       - run:
-          command: yarn run test:ci
+          command: yarn run test:unit:ci
           environment:
             JUNIT_REPORT_PATH: ./junit/
             JUNIT_REPORT_NAME: test-results.xml

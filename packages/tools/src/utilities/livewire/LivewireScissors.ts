@@ -14,7 +14,7 @@ const TWO_THIRD_PI = 2 / (3 * Math.PI);
  *
  * {@link http://www.sciencedirect.com/science/article/B6WG4-45JB8WN-9/2/6fe59d8089fd1892c2bfb82283065579}
  *
- * Implementation based on
+ * Implementation based on MIT licensed code at:
  * {@link http://code.google.com/p/livewire-javascript/}
  */
 export class LivewireScissors {

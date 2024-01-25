@@ -319,7 +319,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Sets the inversion for the volume transfer function
    *
-   * @param invert - Should the transfer function be inverted?
+   * @param inverted - Should the transfer function be inverted?
    * @param volumeId - volumeId
    * @param suppressEvents - If `true`, events will not be published
    *
@@ -341,10 +341,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const cfun = this._getOrCreateColorTransferFunction(volumeIdToUse);
     invertRgbTransferFunction(cfun);
 
-    const { voiRange, VOILUTFunction, invert } =
-      this.getProperties(volumeIdToUse);
+    const { voiRange, VOILUTFunction } = this.getProperties(volumeIdToUse);
 
-    this.viewportProperties.invert = invert;
+    this.viewportProperties.invert = inverted;
 
     if (!suppressEvents) {
       const eventDetail: VoiModifiedEventDetail = {
@@ -352,7 +351,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         range: voiRange,
         volumeId: volumeIdToUse,
         VOILUTFunction: VOILUTFunction,
-        invert: invert,
+        invert: inverted,
         invertStateChanged: true,
       };
 
