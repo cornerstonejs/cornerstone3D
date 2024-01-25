@@ -11,9 +11,9 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import {
-  shouldInterpolate,
+  shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 
@@ -542,7 +542,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
-    const updatedPoints = shouldInterpolate(this.configuration)
+    const updatedPoints = shouldSmooth(this.configuration)
       ? getInterpolatedPoints(
           this.configuration,
           fusedCanvasPoints,

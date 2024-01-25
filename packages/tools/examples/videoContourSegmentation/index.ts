@@ -43,7 +43,7 @@ const {
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
-// Define a unique id for the volume
+// Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
@@ -51,6 +51,44 @@ let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 let activeSegmentIndex = 1;
+
+const configuredTools = new Map<string, any>();
+const interpolationConfiguration = {
+  interpolation: { enabled: true },
+};
+
+configuredTools.set('CatmullRomSplineROI', {
+  baseTool: SplineContourSegmentationTool.toolName,
+  configuration: {
+    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
+  },
+});
+configuredTools.set('LinearSplineROI', {
+  baseTool: SplineContourSegmentationTool.toolName,
+  configuration: {
+    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
+  },
+});
+
+configuredTools.set('BSplineROI', {
+  baseTool: SplineContourSegmentationTool.toolName,
+  configuration: {
+    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
+  },
+});
+
+configuredTools.set('FreeformInterpolation', {
+  baseTool: PlanarFreehandContourSegmentationTool.toolName,
+  configuration: interpolationConfiguration,
+});
+configuredTools.set('SplineInterpolation', {
+  baseTool: SplineContourSegmentationTool.toolName,
+  configuration: interpolationConfiguration,
+});
+configuredTools.set('LivewireInterpolation', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration: interpolationConfiguration,
+});
 
 // ======== Set up page ======== //
 
@@ -189,26 +227,6 @@ element.addEventListener(
   cancelDrawingEventListener
 );
 
-const Splines = {
-  CatmullRomSplineROI: {
-    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
-  },
-  LinearSplineROI: {
-    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
-  },
-  BSplineROI: {
-    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
-  },
-};
-
-const SplineToolNames = Object.keys(Splines);
-const splineToolsNames = [
-  ...SplineToolNames,
-  LivewireContourSegmentationTool.toolName,
-  PlanarFreehandContourSegmentationTool.toolName,
-];
-let selectedToolName = splineToolsNames[0];
-
 addDropdownToToolbar({
   labelText: 'Segment Index',
   options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
@@ -217,8 +235,15 @@ addDropdownToToolbar({
   },
 });
 
+const toolNames = [
+  PlanarFreehandContourSegmentationTool.toolName,
+  LivewireContourSegmentationTool.toolName,
+  ...configuredTools.keys(),
+];
+let selectedToolName = toolNames[0];
+
 addDropdownToToolbar({
-  options: { values: splineToolsNames, defaultValue: selectedToolName },
+  options: { values: toolNames, defaultValue: selectedToolName },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -350,40 +375,13 @@ async function run() {
   toolGroup.addTool(LivewireContourSegmentationTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-
-  toolGroup.addToolInstance(
-    'CatmullRomSplineROI',
-    SplineContourSegmentationTool.toolName,
-    {
-      spline: {
-        type: SplineContourSegmentationTool.SplineTypes.CatmullRom,
-      },
-    }
-  );
-
-  toolGroup.addToolInstance(
-    'LinearSplineROI',
-    SplineContourSegmentationTool.toolName,
-    {
-      spline: {
-        type: SplineContourSegmentationTool.SplineTypes.Linear,
-      },
-    }
-  );
-
-  toolGroup.addToolInstance(
-    'BSplineROI',
-    SplineContourSegmentationTool.toolName,
-    {
-      spline: {
-        type: SplineContourSegmentationTool.SplineTypes.BSpline,
-      },
-    }
-  );
-
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(splineToolsNames[0], {
+  for (const [toolName, config] of configuredTools.entries()) {
+    toolGroup.addToolInstance(toolName, config.baseTool, config.configuration);
+  }
+
+  toolGroup.setToolActive(toolNames[0], {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click

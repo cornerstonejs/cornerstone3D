@@ -42,7 +42,12 @@ export default function filterAnnotationsForDisplay(
         return false;
       }
 
-      const imageId = annotation.metadata.referencedImageId;
+      // The referenced image id can be a targetId, so handle removing the
+      // imageId portion to make the base comparison work.
+      const imageId = annotation.metadata.referencedImageId?.replace(
+        'imageId:',
+        ''
+      );
 
       if (imageId === undefined) {
         // This annotation was not drawn on a non-coplanar reformat, and such does
