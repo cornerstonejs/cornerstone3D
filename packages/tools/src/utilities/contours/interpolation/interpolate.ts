@@ -19,6 +19,10 @@ type PointsXYZI = Types.PointsXYZ & {
   I?: boolean[];
 };
 
+type PointsArray3 = PointsArray<Types.Point3> & {
+  I?: boolean[];
+};
+
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
 
 let interpolating = false;
@@ -171,7 +175,7 @@ function _linearlyInterpolateContour(
       interpolationData.get(endIndex)[0].data.handles.points.length * 2
     )
   );
-  const handlePoints = _subselect(interpolated3DPoints, handleCount);
+  const handlePoints = interpolated3DPoints.subselect(handleCount);
 
   if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
@@ -192,25 +196,6 @@ function _linearlyInterpolateContour(
   }
 }
 
-function _subselect(points, count = 10) {
-  const handles = [];
-  const { length } = points.x;
-  if (!length) {
-    return handles;
-  }
-  for (let i = 0; i < count; i++) {
-    const handleIndex = Math.floor((length * i) / count);
-    handles.push(
-      vec3.fromValues(
-        points.x[handleIndex],
-        points.y[handleIndex],
-        points.z[handleIndex]
-      )
-    );
-  }
-  return handles;
-}
-
 /**
  * _addInterpolatedContour - Adds a new contour to the imageId.
  *
@@ -222,13 +207,13 @@ function _subselect(points, count = 10) {
  * @returns null
  */
 function _addInterpolatedContour(
-  interpolated3DPoints: Types.PointsXYZ,
+  interpolated3DPoints: PointsArray3,
   handlePoints: Types.Point3[],
   sliceIndex: number,
   referencedToolData,
   eventData
 ) {
-  const points = PointsArray.fromXYZ(interpolated3DPoints).points;
+  const points = interpolated3DPoints.points;
   const { viewport } = eventData;
 
   const interpolatedAnnotation = createPolylineToolData(
@@ -259,7 +244,7 @@ function _addInterpolatedContour(
  * @returns null
  */
 function _editInterpolatedContour(
-  interpolated3DPoints: Types.PointsXYZ,
+  interpolated3DPoints: PointsArray3,
   handlePoints: Types.Point3[],
   sliceIndex,
   referencedToolData,
@@ -295,7 +280,7 @@ function _editInterpolatedContour(
   }
 
   const oldToolData = annotations[toolDataIndex] as InterpolationROIAnnotation;
-  const points = PointsArray.fromXYZ(interpolated3DPoints).points;
+  const points = interpolated3DPoints.points;
   const interpolatedAnnotation = createPolylineToolData(
     points,
     handlePoints,
@@ -326,20 +311,30 @@ function _generateInterpolatedOpenContour(
   c2ir,
   zInterp,
   c1HasMoreNodes
-): PointsXYZI {
-  const cInterp = {
-    x: [],
-    y: [],
-    z: [],
-  };
-
+): PointsArray3 {
   const indices = c1HasMoreNodes ? c1ir.I : c2ir.I;
+
+  const c1 = PointsArray.fromXYZ(c1ir);
+  const c2 = PointsArray.fromXYZ(c2ir);
+  const { _length: length } = c1;
+  const cInterp = PointsArray.create3(length);
+
+  const vecSubtract = vec3.create();
+  const vecResult = vec3.create();
 
   for (let i = 0; i < c1ir.x.length; i++) {
     if (indices[i]) {
-      cInterp.x.push(c1ir.x[i] + (c2ir.x[i] - c1ir.x[i]) * zInterp);
-      cInterp.y.push(c1ir.y[i] + (c2ir.y[i] - c1ir.y[i]) * zInterp);
-      cInterp.z.push(c1ir.z[i] + (c2ir.z[i] - c1ir.z[i]) * zInterp);
+      const c1point = c1.getPoint(i);
+      const c2point = c2.getPoint(i);
+      vec3.sub(vecSubtract, c2point, c1point);
+      cInterp.push(
+        vec3.scaleAndAdd(
+          vecResult,
+          c1point,
+          vecSubtract,
+          zInterp
+        ) as Types.Point3
+      );
     }
   }
 
@@ -373,8 +368,8 @@ function _generateInterpolationContourPair(c1, c2) {
   const perim1Interp = _getInterpolatedPerim(numNodes1, cumPerim1Norm);
   const perim2Interp = _getInterpolatedPerim(numNodes2, cumPerim2Norm);
 
-  const perim1Ind = _getIndicatorArray(c1, numNodes1);
-  const perim2Ind = _getIndicatorArray(c2, numNodes2);
+  const perim1Ind = _getIndicatorArray(numNodes1 - 2, c1.x.length);
+  const perim2Ind = _getIndicatorArray(numNodes2 - 2, c2.x.length);
 
   const nodesPerSegment1 = _getNodesPerSegment(perim1Interp, perim1Ind);
   const nodesPerSegment2 = _getNodesPerSegment(perim2Interp, perim2Ind);
@@ -592,17 +587,10 @@ function _getNodesPerSegment(perimInterp, perimInd) {
  * @param numNodes - Number, The number of nodes added.
  * @returns boolean[], The indicator array of original node locations.
  */
-function _getIndicatorArray(contour, numNodes) {
-  const perimInd = [];
-
-  for (let i = 0; i < numNodes - 2; i++) {
-    perimInd.push(false);
-  }
-
-  for (let i = 0; i < contour.x.length; i++) {
-    perimInd.push(true);
-  }
-
+function _getIndicatorArray(numFalse, numTrue) {
+  const perimInd = new Array(numFalse + numTrue);
+  perimInd.fill(false, 0, numFalse);
+  perimInd.fill(true, numFalse, numFalse + numTrue);
   return perimInd;
 }
 
@@ -618,7 +606,7 @@ function _getInterpolatedPerim(numNodes, cumPerimNorm) {
   const diff = 1 / (numNodes - 1);
   const linspace = [diff];
 
-  // Length - 2 as we are discarding 0 an 1 for efficiency (no need to calculate them).
+  // Length - 2 as we are discarding 0 and 1 for efficiency (no need to calculate them).
   for (let i = 1; i < numNodes - 2; i++) {
     linspace.push(linspace[linspace.length - 1] + diff);
   }

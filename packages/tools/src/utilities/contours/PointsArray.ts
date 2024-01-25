@@ -2,8 +2,12 @@ import type { Types } from '@cornerstonejs/core';
 import { vec2, vec3 } from 'gl-matrix';
 
 export type PolyDataPointConfiguration = {
+  /** The dimensionality of the points */
   dimensions?: 2 | 3;
+  /** The initial size of the backing array, not containing any data initially */
   initialSize?: number;
+  /** The incremental size to grow by when required */
+  growSize?: number;
 };
 
 /**
@@ -14,35 +18,87 @@ export type PolyDataPointConfiguration = {
  * transferring them amongst systems and is planned to have more methods added
  * for generic manipulation of data.
  */
-export abstract class PointsArray<T> {
+export class PointsArray<T> {
   data: Float32Array;
-  dimensions = 3;
-  public length = 0;
+  _dimensions = 3;
+  _length = 0;
+  _byteSize = 4;
+  growSize = 128;
+  array: ArrayBuffer;
 
   constructor(configuration: PolyDataPointConfiguration = {}) {
-    const { initialSize = 1024, dimensions = 3 } = configuration;
-    this.data = new Float32Array(initialSize * dimensions);
-    this.dimensions = dimensions;
+    const {
+      initialSize = 1024,
+      dimensions = 3,
+      growSize = 128,
+    } = configuration;
+    const itemLength = initialSize * dimensions;
+    this.growSize = growSize;
+    // TODO - use resizeable arrays when they become available in all browsers
+    this.array = new ArrayBuffer(itemLength * this._byteSize);
+    this.data = new Float32Array(this.array);
+    this._dimensions = dimensions;
   }
 
-  protected forEach(func: (value: T, index: number) => void, point: T) {
-    for (let i = 0; i < this.length; i++) {
-      func(this.getPoint(i, point), i);
+  public forEach(func: (value: T, index: number) => void) {
+    for (let i = 0; i < this._length; i++) {
+      func(this.getPoint(i), i);
     }
   }
 
-  abstract getPoint(index: number, point: T): T;
+  public get length() {
+    return this._length;
+  }
+
+  public get dimensions() {
+    return this._dimensions;
+  }
+
+  public get dimensionLength() {
+    return this._length * this._dimensions;
+  }
+
+  public getPoint(index: number): T {
+    if (index < 0) {
+      index += this._length;
+    }
+    if (index < 0 || index >= this._length) {
+      return;
+    }
+    const offset = this._dimensions * index;
+    return this.data.subarray(offset, offset + this._dimensions) as T;
+  }
+
+  /**
+   * Adds the additional amount requested
+   */
+  protected grow(additionalSize = 1, growSize = this.growSize) {
+    if (
+      this.dimensionLength + additionalSize * this._dimensions <=
+      this.data.length
+    ) {
+      return;
+    }
+    const newSize = this.data.length + growSize;
+    const newArray = new ArrayBuffer(
+      newSize * this._dimensions * this._byteSize
+    );
+    const newData = new Float32Array(newArray);
+    newData.set(this.data);
+    this.data = newData;
+    this.array = newArray;
+  }
 
   /**
    * Reverse the points in place
    */
   public reverse() {
-    const midLength = Math.floor(this.length / 2);
+    const midLength = Math.floor(this._length / 2);
 
     for (let i = 0; i < midLength; i++) {
-      const indexStart = i * this.dimensions;
-      const indexEnd = (this.length - 1 - i) * this.dimensions;
-      for (let dimension = 0; dimension < this.dimensions; dimension++) {
+      const indexStart = i * this._dimensions;
+      const indexEnd = (this._length - 1 - i) * this._dimensions;
+      for (let dimension = 0; dimension < this._dimensions; dimension++) {
         const valueStart = this.data[indexStart + dimension];
         this.data[indexStart + dimension] = this.data[indexEnd + dimension];
         this.data[indexEnd + dimension] = valueStart;
@@ -50,116 +106,72 @@ export abstract class PointsArray<T> {
     }
   }
 
-  protected map(f: (value, index: number) => T, factory: (index: number) => T) {
+  public push(point: T) {
+    this.grow(1);
+    const offset = this.length * this._dimensions;
+    for (let i = 0; i < this._dimensions; i++) {
+      this.data[i + offset] = point[i];
+    }
+    this._length++;
+  }
+
+  public map<R>(f: (value, index: number) => R): R[] {
     const mapData = [];
-    for (let i = 0; i < this.length; i++) {
-      mapData.push(f(this.getPoint(i, factory(i)), i));
+    for (let i = 0; i < this._length; i++) {
+      mapData.push(f(this.getPoint(i), i));
     }
     return mapData;
   }
 
+  public get points(): T[] {
+    return this.map((p) => p);
+  }
+
+  /**
+   * @returns An XYZ array
+   */
+  public toXYZ(): Types.PointsXYZ {
+    const xyz = { x: [], y: [], z: [] };
+    this.forEach((p) => {
+      xyz.x.push(p[0]);
+      xyz.y.push(p[1]);
+      xyz.z.push(p[2] ?? 0);
+    });
+    return xyz;
+  }
+
   /** Create an PointsArray3 from the x,y,z individual arrays */
-  public static fromXYZ({ x, y, z }: Types.PointsXYZ): PointsArray3 {
-    const array = new PointsArray3({ initialSize: x.length });
+  public static fromXYZ({
+    x,
+    y,
+    z,
+  }: Types.PointsXYZ): PointsArray<Types.Point3> {
+    const array = PointsArray.create3(x.length);
     let offset = 0;
     for (let i = 0; i < x.length; i++) {
       array.data[offset++] = x[i];
       array.data[offset++] = y[i];
       array.data[offset++] = z[i];
     }
-    array.length = x.length;
+    array._length = x.length;
     return array;
   }
-}
 
-/**
- * A version of this with support for Types.Point2 and vec2 generation and extraction.
- *
- * This class is designed to allow for efficient storage and manipulation of
- * large sets of Point2 type data but stored as a single Float32Array.
- */
-export class PointsArray2 extends PointsArray<Types.Point2> {
-  constructor(configuration = {}) {
-    super({ ...configuration, dimensions: 2 });
-  }
-
-  public forEach(
-    func: (value: Types.Point2, index: number) => void,
-    point = vec2.create() as Types.Point2
-  ) {
-    super.forEach(func, point);
-  }
-
-  public getPoint(index: number, point = vec2.create() as Types.Point2) {
-    if (index >= this.length) {
-      return;
+  public subselect(count = 10, offset = 0): T[] {
+    const selected = [];
+    for (let i = 0; i < count; i++) {
+      const index =
+        (offset + Math.floor((this.length * i) / count)) % this.length;
+      selected.push(this.getPoint(index));
     }
-    const index2 = index * 2;
-    point[0] = this.data[index2];
-    point[1] = this.data[index2 + 1];
-    return point;
+    return selected;
   }
 
-  public get points() {
-    return this.map(
-      (point) => point,
-      () => vec2.create() as Types.Point2
-    );
-  }
-}
-
-/**
- * A version of PointsArray designed to work with Types.Point3 and vec3 data,
- * but efficiently storing the data internally as a Float32Array.
- * A good use case for this would be storing contour data or function results
- * of type `(number)=>Point3` as these can be quite large and can benefit from
- * directly using the Float32Array representation for both the Point3 values and
- * the internal storage of the Point3[] data.
- *
- * For example, a 64k length array of `PointsArray3` data is just a bit over 256k of data as
- * stored with this class, but when stored as a Point3[], is at least 1 meg in size
- * because each number is 64 bits, and each Point3[] requires a list of values, adding
- * at least another 8 bytes per value, and at least another 64 bytes per array.
- */
-export class PointsArray3 extends PointsArray<Types.Point3> {
-  constructor(configuration = {}) {
-    super({ ...configuration, dimensions: 3 });
+  public static create3(initialSize = 128) {
+    return new PointsArray<Types.Point3>({ initialSize, dimensions: 3 });
   }
 
-  public forEach(
-    func: (value: Types.Point3, index: number) => void,
-    point = vec3.create() as Types.Point3
-  ) {
-    super.forEach(func, point);
-  }
-
-  public getPoint(index: number, point = vec3.create() as Types.Point3) {
-    if (index >= this.length) {
-      return;
-    }
-    const index2 = index * 3;
-    point[0] = this.data[index2];
-    point[1] = this.data[index2 + 1];
-    point[2] = this.data[index2 + 2];
-    return point;
-  }
-
-  public get points() {
-    return this.map(
-      (point) => point,
-      () => vec3.create() as Types.Point3
-    );
-  }
-
-  public getXYZ(): Types.PointsXYZ {
-    const x = [];
-    const y = [];
-    const z = [];
-    this.forEach((point) => {
-      x.push(point[0]);
-      y.push(point[1]);
-      z.push(point[2]);
-    });
-    return { x, y, z };
+  public static create2(initialSize = 128) {
+    return new PointsArray<Types.Point3>({ initialSize, dimensions: 2 });
   }
 }
