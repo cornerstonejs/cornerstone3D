@@ -66,7 +66,6 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
-  ContourROITool,
   FreehandROISculptorTool,
 } from './tools';
 
@@ -110,7 +109,6 @@ export {
   SplineROITool,
   BidirectionalTool,
   PlanarFreehandROITool,
-  ContourROITool,
   LivewireContourTool,
   ArrowAnnotateTool,
   AngleTool,

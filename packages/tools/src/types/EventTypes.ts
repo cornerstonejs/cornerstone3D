@@ -187,37 +187,6 @@ type AnnotationRenderedEventDetail = {
   renderingEngineId: string;
 };
 
-type AnnotationLabelChangeEventDetail = {
-  /** The annotation that is being updated. */
-  annotation: Annotation;
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
-};
-
-type AnnotationInterpolationItemDeleteEventDetail = {
-  /** The annotation that is being updated with a change in label. */
-  annotation: Annotation;
-  /** The HTML element that the annotation was rendered on. */
-  element: HTMLDivElement;
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
-};
-
-type AnnotationInterpolationCompletedEventDetail = {
-  /** The annotation that is being updated with a change in label. */
-  annotation: Annotation;
-  /** The HTML element that the annotation was rendered on. */
-  element: HTMLDivElement;
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
-};
-
 /**
  * EventDetail for when a Segmentation Data is modified by a tool
  */
@@ -530,24 +499,6 @@ type AnnotationVisibilityChangeEventType =
   Types.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 /**
- * The Annotation label change event type
- */
-type AnnotationLabelChangeEventType =
-  Types.CustomEventType<AnnotationLabelChangeEventDetail>;
-
-/**
- * The Annotation delete event type
- */
-type AnnotationInterpolationItemDeleteEventType =
-  Types.CustomEventType<AnnotationInterpolationItemDeleteEventDetail>;
-
-/**
- * The Annotation interpolation process completed event type
- */
-type AnnotationInterpolationCompletedEventType =
-  Types.CustomEventType<AnnotationInterpolationCompletedEventDetail>;
-
-/**
  * Event for when SegmentationData is modified
  */
 type SegmentationDataModifiedEventType =
@@ -719,11 +670,6 @@ export {
   AnnotationVisibilityChangeEventDetail,
   AnnotationLockChangeEventType,
   AnnotationVisibilityChangeEventType,
-  AnnotationLabelChangeEventDetail,
-  AnnotationLabelChangeEventType,
-  AnnotationInterpolationItemDeleteEventDetail,
-  AnnotationInterpolationItemDeleteEventType,
-  AnnotationInterpolationCompletedEventType,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
   SegmentationRepresentationModifiedEventType,

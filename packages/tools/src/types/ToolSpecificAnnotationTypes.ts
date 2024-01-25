@@ -300,22 +300,6 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
   };
 }
 
-export interface InterpolationROIAnnotation
-  extends PlanarFreehandROIAnnotation {
-  metadata: {
-    cameraPosition?: Types.Point3;
-    cameraFocalPoint?: Types.Point3;
-    viewPlaneNormal?: Types.Point3;
-    viewUp?: Types.Point3;
-    annotationUID?: string;
-    FrameOfReferenceUID: string;
-    referencedImageId?: string;
-    toolName: string;
-    referencedSliceIndex?: number;
-  };
-  interpolationUID?: string;
-}
-
 export interface ArrowAnnotation extends Annotation {
   data: {
     text: string;
