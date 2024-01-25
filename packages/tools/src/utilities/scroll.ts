@@ -112,7 +112,7 @@ export function scrollVolume(
   } else {
     csUtils.triggerEvent(
       eventTarget,
-      EVENTS.VOLUME_SCROLL,
+      EVENTS.VOLUME_VIEWPORT_SCROLL,
       VolumeScrollEventDetail
     );
   }
