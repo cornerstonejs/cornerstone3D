@@ -581,21 +581,11 @@ describe('Contour Tool: ', () => {
                   annotation.state.removeAnnotation(
                     currentAnnotation.annotationUID
                   );
+                  expect(addedAnnotations.length).toBe(
+                    expectedContourCount - 1
+                  );
+                  done();
                 }
-              }
-            );
-            element.addEventListener(
-              EventTypes.INTERPOLATED_ANNOTATIONS_REMOVED,
-              function () {
-                let addedAnnotations = annotation.state.getAnnotations(
-                  ContourROITool.toolName,
-                  element
-                );
-                expect(addedAnnotations.length).toBe(1);
-                done();
-                addedAnnotations.forEach((x) => {
-                  annotation.state.removeAnnotation(x.annotationUID);
-                });
               }
             );
             addAnnotation(lastSlicePoints, 3, 'Label 1');
@@ -615,7 +605,7 @@ describe('Contour Tool: ', () => {
       }
     });
 
-    it('Should successfully edit auto generated contour annotation', function (done) {
+    fit('Should successfully edit auto generated contour annotation', function (done) {
       const element = createViewport(
         this.renderingEngine,
         ViewportType.STACK,

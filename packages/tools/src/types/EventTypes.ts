@@ -6,7 +6,6 @@ import IDistance from './IDistance';
 import { SetToolBindingsType } from './ISetToolModeOptions';
 import { Swipe } from '../enums/Touch';
 import { ToolModes } from '../enums';
-import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
 
 /**
  * The normalized interaction event detail
@@ -199,18 +198,7 @@ type AnnotationLabelChangeEventDetail = {
 
 type AnnotationInterpolationCompletedEventDetail = {
   /** The annotation that is being updated with a change in label. */
-  annotation: InterpolationROIAnnotation;
-  /** The HTML element that the annotation was rendered on. */
-  element: HTMLDivElement;
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
-};
-
-type AnnotationInterpolationRemovedEventDetail = {
-  /** The annotations that is being removed . */
-  annotations: Array<InterpolationROIAnnotation>;
+  annotation: Annotation;
   /** The HTML element that the annotation was rendered on. */
   element: HTMLDivElement;
   /** unique id of the viewport */
@@ -543,12 +531,6 @@ type AnnotationInterpolationCompletedEventType =
   Types.CustomEventType<AnnotationInterpolationCompletedEventDetail>;
 
 /**
- * The Annotation interpolation removed event type
- */
-type AnnotationInterpolationRemovedEventType =
-  Types.CustomEventType<AnnotationInterpolationRemovedEventDetail>;
-
-/**
  * Event for when SegmentationData is modified
  */
 type SegmentationDataModifiedEventType =
@@ -724,8 +706,6 @@ export {
   AnnotationLabelChangeEventType,
   AnnotationInterpolationCompletedEventDetail,
   AnnotationInterpolationCompletedEventType,
-  AnnotationInterpolationRemovedEventDetail,
-  AnnotationInterpolationRemovedEventType,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
   SegmentationRepresentationModifiedEventType,
