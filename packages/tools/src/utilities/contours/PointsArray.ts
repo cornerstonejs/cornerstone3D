@@ -1,9 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import { vec2, vec3 } from 'gl-matrix';
 
 export type PolyDataPointConfiguration = {
   /** The dimensionality of the points */
-  dimensions?: 2 | 3;
+  dimensions?: number;
   /** The initial size of the backing array, not containing any data initially */
   initialSize?: number;
   /** The incremental size to grow by when required */
@@ -19,6 +18,14 @@ export type PolyDataPointConfiguration = {
  * for generic manipulation of data.
  */
 export class PointsArray<T> {
+  /** Allow storage for an index value to indicate where this slice is located */
+  public kIndex: number;
+  /**
+   * Sources data for this array.  Just used for external access, not updated
+   * here.
+   */
+  public sources: PointsArray<T>[];
+
   data: Float32Array;
   _dimensions = 3;
   _length = 0;
@@ -66,7 +73,10 @@ export class PointsArray<T> {
       return;
     }
     const offset = this._dimensions * index;
-    return this.data.subarray(offset, offset + this._dimensions) as T;
+    return this.data.subarray(
+      offset,
+      offset + this._dimensions
+    ) as unknown as T;
   }
 
   /**
@@ -157,8 +167,11 @@ export class PointsArray<T> {
     return array;
   }
 
-  public subselect(count = 10, offset = 0): T[] {
-    const selected = [];
+  public subselect(count = 10, offset = 0): PointsArray<T> {
+    const selected = new PointsArray<T>({
+      initialSize: count,
+      dimensions: this._dimensions,
+    });
     for (let i = 0; i < count; i++) {
       const index =
         (offset + Math.floor((this.length * i) / count)) % this.length;

@@ -33,7 +33,8 @@ export default function createPolylineToolData(
   });
   Object.assign(annotation.data, {
     handles: {
-      points: handlePoints || [],
+      points: handlePoints.points || handlePoints || [],
+      interpolationSources: handlePoints.sources,
       activeHandleIndex: null,
       textBox: {
         hasMoved: false,

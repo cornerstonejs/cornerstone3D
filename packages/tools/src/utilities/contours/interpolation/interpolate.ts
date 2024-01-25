@@ -17,10 +17,13 @@ import { PointsArray } from '../PointsArray';
  */
 type PointsXYZI = Types.PointsXYZ & {
   I?: boolean[];
+  kIndex?: number;
 };
 
 type PointsArray3 = PointsArray<Types.Point3> & {
   I?: boolean[];
+  /** Source data for the interpolation */
+  sources?: PointsArray3[];
 };
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
@@ -115,6 +118,8 @@ function _linearlyInterpolateBetween(
   );
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
+  c1Interp.kIndex = annotationPair[0];
+  c2Interp.kIndex = annotationPair[1];
 
   // Using the newly constructed contours, interpolate each ROI.
   indices.forEach(function (index) {
@@ -176,6 +181,9 @@ function _linearlyInterpolateContour(
     )
   );
   const handlePoints = interpolated3DPoints.subselect(handleCount);
+  handlePoints.sources = interpolated3DPoints.sources?.map((points) =>
+    points.subselect(handleCount)
+  );
 
   if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
@@ -208,7 +216,7 @@ function _linearlyInterpolateContour(
  */
 function _addInterpolatedContour(
   interpolated3DPoints: PointsArray3,
-  handlePoints: Types.Point3[],
+  handlePoints: PointsArray3,
   sliceIndex: number,
   referencedToolData,
   eventData
@@ -245,7 +253,7 @@ function _addInterpolatedContour(
  */
 function _editInterpolatedContour(
   interpolated3DPoints: PointsArray3,
-  handlePoints: Types.Point3[],
+  handlePoints: PointsArray3,
   sliceIndex,
   referencedToolData,
   eventData
@@ -316,16 +324,22 @@ function _generateInterpolatedOpenContour(
 
   const c1 = PointsArray.fromXYZ(c1ir);
   const c2 = PointsArray.fromXYZ(c2ir);
-  const { _length: length } = c1;
-  const cInterp = PointsArray.create3(length);
+  const { length } = c1;
+  const cInterp = PointsArray.create3(length) as PointsArray3;
 
   const vecSubtract = vec3.create();
   const vecResult = vec3.create();
+  const c1Source = PointsArray.create3(length);
+  c1Source.kIndex = c1ir.kIndex;
+  const c2Source = PointsArray.create3(length);
+  c2Source.kIndex = c2ir.kIndex;
 
   for (let i = 0; i < c1ir.x.length; i++) {
     if (indices[i]) {
       const c1point = c1.getPoint(i);
       const c2point = c2.getPoint(i);
+      c1Source.push(c1point);
+      c2Source.push(c2point);
       vec3.sub(vecSubtract, c2point, c1point);
       cInterp.push(
         vec3.scaleAndAdd(
@@ -337,6 +351,7 @@ function _generateInterpolatedOpenContour(
       );
     }
   }
+  cInterp.sources = [c1Source, c2Source];
 
   return cInterp;
 }
@@ -364,7 +379,7 @@ function _generateInterpolationContourPair(c1, c2) {
   const numNodes1 = interpNodes + c2.x.length;
   const numNodes2 = interpNodes + c1.x.length;
 
-  // concatinate p && cumPerimNorm
+  // concatenate p && cumPerimNorm
   const perim1Interp = _getInterpolatedPerim(numNodes1, cumPerim1Norm);
   const perim2Interp = _getInterpolatedPerim(numNodes2, cumPerim2Norm);
 
@@ -392,13 +407,13 @@ function _generateInterpolationContourPair(c1, c2) {
  * @returns  An object containing the two reduced contours.
  */
 function _reduceContoursToOriginNodes(c1i: PointsXYZI, c2i: PointsXYZI) {
-  const c1Interp = {
+  const c1Interp: PointsXYZI = {
     x: [],
     y: [],
     z: [],
     I: [],
   };
-  const c2Interp = {
+  const c2Interp: PointsXYZI = {
     x: [],
     y: [],
     z: [],
@@ -499,7 +514,7 @@ function _shiftCircularArray(arr, count) {
  *                                    per line segment.
  * @returns object, The super sampled contour.
  */
-function _getSuperSampledContour(c, nodesPerSegment) {
+function _getSuperSampledContour(c, nodesPerSegment): PointsXYZI {
   const ci = {
     x: [],
     y: [],
