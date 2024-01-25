@@ -12,6 +12,7 @@ import {
   segmentationModifiedListener,
   annotationModifiedListener,
 } from './eventListeners';
+import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
 
@@ -74,6 +75,7 @@ function _addCornerstoneEventListeners(): void {
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement);
+  annotationInterpolationEventDispatcher.enable();
 }
 
 /**
@@ -87,6 +89,7 @@ function _removeCornerstoneEventListeners(): void {
 
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement);
+  annotationInterpolationEventDispatcher.disable();
 }
 
 /**

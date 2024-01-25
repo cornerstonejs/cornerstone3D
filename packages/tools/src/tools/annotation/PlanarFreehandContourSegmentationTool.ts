@@ -10,6 +10,12 @@ class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
       {
         configuration: {
           calculateStats: false,
+          /**
+           * Allow open contours false means to not allow a final/complete
+           * annotation to be done as an open contour.  This does not mean
+           * that the contour won't be open during creation.
+           */
+          allowOpenContours: false,
         },
       },
       toolProps
