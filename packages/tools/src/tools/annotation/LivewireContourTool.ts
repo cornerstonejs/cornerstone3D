@@ -9,12 +9,14 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
+import {
+  drawHandles as drawHandlesSvg,
+  drawLine as drawLineSvg,
+} from '../../drawingSvg';
 import { state } from '../../store';
 import { Events, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import type {
-  Annotation,
   EventTypes,
   ToolHandle,
   PublicToolProps,
@@ -211,7 +213,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { currentPoints, element } = eventDetail;
     const { world: worldPos } = currentPoints;
     const { renderingEngine } = getEnabledElement(element);
-    const annotation = this.createAnnotation(evt) as LivewireContourAnnotation;
+    const annotation = this.createAnnotation(evt);
 
     this.setupBaseEditData(worldPos, element, annotation);
     this.addAnnotation(annotation, element);
@@ -759,11 +761,19 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return false;
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  protected onInterpolationComplete = (annotation) => {
+    console.log(
+      'Hello onInterpolationComplete',
+      annotation,
+      this.configuration
+    );
+  };
+
+  protected createAnnotation(evt: EventTypes.InteractionEventType) {
     const contourSegmentationAnnotation = super.createAnnotation(evt);
     const { world: worldPos } = evt.detail.currentPoints;
 
-    return <LivewireContourAnnotation>csUtils.deepMerge(
+    const annotation = <LivewireContourAnnotation>csUtils.deepMerge(
       contourSegmentationAnnotation,
       {
         data: {
@@ -773,6 +783,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         },
       }
     );
+    annotation.onInterpolationComplete = this.onInterpolationComplete;
+    return annotation;
   }
 
   /**
@@ -783,7 +795,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   protected renderAnnotationInstance(renderContext: {
     enabledElement: Types.IEnabledElement;
     targetId: string;
-    annotation: Annotation;
+    annotation: LivewireContourAnnotation;
     annotationStyle: Record<string, any>;
     svgDrawingHelper: SVGDrawingHelper;
   }): boolean {
@@ -818,6 +830,25 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
           lineWidth,
         }
       );
+
+      const { interpolationSources: sources } = handles;
+      if (sources) {
+        console.log('canvasHandles', canvasHandles);
+        const sourceCanvas = sources.map((source) => source.map(worldToCanvas));
+        for (let i = 0; i < sourceCanvas[0].length; i++) {
+          const p0 = sourceCanvas[0][i];
+          const p1 = sourceCanvas[1][i];
+          const pInterp = canvasHandles[i];
+          console.log(
+            'Drawing line from',
+            p0,
+            p1,
+            'should be through',
+            pInterp
+          );
+          drawLineSvg(svgDrawingHelper, annotationUID, `ortho-${i}`, p0, p1);
+        }
+      }
     }
 
     // Let the base class render the contour

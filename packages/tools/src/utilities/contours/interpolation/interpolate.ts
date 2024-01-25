@@ -178,7 +178,7 @@ function _linearlyInterpolateContour(
       8,
       interpolationData.get(startIndex)[0].data.handles.points.length,
       interpolationData.get(endIndex)[0].data.handles.points.length,
-      interpolated3DPoints.x.length / 50
+      interpolated3DPoints.length / 50
     )
   );
   const handlePoints = interpolated3DPoints.subselect(handleCount);
@@ -235,7 +235,7 @@ function _addInterpolatedContour(
   interpolatedAnnotation.metadata.referencedImageId = targetId;
   interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
   annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
-  referencedToolData.postInterpolateAction?.(
+  referencedToolData.onInterpolationComplete?.(
     interpolatedAnnotation,
     referencedToolData
   );

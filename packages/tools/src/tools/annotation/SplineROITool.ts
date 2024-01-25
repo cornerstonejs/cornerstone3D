@@ -784,9 +784,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     // Add an action to create a new spline data on creating an interpolated
     // instance.
-    let postInterpolateAction;
+    let onInterpolationComplete;
     if (this.configuration.interpolation?.enabled) {
-      postInterpolateAction = (annotation) => {
+      onInterpolationComplete = (annotation) => {
         annotation.data.spline ||= createSpline();
         this.createInterpolatedSplineControl(annotation);
       };
@@ -800,7 +800,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         spline: createSpline(),
         cachedStats: {},
       },
-      postInterpolateAction,
+      onInterpolationComplete,
     });
   }
 

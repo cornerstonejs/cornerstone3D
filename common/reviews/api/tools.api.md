@@ -1350,7 +1350,11 @@ type ContourAnnotationData = {
             polyline: Types_2.Point3[];
             closed: boolean;
         };
+        handles: {
+            interpolationSources?: PointsArray<Types_2.Point3>[];
+        };
     };
+    onInterpolationComplete?: (annotation: ContourAnnotation) => unknown;
 };
 
 declare namespace contours {
@@ -3050,7 +3054,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): LivewireContourAnnotation;
     // (undocumented)
     editData: {
         annotation: LivewireContourAnnotation;
@@ -3084,12 +3088,14 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
+    protected onInterpolationComplete: (annotation: any) => void;
+    // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
     // (undocumented)
     protected renderAnnotationInstance(renderContext: {
         enabledElement: Types_2.IEnabledElement;
         targetId: string;
-        annotation: Annotation;
+        annotation: LivewireContourAnnotation;
         annotationStyle: Record<string, any>;
         svgDrawingHelper: SVGDrawingHelper;
     }): boolean;
