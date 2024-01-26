@@ -16,11 +16,8 @@ import {
   removeAnnotation,
 } from '../../../stateManagement/annotation/annotationState';
 import { AnnotationCompletedEventType } from '../../../types/EventTypes';
-import {
-  areCoplanarContours,
-  isContourSegmentationAnnotation,
-  areContoursFromSameSegmentIndex,
-} from '.';
+import * as contourUtils from '../../../utilities/contours';
+import * as contourSegUtils from '../../../utilities/contourSegmentation';
 import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
 import { PlanarFreehandContourSegmentationTool } from '../../../tools';
 
@@ -32,7 +29,7 @@ export default function contourSegmentationCompletedListener(
   const sourceAnnotation = evt.detail
     .annotation as ContourSegmentationAnnotation;
 
-  if (!isContourSegmentationAnnotation(sourceAnnotation)) {
+  if (!contourSegUtils.isContourSegmentationAnnotation(sourceAnnotation)) {
     return;
   }
 
@@ -49,7 +46,7 @@ export default function contourSegmentationCompletedListener(
     viewport
   );
 
-  const targetAnnotationInfo = getTargetAnnotation(
+  const targetAnnotationInfo = findIntersectingContour(
     viewport,
     sourcePolyline,
     contourSegmentationAnnotations
@@ -144,16 +141,16 @@ function getValidContourSegmentationAnnotations(
       (targetAnnotation) =>
         targetAnnotation.annotationUID &&
         targetAnnotation.annotationUID !== sourceAnnotationUID &&
-        isContourSegmentationAnnotation(targetAnnotation) &&
-        areContoursFromSameSegmentIndex(targetAnnotation, sourceAnnotation) &&
-        areCoplanarContours(targetAnnotation, sourceAnnotation)
+        contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
+        contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
+        contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
     );
 
     return validAnnotations.concat(toolAnnotations);
   }, []);
 }
 
-function getTargetAnnotation(
+function findIntersectingContour(
   viewport: Types.IViewport,
   sourcePolyline: Types.Point2[],
   contourSegmentationAnnotations: ContourSegmentationAnnotation[]

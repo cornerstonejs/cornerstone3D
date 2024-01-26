@@ -1,4 +1,4 @@
-import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
+import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
 
 /**
  * Check if two contour segmentations are from same segmentId,
@@ -8,7 +8,7 @@ import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentatio
  * @returns True if they are from same segmentId, segmentationRepresentationUID
  * and segmentIndex or false otherwise.
  */
-export default function areContoursFromSameSegmentIndex(
+export default function areSameSegment(
   firstAnnotation: ContourSegmentationAnnotation,
   secondAnnotation: ContourSegmentationAnnotation
 ) {
