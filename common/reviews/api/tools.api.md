@@ -281,8 +281,6 @@ type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDeta
 
 // @public (undocumented)
 type AnnotationCompletedEventDetail = {
-    viewportId: string;
-    renderingEngineId: string;
     annotation: Annotation;
     changeType?: ChangeTypes.Completed;
 };
@@ -405,6 +403,15 @@ type AnnotationRemovedEventDetail = {
 
 // @public (undocumented)
 type AnnotationRemovedEventType = Types_2.CustomEventType<AnnotationRemovedEventDetail>;
+
+// @public (undocumented)
+type AnnotationRenderContext = {
+    enabledElement: Types_2.IEnabledElement;
+    targetId: string;
+    annotation: Annotation;
+    annotationStyle: Record<string, any>;
+    svgDrawingHelper: SVGDrawingHelper;
+};
 
 // @public (undocumented)
 type AnnotationRenderedEventDetail = {
@@ -834,9 +841,6 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     protected updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
-
-// @public (undocumented)
-function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
 abstract class Calculator {
@@ -2226,6 +2230,9 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
+function getArea(points: Types_2.Point2[]): number;
+
+// @public (undocumented)
 function getBoundingBoxAroundShapeIJK(points: Types_2.Point2[] | Types_2.Point3[], dimensions?: Types_2.Point2 | Types_2.Point3): BoundingBox;
 
 // @public (undocumented)
@@ -2375,6 +2382,9 @@ function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentatio
 
 // @public (undocumented)
 function getSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): boolean;
+
+// @public (undocumented)
+function getSignedArea(polyline: Types_2.Point2[]): number;
 
 // @public (undocumented)
 function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData, viewport: any): {
@@ -2700,7 +2710,7 @@ interface IToolGroup {
     };
     // (undocumented)
     getToolConfiguration: {
-        (toolName: string, configurationPath: string): any;
+        (toolName: string, configurationPath?: string): any;
     };
     // (undocumented)
     getToolInstance: {
@@ -2714,6 +2724,8 @@ interface IToolGroup {
     getViewportIds: () => string[];
     // (undocumented)
     getViewportsInfo: () => Array<Types_2.IViewportId>;
+    // (undocumented)
+    hasTool(toolName: string): boolean;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -3513,6 +3525,8 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
     // (undocumented)
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
+    // (undocumented)
     static toolName: any;
 }
 
@@ -3559,13 +3573,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    protected renderAnnotationInstance(renderContext: {
-        enabledElement: Types_2.IEnabledElement;
-        targetId: string;
-        annotation: Annotation;
-        annotationStyle: Record<string, any>;
-        svgDrawingHelper: SVGDrawingHelper;
-    }): boolean;
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3649,6 +3657,8 @@ declare namespace polyline {
         isClosed,
         containsPoint,
         getAABB,
+        getArea,
+        getSignedArea,
         getNormal3,
         getNormal2,
         intersectPolyline,
@@ -3660,7 +3670,6 @@ declare namespace polyline {
         pointsAreWithinCloseContourProximity,
         addCanvasPointsToArray,
         pointCanProjectOnLine,
-        calculateAreaOfPoints,
         mergePolylines,
         subtractPolylines
     }
@@ -4738,7 +4747,10 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    fireChangeOnUpdate: ChangeTypes;
+    fireChangeOnUpdate: {
+        annotationUID: string;
+        changeType: ChangeTypes;
+    };
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -4752,13 +4764,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    protected renderAnnotationInstance(renderContext: {
-        enabledElement: Types_2.IEnabledElement;
-        targetId: string;
-        annotation: Annotation;
-        annotationStyle: Record<string, any>;
-        svgDrawingHelper: SVGDrawingHelper;
-    }): boolean;
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
     // (undocumented)
     static SplineTypes: typeof SplineTypesEnum;
     // (undocumented)
@@ -4770,7 +4776,11 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
+    triggerAnnotationCompleted: (annotation: SplineROIAnnotation) => void;
+    // (undocumented)
     triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    // (undocumented)
+    triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
 }
 
 // @public (undocumented)
@@ -5353,6 +5363,7 @@ declare namespace Types {
         ToolSpecificAnnotationTypes,
         JumpToSliceOptions,
         AnnotationGroupSelector,
+        AnnotationRenderContext,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
