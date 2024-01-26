@@ -1,10 +1,5 @@
 import { Events } from '../../enums';
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../base';
@@ -26,9 +21,9 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 
 import {
   resetElementCursor,
@@ -312,8 +307,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     this._deactivateDraw(element);
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { viewportId, renderingEngineId, renderingEngine } = enabledElement;
+    const { renderingEngine } = getEnabledElement(element);
 
     if (
       this.isHandleOutsideImage &&
@@ -336,13 +330,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         }
         annotation.data.text = text;
 
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation);
 
         triggerAnnotationRenderForViewportIds(
           renderingEngine,
@@ -350,15 +338,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         );
       });
     } else {
-      const eventType = Events.ANNOTATION_MODIFIED;
-
-      const eventDetail: AnnotationModifiedEventDetail = {
-        annotation,
-        viewportId,
-        renderingEngineId,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationModified(annotation, element);
     }
 
     this.editData = null;
@@ -472,8 +452,8 @@ class ArrowAnnotateTool extends AnnotationTool {
   _doneChangingTextCallback(element, annotation, updatedText): void {
     annotation.data.text = updatedText;
 
-    const { renderingEngine, viewportId, renderingEngineId } =
-      getEnabledElement(element);
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -482,13 +462,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    triggerEvent(eventTarget, eventType, {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    });
+    triggerAnnotationModified(annotation, element);
   }
 
   cancel = (element: HTMLDivElement) => {
@@ -505,8 +479,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
+      const { renderingEngine } = getEnabledElement(element);
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
@@ -514,13 +487,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;

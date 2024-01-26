@@ -842,18 +842,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
+    this.setInvertColor(this.initialInvert);
+
+    this.setInterpolationType(InterpolationType.LINEAR);
+
     if (this.getRotation() !== 0) {
       this.setRotation(0);
     }
-    this.setInterpolationType(InterpolationType.LINEAR);
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
       transferFunction,
       this.initialTransferFunctionNodes
     );
-
-    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {

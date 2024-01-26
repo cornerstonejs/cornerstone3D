@@ -33,6 +33,17 @@ export function addTool(ToolClass): void {
 }
 
 /**
+ * Check if a given tool is already registered
+ * @param ToolClass - A tool class to check
+ * @returns True if the tool is alredy registered or false otherwise
+ */
+export function hasTool(ToolClass): boolean {
+  const toolName = ToolClass.toolName;
+
+  return !!(toolName && state.tools[toolName]);
+}
+
+/**
  * Removes the tool class from the cornerstoneTools.
  *
  * @param ToolClass - A tool calls to instantiate.

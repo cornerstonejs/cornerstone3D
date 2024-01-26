@@ -1,50 +1,29 @@
 import { Types } from '@cornerstonejs/core';
-
-/**
- * getSumReducer - A reducer function that calculates the sum of an array.
- *
- * @param total - The running total.
- * @param num - The numerical value of the array element.
- * @returns The updated running total.
- */
-function getSumReducer(total: number, num: number): number {
-  return total + num;
-}
+import { getSignedArea } from '../math/polyline';
 
 /**
  * _reverseIfAntiClockwise - If the contour's nodes run anti-clockwise,
  * reverse them.
  *
  * @param points - The points array.
+ * @param otherListsToReverse - any number of additional lists to also reverse
+ *       when the primary list is anti-clockwise.
  * @returns The contour, corrected to be clockwise if appropriate.
  */
-export default function reverseIfAntiClockwise(points: Types.Point2[]) {
-  const length = points.length;
-  if (!length) {
-    return points;
-  }
-  let xSum = 0;
-  for (const point of points) {
-    xSum += point[0];
-  }
-  const xMean = xSum / length;
+export default function reverseIfAntiClockwise(
+  points: Types.Point2[],
+  ...otherListsToReverse: unknown[][]
+) {
+  const signedArea = getSignedArea(points);
 
-  let checkSum = 0;
-
-  for (let k = 0, i = 1, j = 2; k < length; k++) {
-    checkSum += (points[i][0] - xMean) * (points[j][1] - points[k][1]);
-    i++;
-    j++;
-    if (i >= length) {
-      i = 0;
+  // signedArea will be less than zero for anti-clockwise
+  if (signedArea < 0) {
+    if (otherListsToReverse) {
+      otherListsToReverse.forEach((list) => list.reverse());
     }
-    if (j >= length) {
-      j = 0;
-    }
-  }
 
-  if (checkSum > 0) {
     return points.slice().reverse();
   }
+
   return points;
 }

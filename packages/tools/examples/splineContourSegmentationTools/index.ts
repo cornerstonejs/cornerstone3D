@@ -32,6 +32,7 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
+  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -317,6 +318,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -325,6 +327,7 @@ async function run() {
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
 
   toolGroup.addToolInstance(
     'CatmullRomSplineROI',
@@ -365,6 +368,9 @@ async function run() {
       },
     ],
   });
+
+  // Spline curves may be converted into freehand contours when they overlaps (append/remove)
+  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

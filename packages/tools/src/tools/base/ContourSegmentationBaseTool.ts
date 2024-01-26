@@ -1,9 +1,10 @@
 import { utilities } from '@cornerstonejs/core';
-import {
+import type {
   Annotation,
   EventTypes,
   PublicToolProps,
   ToolProps,
+  AnnotationRenderContext,
 } from '../../types';
 import {
   config as segmentationConfig,
@@ -12,10 +13,12 @@ import {
   segmentIndex as segmentIndexController,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
+import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { SegmentationRepresentations } from '../../enums';
 import ContourBaseTool from './ContourBaseTool';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { InterpolationManager } from '../../utilities/contours/interpolation';
 
 /**
@@ -93,9 +96,9 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const annotationUID = super.addAnnotation(annotation, element);
 
     if (this.isContourSegmentationTool()) {
-      this._registerContourSegmentationAnnotation(
-        annotation as ContourSegmentationAnnotation
-      );
+      const contourSegAnnotation = annotation as ContourSegmentationAnnotation;
+
+      this._registerContourSegmentationAnnotation(contourSegAnnotation);
     }
 
     return annotationUID;
@@ -138,6 +141,26 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const contourSegmentationStyle = this._getContourSegmentationStyle(context);
 
     return utilities.deepMerge(annotationStyle, contourSegmentationStyle);
+  }
+
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
+    const { annotation } = renderContext;
+    const { invalidated } = annotation;
+
+    // Render the annotation before triggering events
+    const renderResult = super.renderAnnotationInstance(renderContext);
+
+    if (invalidated && this.isContourSegmentationTool()) {
+      const { segmentationId } = (<SplineContourSegmentationAnnotation>(
+        annotation
+      )).data.segmentation;
+
+      triggerSegmentationDataModified(segmentationId);
+    }
+
+    return renderResult;
   }
 
   /**
