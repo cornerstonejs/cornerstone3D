@@ -238,6 +238,11 @@ export class ImageVolume implements IImageVolume {
       : [<PixelDataTypedArray>this.scalarData];
   }
 
+  /**
+   * Updates the internals of the volume to reflect the changes in the
+   * underlying scalar data. This should be called when the scalar data
+   * is modified externally
+   */
   public modified() {
     this.imageData.modified();
 

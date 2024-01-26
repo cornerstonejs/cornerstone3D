@@ -176,6 +176,9 @@ async function getVOIFromMinMax(
   // slice for the imageScalarData, and for the second scenario we use the getPixelData
   // on the Cornerstone IImage object to get the pixel data.
   let image;
+  // Note: we don't want to use the derived or generated images for setting the
+  // default VOI, because they are not the original. This is ugly but don't
+  // know how to do it better.
   if (!imageId.startsWith('derived') && !imageId.startsWith('generated')) {
     image = await loadAndCacheImage(imageId, options);
   }

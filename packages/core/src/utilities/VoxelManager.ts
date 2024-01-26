@@ -242,7 +242,9 @@ export default class VoxelManager<T> {
     scalarData
   ): VoxelManager<number> {
     if (dimensions.length !== 3) {
-      throw new Error('Dimensions must be 3D');
+      throw new Error(
+        'Dimensions must be provided as [number, number, number] for [width, height, depth]'
+      );
     }
 
     const voxels = new VoxelManager(
