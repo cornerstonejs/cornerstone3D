@@ -92,6 +92,11 @@ number
 function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
 
 // @public (undocumented)
+const backgroundColors: {
+    slicer3D: number[];
+};
+
+// @public (undocumented)
 export abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
@@ -278,7 +283,8 @@ declare namespace CONSTANTS {
         RENDERING_DEFAULTS,
         mprCameraValues as MPR_CAMERA_VALUES,
         EPSILON,
-        presets as VIEWPORT_PRESETS
+        presets as VIEWPORT_PRESETS,
+        backgroundColors as BACKGROUND_COLORS
     }
 }
 export { CONSTANTS }
@@ -603,7 +609,7 @@ function createAndCacheDerivedSegmentationImage(referencedImageId: string, optio
 function createAndCacheDerivedSegmentationImages(referencedImageIds: Array<string>, options?: DerivedImageOptions): DerivedImages;
 
 // @public (undocumented)
-function createAndCacheDerivedSegmentationVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
+function createAndCacheDerivedSegmentationVolume(referencedVolumeId: string, options?: DerivedVolumeOptions): Promise<IImageVolume>;
 
 // @public (undocumented)
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
@@ -631,6 +637,9 @@ function createInt16SharedArray(length: number): Int16Array;
 
 // @public (undocumented)
 function createLinearRGBTransferFunction(voiRange: VOIRange): vtkColorTransferFunction;
+
+// @public (undocumented)
+function createLocalSegmentationVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): Promise<IImageVolume>;
 
 // @public (undocumented)
 function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): IImageVolume;
@@ -1221,7 +1230,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: IContourSet | Surface;
+    data: IContourSet | ISurface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1437,7 +1446,7 @@ interface IImageVolume {
     // (undocumented)
     convertToImageSlicesAndCache(): string[];
     // (undocumented)
-    decache?: () => void;
+    decache?: (completelyRemove?: boolean) => void;
     // (undocumented)
     destroy(): void;
     // (undocumented)
@@ -1466,6 +1475,8 @@ interface IImageVolume {
     loadStatus?: Record<string, any>;
     // (undocumented)
     metadata: Metadata;
+    // (undocumented)
+    modified(): void;
     // (undocumented)
     numVoxels: number;
     // (undocumented)
@@ -1762,6 +1773,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     metadata: Metadata;
     // (undocumented)
+    modified(): void;
+    // (undocumented)
     protected numFrames: number;
     // (undocumented)
     numVoxels: number;
@@ -2027,6 +2040,30 @@ interface IStreamingVolumeProperties {
         cachedFrames: Array<ImageQualityStatus>;
         callbacks: Array<() => void>;
     };
+}
+
+// @public (undocumented)
+interface ISurface {
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
+    // (undocumented)
+    getColor(): Point3;
+    // (undocumented)
+    getPoints(): number[];
+    // (undocumented)
+    getPolys(): number[];
+    // (undocumented)
+    getSizeInBytes(): number;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    setColor(color: Point3): void;
+    // (undocumented)
+    setPoints(points: number[]): void;
+    // (undocumented)
+    setPolys(polys: number[]): void;
+    // (undocumented)
+    readonly sizeInBytes: number;
 }
 
 // @public (undocumented)
@@ -3129,6 +3166,7 @@ declare namespace Types {
         IContour,
         PublicSurfaceData,
         SurfaceData,
+        ISurface,
         RGB,
         ColormapPublic,
         ColormapRegistration,
@@ -3486,11 +3524,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
-    protected newActorAdded: boolean;
-    // (undocumented)
     options: ViewportInputOptions;
-    // (undocumented)
-    protected posProcessNewActors(): void;
     // (undocumented)
     _removeActor(actorUID: string): void;
     // (undocumented)
@@ -3716,7 +3750,8 @@ declare namespace volumeLoader {
         getVolumeLoaderSchemes,
         registerUnknownVolumeLoader,
         getUnknownVolumeLoaderSchema,
-        createAndCacheDerivedSegmentationVolume
+        createAndCacheDerivedSegmentationVolume,
+        createLocalSegmentationVolume
     }
 }
 export { volumeLoader }
@@ -3809,8 +3844,6 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    posProcessNewActors(): void;
-    // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
@@ -3881,7 +3914,7 @@ class VoxelManager<T> {
     // (undocumented)
     setAtIJK: (i: number, j: number, k: number, v: any) => void;
     // (undocumented)
-    setAtIJKPoint: ([i, j, k]: [any, any, any], v: any) => void;
+    setAtIJKPoint: ([i, j, k]: Point3, v: any) => void;
     // (undocumented)
     setAtIndex: (index: any, v: any) => void;
     // (undocumented)

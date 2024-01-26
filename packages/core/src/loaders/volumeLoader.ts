@@ -53,6 +53,7 @@ interface LocalVolumeOptions {
   scalarData?: PixelDataTypedArray;
   imageIds?: Array<string>;
   referencedImageIds?: Array<string>;
+  referencedVolumeId?: string;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
     sharedArrayBuffer?: boolean;
@@ -383,7 +384,10 @@ export function createLocalVolume(
     }
 
     // Generate volume scalar data if scalarData is not provided or invalid
-    ({ scalarData } = generateVolumeScalarData(targetBuffer, scalarLength));
+    ({ volumeScalarData: scalarData } = generateVolumeScalarData(
+      targetBuffer,
+      scalarLength
+    ));
   }
 
   // Todo: handle default values for spacing, origin, direction if not provided

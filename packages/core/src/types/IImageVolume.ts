@@ -85,6 +85,9 @@ interface IImageVolume {
 
   /** */
   get imageCacheOffsetMap(): Map<string, any>;
+
+  /** updates volume internals  */
+  modified(): void;
 }
 
 export default IImageVolume;
