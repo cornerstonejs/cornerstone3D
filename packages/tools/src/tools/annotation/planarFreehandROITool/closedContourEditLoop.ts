@@ -17,11 +17,8 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
-const {
-  getSubPixelSpacingAndXYDirections,
-  addCanvasPointsToArray,
-  calculateAreaOfPoints,
-} = polyline;
+const { getSubPixelSpacingAndXYDirections, addCanvasPointsToArray, getArea } =
+  polyline;
 
 /**
  * Activates the closed contour edit event loop.
@@ -409,8 +406,8 @@ function fuseEditPointsWithClosedContour(
     }
   }
 
-  const areaPointSet1 = calculateAreaOfPoints(pointSet1);
-  const areaPointSet2 = calculateAreaOfPoints(pointSet2);
+  const areaPointSet1 = getArea(pointSet1);
+  const areaPointSet2 = getArea(pointSet2);
 
   const pointsToRender: Types.Point2[] =
     areaPointSet1 > areaPointSet2 ? pointSet1 : pointSet2;

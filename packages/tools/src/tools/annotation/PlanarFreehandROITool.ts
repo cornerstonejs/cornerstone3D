@@ -695,8 +695,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const scale = getCalibratedScale(image);
-      let area =
-        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      let area = polyline.getArea(canvasCoordinates) / scale / scale;
       // Convert from canvas_pixels ^2 to mm^2
       area *= deltaInX * deltaInY;
 

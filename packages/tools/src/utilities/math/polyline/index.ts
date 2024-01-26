@@ -1,6 +1,8 @@
 import isClosed from './isClosed';
 import containsPoint from './containsPoint';
 import getAABB from './getAABB';
+import getArea from './getArea';
+import getAreaWithSignal from './getAreaWithSignal';
 import getNormal3 from './getNormal3';
 import getNormal2 from './getNormal2';
 import { mergePolylines, subtractPolylines } from './combinePolyline';
@@ -13,12 +15,13 @@ import getSubPixelSpacingAndXYDirections from './getSubPixelSpacingAndXYDirectio
 import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity';
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
-import calculateAreaOfPoints from './calculateAreaOfPoints';
 
 export {
   isClosed,
   containsPoint,
   getAABB,
+  getArea,
+  getAreaWithSignal,
   getNormal3,
   getNormal2,
   intersectPolyline,
@@ -30,7 +33,6 @@ export {
   pointsAreWithinCloseContourProximity,
   addCanvasPointsToArray,
   pointCanProjectOnLine,
-  calculateAreaOfPoints,
   mergePolylines,
   subtractPolylines,
 };
