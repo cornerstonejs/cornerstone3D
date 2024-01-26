@@ -29,7 +29,7 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
  * Abstract class for tools which create and display annotations on the
  * cornerstone3D canvas. In addition, it provides a base class for segmentation
  * tools that require drawing an annotation before running the segmentation strategy
- * for instance threshold segmentation based on an area and a threshold.
+//  * for instance threshold segmentation based on an area and a threshold.
  * Annotation tools make use of drawing utilities to draw SVG elements on the viewport.
  *
  * To create a new annotation tool, derive from this class and implement the
@@ -368,7 +368,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split(/volumeId:|\?/)[1];
+      const volumeId = targetId.split(/volumeId:/)[1];
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }
