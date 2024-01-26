@@ -238,11 +238,18 @@ function createImage(
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');
-          const imageData = context.createImageData(
+          let imageData = context.createImageData(
             imageFrame.columns,
             imageFrame.rows
           );
-
+          if (!useRGBA) {
+            imageData = {
+              ...imageData,
+              data: new Uint8ClampedArray(
+                3 * imageFrame.columns * imageFrame.rows
+              ),
+            };
+          }
           convertColorSpace(imageFrame, imageData.data, useRGBA);
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
