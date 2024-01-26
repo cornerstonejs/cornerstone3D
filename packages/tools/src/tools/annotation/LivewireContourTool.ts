@@ -69,6 +69,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        interpolation: { enabled: false, smoothHandles: 0, nearestEdge: 0 },
       },
     }
   ) {
@@ -403,7 +404,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { element } = eventDetail;
     const { currentPoints } = eventDetail;
     const { canvas: canvasPos, world: worldPosOriginal } = currentPoints;
-    let worldPos = worldPosOriginal;
+    const worldPos = worldPosOriginal;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
@@ -444,21 +445,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.editData.closed = this.editData.closed || closePath;
     this.editData.confirmedPath = this.editData.currentPath;
 
-    const smoothPathCount = this.scissors.smoothPathCount(
-      this.editData.confirmedPath.pointArray,
-      this.editData.currentPath.getLastControlPoint()
+    this.editData.currentPath.removeLastPoints(1);
+    this.editData.currentPath.addPoint(
+      this.scissors.findMinNearby(worldToSlice(worldPosOriginal), 2)
     );
-    if (smoothPathCount) {
-      this.editData.currentPath.removeLastPoints(smoothPathCount);
-      annotation.data.contour.polyline.splice(
-        annotation.data.contour.polyline.length - smoothPathCount,
-        smoothPathCount
-      );
-      worldPos =
-        annotation.data.contour.polyline[
-          annotation.data.contour.polyline.length - 1
-        ];
-    }
 
     // Add the current cursor position as a new control point after clicking
     const lastPoint = this.editData.currentPath.getLastPoint();
@@ -802,35 +792,53 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const { scissors } = this;
       annotation.data.contour.originalPolyline =
         annotation.data.contour.polyline;
+      const { smoothHandles, nearestEdge } = this.configuration.interpolation;
       annotation.data.handles.originalPoints = points;
       const { worldToSlice, sliceToWorld } = this.editData;
       const handleSmoothing = [];
+
       // New path generation - go through the handles and regenerate the polyline
-      const smoothingOffset = 1;
-      for (let i = 0; i < count; i++) {
-        scissors.startSearch(worldToSlice(points[i]));
-        const path = scissors.findPathToPoint(
-          worldToSlice(points[(i + 1) % count])
-        );
-        handleSmoothing.push(path[smoothingOffset]);
-        handleSmoothing.push(path[path.length - smoothingOffset - 1]);
-      }
-      // Recreate the handles as smoothed handles
-      const smoothingCount = 2 * count;
-      for (let i = 0; i < count; i++) {
-        const smoothingIndex = 2 * i;
-        const previousCanvas =
-          handleSmoothing[
-            (smoothingIndex - 1 + smoothingCount) % smoothingCount
-          ];
-        const nextCanvas =
-          handleSmoothing[(smoothingIndex + 1) % smoothingCount];
-        if (!previousCanvas || !nextCanvas) {
-          // Only for very short paths.
-          continue;
+      if (smoothHandles) {
+        const smoothingOffset = smoothHandles;
+        for (let i = 0; i < count; i++) {
+          scissors.startSearch(worldToSlice(points[i]));
+          const path = scissors.findPathToPoint(
+            worldToSlice(points[(i + 1) % count])
+          );
+          handleSmoothing.push(path[smoothingOffset]);
+          handleSmoothing.push(path[path.length - smoothingOffset]);
         }
-        const newHandle = previousCanvas.map((v, j) => (v + nextCanvas[j]) / 2);
-        points[i] = sliceToWorld(newHandle);
+        // Recreate the handles as smoothed handles
+        const smoothingCount = 2 * count;
+        for (let i = 0; i < count; i++) {
+          const smoothingIndex = 2 * i;
+          const previousCanvas =
+            handleSmoothing[
+              (smoothingIndex - 1 + smoothingCount) % smoothingCount
+            ];
+          const nextCanvas =
+            handleSmoothing[(smoothingIndex + 1) % smoothingCount];
+          if (!previousCanvas || !nextCanvas) {
+            // Only for very short paths.
+            continue;
+          }
+          const newHandle = previousCanvas.map(
+            (v, j) => (v + nextCanvas[j]) / 2
+          );
+          points[i] = sliceToWorld(newHandle);
+        }
+      } else if (nearestEdge) {
+        // Nearest edge handling
+        points.forEach((point, hIndex) => {
+          const testPoint = worldToSlice(point);
+          handleSmoothing.push(testPoint);
+
+          const minPoint = scissors.findMinNearby(testPoint, nearestEdge);
+          if (!csUtils.isEqual(testPoint, minPoint)) {
+            handleSmoothing[hIndex] = minPoint;
+            points[hIndex] = sliceToWorld(minPoint);
+          }
+        });
       }
 
       // Finally, regenerate the updated data

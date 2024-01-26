@@ -180,13 +180,10 @@ function _linearlyInterpolateContour(
       8,
       interpolationData.get(startIndex)[0].data.handles.points.length,
       interpolationData.get(endIndex)[0].data.handles.points.length,
-      interpolated3DPoints.length / 50
+      interpolated3DPoints.length / 40
     )
   );
-  const handlePoints = interpolated3DPoints.subselect(handleCount);
-  handlePoints.sources = interpolated3DPoints.sources?.map((points) =>
-    points.subselect(handleCount)
-  );
+  const handlePoints = selectHandles(interpolated3DPoints, handleCount);
 
   if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
@@ -205,6 +202,61 @@ function _linearlyInterpolateContour(
       eventData
     );
   }
+}
+
+/**
+ * Selects handles by looking for local maximums in the angle that the local
+ * vector makes
+ */
+function selectHandles(interpolated3DPoints, handleCount): PointsArray3 {
+  const handles = PointsArray.create3(handleCount) as PointsArray3;
+  handles.sources = [];
+  const { sources: destPoints } = handles;
+  const distance = Math.min(
+    Math.ceil(interpolated3DPoints.length / handleCount / 10),
+    5
+  );
+  const { length, sources: sourcePoints = [] } = interpolated3DPoints;
+  const prevVec3 = vec3.create();
+  const nextVec3 = vec3.create();
+  const dotValues = new Float32Array(length);
+  const interval = Math.floor(length / handleCount / 4);
+  sourcePoints.forEach(() => destPoints.push(PointsArray.create3(handleCount)));
+
+  for (let i = 0; i < length; i++) {
+    const point = interpolated3DPoints.getPoint(i);
+    const prevPoint = interpolated3DPoints.getPoint(i - distance);
+    const nextPoint = interpolated3DPoints.getPoint((i + distance) % length);
+    vec3.sub(prevVec3, point, prevPoint);
+    vec3.scale(prevVec3, prevVec3, 1 / vec3.length(prevVec3));
+    vec3.sub(nextVec3, point, nextPoint);
+    vec3.scale(nextVec3, nextVec3, 1 / vec3.length(nextVec3));
+    const dot = vec3.dot(prevVec3, nextVec3);
+    dotValues[i] = dot;
+  }
+
+  handles.push(interpolated3DPoints.getPoint(0));
+  sourcePoints.forEach((source, index) =>
+    destPoints[index].push(source.getPoint(0))
+  );
+
+  for (let i = 1; i < handleCount; i++) {
+    const centerIndex = Math.floor((length * i) / handleCount);
+    let minIndex = centerIndex;
+    let minValue = dotValues[centerIndex];
+    for (let j = -interval; j < interval; j++) {
+      if (dotValues[centerIndex + j] < minValue) {
+        minValue = dotValues[centerIndex + j];
+        minIndex = centerIndex + j;
+      }
+    }
+    handles.push(interpolated3DPoints.getPoint(minIndex));
+    sourcePoints.forEach((source, index) =>
+      destPoints[index].push(source.getPoint(minIndex))
+    );
+  }
+
+  return handles;
 }
 
 /**

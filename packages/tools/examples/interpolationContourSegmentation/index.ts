@@ -49,9 +49,17 @@ const interpolationTools = new Map<string, any>();
 const configuration = {
   interpolation: { enabled: true },
 };
+interpolationTools.set('LivewireInterpolationNearest3', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration: { interpolation: { enabled: true, nearestEdge: 3 } },
+});
 interpolationTools.set('LivewireInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
+});
+interpolationTools.set('LivewireInterpolationSmooth1', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration: { interpolation: { enabled: true, smoothHandles: 1 } },
 });
 interpolationTools.set('FreeformInterpolation', {
   baseTool: PlanarFreehandContourSegmentationTool.toolName,

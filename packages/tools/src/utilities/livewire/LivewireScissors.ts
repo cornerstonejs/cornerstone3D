@@ -105,45 +105,41 @@ export class LivewireScissors {
   }
 
   /**
-   * Returns a smoothing path count for how many items to remove.
-   * This will remove points, up to count which have a high gradient, up to
-   * count of them where the clip value is larger than that provided.
+   * Finds a nearby point with a minimum local weight.
    *
-   * @returns Count of items to remove from the path.
+   * @param testPoint - to look nearby
+   * @param delta - how long a distance to look
+   * @returns A point having the minimum weighted distance from the testPoint
    */
-  public smoothPathCount(
-    pathPoints: Types.Point2[],
-    lastPoint: Types.Point2,
-    count = 5,
-    clipValue = 0.85
-  ) {
-    const lastIndex =
-      (lastPoint &&
-        pathPoints.findIndex((point) => isEqual(point, lastPoint))) ||
-      -1;
-    if (pathPoints.length - lastIndex < count * 2) {
-      // If a nearby point is clicked, just add it anyways, because that means
-      // the user actually wants the given point
-      return 0;
-    }
-    let removeCount = 0;
-    for (
-      let i = pathPoints.length - 1;
-      i > pathPoints.length - count && i > 0;
-      i--
-    ) {
-      const weighted = this._getWeightedDistance(
-        pathPoints[i],
-        pathPoints[i - 1]
-      );
-      if (weighted < clipValue) {
-        return removeCount ? removeCount + 2 : 0;
+  public findMinNearby(testPoint: Types.Point2, delta = 2) {
+    const [x, y] = testPoint;
+    const xRange = [
+      Math.max(0, x - delta),
+      Math.min(x + delta + 1, this.width),
+    ];
+    const yRange = [
+      Math.max(0, y - delta),
+      Math.min(y + delta + 1, this.height),
+    ];
+    let minValue = this._getWeightedDistance(testPoint, testPoint) * 0.8;
+    let minPoint = testPoint;
+    for (let xTest = xRange[0]; xTest < xRange[1]; xTest++) {
+      for (let yTest = yRange[0]; yTest < yRange[1]; yTest++) {
+        const distanceCost =
+          (0.2 *
+            (Math.abs(xTest - testPoint[0]) + Math.abs(yTest - testPoint[1]))) /
+          delta /
+          2;
+        const weight =
+          this._getWeightedDistance(testPoint, [xTest, yTest]) * 0.8 +
+          distanceCost;
+        if (weight < minValue) {
+          minPoint = [xTest, yTest];
+          minValue = weight;
+        }
       }
-      removeCount++;
     }
-    // Tried all of them, they were all too big, so assume they are really moving
-    // along a high gradient.
-    return 0;
+    return minPoint;
   }
 
   /**
@@ -509,6 +505,11 @@ export class LivewireScissors {
       return 1;
     }
     return direction;
+  }
+
+  /** Gets the cost to go from A to B */
+  public getCost(pointA, pointB): number {
+    return this._getWeightedDistance(pointA, pointB);
   }
 
   /**
