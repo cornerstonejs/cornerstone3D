@@ -33,7 +33,7 @@ const {
   segmentation,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
+const { ViewportType, InterpolationType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
@@ -310,6 +310,7 @@ async function run() {
     imageArea: [0.9, 0.9],
     storeAsInitialCamera: true,
   });
+  stackViewport.setProperties({ interpolationType: InterpolationType.NEAREST });
 
   // Set the volume to load
   volume.load();

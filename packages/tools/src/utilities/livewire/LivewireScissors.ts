@@ -420,14 +420,9 @@ export class LivewireScissors {
     let pixelIndex = 0;
 
     for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width - 1; x++) {
+      for (let x = 0; x < width; x++) {
         gradX[pixelIndex++] = this._getDeltaX(x, y);
       }
-
-      // Make the last column the same as the previous one because there is
-      // no way to calculate `dx` since x+1 gets out of bounds
-      gradX[pixelIndex] = gradX[pixelIndex - 1];
-      pixelIndex++;
     }
 
     return gradX;
@@ -444,16 +439,10 @@ export class LivewireScissors {
     const gradY = new Float32Array(width * height);
     let pixelIndex = 0;
 
-    for (let y = 0; y < height - 1; y++) {
+    for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         gradY[pixelIndex++] = this._getDeltaY(x, y);
       }
-    }
-
-    // Make the last row the same as the previous one because there is
-    // no way to calculate `dy` since y+1 gets out of bounds
-    for (let len = gradY.length; pixelIndex < len; pixelIndex++) {
-      gradY[pixelIndex] = gradY[pixelIndex - width];
     }
 
     return gradY;
@@ -506,14 +495,20 @@ export class LivewireScissors {
       dp = -dp;
       dq = -dq;
     }
-
     if (px !== qx && py !== qy) {
       // It's going diagonally between pixels
       dp *= Math.SQRT1_2;
       dq *= Math.SQRT1_2;
     }
+    dq = Math.min(Math.max(dq, -1), 1);
 
-    return TWO_THIRD_PI * (Math.acos(dp) + Math.acos(dq));
+    const direction =
+      TWO_THIRD_PI * (Math.acos(Math.min(dp, 1)) + Math.acos(dq));
+    if (isNaN(direction) || !isFinite(direction)) {
+      console.warn('Fond non-direction:', px, py, qx, qy, dp, dq, direction);
+      return 1;
+    }
+    return direction;
   }
 
   /**
@@ -536,6 +531,16 @@ export class LivewireScissors {
     const laplace = this.laplace[bIndex];
     const direction = this._getGradientDirection(aX, aY, bX, bY);
 
+    // console.log(
+    //   'For point ax,ay to bx,by',
+    //   aX,
+    //   aY,
+    //   bX,
+    //   bY,
+    //   gradient,
+    //   laplace,
+    //   direction
+    // );
     return 0.43 * gradient + 0.43 * laplace + 0.11 * direction;
   }
 
