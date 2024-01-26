@@ -536,6 +536,9 @@ type AnnotationVisibilityChangeEventDetail = {
 type AnnotationVisibilityChangeEventType = Types_2.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 // @public (undocumented)
+function areCoplanarContours(firstAnnotation: ContourAnnotation, secondAnnotation: ContourAnnotation): boolean;
+
+// @public (undocumented)
 export class ArrowAnnotateTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -1365,6 +1368,7 @@ type ContourAnnotationData = {
 
 declare namespace contours {
     export {
+        areCoplanarContours,
         _default_2 as contourFinder,
         _default_3 as mergePoints,
         _default_4 as detectContourHoles,
@@ -3143,6 +3147,12 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
+    // (undocumented)
+    triggerAnnotationCompleted: (annotation: LivewireContourAnnotation) => void;
+    // (undocumented)
+    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    // (undocumented)
+    triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
 }
 
 declare namespace locking {
