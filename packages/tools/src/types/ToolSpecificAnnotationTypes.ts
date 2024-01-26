@@ -143,7 +143,10 @@ export type SplineContourSegmentationAnnotation = SplineROIAnnotation &
 
 export type LivewireContourAnnotation = ContourAnnotation & {
   data: {
-    label?: string;
+    contour: {
+      /** The original polyline before livewire, to show comparison */
+      originalPolyline?: Types.Point3[];
+    };
   };
 };
 

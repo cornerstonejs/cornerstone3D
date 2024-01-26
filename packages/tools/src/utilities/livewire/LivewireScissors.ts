@@ -481,7 +481,7 @@ export class LivewireScissors {
   }
 
   /**
-   * Compute the gradiant direction, in radians, between to points
+   * Compute the gradient direction, in radians, between two points
    *
    * @param px - Point `p` x-coordinate of point p.
    * @param py - Point `p` y-coordinate of point p.

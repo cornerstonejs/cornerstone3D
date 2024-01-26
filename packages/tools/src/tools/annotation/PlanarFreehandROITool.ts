@@ -14,7 +14,7 @@ import {
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
 import { roundNumber } from '../../utilities';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -84,7 +84,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *
  * The result of smoothing will be removal of some of the outliers
  * Changing tool configuration (see below) you can fine-tune the smoothing process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive smoothing.
- * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more agressive smoothing.
+ * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more aggressive smoothing.
  *
  * ```js
  * cornerstoneTools.addTool(PlanarFreehandROITool)
@@ -103,7 +103,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *   ],
  * })
  *
- * // set smoothing agressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
+ * // set smoothing aggressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
  *   smoothing: { knotsRatioPercentageOnAdd: 30 },
  * });
@@ -408,7 +408,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    */
   triggerAnnotationModified = (
     annotation: PlanarFreehandROIAnnotation,
-    enabledElement: Types.IEnabledElement
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.HandlesUpdated
   ): void => {
     const { viewportId, renderingEngineId } = enabledElement;
     // Dispatching annotation modified
@@ -418,6 +419,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       annotation,
       viewportId,
       renderingEngineId,
+      changeType,
     };
     triggerEvent(eventTarget, eventType, eventDetail);
   };
@@ -866,7 +868,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    this.triggerAnnotationModified(
+      annotation,
+      enabledElement,
+      ChangeTypes.StatsUpdated
+    );
 
     annotation.invalidated = false;
 

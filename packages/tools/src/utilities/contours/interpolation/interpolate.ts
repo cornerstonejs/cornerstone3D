@@ -42,11 +42,13 @@ function interpolate(viewportData: InterpolationViewportData) {
     return;
   }
   interpolating = true;
-  try {
-    startInterpolation(viewportData);
-  } finally {
-    interpolating = false;
-  }
+  queueMicrotask(() => {
+    try {
+      startInterpolation(viewportData);
+    } finally {
+      interpolating = false;
+    }
+  });
 }
 
 /**

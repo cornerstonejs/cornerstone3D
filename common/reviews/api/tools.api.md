@@ -3031,7 +3031,9 @@ declare namespace lineSegment {
 // @public (undocumented)
 type LivewireContourAnnotation = ContourAnnotation & {
     data: {
-        label?: string;
+        contour: {
+            originalPolyline?: Types_2.Point3[];
+        };
     };
 };
 
@@ -3554,7 +3556,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
-    triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
+    triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
 }
 
 declare namespace planarFreehandROITool {

@@ -306,7 +306,10 @@ async function run() {
 
   // Set the stack on the viewport
   await stackViewport.setStack(stackImageIds);
-  stackViewport.setDisplayArea({ imageArea: [0.9, 0.9] });
+  stackViewport.setDisplayArea({
+    imageArea: [0.9, 0.9],
+    storeAsInitialCamera: true,
+  });
 
   // Set the volume to load
   volume.load();
