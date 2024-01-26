@@ -23,7 +23,6 @@ export function computeAndAddSurfaceRepresentation(
     segmentationId,
     SegmentationRepresentations.Surface,
     () => computeSurfaceData(segmentationId, options),
-    () => updateSurfaceData(segmentationId),
-    options
+    () => updateSurfaceData(segmentationId)
   );
 }

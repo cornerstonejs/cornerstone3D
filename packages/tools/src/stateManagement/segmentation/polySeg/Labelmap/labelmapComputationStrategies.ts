@@ -184,19 +184,21 @@ async function computeLabelmapFromSurfaceSegmentation(
     );
   }
 
-  let result = await convertSurfaceToVolumeLabelmap(
+  const result = await convertSurfaceToVolumeLabelmap(
     { geometryIds: segmentsGeometryIds },
     segmentationVolume
   );
 
-  if (!isVolume) {
-    // we need to convert the volume labelmap to a stack labelmap
-    result = await computeStackSegmentationFromVolume({
-      volumeId: segmentationVolume.volumeId,
-    });
+  if (isVolume) {
+    return result;
   }
 
-  return result;
+  // we need to convert the volume labelmap to a stack labelmap
+  const stackData = (await computeStackSegmentationFromVolume({
+    volumeId: segmentationVolume.volumeId,
+  })) as LabelmapSegmentationDataStack;
+
+  return stackData;
 }
 
 export { computeLabelmapFromContourSegmentation };

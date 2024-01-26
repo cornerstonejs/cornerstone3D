@@ -57,7 +57,10 @@ export async function updateSurfaceData(segmentationId) {
           ) {
             return;
           }
-          segmentation.representationData.SURFACE.geometryIds.push(geometryId);
+          segmentation.representationData.SURFACE.geometryIds.set(
+            segmentIndex,
+            geometryId
+          );
 
           return createAndCacheSurfacesFromRaw(
             segmentationId,

@@ -24,8 +24,7 @@ async function computeAndAddRepresentation<T>(
   segmentationId: string,
   representationType: SegmentationRepresentations,
   computeFunction: () => Promise<T>,
-  updateFunction?: () => void,
-  options: any
+  updateFunction?: () => void
 ): Promise<T> {
   // register the worker if it hasn't been registered yet
   registerPolySegWorker();

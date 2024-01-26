@@ -19,7 +19,7 @@ export async function computeStackSegmentationFromVolume({
   volumeId,
 }: {
   volumeId: string;
-}): Promise<{ imageIdReferenceMap: Map<any, any> }> {
+}): Promise<{ imageIdReferenceMap: Map<string, string> }> {
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
   // we need to decache the segmentation Volume so that we use it

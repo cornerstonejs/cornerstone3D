@@ -24,7 +24,6 @@ export function computeAndAddLabelmapRepresentation(
     segmentationId,
     SegmentationRepresentations.Labelmap,
     () => computeLabelmapData(segmentationId, options),
-    () => {},
-    options
+    () => {}
   );
 }

@@ -190,8 +190,16 @@ export async function convertContourToStackLabelmap(
     imagePositionPatient = imagePositionPatient ?? [0, 0, 0];
 
     // Create vector from row and column cosines
-    const rowCosineVec = vec3.fromValues(...rowCosines);
-    const colCosineVec = vec3.fromValues(...columnCosines);
+    const rowCosineVec = vec3.fromValues(
+      rowCosines[0],
+      rowCosines[1],
+      rowCosines[2]
+    );
+    const colCosineVec = vec3.fromValues(
+      columnCosines[0],
+      columnCosines[1],
+      columnCosines[2]
+    );
 
     // Calculate scan axis normal
     const scanAxisNormal = vec3.create();
