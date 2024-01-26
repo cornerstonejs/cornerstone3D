@@ -14,7 +14,7 @@ import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/
 import {
   ContourSegmentationAnnotation,
   ContourSegmentationData,
-} from 'tools/src/types';
+} from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
 

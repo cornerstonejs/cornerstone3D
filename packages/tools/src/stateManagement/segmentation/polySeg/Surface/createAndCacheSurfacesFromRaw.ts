@@ -35,7 +35,7 @@ export async function createAndCacheSurfacesFromRaw(
 
   const segmentation = getSegmentation(segmentationId);
 
-  const geometryIds = new Map<string, string>();
+  const geometryIds = new Map<number, string>();
 
   // Loop through raw surfaces data and create surfaces
   const promises = Object.keys(rawSurfacesData).map(async (index: string) => {
@@ -62,7 +62,7 @@ export async function createAndCacheSurfacesFromRaw(
     };
 
     const geometryId = closedSurface.id;
-    geometryIds.set(segmentIndex.toString(), geometryId);
+    geometryIds.set(segmentIndex, geometryId);
 
     return geometryLoader.createAndCacheGeometry(geometryId, {
       type: Enums.GeometryType.SURFACE,

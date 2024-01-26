@@ -53,6 +53,9 @@ function addColorLUT(colorLUT: Types_2.ColorLUT, index: number): void;
 function addColorLUT_2(colorLUT: Types_2.ColorLUT, colorLUTIndex: number): void;
 
 // @public (undocumented)
+function addRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
+
+// @public (undocumented)
 function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEvents?: boolean): void;
 
 // @public (undocumented)
@@ -852,6 +855,9 @@ function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRender
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
 
 // @public (undocumented)
+function canComputeRequestedRepresentation(segmentationRepresentationUID: string): boolean;
+
+// @public (undocumented)
 type CanvasCoordinates = [
 Types_2.Point2,
 Types_2.Point2,
@@ -1305,6 +1311,21 @@ type ColorbarTicksStyle = {
 // @public (undocumented)
 type ColorbarVOIRange = ColorbarImageRange;
 
+// @public (undocumented)
+function computeAndAddLabelmapRepresentation(segmentationId: string, options?: {
+    segmentIndices?: number[];
+    segmentationRepresentationUID?: string;
+    viewport?: Types_2.IVolumeViewport | Types_2.IStackViewport;
+}): Promise<RawLabelmapData>;
+
+// @public (undocumented)
+function computeAndAddSurfaceRepresentation(segmentationId: string, options?: {
+    segmentIndices?: number[];
+    segmentationRepresentationUID?: string;
+}): Promise<{
+    geometryIds: Map<number, string>;
+}>;
+
 declare namespace config {
     export {
         getState,
@@ -1356,8 +1377,8 @@ type ContourAnnotationData = {
 declare namespace contours {
     export {
         _default_2 as contourFinder,
-        _default_3 as mergePoints,
-        _default_4 as detectContourHoles,
+        getDeduplicatedVTKPolyDataPoints,
+        _default_3 as detectContourHoles,
         generateContourSetsFromLabelmap,
         AnnotationToPointData,
         interpolation,
@@ -1398,7 +1419,6 @@ function convertStackToVolumeSegmentation({ segmentationId, options, }: {
     options?: {
         toolGroupId: string;
         volumeId?: string;
-        newSegmentationId?: string;
         removeOriginal?: boolean;
     };
 }): Promise<void>;
@@ -1618,16 +1638,11 @@ const _default_2: {
 
 // @public (undocumented)
 const _default_3: {
-    removeDuplicatePoints: typeof removeDuplicatePoints;
-};
-
-// @public (undocumented)
-const _default_4: {
     processContourHoles: typeof processContourHoles;
 };
 
 // @public (undocumented)
-const _default_5: {
+const _default_4: {
     smoothAnnotation: typeof smoothAnnotation;
 };
 
@@ -2104,6 +2119,12 @@ function filterViewportsWithToolEnabled(viewports: Array<Types_2.IViewport>, too
 function findClosestPoint(sourcePoints: Array<Types_2.Point2>, targetPoint: Types_2.Point2): Types_2.Point2;
 
 // @public (undocumented)
+function findSegmentationRepresentationByUID(segmentationRepresentationUID: string): {
+    toolGroupId: string;
+    segmentationRepresentation: ToolGroupSpecificRepresentation;
+};
+
+// @public (undocumented)
 function floodFill(getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
 
 // @public (undocumented)
@@ -2259,6 +2280,15 @@ function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
 }): number[] | number[][];
 
 // @public (undocumented)
+function getDeduplicatedVTKPolyDataPoints(polyData: any, bypass?: boolean): {
+    points: any[];
+    lines: {
+        a: any;
+        b: any;
+    }[];
+};
+
+// @public (undocumented)
 function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapConfig;
 
 // @public (undocumented)
@@ -2343,6 +2373,9 @@ function getSegmentations(): Segmentation[] | [];
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
+function getSegmentAtWorldPoint(viewport: Types_2.IViewport, worldPoint: Types_2.Point3, segmentationRepresentationUID: string): number;
+
+// @public (undocumented)
 function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
 
 // @public (undocumented)
@@ -2399,6 +2432,9 @@ function getToolGroupsWithToolName(toolName: string): IToolGroup[] | [];
 
 // @public (undocumented)
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
+
+// @public (undocumented)
+function getUniqueSegmentIndices(segmentationId: any): number[];
 
 // @public (undocumented)
 function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | IStackViewport_2;
@@ -2612,6 +2648,12 @@ interface ISpline {
     // (undocumented)
     updateControlPoint(index: number, newControlPoint: Types_2.Point2): void;
 }
+
+// @public (undocumented)
+function isPointInsidePolyline2D(point: Types_2.Point2, polyline: Types_2.Point2[]): boolean;
+
+// @public (undocumented)
+function isPointInsidePolyline3D(point: Types_2.Point3, polyline: Types_2.Point3[]): boolean;
 
 // @public (undocumented)
 function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
@@ -2883,7 +2925,11 @@ type LabelmapRenderingConfig = {
 };
 
 // @public (undocumented)
-type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack;
+type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack | {
+    volumeId?: string;
+    referencedVolumeId?: string;
+    imageIdReferenceMap?: Map<string, string>;
+};
 
 // @public (undocumented)
 type LabelmapSegmentationDataStack = {
@@ -3541,7 +3587,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
 declare namespace planarFreehandROITool {
     export {
-        _default_5 as default,
+        _default_4 as default,
         smoothAnnotation
     }
 }
@@ -3615,7 +3661,17 @@ declare namespace polyline {
         pointsAreWithinCloseContourProximity,
         addCanvasPointsToArray,
         pointCanProjectOnLine,
-        calculateAreaOfPoints
+        calculateAreaOfPoints,
+        isPointInsidePolyline2D,
+        isPointInsidePolyline3D
+    }
+}
+
+declare namespace polySegManager {
+    export {
+        canComputeRequestedRepresentation,
+        computeAndAddSurfaceRepresentation,
+        computeAndAddLabelmapRepresentation
     }
 }
 
@@ -4152,9 +4208,7 @@ type RepresentationConfig = {
 type RepresentationPublicInput = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
-    options?: {
-        colorLUTOrIndex?: Types_2.ColorLUT | number;
-    };
+    options?: RepresentationPublicInputOptions;
 };
 
 // @public (undocumented)
@@ -4262,17 +4316,19 @@ type Segmentation = {
 
 declare namespace segmentation {
     export {
-        state_3 as state,
         addSegmentations,
-        activeSegmentation,
         addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
+        addRepresentationData,
+        state_3 as state,
+        activeSegmentation,
         segmentLocking,
         config_2 as config,
         segmentIndex,
         triggerSegmentationEvents,
         convertStackToVolumeSegmentation,
-        convertVolumeToStackSegmentation
+        convertVolumeToStackSegmentation,
+        polySegManager as polySeg
     }
 }
 export { segmentation }
@@ -4296,7 +4352,9 @@ declare namespace segmentation_2 {
         contourAndFindLargestBidirectional,
         createBidirectionalToolData,
         segmentContourAction,
-        invalidateBrushCursor
+        invalidateBrushCursor,
+        getUniqueSegmentIndices,
+        getSegmentAtWorldPoint
     }
 }
 
@@ -4450,7 +4508,7 @@ export class SegmentSelectTool extends BaseTool {
     // (undocumented)
     _setActiveSegment(evt?: EventTypes_2.InteractionEventType): void;
     // (undocumented)
-    _setActiveSegmentLabelmap(activeSegmentation: Segmentation, worldPoint: Types_2.Point3, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): void;
+    _setActiveSegmentForType(activeSegmentationReps: ToolGroupSpecificRepresentation, worldPoint: Types_2.Point3, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): void;
     // (undocumented)
     static toolName: any;
 }
@@ -4820,7 +4878,8 @@ declare namespace state_3 {
         addColorLUT,
         getColorLUT,
         getNextColorLUTIndex,
-        removeColorLUT
+        removeColorLUT,
+        findSegmentationRepresentationByUID
     }
 }
 
@@ -5089,6 +5148,7 @@ type ToolGroupSpecificRepresentationState = {
     active: boolean;
     segmentsHidden: Set<number>;
     colorLUTIndex: number;
+    polySeg?: boolean;
 };
 
 // @public (undocumented)

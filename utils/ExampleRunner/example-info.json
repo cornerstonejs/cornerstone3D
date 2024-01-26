@@ -12,6 +12,9 @@
     "tools-advanced": {
       "description": "Advanced Tools library"
     },
+    "polymorph-segmentation": {
+      "description": "Advanced Tools library"
+    },
     "dicom-image-loader": {
       "description": "DICOM image loader"
     },
@@ -418,6 +421,36 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
+      }
+    },
+    "polymorph-segmentation":{
+      "PolySegWasmContourToStackLabelmap":{
+        "name": "Convert contour segmentation to stack labelmap",
+        "description": "Demonstrates how to convert a contour segmentation to a stack labelmap"
+      },
+      "PolySegWasmContourToVolumeLabelmap":{
+        "name": "Convert contour segmentation to volume labelmap",
+        "description": "Demonstrates how to convert a contour segmentation to a volume labelmap"
+      },
+      "PolySegWasmContourToSurface": {
+        "name": "Convert contour segmentation to surface",
+        "description": "Demonstrates how to convert a contour segmentation to a closed surface"
+      },
+      "PolySegWasmStackLabelmapToSurface":{
+        "name": "Convert stack labelmap to surface",
+        "description": "Demonstrates how to convert a stack labelmap to a closed surface"
+      },
+      "PolySegWasmVolumeLabelmapToSurface":{
+        "name": "Convert volume labelmap to surface",
+        "description": "Demonstrates how to convert a volume labelmap to a closed surface"
+      },
+      "PolySegWasmSurfaceToVolumeLabelmap":{
+        "name": "Convert surface to volume labelmap",
+        "description": "Demonstrates how to convert a closed surface to a volume labelmap"
+      },
+      "PolySegWasmSurfaceToStackLabelmap":{
+        "name": "Convert surface to stack labelmap",
+        "description": "Demonstrates how to convert a closed surface to a stack labelmap"
       }
     },
     "dicom-image-loader": {

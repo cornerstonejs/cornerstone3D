@@ -11,7 +11,6 @@ import {
 } from '../../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { convertLabelmapToSurface } from './convertLabelmapToSurface';
-import { convertStackToVolumeSegmentation } from '../../convertStackToVolumeSegmentation';
 
 export type RawSurfacesData = {
   segmentIndex: number;

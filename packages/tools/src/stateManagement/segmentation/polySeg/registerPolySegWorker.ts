@@ -10,6 +10,7 @@ export function registerPolySegWorker() {
   registered = true;
 
   const workerFn = () => {
+    // @ts-ignore
     return new Worker(new URL('./polySegConverters.js', import.meta.url), {
       name: 'polySeg',
     });

@@ -132,10 +132,10 @@ async function render(
       return;
     }
 
-    const surface = geometry.data;
+    const surface = geometry.data as Types.ISurface;
 
     const color = colorLUT[segmentIndex];
-    surface.setColor(color);
+    surface.setColor(color.slice(0, 3) as Types.Point3);
 
     const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
     const actorUID = surfaceUID;

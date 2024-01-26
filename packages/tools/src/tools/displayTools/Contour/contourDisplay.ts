@@ -77,52 +77,70 @@ async function render(
     return;
   }
 
-  const representationData = segmentation.representationData.CONTOUR;
-  const contourData = representationData;
+  const contourData = segmentation.representationData[Representations.Contour];
 
-  if (contourData?.points?.length) {
-    // contourData = createAnnotationsFromPoints(contourData.points);
-    const contourSegmentationAnnotation = {
-      annotationUID: csUtils.uuidv4(),
-      data: {
-        contour: {
-          closed: true,
-          polyline: contourData.points,
-        },
-        segmentation: {
-          segmentationId,
-          segmentIndex: 1, // Todo
-          segmentationRepresentationUID:
-            representationConfig.segmentationRepresentationUID,
-        },
-      },
-      highlighted: false,
-      invalidated: false,
-      isLocked: false,
-      isVisible: true,
-      metadata: {
-        toolName: 'PlanarFreehandContourSegmentationTool',
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        viewPlaneNormal: viewport.getCamera().viewPlaneNormal,
-      },
-    };
+  const { geometryIds } = contourData;
 
-    addAnnotation(contourSegmentationAnnotation, viewport.element);
-  } else if (
-    !contourData &&
-    polySeg.canComputeRequestedRepresentation(
-      representationConfig.segmentationRepresentationUID
-    )
-  ) {
-    // contourData = await polySeg.computeAndAddContourRepresentation(
-    //   segmentationId,
-    //   {
-    //     segmentationRepresentationUID:
-    //       representationConfig.segmentationRepresentationUID,
-    //     viewport,
-    //   }
-    // );
+  // this means we would like to use vtk actors for contour data
+  // Note: We really should get out of
+
+  if (viewport instanceof StackViewport) {
+    // We don't have a good way to handle stack viewports for contours at the moment.
+    // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
+    return;
   }
+
+  // add the contour sets to the viewport
+  addOrUpdateVTKContourSets(
+    viewport,
+    geometryIds,
+    representationConfig,
+    toolGroupConfig
+  );
+
+  // if (contourData?.points?.length) {
+  //   // contourData = createAnnotationsFromPoints(contourData.points);
+  //   const contourSegmentationAnnotation = {
+  //     annotationUID: csUtils.uuidv4(),
+  //     data: {
+  //       contour: {
+  //         closed: true,
+  //         polyline: contourData.points,
+  //       },
+  //       segmentation: {
+  //         segmentationId,
+  //         segmentIndex: 1, // Todo
+  //         segmentationRepresentationUID:
+  //           representationConfig.segmentationRepresentationUID,
+  //       },
+  //     },
+  //     highlighted: false,
+  //     invalidated: false,
+  //     isLocked: false,
+  //     isVisible: true,
+  //     metadata: {
+  //       toolName: 'PlanarFreehandContourSegmentationTool',
+  //       FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+  //       viewPlaneNormal: viewport.getCamera().viewPlaneNormal,
+  //     },
+  //   };
+
+  //   addAnnotation(contourSegmentationAnnotation, viewport.element);
+  // } else if (
+  //   !contourData &&
+  //   polySeg.canComputeRequestedRepresentation(
+  //     representationConfig.segmentationRepresentationUID
+  //   )
+  // ) {
+  // contourData = await polySeg.computeAndAddContourRepresentation(
+  //   segmentationId,
+  //   {
+  //     segmentationRepresentationUID:
+  //       representationConfig.segmentationRepresentationUID,
+  //     viewport,
+  //   }
+  // );
+  // }
 
   // if (contourData?.geometryIds?.length) {
   //   handleVTKContour({
@@ -139,41 +157,6 @@ async function render(
   //     annotationUIDsMap: contourData.annotationUIDsMap,
   //   });
   // }
-}
-
-function handleContourAnnotationSegmentation({
-  viewport,
-  representationConfig,
-  toolGroupConfig,
-  annotationUIDsMap,
-}) {
-  // this means we would like to use vtk actors for contour data
-  // Note: We really should get out of
-
-  if (viewport instanceof StackViewport) {
-    // We don't have a good way to handle stack viewports for contours at the moment.
-    // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
-    return;
-  }
-
-  // add the contour sets to the viewport
-  addOrUpdateVTKContourSets(
-    viewport,
-    annotationUIDsMap,
-    representationConfig,
-    toolGroupConfig
-  );
-}
-
-function handleVTKContour({
-  viewport,
-  representationConfig,
-  toolGroupConfig,
-  geometryIds,
-}) {
-  // this means we would like to use vtk actors for contour data
-  // Note: We really should get out of
-  console.debug('here i am');
 }
 
 function _removeContourFromToolGroupViewports(
