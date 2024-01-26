@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.50.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.2...v1.50.3) (2024-01-26)
+
+### Bug Fixes
+
+- **Cache:** Missing cached image to events details (removeImageLoadObject) ([#1040](https://github.com/cornerstonejs/cornerstone3D/issues/1040)) ([229f503](https://github.com/cornerstonejs/cornerstone3D/commit/229f50317aef2366b4c5363db203e21588d995d2))
+
 ## [1.50.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.1...v1.50.2) (2024-01-26)
 
 ### Bug Fixes
