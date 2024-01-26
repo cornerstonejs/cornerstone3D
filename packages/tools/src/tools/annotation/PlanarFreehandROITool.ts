@@ -658,7 +658,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     enabledElement
   ) => {
     const { data } = annotation;
-    const { element } = enabledElement;
+    const { element } = viewport;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
 

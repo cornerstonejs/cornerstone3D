@@ -922,7 +922,6 @@ class CobbAngleTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { element } = enabledElement;
 
     // Until we have all four anchors bail out
     if (data.handles.points.length !== 4) {
@@ -957,6 +956,7 @@ class CobbAngleTool extends AnnotationTool {
       }
     }
     const { viewport } = enabledElement;
+    const { element } = viewport;
 
     const canvasPoints = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)

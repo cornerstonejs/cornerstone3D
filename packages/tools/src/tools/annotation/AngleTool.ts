@@ -787,7 +787,7 @@ class AngleTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { element } = enabledElement;
+    const { element } = enabledElement.viewport;
 
     // Until we have all three anchors bail out
     if (data.handles.points.length !== 3) {

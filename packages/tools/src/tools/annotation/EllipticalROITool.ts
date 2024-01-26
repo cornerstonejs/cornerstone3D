@@ -979,7 +979,7 @@ class EllipticalROITool extends AnnotationTool {
     enabledElement
   ) => {
     const data = annotation.data;
-    const { element } = enabledElement;
+    const { element } = viewport;
 
     const { points } = data.handles;
 
