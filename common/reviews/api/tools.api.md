@@ -2137,6 +2137,12 @@ function findClosestPoint(sourcePoints: Array<Types_2.Point2>, targetPoint: Type
 function findHandlePolylineIndex(annotation: ContourAnnotation, handleIndex: number): number;
 
 // @public (undocumented)
+function findSegmentationRepresentationByUID(segmentationRepresentationUID: string): {
+    toolGroupId: string;
+    segmentationRepresentation: ToolGroupSpecificRepresentation;
+};
+
+// @public (undocumented)
 function floodFill(getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
 
 // @public (undocumented)
@@ -3721,7 +3727,17 @@ declare namespace polyline {
         addCanvasPointsToArray,
         pointCanProjectOnLine,
         mergePolylines,
-        subtractPolylines
+        subtractPolylines,
+        isPointInsidePolyline2D,
+        isPointInsidePolyline3D
+    }
+}
+
+declare namespace polySegManager {
+    export {
+        canComputeRequestedRepresentation,
+        computeAndAddSurfaceRepresentation,
+        computeAndAddLabelmapRepresentation
     }
 }
 
