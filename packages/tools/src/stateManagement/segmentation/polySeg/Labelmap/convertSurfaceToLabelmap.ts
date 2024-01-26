@@ -1,9 +1,4 @@
-import {
-  Types,
-  cache,
-  getWebWorkerManager,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import { Types, cache, getWebWorkerManager } from '@cornerstonejs/core';
 import { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
 
 const workerManager = getWebWorkerManager();
@@ -38,7 +33,7 @@ export async function convertSurfaceToVolumeLabelmap(
   });
 
   const { dimensions, direction, origin, spacing } = segmentationVolume;
-  const results = await workerManager.executeTask(
+  const newScalarData = await workerManager.executeTask(
     'polySeg',
     'convertSurfacesToVolumeLabelmap',
     {
@@ -57,22 +52,17 @@ export async function convertSurfaceToVolumeLabelmap(
     }
   );
 
-  const scalarData = results;
-  const volumeId = 'segment1';
-  await volumeLoader.createLocalVolume(
-    {
-      dimensions,
-      direction,
-      origin,
-      metadata: {},
-      scalarData,
-      spacing,
-    },
-    volumeId
-  );
+  segmentationVolume.imageData
+    .getPointData()
+    .getScalars()
+    .setData(newScalarData);
+  segmentationVolume.imageData.modified();
+
+  // update the scalarData in the volume as well
+  segmentationVolume.modified();
 
   return {
-    volumeId,
+    volumeId: segmentationVolume.volumeId,
   };
 }
 

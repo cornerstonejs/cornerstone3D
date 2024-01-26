@@ -544,10 +544,12 @@ export class ImageVolume implements IImageVolume {
       // check if the referenced volume has imageIds to see how many
       // images we need to generate
       const referencedVolumeId = this.referencedVolumeId;
-      const referencedVolume = cache.getVolume(referencedVolumeId);
 
-      const numSlices =
-        referencedVolume?.imageIds?.length || this.dimensions[2];
+      let numSlices = this.dimensions[2];
+      if (referencedVolumeId) {
+        const referencedVolume = cache.getVolume(referencedVolumeId);
+        numSlices = referencedVolume?.imageIds?.length ?? numSlices;
+      }
 
       this.imageIds = Array.from({ length: numSlices }, (_, i) => {
         return `generated:${this.volumeId}:${i}`;

@@ -51,8 +51,8 @@ interface LocalVolumeOptions {
   origin: Point3;
   direction: Mat3;
   scalarData?: PixelDataTypedArray;
-  referencedImageIds?: Array<string>;
   imageIds?: Array<string>;
+  referencedImageIds?: Array<string>;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
     sharedArrayBuffer?: boolean;
@@ -301,7 +301,10 @@ export async function createAndCacheDerivedVolume(
   const scalarData = referencedVolume.getScalarData();
   const scalarLength = scalarData.length;
 
-  const volumeScalarData = generateVolumeScalarData(targetBuffer, scalarLength);
+  const { volumeScalarData, numBytes } = generateVolumeScalarData(
+    targetBuffer,
+    scalarLength
+  );
 
   // Todo: handle more than one component for segmentation (RGB)
   const scalarArray = vtkDataArray.newInstance({
@@ -328,7 +331,6 @@ export async function createAndCacheDerivedVolume(
     imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
-    referencedVolumeId,
     imageIds: [],
   });
 
@@ -381,7 +383,7 @@ export function createLocalVolume(
     }
 
     // Generate volume scalar data if scalarData is not provided or invalid
-    scalarData = generateVolumeScalarData(targetBuffer, scalarLength);
+    ({ scalarData } = generateVolumeScalarData(targetBuffer, scalarLength));
   }
 
   // Todo: handle default values for spacing, origin, direction if not provided
@@ -428,6 +430,7 @@ export function createLocalVolume(
     scalarData,
     sizeInBytes: numBytes,
     referencedImageIds: options.referencedImageIds || [],
+    referencedVolumeId: options.referencedVolumeId,
     imageIds: options.imageIds || [],
   });
 
@@ -639,5 +642,5 @@ function generateVolumeScalarData(
     volumeScalarData = new TypedArrayConstructor(scalarLength);
   }
 
-  return volumeScalarData;
+  return { volumeScalarData, numBytes };
 }

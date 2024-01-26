@@ -1,4 +1,9 @@
-import { Types, VolumeViewport, volumeLoader } from '@cornerstonejs/core';
+import {
+  Types,
+  VolumeViewport,
+  volumeLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
 import {
@@ -10,6 +15,8 @@ import {
   convertContourToVolumeLabelmap,
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
+import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
+import { PixelDataTypedArray } from '@cornerstonejs/core/dist/types/types';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume
@@ -120,6 +127,20 @@ async function computeLabelmapFromSurfaceSegmentation(
 ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
   const isVolume = options.viewport instanceof VolumeViewport ?? true;
 
+  const segmentIndices = options.segmentIndices?.length
+    ? options.segmentIndices
+    : getUniqueSegmentIndices(segmentationId);
+
+  const segmentation = getSegmentation(segmentationId);
+
+  const segmentsGeometryIds = new Map() as Map<number, string>;
+  const representationData = segmentation.representationData.SURFACE;
+  representationData.geometryIds.forEach((geometryId, segmentIndex) => {
+    if (segmentIndices.includes(segmentIndex)) {
+      segmentsGeometryIds.set(segmentIndex, geometryId);
+    }
+  });
+
   if (isVolume && !options.viewport) {
     // Todo: we don't have support for volume viewport without providing the
     // viewport, since we need to get the referenced volumeId from the viewport
@@ -131,24 +152,48 @@ async function computeLabelmapFromSurfaceSegmentation(
     );
   }
 
-  const segmentation = getSegmentation(segmentationId);
-  const representationData = segmentation.representationData.SURFACE;
-
-  let result;
+  let segmentationVolume;
   if (isVolume) {
     const defaultActor = options.viewport.getDefaultActor();
     const { uid: volumeId } = defaultActor;
-    const segmentationVolume =
+    segmentationVolume =
       await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
-
-    result = convertSurfaceToVolumeLabelmap(
-      representationData,
-      segmentationVolume
-    );
   } else {
-    throw new Error(
-      'Cannot compute labelmap from surface segmentation for stack viewport yet'
+    // for stack we basically need to create a volume from the stack
+    // imageIds and then create a segmentation volume from that and finally
+    // convert the surface to a labelmap and later on convert the labelmap
+    // to a stack labelmap
+    const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
+    const volumeId = 'generatedSegmentationVolumeId';
+    const volumeProps = utilities.generateVolumePropsFromImageIds(
+      imageIds,
+      volumeId
     );
+
+    // we don't need the imageIds for the viewport (e.g., CT), but rather
+    // want to use the imageIds as a reference
+    delete volumeProps.imageIds;
+
+    segmentationVolume = await volumeLoader.createLocalSegmentationVolume(
+      {
+        ...volumeProps,
+        scalarData: volumeProps.scalarData as PixelDataTypedArray,
+        referencedImageIds: imageIds,
+      },
+      volumeId
+    );
+  }
+
+  let result = await convertSurfaceToVolumeLabelmap(
+    { geometryIds: segmentsGeometryIds },
+    segmentationVolume
+  );
+
+  if (!isVolume) {
+    // we need to convert the volume labelmap to a stack labelmap
+    result = await computeStackSegmentationFromVolume({
+      volumeId: segmentationVolume.volumeId,
+    });
   }
 
   return result;

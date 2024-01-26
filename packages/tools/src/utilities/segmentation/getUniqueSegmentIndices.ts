@@ -63,6 +63,11 @@ function getUniqueSegmentIndices(segmentationId) {
     });
 
     return Array.from(indices.values()).sort();
+  } else if (segmentation.type === SegmentationRepresentations.Surface) {
+    const geometryIds =
+      segmentation.representationData.SURFACE?.geometryIds ?? [];
+
+    return Array.from(geometryIds.keys());
   }
 }
 

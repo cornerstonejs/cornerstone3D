@@ -152,7 +152,6 @@ function _getImageIdReferenceMapForStackSegmentation(
   // segmentation converted from stack segmentation, there will be segmentationImageIds
   // otherwise, if it is empty volume segmentation derived from
   // a volume that is not a stack, there will be no segmentationImageIds
-  const segmentationImageIds = segmentationVolume.imageIds;
 
   if (segmentationVolume.additionalDetails?.imageIdReferenceMap) {
     // this means the segmentation volume is derived from a stack segmentation
@@ -165,8 +164,12 @@ function _getImageIdReferenceMapForStackSegmentation(
     // this means the segmentation volume is derived from a stack segmentation
     // and we can use the referencedImageIds from the segmentationVolume
     const referencedImageIds = segmentationVolume.referencedImageIds;
+    const segmentationImageIds = segmentationVolume.imageIds;
 
-    return createImageIdReferenceMap(referencedImageIds, segmentationImageIds);
+    return createImageIdReferenceMap(
+      referencedImageIds,
+      [...segmentationImageIds].reverse()
+    );
   } else {
     // check if the segmentation volume is derived from another volume and
     // whether if that volume has imageIds
@@ -208,7 +211,7 @@ function _getImageIdReferenceMapForStackSegmentation(
 
     return createImageIdReferenceMap(
       referencedImageIds,
-      segmentationImageIdsToUse
+      [...segmentationImageIdsToUse].reverse()
     );
   }
 }
