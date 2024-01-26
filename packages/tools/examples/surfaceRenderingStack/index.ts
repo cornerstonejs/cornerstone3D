@@ -12,6 +12,7 @@ import {
   setTitleAndDescription,
   addToggleButtonToToolbar,
   addSliderToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { sortImageIds } from './utils';
@@ -22,6 +23,23 @@ import surface15 from '../../../../utils/assets/surfaces/lung15.json';
 import surface16 from '../../../../utils/assets/surfaces/lung16.json';
 import surface17 from '../../../../utils/assets/surfaces/lung17.json';
 
+const volumeFlag = true;
+let renderingEngine;
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_VOLUME_AXIAL';
+const viewportId3 = 'CT_VOLUME_SAG';
+
+export function downloadObjectAsJson(exportObj, exportName) {
+  const dataStr =
+    'data:text/json;charset=utf-8,' +
+    encodeURIComponent(JSON.stringify(exportObj));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute('href', dataStr);
+  downloadAnchorNode.setAttribute('download', exportName + '.json');
+  document.body.appendChild(downloadAnchorNode); // required for firefox
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -116,6 +134,31 @@ addSliderToToolbar({
         opacity: value,
       }
     );
+  },
+});
+
+addButtonToToolbar({
+  title: 'Generate contours',
+  onClick: async () => {
+    if (volumeFlag) {
+      const viewport = <Types.IVolumeViewport>(
+        renderingEngine.getViewport(viewportId2)
+      );
+      const contours = await cornerstoneTools.utilities.getContoursForSlices(
+        surfaces[4].closedSurface.data,
+        viewport
+      );
+      downloadObjectAsJson(contours, 'contoursVolume');
+    } else {
+      const viewport = <Types.IStackViewport>(
+        renderingEngine.getViewport(viewportId1)
+      );
+      const contours = await cornerstoneTools.utilities.getContoursForSlices(
+        surfaces[4].closedSurface.data,
+        viewport
+      );
+      downloadObjectAsJson(contours, 'contoursStack');
+    }
   },
 });
 
@@ -233,13 +276,9 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_VOLUME_AXIAL';
-  const viewportId3 = 'CT_VOLUME_SAG';
-
   const viewportInputArray = [
     {
       viewportId: viewportId1,
@@ -298,20 +337,22 @@ async function run() {
   await surfaces.forEach((surface) => {
     const segmentationId = surface.closedSurface.id;
 
-    // // Add the segmentation representation to the toolgroup
-    segmentation.addSegmentationRepresentations(toolGroupIdStack, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-
-    segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
+    if (volumeFlag) {
+      // Add the segmentation representation to the toolgroup
+      segmentation.addSegmentationRepresentations(toolGroupIdStack, [
+        {
+          segmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Surface,
+        },
+      ]);
+    } else {
+      segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
+        {
+          segmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Surface,
+        },
+      ]);
+    }
   });
 
   // Render the image

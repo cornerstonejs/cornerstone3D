@@ -45,6 +45,7 @@ import * as viewport from './viewport';
 import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
+import { getContoursForSlices } from './polyData/getContoursForSlices';
 import * as voi from './voi';
 
 const roundNumber = utilities.roundNumber;
@@ -91,6 +92,7 @@ export {
   roundNumber,
   pointToString,
   polyDataUtils,
+  getContoursForSlices,
   voi,
   annotationFrameRange,
 };
