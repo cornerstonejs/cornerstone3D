@@ -856,7 +856,8 @@ class RectangleROITool extends AnnotationTool {
     enabledElement
   ) => {
     const { data } = annotation;
-    const { element, viewport } = enabledElement;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[3];

@@ -522,7 +522,8 @@ class ProbeTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { element, renderingEngineId, viewport } = enabledElement;
+    const { renderingEngineId, viewport } = enabledElement;
+    const { element } = viewport;
 
     const worldPos = data.handles.points[0];
     const { cachedStats } = data;
