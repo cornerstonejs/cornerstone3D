@@ -12,7 +12,7 @@ import type { Types } from '@cornerstonejs/core';
  * @param polyline - Polyline points (2D)
  * @returns Area of the polyline (with signal)
  */
-export default function getAreaWithSignal(polyline: Types.Point2[]): number {
+export default function getSignedArea(polyline: Types.Point2[]): number {
   // Reference point can be any point on the same plane
   const refPoint = polyline[0];
   let area = 0;

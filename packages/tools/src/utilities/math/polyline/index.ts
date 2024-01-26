@@ -2,7 +2,7 @@ import isClosed from './isClosed';
 import containsPoint from './containsPoint';
 import getAABB from './getAABB';
 import getArea from './getArea';
-import getAreaWithSignal from './getAreaWithSignal';
+import getSignedArea from './getSignedArea';
 import getNormal3 from './getNormal3';
 import getNormal2 from './getNormal2';
 import { mergePolylines, subtractPolylines } from './combinePolyline';
@@ -21,7 +21,7 @@ export {
   containsPoint,
   getAABB,
   getArea,
-  getAreaWithSignal,
+  getSignedArea,
   getNormal3,
   getNormal2,
   intersectPolyline,

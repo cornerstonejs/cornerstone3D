@@ -74,7 +74,11 @@ function getSourceAndTargetPointsList(
     PolylineIntersectionPoint[]
   >();
 
-  let intersectionPointDirection = PolylinePointDirection.Entering;
+  const isFisrtPointInside = containsPoint(sourcePolyline, targetPolyline[0]);
+
+  let intersectionPointDirection = isFisrtPointInside
+    ? PolylinePointDirection.Exiting
+    : PolylinePointDirection.Entering;
 
   // Store all vertices and intersection for target contour
   for (let i = 0, len = targetPolyline.length; i < len; i++) {
@@ -257,7 +261,7 @@ function mergePolylines(
   // Both polylines need to be CW or CCW to be merged and one of them needs to
   // be reversed if theirs orientation are not the same
   if (!glMatrix.equals(1, dotNormals)) {
-    sourcePolyline = sourcePolyline.reverse();
+    sourcePolyline = sourcePolyline.slice().reverse();
   }
 
   const { targetPolylinePoints } = getSourceAndTargetPointsList(
@@ -306,7 +310,7 @@ function subtractPolylines(
   // subtracted and one of them needs to be reversed if theirs orientation are
   // the same
   if (!glMatrix.equals(-1, dotNormals)) {
-    sourcePolyline = sourcePolyline.reverse();
+    sourcePolyline = sourcePolyline.slice().reverse();
   }
 
   const { targetPolylinePoints } = getSourceAndTargetPointsList(

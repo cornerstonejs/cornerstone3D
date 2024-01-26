@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import getAreaWithSignal from './getAreaWithSignal';
+import getSignedArea from './getSignedArea';
 
 /**
  * Calculate the normal of a 2D polyline
@@ -9,7 +9,7 @@ import getAreaWithSignal from './getAreaWithSignal';
  * @returns Normal of the 2D planar polyline
  */
 export default function getNormal2(polyline: Types.Point2[]): Types.Point3 {
-  const area = getAreaWithSignal(polyline);
+  const area = getSignedArea(polyline);
 
   // The normal of a 2D polyline is (0, 0, 1) or (0, 0, -1) depending if it
   // is CW or CCW polyline
