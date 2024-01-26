@@ -2,7 +2,6 @@ import {
   getEnabledElement,
   utilities as csUtils,
   Types,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
 import {
@@ -22,6 +21,8 @@ import {
   isContourSegmentationAnnotation,
   areContoursFromSameSegmentIndex,
 } from '.';
+import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
+import { PlanarFreehandContourSegmentationTool } from '../../../tools';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
@@ -58,6 +59,10 @@ export default function contourSegmentationCompletedListener(
     return;
   }
 
+  if (!isFreehandContourSegToolRegistered(viewport)) {
+    return;
+  }
+
   const { targetAnnotation, targetPolyline } = targetAnnotationInfo;
 
   processContours(
@@ -67,6 +72,32 @@ export default function contourSegmentationCompletedListener(
     targetAnnotation,
     targetPolyline
   );
+}
+
+function isFreehandContourSegToolRegistered(viewport: Types.IViewport) {
+  const { toolName } = PlanarFreehandContourSegmentationTool;
+
+  if (!cstHasTool(PlanarFreehandContourSegmentationTool)) {
+    console.warn(`${toolName} is not registered in cornerstone`);
+    return false;
+  }
+
+  const toolGroup = ToolGroupManager.getToolGroupForViewport(
+    viewport.id,
+    viewport.renderingEngineId
+  );
+
+  if (!toolGroup.hasTool(toolName)) {
+    console.warn(`Tool ${toolName} not added to ${toolGroup.id} toolGroup`);
+    return false;
+  }
+
+  if (!toolGroup.getToolOptions(toolName)) {
+    console.warn(`Tool ${toolName} must be in active/passive state`);
+    return false;
+  }
+
+  return true;
 }
 
 function convertContourPolylineToCanvasSpace(
