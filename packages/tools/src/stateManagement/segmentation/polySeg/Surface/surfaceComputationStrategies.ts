@@ -136,9 +136,7 @@ async function computeSurfaceFromContourSegmentation(
     segmentIndices?: number[];
   } = {}
 ): Promise<RawSurfacesData> {
-  convertStackToVolumeSegmentation({
-    segmentationId,
-  });
+  const segmentation = getSegmentation(segmentationId);
 
   const contourRepresentationData = segmentation.representationData.CONTOUR;
 
