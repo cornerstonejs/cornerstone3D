@@ -1,20 +1,10 @@
-import {
-  RenderingEngine,
-  Enums,
-  setVolumesForViewports,
-  volumeLoader,
-  CONSTANTS,
-  utilities,
-  Types,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
   addDropdownToToolbar,
-  addToggleButtonToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -38,7 +28,7 @@ const {
 } = cornerstoneTools;
 
 setTitleAndDescription(
-  'Contour Segmentation to Volume Labelmap Segmentation',
+  'Contour Segmentation to Stack Labelmap Segmentation',
   'This demonstration showcases the usage of PolySEG WASM module to convert a contour segmentation to a volume labelmap segmentation. Use the left viewport to draw a contour segmentation and then click on the button to convert it to a volume labelmap segmentation. The right viewport shows the volume labelmap segmentation.'
 );
 
@@ -52,6 +42,25 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 
 const size = '500px';
 const content = document.getElementById('content');
+
+const inlineContainer = document.createElement('div');
+inlineContainer.style.display = 'flex';
+inlineContainer.style.alignItems = 'center';
+inlineContainer.style.height = '40px';
+
+const label = document.createElement('label');
+label.innerHTML = 'Progress: ';
+
+const progressDetailP = document.createElement('p');
+progressDetailP.id = 'progressDetailP';
+progressDetailP.style.marginLeft = '8px';
+
+inlineContainer.appendChild(label);
+inlineContainer.appendChild(progressDetailP);
+
+// Append the container to the main content
+content.appendChild(inlineContainer);
+
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
@@ -123,6 +132,22 @@ addDropdownToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+
+  eventTarget.addEventListener(
+    cornerstoneTools.Enums.Events.POLYSEG_CONVERSION_STARTED,
+    (evt) => {
+      const p = document.getElementById('progressDetailP');
+      p.innerHTML = `Conversion started`;
+    }
+  );
+
+  eventTarget.addEventListener(
+    cornerstoneTools.Enums.Events.POLYSEG_CONVERSION_COMPLETED,
+    (evt) => {
+      const p = document.getElementById('progressDetailP');
+      p.innerHTML = `Conversion completed`;
+    }
+  );
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -245,10 +270,10 @@ async function run() {
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
   const viewport1 = renderingEngine.getViewport(viewportId1);
-  await viewport1.setStack(imageIds, 0);
+  await viewport1.setStack(imageIds, 1);
 
   const viewport2 = renderingEngine.getViewport(viewportId2);
-  await viewport2.setStack(imageIds, 0);
+  await viewport2.setStack(imageIds, 1);
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   // Add the segmentations to state

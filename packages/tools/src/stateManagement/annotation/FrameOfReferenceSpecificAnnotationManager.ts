@@ -365,6 +365,24 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
   };
 
+  getAllAnnotations = (): Annotations => {
+    const annotations = this.annotations;
+    const allAnnotations = [];
+
+    for (const groupKey in annotations) {
+      const frameOfReferenceSpecificAnnotations = annotations[groupKey];
+
+      for (const toolName in frameOfReferenceSpecificAnnotations) {
+        const toolSpecificAnnotations =
+          frameOfReferenceSpecificAnnotations[toolName];
+
+        allAnnotations.push(...toolSpecificAnnotations);
+      }
+    }
+
+    return allAnnotations;
+  };
+
   /**
    * A function that returns the number of all annotations in the annotation state
    *

@@ -38,7 +38,9 @@ export function isPointInsidePolyline2D(
     }
   }
 
-  return windingNumber % 2 !== 0;
+  const isInside = windingNumber % 2 !== 0;
+
+  return isInside;
 }
 
 /**

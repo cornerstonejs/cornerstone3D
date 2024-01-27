@@ -24,7 +24,7 @@ export default function containsPoint(
   const numPolylinePoints = polyline.length;
   let numIntersections = 0;
 
-  // Test intersection agains [end, start] line segment if it should be closed
+  // Test intersection against [end, start] line segment if it should be closed
   const shouldClose = !(closed === undefined ? isClosed(polyline) : closed);
   const maxSegmentIndex = polyline.length - (shouldClose ? 1 : 2);
 

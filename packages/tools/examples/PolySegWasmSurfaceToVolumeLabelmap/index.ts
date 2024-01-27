@@ -226,7 +226,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.ACQUISITION,
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
     },
   ];

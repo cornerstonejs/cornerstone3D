@@ -14,6 +14,7 @@ import {
   getAnnotations,
   addAnnotation,
   removeAnnotation,
+  getAllAnnotations,
 } from '../../../stateManagement/annotation/annotationState';
 import { AnnotationCompletedEventType } from '../../../types/EventTypes';
 import * as contourUtils from '../../../utilities/contours';
@@ -129,25 +130,18 @@ function getValidContourSegmentationAnnotations(
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
   const { annotationUID: sourceAnnotationUID } = sourceAnnotation;
-  const { FrameOfReferenceUID } = sourceAnnotation.metadata;
 
   // Get all annotations and filter all contour segmentations locally
-  const toolName = undefined;
-  const annotationsGroups = getAnnotations(toolName, FrameOfReferenceUID);
-  const toolNames = Object.keys(annotationsGroups);
+  const allAnnotations = getAllAnnotations();
 
-  return toolNames.reduce((validAnnotations, toolName) => {
-    const toolAnnotations = annotationsGroups[toolName].filter(
-      (targetAnnotation) =>
-        targetAnnotation.annotationUID &&
-        targetAnnotation.annotationUID !== sourceAnnotationUID &&
-        contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
-        contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
-        contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
-    );
-
-    return validAnnotations.concat(toolAnnotations);
-  }, []);
+  return allAnnotations.filter(
+    (targetAnnotation) =>
+      targetAnnotation.annotationUID &&
+      targetAnnotation.annotationUID !== sourceAnnotationUID &&
+      contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
+      contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
+      contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
+  ) as ContourSegmentationAnnotation[];
 }
 
 function findIntersectingContour(

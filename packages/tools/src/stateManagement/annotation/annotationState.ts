@@ -59,6 +59,11 @@ function getAnnotations(
   return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
+function getAllAnnotations(): Annotations {
+  const manager = getAnnotationManager();
+  return manager.getAllAnnotations();
+}
+
 /**
  * Add the annotation to the annotation manager along with the options that is
  * used to filter the annotation manager and the annotation group that
@@ -170,6 +175,7 @@ function removeAllAnnotations(): void {
 }
 
 export {
+  getAllAnnotations,
   getAnnotations,
   getNumberOfAnnotations,
   addAnnotation,

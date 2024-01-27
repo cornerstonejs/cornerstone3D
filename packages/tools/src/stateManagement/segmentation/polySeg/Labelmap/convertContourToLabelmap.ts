@@ -9,10 +9,13 @@ import {
   imageLoader,
   metaData,
   Enums,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
 import { Annotation, ContourSegmentationData } from '../../../../types';
 import { getAnnotation } from '../../..';
 import { vec3 } from 'gl-matrix';
+import { Events } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
@@ -68,6 +71,8 @@ export async function convertContourToVolumeLabelmap(
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);
 
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_STARTED, {});
+
   const newScalarData = await workerManager.executeTask(
     'polySeg',
     'convertContourToVolumeLabelmap',
@@ -88,6 +93,8 @@ export async function convertContourToVolumeLabelmap(
       ],
     }
   );
+
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_COMPLETED);
 
   segmentationVolume.imageData
     .getPointData()
@@ -135,21 +142,6 @@ export async function convertContourToStackLabelmap(
       );
     }
   });
-
-  // check if they are the same size and throw not yet otherwise
-  // const firstImageId = imageIds[0];
-  // const firstImage = cache.getImage(firstImageId);
-  // imageIds.forEach((imageId) => {
-  //   const image = cache.getImage(imageId);
-  //   if (
-  //     image.width !== firstImage.width ||
-  //     image.height !== firstImage.height
-  //   ) {
-  //     throw new Error(
-  //       'All images must be the same size before converting contour to labelmap'
-  //     );
-  //   }
-  // });
 
   // create
   const { imageIds: segmentationImageIds } =
@@ -223,6 +215,7 @@ export async function convertContourToStackLabelmap(
     });
   });
 
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_STARTED, {});
   const newSegmentationsScalarData = await workerManager.executeTask(
     'polySeg',
     'convertContourToStackLabelmap',
@@ -239,6 +232,10 @@ export async function convertContourToStackLabelmap(
       ],
     }
   );
+
+  debugger;
+
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_COMPLETED);
 
   const imageIdReferenceMap = new Map();
   newSegmentationsScalarData.forEach(({ scalarData }, referencedImageId) => {
@@ -272,7 +269,6 @@ function _getAnnotationMapFromSegmentation(
     : Array.from(annotationMap.keys());
 
   const annotationUIDsInSegmentMap = new Map<number, Annotation[]>();
-
   segmentIndices.forEach((index) => {
     const annotationUIDsInSegment = annotationMap.get(index);
 
