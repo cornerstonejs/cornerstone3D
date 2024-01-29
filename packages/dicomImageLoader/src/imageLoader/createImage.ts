@@ -246,7 +246,9 @@ function createImage(
             imageData = {
               ...imageData,
               data: new Uint8ClampedArray(
-                3 * imageFrame.columns * imageFrame.rows
+                imageFrame.samplesPerPixel *
+                  imageFrame.columns *
+                  imageFrame.rows
               ),
             };
           }
