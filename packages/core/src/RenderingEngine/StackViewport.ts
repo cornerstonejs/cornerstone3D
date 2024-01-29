@@ -1600,7 +1600,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const values = new pixelArray.constructor(pixelArray.length);
 
     // Todo: I guess nothing should be done for use16bit?
-        try {
+    try {
       const scalarArray = vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: numComps,
