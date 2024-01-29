@@ -1600,21 +1600,22 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const values = new pixelArray.constructor(pixelArray.length);
 
     // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numComps,
-      values: values,
-    });
-
-    const imageData = vtkImageData.newInstance();
-
-    imageData.setDimensions(dimensions);
-    imageData.setSpacing(spacing);
-    imageData.setDirection(direction);
-    imageData.setOrigin(origin);
-    imageData.getPointData().setScalars(scalarArray);
-
-    return imageData;
+        try {
+      const scalarArray = vtkDataArray.newInstance({
+        name: 'Pixels',
+        numberOfComponents: numComps,
+        values: values,
+      });
+      const imageData = vtkImageData.newInstance();
+      imageData.setDimensions(dimensions);
+      imageData.setSpacing(spacing);
+      imageData.setDirection(direction);
+      imageData.setOrigin(origin);
+      imageData.getPointData().setScalars(scalarArray);
+      return imageData;
+    } catch (error) {
+      throw new Error((error as RangeError).message);
+    }
   }
   /**
    * Creates vtkImagedata based on the image object, it creates
@@ -2074,11 +2075,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
     return this.imagesLoader.loadImages([imageId], this).then((v) => {
-      if (Array.isArray(v)) {
-        if (v[0]?.status === 'rejected') {
-          throw new RangeError(v[0]?.reason);
-        }
-      }
       return imageId;
     });
   }
