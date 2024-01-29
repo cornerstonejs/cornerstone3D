@@ -1605,15 +1605,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       numberOfComponents: numComps,
       values: values,
     });
-    
+
     const imageData = vtkImageData.newInstance();
-    
+
     imageData.setDimensions(dimensions);
     imageData.setSpacing(spacing);
     imageData.setDirection(direction);
     imageData.setOrigin(origin);
     imageData.getPointData().setScalars(scalarArray);
-    
+
     return imageData;
   }
   /**
