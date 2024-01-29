@@ -254,6 +254,8 @@ function mergePolylines(
   targetPolyline: Types.Point2[],
   sourcePolyline: Types.Point2[]
 ) {
+  console.log('>>>>> :: sourcePolyline:', sourcePolyline);
+  console.log('>>>>> :: targetPolyline:', targetPolyline);
   const targetNormal = getNormal2(targetPolyline);
   const sourceNormal = getNormal2(sourcePolyline);
   const dotNormals = vec3.dot(sourceNormal, targetNormal);

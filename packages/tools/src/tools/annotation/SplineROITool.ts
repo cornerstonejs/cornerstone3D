@@ -41,6 +41,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
 import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
@@ -667,6 +668,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     data.contour.polyline = splinePolylineWorld;
+    data.contour.windingDirection = ContourWindingDirection.CW;
 
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);

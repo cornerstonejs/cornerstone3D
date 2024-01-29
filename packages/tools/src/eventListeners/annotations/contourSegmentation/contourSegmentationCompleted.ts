@@ -1,3 +1,4 @@
+import { glMatrix, vec2, vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -23,9 +24,40 @@ import { PlanarFreehandContourSegmentationTool } from '../../../tools';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
+function debug(annotation: ContourSegmentationAnnotation) {
+  const viewport = getViewportForAnnotation(annotation);
+  const polyline = convertContourPolylineToCanvasSpace(
+    annotation.data.contour.polyline,
+    viewport
+  );
+  const normal = math.polyline.getNormal2(polyline);
+  console.log('>>>>> normal:', normal);
+
+  // prettier-ignore
+  const rectCW = [[200, 200], [300, 200], [300, 300], [200, 300]];
+  const rectCWNormal = math.polyline.getNormal2(rectCW as Types.Point2[]);
+  console.log('>>>>> rectCWNormal:', rectCWNormal);
+  const rectCWWindingDir = math.polyline.getWindingDirection(
+    rectCW as Types.Point2[]
+  );
+  console.log('>>>>> rectCWWindingDir:', rectCWWindingDir);
+
+  // prettier-ignore
+  const rectCCW = [[100, 100], [400, 100], [400, 400], [100, 400]].reverse();
+  const rectCCWNormal = math.polyline.getNormal2(rectCCW as Types.Point2[]);
+  console.log('>>>>> rectCCWNormal:', rectCCWNormal);
+  const rectCCWWindingDir = math.polyline.getWindingDirection(
+    rectCCW as Types.Point2[]
+  );
+  console.log('>>>>> rectCCWWindingDir:', rectCCWWindingDir);
+}
+
 export default function contourSegmentationCompletedListener(
   evt: AnnotationCompletedEventType
 ) {
+  // debug(evt.detail.annotation as ContourSegmentationAnnotation);
+  // return;
+
   const sourceAnnotation = evt.detail
     .annotation as ContourSegmentationAnnotation;
 
@@ -60,15 +92,35 @@ export default function contourSegmentationCompletedListener(
     return;
   }
 
-  const { targetAnnotation, targetPolyline } = targetAnnotationInfo;
+  const { targetAnnotation, targetPolyline, isHole } = targetAnnotationInfo;
 
-  processContours(
-    viewport,
-    sourceAnnotation,
-    sourcePolyline,
-    targetAnnotation,
-    targetPolyline
-  );
+  console.log('>>>>> targetAnnotationInfo:', targetAnnotationInfo);
+  // return;
+
+  if (isHole) {
+    // prettier-ignore
+    const targetPolylineTest = [[200, 200], [300, 200], [300, 300], [200, 300]];
+    // prettier-ignore
+    const sourcePolylineTest = [[100, 100], [400, 100], [400, 400], [100, 400]].reverse();
+
+    createPolylineHole(
+      viewport,
+      targetAnnotation,
+      // targetPolyline,
+      targetPolylineTest as Types.Point2[],
+      sourceAnnotation,
+      // sourcePolyline
+      sourcePolylineTest as Types.Point2[]
+    );
+  } else {
+    appendOrRemovePolylines(
+      viewport,
+      targetAnnotation,
+      targetPolyline,
+      sourceAnnotation,
+      sourcePolyline
+    );
+  }
 }
 
 function isFreehandContourSegToolRegistered(viewport: Types.IViewport) {
@@ -150,6 +202,19 @@ function getValidContourSegmentationAnnotations(
   }, []);
 }
 
+function doesPolylineContainsPoints(
+  polyline: Types.Point2[],
+  points: Types.Point2[]
+) {
+  for (let i = 0, numPoint = points.length; i < numPoint; i++) {
+    if (!math.polyline.containsPoint(polyline, points[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function findIntersectingContour(
   viewport: Types.IViewport,
   sourcePolyline: Types.Point2[],
@@ -157,6 +222,7 @@ function findIntersectingContour(
 ): {
   targetAnnotation: ContourSegmentationAnnotation;
   targetPolyline: Types.Point2[];
+  isHole: boolean;
 } {
   const sourceAABB = math.polyline.getAABB(sourcePolyline);
 
@@ -168,22 +234,74 @@ function findIntersectingContour(
     );
 
     const targetAABB = math.polyline.getAABB(targetPolyline);
-    const polylinesIntersect =
-      math.aabb.intersectAABB(sourceAABB, targetAABB) &&
+    const aabbIntersect = math.aabb.intersectAABB(sourceAABB, targetAABB);
+    const lineSegmentsIntersect =
+      aabbIntersect &&
       math.polyline.intersectPolyline(sourcePolyline, targetPolyline);
+    const isHole =
+      aabbIntersect &&
+      !lineSegmentsIntersect &&
+      doesPolylineContainsPoints(targetPolyline, sourcePolyline);
 
-    if (polylinesIntersect) {
-      return { targetAnnotation, targetPolyline };
+    if (lineSegmentsIntersect || isHole) {
+      return { targetAnnotation, targetPolyline, isHole };
     }
   }
 }
 
-function processContours(
+function createPolylineHole(
   viewport: Types.IViewport,
-  sourceAnnotation: ContourSegmentationAnnotation,
-  sourcePolyline: Types.Point2[],
   targetAnnotation: ContourSegmentationAnnotation,
-  targetPolyline: Types.Point2[]
+  targetPolyline: Types.Point2[],
+  holeAnnotation: ContourSegmentationAnnotation,
+  holePolyline: Types.Point2[]
+) {
+  const targetPolylineNormal = math.polyline.getNormal2(targetPolyline);
+  const holePolylineNormal = math.polyline.getNormal2(holePolyline);
+  const dotNormals = vec3.dot(targetPolylineNormal, holePolylineNormal);
+
+  // Check if both normals are pointing to the same direction because the
+  // polyline for the hole needs to be in a different direction
+  if (glMatrix.equals(1, dotNormals)) {
+    holeAnnotation.data.contour.polyline =
+      holeAnnotation.data.contour.polyline.reverse();
+  }
+
+  targetAnnotation.childrenAnnotationUIDs =
+    targetAnnotation.childrenAnnotationUIDs || [];
+
+  // Link both annotations
+  targetAnnotation.childrenAnnotationUIDs.push(holeAnnotation.annotationUID);
+  holeAnnotation.parentAnnotationUID = targetAnnotation.annotationUID;
+
+  // ---------------------------------------------------------------------------
+
+  const { element } = viewport;
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine } = enabledElement;
+
+  // Updating a Spline contours, for example, should also update freehand contours
+  const updatedTtoolNames = new Set([
+    DEFAULT_CONTOUR_SEG_TOOLNAME,
+    targetAnnotation.metadata.toolName,
+    holeAnnotation.metadata.toolName,
+  ]);
+
+  for (const toolName of updatedTtoolNames.values()) {
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      toolName
+    );
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  }
+}
+
+function appendOrRemovePolylines(
+  viewport: Types.IViewport,
+  targetAnnotation: ContourSegmentationAnnotation,
+  targetPolyline: Types.Point2[],
+  sourceAnnotation: ContourSegmentationAnnotation,
+  sourcePolyline: Types.Point2[]
 ) {
   const sourceStartPoint = sourcePolyline[0];
   const mergePolylines = math.polyline.containsPoint(
@@ -257,6 +375,7 @@ function processContours(
     const updatedTtoolNames = new Set([
       DEFAULT_CONTOUR_SEG_TOOLNAME,
       targetAnnotation.metadata.toolName,
+      sourceAnnotation.metadata.toolName,
     ]);
 
     for (const toolName of updatedTtoolNames.values()) {

@@ -22,6 +22,8 @@ export default function filterAnnotationsForDisplay(
   viewport: Types.IViewport,
   annotations: Annotations
 ): Annotations {
+  let filteredAnnotations: Annotations;
+
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId();
@@ -37,7 +39,7 @@ export default function filterAnnotationsForDisplay(
     // show the annotation on a volume that does not share the same imageURIs (CT Volume),
     // and we don't have a proper way to check distance either since a stack can be
     // composed of multiple unrelated images
-    return annotations.filter((annotation) => {
+    filteredAnnotations = annotations.filter((annotation) => {
       if (!annotation.isVisible) {
         return false;
       }
@@ -62,7 +64,7 @@ export default function filterAnnotationsForDisplay(
   } else if (viewport instanceof VideoViewport) {
     const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
 
-    return annotations.filter((annotation) => {
+    filteredAnnotations = annotations.filter((annotation) => {
       if (!annotation.isVisible) {
         return false;
       }
@@ -91,7 +93,7 @@ export default function filterAnnotationsForDisplay(
       csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera);
 
     // Get data with same normal and within the same slice
-    return filterAnnotationsWithinSlice(
+    filteredAnnotations = filterAnnotationsWithinSlice(
       annotations,
       camera,
       spacingInNormalDirection
@@ -99,4 +101,8 @@ export default function filterAnnotationsForDisplay(
   } else {
     throw new Error(`Viewport Type ${viewport.type} not supported`);
   }
+
+  return filteredAnnotations.filter(
+    (annotation) => !annotation.parentAnnotationUID
+  );
 }

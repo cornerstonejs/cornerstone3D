@@ -2,6 +2,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
+  getAnnotation,
   getAnnotations,
 } from '../../stateManagement/annotation/annotationState';
 import type {
@@ -205,6 +206,9 @@ abstract class ContourBaseTool extends AnnotationTool {
     );
     const { lineWidth, lineDash, color, fillColor, fillOpacity } =
       annotationStyle;
+
+    // Get children polylines
+    // getAnnotation
 
     drawPolylineSvg(
       svgDrawingHelper,

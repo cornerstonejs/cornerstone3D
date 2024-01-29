@@ -3,6 +3,10 @@ import type { Types } from '@cornerstonejs/core';
 type Annotation = {
   /** A unique identifier for this annotation */
   annotationUID?: string;
+
+  parentAnnotationUID?: string;
+  childrenAnnotationUIDs?: string[];
+
   /** If the annotation is being hovered over and is highlighted */
   highlighted?: boolean;
   /** If the annotation is locked for manipulation */
