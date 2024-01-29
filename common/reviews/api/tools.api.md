@@ -876,6 +876,8 @@ enum ChangeTypes {
     // (undocumented)
     Interaction = "Interaction",
     // (undocumented)
+    InterpolationUpdate = "InterpolationUpdate",
+    // (undocumented)
     StatsUpdated = "StatsUpdated"
 }
 
@@ -2527,6 +2529,7 @@ type InterpolationROIAnnotation = ContourAnnotation & {
         referencedSliceIndex?: number;
     };
     interpolationUID?: string;
+    isInterpolationUpdate?: boolean;
 };
 
 // @public (undocumented)
@@ -2535,6 +2538,7 @@ type InterpolationViewportData = {
     interpolationUID: string;
     viewport: Types_2.IViewport;
     sliceData: Types_2.ImageSliceData;
+    isInterpolationUpdate?: boolean;
 };
 
 // @public (undocumented)
@@ -3056,7 +3060,11 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
+    protected clearEditData(): void;
+    // (undocumented)
     protected createAnnotation(evt: EventTypes_2.InteractionEventType): LivewireContourAnnotation;
+    // (undocumented)
+    deleteInProgress(element: any, config: any, evt: any): void;
     // (undocumented)
     editData: {
         annotation: LivewireContourAnnotation;
@@ -3076,7 +3084,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     editHandle(worldPos: Types_2.Point3, element: any, annotation: any, handleIndex: number): void;
     // (undocumented)
-    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    _endCallback: (evt: EventTypes_2.InteractionEventType, clearAnnotation?: boolean) => void;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation, handle: ToolHandle) => void;
     // (undocumented)

@@ -57,10 +57,6 @@ interpolationTools.set('LivewireInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
 });
-interpolationTools.set('LivewireInterpolationSmooth1', {
-  baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: { interpolation: { enabled: true, smoothHandles: 1 } },
-});
 interpolationTools.set('FreeformInterpolation', {
   baseTool: PlanarFreehandContourSegmentationTool.toolName,
   configuration,

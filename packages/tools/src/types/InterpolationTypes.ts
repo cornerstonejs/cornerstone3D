@@ -14,6 +14,8 @@ export type InterpolationViewportData = {
   /** The viewport that this interpolation is occurring within */
   viewport: Types.IViewport;
   sliceData: Types.ImageSliceData;
+  /** True if the interpolation data is being regenerated because of an update */
+  isInterpolationUpdate?: boolean;
 };
 
 export type ImageInterpolationData = {

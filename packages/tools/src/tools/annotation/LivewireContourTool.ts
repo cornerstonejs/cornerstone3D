@@ -70,6 +70,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         interpolation: { enabled: false, smoothHandles: 0, nearestEdge: 0 },
+        actions: {
+          deleteInProgress: {
+            method: 'deleteInProgress',
+            bindings: [
+              {
+                key: 'Escape',
+              },
+            ],
+          },
+        },
       },
     }
   ) {
@@ -333,7 +343,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     evt.preventDefault();
   };
 
-  _endCallback = (evt: EventTypes.InteractionEventType): void => {
+  _endCallback = (
+    evt: EventTypes.InteractionEventType,
+    clearAnnotation = false
+  ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -351,10 +364,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { renderingEngine } = enabledElement;
 
     if (
-      this.isHandleOutsideImage &&
-      this.configuration.preventHandleOutsideImage
+      (this.isHandleOutsideImage &&
+        this.configuration.preventHandleOutsideImage) ||
+      clearAnnotation
     ) {
       removeAnnotation(annotation.annotationUID);
+      this.clearEditData();
+      triggerAnnotationRenderForViewportIds(
+        renderingEngine,
+        viewportIdsToRender
+      );
+      return;
     }
 
     // Reverse the points if needed, ensuring both the handles and the
@@ -384,12 +404,15 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     };
 
     triggerEvent(eventTarget, eventType, eventDetailModified);
+    this.clearEditData();
+  };
 
+  protected clearEditData() {
     this.editData = null;
     this.scissors = null;
     this.scissorsRight = null;
     this.isDrawing = false;
-  };
+  }
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
     const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
@@ -774,6 +797,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   }
 
   /**
+   * Clears any in progress edits, mostly used to get rid of accidentally started
+   * contours that happen on clicking not quite the right handle point.
+   */
+  public deleteInProgress(element, config, evt) {
+    if (!this.editData) {
+      return;
+    }
+    this._endCallback(evt, true);
+  }
+
+  /**
    * Updates the interpolated annotations with the currently displayed image data,
    * performing hte livewire on the image data as generated.
    */
@@ -792,42 +826,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const { scissors } = this;
       annotation.data.contour.originalPolyline =
         annotation.data.contour.polyline;
-      const { smoothHandles, nearestEdge } = this.configuration.interpolation;
+      const { nearestEdge } = this.configuration.interpolation;
       annotation.data.handles.originalPoints = points;
       const { worldToSlice, sliceToWorld } = this.editData;
       const handleSmoothing = [];
 
       // New path generation - go through the handles and regenerate the polyline
-      if (smoothHandles) {
-        const smoothingOffset = smoothHandles;
-        for (let i = 0; i < count; i++) {
-          scissors.startSearch(worldToSlice(points[i]));
-          const path = scissors.findPathToPoint(
-            worldToSlice(points[(i + 1) % count])
-          );
-          handleSmoothing.push(path[smoothingOffset]);
-          handleSmoothing.push(path[path.length - smoothingOffset]);
-        }
-        // Recreate the handles as smoothed handles
-        const smoothingCount = 2 * count;
-        for (let i = 0; i < count; i++) {
-          const smoothingIndex = 2 * i;
-          const previousCanvas =
-            handleSmoothing[
-              (smoothingIndex - 1 + smoothingCount) % smoothingCount
-            ];
-          const nextCanvas =
-            handleSmoothing[(smoothingIndex + 1) % smoothingCount];
-          if (!previousCanvas || !nextCanvas) {
-            // Only for very short paths.
-            continue;
-          }
-          const newHandle = previousCanvas.map(
-            (v, j) => (v + nextCanvas[j]) / 2
-          );
-          points[i] = sliceToWorld(newHandle);
-        }
-      } else if (nearestEdge) {
+      if (nearestEdge) {
         // Nearest edge handling
         points.forEach((point, hIndex) => {
           const testPoint = worldToSlice(point);
@@ -841,7 +846,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         });
       }
 
-      // Finally, regenerate the updated data
+      // Regenerate the updated data based on the updated handles
       const acceptedPath = new LivewirePath();
       for (let i = 0; i < count; i++) {
         scissors.startSearch(worldToSlice(points[i]));
@@ -861,11 +866,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this.triggerAnnotationModified(
         annotation,
         enabledElement,
-        ChangeTypes.HandlesUpdated
+        ChangeTypes.InterpolationUpdate
       );
       // Might have created new interpolation sources, so clear again
       annotation.data.handles.interpolationSources = null;
-      annotation.autoGenerated = true;
     });
   }
 

@@ -20,6 +20,11 @@ import getViewportForAnnotation from '../../getViewportForAnnotation';
 
 const { uuidv4 } = csUtils;
 
+const ChangeTypesForInterpolation = [
+  ChangeTypes.HandlesUpdated,
+  ChangeTypes.InterpolationUpdate,
+];
+
 export default class InterpolationManager {
   static toolNames = [];
 
@@ -163,7 +168,7 @@ export default class InterpolationManager {
 
     if (
       !this.toolNames.includes(toolName) ||
-      changeType !== ChangeTypes.HandlesUpdated
+      !ChangeTypesForInterpolation.includes(changeType)
     ) {
       return;
     }
@@ -184,6 +189,7 @@ export default class InterpolationManager {
       sliceData,
       annotation,
       interpolationUID: annotation.interpolationUID,
+      isInterpolationUpdate: changeType === ChangeTypes.InterpolationUpdate,
     };
     interpolate(viewportData);
   };

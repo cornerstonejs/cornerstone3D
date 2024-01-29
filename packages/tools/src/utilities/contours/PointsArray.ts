@@ -79,6 +79,21 @@ export class PointsArray<T> {
     ) as unknown as T;
   }
 
+  public getPointArray(index: number): T {
+    const array = [];
+    if (index < 0) {
+      index += this._length;
+    }
+    if (index < 0 || index >= this._length) {
+      return;
+    }
+    const offset = this._dimensions * index;
+    for (let i = 0; i < this._dimensions; i++) {
+      array.push(this.data[i + offset]);
+    }
+    return array as unknown as T;
+  }
+
   /**
    * Adds the additional amount requested
    */
