@@ -1,8 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
-  eventTarget,
-  triggerEvent,
   utilities as csUtils,
   VolumeViewport,
 } from '@cornerstonejs/core';
@@ -26,7 +24,10 @@ import type {
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import {
+  triggerAnnotationModified,
+  triggerAnnotationCompleted,
+} from '../../stateManagement/annotation/helpers/state';
 import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
@@ -390,20 +391,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    const eventType = newAnnotation
-      ? Events.ANNOTATION_COMPLETED
-      : Events.ANNOTATION_MODIFIED;
-    const { viewportId, renderingEngineId } = enabledElement;
-    const eventDetailModified: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-      changeType: newAnnotation
-        ? ChangeTypes.Completed
-        : ChangeTypes.HandlesUpdated,
-    };
+    const changeType = newAnnotation
+      ? ChangeTypes.Completed
+      : ChangeTypes.HandlesUpdated;
 
-    triggerEvent(eventTarget, eventType, eventDetailModified);
+    this.triggerChangeEvent(annotation, enabledElement, changeType);
     this.clearEditData();
   };
 
@@ -413,6 +405,21 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.scissorsRight = null;
     this.isDrawing = false;
   }
+
+  /**
+   * Triggers an annotation complete or modified event based on changeType.
+   */
+  triggerChangeEvent = (
+    annotation: LivewireContourAnnotation,
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.StatsUpdated
+  ): void => {
+    if (changeType === ChangeTypes.Completed) {
+      triggerAnnotationCompleted(annotation);
+    } else {
+      triggerAnnotationModified(annotation, enabledElement, changeType);
+    }
+  };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
     const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
@@ -684,27 +691,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return annotation.annotationUID;
   };
 
-  /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: LivewireContourAnnotation,
-    enabledElement: Types.IEnabledElement,
-    changeType: ChangeTypes = ChangeTypes.HandlesUpdated
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-      changeType,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
   private _activateModify = (element) => {
     state.isInteractingWithTool = true;
 
@@ -865,7 +851,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation.data.handles.interpolationSources = null;
 
       if (repeatInterpolation) {
-        this.triggerAnnotationModified(
+        triggerAnnotationModified(
           annotation,
           enabledElement,
           ChangeTypes.InterpolationUpdate

@@ -4,10 +4,18 @@ import {
   eventTarget,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { Events } from '../../../enums';
 import { Annotation } from '../../../types/AnnotationTypes';
+import ChangeTypes from '../../../enums/ChangeTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
-import { AnnotationAddedEventDetail } from '../../../types/EventTypes';
+import {
+  AnnotationAddedEventDetail,
+  AnnotationModifiedEventDetail,
+  AnnotationCompletedEventDetail,
+} from '../../../types/EventTypes';
+
+type IEnabledElement = Types.IEnabledElement;
 
 /**
  * It triggers an event for the element when an annotation is added
@@ -76,4 +84,42 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
   });
 }
 
-export { triggerAnnotationAddedForElement, triggerAnnotationAddedForFOR };
+/**
+ * Triggers an annotation modified event.
+ */
+function triggerAnnotationModified(
+  annotation: Annotation,
+  element: HTMLDivElement | IEnabledElement,
+  changeType = ChangeTypes.HandlesUpdated
+): void {
+  const enabledElement = getEnabledElement(element);
+  const { viewportId, renderingEngineId } = enabledElement;
+  const eventType = Events.ANNOTATION_MODIFIED;
+  const eventDetail: AnnotationModifiedEventDetail = {
+    annotation,
+    viewportId,
+    renderingEngineId,
+    changeType,
+  };
+
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event.
+ */
+function triggerAnnotationCompleted(annotation: Annotation): void {
+  const eventType = Events.ANNOTATION_COMPLETED;
+  const eventDetail: AnnotationCompletedEventDetail = {
+    annotation,
+  };
+
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+export {
+  triggerAnnotationAddedForElement,
+  triggerAnnotationAddedForFOR,
+  triggerAnnotationModified,
+  triggerAnnotationCompleted,
+};

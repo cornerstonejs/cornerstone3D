@@ -1,4 +1,5 @@
 import { Types } from '@cornerstonejs/core';
+import { getSignedArea } from '../math/polyline';
 
 /**
  * _reverseIfAntiClockwise - If the contour's nodes run anti-clockwise,
@@ -13,36 +14,16 @@ export default function reverseIfAntiClockwise(
   points: Types.Point2[],
   ...otherListsToReverse: unknown[][]
 ) {
-  const length = points.length;
-  if (!length) {
-    return points;
-  }
-  let xSum = 0;
-  for (const point of points) {
-    xSum += point[0];
-  }
-  const xMean = xSum / length;
+  const signedArea = getSignedArea(points);
 
-  let checkSum = 0;
-
-  for (let k = 0, i = 1, j = 2; k < length; k++) {
-    checkSum += (points[i][0] - xMean) * (points[j][1] - points[k][1]);
-    i++;
-    j++;
-    if (i >= length) {
-      i = 0;
-    }
-    if (j >= length) {
-      j = 0;
-    }
-  }
-
-  // Checksum will be less than zero for anti-clockwise
-  if (checkSum < 0) {
+  // signedArea will be less than zero for anti-clockwise
+  if (signedArea < 0) {
     if (otherListsToReverse) {
       otherListsToReverse.forEach((list) => list.reverse());
     }
+
     return points.slice().reverse();
   }
+
   return points;
 }

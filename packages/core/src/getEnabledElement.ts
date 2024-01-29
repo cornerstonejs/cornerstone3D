@@ -32,13 +32,17 @@ import { IEnabledElement, IStackViewport, IVolumeViewport } from './types';
  * can be found
  */
 export default function getEnabledElement(
-  element: HTMLDivElement | undefined
+  element: HTMLDivElement | IEnabledElement | undefined
 ): IEnabledElement | undefined {
   if (!element) {
     return;
   }
+  if ((element as IEnabledElement).viewport?.element) {
+    return element as IEnabledElement;
+  }
 
-  const { viewportUid, renderingEngineUid } = element.dataset;
+  const { viewportUid, renderingEngineUid } = (element as HTMLDivElement)
+    .dataset;
 
   return getEnabledElementByIds(viewportUid, renderingEngineUid);
 }

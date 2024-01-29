@@ -98,6 +98,11 @@ class WindowLevelTool extends BaseTool {
       });
     }
 
+    // If the range is not valid. Do nothing
+    if (newRange.lower >= newRange.upper) {
+      return;
+    }
+
     viewport.setProperties({
       voiRange: newRange,
     });

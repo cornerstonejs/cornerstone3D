@@ -1,3 +1,4 @@
+import areCoplanarContours from './areCoplanarContours';
 import contourFinder from './contourFinder';
 import mergePoints from './mergePoints';
 import detectContourHoles from './detectContourHoles';
@@ -8,6 +9,7 @@ import * as interpolation from './interpolation';
 import findHandlePolylineIndex from './findHandlePolylineIndex';
 
 export {
+  areCoplanarContours,
   contourFinder,
   mergePoints,
   detectContourHoles,

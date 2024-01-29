@@ -24,6 +24,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace aabb {
     export {
+        intersectAABB,
         distanceToPoint,
         distanceToPointSquared
     }
@@ -404,6 +405,15 @@ type AnnotationRemovedEventDetail = {
 type AnnotationRemovedEventType = Types_2.CustomEventType<AnnotationRemovedEventDetail>;
 
 // @public (undocumented)
+type AnnotationRenderContext = {
+    enabledElement: Types_2.IEnabledElement;
+    targetId: string;
+    annotation: Annotation;
+    annotationStyle: Record<string, any>;
+    svgDrawingHelper: SVGDrawingHelper;
+};
+
+// @public (undocumented)
 type AnnotationRenderedEventDetail = {
     element: HTMLDivElement;
     viewportId: string;
@@ -524,6 +534,9 @@ type AnnotationVisibilityChangeEventDetail = {
 
 // @public (undocumented)
 type AnnotationVisibilityChangeEventType = Types_2.CustomEventType<AnnotationVisibilityChangeEventDetail>;
+
+// @public (undocumented)
+function areCoplanarContours(firstAnnotation: ContourAnnotation, secondAnnotation: ContourAnnotation): boolean;
 
 // @public (undocumented)
 export class ArrowAnnotateTool extends AnnotationTool {
@@ -831,9 +844,6 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     protected updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
-
-// @public (undocumented)
-function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
 abstract class Calculator {
@@ -1340,6 +1350,9 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
+function containsPoint(polyline: Types_2.Point2[], point: Types_2.Point2, closed?: boolean): boolean;
+
+// @public (undocumented)
 function contourAndFindLargestBidirectional(segmentation: any): any;
 
 // @public (undocumented)
@@ -1361,6 +1374,7 @@ type ContourAnnotationData = {
 
 declare namespace contours {
     export {
+        areCoplanarContours,
         _default_2 as contourFinder,
         _default_3 as mergePoints,
         _default_4 as detectContourHoles,
@@ -2175,6 +2189,9 @@ function generateContourSetsFromLabelmap({ segmentations }: {
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
 
 // @public (undocumented)
+function getAABB(polyline: Types_2.Point2[]): Types_2.AABB2;
+
+// @public (undocumented)
 function getActiveSegmentation(toolGroupId: string): Segmentation;
 
 // @public (undocumented)
@@ -2223,6 +2240,9 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
+function getArea(points: Types_2.Point2[]): number;
+
+// @public (undocumented)
 function getBoundingBoxAroundShapeIJK(points: Types_2.Point2[] | Types_2.Point3[], dimensions?: Types_2.Point2 | Types_2.Point3): BoundingBox;
 
 // @public (undocumented)
@@ -2250,7 +2270,7 @@ const getCalibratedScale: (image: any, handles?: any[]) => any;
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
-function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
+function getClosestLineSegmentIntersection(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
     segment: Types_2.Point2;
     distance: number;
 } | undefined;
@@ -2287,7 +2307,7 @@ function getDeltaPoints(currentPoints: IPoints[], lastPoints: IPoints[]): IPoint
 function getDeltaRotation(currentPoints: ITouchPoints[], lastPoints: ITouchPoints[]): void;
 
 // @public (undocumented)
-function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
+function getFirstLineSegmentIntersectionIndexes(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
 function getFont(styleSpecifier: StyleSpecifier, state?: AnnotationStyleStates, mode?: ToolModes): string;
@@ -2302,6 +2322,12 @@ function getGlobalConfig_2(): SegmentationRepresentationConfig;
 function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
 
 // @public (undocumented)
+function getLineSegmentIntersectionsCoordinates(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2[];
+
+// @public (undocumented)
+function getLineSegmentIntersectionsIndexes(polyline: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2[];
+
+// @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
 
 // @public (undocumented)
@@ -2312,6 +2338,12 @@ function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
 function getNextColorLUTIndex(): number;
+
+// @public (undocumented)
+function getNormal2(polyline: Types_2.Point2[]): Types_2.Point3;
+
+// @public (undocumented)
+function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 
 // @public (undocumented)
 function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
@@ -2360,6 +2392,9 @@ function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentatio
 
 // @public (undocumented)
 function getSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): boolean;
+
+// @public (undocumented)
+function getSignedArea(polyline: Types_2.Point2[]): number;
 
 // @public (undocumented)
 function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData, viewport: any): {
@@ -2542,7 +2577,13 @@ type InterpolationViewportData = {
 };
 
 // @public (undocumented)
+function intersectAABB(aabb1: Types_2.AABB2, aabb2: Types_2.AABB2): boolean;
+
+// @public (undocumented)
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+
+// @public (undocumented)
+function intersectPolyline(sourcePolyline: Types_2.Point2[], targetPolyline: Types_2.Point2[]): boolean;
 
 // @public (undocumented)
 function invalidateBrushCursor(toolGroupId: string): void;
@@ -2569,6 +2610,9 @@ function isAnnotationVisible(annotationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function isAxisAlignedRectangle(rectangleCornersIJK: any): boolean;
+
+// @public (undocumented)
+function isClosed(polyline: Types_2.Point2[]): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -2678,7 +2722,7 @@ interface IToolGroup {
     };
     // (undocumented)
     getToolConfiguration: {
-        (toolName: string, configurationPath: string): any;
+        (toolName: string, configurationPath?: string): any;
     };
     // (undocumented)
     getToolInstance: {
@@ -2692,6 +2736,8 @@ interface IToolGroup {
     getViewportIds: () => string[];
     // (undocumented)
     getViewportsInfo: () => Array<Types_2.IViewportId>;
+    // (undocumented)
+    hasTool(toolName: string): boolean;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -3118,7 +3164,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
     // (undocumented)
     updateInterpolatedAnnotation(annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement): void;
 }
@@ -3179,6 +3225,9 @@ declare namespace math {
         vec2
     }
 }
+
+// @public (undocumented)
+function mergePolylines(targetPolyline: Types_2.Point2[], sourcePolyline: Types_2.Point2[]): Types_2.Point2[];
 
 // @public (undocumented)
 export class MIPJumpToClickTool extends BaseTool {
@@ -3500,6 +3549,8 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
     // (undocumented)
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
+    // (undocumented)
     static toolName: any;
 }
 
@@ -3546,13 +3597,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    protected renderAnnotationInstance(renderContext: {
-        enabledElement: Types_2.IEnabledElement;
-        targetId: string;
-        annotation: Annotation;
-        annotationStyle: Record<string, any>;
-        svgDrawingHelper: SVGDrawingHelper;
-    }): boolean;
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3561,10 +3606,6 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
-    // (undocumented)
-    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
-    // (undocumented)
-    triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
 }
 
 declare namespace planarFreehandROITool {
@@ -3637,13 +3678,24 @@ declare namespace polyDataUtils {
 
 declare namespace polyline {
     export {
-        getFirstIntersectionWithPolyline,
-        getClosestIntersectionWithPolyline,
+        isClosed,
+        containsPoint,
+        getAABB,
+        getArea,
+        getSignedArea,
+        getNormal3,
+        getNormal2,
+        intersectPolyline,
+        getFirstLineSegmentIntersectionIndexes,
+        getLineSegmentIntersectionsIndexes,
+        getLineSegmentIntersectionsCoordinates,
+        getClosestLineSegmentIntersection,
         getSubPixelSpacingAndXYDirections,
         pointsAreWithinCloseContourProximity,
         addCanvasPointsToArray,
         pointCanProjectOnLine,
-        calculateAreaOfPoints
+        mergePolylines,
+        subtractPolylines
     }
 }
 
@@ -4719,7 +4771,10 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    fireChangeOnUpdate: ChangeTypes;
+    fireChangeOnUpdate: {
+        annotationUID: string;
+        changeType: ChangeTypes;
+    };
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -4733,13 +4788,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    protected renderAnnotationInstance(renderContext: {
-        enabledElement: Types_2.IEnabledElement;
-        targetId: string;
-        annotation: Annotation;
-        annotationStyle: Record<string, any>;
-        svgDrawingHelper: SVGDrawingHelper;
-    }): boolean;
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
     // (undocumented)
     static SplineTypes: typeof SplineTypesEnum;
     // (undocumented)
@@ -4751,7 +4800,11 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
+    triggerAnnotationCompleted: (annotation: SplineROIAnnotation) => void;
+    // (undocumented)
     triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    // (undocumented)
+    triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
 }
 
 // @public (undocumented)
@@ -4907,6 +4960,9 @@ type StyleSpecifier = {
     toolName?: string;
     annotationUID?: string;
 };
+
+// @public (undocumented)
+function subtractPolylines(targetPolyline: Types_2.Point2[], sourcePolyline: Types_2.Point2[]): Types_2.Point2[][];
 
 // @public (undocumented)
 type SVGCursorDescriptor = {
@@ -5331,6 +5387,7 @@ declare namespace Types {
         ToolSpecificAnnotationTypes,
         JumpToSliceOptions,
         AnnotationGroupSelector,
+        AnnotationRenderContext,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
