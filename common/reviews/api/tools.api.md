@@ -2055,11 +2055,6 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 }
 
 // @public (undocumented)
-function generateContourSetsFromLabelmap({ segmentations }: {
-    segmentations: any;
-}): any[];
-
-// @public (undocumented)
 export class FreehandROISculptorTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2124,6 +2119,11 @@ export class FreehandROISculptorTool extends BaseTool {
     // (undocumented)
     _updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
+
+// @public (undocumented)
+function generateContourSetsFromLabelmap({ segmentations }: {
+    segmentations: any;
+}): any[];
 
 // @public (undocumented)
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;

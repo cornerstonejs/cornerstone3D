@@ -3,10 +3,6 @@ import {
   Types,
   Enums,
   volumeLoader,
-  getRenderingEngine,
-  eventTarget,
-  triggerEvent,
-  getEnabledElement,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -15,7 +11,6 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { AnnotationLabelChangeEventDetail } from 'tools/src/types/EventTypes';
 
 // This is for debugging purposes
 console.warn(
@@ -28,7 +23,7 @@ const {
   StackScrollMouseWheelTool,
   ZoomTool,
   FreehandROISculptorTool,
-  ContourROITool,
+  LivewireContourTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -77,54 +72,19 @@ const instructions = document.createElement('p');
 instructions.innerText = `
 Drawing:
 
-PlanarFreehandROi
-
-- Left click or click on FreeHandROI button and drag to draw a freehand annotation.
-- If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)
-
-ContourROi
-
-- Click on ContourROI button and drag to draw a contour
-- Once draw the contour in one slice move to another slice and draw contour there. After completing contour the interpolated contour will be created in intermediate slices.
-- To create the interpolated contour there should be atleast 1 or more slice differences
+- Click on FreeHandROI button and drag to draw a freehand annotation.
+- If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line).
+- Click on LivewireContour button to draw LivewireContour annotations
 
 Editing:
-
-PlanarFreehandROi
 
 - Click on Sculpt button then adjustable cursor will appear.
 - Nearest freehand ROI will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation
 - Drag to sculpt freehand ROI
 
-ContourROi
-
-- Click on Sculpt button then adjustable cursor will appear
-- Nearest freehand ROI will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation
-- Click and drag to sculpt contour
-- Check related contours are adjusted based on edited contour.
-
 `;
 
 content.append(instructions);
-
-function addContourRoiToolButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'ContourROI',
-    onClick: () => {
-      // shouldCalculateStats = !shouldCalculateStats;
-
-      toolGroup.setToolActive(ContourROITool.toolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Primary, // Left Click
-          },
-        ],
-      });
-      toolGroup.setToolPassive(FreehandROISculptorTool.toolName);
-      toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
-    },
-  });
-}
 
 function addFreeHandRoiToolButton(toolGroup) {
   addButtonToToolbar({
@@ -138,7 +98,7 @@ function addFreeHandRoiToolButton(toolGroup) {
         ],
       });
       toolGroup.setToolPassive(FreehandROISculptorTool.toolName);
-      toolGroup.setToolPassive(ContourROITool.toolName);
+      toolGroup.setToolPassive(LivewireContourTool.toolName);
     },
   });
 }
@@ -154,15 +114,31 @@ function addSculptingToolButton(toolGroup) {
           },
         ],
       });
-      toolGroup.setToolPassive(ContourROITool.toolName);
       toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
+      toolGroup.setToolPassive(LivewireContourTool.toolName);
+    },
+  });
+}
+
+function addLivewireContourToolButton(toolGroup) {
+  addButtonToToolbar({
+    title: 'LivewireContour',
+    onClick: () => {
+      toolGroup.setToolActive(LivewireContourTool.toolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Primary, // Left Click
+          },
+        ],
+      });
+      toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
+      toolGroup.setToolPassive(FreehandROISculptorTool.toolName);
     },
   });
 }
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const dropdownOptions = ['label 1', 'label 2', 'label 3', 'label 4', 'label 5'];
-const dropDownValue = dropdownOptions[0];
+
 /**
  * Runs the demo
  */
@@ -171,12 +147,12 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(ContourROITool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(FreehandROISculptorTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(LivewireContourTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -188,7 +164,7 @@ async function run() {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(FreehandROISculptorTool.toolName);
-  toolGroup.addTool(ContourROITool.toolName);
+  toolGroup.addTool(LivewireContourTool.toolName);
 
   // Set the initial state of the tools.
   toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
@@ -224,8 +200,8 @@ async function run() {
   // set up sculp tool button.
   addSculptingToolButton(toolGroup);
 
-  // set up contour ROI tool button
-  addContourRoiToolButton(toolGroup);
+  // set up LivewireContourTool tool button.
+  addLivewireContourToolButton(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({
@@ -249,16 +225,6 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  eventTarget.addEventListener(Events.ANNOTATION_COMPLETED, (evt) => {
-    const { annotation } = evt.detail;
-    if (annotation.metadata.toolName === ContourROITool.toolName) {
-      annotation.data.label = dropDownValue;
-      const { viewport, element } =
-        getViewportDataBasedOnAnnotation(annotation);
-      triggerLabelUpdateCallback({ viewport, element }, annotation);
-    }
-  });
 
   // Create a stack and a volume viewport
   const viewportInputArray = [
@@ -312,39 +278,6 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
-}
-
-function getViewportDataBasedOnAnnotation(measurementData) {
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewports: Types.IViewport[] = renderingEngine.getViewports();
-
-  let viewport = null;
-  let element = null;
-  if (measurementData.metadata.referencedImageId) {
-    viewport = viewports[0];
-    element = viewports[0].element;
-  } else {
-    viewport = viewports[1];
-    element = viewports[1].element;
-  }
-  return { viewport, element };
-}
-
-function triggerLabelUpdateCallback(eventData, annotation) {
-  const { element } = eventData;
-
-  if (!element) {
-    return;
-  }
-  const { viewportId, renderingEngineId } = getEnabledElement(element);
-
-  const eventDetail: AnnotationLabelChangeEventDetail = {
-    annotation,
-    renderingEngineId,
-    viewportId,
-  };
-
-  triggerEvent(eventTarget, Events.ANNOTATION_LABEL_CHANGE, eventDetail);
 }
 
 run();

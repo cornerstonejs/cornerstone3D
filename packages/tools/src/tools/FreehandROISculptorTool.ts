@@ -21,8 +21,21 @@ import {
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 
+type CommonData = {
+  selectedIndex: number | null;
+  viewportIdsToRender: any[];
+  isEditingOpenContour: boolean;
+  mouseLocation: Types.Point2 | undefined;
+};
+
 class FreehandROISculptorTool extends BaseTool {
   static toolName: string;
+  private _commonData?: CommonData = {
+    selectedIndex: null,
+    viewportIdsToRender: [],
+    isEditingOpenContour: false,
+    mouseLocation: undefined,
+  };
   private _sculptData?: {
     mousePoint: Types.Point3;
     mouseCanvasPoint: Types.Point2;
@@ -33,18 +46,15 @@ class FreehandROISculptorTool extends BaseTool {
   };
   toolSize: number;
   isActive = false;
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        mouseLocation: null,
         maxToolSize: null,
         minSpacing: 1,
-        selectedIndex: null,
-        isEditingOpenContour: false,
-        viewportIdsToRender: [],
-        referencedToolNames: ['PlanarFreehandROI', 'ContourROI'],
+        referencedToolNames: ['PlanarFreehandROI', 'LivewireContour'],
         referencedToolName: 'PlanarFreehandROI',
       },
     }
@@ -56,13 +66,12 @@ class FreehandROISculptorTool extends BaseTool {
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const eventData = evt.detail;
-    const config = this.configuration;
     const element = eventData.element;
 
     this._configureToolSize(evt);
     this._selectFreehandTool(eventData);
 
-    if (config.selectedIndex === null) {
+    if (this._commonData.selectedIndex === null) {
       return;
     }
 
@@ -78,7 +87,7 @@ class FreehandROISculptorTool extends BaseTool {
       this._configureToolSize(evt);
       this._updateCursor(evt);
     } else {
-      this.configuration.mouseLocation = undefined;
+      this._commonData.mouseLocation = undefined;
     }
   };
 
@@ -95,7 +104,7 @@ class FreehandROISculptorTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
 
-    config.viewportIdsToRender = [viewport.id];
+    this._commonData.viewportIdsToRender = [viewport.id];
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       config.referencedToolName
@@ -108,15 +117,15 @@ class FreehandROISculptorTool extends BaseTool {
       return;
     }
 
-    config.mouseLocation = eventData.currentPoints.canvas;
+    this._commonData.mouseLocation = eventData.currentPoints.canvas;
 
     if (this.isActive) {
-      annotations[config.selectedIndex].highlighted = true;
+      annotations[this._commonData.selectedIndex].highlighted = true;
     } else {
       const canvasCoords = eventData.currentPoints.canvas;
       const radius = this._distanceFromPoint(
         viewport,
-        annotations[config.selectedIndex]?.data,
+        annotations[this._commonData.selectedIndex]?.data,
         canvasCoords
       );
       if (radius > 0) {
@@ -143,11 +152,9 @@ class FreehandROISculptorTool extends BaseTool {
       renderingEngineId
     );
 
-    const toolInstance = toolGroup.getToolInstance(
-      config.referencedToolNames[0]
-    );
+    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 
-    config.referencedToolNames.forEach((referencedToolName) => {
+    config.referencedToolNames.forEach((referencedToolName: string) => {
       const annotation = getAnnotations(referencedToolName, element);
       if (annotation) {
         interactableAnnotation = [...interactableAnnotation, ...annotation];
@@ -254,10 +261,12 @@ class FreehandROISculptorTool extends BaseTool {
    * @param insertIndex - The index to insert the new handle.
    */
   _insertHandleRadially(insertIndex: number): void {
-    const config = this.configuration;
     const { points } = this._sculptData;
 
-    if (insertIndex > points.length - 1 && config.isEditingOpenContour) {
+    if (
+      insertIndex > points.length - 1 &&
+      this._commonData.isEditingOpenContour
+    ) {
       return;
     }
 
@@ -279,7 +288,7 @@ class FreehandROISculptorTool extends BaseTool {
    * @param nextIndex - The next index
    */
   _getInsertPosition(previousIndex: number, nextIndex: number): Types.Point3 {
-    let insertPosition;
+    let insertPosition: Types.Point2;
     const { points, toolSize, element, mouseCanvasPoint } = this._sculptData;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -382,14 +391,13 @@ class FreehandROISculptorTool extends BaseTool {
    * @param eventData - Data object associated with the event.
    */
   _selectFreehandTool(eventData: any): void {
-    const config = this.configuration;
     const closestToolIndex = this._getClosestFreehandToolOnElement(eventData);
 
     if (closestToolIndex === undefined) {
       return;
     }
 
-    config.selectedIndex = closestToolIndex;
+    this._commonData.selectedIndex = closestToolIndex;
   }
 
   /**
@@ -439,7 +447,7 @@ class FreehandROISculptorTool extends BaseTool {
       }
     }
 
-    config.isEditingOpenContour =
+    this._commonData.isEditingOpenContour =
       annotations[closest.toolIndex].data.isOpenContour;
 
     config.referencedToolName =
@@ -487,7 +495,7 @@ class FreehandROISculptorTool extends BaseTool {
     this._deactivateSculpt(element);
     resetElementCursor(element);
 
-    const { renderingEngineId, viewportId, viewport } = enabledElement;
+    const { renderingEngineId, viewportId } = enabledElement;
 
     const toolGroup = ToolGroupManager.getToolGroupForViewport(
       viewportId,
@@ -500,15 +508,11 @@ class FreehandROISculptorTool extends BaseTool {
       this._filterInteractableFreehandRoiAnnotationsForElement(element);
 
     if (toolInstance.configuration.calculateStats) {
-      annotations[config.selectedIndex].invalidated = true;
-    }
-
-    if (annotations[config.selectedIndex]?.autoGenerated) {
-      annotations[config.selectedIndex].autoGenerated = false;
+      annotations[this._commonData.selectedIndex].invalidated = true;
     }
 
     toolInstance.triggerAnnotationModified(
-      annotations[config.selectedIndex],
+      annotations[this._commonData.selectedIndex],
       enabledElement
     );
   };
@@ -519,7 +523,6 @@ class FreehandROISculptorTool extends BaseTool {
    * @param evt - The event
    */
   _dragCallback(evt: EventTypes.InteractionEventType): void {
-    const config = this.configuration;
     const eventData = evt.detail;
     const element = eventData.element;
     this._updateCursor(evt);
@@ -531,7 +534,7 @@ class FreehandROISculptorTool extends BaseTool {
       return;
     }
 
-    const points = annotations[config.selectedIndex].data.polyline;
+    const points = annotations[this._commonData.selectedIndex].data.polyline;
 
     this._sculpt(eventData, points);
   }
@@ -620,12 +623,11 @@ class FreehandROISculptorTool extends BaseTool {
   ): void {
     const { viewport } = enabledElement;
     const { element } = viewport;
-    const config = this.configuration;
 
-    const viewportIdsToRender = config.viewportIdsToRender;
+    const viewportIdsToRender = this._commonData.viewportIdsToRender;
 
     if (
-      !config.mouseLocation ||
+      !this._commonData.mouseLocation ||
       this.mode !== ToolModes.Active ||
       !viewportIdsToRender.includes(viewport.id)
     ) {
@@ -667,7 +669,7 @@ class FreehandROISculptorTool extends BaseTool {
       svgDrawingHelper,
       '',
       circleUID,
-      this.configuration.mouseLocation as Types.Point2,
+      this._commonData.mouseLocation,
       this.toolSize,
       {
         color,
