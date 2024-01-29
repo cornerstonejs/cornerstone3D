@@ -1600,22 +1600,21 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const values = new pixelArray.constructor(pixelArray.length);
 
     // Todo: I guess nothing should be done for use16bit?
-    try {
-      const scalarArray = vtkDataArray.newInstance({
-        name: 'Pixels',
-        numberOfComponents: numComps,
-        values: values,
-      });
-      const imageData = vtkImageData.newInstance();
-      imageData.setDimensions(dimensions);
-      imageData.setSpacing(spacing);
-      imageData.setDirection(direction);
-      imageData.setOrigin(origin);
-      imageData.getPointData().setScalars(scalarArray);
-      return imageData;
-    } catch (error) {
-      throw new Error((error as RangeError).message);
-    }
+    const scalarArray = vtkDataArray.newInstance({
+      name: 'Pixels',
+      numberOfComponents: numComps,
+      values: values,
+    });
+    
+    const imageData = vtkImageData.newInstance();
+    
+    imageData.setDimensions(dimensions);
+    imageData.setSpacing(spacing);
+    imageData.setDirection(direction);
+    imageData.setOrigin(origin);
+    imageData.getPointData().setScalars(scalarArray);
+    
+    return imageData;
   }
   /**
    * Creates vtkImagedata based on the image object, it creates
@@ -2041,11 +2040,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return options;
   }
 
-  public loadImages(
+  public async loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
-    return Promise.allSettled(
+    const resultList = await Promise.allSettled(
       imageIds.map((imageId) => {
         const options = this.getLoaderImageOptions(
           imageId
@@ -2063,6 +2062,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         );
       })
     );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
