@@ -826,7 +826,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const { scissors } = this;
       annotation.data.contour.originalPolyline =
         annotation.data.contour.polyline;
-      const { nearestEdge } = this.configuration.interpolation;
+      const { nearestEdge, repeatInterpolation } =
+        this.configuration.interpolation;
       annotation.data.handles.originalPoints = points;
       const { worldToSlice, sliceToWorld } = this.editData;
       const handleSmoothing = [];
@@ -863,11 +864,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this.editData = null;
       annotation.data.handles.interpolationSources = null;
 
-      this.triggerAnnotationModified(
-        annotation,
-        enabledElement,
-        ChangeTypes.InterpolationUpdate
-      );
+      if (repeatInterpolation) {
+        this.triggerAnnotationModified(
+          annotation,
+          enabledElement,
+          ChangeTypes.InterpolationUpdate
+        );
+      }
       // Might have created new interpolation sources, so clear again
       annotation.data.handles.interpolationSources = null;
     });

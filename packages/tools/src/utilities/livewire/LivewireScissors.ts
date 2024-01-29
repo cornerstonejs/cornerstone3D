@@ -501,7 +501,7 @@ export class LivewireScissors {
     const direction =
       TWO_THIRD_PI * (Math.acos(Math.min(dp, 1)) + Math.acos(dq));
     if (isNaN(direction) || !isFinite(direction)) {
-      console.warn('Fond non-direction:', px, py, qx, qy, dp, dq, direction);
+      console.warn('Found non-direction:', px, py, qx, qy, dp, dq, direction);
       return 1;
     }
     return direction;

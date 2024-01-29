@@ -53,6 +53,16 @@ interpolationTools.set('LivewireInterpolationNearest3', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration: { interpolation: { enabled: true, nearestEdge: 3 } },
 });
+interpolationTools.set('LivewireInterpolationNearest5', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration: { interpolation: { enabled: true, nearestEdge: 5 } },
+});
+interpolationTools.set('LivewireInterpolationNearest3RepeatInterpolation', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration: {
+    interpolation: { enabled: true, nearestEdge: 3, repeatInterpolation: true },
+  },
+});
 interpolationTools.set('LivewireInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
