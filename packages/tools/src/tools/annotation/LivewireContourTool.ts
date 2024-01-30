@@ -788,6 +788,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
    */
   public deleteInProgress(element, config, evt) {
     if (!this.editData) {
+      // Consider deleting items in progress here by using the element/viewport
+      // to find annotations displayed on the current view.
       return;
     }
     this._endCallback(evt, true);

@@ -13,28 +13,15 @@ export default function selectHandles(
   const handles = PointsArray.create3(handleCount) as PointsArray3;
   handles.sources = [];
   const { sources: destPoints } = handles;
-  const distance = 6;
   const { length, sources: sourcePoints = [] } = interpolated3DPoints;
+  const distance = 6;
   if (length < distance * 2) {
     return interpolated3DPoints.subselect(3);
   }
-  const prevVec3 = vec3.create();
-  const nextVec3 = vec3.create();
-  const dotValues = new Float32Array(length);
   const interval = Math.floor(length / handleCount / 4);
   sourcePoints.forEach(() => destPoints.push(PointsArray.create3(handleCount)));
 
-  for (let i = 0; i < length; i++) {
-    const point = interpolated3DPoints.getPoint(i);
-    const prevPoint = interpolated3DPoints.getPoint(i - distance);
-    const nextPoint = interpolated3DPoints.getPoint((i + distance) % length);
-    vec3.sub(prevVec3, point, prevPoint);
-    vec3.scale(prevVec3, prevVec3, 1 / vec3.length(prevVec3));
-    vec3.sub(nextVec3, nextPoint, point);
-    vec3.scale(nextVec3, nextVec3, 1 / vec3.length(nextVec3));
-    const dot = vec3.dot(prevVec3, nextVec3);
-    dotValues[i] = dot;
-  }
+  const dotValues = createDotValues(interpolated3DPoints, distance);
 
   const inflectionIndices = findInflectionPoints(dotValues, handleCount);
   if (inflectionIndices?.length > 2) {
@@ -69,8 +56,32 @@ export default function selectHandles(
   return handles;
 }
 
+export function createDotValues(
+  pointsArray: PointsArray3,
+  distance = 6
+): Float32Array {
+  const { length } = pointsArray;
+  const prevVec3 = vec3.create();
+  const nextVec3 = vec3.create();
+  const dotValues = new Float32Array(length);
+
+  for (let i = 0; i < length; i++) {
+    const point = pointsArray.getPoint(i);
+    const prevPoint = pointsArray.getPoint(i - distance);
+    const nextPoint = pointsArray.getPoint((i + distance) % length);
+    vec3.sub(prevVec3, point, prevPoint);
+    vec3.scale(prevVec3, prevVec3, 1 / vec3.length(prevVec3));
+    vec3.sub(nextVec3, nextPoint, point);
+    vec3.scale(nextVec3, nextVec3, 1 / vec3.length(nextVec3));
+    const dot = vec3.dot(prevVec3, nextVec3);
+    dotValues[i] = dot;
+  }
+
+  return dotValues;
+}
+
 function findInflectionPoints(dotValues, handleCount) {
-  const { mean, max, min, deviation } = getStats(dotValues);
+  const { max, deviation } = getStats(dotValues);
   const { length } = dotValues;
   // Fallback for very uniform ojects.
   if (deviation < 0.01 || length < handleCount * 3) {

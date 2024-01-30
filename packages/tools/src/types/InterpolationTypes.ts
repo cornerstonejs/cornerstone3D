@@ -41,4 +41,8 @@ export type AcceptInterpolationSelector = {
    * Applies just to the given segment index.
    */
   segmentIndex?: number;
+  /**
+   * Only apply to the given slice index
+   */
+  sliceIndex?: number;
 };
