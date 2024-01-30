@@ -47,13 +47,6 @@ describe('SelectHandles:', function () {
       array.push([0, 99 - i, 0]);
     }
     const handles = selectHandles(array, 3);
-    console.log(
-      'handles',
-      handles.getPoint(0),
-      handles.getPoint(2),
-      handles.getPoint(4),
-      handles.getPoint(6)
-    );
     expect(handles.getPointArray(1)).toEqual([0, 0, 0]);
     expect(handles.getPointArray(3)).toEqual([99, 0, 0]);
     expect(handles.getPointArray(5)).toEqual([99, 99, 0]);

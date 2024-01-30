@@ -125,14 +125,16 @@ export class LivewireScissors {
     let minPoint = testPoint;
     for (let xTest = xRange[0]; xTest < xRange[1]; xTest++) {
       for (let yTest = yRange[0]; yTest < yRange[1]; yTest++) {
+        // Cost values are 0...1, with 1 being a poor choice for the
+        // livewire fitting - thus, we want to minimize our value, so the
+        // distance cost should be low for the center point.
         const distanceCost =
-          (0.2 *
-            (Math.abs(xTest - testPoint[0]) + Math.abs(yTest - testPoint[1]))) /
-          delta /
-          2;
-        const weight =
-          this._getWeightedDistance(testPoint, [xTest, yTest]) * 0.8 +
-          distanceCost;
+          1 -
+          (Math.abs(xTest - testPoint[0]) + Math.abs(yTest - testPoint[1])) /
+            delta /
+            2;
+        const weightCost = this._getWeightedDistance(testPoint, [xTest, yTest]);
+        const weight = weightCost * 0.8 + distanceCost * 0.2;
         if (weight < minValue) {
           minPoint = [xTest, yTest];
           minValue = weight;
@@ -277,7 +279,7 @@ export class LivewireScissors {
 
     // If it is at the end, back up one
     if (y + 1 === height) {
-      index -= height;
+      index -= width;
     }
 
     return data[index] - data[index + width];
@@ -516,9 +518,19 @@ export class LivewireScissors {
    * Return a weighted distance between two points
    */
   private _getWeightedDistance(pointA: Types.Point2, pointB: Types.Point2) {
-    const { _getPointIndex: index } = this;
+    const { _getPointIndex: index, width, height } = this;
     const [aX, aY] = pointA;
     const [bX, bY] = pointB;
+    // Assign a cost of 1 to any points outside the image, prevents using invalid
+    // points
+    if (bX < 0 || bX >= width || bY < 0 || bY >= height) {
+      return 1;
+    }
+    // Use a cost of 0 if the point was outside and is now going inside
+    if (aX < 0 || aY < 0 || aX >= width || aY >= height) {
+      return 0;
+    }
+
     const bIndex = index(bY, bX);
 
     // Weighted distance function
@@ -532,16 +544,6 @@ export class LivewireScissors {
     const laplace = this.laplace[bIndex];
     const direction = this._getGradientDirection(aX, aY, bX, bY);
 
-    // console.log(
-    //   'For point ax,ay to bx,by',
-    //   aX,
-    //   aY,
-    //   bX,
-    //   bY,
-    //   gradient,
-    //   laplace,
-    //   direction
-    // );
     return 0.43 * gradient + 0.43 * laplace + 0.11 * direction;
   }
 
