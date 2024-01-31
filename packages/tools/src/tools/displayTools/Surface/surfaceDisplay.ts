@@ -186,3 +186,5 @@ export default {
   render,
   removeSegmentationRepresentation,
 };
+
+export { render, removeSegmentationRepresentation };

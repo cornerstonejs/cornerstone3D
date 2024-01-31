@@ -53,7 +53,7 @@ function canComputeRequestedRepresentation(
   const { segmentationRepresentation } = representationInfo;
   const { type: representationType, polySeg } = segmentationRepresentation;
 
-  if (!polySeg) {
+  if (!polySeg || !polySeg.enabled) {
     return false;
   }
 

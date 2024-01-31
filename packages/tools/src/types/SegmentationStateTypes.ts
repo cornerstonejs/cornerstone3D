@@ -110,7 +110,10 @@ export type ToolGroupSpecificRepresentationState = {
   /**
    * Poly Seg generated
    */
-  polySeg?: boolean;
+  polySeg?: {
+    enabled: boolean;
+    options?: any;
+  };
 };
 
 /**
@@ -280,5 +283,8 @@ export type RepresentationPublicInputOptions = {
   colorLUTOrIndex?: Types.ColorLUT | number;
   // whether to use polymorphic segmentation utilities to convert
   // from other representations to this representation
-  polySeg?: boolean;
+  polySeg?: {
+    enabled: boolean;
+    options?: any;
+  };
 };

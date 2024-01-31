@@ -1290,6 +1290,32 @@ class Viewport implements IViewport {
     vtkPlanes[1].setOrigin(newOrigin2);
   }
 
+  /**
+   * Method to get the clipping planes of a given actor
+   * @param actorEntry - The actor entry (a specific type you'll define dependent on your code)
+   * @returns vtkPlanes - An array of vtkPlane objects associated with the given actor
+   */
+  public getClippingPlanesForActor(actorEntry?: ActorEntry): vtkPlane[] {
+    if (!actorEntry) {
+      actorEntry = this.getDefaultActor();
+    }
+
+    if (!actorEntry.actor) {
+      throw new Error('Invalid actor entry: Actor is undefined');
+    }
+
+    const mapper = actorEntry.actor.getMapper();
+    let vtkPlanes = actorEntry?.clippingFilter
+      ? actorEntry.clippingFilter.getClippingPlanes()
+      : mapper.getClippingPlanes();
+
+    if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
+      vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+    }
+
+    return vtkPlanes;
+  }
+
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {
     const viewUpCorners = this._getCorners(bounds);
     const viewRightCorners = this._getCorners(bounds);
