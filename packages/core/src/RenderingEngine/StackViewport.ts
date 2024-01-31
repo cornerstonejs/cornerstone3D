@@ -2041,11 +2041,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return options;
   }
 
-  public loadImages(
+  public async loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
-    return Promise.allSettled(
+    const resultList = await Promise.allSettled(
       imageIds.map((imageId) => {
         const options = this.getLoaderImageOptions(
           imageId
@@ -2063,6 +2063,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         );
       })
     );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
