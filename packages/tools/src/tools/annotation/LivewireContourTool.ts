@@ -70,6 +70,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         /**
          * Configuring this to a value larger than 0 will snap handles to nearby
          * livewire points, within the given rectangle surrounding the clicked point.
+         * If set to 0, then the exact clicked point will be used instead, which may
+         * not be an edge and can result in jagged outlines.
+         * The unit is image pixels (index).
          */
         snapHandleNearby: 1,
 
@@ -85,14 +88,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
           /**
            * Set the nearestEdge to snap interpolated handles to an edge within
            * the given number of pixels.  Setting to 0 disables snap to pixel
-           * for interpolation.
+           * for interpolation and the interpolated point will be used directly.
+           * Setting to too large a value may result in many points outside the contour
+           * being chosen.
            */
-          nearestEdge: 0,
+          nearestEdge: 1,
           /**
-           * Sets a CSS color to use for showing the interpolation contour overlaying
-           * the livewire contour for auto generated contours.
+           * Set to true to show the interpolated polyline, which can be useful
+           * when understanding the nearest edge and
            */
-          interpolationColor: <string>null,
+          showInterpolationPolyline: false,
         },
         actions: {
           undo: {

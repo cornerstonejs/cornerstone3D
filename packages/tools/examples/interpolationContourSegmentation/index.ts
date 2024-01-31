@@ -60,7 +60,7 @@ const actions = {
 
 const interpolation = {
   enabled: true,
-  interpolationColor: '#70ffff',
+  showInterpolationPolyline: true,
 };
 
 const configuration = {
