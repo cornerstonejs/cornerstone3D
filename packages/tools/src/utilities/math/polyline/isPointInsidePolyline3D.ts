@@ -33,7 +33,7 @@ export function isPointInsidePolyline3D(
 
   if (sharedDimensionIndex === undefined) {
     throw new Error(
-      'Cannot find a shared dimension index for the polyline points'
+      'Cannot find a shared dimension index for polyline, probably oblique plane'
     );
   }
 

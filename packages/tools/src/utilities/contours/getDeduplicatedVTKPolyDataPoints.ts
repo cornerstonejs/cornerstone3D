@@ -9,6 +9,8 @@ export function getDeduplicatedVTKPolyDataPoints(polyData, bypass = false) {
   const points = polyData.getPoints();
   const lines = polyData.getLines();
 
+  // Todo: This is cloning which is not ideal, we should move to use the PointsArrayManager
+  // that will get merged soon
   const pointsArray = new Array(points.getNumberOfPoints())
     .fill(0)
     .map((_, i) => points.getPoint(i).slice());
@@ -24,6 +26,9 @@ export function getDeduplicatedVTKPolyDataPoints(polyData, bypass = false) {
 
   const newPoints = [];
   for (const [i, pt] of pointsArray.entries()) {
+    // Todo: This is an n^2 algorithm - consider using a Map<string,Point3>.
+    // Generates a reasonable amount of garbage, but I think the performance
+    //  of that is better than doing repeated compares across the entire array.
     const index = newPoints.findIndex(
       (point) => point[0] === pt[0] && point[1] === pt[1] && point[2] === pt[2]
     );

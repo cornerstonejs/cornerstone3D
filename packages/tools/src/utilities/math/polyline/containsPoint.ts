@@ -8,6 +8,8 @@ import isClosed from './isClosed';
  * ray emanating from the given point and to the right and the line segments is odd.
  * https://www.eecs.umich.edu/courses/eecs380/HANDOUTS/PROJ2/InsidePoly.html
  *
+ * Note that a point on the polyline is considered inside.
+ *
  * @param polyline - Polyline points (2D)
  * @param point - 2D Point
  * @returns True is the point is inside the polyline or false otherwise

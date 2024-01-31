@@ -25,7 +25,7 @@ const {
 
 setTitleAndDescription(
   'Contour Segmentation to Stack Labelmap Segmentation',
-  'This demonstration showcases the usage of PolySEG WASM module to convert a contour segmentation to a volume labelmap segmentation. Use the left viewport to draw a contour segmentation and then click on the button to convert it to a volume labelmap segmentation. The right viewport shows the volume labelmap segmentation.'
+  'This demonstration showcases the usage of PolySEG WASM module to convert a contour segmentation to a stack labelmap segmentation. Use the left viewport to draw a contour segmentation and then click on the button to convert it to a stack labelmap segmentation. The right viewport shows the stack labelmap segmentation.'
 );
 
 const { MouseBindings } = csToolsEnums;
@@ -82,7 +82,7 @@ content.appendChild(viewportGrid);
 createInfoSection(content, { ordered: true })
   .addInstruction('Draw a contour segmentation on the left viewport')
   .addInstruction(
-    'Click on the button to convert the contour segmentation to a volume labelmap segmentation'
+    'Click on the button to convert the contour segmentation to a stack labelmap segmentation'
   );
 
 // ============================= //

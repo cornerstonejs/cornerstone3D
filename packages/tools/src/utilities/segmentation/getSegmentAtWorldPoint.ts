@@ -23,6 +23,9 @@ import { isPointInsidePolyline3D } from '../math/polyline';
  * @param viewport - The viewport where the point resides.
  * @param worldPoint - The world point to get the segment for.
  * @param segmentationRepresentationUID - The UID of the segmentation representation to use.
+ *
+ * Todo: we should add unit test for this function
+ *
  * @returns The index of the segment at the world point, or undefined if not found.
  */
 export function getSegmentAtWorldPoint(
