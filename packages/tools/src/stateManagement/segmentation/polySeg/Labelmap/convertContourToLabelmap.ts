@@ -211,7 +211,7 @@ export async function convertContourToStackLabelmap(
     });
   });
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_STARTED, {});
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
   const newSegmentationsScalarData = await workerManager.executeTask(
     'polySeg',
     'convertContourToStackLabelmap',
@@ -223,15 +223,13 @@ export async function convertContourToStackLabelmap(
     {
       callbacks: [
         (progress) => {
-          console.debug('progress', progress);
+          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
         },
       ],
     }
   );
 
-  debugger;
-
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_COMPLETED);
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
 
   const imageIdReferenceMap = new Map();
   newSegmentationsScalarData.forEach(({ scalarData }, referencedImageId) => {
