@@ -1,7 +1,7 @@
-import { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
 import { computeLabelmapData } from './labelmapComputationStrategies';
+import { PolySegConversionOptions } from '../../../../types';
 
 /**
  * Computes and adds the labelmap representation for a given segmentation.
@@ -14,11 +14,7 @@ import { computeLabelmapData } from './labelmapComputationStrategies';
  */
 export function computeAndAddLabelmapRepresentation(
   segmentationId: string,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IVolumeViewport | Types.IStackViewport;
-  } = {}
+  options: PolySegConversionOptions = {}
 ) {
   return computeAndAddRepresentation(
     segmentationId,

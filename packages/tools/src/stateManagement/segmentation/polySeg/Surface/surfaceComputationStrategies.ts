@@ -1,5 +1,8 @@
 import { Types } from '@cornerstonejs/core';
-import { ContourSegmentationData } from '../../../../types';
+import {
+  ContourSegmentationData,
+  PolySegConversionOptions,
+} from '../../../../types';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
 import { convertContourToSurface } from './convertContourToSurface';
@@ -26,10 +29,7 @@ export type RawSurfacesData = {
  */
 export async function computeSurfaceData(
   segmentationId: string,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-  }
+  options: PolySegConversionOptions = {}
 ) {
   const segmentIndices = options.segmentIndices?.length
     ? options.segmentIndices
@@ -80,10 +80,7 @@ export async function computeSurfaceData(
 
 async function computeSurfaceFromLabelmapSegmentation(
   segmentationId,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-  } = {}
+  options: PolySegConversionOptions = {}
 ): Promise<RawSurfacesData> {
   // Todo: validate valid labelmap representation
   const segmentation = getSegmentation(segmentationId);
@@ -131,10 +128,7 @@ async function computeSurfaceFromLabelmapSegmentation(
  */
 async function computeSurfaceFromContourSegmentation(
   segmentationId: string,
-  options: {
-    segmentationRepresentationUID?: string;
-    segmentIndices?: number[];
-  } = {}
+  options: PolySegConversionOptions = {}
 ): Promise<RawSurfacesData> {
   const segmentation = getSegmentation(segmentationId);
 

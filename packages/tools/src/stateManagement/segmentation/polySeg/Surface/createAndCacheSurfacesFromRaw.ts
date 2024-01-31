@@ -5,6 +5,7 @@ import {
   getSegmentation,
 } from '../../segmentationState';
 import { RawSurfacesData } from './surfaceComputationStrategies';
+import { PolySegConversionOptions } from '../../../../types';
 
 /**
  * Creates and caches surfaces from raw surface data.
@@ -19,10 +20,7 @@ import { RawSurfacesData } from './surfaceComputationStrategies';
 export async function createAndCacheSurfacesFromRaw(
   segmentationId: string,
   rawSurfacesData: RawSurfacesData,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-  } = {}
+  options: PolySegConversionOptions = {}
 ) {
   // Initialize segmentationRepresentation and toolGroupId if a representation UID is provided
   let segmentationRepresentation: any, toolGroupId: any;

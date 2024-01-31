@@ -17,6 +17,7 @@ import {
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
 import { PixelDataTypedArray } from '@cornerstonejs/core/dist/types/types';
+import { PolySegConversionOptions } from '../../../../types';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume
@@ -24,11 +25,7 @@ export type RawLabelmapData =
 
 export async function computeLabelmapData(
   segmentationId: string,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IVolumeViewport | Types.IStackViewport;
-  }
+  options: PolySegConversionOptions = {}
 ) {
   const segmentIndices = options.segmentIndices?.length
     ? options.segmentIndices
@@ -72,11 +69,7 @@ export async function computeLabelmapData(
 
 async function computeLabelmapFromContourSegmentation(
   segmentationId,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IVolumeViewport | Types.IStackViewport;
-  } = {}
+  options: PolySegConversionOptions = {}
 ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
   const isVolume = options.viewport instanceof VolumeViewport ?? true;
 
@@ -119,11 +112,7 @@ async function computeLabelmapFromContourSegmentation(
 
 async function computeLabelmapFromSurfaceSegmentation(
   segmentationId,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IVolumeViewport | Types.IStackViewport;
-  } = {}
+  options: PolySegConversionOptions = {}
 ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
   const isVolume = options.viewport instanceof VolumeViewport ?? true;
 

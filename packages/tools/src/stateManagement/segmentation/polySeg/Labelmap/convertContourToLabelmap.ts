@@ -12,7 +12,11 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
-import { Annotation, ContourSegmentationData } from '../../../../types';
+import {
+  Annotation,
+  ContourSegmentationData,
+  PolySegConversionOptions,
+} from '../../../../types';
 import { getAnnotation } from '../../..';
 import { vec3 } from 'gl-matrix';
 import { Events } from '../../../../enums';
@@ -21,11 +25,7 @@ const workerManager = getWebWorkerManager();
 
 export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ContourSegmentationData,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IViewport;
-  } = {}
+  options: PolySegConversionOptions = {}
 ) {
   const { viewport } = options;
 
@@ -112,11 +112,7 @@ export async function convertContourToVolumeLabelmap(
 
 export async function convertContourToStackLabelmap(
   contourRepresentationData: ContourSegmentationData,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IViewport;
-  } = {}
+  options: PolySegConversionOptions = {}
 ) {
   if (!options.viewport) {
     throw new Error(
@@ -256,11 +252,7 @@ export async function convertContourToStackLabelmap(
 
 function _getAnnotationMapFromSegmentation(
   contourRepresentationData: ContourSegmentationData,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types.IViewport;
-  } = {}
+  options: PolySegConversionOptions = {}
 ) {
   const annotationMap = contourRepresentationData.annotationUIDsMap;
 

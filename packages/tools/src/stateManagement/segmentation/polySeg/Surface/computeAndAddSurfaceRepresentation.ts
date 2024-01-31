@@ -1,4 +1,5 @@
 import { SegmentationRepresentations } from '../../../../enums';
+import { PolySegConversionOptions } from '../../../../types';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
 import { computeSurfaceData } from './surfaceComputationStrategies';
 import { updateSurfaceData } from './updateSurfaceData';
@@ -14,10 +15,7 @@ import { updateSurfaceData } from './updateSurfaceData';
  */
 export function computeAndAddSurfaceRepresentation(
   segmentationId: string,
-  options: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-  } = {}
+  options: PolySegConversionOptions = {}
 ) {
   return computeAndAddRepresentation(
     segmentationId,
