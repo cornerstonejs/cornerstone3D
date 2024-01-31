@@ -72,6 +72,13 @@ export default class PointsManager<T> {
     return this._length * this._dimensions;
   }
 
+  /**
+   * Returns a Float32Array view of the given point.
+   * Changes to the data in this point will affect the underlying data.
+   *
+   * @param index  - positive index from start, or negative from end
+   * @returns Float32Array view onto the point at the given index
+   */
   public getPoint(index: number): T {
     if (index < 0) {
       index += this._length;
@@ -86,6 +93,13 @@ export default class PointsManager<T> {
     ) as unknown as T;
   }
 
+  /**
+   * Returns a `number[]` version of the given point.
+   * Changes to the array will NOT affect the underlying data.
+   *
+   * @param index  - positive index from start, or negative from end
+   * @returns A new number[] instance of the given point.
+   */
   public getPointArray(index: number): T {
     const array = [];
     if (index < 0) {
@@ -102,7 +116,8 @@ export default class PointsManager<T> {
   }
 
   /**
-   * Adds the additional amount requested
+   * Updates the array size as needed to allow for at least the given
+   * additional number of elements.
    */
   protected grow(additionalSize = 1, growSize = this.growSize) {
     if (
@@ -122,7 +137,7 @@ export default class PointsManager<T> {
   }
 
   /**
-   * Reverse the points in place
+   * Reverse the points in place.
    */
   public reverse() {
     const midLength = Math.floor(this._length / 2);
@@ -138,6 +153,9 @@ export default class PointsManager<T> {
     }
   }
 
+  /**
+   * Push a new point onto this arrays object
+   */
   public push(point: T) {
     this.grow(1);
     const offset = this.length * this._dimensions;
@@ -147,6 +165,9 @@ export default class PointsManager<T> {
     this._length++;
   }
 
+  /**
+   * Maps the array onto another type.
+   */
   public map<R>(f: (value, index: number) => R): R[] {
     const mapData = [];
     for (let i = 0; i < this._length; i++) {
@@ -155,6 +176,12 @@ export default class PointsManager<T> {
     return mapData;
   }
 
+  /**
+   * A points object containing Float32Array instances referring to the underlying
+   * data, contained in a FloatArray32[] instance.
+   * Note - changes to the data store will directly affect the points value
+   * returned here, even if stored separately.
+   */
   public get points(): T[] {
     return this.map((p) => p);
   }
@@ -163,32 +190,47 @@ export default class PointsManager<T> {
    * The XYZ representation of a points array is an object with three separate
    * arrays, one for each of x,y and z, containing the point data, eg
    * `x: {x0, x1, x2, ...., xn }`
+   * Will create just x,y for Point2 arrays.
    *
    * @returns An XYZ array
    */
   public toXYZ(): PointsXYZ {
-    const xyz = { x: [], y: [], z: [] };
+    const xyz = { x: [], y: [] } as PointsXYZ;
+    if (this._dimensions >= 3) {
+      xyz.z = [];
+    }
+    const { x, y, z } = xyz;
+
     this.forEach((p) => {
-      xyz.x.push(p[0]);
-      xyz.y.push(p[1]);
-      xyz.z.push(p[2] ?? 0);
+      x.push(p[0]);
+      y.push(p[1]);
+      if (z) {
+        z.push(p[2]);
+      }
     });
     return xyz;
   }
 
-  /** Create an PointsArray3 from the x,y,z individual arrays */
+  /**
+   * Create an PointsArray3 from the x,y,z individual arrays (see toXYZ)
+   * Will create a Point3 array even if z is missing, with 0 as the value.
+   */
   public static fromXYZ({ x, y, z }: PointsXYZ): PointsManager<Point3> {
     const array = PointsManager.create3(x.length);
     let offset = 0;
     for (let i = 0; i < x.length; i++) {
       array.data[offset++] = x[i];
       array.data[offset++] = y[i];
-      array.data[offset++] = z[i];
+      array.data[offset++] = z ? z[i] : 0;
     }
     array._length = x.length;
     return array;
   }
 
+  /**
+   * Select the given number of points from the array, evenly spaced at the
+   * given offset (which must be between `(-count,count)`)
+   */
   public subselect(count = 10, offset = 0): PointsManager<T> {
     const selected = new PointsManager<T>({
       initialSize: count,
@@ -202,10 +244,16 @@ export default class PointsManager<T> {
     return selected;
   }
 
+  /**
+   * Create a PointsManager<Point3> instance with available capacity of initialSize
+   */
   public static create3(initialSize = 128) {
     return new PointsManager<Point3>({ initialSize, dimensions: 3 });
   }
 
+  /**
+   * Create a PointsManager<Point2> instance with available capacity of initialSize
+   */
   public static create2(initialSize = 128) {
     return new PointsManager<Point2>({ initialSize, dimensions: 2 });
   }

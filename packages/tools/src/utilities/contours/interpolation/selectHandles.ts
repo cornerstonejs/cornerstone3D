@@ -7,30 +7,34 @@ const { PointsManager } = utilities;
 /**
  * Selects handles by looking for local maximums in the angle that the local
  * vector makes
+ *
+ * @param polyline - an array of points, usually the polyline for the contour to
+ *        select handles from.
+ * @param handleCount - a guideline for how many handles to create
  */
 export default function selectHandles(
-  interpolated3DPoints,
-  handleCount
+  polyline: PointsArray3,
+  handleCount: number
 ): PointsArray3 {
   const handles = PointsManager.create3(handleCount) as PointsArray3;
   handles.sources = [];
   const { sources: destPoints } = handles;
-  const { length, sources: sourcePoints = [] } = interpolated3DPoints;
+  const { length, sources: sourcePoints = [] } = polyline;
   const distance = 6;
   if (length < distance * 2) {
-    return interpolated3DPoints.subselect(3);
+    return polyline.subselect(3);
   }
   const interval = Math.floor(length / handleCount / 4);
   sourcePoints.forEach(() =>
     destPoints.push(PointsManager.create3(handleCount))
   );
 
-  const dotValues = createDotValues(interpolated3DPoints, distance);
+  const dotValues = createDotValues(polyline, distance);
 
-  const inflectionIndices = findInflectionPoints(dotValues, handleCount);
+  const inflectionIndices = findMinimumRegions(dotValues, handleCount);
   if (inflectionIndices?.length > 2) {
     inflectionIndices.forEach((index) => {
-      handles.push(interpolated3DPoints.getPoint(index));
+      handles.push(polyline.getPoint(index));
       sourcePoints.forEach((source, destSourceIndex) =>
         destPoints[destSourceIndex].push(source.getPoint(index))
       );
@@ -51,7 +55,7 @@ export default function selectHandles(
         minIndex = testIndex;
       }
     }
-    handles.push(interpolated3DPoints.getPoint(minIndex));
+    handles.push(polyline.getPoint(minIndex));
     sourcePoints.forEach((source, index) =>
       destPoints[index].push(source.getPoint(minIndex))
     );
@@ -60,31 +64,45 @@ export default function selectHandles(
   return handles;
 }
 
+/**
+ * Creates an array of the dot products between each point in the points array
+ * and a point +/- distance from that point, unitized to vector length 1.
+ * That is, this is a measure of the angle at the given point, where 1 is a
+ * straight line, and -1 is a 180 degree angle change.
+ *
+ * @param polyline - the array of Point3 values
+ * @param distance - previous/next distance to use for the vectors for the dot product
+ * @returns - Float32Array of dot products, one per point in the source array.
+ */
 export function createDotValues(
-  pointsArray: PointsArray3,
+  polyline: PointsArray3,
   distance = 6
 ): Float32Array {
-  const { length } = pointsArray;
+  const { length } = polyline;
   const prevVec3 = vec3.create();
   const nextVec3 = vec3.create();
   const dotValues = new Float32Array(length);
 
   for (let i = 0; i < length; i++) {
-    const point = pointsArray.getPoint(i);
-    const prevPoint = pointsArray.getPoint(i - distance);
-    const nextPoint = pointsArray.getPoint((i + distance) % length);
+    const point = polyline.getPoint(i);
+    const prevPoint = polyline.getPoint(i - distance);
+    const nextPoint = polyline.getPoint((i + distance) % length);
     vec3.sub(prevVec3, point, prevPoint);
-    vec3.scale(prevVec3, prevVec3, 1 / vec3.length(prevVec3));
     vec3.sub(nextVec3, nextPoint, point);
-    vec3.scale(nextVec3, nextVec3, 1 / vec3.length(nextVec3));
-    const dot = vec3.dot(prevVec3, nextVec3);
+    const dot =
+      vec3.dot(prevVec3, nextVec3) / (vec3.len(prevVec3) * vec3.len(nextVec3));
     dotValues[i] = dot;
   }
 
   return dotValues;
 }
 
-function findInflectionPoints(dotValues, handleCount) {
+/**
+ * Finds minimum regions in the dot products.  These are detected as
+ * center points of the dot values regions having a minimum value - that is,
+ * where the direction of the line is changing fastest.
+ */
+function findMinimumRegions(dotValues, handleCount) {
   const { max, deviation } = getStats(dotValues);
   const { length } = dotValues;
   // Fallback for very uniform ojects.
@@ -135,6 +153,11 @@ function findInflectionPoints(dotValues, handleCount) {
   return selectedIndices;
 }
 
+/**
+ * Adds points in between the start and finish.
+ * This is currently just the center point for short values and the start/center/end
+ * for ranges where the distance between these is at least the increment.
+ */
 function addIncrement(indices, start, finish, increment, length) {
   const distance = indexValue(finish - start, length);
   if (distance >= increment * 2) {
@@ -145,10 +168,17 @@ function addIncrement(indices, start, finish, increment, length) {
   return indices;
 }
 
+/**
+ * Gets the index value of a closed polyline, rounding the value and
+ * doing the module operation as required.
+ */
 function indexValue(v, length) {
   return (Math.round(v) + length) % length;
 }
 
+/**
+ * Gets statistics on the provided array numbers.
+ */
 function getStats(dotValues) {
   const { length } = dotValues;
   let sum = 0;
@@ -163,10 +193,11 @@ function getStats(dotValues) {
   }
   const mean = sum / length;
   for (let i = 0; i < length; i++) {
-    sumSq += (dotValues[i] - mean) ** 2;
+    const valueDiff = dotValues[i] - mean;
+    sumSq += valueDiff * valueDiff;
   }
   return {
-    mean: sum / length,
+    mean,
     max,
     min,
     sumSq,
