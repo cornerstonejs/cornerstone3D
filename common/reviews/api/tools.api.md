@@ -1399,7 +1399,7 @@ type ContourSegmentationAnnotationData = {
         };
     };
     handles: {
-        interpolationSources?: PointsArray<Types_2.Point3>[];
+        interpolationSources?: Types_2.PointsManager<Types_2.Point3>[];
     };
     onInterpolationComplete?: (annotation: ContourSegmentationAnnotation) => unknown;
 };

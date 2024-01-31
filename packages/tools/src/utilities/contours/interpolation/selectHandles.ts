@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { PointsArray } from '../PointsArray';
+import { utilities } from '@cornerstonejs/core';
 import type { PointsArray3 } from './interpolate';
+
+const { PointsManager } = utilities;
 
 /**
  * Selects handles by looking for local maximums in the angle that the local
@@ -10,7 +12,7 @@ export default function selectHandles(
   interpolated3DPoints,
   handleCount
 ): PointsArray3 {
-  const handles = PointsArray.create3(handleCount) as PointsArray3;
+  const handles = PointsManager.create3(handleCount) as PointsArray3;
   handles.sources = [];
   const { sources: destPoints } = handles;
   const { length, sources: sourcePoints = [] } = interpolated3DPoints;
@@ -19,7 +21,9 @@ export default function selectHandles(
     return interpolated3DPoints.subselect(3);
   }
   const interval = Math.floor(length / handleCount / 4);
-  sourcePoints.forEach(() => destPoints.push(PointsArray.create3(handleCount)));
+  sourcePoints.forEach(() =>
+    destPoints.push(PointsManager.create3(handleCount))
+  );
 
   const dotValues = createDotValues(interpolated3DPoints, distance);
 

@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Point2, Point3, PointsXYZ } from '../types';
 
 export type PolyDataPointConfiguration = {
   /** The dimensionality of the points */
@@ -10,21 +10,28 @@ export type PolyDataPointConfiguration = {
 };
 
 /**
- * PointsArray is a TypedArray based representation of n dimensional points with
- * custom sub-classes to represent the version of this based on Point2 and Point3
- * gl-matrix implementation.
+ * PointsManager handles Point type data contained in a TypedArray representation
+ * where all the point data is consecutive from start to end.  That is, the
+ * organization is  `x0,y0,z0,x1,y1,z1,...,xn,yn,zn`.  This optimizes the storage
+ * costs for large arrays of data, while still providing access to the point
+ * data as though it were a simple array of objects.
+ *
  * This representation is efficient for storing large numbers of points and for
  * transferring them amongst systems and is planned to have more methods added
  * for generic manipulation of data.
  */
-export class PointsArray<T> {
-  /** Allow storage for an index value to indicate where this slice is located */
+export default class PointsManager<T> {
+  /**
+   *  Allow storage for an index value to indicate where this array is
+   * contained in terms of the index location.
+   */
   public kIndex: number;
+
   /**
    * Sources data for this array.  Just used for external access, not updated
    * here.
    */
-  public sources: PointsArray<T>[];
+  public sources: PointsManager<T>[];
 
   data: Float32Array;
   _dimensions = 3;
@@ -153,9 +160,13 @@ export class PointsArray<T> {
   }
 
   /**
+   * The XYZ representation of a points array is an object with three separate
+   * arrays, one for each of x,y and z, containing the point data, eg
+   * `x: {x0, x1, x2, ...., xn }`
+   *
    * @returns An XYZ array
    */
-  public toXYZ(): Types.PointsXYZ {
+  public toXYZ(): PointsXYZ {
     const xyz = { x: [], y: [], z: [] };
     this.forEach((p) => {
       xyz.x.push(p[0]);
@@ -166,12 +177,8 @@ export class PointsArray<T> {
   }
 
   /** Create an PointsArray3 from the x,y,z individual arrays */
-  public static fromXYZ({
-    x,
-    y,
-    z,
-  }: Types.PointsXYZ): PointsArray<Types.Point3> {
-    const array = PointsArray.create3(x.length);
+  public static fromXYZ({ x, y, z }: PointsXYZ): PointsManager<Point3> {
+    const array = PointsManager.create3(x.length);
     let offset = 0;
     for (let i = 0; i < x.length; i++) {
       array.data[offset++] = x[i];
@@ -182,8 +189,8 @@ export class PointsArray<T> {
     return array;
   }
 
-  public subselect(count = 10, offset = 0): PointsArray<T> {
-    const selected = new PointsArray<T>({
+  public subselect(count = 10, offset = 0): PointsManager<T> {
+    const selected = new PointsManager<T>({
       initialSize: count,
       dimensions: this._dimensions,
     });
@@ -196,10 +203,10 @@ export class PointsArray<T> {
   }
 
   public static create3(initialSize = 128) {
-    return new PointsArray<Types.Point3>({ initialSize, dimensions: 3 });
+    return new PointsManager<Point3>({ initialSize, dimensions: 3 });
   }
 
   public static create2(initialSize = 128) {
-    return new PointsArray<Types.Point3>({ initialSize, dimensions: 2 });
+    return new PointsManager<Point2>({ initialSize, dimensions: 2 });
   }
 }

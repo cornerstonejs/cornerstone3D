@@ -1,4 +1,4 @@
-import { triggerEvent } from '@cornerstonejs/core';
+import { triggerEvent, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
@@ -9,8 +9,9 @@ import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnno
 import type { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
 import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
-import { PointsArray } from '../PointsArray';
 import selectHandles from './selectHandles';
+
+const { PointsManager } = utilities;
 
 /**
  * An XYZ encoded points that also includes an indicator I for whether the
@@ -21,10 +22,8 @@ export type PointsXYZI = Types.PointsXYZ & {
   kIndex?: number;
 };
 
-export type PointsArray3 = PointsArray<Types.Point3> & {
+export type PointsArray3 = Types.PointsManager<Types.Point3> & {
   I?: boolean[];
-  /** Source data for the interpolation */
-  sources?: PointsArray3[];
 };
 
 const dP = 0.2; // Aim for < 0.2mm between interpolated nodes when super-sampling.
@@ -33,7 +32,13 @@ let interpolating = false;
 
 /**
  * interpolate - Interpolate missing contours in the ROIContours.
- * If input is tool data collection, it is expected to be sorted in the order of stack image in which it was drawn
+ * If input is tool data collection, it is expected to be sorted in the order
+ * of stack image in which it was drawn.
+ *
+ * This is performed in a microtask in order to avoid delaying the event handler
+ * excessively, but to ensure it is completed before the data is additionally
+ * changed.  It was originally done in a setTimeout, but that allowed the data
+ * to be updated between calls, causing issues with the interpolation process.
  *
  * @param viewportData - Object
  * @returns null
@@ -334,16 +339,16 @@ function _generateInterpolatedOpenContour(
 ): PointsArray3 {
   const indices = c1HasMoreNodes ? c1ir.I : c2ir.I;
 
-  const c1 = PointsArray.fromXYZ(c1ir);
-  const c2 = PointsArray.fromXYZ(c2ir);
+  const c1 = PointsManager.fromXYZ(c1ir);
+  const c2 = PointsManager.fromXYZ(c2ir);
   const { length } = c1;
-  const cInterp = PointsArray.create3(length) as PointsArray3;
+  const cInterp = PointsManager.create3(length) as PointsArray3;
 
   const vecSubtract = vec3.create();
   const vecResult = vec3.create();
-  const c1Source = PointsArray.create3(length);
+  const c1Source = PointsManager.create3(length);
   c1Source.kIndex = c1ir.kIndex;
-  const c2Source = PointsArray.create3(length);
+  const c2Source = PointsManager.create3(length);
   c2Source.kIndex = c2ir.kIndex;
 
   for (let i = 0; i < c1ir.x.length; i++) {

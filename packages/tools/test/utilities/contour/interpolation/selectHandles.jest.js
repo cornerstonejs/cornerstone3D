@@ -1,13 +1,13 @@
 import selectHandles, {
   createDotValues,
 } from '../../../../src/utilities/contours/interpolation/selectHandles';
-import { PointsArray } from '../../../../src/utilities/contours/PointsArray';
+import { PointsManager } from '@cornerstonejs/core/src/utilities/PointsManager';
 
 import { describe, it, expect } from '@jest/globals';
 
 function createCircle(radius = 30) {
   const center = radius + 5;
-  const points = PointsArray.create3(radius * 5);
+  const points = PointsManager.create3(radius * 5);
 
   for (let angle = 0; angle < 360; angle++) {
     const radians = (angle * Math.PI) / 180;
@@ -19,7 +19,7 @@ function createCircle(radius = 30) {
 }
 
 function createSquare(edge: number) {
-  const array = PointsArray.create3(410);
+  const array = PointsManager.create3(410);
   for (let i = 0; i <= edge; i++) {
     array.push([i, 0, 0]);
   }
@@ -38,7 +38,7 @@ function createSquare(edge: number) {
 
 describe('SelectHandles:', function () {
   it('Should select 3 handles for too small array', () => {
-    const array = PointsArray.create3(5);
+    const array = PointsManager.create3(5);
     array.push([0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0]);
     const handles = selectHandles(array, 3);
     expect(handles.length).toBe(3);
