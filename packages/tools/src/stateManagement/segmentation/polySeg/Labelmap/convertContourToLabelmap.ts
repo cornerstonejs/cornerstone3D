@@ -71,7 +71,7 @@ export async function convertContourToVolumeLabelmap(
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_STARTED, {});
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
 
   const newScalarData = await workerManager.executeTask(
     'polySeg',
@@ -88,13 +88,13 @@ export async function convertContourToVolumeLabelmap(
     {
       callbacks: [
         (progress) => {
-          console.debug('progress', progress);
+          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
         },
       ],
     }
   );
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION_COMPLETED);
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
 
   segmentationVolume.imageData
     .getPointData()

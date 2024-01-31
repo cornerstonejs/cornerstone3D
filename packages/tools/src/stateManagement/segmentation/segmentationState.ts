@@ -113,10 +113,9 @@ function findSegmentationRepresentationByUID(
 
   const toolGroupIds = Object.keys(allToolGroupRepresentations);
 
-  for (let i = 0; i < toolGroupIds.length; i++) {
-    const toolGroupId = toolGroupIds[i];
+  for (const toolGroupId of toolGroupIds) {
     const toolGroupRepresentations =
-      allToolGroupRepresentations[toolGroupId] || [];
+      getAllSegmentationRepresentations()[toolGroupId];
 
     const foundRepresentation = toolGroupRepresentations.find(
       (representation) =>

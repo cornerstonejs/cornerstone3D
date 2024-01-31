@@ -1,4 +1,4 @@
-import { Types, cache } from '@cornerstonejs/core';
+import { Types, cache, eventTarget, triggerEvent } from '@cornerstonejs/core';
 import { getWebWorkerManager } from '@cornerstonejs/core';
 import {
   LabelmapSegmentationData,
@@ -6,6 +6,7 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
 import { computeVolumeSegmentationFromStack } from '../../convertStackToVolumeSegmentation';
+import { Events } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
@@ -31,6 +32,8 @@ export async function convertLabelmapToSurface(
   const scalarData = volume.getScalarData();
   const { dimensions, spacing, origin, direction } = volume;
 
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+
   const results = await workerManager.executeTask(
     'polySeg',
     'convertLabelmapToSurface',
@@ -45,11 +48,13 @@ export async function convertLabelmapToSurface(
     {
       callbacks: [
         (progress) => {
-          console.debug('progress', progress);
+          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
         },
       ],
     }
   );
+
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
 
   return results;
 }

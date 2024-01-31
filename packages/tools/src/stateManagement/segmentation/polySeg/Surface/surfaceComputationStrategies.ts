@@ -89,7 +89,8 @@ async function computeSurfaceFromLabelmapSegmentation(
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation?.representationData?.LABELMAP) {
-    throw new Error('No labelmap data found for segmentation');
+    console.warn('Only support surface update from labelmaps');
+    return;
   }
 
   const isVolume = isVolumeSegmentation(

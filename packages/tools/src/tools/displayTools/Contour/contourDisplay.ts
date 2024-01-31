@@ -81,8 +81,11 @@ async function render(
 
   const { geometryIds } = contourData;
 
+  if (!geometryIds?.length) {
+    return;
+  }
+
   // this means we would like to use vtk actors for contour data
-  // Note: We really should get out of
 
   if (viewport instanceof StackViewport) {
     // We don't have a good way to handle stack viewports for contours at the moment.
@@ -98,6 +101,11 @@ async function render(
     toolGroupConfig
   );
 
+  /**
+   * The following logic could be added if we want to support the use case
+   * where the contour representation data is initiated using annotations
+   * in the state from the get-go , and not when the user draws a contour.
+   */
   // if (contourData?.points?.length) {
   //   // contourData = createAnnotationsFromPoints(contourData.points);
   //   const contourSegmentationAnnotation = {

@@ -63,21 +63,20 @@ async function computeAndAddRepresentation<T>(
  * If there is an existing listener, it will be unsubscribed before adding the new listener.
  */
 function subscribeToSegmentationChanges(updateFunction) {
-  // Named function for handling the event
-  const handleSegmentationChange = (event) => {
+  const debouncedUpdateFunction = (event) => {
     _debouncedSegmentationModified(event, updateFunction);
   };
 
-  // Remove the event listener for cleanup
+  updateFunction._debouncedUpdateFunction = debouncedUpdateFunction;
+
   eventTarget.removeEventListener(
     Events.SEGMENTATION_DATA_MODIFIED,
-    handleSegmentationChange
+    updateFunction._debouncedUpdateFunction
   );
 
-  // Add the event listener
   eventTarget.addEventListener(
     Events.SEGMENTATION_DATA_MODIFIED,
-    handleSegmentationChange
+    updateFunction._debouncedUpdateFunction
   );
 }
 

@@ -132,18 +132,14 @@ async function run() {
   await initDemo();
 
   eventTarget.addEventListener(
-    cornerstoneTools.Enums.Events.POLYSEG_CONVERSION_STARTED,
+    cornerstoneTools.Enums.Events.POLYSEG_CONVERSION,
     (evt) => {
       const p = document.getElementById('progressDetailP');
-      p.innerHTML = `Conversion started`;
-    }
-  );
-
-  eventTarget.addEventListener(
-    cornerstoneTools.Enums.Events.POLYSEG_CONVERSION_COMPLETED,
-    (evt) => {
-      const p = document.getElementById('progressDetailP');
-      p.innerHTML = `Conversion completed`;
+      const { detail } = evt;
+      const { progress } = detail;
+      if (p) {
+        p.innerHTML = `${progress}%`;
+      }
     }
   );
 

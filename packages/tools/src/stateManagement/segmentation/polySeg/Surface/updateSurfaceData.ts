@@ -16,6 +16,10 @@ export async function updateSurfaceData(segmentationId) {
     segmentationId
   );
 
+  if (!surfacesObj) {
+    return;
+  }
+
   const segmentation = getSegmentation(segmentationId);
   const indices = getUniqueSegmentIndices(segmentationId);
 

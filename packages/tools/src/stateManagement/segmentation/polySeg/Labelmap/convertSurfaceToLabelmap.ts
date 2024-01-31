@@ -1,5 +1,12 @@
-import { Types, cache, getWebWorkerManager } from '@cornerstonejs/core';
+import {
+  Types,
+  cache,
+  eventTarget,
+  getWebWorkerManager,
+  triggerEvent,
+} from '@cornerstonejs/core';
 import { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
+import { Events } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
@@ -33,6 +40,9 @@ export async function convertSurfaceToVolumeLabelmap(
   });
 
   const { dimensions, direction, origin, spacing } = segmentationVolume;
+
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+
   const newScalarData = await workerManager.executeTask(
     'polySeg',
     'convertSurfacesToVolumeLabelmap',
@@ -46,11 +56,13 @@ export async function convertSurfaceToVolumeLabelmap(
     {
       callbacks: [
         (progress) => {
-          console.debug('progress', progress);
+          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
         },
       ],
     }
   );
+
+  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
 
   segmentationVolume.imageData
     .getPointData()
