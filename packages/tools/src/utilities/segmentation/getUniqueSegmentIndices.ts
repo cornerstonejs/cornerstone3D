@@ -17,7 +17,7 @@ function getUniqueSegmentIndices(segmentationId) {
     const labelmapData =
       segmentation.representationData[SegmentationRepresentations.Labelmap];
 
-    const keySet = {};
+    const keySet = new Set();
 
     if (isVolumeSegmentation(labelmapData)) {
       const volume = cache.getVolume(segmentationId);
@@ -25,8 +25,8 @@ function getUniqueSegmentIndices(segmentationId) {
 
       for (let i = 0; i < scalarData.length; i++) {
         const segmentIndex = scalarData[i];
-        if (segmentIndex !== 0 && !keySet[segmentIndex]) {
-          keySet[segmentIndex] = true;
+        if (segmentIndex !== 0) {
+          keySet.add(segmentIndex);
         }
       }
     } else {
@@ -36,14 +36,16 @@ function getUniqueSegmentIndices(segmentationId) {
 
         for (let i = 0; i < scalarData.length; i++) {
           const segmentIndex = scalarData[i];
-          if (segmentIndex !== 0 && !keySet[segmentIndex]) {
-            keySet[segmentIndex] = true;
+          if (segmentIndex !== 0) {
+            keySet.add(segmentIndex);
           }
         }
       });
     }
 
-    return Object.keys(keySet).map((it) => parseInt(it, 10));
+    return Array.from(keySet)
+      .map((it) => parseInt(it as string))
+      .sort();
   } else if (segmentation.type === SegmentationRepresentations.Contour) {
     const annotationUIDsMap =
       segmentation.representationData.CONTOUR?.annotationUIDsMap;

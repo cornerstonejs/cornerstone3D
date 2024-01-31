@@ -1,47 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-
-/**
- * Determines whether a 2D point is inside a polyline.
- * The algorithm works by drawing horizontal rays from the point to the right side
- * of the polygon, counting the number of times the ray intersects a polygon edge.
- *  If the winding number is odd, the point is inside the polygon.
- *
- * @param point - The 2D point to check.
- * @param polyline - The polyline represented as an array of 2D points.
- * @returns A boolean indicating whether the point is inside the polyline.
- */
-export function isPointInsidePolyline2D(
-  point: Types.Point2,
-  polyline: Types.Point2[]
-) {
-  const n = polyline.length;
-  let windingNumber = 0;
-  const x = point[0],
-    y = point[1];
-
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    const xi = polyline[i][0],
-      yi = polyline[i][1];
-    const xj = polyline[j][0],
-      yj = polyline[j][1];
-
-    if (yi === yj && y !== yi) {
-      continue;
-    }
-
-    if (
-      ((yi < y && yj >= y) || (yj < y && yi >= y)) &&
-      xi + ((y - yi) / (yj - yi)) * (xj - xi) < x
-    ) {
-      windingNumber++;
-    }
-  }
-
-  const isInside = windingNumber % 2 !== 0;
-
-  return isInside;
-}
+import containsPoint from './containsPoint';
 
 /**
  * Determines whether a 3D point is inside a polyline in 3D space.
@@ -94,5 +52,5 @@ export function isPointInsidePolyline3D(
     point[(sharedDimensionIndex + 2) % 3],
   ] as Types.Point2;
 
-  return isPointInsidePolyline2D(point2D, points2D);
+  return containsPoint(points2D, point2D);
 }

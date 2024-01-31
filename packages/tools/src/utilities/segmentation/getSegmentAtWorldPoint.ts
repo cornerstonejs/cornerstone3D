@@ -22,8 +22,7 @@ import { isPointInsidePolyline3D } from '../math/polyline';
  * Get the segment at the specified world point in the viewport.
  * @param viewport - The viewport where the point resides.
  * @param worldPoint - The world point to get the segment for.
- * @param segmentationId - The ID of the segmentation to lookup.
- * @param representationType - The type of segmentation representation (labelmap, contour etc.)
+ * @param segmentationRepresentationUID - The UID of the segmentation representation to use.
  * @returns The index of the segment at the world point, or undefined if not found.
  */
 export function getSegmentAtWorldPoint(
@@ -60,7 +59,7 @@ export function getSegmentAtWorldPoint(
   }
 }
 
-function getSegmentAtWorldForLabelmap(
+export function getSegmentAtWorldForLabelmap(
   viewport: Types.IViewport,
   worldPoint: Types.Point3,
   labelmapData: LabelmapSegmentationData,
@@ -97,16 +96,18 @@ function getSegmentAtWorldForLabelmap(
   const imageData = segmentationActor?.actor.getMapper().getInputData();
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
-  // Since it is a stack, we don't need to check the z
-  const flattenedIndex = indexIJK[0] + indexIJK[1] * image.columns;
-  const scalars = imageData.getPointData().getScalars().getData();
+  const dimensions = imageData.getDimensions();
+  const voxelManager = utilities.VoxelManager.createVolumeVoxelManager(
+    dimensions,
+    imageData.getPointData().getScalars().getData()
+  );
 
-  const segmentIndex = scalars[flattenedIndex];
+  const segmentIndex = voxelManager.getAtIJK(...(indexIJK as Types.Point3));
 
   return segmentIndex;
 }
 
-function getSegmentAtWorldForContour(
+export function getSegmentAtWorldForContour(
   viewport: Types.IViewport,
   worldPoint: Types.Point3,
   contourData: ContourSegmentationData
@@ -138,6 +139,9 @@ function getSegmentAtWorldForContour(
         continue;
       }
 
+      // This function checks whether we are inside the contour. It does not
+      // check if we are exactly on the contour, which is highly unlikely given
+      // the canvas pixel resolution of 1 decimal place we have by design.
       if (isPointInsidePolyline3D(worldPoint, polyline)) {
         return Number(segmentIndex);
       }

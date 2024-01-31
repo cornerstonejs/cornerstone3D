@@ -308,7 +308,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // Making sure the setViewports api also can fill the canvas
     // properly
-    viewportInputEntries.map((vp) => {
+    viewportInputEntries.forEach((vp) => {
       const canvas = getOrCreateCanvas(vp.element);
       const { background } = vp.defaultOptions;
       this.fillCanvasWithBackgroundColor(canvas, background);

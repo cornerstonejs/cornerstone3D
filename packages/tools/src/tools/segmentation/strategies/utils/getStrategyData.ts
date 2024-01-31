@@ -23,7 +23,7 @@ function getStrategyData({ operationData, viewport }) {
     if (referencedVolumeId) {
       const imageVolume = cache.getVolume(referencedVolumeId);
       imageScalarData = imageVolume.getScalarData();
-      dimensions = imageVolume.dimensions;
+      imageDimensions = imageVolume.dimensions;
     }
 
     ({ imageData: segmentationImageData } = segmentationVolume);
