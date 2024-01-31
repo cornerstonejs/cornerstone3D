@@ -855,7 +855,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         triggerAnnotationModified(
           annotation,
           enabledElement.viewport.element,
-          ChangeTypes.InterpolationUpdate
+          ChangeTypes.InterpolationUpdated
         );
       }
       // Might have created new interpolation sources, so clear again

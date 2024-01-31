@@ -3,7 +3,6 @@ import {
   Types,
   Enums,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -41,6 +40,7 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+let renderingEngine;
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 const viewports = [];
 const segmentationId = `SEGMENTATION_ID`;
@@ -187,7 +187,7 @@ addButtonToToolbar({
         // Could also specify only for the active tool, but that doesn't seem useful here.
       }
     );
-    getRenderingEngine(renderingEngineId).render();
+    renderingEngine.render();
   },
 });
 
@@ -203,7 +203,7 @@ function acceptCurrent() {
       }
     );
   });
-  getRenderingEngine(renderingEngineId).render();
+  renderingEngine.render();
 }
 
 addButtonToToolbar({
@@ -320,7 +320,7 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack and a volume viewport
   const viewportInputArray = [

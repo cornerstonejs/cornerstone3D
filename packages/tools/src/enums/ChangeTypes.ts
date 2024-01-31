@@ -30,7 +30,7 @@ enum ChangeTypes {
   /**
    * Occurs when an interpolation result is updated with more tool specific data.
    */
-  InterpolationUpdate = 'InterpolationUpdate',
+  InterpolationUpdated = 'InterpolationUpdated',
 }
 
 export default ChangeTypes;

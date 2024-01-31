@@ -22,7 +22,7 @@ const { uuidv4 } = csUtils;
 
 const ChangeTypesForInterpolation = [
   ChangeTypes.HandlesUpdated,
-  ChangeTypes.InterpolationUpdate,
+  ChangeTypes.InterpolationUpdated,
 ];
 
 export default class InterpolationManager {
@@ -196,7 +196,7 @@ export default class InterpolationManager {
       sliceData,
       annotation,
       interpolationUID: annotation.interpolationUID,
-      isInterpolationUpdate: changeType === ChangeTypes.InterpolationUpdate,
+      isInterpolationUpdate: changeType === ChangeTypes.InterpolationUpdated,
     };
     interpolate(viewportData);
   };

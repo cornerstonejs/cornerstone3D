@@ -886,7 +886,7 @@ enum ChangeTypes {
     // (undocumented)
     Interaction = "Interaction",
     // (undocumented)
-    InterpolationUpdate = "InterpolationUpdate",
+    InterpolationUpdated = "InterpolationUpdated",
     // (undocumented)
     StatsUpdated = "StatsUpdated"
 }
