@@ -4,18 +4,14 @@ import {
   eventTarget,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-import { Events } from '../../../enums';
+import { Events, ChangeTypes } from '../../../enums';
 import { Annotation } from '../../../types/AnnotationTypes';
-import ChangeTypes from '../../../enums/ChangeTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
 import {
   AnnotationAddedEventDetail,
   AnnotationModifiedEventDetail,
   AnnotationCompletedEventDetail,
 } from '../../../types/EventTypes';
-
-type IEnabledElement = Types.IEnabledElement;
 
 /**
  * It triggers an event for the element when an annotation is added
@@ -89,7 +85,7 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
  */
 function triggerAnnotationModified(
   annotation: Annotation,
-  element: HTMLDivElement | IEnabledElement,
+  element: HTMLDivElement,
   changeType = ChangeTypes.HandlesUpdated
 ): void {
   const enabledElement = getEnabledElement(element);

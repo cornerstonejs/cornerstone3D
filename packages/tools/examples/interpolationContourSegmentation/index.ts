@@ -58,17 +58,28 @@ const actions = {
   },
 };
 
+const interpolation = {
+  enabled: true,
+  interpolationColor: '#70ffff',
+};
+
 const configuration = {
   interpolation: { enabled: true },
   actions,
 };
 interpolationTools.set('LivewireInterpolationNearest3', {
   baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: { interpolation: { enabled: true, nearestEdge: 3 }, actions },
+  configuration: {
+    interpolation: { ...interpolation, nearestEdge: 3 },
+    actions,
+  },
 });
 interpolationTools.set('LivewireInterpolationNearest5', {
   baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: { interpolation: { enabled: true, nearestEdge: 5 }, actions },
+  configuration: {
+    interpolation: { ...interpolation, nearestEdge: 5 },
+    actions,
+  },
 });
 interpolationTools.set('LivewireInterpolationNearest3RepeatInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,

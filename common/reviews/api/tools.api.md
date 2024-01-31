@@ -3144,8 +3144,6 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    protected onInterpolationComplete: (annotation: any) => void;
-    // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
     // (undocumented)
     protected renderAnnotationInstance(renderContext: {

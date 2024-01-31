@@ -922,7 +922,7 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport): {
 };
 
 // @public (undocumented)
-export function getEnabledElement(element: HTMLDivElement | IEnabledElement | undefined): IEnabledElement | undefined;
+export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
 export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
