@@ -1,9 +1,10 @@
+import { utilities } from '@cornerstonejs/core';
+import { describe, it, expect } from '@jest/globals';
 import selectHandles, {
   createDotValues,
 } from '../../../../src/utilities/contours/interpolation/selectHandles';
-import { PointsManager } from '@cornerstonejs/core/src/utilities/PointsManager';
 
-import { describe, it, expect } from '@jest/globals';
+const { PointsManager } = utilities;
 
 function createCircle(radius = 30) {
   const center = radius + 5;
@@ -18,7 +19,7 @@ function createCircle(radius = 30) {
   return points;
 }
 
-function createSquare(edge: number) {
+function createSquare(edge) {
   const array = PointsManager.create3(410);
   for (let i = 0; i <= edge; i++) {
     array.push([i, 0, 0]);
