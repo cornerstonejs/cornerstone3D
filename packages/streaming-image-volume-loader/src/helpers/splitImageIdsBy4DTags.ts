@@ -5,12 +5,17 @@ import { metaData } from '@cornerstonejs/core';
 //   (0018,1060) Trigger Time                   [NOK]
 //   (0018,0081) Echo Time                      [NOK]
 //   (0018,0086) Echo Number                    [NOK]
-//   (0020,0100) Temporal Position Identifier   [NOK]
+//   (0020,0100) Temporal Position Identifier   [OK]
 //   (0054,1300) FrameReferenceTime             [OK]
 
 interface MappedFrameReferenceTime {
   imageId: string;
   frameReferenceTime: number;
+}
+
+interface MappedTemporalPositionIdentifier {
+  imageId: string;
+  temporalPositionIdentifier: number;
 }
 
 const groupBy = (array, key) => {
@@ -20,21 +25,28 @@ const groupBy = (array, key) => {
   }, {});
 };
 
-function splitFramesByFrameReferenceTime(imageIds: string[]): string[][] {
-  const framesMetadata: Array<MappedFrameReferenceTime> = imageIds.map(
-    (imageId: string): MappedFrameReferenceTime => {
-      const petImageModule = metaData.get('petImageModule', imageId);
-      const { frameReferenceTime = 0 } = petImageModule ?? {};
-      return { imageId, frameReferenceTime };
-    }
-  );
+function splitFramesByMetadata(
+  imageIds: string[],
+  metadataField: string,
+  property: string
+): string[][] {
+  const framesMetadata: Array<any> = imageIds.map((imageId: string) => {
+    const moduleInfo = metaData.get(metadataField, imageId);
+    const propInfo = moduleInfo ? moduleInfo[property] : 0;
+    return { imageId, [property]: propInfo };
+  });
 
-  const framesGroups = groupBy(framesMetadata, 'frameReferenceTime');
-  const sortedFrameReferenceTimes = Object.keys(framesGroups)
+  if (!framesMetadata.every((item) => item[property])) {
+    // some frames do not have the metadataField
+    return null;
+  }
+
+  const framesGroups = groupBy(framesMetadata, property);
+  const sortedKeys = Object.keys(framesGroups)
     .map(Number.parseFloat)
     .sort((a, b) => a - b);
 
-  const imageIdsGroups = sortedFrameReferenceTimes.map((key) =>
+  const imageIdsGroups = sortedKeys.map((key) =>
     framesGroups[key].map((item) => item.imageId)
   );
 
@@ -48,7 +60,16 @@ function splitFramesByFrameReferenceTime(imageIds: string[]): string[][] {
  * @returns imageIds grouped by 4D tags
  */
 function splitImageIdsBy4DTags(imageIds: string[]): string[][] {
-  const fncList = [splitFramesByFrameReferenceTime];
+  const fncList = [
+    (imageIds) =>
+      splitFramesByMetadata(imageIds, 'petImageModule', 'frameReferenceTime'),
+    (imageIds) =>
+      splitFramesByMetadata(
+        imageIds,
+        'temporalPositionIdentifier',
+        'temporalPositionIdentifier'
+      ),
+  ];
 
   for (let i = 0; i < fncList.length; i++) {
     const framesGroups = fncList[i](imageIds);
