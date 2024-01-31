@@ -453,6 +453,7 @@ export default class BaseStreamingImageVolume
     const { cachedFrames } = this;
 
     if (cachedFrames[imageIdIndex] === ImageQualityStatus.FULL_RESOLUTION) {
+      // The request framework handles non-promise returns, so just return here
       return;
     }
 

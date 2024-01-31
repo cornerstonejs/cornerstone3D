@@ -35,7 +35,7 @@ import type {
   VOIRange,
   VolumeActor,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
+import { TargetSpecifier, ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -842,18 +842,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
+    this.setInvertColor(this.initialInvert);
+
+    this.setInterpolationType(InterpolationType.LINEAR);
+
     if (this.getRotation() !== 0) {
       this.setRotation(0);
     }
-    this.setInterpolationType(InterpolationType.LINEAR);
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
       transferFunction,
       this.initialTransferFunctionNodes
     );
-
-    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {
@@ -2040,11 +2041,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return options;
   }
 
-  public loadImages(
+  public async loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
-    return Promise.allSettled(
+    const resultList = await Promise.allSettled(
       imageIds.map((imageId) => {
         const options = this.getLoaderImageOptions(
           imageId
@@ -2062,6 +2063,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         );
       })
     );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
@@ -2811,6 +2821,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public getCurrentImageIdIndex = (): number => {
     return this.currentImageIdIndex;
   };
+
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
+    return `imageId:${this.imageIds[imageIdIndex]}`;
+  }
 
   /**
    *

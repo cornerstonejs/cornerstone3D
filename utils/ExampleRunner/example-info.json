@@ -229,11 +229,14 @@
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
       },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
       "livewireContour": {
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
-
     },
     "video" : {
       "video": {
@@ -252,9 +255,17 @@
         "name": "Video Tools",
         "description": "Video annotation tools"
       },
+      "videoSplineROITools": {
+        "name": "Video Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline) on video"
+      },
       "videoGroup": {
         "name": "Video Annotation Grouping",
         "description": "Annotation grouping tools"
+      },
+      "videoContourSegmentation": {
+        "name": "Video Contour Segmentation",
+        "description": "Demonstrates spline and livewire contour segmentation on video viewports"
       },
       "videoRange": {
         "name": "Video Range Selection",
@@ -289,6 +300,10 @@
       "contourRenderingConfiguration": {
         "name": "Contour rendering configuration ",
         "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
+      },
+      "interpolationContourSegmentation": {
+        "name": "Interpolation of Contours between slices",
+        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
       },
       "labelmapToolGroupSpecificConfiguration": {
         "name": "ToolGroup Specific Labelmap Segmentation Configuration",
@@ -333,6 +348,22 @@
       "segmentSelect": {
         "name": "Segment Select Tool",
         "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
+      },
+      "splineContourSegmentationTools": {
+        "name": "Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool"
+      },
+      "splineContourSegmentationToolsAdvanced": {
+        "name": "Advanced Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool on multiple viewports (stack and volume), segmentations and different styles for active and inactive states"
+      },
+      "planarFreehandContourSegmentationTool": {
+        "name": "Freehand Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using planarFreehandROITool tool"
+      },
+      "livewireContourSegmentation": {
+        "name": "Livewire Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using livewireContour tool"
       }
     },
     "tools-advanced": {

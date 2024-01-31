@@ -25,6 +25,8 @@ import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
+import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
+import getViewportForAnnotation from './getViewportForAnnotation';
 
 // name spaces
 import * as contours from './contours';
@@ -73,8 +75,10 @@ export {
   pointInShapeCallback,
   getSphereBoundsInfo,
   getAnnotationNearPoint,
+  getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,
+  pointInSurroundingSphereCallback,
   viewport,
   cine,
   clip,

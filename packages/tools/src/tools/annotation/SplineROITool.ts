@@ -1,34 +1,33 @@
-import { AnnotationTool } from '../base';
-
 import {
   getEnabledElement,
   eventTarget,
   triggerEvent,
+  utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
-import {
-  addAnnotation,
-  getAnnotations,
-  removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
-import { Events, MouseBindings, KeyboardBindings } from '../../enums';
-import { resetElementCursor } from '../../cursors/elementCursor';
 import {
+  Events,
+  MouseBindings,
+  KeyboardBindings,
+  ChangeTypes,
+} from '../../enums';
+import { resetElementCursor } from '../../cursors/elementCursor';
+import type {
+  Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
 import {
   math,
@@ -46,12 +45,13 @@ import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -77,7 +77,7 @@ enum SplineToolActions {
   DeleteControlPoint = 'deleteControlPoint',
 }
 
-class SplineROITool extends AnnotationTool {
+class SplineROITool extends ContourSegmentationBaseTool {
   static toolName;
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
@@ -96,6 +96,10 @@ class SplineROITool extends AnnotationTool {
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
+  fireChangeOnUpdate: {
+    annotationUID: string;
+    changeType: ChangeTypes;
+  } = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -168,71 +172,17 @@ class SplineROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): SplineROIAnnotation => {
+  addNewAnnotation(evt: EventTypes.InteractionEventType): SplineROIAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const { world: worldPos, canvas: canvasPos } = currentPoints;
+    const { canvas: canvasPos } = currentPoints;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { renderingEngine } = enabledElement;
+    const annotation = this.createAnnotation(evt) as SplineROIAnnotation;
 
     this.isDrawing = true;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const { type: splineType } = this.configuration.spline;
-    const splineConfig = this._getSplineConfig(splineType);
-    const spline = new splineConfig.Class();
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation: SplineROIAnnotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-      },
-      data: {
-        handles: {
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-          points: [[...worldPos]],
-          activeHandleIndex: null,
-        },
-        spline: {
-          type: splineConfig.type,
-          instance: spline,
-          resolution: splineConfig.resolution,
-          closed: false,
-          polyline: [],
-        },
-        cachedStats: {},
-      },
-    };
-
-    addAnnotation(annotation, element);
+    this.addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -253,7 +203,7 @@ class SplineROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
-  };
+  }
 
   /**
    * It returns if the canvas point is near the provided annotation in the provided
@@ -355,6 +305,7 @@ class SplineROITool extends AnnotationTool {
 
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     const { data } = annotation;
+    annotation.autoGenerated = false;
 
     data.handles.activeHandleIndex = null;
 
@@ -365,6 +316,16 @@ class SplineROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
+    // Decide whether there's at least one point is outside image
+    const image = this.getTargetIdImage(
+      this.getTargetId(enabledElement.viewport),
+      enabledElement.renderingEngine
+    );
+    const { imageData, dimensions } = image;
+    this.isHandleOutsideImage = data.handles.points
+      .map((p) => utilities.transformWorldToIndex(imageData, p))
+      .some((index) => !utilities.indexWithinDimensions(index, dimensions));
+
     if (
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
@@ -372,16 +333,14 @@ class SplineROITool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
+    this.fireChangeOnUpdate ||= {
+      annotationUID: annotation.annotationUID,
+      changeType: newAnnotation
+        ? ChangeTypes.Completed
+        : ChangeTypes.HandlesUpdated,
+    };
+
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
-    }
 
     this.editData = null;
     this.isDrawing = false;
@@ -438,7 +397,7 @@ class SplineROITool extends AnnotationTool {
     const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
-    if (data.spline.closed) {
+    if (data.contour.closed) {
       return;
     }
 
@@ -448,7 +407,7 @@ class SplineROITool extends AnnotationTool {
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
-    let closeSpline = data.handles.points.length >= 2 && doubleClick;
+    let closeContour = data.handles.points.length >= 2 && doubleClick;
     let addNewPoint = true;
 
     // Check if user clicked on the first point to close the curve
@@ -461,7 +420,7 @@ class SplineROITool extends AnnotationTool {
 
       if (closestControlPoint?.index === 0) {
         addNewPoint = false;
-        closeSpline = true;
+        closeContour = true;
       }
     }
 
@@ -469,11 +428,11 @@ class SplineROITool extends AnnotationTool {
       data.handles.points.push(worldPoint);
     }
 
-    data.spline.closed = data.spline.closed || closeSpline;
+    data.contour.closed = data.contour.closed || closeContour;
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    if (data.spline.closed) {
+    if (data.contour.closed) {
       this._endCallback(evt);
     }
 
@@ -532,7 +491,7 @@ class SplineROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  cancel = (element: HTMLDivElement) => {
+  cancel(element: HTMLDivElement) {
     // If it is not in mid-draw or mid-modify
     if (!this.isDrawing) {
       return;
@@ -549,6 +508,8 @@ class SplineROITool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
+    super.cancelAnnotation(annotation);
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -556,6 +517,19 @@ class SplineROITool extends AnnotationTool {
 
     this.editData = null;
     return annotation.annotationUID;
+  }
+
+  /**
+   * Triggers an annotation completed event.
+   */
+  triggerAnnotationCompleted = (annotation: SplineROIAnnotation): void => {
+    const eventType = Events.ANNOTATION_COMPLETED;
+    const eventDetail: AnnotationCompletedEventDetail = {
+      annotation,
+      changeType: ChangeTypes.Completed,
+    };
+
+    triggerEvent(eventTarget, eventType, eventDetail);
   };
 
   /**
@@ -563,18 +537,34 @@ class SplineROITool extends AnnotationTool {
    */
   triggerAnnotationModified = (
     annotation: SplineROIAnnotation,
-    enabledElement: Types.IEnabledElement
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.StatsUpdated
   ): void => {
     const { viewportId, renderingEngineId } = enabledElement;
     const eventType = Events.ANNOTATION_MODIFIED;
-
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
       renderingEngineId,
+      changeType,
     };
 
     triggerEvent(eventTarget, eventType, eventDetail);
+  };
+
+  /**
+   * Triggers an annotation complete or modified event based on changeType.
+   */
+  triggerChangeEvent = (
+    annotation: SplineROIAnnotation,
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.StatsUpdated
+  ): void => {
+    if (changeType === ChangeTypes.Completed) {
+      this.triggerAnnotationCompleted(annotation);
+    } else {
+      this.triggerAnnotationModified(annotation, enabledElement, changeType);
+    }
   };
 
   private _activateModify = (element) => {
@@ -629,226 +619,231 @@ class SplineROITool extends AnnotationTool {
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
   };
 
+  protected isContourSegmentationTool(): boolean {
+    // Disable contour segmenatation behavior because it shall be activated only
+    // for SplineContourSegmentationTool
+    return false;
+  }
+
   /**
-   * it is used to draw the circleROI annotation in each
-   * request animation frame. It calculates the updated cached statistics if
-   * data is invalidated and cache it.
-   *
-   * @param enabledElement - The Cornerstone's enabledElement.
-   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   * Render an annotation instance
+   * @param renderContext - Render context that contains the annotation, enabledElement, etc.
+   * @returns True if the annotation is rendered or false otherwise
    */
-  renderAnnotation = (
-    enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: SVGDrawingHelper
-  ): boolean => {
-    let renderStatus = false;
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
+    const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
+      renderContext;
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
     const { element } = viewport;
+    const annotation = renderContext.annotation as SplineROIAnnotation;
+    const { annotationUID, data, highlighted } = annotation;
+    const { handles } = data;
+    const { points: controlPoints, activeHandleIndex } = handles;
+    const newAnnotation = this.editData?.newAnnotation;
 
-    // If rendering engine has been destroyed while rendering
-    if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
-      return renderStatus;
-    }
+    const {
+      lineWidth,
+      lineDash,
+      color,
+      locked: annotationLocked,
+    } = annotationStyle;
 
-    let annotations = getAnnotations(this.getToolName(), element);
+    const canvasCoordinates = controlPoints.map((p) =>
+      worldToCanvas(p)
+    ) as Types.Point2[];
 
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
-      annotations
+    const { drawPreviewEnabled } = this.configuration.spline;
+    const splineType = annotation.data.spline.type;
+    const splineConfig = this._getSplineConfig(splineType);
+    const spline = this._updateSplineInstance(element, annotation);
+    const splinePolylineCanvas = reverseIfAntiClockwise(
+      spline.getPolylinePoints()
+    );
+    const splinePolylineWorld = splinePolylineCanvas.map((point2) =>
+      viewport.canvasToWorld(point2)
     );
 
-    if (!annotations?.length) {
-      return renderStatus;
+    data.contour.polyline = splinePolylineWorld;
+
+    // Let the base class render the contour
+    super.renderAnnotationInstance(renderContext);
+
+    // If cachedStats does not exist, or the areaUnit is missing (as part of
+    // import/hydration etc.), force to recalculate the stats from the points
+    if (
+      !data.cachedStats[targetId] ||
+      data.cachedStats[targetId].areaUnit == null
+    ) {
+      data.cachedStats[targetId] = {
+        Modality: null,
+        area: null,
+        areaUnit: null,
+      };
+
+      this._calculateCachedStats(annotation, element);
+    } else if (annotation.invalidated) {
+      this._throttledCalculateCachedStats(annotation, element);
     }
 
-    const targetId = this.getTargetId(viewport);
-    const newAnnotation = this.editData?.newAnnotation;
-    const styleSpecifier: StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
+    let activeHandleCanvasCoords;
 
-    for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as SplineROIAnnotation;
-      const { annotationUID, data, highlighted } = annotation;
-      const { handles } = data;
-      const { points: controlPoints, activeHandleIndex } = handles;
+    if (!annotationLocked && !this.editData && activeHandleIndex !== null) {
+      // Not locked or creating and hovering over handle, so render handle.
+      activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+    }
 
-      styleSpecifier.annotationUID = annotationUID;
+    if (activeHandleCanvasCoords || newAnnotation || highlighted) {
+      const handleGroupUID = '0';
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifier,
-        annotation
-      ) as number;
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifier,
-        annotation
-      ) as string;
-      const color = this.getStyle(
-        'color',
-        styleSpecifier,
-        annotation
-      ) as string;
-
-      const canvasCoordinates = controlPoints.map((p) =>
-        worldToCanvas(p)
-      ) as Types.Point2[];
-
-      const { drawPreviewEnabled } = this.configuration.spline;
-      const splineType = annotation.data.spline.type;
-      const splineConfig = this._getSplineConfig(splineType);
-      const spline = this._updateSplineInstance(element, annotation);
-      const splinePolylineCanvas = spline.getPolylinePoints();
-      const splinePolylineWorld = [];
-
-      for (let i = 0, len = splinePolylineCanvas.length; i < len; i++) {
-        splinePolylineWorld.push(
-          viewport.canvasToWorld(splinePolylineCanvas[i])
-        );
-      }
-
-      data.spline.polyline = splinePolylineWorld;
-
-      // If cachedStats does not exist, or the areaUnit is missing (as part of
-      // import/hydration etc.), force to recalculate the stats from the points
-      if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
-      ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          areaUnit: null,
-        };
-
-        this._calculateCachedStats(annotation, element);
-      } else if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, element);
-      }
-
-      let activeHandleCanvasCoords;
-
-      if (!isAnnotationVisible(annotationUID)) {
-        continue;
-      }
-
-      if (
-        !isAnnotationLocked(annotation) &&
-        !this.editData &&
-        activeHandleIndex !== null
-      ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
-      }
-
-      if (activeHandleCanvasCoords || newAnnotation || highlighted) {
-        const handleGroupUID = '0';
-        drawHandlesSvg(
-          svgDrawingHelper,
-          annotationUID,
-          handleGroupUID,
-          canvasCoordinates,
-          {
-            color,
-            lineDash,
-            lineWidth,
-            handleRadius: '3',
-          }
-        );
-      }
-
-      if (
-        drawPreviewEnabled &&
-        spline.numControlPoints > 1 &&
-        this.editData?.lastCanvasPoint &&
-        !spline.closed
-      ) {
-        const { lastCanvasPoint } = this.editData;
-        const previewPolylinePoints = spline.getPreviewPolylinePoints(
-          lastCanvasPoint,
-          SPLINE_CLICK_CLOSE_CURVE_DIST
-        );
-
-        drawPolylineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          'previewSplineChange',
-          previewPolylinePoints,
-          {
-            color: '#9EA0CA',
-            lineDash,
-            lineWidth,
-          }
-        );
-      }
-
-      if (splineConfig.showControlPointsConnectors) {
-        const controlPointsConnectors = [...canvasCoordinates];
-
-        // Connect the last point to the first one when the spline is closed
-        if (spline.closed) {
-          controlPointsConnectors.push(canvasCoordinates[0]);
+      // Move this call to the base class (contour seg) in the near future
+      drawHandlesSvg(
+        svgDrawingHelper,
+        annotationUID,
+        handleGroupUID,
+        canvasCoordinates,
+        {
+          color,
+          lineWidth: Math.max(1, lineWidth),
+          handleRadius: '3',
         }
+      );
+    }
 
-        drawPolylineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          'controlPointsConnectors',
-          controlPointsConnectors,
-          {
-            color: 'rgba(255, 255, 255, 0.5)',
-            lineDash,
-            lineWidth,
-          }
-        );
+    if (
+      drawPreviewEnabled &&
+      spline.numControlPoints > 1 &&
+      this.editData?.lastCanvasPoint &&
+      !spline.closed
+    ) {
+      const { lastCanvasPoint } = this.editData;
+      const previewPolylinePoints = spline.getPreviewPolylinePoints(
+        lastCanvasPoint,
+        SPLINE_CLICK_CLOSE_CURVE_DIST
+      );
+
+      drawPolylineSvg(
+        svgDrawingHelper,
+        annotationUID,
+        'previewSplineChange',
+        previewPolylinePoints,
+        {
+          color: '#9EA0CA',
+          lineDash,
+          lineWidth: 1,
+        }
+      );
+    }
+
+    if (splineConfig.showControlPointsConnectors) {
+      const controlPointsConnectors = [...canvasCoordinates];
+
+      // Connect the last point to the first one when the spline is closed
+      if (spline.closed) {
+        controlPointsConnectors.push(canvasCoordinates[0]);
       }
 
       drawPolylineSvg(
         svgDrawingHelper,
         annotationUID,
-        'lineSegments',
-        splinePolylineCanvas,
+        'controlPointsConnectors',
+        controlPointsConnectors,
         {
-          color,
-          lineDash,
-          lineWidth,
+          color: 'rgba(255, 255, 255, 0.5)',
+          lineWidth: 1,
         }
       );
-
-      this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
-
-      renderStatus = true;
-      annotation.invalidated = false;
     }
 
-    return renderStatus;
-  };
+    this._renderStats(
+      annotation,
+      viewport,
+      svgDrawingHelper,
+      annotationStyle.textbox
+    );
 
-  _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
+    if (this.fireChangeOnUpdate?.annotationUID === annotationUID) {
+      this.triggerChangeEvent(
+        annotation,
+        enabledElement,
+        this.fireChangeOnUpdate.changeType
+      );
+      this.fireChangeOnUpdate = null;
+    }
+
+    annotation.invalidated = false;
+    return true;
+  }
+
+  /**
+   * Creates new interpolated handles for the spline control given the
+   * polyline data.  This allows creating the spline from polyline data
+   * directly.
+   */
+  protected createInterpolatedSplineControl(annotation) {
+    if (annotation.data.handles.points?.length) {
+      // The interpolation itself created the handles
+      return;
+    }
+    const { polyline } = annotation.data.contour;
+    if (!polyline || !polyline.length) {
+      return;
+    }
+    annotation.data.handles.points = [];
+    const { points } = annotation.data.handles;
+    const increment = Math.max(10, Math.floor(polyline.length / 20));
+    for (let i = 0; i < polyline.length - increment; i += increment) {
+      points.push(polyline[i]);
+    }
+    points.push(polyline[polyline.length - 1]);
+  }
+
+  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+    const contourAnnotation = super.createAnnotation(evt);
+    const { world: worldPos } = evt.detail.currentPoints;
+    const { type: splineType } = this.configuration.spline;
+    const splineConfig = this._getSplineConfig(splineType);
+    const spline = new splineConfig.Class();
+    const createSpline = () => ({
+      type: splineConfig.type,
+      instance: spline,
+      resolution: splineConfig.resolution,
+    });
+
+    // Add an action to create a new spline data on creating an interpolated
+    // instance.
+    let postInterpolateAction;
+    if (this.configuration.interpolation?.enabled) {
+      postInterpolateAction = (annotation) => {
+        annotation.data.spline ||= createSpline();
+        this.createInterpolatedSplineControl(annotation);
+      };
+    }
+
+    return <SplineROIAnnotation>utilities.deepMerge(contourAnnotation, {
+      data: {
+        handles: {
+          points: [[...worldPos]],
+        },
+        spline: createSpline(),
+        cachedStats: {},
+      },
+      postInterpolateAction,
+    });
+  }
+
+  private _renderStats = (
+    annotation,
+    viewport,
+    svgDrawingHelper,
+    textboxStyle
+  ) => {
     const data = annotation.data;
     const targetId = this.getTargetId(viewport);
 
-    if (!data.spline.closed) {
-      return;
-    }
-
-    const styleSpecifier: StyleSpecifier = {
-      toolGroupId: this.toolGroupId,
-      toolName: this.getToolName(),
-      viewportId: enabledElement.viewport.id,
-    };
-
-    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-    if (!options.visibility) {
+    if (!data.spline.instance.closed || !textboxStyle.visibility) {
       return;
     }
 
@@ -880,7 +875,7 @@ class SplineROITool extends AnnotationTool {
       textBoxPosition,
       canvasCoordinates,
       {},
-      options
+      textboxStyle
     );
 
     const { x: left, y: top, width, height } = boundingBox;
@@ -1007,23 +1002,6 @@ class SplineROITool extends AnnotationTool {
     return Object.assign({ type }, DEFAULT_SPLINE_CONFIG, splineConfigs[type]);
   }
 
-  private _updateSplineScale(spline: ISpline, annotation: SplineROIAnnotation) {
-    const splineType = annotation.data.spline.type;
-    const splineConfig = this._getSplineConfig(splineType);
-
-    if (
-      !(spline instanceof CardinalSpline) ||
-      spline.fixedScale ||
-      splineConfig.scale === undefined ||
-      spline.scale === splineConfig.scale
-    ) {
-      return;
-    }
-
-    spline.scale = splineConfig.scale;
-    annotation.invalidated = true;
-  }
-
   private _updateSplineInstance(
     element: HTMLDivElement,
     annotation: SplineROIAnnotation
@@ -1038,7 +1016,7 @@ class SplineROITool extends AnnotationTool {
     const canvasPoints = worldPoints.map(worldToCanvas);
 
     spline.setControlPoints(canvasPoints);
-    spline.closed = !!data.spline?.closed;
+    spline.closed = !!data.contour.closed;
 
     // Update spline resolution in case it has changed
     if (spline.resolution !== splineConfig.resolution) {
@@ -1069,14 +1047,14 @@ class SplineROITool extends AnnotationTool {
     }
     const data = annotation.data;
 
-    if (!data.spline.closed) {
+    if (!data.contour.closed) {
       return;
     }
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
     const { cachedStats } = data;
-    const { polyline: points } = data.spline;
+    const { polyline: points } = data.contour;
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
@@ -1110,8 +1088,7 @@ class SplineROITool extends AnnotationTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const scale = getCalibratedScale(image);
-      let area =
-        math.polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
 
       // Convert from canvas_pixels ^2 to mm^2
       area *= deltaInX * deltaInY;
@@ -1123,7 +1100,11 @@ class SplineROITool extends AnnotationTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    this.triggerAnnotationModified(
+      annotation,
+      enabledElement,
+      ChangeTypes.StatsUpdated
+    );
 
     return cachedStats;
   };

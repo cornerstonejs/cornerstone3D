@@ -1,5 +1,4 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -9,19 +8,21 @@ import { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
-  shouldInterpolate,
+  shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
+import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClockwise';
 
 const {
   addCanvasPointsToArray,
   pointsAreWithinCloseContourProximity,
-  getFirstIntersectionWithPolyline,
+  getFirstLineSegmentIntersectionIndexes,
   getSubPixelSpacingAndXYDirections,
 } = polyline;
 
@@ -216,9 +217,13 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const updatedPoints = shouldInterpolate(this.configuration)
-    ? getInterpolatedPoints(this.configuration, canvasPoints)
+  const clockwise = this.configuration.makeClockWise
+    ? reverseIfAntiClockwise(canvasPoints)
     : canvasPoints;
+
+  const updatedPoints = shouldSmooth(this.configuration, annotation)
+    ? getInterpolatedPoints(this.configuration, clockwise)
+    : clockwise;
 
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do
@@ -227,12 +232,13 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = false;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = true;
+  annotation.invalidated = true;
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerAnnotationCompleted(annotation);
   }
 
   this.isDrawing = false;
@@ -257,7 +263,7 @@ function removeCrossedLinesOnCompleteDraw(): void {
   const endToStart = [canvasPoints[0], canvasPoints[numPoints - 1]];
   const canvasPointsMinusEnds = canvasPoints.slice(0, -1).slice(1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     canvasPointsMinusEnds,
     endToStart[0],
     endToStart[1],
@@ -286,7 +292,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
-  const updatedPoints = shouldInterpolate(this.configuration)
+  const updatedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
 
@@ -297,8 +303,9 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
     viewport.canvasToWorld(canvasPoint)
   );
 
-  annotation.data.polyline = worldPoints;
-  annotation.data.isOpenContour = true;
+  annotation.data.contour.polyline = worldPoints;
+  annotation.data.contour.closed = false;
+  annotation.invalidated = true;
   const { textBox } = annotation.data.handles;
 
   // Add the first and last points to the list of handles. These means they
@@ -315,7 +322,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   }
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerAnnotationCompleted(annotation);
   }
 
   this.isDrawing = false;
@@ -345,7 +352,7 @@ function findCrossingIndexDuringCreate(
   const { canvasPoints } = this.drawData;
   const pointsLessLastOne = canvasPoints.slice(0, -1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     pointsLessLastOne,
     canvasPos,
     lastCanvasPoint,

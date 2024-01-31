@@ -1,6 +1,8 @@
-import { Types } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
+
 import { BucketQueue } from '../BucketQueue';
 
+const { isEqual } = utilities;
 const MAX_UINT32 = 4294967295;
 const TWO_THIRD_PI = 2 / (3 * Math.PI);
 
@@ -14,7 +16,7 @@ const TWO_THIRD_PI = 2 / (3 * Math.PI);
  *
  * {@link http://www.sciencedirect.com/science/article/B6WG4-45JB8WN-9/2/6fe59d8089fd1892c2bfb82283065579}
  *
- * Implementation based on
+ * Implementation based on MIT licensed code at:
  * {@link http://code.google.com/p/livewire-javascript/}
  */
 export class LivewireScissors {
@@ -28,7 +30,7 @@ export class LivewireScissors {
   public readonly height: number;
 
   /** Grayscale image */
-  private grayscalePixelData: Float32Array;
+  private grayscalePixelData: Types.PixelDataTypedArray;
 
   // Laplace zero-crossings (either 0 or 1).
   private laplace: Float32Array;
@@ -57,7 +59,11 @@ export class LivewireScissors {
   /** Dijkstra - BucketQueue to sort items by priority */
   private priorityQueueNew: BucketQueue<number>;
 
-  constructor(grayscalePixelData: Float32Array, width: number, height: number) {
+  constructor(
+    grayscalePixelData: Types.PixelDataTypedArray,
+    width: number,
+    height: number
+  ) {
     const numPixels = grayscalePixelData.length;
 
     this.searchGranularityBits = 8; // Bits of resolution for BucketQueue.
@@ -96,6 +102,48 @@ export class LivewireScissors {
     this.startPoint = startPoint;
     this.costs[startPointIndex] = 0;
     this.priorityQueueNew.push(startPointIndex);
+  }
+
+  /**
+   * Returns a smoothing path count for how many items to remove.
+   * This will remove points, up to count which have a high gradient, up to
+   * count of them where the clip value is larger than that provided.
+   *
+   * @returns Count of items to remove from the path.
+   */
+  public smoothPathCount(
+    pathPoints: Types.Point2[],
+    lastPoint: Types.Point2,
+    count = 5,
+    clipValue = 0.85
+  ) {
+    const lastIndex =
+      (lastPoint &&
+        pathPoints.findIndex((point) => isEqual(point, lastPoint))) ||
+      -1;
+    if (pathPoints.length - lastIndex < count * 2) {
+      // If a nearby point is clicked, just add it anyways, because that means
+      // the user actually wants the given point
+      return 0;
+    }
+    let removeCount = 0;
+    for (
+      let i = pathPoints.length - 1;
+      i > pathPoints.length - count && i > 0;
+      i--
+    ) {
+      const weighted = this._getWeightedDistance(
+        pathPoints[i],
+        pathPoints[i - 1]
+      );
+      if (weighted < clipValue) {
+        return removeCount ? removeCount + 2 : 0;
+      }
+      removeCount++;
+    }
+    // Tried all of them, they were all too big, so assume they are really moving
+    // along a high gradient.
+    return 0;
   }
 
   /**
@@ -152,20 +200,20 @@ export class LivewireScissors {
       // Update the cost of all neighbors that have higher costs
       for (let i = 0, len = neighborsPoints.length; i < len; i++) {
         const neighborPoint = neighborsPoints[i];
-        const neighbordPointIndex = index(neighborPoint[1], neighborPoint[0]);
+        const neighborPointIndex = index(neighborPoint[1], neighborPoint[0]);
         const dist = this._getWeightedDistance(point, neighborPoint);
         const neighborCost = cost[pointIndex] + dist;
 
-        if (neighborCost < cost[neighbordPointIndex]) {
-          if (cost[neighbordPointIndex] !== Infinity) {
+        if (neighborCost < cost[neighborPointIndex]) {
+          if (cost[neighborPointIndex] !== Infinity) {
             // The item needs to be removed from the priority queue and
             // re-added in order to be moved to the right bucket.
-            priorityQueue.remove(neighbordPointIndex);
+            priorityQueue.remove(neighborPointIndex);
           }
 
-          cost[neighbordPointIndex] = neighborCost;
-          parents[neighbordPointIndex] = pointIndex;
-          priorityQueue.push(neighbordPointIndex);
+          cost[neighborPointIndex] = neighborCost;
+          parents[neighborPointIndex] = pointIndex;
+          priorityQueue.push(neighborPointIndex);
         }
       }
     }
@@ -545,36 +593,6 @@ export class LivewireScissors {
         0,
         Math.min(1, (pixelData[i] - minPixelValue) / pixelRange)
       );
-    }
-
-    return new LivewireScissors(grayscalePixelData, width, height);
-  }
-
-  /**
-   * Create a livewire scissor instance from a RGBA image
-   * @param rgbaPixelData - RGBA pixel data
-   * @param width - Width of the image
-   * @param height - Height of the image
-   * @returns A LivewireScissors instance
-   */
-  public static createInstanceFromRGBAPixelData(
-    rgbaPixelData: Uint8ClampedArray,
-    width: number,
-    height: number
-  ): LivewireScissors {
-    const numPixels = rgbaPixelData.length / 4;
-    const grayscalePixelData = new Float32Array(numPixels);
-
-    // Multiplier to average an RGB sum and convert it to 0-1 range.
-    // 1/x because multiplication is faster than division.
-    const avgMultiplier = 1 / (3 * 255);
-
-    for (let i = 0, offset = 0; i < numPixels; i++, offset += 4) {
-      const red = rgbaPixelData[offset];
-      const green = rgbaPixelData[offset];
-      const blue = rgbaPixelData[offset];
-
-      grayscalePixelData[i] = (red + green + blue) * avgMultiplier;
     }
 
     return new LivewireScissors(grayscalePixelData, width, height);

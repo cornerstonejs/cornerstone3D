@@ -114,7 +114,9 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    viewport.setProperties({ invert: true }, volumeId);
+    const { invert } = viewport.getProperties();
+
+    viewport.setProperties({ invert: !invert }, volumeId);
 
     viewport.render();
   },

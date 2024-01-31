@@ -76,9 +76,8 @@ async function render(
   }
 
   if (!geometryIds?.length) {
-    console.warn(
-      `No contours found for segmentationId ${segmentationId}. Skipping render.`
-    );
+    // This is a normal occurrence when contours activated, but not yet drawn
+    return;
   }
 
   // add the contour sets to the viewport

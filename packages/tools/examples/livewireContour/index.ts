@@ -10,6 +10,7 @@ import {
   setTitleAndDescription,
   createInfoSection,
   setCtTransferFunctionForVolumeActor,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -67,15 +68,14 @@ const stackViewportElement = createViewportElement('axial-element');
 const volumeCoronalViewportElement = createViewportElement('coronal-element');
 const volumeSagittalViewportElement = createViewportElement('sagittal-element');
 
-const info = createInfoSection(content);
-
-info.addInstruction(
-  'Viewports: Axial (Stack), Coronal (Volume), Sagittal (Volume)'
-);
-info.addInstruction('Left click to use the livewire tool');
-info.addInstruction('Middle click to use the pan tool');
-info.addInstruction('Right click to use the zoom tool');
-info.addInstruction('Press "escape" to cancel drawing');
+createInfoSection(content)
+  .addInstruction(
+    'Viewports: Axial (Stack), Coronal (Volume), Sagittal (Volume)'
+  )
+  .addInstruction('Left click to use the livewire tool')
+  .addInstruction('Middle click to use the pan tool')
+  .addInstruction('Right click to use the zoom tool')
+  .addInstruction('Press "escape" to cancel drawing');
 
 // ============================= //
 
@@ -108,9 +108,6 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LivewireContourTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -118,9 +115,6 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(LivewireContourTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools
   toolGroup.setToolActive(LivewireContourTool.toolName, {
@@ -130,26 +124,7 @@ async function run() {
       },
     ],
   });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  addManipulationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -169,7 +144,7 @@ async function run() {
     type: ViewportType.STACK,
     element: stackViewportElement,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: <Types.Point3>[0.2, 0.2, 0],
     },
   };
 

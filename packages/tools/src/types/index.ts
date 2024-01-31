@@ -4,6 +4,14 @@ import type {
   AnnotationState,
   GroupSpecificAnnotations,
 } from './AnnotationTypes';
+import type {
+  ContourAnnotationData,
+  ContourAnnotation,
+} from './ContourAnnotation';
+import type {
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
+} from './ContourSegmentationAnnotation';
 import type * as EventTypes from './EventTypes';
 import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
@@ -55,6 +63,7 @@ import type IToolClassReference from './IToolClassReference';
 import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type AnnotationRenderContext from './AnnotationRenderContext';
 import type { Statistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
@@ -62,6 +71,10 @@ import {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from './LabelmapToolOperationData';
+import type {
+  InterpolationViewportData,
+  ImageInterpolationData,
+} from './InterpolationTypes';
 
 // Splines
 import type { CardinalSplineProps } from './CardinalSplineProps';
@@ -79,15 +92,23 @@ export type {
   // AnnotationState
   Annotation,
   Annotations,
+  ContourAnnotationData,
+  ContourAnnotation,
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
   BidirectionalData,
   CanvasCoordinates,
   IAnnotationManager,
+  InterpolationViewportData,
+  ImageInterpolationData,
   GroupSpecificAnnotations,
   AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
   AnnotationGroupSelector,
+  // Rendering
+  AnnotationRenderContext,
   // Geometry
   PlanarBoundingBox,
   ToolProps,

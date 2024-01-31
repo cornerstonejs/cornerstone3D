@@ -4,23 +4,47 @@ import { getSegmentationRepresentations } from '../../../stateManagement/segment
 import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import { isVolumeSegmentation } from '../../../tools/segmentation/strategies/utils/stackVolumeCheck';
 
-function getSegmentationIndices(segmentationId) {
+function getUniqueSegmentIndices(segmentationId) {
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   if (segmentation.type === SegmentationRepresentations.Labelmap) {
-    const volume = cache.getVolume(segmentationId);
-    const scalarData = volume.getScalarData();
+    const labelmapData =
+      segmentation.representationData[SegmentationRepresentations.Labelmap];
 
     const keySet = {};
-    for (let i = 0; i < scalarData.length; i++) {
-      const segmentIndex = scalarData[i];
-      if (segmentIndex !== 0 && !keySet[segmentIndex]) {
-        keySet[segmentIndex] = true;
+
+    if (isVolumeSegmentation(labelmapData)) {
+      const volume = cache.getVolume(segmentationId);
+      const scalarData = volume.getScalarData();
+
+      for (let i = 0; i < scalarData.length; i++) {
+        const segmentIndex = scalarData[i];
+        if (segmentIndex !== 0 && !keySet[segmentIndex]) {
+          keySet[segmentIndex] = true;
+        }
       }
+    } else {
+      labelmapData.imageIdReferenceMap.forEach((segmentationImageId) => {
+        const image = cache.getImage(segmentationImageId);
+        const scalarData = image.getPixelData();
+
+        for (let i = 0; i < scalarData.length; i++) {
+          const segmentIndex = scalarData[i];
+          if (segmentIndex !== 0 && !keySet[segmentIndex]) {
+            keySet[segmentIndex] = true;
+          }
+        }
+      });
     }
+
     return Object.keys(keySet).map((it) => parseInt(it, 10));
   } else if (segmentation.type === SegmentationRepresentations.Contour) {
+    const annotationUIDsMap =
+      segmentation.representationData.CONTOUR?.annotationUIDsMap;
+
+    const indices = new Set(annotationUIDsMap.keys());
     const geometryIds = segmentation.representationData.CONTOUR?.geometryIds;
 
     if (!geometryIds) {
@@ -29,10 +53,12 @@ function getSegmentationIndices(segmentationId) {
       );
     }
 
-    return geometryIds.map((geometryId) => {
+    geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
-      return (geometry.data as Types.IContourSet).getSegmentIndex();
+      indices.add((geometry.data as Types.IContourSet).getSegmentIndex());
     });
+
+    return Array.from(indices.values()).sort();
   }
 }
 
@@ -70,7 +96,7 @@ function setSegmentationVisibility(
 
   const { segmentsHidden, segmentationId } = representation;
 
-  const indices = getSegmentationIndices(segmentationId);
+  const indices = getUniqueSegmentIndices(segmentationId);
 
   // if visibility is set to be true, we need to remove all the segments
   // from the segmentsHidden set, otherwise we need to add all the segments
@@ -115,9 +141,17 @@ function getSegmentationVisibility(
     return;
   }
 
-  const { segmentsHidden } = representation;
+  const { segmentsHidden, segmentationId } = representation;
+  const indices = getUniqueSegmentIndices(segmentationId);
 
-  return segmentsHidden.size === 0;
+  // Create a set that contains all segments indices
+  const indicesSet = new Set(indices);
+
+  // Remove a indices that are hidden
+  segmentsHidden.forEach((segmentIndex) => indicesSet.delete(segmentIndex));
+
+  // Check if there is at least one segment visible
+  return !!indicesSet.size;
 }
 
 /**
@@ -160,6 +194,13 @@ function setSegmentsVisibility(
   );
 }
 
+/**
+ * @param toolGroupId - The Id of the tool group that contains the segmentation
+ * @param segmentationRepresentationUID - The id of the segmentation representation that contains the segment
+ * @param segmentIndex - Index of the segment that will be updated
+ * @param visibility - True to show the segment or false to hide it
+ * @returns True if the segment is visible or false otherwise
+ */
 function setSegmentVisibility(
   toolGroupId: string,
   segmentationRepresentationUID: string,
@@ -186,9 +227,34 @@ function setSegmentVisibility(
   );
 }
 
+/**
+ * @param toolGroupId - The Id of the tool group that contains the segmentation.
+ * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
+ * @param segmentIndex - Index of the segment
+ * @returns True if the segment is visible or false otherwise
+ */
+function getSegmentVisibility(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  segmentIndex: number
+): boolean {
+  const segRepresentation =
+    SegmentationState.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+  if (!segRepresentation) {
+    return false;
+  }
+
+  return !segRepresentation.segmentsHidden.has(segmentIndex);
+}
+
 export {
   setSegmentationVisibility,
   getSegmentationVisibility,
   setSegmentVisibility,
   setSegmentsVisibility,
+  getSegmentVisibility,
 };

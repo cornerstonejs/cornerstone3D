@@ -109,8 +109,6 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     abstract getCurrentImageId(): string;
     // (undocumented)
-    abstract getCurrentImageIdIndex(): number;
-    // (undocumented)
     getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -128,6 +126,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     getRotation: () => number;
     // (undocumented)
     getSlabThickness(): number;
+    // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
@@ -318,6 +318,9 @@ function convertStackToVolumeViewport({ viewport, options, }: {
         orientation?: OrientationAxis;
     };
 }): Promise<IVolumeViewport>;
+
+// @public (undocumented)
+function convertToGrayscale(scalarData: any, width: number, height: number): any;
 
 // @public (undocumented)
 function convertVolumeToStackViewport({ viewport, options, }: {
@@ -2099,6 +2102,8 @@ interface IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
     getDisplayArea(): DisplayArea | undefined;
@@ -2114,6 +2119,8 @@ interface IViewport {
     getRenderingEngine(): any;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    getTargetId(forTarget?: TargetSpecifier): string;
     // (undocumented)
     getZoom(): number;
     // (undocumented)
@@ -2429,6 +2436,13 @@ type Point3 = [number, number, number];
 
 // @public (undocumented)
 type Point4 = [number, number, number, number];
+
+// @public (undocumented)
+type PointsXYZ = {
+    x: number[];
+    y: number[];
+    z: number[];
+};
 
 // @public (undocumented)
 const presets: ViewportPreset[];
@@ -2871,6 +2885,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
+    // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
     hasImageId: (imageId: string) => boolean;
@@ -2978,6 +2994,14 @@ class TargetEventListeners {
 }
 
 // @public (undocumented)
+type TargetSpecifier = {
+    sliceIndex?: number;
+    forFrameOfReference?: boolean;
+    points?: Point3[];
+    volumeId?: string;
+};
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -3048,6 +3072,7 @@ declare namespace Types {
         IRegisterImageLoader,
         IStreamingVolumeProperties,
         IViewport,
+        TargetSpecifier,
         StackViewportProperties,
         VolumeViewportProperties,
         ViewportProperties,
@@ -3068,6 +3093,7 @@ declare namespace Types {
         AABB2,
         Point2,
         Point3,
+        PointsXYZ,
         Point4,
         Mat3,
         Plane,
@@ -3153,6 +3179,7 @@ declare namespace utilities {
         createInt16SharedArray,
         getViewportModality,
         windowLevel,
+        convertToGrayscale,
         getClosestImageId,
         getSpacingInNormalDirection,
         getTargetVolumeAndSpacingInNormalDir,
@@ -3233,6 +3260,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCurrentImageId(): string;
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -3274,6 +3303,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
     // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
+    // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
     hasImageURI(imageURI: string): boolean;
@@ -3288,7 +3319,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
-    play(): void;
+    play(): Promise<void>;
     // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)
@@ -3410,6 +3441,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
     getDisplayArea(): DisplayArea | undefined;
@@ -3434,6 +3467,8 @@ export class Viewport implements IViewport {
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
