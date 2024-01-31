@@ -7,10 +7,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import {
-  drawHandles as drawHandlesSvg,
-  drawPolyline as drawPolylineSvg,
-} from '../../drawingSvg';
+import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store';
 import { Events, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
@@ -39,9 +36,9 @@ const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
 class LivewireContourTool extends ContourSegmentationBaseTool {
   public static toolName: string;
-  private scissors: LivewireScissors;
+  protected scissors: LivewireScissors;
   /** The scissors from the right handle, used for editing */
-  private scissorsRight: LivewireScissors;
+  protected scissorsRight: LivewireScissors;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -70,10 +67,36 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
-        interpolation: { enabled: false, smoothHandles: 0, nearestEdge: 0 },
+        /**
+         * Configuring this to a value larger than 0 will snap handles to nearby
+         * livewire points, within the given rectangle surrounding the clicked point.
+         */
+        snapHandleNearby: 1,
+
+        /**
+         * Interpolation is only available for segmentation versions of these
+         * tools.  To use it on the segmentation tools, set enabled to true,
+         * and create two livewire contours in the same segment index, separated
+         * by at least one slice.
+         */
+        interpolation: {
+          enabled: false,
+
+          /**
+           * Set the nearestEdge to snap interpolated handles to an edge within
+           * the given number of pixels.  Setting to 0 disables snap to pixel
+           * for interpolation.
+           */
+          nearestEdge: 0,
+          /**
+           * Sets a CSS color to use for showing the interpolation contour overlaying
+           * the livewire contour for auto generated contours.
+           */
+          interpolationColor: <string>null,
+        },
         actions: {
-          deleteInProgress: {
-            method: 'deleteInProgress',
+          undo: {
+            method: 'undo',
             bindings: [
               {
                 key: 'Escape',
@@ -479,10 +502,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.editData.closed = this.editData.closed || closePath;
     this.editData.confirmedPath = this.editData.currentPath;
 
-    this.editData.currentPath.removeLastPoints(1);
-    this.editData.currentPath.addPoint(
-      this.scissors.findMinNearby(worldToSlice(worldPosOriginal), 1)
-    );
+    const { snapHandleNearby } = this.configuration;
+    if (snapHandleNearby) {
+      this.editData.currentPath.removeLastPoints(1);
+      this.editData.currentPath.addPoint(
+        this.scissors.findMinNearby(worldToSlice(worldPosOriginal), 1)
+      );
+    }
 
     // Add the current cursor position as a new control point after clicking
     const lastPoint = this.editData.currentPath.getLastPoint();
@@ -498,7 +524,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     if (this.editData.closed) {
       // Update the annotation because `editData` will be set to null
-      this._updateAnnotation(element, this.editData.confirmedPath);
+      this.updateAnnotation(element, this.editData.confirmedPath);
       this._endCallback(evt);
     }
 
@@ -753,7 +779,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { element } = viewport;
 
     // Update the annotation that is in editData (being edited)
-    this._updateAnnotation(element, this.editData?.currentPath);
+    this.updateAnnotation(element, this.editData?.currentPath);
 
     return super.renderAnnotation(enabledElement, svgDrawingHelper);
   }
@@ -784,83 +810,15 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   /**
    * Clears any in progress edits, mostly used to get rid of accidentally started
    * contours that happen on clicking not quite the right handle point.
+   * Eventually this is to be replaced with a proper undo, once that framework
+   * is available.
    */
-  public deleteInProgress(element, config, evt) {
+  public undo(element, config, evt) {
     if (!this.editData) {
-      // Consider deleting items in progress here by using the element/viewport
-      // to find annotations displayed on the current view.
+      // TODO - proper undo
       return;
     }
     this._endCallback(evt, true);
-  }
-
-  /**
-   * Updates the interpolated annotations with the currently displayed image data,
-   * performing hte livewire on the image data as generated.
-   */
-  public updateInterpolatedAnnotation(
-    annotation: LivewireContourAnnotation,
-    enabledElement: Types.IEnabledElement
-  ) {
-    const { interpolationSources, points } = annotation.data.handles;
-    if (this.editData || !annotation.invalidated || !interpolationSources) {
-      return;
-    }
-    queueMicrotask(() => {
-      const { element } = enabledElement.viewport;
-      this.setupBaseEditData(points[0], element, annotation);
-      const { length: count } = points;
-      const { scissors } = this;
-      annotation.data.contour.originalPolyline =
-        annotation.data.contour.polyline;
-      const { nearestEdge, repeatInterpolation } =
-        this.configuration.interpolation;
-      annotation.data.handles.originalPoints = points;
-      const { worldToSlice, sliceToWorld } = this.editData;
-      const handleSmoothing = [];
-
-      // New path generation - go through the handles and regenerate the polyline
-      if (nearestEdge) {
-        // Nearest edge handling
-        points.forEach((point, hIndex) => {
-          const testPoint = worldToSlice(point);
-          handleSmoothing.push(testPoint);
-
-          const minPoint = scissors.findMinNearby(testPoint, nearestEdge);
-          if (!csUtils.isEqual(testPoint, minPoint)) {
-            handleSmoothing[hIndex] = minPoint;
-            points[hIndex] = sliceToWorld(minPoint);
-          }
-        });
-      }
-
-      // Regenerate the updated data based on the updated handles
-      const acceptedPath = new LivewirePath();
-      for (let i = 0; i < count; i++) {
-        scissors.startSearch(worldToSlice(points[i]));
-        const path = scissors.findPathToPoint(
-          worldToSlice(points[(i + 1) % count])
-        );
-        acceptedPath.addPoints(path);
-      }
-
-      // Now, update the rendering
-      this._updateAnnotation(element, acceptedPath);
-      this.scissors = null;
-      this.scissorsRight = null;
-      this.editData = null;
-      annotation.data.handles.interpolationSources = null;
-
-      if (repeatInterpolation) {
-        triggerAnnotationModified(
-          annotation,
-          enabledElement.viewport.element,
-          ChangeTypes.InterpolationUpdated
-        );
-      }
-      // Might have created new interpolation sources, so clear again
-      annotation.data.handles.interpolationSources = null;
-    });
   }
 
   /**
@@ -877,7 +835,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   }): boolean {
     const { annotation, enabledElement, svgDrawingHelper, annotationStyle } =
       renderContext;
-    this.updateInterpolatedAnnotation(annotation, enabledElement);
 
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
@@ -886,7 +843,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const newAnnotation = this.editData?.newAnnotation;
     const { lineWidth, lineDash, color } = annotationStyle;
 
-    const { interpolationColor } = this.configuration.interpolation || {};
     // Render the first control point only when the annotation is drawn for the
     // first time to make it easier to know where the user needs to click to
     // to close the ROI.
@@ -911,30 +867,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       );
     }
 
-    const { originalPolyline } = annotation.data.contour;
-    if (interpolationColor && originalPolyline && annotation.autoGenerated) {
-      const polylineCanvasPoints = originalPolyline.map(worldToCanvas);
-      polylineCanvasPoints.push(polylineCanvasPoints[0]);
-      drawPolylineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        'interpolationContour-0',
-        polylineCanvasPoints,
-        {
-          color: interpolationColor,
-          lineWidth: 1,
-          fillOpacity: 0,
-        }
-      );
-    }
-
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
 
     return true;
   }
 
-  private _updateAnnotation(_, livewirePath: LivewirePath) {
+  protected updateAnnotation(_, livewirePath: LivewirePath) {
     if (!this.editData || !livewirePath) {
       return;
     }

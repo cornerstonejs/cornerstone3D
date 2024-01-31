@@ -34,6 +34,11 @@ export default function createPolylineToolData(
   Object.assign(annotation.data, {
     handles: {
       points: handlePoints.points || handlePoints || [],
+      /**
+       * The interpolation sources contains the source points used for interpolating
+       * to generate the new handles.  This allows performing other types of
+       * interpolation to generate the new handles, such as livewire.
+       */
       interpolationSources: handlePoints.sources,
       activeHandleIndex: null,
       textBox: {
