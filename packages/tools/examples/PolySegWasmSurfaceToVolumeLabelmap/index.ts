@@ -4,7 +4,6 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
-  utilities,
   Types,
   geometryLoader,
 } from '@cornerstonejs/core';
@@ -14,10 +13,9 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
-  addDropdownToToolbar,
-  addToggleButtonToToolbar,
   createInfoSection,
   downloadSurfacesData,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -32,10 +30,6 @@ const {
   Enums: csToolsEnums,
   segmentation,
   BrushTool,
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
-  TrackballRotateTool,
 } = cornerstoneTools;
 
 setTitleAndDescription(
@@ -43,7 +37,6 @@ setTitleAndDescription(
   'This demonstration showcases the usage of PolySEG WASM module to convert a surface to a labelmap. The labelmap can then be used for further processing, such as 3D rendering.'
 );
 
-const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
@@ -127,74 +120,23 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
   toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId);
   toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
 
-  // Manipulation Tools
-  toolGroup1.addTool(PanTool.toolName);
-  toolGroup2.addTool(PanTool.toolName);
-  toolGroup1.addTool(ZoomTool.toolName);
-  toolGroup1.addTool(TrackballRotateTool.toolName);
-  toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup2.addTool(StackScrollMouseWheelTool.toolName);
+  addManipulationBindings(toolGroup1, { is3DViewport: true });
+  addManipulationBindings(toolGroup2);
 
   // Segmentation Tools
   toolGroup1.addTool(SegmentationDisplayTool.toolName);
-
   toolGroup2.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(ZoomTool.toolName);
 
   // activations
   toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  toolGroup1.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Middle Click
-      },
-    ],
-  });
-  toolGroup1.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  toolGroup1.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-    ],
-  });
-  toolGroup2.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup2.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup2.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

@@ -8,6 +8,7 @@ import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import { getMinMax, windowLevel } from '../../utilities';
 import { RequestType } from '../../enums';
+import cache from '../../cache';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;
@@ -175,25 +176,23 @@ async function getVOIFromMinMax(
   // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
   // slice for the imageScalarData, and for the second scenario we use the getPixelData
   // on the Cornerstone IImage object to get the pixel data.
-  let image;
   // Note: we don't want to use the derived or generated images for setting the
   // default VOI, because they are not the original. This is ugly but don't
   // know how to do it better.
-  if (!imageId.startsWith('derived') && !imageId.startsWith('generated')) {
+  let image = cache.getImage(imageId);
+
+  if (!image?.referencedImageId) {
     image = await loadAndCacheImage(imageId, options);
   }
 
-  let imageScalarData;
-  if (!image) {
-    imageScalarData = _getImageScalarDataFromImageVolume(
-      imageVolume,
-      byteOffset,
-      bytePerPixel,
-      voxelsPerImage
-    );
-  } else {
-    imageScalarData = image.getPixelData();
-  }
+  const imageScalarData = image
+    ? image.getPixelData()
+    : _getImageScalarDataFromImageVolume(
+        imageVolume,
+        byteOffset,
+        bytePerPixel,
+        voxelsPerImage
+      );
 
   // Get the min and max pixel values of the middle slice
   const { min, max } = getMinMax(imageScalarData);

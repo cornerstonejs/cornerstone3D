@@ -48,11 +48,19 @@ const sphereComposition = {
 
     segmentationVoxelManager.boundsIJK = newBoundsIJK;
 
-    imageVoxelManager.isInObject = createEllipseInPoint({
-      topLeftWorld,
-      bottomRightWorld,
-      center,
-    });
+    if (imageVoxelManager) {
+      imageVoxelManager.isInObject = createEllipseInPoint({
+        topLeftWorld,
+        bottomRightWorld,
+        center,
+      });
+    } else {
+      segmentationVoxelManager.isInObject = createEllipseInPoint({
+        topLeftWorld,
+        bottomRightWorld,
+        center,
+      });
+    }
   },
 } as Composition;
 

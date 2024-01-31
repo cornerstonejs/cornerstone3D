@@ -1,10 +1,10 @@
 import { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
-import {
-  ContourType,
-  computeContourData,
-} from './contourComputationStrategies';
+// import {
+//   ContourType,
+//   computeContourData,
+// } from './contourComputationStrategies';
 
 /**
  * Computes and adds the contour representation for a given segmentation.
@@ -21,13 +21,14 @@ export function computeAndAddContourRepresentation(
     segmentIndices?: number[];
     segmentationRepresentationUID?: string;
     viewport?: Types.IVolumeViewport | Types.IStackViewport;
-    type?: ContourType;
+    // type?: ContourType;
   } = {}
 ) {
   return computeAndAddRepresentation(
     segmentationId,
     SegmentationRepresentations.Contour,
-    () => computeContourData(segmentationId, options),
+    // () => computeContourData(segmentationId, options),
+    () => {},
     () => {}
   );
 }

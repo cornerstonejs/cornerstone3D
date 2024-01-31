@@ -86,7 +86,12 @@ interface IImageVolume {
   /** */
   get imageCacheOffsetMap(): Map<string, any>;
 
-  /** updates volume internals  */
+  /**
+   * Mark the volume as having had the pixel data changed externally
+   * which in background will re-configure the volume to use the new
+   * pixel data.
+   *
+   */
   modified(): void;
 }
 
