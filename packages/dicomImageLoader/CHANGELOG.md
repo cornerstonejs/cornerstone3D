@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.51.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.1...v1.51.2) (2024-01-31)
+
+### Bug Fixes
+
+- **dicom-image-loader:** add rgba condition interception for canvas createImageData API ([#1043](https://github.com/cornerstonejs/cornerstone3D/issues/1043)) ([70cf339](https://github.com/cornerstonejs/cornerstone3D/commit/70cf339e77f1396396c2d838722ac1330d205341))
+
+## [1.51.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.0...v1.51.1) (2024-01-31)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 # [1.51.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.3...v1.51.0) (2024-01-26)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
