@@ -877,7 +877,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       return;
     }
 
-    const { annotation, sliceToWorld, worldToSlice } = this.editData;
+    const { annotation, sliceToWorld } = this.editData;
     let { pointArray: imagePoints } = livewirePath;
 
     if (imagePoints.length > 1) {
@@ -893,7 +893,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       },
       {
         canvasToWorld: sliceToWorld,
-        worldToCanvas: worldToSlice,
       }
     );
   }
