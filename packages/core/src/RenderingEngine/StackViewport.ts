@@ -2064,7 +2064,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       })
     );
     const errorList = resultList.filter((item) => item.status === 'rejected');
-    if (errorList) {
+    if (errorList && errorList.length) {
       const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
         detail: errorList,
         cancelable: true,
