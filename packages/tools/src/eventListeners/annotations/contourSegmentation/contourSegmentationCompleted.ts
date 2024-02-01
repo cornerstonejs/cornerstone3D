@@ -20,6 +20,10 @@ import * as contourUtils from '../../../utilities/contours';
 import * as contourSegUtils from '../../../utilities/contourSegmentation';
 import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
 import { PlanarFreehandContourSegmentationTool } from '../../../tools';
+import {
+  ContourAnnotation,
+  ContourWindingDirection,
+} from '../../../types/ContourAnnotation';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
@@ -292,10 +296,10 @@ function combinePolylines(
   const { textBox } = handles;
 
   for (let i = 0; i < newPolylines.length; i++) {
-    const polyline = convertPolylineToWorldSpace(newPolylines[i], viewport);
-    const startPoint = polyline[0];
-    const endPoint = polyline[polyline.length - 1];
-    const newAnnotation = {
+    const polyline = newPolylines[i];
+    const startPoint = viewport.canvasToWorld(polyline[0]);
+    const endPoint = viewport.canvasToWorld(polyline[polyline.length - 1]);
+    const newAnnotation: ContourAnnotation = {
       metadata: {
         ...metadata,
         toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
@@ -307,7 +311,7 @@ function combinePolylines(
           textBox: textBox ? { ...textBox } : undefined,
         },
         contour: {
-          polyline,
+          polyline: [],
           closed: true,
         },
         segmentation: {
@@ -321,6 +325,15 @@ function combinePolylines(
       isVisible: undefined,
     };
 
+    contourUtils.updateContourPolyline(
+      newAnnotation,
+      {
+        points: polyline,
+        closed: true,
+        windingDirection: ContourWindingDirection.Clockwise,
+      },
+      viewport
+    );
     addAnnotation(newAnnotation, element);
 
     // Updating a Spline contours, for example, should also update freehand contours

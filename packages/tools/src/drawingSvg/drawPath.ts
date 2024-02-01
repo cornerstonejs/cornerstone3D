@@ -65,13 +65,11 @@ export default function drawPath(
       const point = points[j];
       const cmd = j ? 'L' : 'M';
 
-      pointsAttribute += `${cmd} ${point[0].toFixed(0)} ${point[1].toFixed(
-        0
-      )} `;
+      pointsAttribute += `${cmd} ${point[0]},${point[1]} `;
     }
 
     if (options.connectLastToFirst) {
-      pointsAttribute += 'Z ';
+      pointsAttribute += 'Z';
     }
   }
 
