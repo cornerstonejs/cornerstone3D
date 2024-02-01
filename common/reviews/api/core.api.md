@@ -3012,6 +3012,33 @@ type StreamingRetrieveOptions = BaseRetrieveOptions & {
 };
 
 // @public (undocumented)
+export class Surface implements ISurface {
+    constructor(props: SurfaceProps);
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
+    // (undocumented)
+    getColor(): RGB;
+    // (undocumented)
+    getPoints(): number[];
+    // (undocumented)
+    getPolys(): number[];
+    // (undocumented)
+    getSizeInBytes(): number;
+    // (undocumented)
+    _getSizeInBytes(): number;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    setColor(color: RGB): void;
+    // (undocumented)
+    setPoints(points: number[]): void;
+    // (undocumented)
+    setPolys(polys: number[]): void;
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
+// @public (undocumented)
 type SurfaceData = {
     points: number[];
     polys: number[];
@@ -3476,6 +3503,8 @@ export class Viewport implements IViewport {
     getCamera(): ICamera;
     // (undocumented)
     getCanvas(): HTMLCanvasElement;
+    // (undocumented)
+    getClippingPlanesForActor(actorEntry?: ActorEntry): vtkPlane[];
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)

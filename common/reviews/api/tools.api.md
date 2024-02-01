@@ -1322,17 +1322,13 @@ type ColorbarTicksStyle = {
 type ColorbarVOIRange = ColorbarImageRange;
 
 // @public (undocumented)
-function computeAndAddLabelmapRepresentation(segmentationId: string, options?: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-    viewport?: Types_2.IVolumeViewport | Types_2.IStackViewport;
-}): Promise<RawLabelmapData>;
+function computeAndAddContourRepresentation(segmentationId: string, options?: PolySegConversionOptions): void;
 
 // @public (undocumented)
-function computeAndAddSurfaceRepresentation(segmentationId: string, options?: {
-    segmentIndices?: number[];
-    segmentationRepresentationUID?: string;
-}): Promise<{
+function computeAndAddLabelmapRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<RawLabelmapData>;
+
+// @public (undocumented)
+function computeAndAddSurfaceRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<{
     geometryIds: Map<number, string>;
 }>;
 
@@ -1990,6 +1986,8 @@ enum Events {
     // (undocumented)
     MOUSE_WHEEL = "CORNERSTONE_TOOLS_MOUSE_WHEEL",
     // (undocumented)
+    POLYSEG_CONVERSION = "CORNERSTONE_TOOLS_POLYSEG_CONVERSION",
+    // (undocumented)
     SEGMENTATION_DATA_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED",
     // (undocumented)
     SEGMENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED",
@@ -2168,6 +2166,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     // (undocumented)
     addAnnotation: (annotation: Annotation, groupKey?: string) => void;
     // (undocumented)
+    getAllAnnotations: () => Annotations;
+    // (undocumented)
     getAnnotation: (annotationUID: string) => Annotation | undefined;
     // (undocumented)
     getAnnotations: (groupKey: string, toolName?: string) => GroupSpecificAnnotations | Annotations;
@@ -2214,6 +2214,9 @@ function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpec
 
 // @public (undocumented)
 function getActiveSegmentIndex(segmentationId: string): number | undefined;
+
+// @public (undocumented)
+function getAllAnnotations(): Annotations;
 
 // @public (undocumented)
 function getAllSegmentationRepresentations(): Record<string, ToolGroupSpecificRepresentation[]>;
@@ -2696,9 +2699,6 @@ interface ISpline {
     // (undocumented)
     updateControlPoint(index: number, newControlPoint: Types_2.Point2): void;
 }
-
-// @public (undocumented)
-function isPointInsidePolyline2D(point: Types_2.Point2, polyline: Types_2.Point2[]): boolean;
 
 // @public (undocumented)
 function isPointInsidePolyline3D(point: Types_2.Point3, polyline: Types_2.Point3[]): boolean;
@@ -3728,16 +3728,23 @@ declare namespace polyline {
         pointCanProjectOnLine,
         mergePolylines,
         subtractPolylines,
-        isPointInsidePolyline2D,
         isPointInsidePolyline3D
     }
 }
+
+// @public (undocumented)
+type PolySegConversionOptions = {
+    segmentIndices?: number[];
+    segmentationRepresentationUID?: string;
+    viewport?: Types_2.IViewport;
+};
 
 declare namespace polySegManager {
     export {
         canComputeRequestedRepresentation,
         computeAndAddSurfaceRepresentation,
-        computeAndAddLabelmapRepresentation
+        computeAndAddLabelmapRepresentation,
+        computeAndAddContourRepresentation
     }
 }
 
@@ -4908,6 +4915,7 @@ export let state: ICornerstoneTools3dState;
 
 declare namespace state_2 {
     export {
+        getAllAnnotations,
         getAnnotations,
         getNumberOfAnnotations,
         addAnnotation,
@@ -5218,7 +5226,10 @@ type ToolGroupSpecificRepresentationState = {
     active: boolean;
     segmentsHidden: Set<number>;
     colorLUTIndex: number;
-    polySeg?: boolean;
+    polySeg?: {
+        enabled: boolean;
+        options?: any;
+    };
 };
 
 // @public (undocumented)
@@ -5486,7 +5497,8 @@ declare namespace Types {
         ISpline,
         SplineCurveSegment,
         SplineLineSegment,
-        SplineProps
+        SplineProps,
+        PolySegConversionOptions
     }
 }
 export { Types }
