@@ -365,9 +365,15 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
   };
 
+  /**
+   * return all annotations as a single array
+   */
   getAllAnnotations = (): Annotations => {
-    // @ts-ignore
-    return Object.values(this.annotations).flat();
+    return Object.values(this.annotations)
+      .map((frameOfReferenceSpecificAnnotations) =>
+        Object.values(frameOfReferenceSpecificAnnotations)
+      )
+      .flat(2);
   };
 
   /**

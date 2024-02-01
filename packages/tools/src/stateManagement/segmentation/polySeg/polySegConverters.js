@@ -184,6 +184,9 @@ const obj = {
       const annotations = annotationUIDsInSegmentMap.get(index);
 
       for (const annotation of annotations) {
+        if (!annotation.data) {
+          debugger;
+        }
         const bounds = getBoundingBoxAroundShapeWorld(
           annotation.data.contour.polyline
         );

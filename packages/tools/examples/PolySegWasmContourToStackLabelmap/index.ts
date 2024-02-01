@@ -213,10 +213,10 @@ async function run() {
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
   const viewport1 = renderingEngine.getViewport(viewportId1);
-  await viewport1.setStack(imageIds, 1);
+  await viewport1.setStack(imageIds, 0);
 
   const viewport2 = renderingEngine.getViewport(viewportId2);
-  await viewport2.setStack(imageIds, 1);
+  await viewport2.setStack(imageIds, 0);
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   // Add the segmentations to state
