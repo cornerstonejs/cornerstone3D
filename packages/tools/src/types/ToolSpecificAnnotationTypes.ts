@@ -444,3 +444,5 @@ export interface VideoRedactionAnnotation extends Annotation {
     active: boolean;
   };
 }
+
+export type { ContourAnnotation };

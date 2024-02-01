@@ -20,6 +20,8 @@ export default interface IToolGroup {
   getViewportsInfo: () => Array<Types.IViewportId>;
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any };
+  /** Check if a tool is already added to the tool group */
+  hasTool(toolName: string): boolean;
   /** Add a tool to toolGroup with its configuration and custom calculator if wanted */
   addTool: {
     (toolName: string, toolConfiguration?: ToolConfiguration): void;
@@ -70,7 +72,7 @@ export default interface IToolGroup {
     ): void;
   };
   getToolConfiguration: {
-    (toolName: string, configurationPath: string): any;
+    (toolName: string, configurationPath?: string): any;
   };
   getDefaultMousePrimary: {
     (): MouseBindings;

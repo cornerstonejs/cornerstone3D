@@ -3,6 +3,49 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.51.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.1...v1.51.2) (2024-01-31)
+
+### Bug Fixes
+
+- Capture error messages thrown by vtk ([#1038](https://github.com/cornerstonejs/cornerstone3D/issues/1038)) ([9a9206d](https://github.com/cornerstonejs/cornerstone3D/commit/9a9206d13176dfe19e6d2e7e4f4d585b8bfff500))
+- **dicom-image-loader:** add rgba condition interception for canvas createImageData API ([#1043](https://github.com/cornerstonejs/cornerstone3D/issues/1043)) ([70cf339](https://github.com/cornerstonejs/cornerstone3D/commit/70cf339e77f1396396c2d838722ac1330d205341))
+
+## [1.51.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.0...v1.51.1) (2024-01-31)
+
+### Bug Fixes
+
+- Refactor image splitting logic to support additional metadata ([#1048](https://github.com/cornerstonejs/cornerstone3D/issues/1048)) ([4205452](https://github.com/cornerstonejs/cornerstone3D/commit/42054522680083aada25737d5e64fb22c24cb424))
+
+# [1.51.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.3...v1.51.0) (2024-01-26)
+
+### Features
+
+- **contouSeg:** append/remove ([#1029](https://github.com/cornerstonejs/cornerstone3D/issues/1029)) ([29af2e1](https://github.com/cornerstonejs/cornerstone3D/commit/29af2e1a211ae904ac071b46ada48bbf62fb4c33))
+
+## [1.50.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.2...v1.50.3) (2024-01-26)
+
+### Bug Fixes
+
+- **Cache:** Missing cached image to events details (removeImageLoadObject) ([#1040](https://github.com/cornerstonejs/cornerstone3D/issues/1040)) ([229f503](https://github.com/cornerstonejs/cornerstone3D/commit/229f50317aef2366b4c5363db203e21588d995d2))
+
+## [1.50.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.1...v1.50.2) (2024-01-26)
+
+### Bug Fixes
+
+- **StackViewport:** Reset properties invert ([#1027](https://github.com/cornerstonejs/cornerstone3D/issues/1027)) ([a798596](https://github.com/cornerstonejs/cornerstone3D/commit/a79859640a8de88adc88915b19c6e3d52a5d49a3))
+
+## [1.50.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.50.0...v1.50.1) (2024-01-26)
+
+### Bug Fixes
+
+- **WindowLevelTool:** attempt to set zero width color range ([#1037](https://github.com/cornerstonejs/cornerstone3D/issues/1037)) ([bcdc704](https://github.com/cornerstonejs/cornerstone3D/commit/bcdc704f994715163dde6d9160b80157904b793d))
+
+# [1.50.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.49.2...v1.50.0) (2024-01-25)
+
+### Features
+
+- Livewire editing ([#1035](https://github.com/cornerstonejs/cornerstone3D/issues/1035)) ([655a241](https://github.com/cornerstonejs/cornerstone3D/commit/655a241b213e9f9eb00c295407cc53df2d4954ea))
+
 ## [1.49.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.49.1...v1.49.2) (2024-01-24)
 
 ### Bug Fixes

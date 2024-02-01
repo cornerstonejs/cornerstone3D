@@ -1,6 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
+
 import { BucketQueue } from '../BucketQueue';
 
+const { isEqual } = utilities;
 const MAX_UINT32 = 4294967295;
 const TWO_THIRD_PI = 2 / (3 * Math.PI);
 
@@ -103,6 +105,48 @@ export class LivewireScissors {
   }
 
   /**
+   * Returns a smoothing path count for how many items to remove.
+   * This will remove points, up to count which have a high gradient, up to
+   * count of them where the clip value is larger than that provided.
+   *
+   * @returns Count of items to remove from the path.
+   */
+  public smoothPathCount(
+    pathPoints: Types.Point2[],
+    lastPoint: Types.Point2,
+    count = 5,
+    clipValue = 0.85
+  ) {
+    const lastIndex =
+      (lastPoint &&
+        pathPoints.findIndex((point) => isEqual(point, lastPoint))) ||
+      -1;
+    if (pathPoints.length - lastIndex < count * 2) {
+      // If a nearby point is clicked, just add it anyways, because that means
+      // the user actually wants the given point
+      return 0;
+    }
+    let removeCount = 0;
+    for (
+      let i = pathPoints.length - 1;
+      i > pathPoints.length - count && i > 0;
+      i--
+    ) {
+      const weighted = this._getWeightedDistance(
+        pathPoints[i],
+        pathPoints[i - 1]
+      );
+      if (weighted < clipValue) {
+        return removeCount ? removeCount + 2 : 0;
+      }
+      removeCount++;
+    }
+    // Tried all of them, they were all too big, so assume they are really moving
+    // along a high gradient.
+    return 0;
+  }
+
+  /**
    * Runs Dijsktra until it finds a path from the start point to the target
    * point. Once it reaches the target point all the state is preserved in order
    * to save processing time the next time the method is called for a new target
@@ -156,20 +200,20 @@ export class LivewireScissors {
       // Update the cost of all neighbors that have higher costs
       for (let i = 0, len = neighborsPoints.length; i < len; i++) {
         const neighborPoint = neighborsPoints[i];
-        const neighbordPointIndex = index(neighborPoint[1], neighborPoint[0]);
+        const neighborPointIndex = index(neighborPoint[1], neighborPoint[0]);
         const dist = this._getWeightedDistance(point, neighborPoint);
         const neighborCost = cost[pointIndex] + dist;
 
-        if (neighborCost < cost[neighbordPointIndex]) {
-          if (cost[neighbordPointIndex] !== Infinity) {
+        if (neighborCost < cost[neighborPointIndex]) {
+          if (cost[neighborPointIndex] !== Infinity) {
             // The item needs to be removed from the priority queue and
             // re-added in order to be moved to the right bucket.
-            priorityQueue.remove(neighbordPointIndex);
+            priorityQueue.remove(neighborPointIndex);
           }
 
-          cost[neighbordPointIndex] = neighborCost;
-          parents[neighbordPointIndex] = pointIndex;
-          priorityQueue.push(neighbordPointIndex);
+          cost[neighborPointIndex] = neighborCost;
+          parents[neighborPointIndex] = pointIndex;
+          priorityQueue.push(neighborPointIndex);
         }
       }
     }

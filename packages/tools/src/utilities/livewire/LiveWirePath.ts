@@ -101,6 +101,18 @@ export class LivewirePath {
     }
   }
 
+  public getLastControlPoint(): Types.Point2 {
+    if (this._controlPointIndexes.length) {
+      return this.pointArray[
+        this._controlPointIndexes[this._controlPointIndexes.length - 1]
+      ];
+    }
+  }
+
+  public removeLastPoints(count: number) {
+    this.pointArray.splice(this.pointArray.length - count, count);
+  }
+
   /**
    * Add points to the path.
    *
@@ -127,5 +139,17 @@ export class LivewirePath {
 
     this._controlPointIndexes =
       other._controlPointIndexes.concat(shiftedIndexArray);
+  }
+
+  /**
+   * Append a path to this one.
+   *
+   * @param other - The path to append.
+   */
+  public appendPath(other: LivewirePath): void {
+    this.addPoints(other.pointArray);
+    other._controlPointIndexes.forEach((point) =>
+      this._controlPointIndexes.push(point)
+    );
   }
 }

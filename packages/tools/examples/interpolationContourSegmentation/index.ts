@@ -49,16 +49,16 @@ const interpolationTools = new Map<string, any>();
 const configuration = {
   interpolation: { enabled: true },
 };
+interpolationTools.set('LivewireInterpolation', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration,
+});
 interpolationTools.set('FreeformInterpolation', {
   baseTool: PlanarFreehandContourSegmentationTool.toolName,
   configuration,
 });
 interpolationTools.set('SplineInterpolation', {
   baseTool: SplineContourSegmentationTool.toolName,
-  configuration,
-});
-interpolationTools.set('LivewireInterpolation', {
-  baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
 });
 const interpolationToolName = [...interpolationTools.keys()][0];
@@ -71,7 +71,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use the Contour Freehand Annotation Tool to draw 2D closed ROIs'
 );
 
-const size = '500px';
+const size = '800px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -305,7 +305,8 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  stackViewport.setStack(stackImageIds);
+  await stackViewport.setStack(stackImageIds);
+  stackViewport.setDisplayArea({ imageArea: [0.9, 0.9] });
 
   // Set the volume to load
   volume.load();

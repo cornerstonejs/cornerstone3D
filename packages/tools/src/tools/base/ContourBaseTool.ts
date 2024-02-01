@@ -4,13 +4,14 @@ import {
   addAnnotation,
   getAnnotations,
 } from '../../stateManagement/annotation/annotationState';
-import {
+import type {
   Annotation,
   ContourAnnotation,
   EventTypes,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
 import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -191,13 +192,9 @@ abstract class ContourBaseTool extends AnnotationTool {
   /**
    * Render a contour segmentation instance
    */
-  protected renderAnnotationInstance(renderContext: {
-    enabledElement: Types.IEnabledElement;
-    targetId: string;
-    annotation: Annotation;
-    annotationStyle: Record<string, any>;
-    svgDrawingHelper: SVGDrawingHelper;
-  }): boolean {
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
     const { enabledElement, annotationStyle, svgDrawingHelper } = renderContext;
     const annotation = renderContext.annotation as ContourAnnotation;
     const { annotationUID } = annotation;

@@ -1,8 +1,6 @@
 import {
   CONSTANTS,
   getEnabledElement,
-  triggerEvent,
-  eventTarget,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -14,7 +12,6 @@ import {
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
 import { roundNumber } from '../../utilities';
-import { Events } from '../../enums';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -26,10 +23,6 @@ import registerClosedContourEditLoop from './planarFreehandROITool/closedContour
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 import type {
   EventTypes,
   ToolHandle,
@@ -39,13 +32,15 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
+import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
@@ -404,40 +399,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   };
 
   /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: PlanarFreehandROIAnnotation,
-    enabledElement: Types.IEnabledElement
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
-   * Triggers an annotation completed event.
-   */
-  triggerAnnotationCompleted = (
-    annotation: PlanarFreehandROIAnnotation
-  ): void => {
-    const eventType = Events.ANNOTATION_COMPLETED;
-
-    const eventDetail: AnnotationCompletedEventDetail = {
-      annotation,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
    * @override We need to override this method as the tool doesn't always have
    * `handles`, which means `filterAnnotationsForDisplay` fails inside
    * `filterAnnotationsWithinSlice`.
@@ -569,13 +530,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return super.getAnnotationStyle(context);
   }
 
-  protected renderAnnotationInstance(renderContext: {
-    enabledElement: Types.IEnabledElement;
-    targetId: string;
-    annotation: Annotation;
-    annotationStyle: Record<string, any>;
-    svgDrawingHelper: SVGDrawingHelper;
-  }): boolean {
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
     const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
       renderContext;
     const annotation = renderContext.annotation as PlanarFreehandROIAnnotation;
@@ -701,6 +658,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     enabledElement
   ) => {
     const { data } = annotation;
+    const { element } = viewport;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
 
@@ -737,8 +695,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const scale = getCalibratedScale(image);
-      let area =
-        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      let area = polyline.getArea(canvasCoordinates) / scale / scale;
       // Convert from canvas_pixels ^2 to mm^2
       area *= deltaInX * deltaInY;
 
@@ -806,7 +763,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           if (point[1] != curRow) {
             intersectionCounter = 0;
             curRow = point[1];
-            intersections = getIntersectionCoordinatesWithPolyline(
+            intersections = getLineSegmentIntersectionsCoordinates(
               canvasCoordinates,
               point,
               [canvasPosEnd[0], point[1]]
@@ -866,7 +823,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(annotation, element);
 
     annotation.invalidated = false;
 

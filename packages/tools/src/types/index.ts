@@ -63,6 +63,7 @@ import type IToolClassReference from './IToolClassReference';
 import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type AnnotationRenderContext from './AnnotationRenderContext';
 import type { Statistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
@@ -106,6 +107,8 @@ export type {
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
   AnnotationGroupSelector,
+  // Rendering
+  AnnotationRenderContext,
   // Geometry
   PlanarBoundingBox,
   ToolProps,
