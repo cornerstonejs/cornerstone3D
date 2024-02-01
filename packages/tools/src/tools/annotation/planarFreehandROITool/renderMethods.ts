@@ -2,12 +2,17 @@ import type { Types } from '@cornerstonejs/core';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
+  drawPath as drawPathSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
 import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import {
+  ContourAnnotation,
+  PlanarFreehandROIAnnotation,
+} from '../../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../../types/AnnotationStyle';
 import { SVGDrawingHelper } from '../../../types';
+import { getAnnotation } from '../../../stateManagement';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
@@ -46,6 +51,23 @@ function _getRenderingOptions(
   };
 
   return options;
+}
+
+function getChildrenContourPoints(
+  enabledElement: Types.IEnabledElement,
+  annotation: PlanarFreehandROIAnnotation
+) {
+  const { viewport } = enabledElement;
+
+  return annotation.childrenAnnotationUIDs?.length
+    ? annotation.childrenAnnotationUIDs.map((childAnnotationUID) => {
+        const childAnnotation = getAnnotation(childAnnotationUID);
+
+        return this.getPolylinePoints(childAnnotation as ContourAnnotation).map(
+          (point) => viewport.worldToCanvas(point)
+        );
+      })
+    : [];
 }
 
 /**
@@ -118,13 +140,23 @@ function renderClosedContour(
     viewport.worldToCanvas(worldPos)
   );
 
+  const childContourPointsArrays = getChildrenContourPoints.call(
+    this,
+    enabledElement,
+    annotation
+  );
+
+  const canvasPointsArrays = childContourPointsArrays.length
+    ? [canvasPoints, ...childContourPointsArrays]
+    : canvasPoints;
+
   const polylineUID = '1';
 
-  drawPolylineSvg(
+  drawPathSvg(
     svgDrawingHelper,
     annotation.annotationUID,
     polylineUID,
-    canvasPoints,
+    canvasPointsArrays,
     options
   );
 }
@@ -350,7 +382,7 @@ function renderClosedContourBeingEdited(
 
   const polylineUIDToRender = 'preview-1';
 
-  drawPolylineSvg(
+  drawPathSvg(
     svgDrawingHelper,
     annotation.annotationUID,
     polylineUIDToRender,

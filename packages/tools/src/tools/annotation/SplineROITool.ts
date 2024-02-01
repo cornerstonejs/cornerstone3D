@@ -6,7 +6,10 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
-import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
+import {
+  getChildrenAnnotations,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
@@ -40,9 +43,9 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
-import { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
-import {
+import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
@@ -52,7 +55,7 @@ import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
+import updateContourPolyline from '../../utilities/contours/updateContourPolyline';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -467,14 +470,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
       const worldPosDelta = deltaPoints.world;
 
-      const points = data.handles.points;
-
-      points.forEach((point) => {
-        point[0] += worldPosDelta[0];
-        point[1] += worldPosDelta[1];
-        point[2] += worldPosDelta[2];
-      });
-      annotation.invalidated = true;
+      this.moveAnnotation(annotation, worldPosDelta);
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
@@ -659,16 +655,37 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const { drawPreviewEnabled } = this.configuration.spline;
     const splineType = annotation.data.spline.type;
     const splineConfig = this._getSplineConfig(splineType);
-    const spline = this._updateSplineInstance(element, annotation);
-    const splinePolylineCanvas = reverseIfAntiClockwise(
-      spline.getPolylinePoints()
-    );
-    const splinePolylineWorld = splinePolylineCanvas.map((point2) =>
-      viewport.canvasToWorld(point2)
-    );
+    const spline = annotation.data.spline.instance;
 
-    data.contour.polyline = splinePolylineWorld;
-    data.contour.windingDirection = ContourWindingDirection.CW;
+    // Update current and all children annotations/splines
+    if (annotation.invalidated) {
+      const splineAnnotationsGroup = [
+        annotation,
+        ...getChildrenAnnotations(annotation),
+      ].filter((annotation) =>
+        this._isSplineROIAnnotation(annotation)
+      ) as SplineROIAnnotation[];
+
+      let windingDirection = ContourWindingDirection.Clockwise;
+
+      splineAnnotationsGroup.forEach((annotation) => {
+        const spline = this._updateSplineInstance(element, annotation);
+        const splinePolylineCanvas = spline.getPolylinePoints();
+
+        updateContourPolyline(
+          annotation,
+          {
+            points: splinePolylineCanvas,
+            closed: data.contour.closed,
+            windingDirection,
+          },
+          viewport
+        );
+
+        // Each inner annotation (hole) must go to the opposite direction
+        windingDirection *= -1;
+      });
+    }
 
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
@@ -991,6 +1008,12 @@ class SplineROITool extends ContourSegmentationBaseTool {
       closestControlPoint.index
     );
   };
+
+  _isSplineROIAnnotation(
+    annotation: Annotation
+  ): annotation is SplineROIAnnotation {
+    return !!(<SplineROIAnnotation>annotation).data?.spline;
+  }
 
   /**
    * Get a spline config merged with the default settings.

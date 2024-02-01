@@ -4,6 +4,7 @@ import {
   addAnnotation,
   getAnnotation,
   getAnnotations,
+  getChildrenAnnotations,
 } from '../../stateManagement/annotation/annotationState';
 import type {
   Annotation,
@@ -14,7 +15,7 @@ import type {
   SVGDrawingHelper,
   AnnotationRenderContext,
 } from '../../types';
-import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
+import { drawPath as drawPathSvg } from '../../drawingSvg';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
 
@@ -179,6 +180,32 @@ abstract class ContourBaseTool extends AnnotationTool {
   }
 
   /**
+   * Move an annotation and all its children annotations in a recursive way
+   * @param annotation - Annotation
+   * @param worldPosDelta - Delta in world space
+   */
+  protected moveAnnotation(
+    annotation: Annotation,
+    worldPosDelta: Types.Point3
+  ): void {
+    const { points } = annotation.data.handles;
+
+    for (let i = 0, numPoints = points.length; i < numPoints; i++) {
+      const point = points[i];
+
+      point[0] += worldPosDelta[0];
+      point[1] += worldPosDelta[1];
+      point[2] += worldPosDelta[2];
+    }
+
+    annotation.invalidated = true;
+
+    getChildrenAnnotations(annotation).forEach((childAnnotation) =>
+      this.moveAnnotation(childAnnotation, worldPosDelta)
+    );
+  }
+
+  /**
    * Get polyline points in world space.
    * Just to give a chance for child classes to override it.
    * @param annotation - Contour annotation
@@ -208,13 +235,25 @@ abstract class ContourBaseTool extends AnnotationTool {
       annotationStyle;
 
     // Get children polylines
-    // getAnnotation
+    const childContourPointsArrays = annotation.childrenAnnotationUIDs?.length
+      ? annotation.childrenAnnotationUIDs.map((childAnnotationUID) => {
+          const childAnnotation = getAnnotation(childAnnotationUID);
 
-    drawPolylineSvg(
+          return this.getPolylinePoints(
+            childAnnotation as ContourAnnotation
+          ).map((point) => worldToCanvas(point));
+        })
+      : [];
+
+    const polylineCanvasPointsArrays = childContourPointsArrays.length
+      ? [polylineCanvasPoints, ...childContourPointsArrays]
+      : polylineCanvasPoints;
+
+    drawPathSvg(
       svgDrawingHelper,
       annotationUID,
       'contourPolyline',
-      polylineCanvasPoints,
+      polylineCanvasPointsArrays,
       {
         color,
         lineDash,

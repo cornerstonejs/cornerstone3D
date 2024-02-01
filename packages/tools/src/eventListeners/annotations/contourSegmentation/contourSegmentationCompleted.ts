@@ -1,4 +1,3 @@
-import { glMatrix, vec2, vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -24,40 +23,9 @@ import { PlanarFreehandContourSegmentationTool } from '../../../tools';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
-function debug(annotation: ContourSegmentationAnnotation) {
-  const viewport = getViewportForAnnotation(annotation);
-  const polyline = convertContourPolylineToCanvasSpace(
-    annotation.data.contour.polyline,
-    viewport
-  );
-  const normal = math.polyline.getNormal2(polyline);
-  console.log('>>>>> normal:', normal);
-
-  // prettier-ignore
-  const rectCW = [[200, 200], [300, 200], [300, 300], [200, 300]];
-  const rectCWNormal = math.polyline.getNormal2(rectCW as Types.Point2[]);
-  console.log('>>>>> rectCWNormal:', rectCWNormal);
-  const rectCWWindingDir = math.polyline.getWindingDirection(
-    rectCW as Types.Point2[]
-  );
-  console.log('>>>>> rectCWWindingDir:', rectCWWindingDir);
-
-  // prettier-ignore
-  const rectCCW = [[100, 100], [400, 100], [400, 400], [100, 400]].reverse();
-  const rectCCWNormal = math.polyline.getNormal2(rectCCW as Types.Point2[]);
-  console.log('>>>>> rectCCWNormal:', rectCCWNormal);
-  const rectCCWWindingDir = math.polyline.getWindingDirection(
-    rectCCW as Types.Point2[]
-  );
-  console.log('>>>>> rectCCWWindingDir:', rectCCWWindingDir);
-}
-
 export default function contourSegmentationCompletedListener(
   evt: AnnotationCompletedEventType
 ) {
-  // debug(evt.detail.annotation as ContourSegmentationAnnotation);
-  // return;
-
   const sourceAnnotation = evt.detail
     .annotation as ContourSegmentationAnnotation;
 
@@ -94,26 +62,10 @@ export default function contourSegmentationCompletedListener(
 
   const { targetAnnotation, targetPolyline, isHole } = targetAnnotationInfo;
 
-  console.log('>>>>> targetAnnotationInfo:', targetAnnotationInfo);
-  // return;
-
   if (isHole) {
-    // prettier-ignore
-    const targetPolylineTest = [[200, 200], [300, 200], [300, 300], [200, 300]];
-    // prettier-ignore
-    const sourcePolylineTest = [[100, 100], [400, 100], [400, 400], [100, 400]].reverse();
-
-    createPolylineHole(
-      viewport,
-      targetAnnotation,
-      // targetPolyline,
-      targetPolylineTest as Types.Point2[],
-      sourceAnnotation,
-      // sourcePolyline
-      sourcePolylineTest as Types.Point2[]
-    );
+    createPolylineHole(viewport, targetAnnotation, sourceAnnotation);
   } else {
-    appendOrRemovePolylines(
+    combinePolylines(
       viewport,
       targetAnnotation,
       targetPolyline,
@@ -252,19 +204,19 @@ function findIntersectingContour(
 function createPolylineHole(
   viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
-  targetPolyline: Types.Point2[],
-  holeAnnotation: ContourSegmentationAnnotation,
-  holePolyline: Types.Point2[]
+  holeAnnotation: ContourSegmentationAnnotation
 ) {
-  const targetPolylineNormal = math.polyline.getNormal2(targetPolyline);
-  const holePolylineNormal = math.polyline.getNormal2(holePolyline);
-  const dotNormals = vec3.dot(targetPolylineNormal, holePolylineNormal);
+  const { windingDirection: targetWindingDirection } =
+    targetAnnotation.data.contour;
+  const { windingDirection: holeWindingDirection } =
+    holeAnnotation.data.contour;
 
   // Check if both normals are pointing to the same direction because the
   // polyline for the hole needs to be in a different direction
-  if (glMatrix.equals(1, dotNormals)) {
-    holeAnnotation.data.contour.polyline =
-      holeAnnotation.data.contour.polyline.reverse();
+  // if (glMatrix.equals(1, dotNormals)) {
+  if (targetWindingDirection === holeWindingDirection) {
+    holeAnnotation.data.contour.polyline.reverse();
+    holeAnnotation.data.contour.windingDirection = targetWindingDirection * -1;
   }
 
   targetAnnotation.childrenAnnotationUIDs =
@@ -296,7 +248,7 @@ function createPolylineHole(
   }
 }
 
-function appendOrRemovePolylines(
+function combinePolylines(
   viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   targetPolyline: Types.Point2[],

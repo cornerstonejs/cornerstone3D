@@ -60,6 +60,20 @@ function getAnnotations(
 }
 
 /**
+ * Returns all children annotation of a given one since annotations can be
+ * associated in a parent/child way (eg: polyline holes)
+ * @param annotation - Annotation
+ * @returns Children annotations
+ */
+function getChildrenAnnotations(annotation: Annotation) {
+  return (
+    annotation.childrenAnnotationUIDs?.map((childAnnotationUID) =>
+      getAnnotation(childAnnotationUID)
+    ) ?? []
+  );
+}
+
+/**
  * Add the annotation to the annotation manager along with the options that is
  * used to filter the annotation manager and the annotation group that
  * the annotation belongs to.
@@ -137,6 +151,11 @@ function removeAnnotation(annotationUID: string): void {
     return;
   }
 
+  // Remove all children annotations first
+  annotation.childrenAnnotationUIDs?.forEach((childAnnotationUID) =>
+    removeAnnotation(childAnnotationUID)
+  );
+
   manager.removeAnnotation(annotationUID);
 
   // trigger annotation removed
@@ -171,6 +190,7 @@ function removeAllAnnotations(): void {
 
 export {
   getAnnotations,
+  getChildrenAnnotations,
   getNumberOfAnnotations,
   addAnnotation,
   getAnnotation,

@@ -21,16 +21,17 @@ import type {
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import {
   triggerAnnotationModified,
   triggerAnnotationCompleted,
 } from '../../stateManagement/annotation/helpers/state';
-import reverseIfAntiClockwise from '../../utilities/contours/reverseIfAntiClockwise';
 
 import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import updateContourPolyline from '../../utilities/contours/updateContourPolyline';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -406,17 +407,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       return;
     }
 
-    // Reverse the points if needed, ensuring both the handles and the
-    // polyline is also reversed.
-    const { worldToSlice } = this.editData;
-    if (worldToSlice) {
-      reverseIfAntiClockwise(
-        data.handles.points.map(worldToSlice),
-        data.handles.points,
-        data.contour.polyline
-      );
-    }
-
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     const changeType = newAnnotation
@@ -536,7 +526,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     if (this.editData.closed) {
       // Update the annotation because `editData` will be set to null
-      this.updateAnnotation(element, this.editData.confirmedPath);
+      this.updateAnnotation(this.editData.confirmedPath);
       this._endCallback(evt);
     }
 
@@ -787,11 +777,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean {
-    const { viewport } = enabledElement;
-    const { element } = viewport;
-
     // Update the annotation that is in editData (being edited)
-    this.updateAnnotation(element, this.editData?.currentPath);
+    this.updateAnnotation(this.editData?.currentPath);
 
     return super.renderAnnotation(enabledElement, svgDrawingHelper);
   }
@@ -885,27 +872,30 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return true;
   }
 
-  protected updateAnnotation(_, livewirePath: LivewirePath) {
+  protected updateAnnotation(livewirePath: LivewirePath) {
     if (!this.editData || !livewirePath) {
       return;
     }
 
-    const { annotation, sliceToWorld } = this.editData;
+    const { annotation, sliceToWorld, worldToSlice } = this.editData;
+    let { pointArray: imagePoints } = livewirePath;
 
-    const { pointArray: imagePoints } = livewirePath;
-    const worldPolylinePoints: Types.Point3[] = [];
-
-    for (let i = 0, len = imagePoints.length; i < len; i++) {
-      const imagePoint = imagePoints[i];
-      const worldPoint = sliceToWorld(imagePoint);
-      worldPolylinePoints.push(worldPoint);
+    if (imagePoints.length > 1) {
+      imagePoints = [...imagePoints, imagePoints[0]];
     }
 
-    if (worldPolylinePoints.length > 1) {
-      worldPolylinePoints.push([...worldPolylinePoints[0]]);
-    }
-
-    annotation.data.contour.polyline = worldPolylinePoints;
+    updateContourPolyline(
+      annotation,
+      {
+        points: imagePoints,
+        closed: annotation.data.contour.closed,
+        windingDirection: ContourWindingDirection.Clockwise,
+      },
+      {
+        canvasToWorld: sliceToWorld,
+        worldToCanvas: worldToSlice,
+      }
+    );
   }
 }
 

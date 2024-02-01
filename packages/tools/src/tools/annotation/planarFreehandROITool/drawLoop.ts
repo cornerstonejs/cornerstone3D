@@ -17,6 +17,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
+import { updateContourPolyline } from '../../../utilities/contours/';
 import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClockwise';
 
 const {
@@ -228,13 +229,16 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
-  const worldPoints = updatedPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+
+  updateContourPolyline(
+    annotation,
+    {
+      points: updatedPoints,
+      closed: true,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = true;
-  annotation.invalidated = true;
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
@@ -299,14 +303,18 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
-  const worldPoints = updatedPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+
+  updateContourPolyline(
+    annotation,
+    {
+      points: updatedPoints,
+      closed: false,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = false;
-  annotation.invalidated = true;
   const { textBox } = annotation.data.handles;
+  const worldPoints = annotation.data.contour.polyline;
 
   // Add the first and last points to the list of handles. These means they
   // will render handles on mouse hover.
