@@ -7,7 +7,7 @@ describe('getVolumeId', () => {
   });
 
   it('should extract volumeId from a complex nifti url', () => {
-    const targetId = 'nifti:https://nifti.com?xoxo';
+    const targetId = 'volumeId:nifti:https://nifti.com?xoxo';
     expect(getVolumeId(targetId)).toEqual('nifti:https://nifti.com?xoxo');
   });
 });
