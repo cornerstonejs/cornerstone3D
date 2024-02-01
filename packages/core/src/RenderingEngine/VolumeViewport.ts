@@ -136,26 +136,35 @@ class VolumeViewport extends BaseVolumeViewport {
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
    */
-  public setOrientation(orientation: OrientationAxis, immediate = true): void {
+  public setOrientation(
+    orientation: OrientationAxis | OrientationVectors,
+    immediate = true
+  ): void {
     let viewPlaneNormal, viewUp;
 
-    if (MPR_CAMERA_VALUES[orientation]) {
-      ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
-    } else if (orientation === 'acquisition') {
-      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
+    // check if the orientation is a string or an object
+    if (typeof orientation === 'string') {
+      if (MPR_CAMERA_VALUES[orientation]) {
+        ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
+      } else if (orientation === 'acquisition') {
+        ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
+      } else {
+        throw new Error(
+          `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
+        );
+      }
+
+      this.setCamera({
+        viewPlaneNormal,
+        viewUp,
+      });
+
+      this.viewportProperties.orientation = orientation;
+      this.resetCamera();
     } else {
-      throw new Error(
-        `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
-      );
+      ({ viewPlaneNormal, viewUp } = orientation);
+      this.applyViewOrientation(orientation);
     }
-
-    this.setCamera({
-      viewPlaneNormal,
-      viewUp,
-    });
-
-    this.viewportProperties.orientation = orientation;
-    this.resetCamera();
 
     if (immediate) {
       this.render();

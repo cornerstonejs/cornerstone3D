@@ -104,6 +104,22 @@ function addOrUpdateSurfaceToElement(
     const filteredData = clippingFilter.getOutputData();
     mapper.setInputData(filteredData);
 
+    const evt = {
+      detail: {
+        actorEntry: {
+          actor: {
+            getMapper: () => mapper,
+          },
+          clippingFilter,
+          uid: actorUID,
+        },
+        vtkPlanes: viewport.getClippingPlanesForActor?.(),
+        viewport,
+      },
+    };
+
+    updateSurfacePlanes(evt);
+
     element.addEventListener(
       Enums.Events.CLIPPING_PLANES_UPDATED,
       updateSurfacePlanes
@@ -128,69 +144,63 @@ function addOrUpdateSurfaceToElement(
     clippingFilter,
   });
 
-  if (viewport instanceof VolumeViewport) {
-    registerDisplayToolsWorker();
-    // All planes is an array of planes pairs for each slice, so we should loop over them and
-    // add the planes to the clipping filter and cache the results for that slice
-    const planesInfo = viewport.getSlicesClippingPlanes?.();
+  // if (viewport instanceof VolumeViewport) {
+  //   registerDisplayToolsWorker();
+  //   // All planes is an array of planes pairs for each slice, so we should loop over them and
+  //   // add the planes to the clipping filter and cache the results for that slice
+  //   const planesInfo = viewport.getSlicesClippingPlanes?.();
 
-    // planesInfo = planesInfo.filter(({ sliceIndex }) => sliceIndex === 68);
+  //   const camera = viewport.getCamera();
 
-    const camera = viewport.getCamera();
-    // triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+  //   workerManager
+  //     .executeTask(
+  //       'displayTools',
+  //       'clipSurfaceWithPlanes',
+  //       {
+  //         planesInfo,
+  //         polyDataInfo: {
+  //           points,
+  //           polys,
+  //         },
+  //         id,
+  //       },
+  //       {
+  //         callbacks: [
+  //           // progress callback
+  //           (progress) => {
+  //             console.debug(progress);
+  //           },
+  //           // update cache callback
+  //           ({ points, lines, sliceIndex }) => {
+  //             const polyData = vtkPolyData.newInstance();
+  //             polyData.getPoints().setData(points, 3);
 
-    workerManager
-      .executeTask(
-        'displayTools',
-        'clipSurfaceWithPlanes',
-        {
-          planesInfo,
-          polyDataInfo: {
-            points,
-            polys,
-          },
-          id,
-        },
-        {
-          callbacks: [
-            // progress callback
-            (progress) => {
-              console.debug(progress);
-            },
-            // update cache callback
-            ({ points, lines, sliceIndex }) => {
-              const polyData = vtkPolyData.newInstance();
-              polyData.getPoints().setData(points, 3);
+  //             const linesArray = vtkCellArray.newInstance({
+  //               values: Int16Array.from(lines),
+  //             });
+  //             polyData.setLines(linesArray);
 
-              const linesArray = vtkCellArray.newInstance({
-                values: Int16Array.from(lines),
-              });
-              polyData.setLines(linesArray);
+  //             // cacheId is the sliceIndex
+  //             const cacheId = `${viewport.id}-${pointToString(
+  //               camera.viewPlaneNormal
+  //             )}-${sliceIndex}`;
 
-              // cacheId is the sliceIndex
-              const cacheId = `${viewport.id}-${pointToString(
-                camera.viewPlaneNormal
-              )}-${sliceIndex}`;
+  //             let actorCache = polyDataCache.get(actorUID);
+  //             if (!actorCache) {
+  //               actorCache = new Map();
+  //               polyDataCache.set(actorUID, actorCache);
+  //             }
+  //             actorCache.set(cacheId, polyData);
 
-              let actorCache = polyDataCache.get(actorUID);
-              if (!actorCache) {
-                actorCache = new Map();
-                polyDataCache.set(actorUID, actorCache);
-              }
-              actorCache.set(cacheId, polyData);
-
-              mapper.setInputData(polyData);
-            },
-          ],
-        }
-      )
-      .then((results) => {
-        console.debug(results);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
+  //             mapper.setInputData(polyData);
+  //           },
+  //         ],
+  //       }
+  //     )
+  //     .catch((error) => {
+  //       console.error(error);
+  //     });
+  // }
 
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();

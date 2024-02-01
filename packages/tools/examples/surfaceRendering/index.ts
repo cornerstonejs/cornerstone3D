@@ -13,6 +13,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   downloadSurfacesData,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -71,10 +72,14 @@ viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
-
+let renderingEngine;
 const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
+
+// Create the viewports
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_3D';
 
 let surfaces;
 async function addSegmentationsToState() {
@@ -114,6 +119,27 @@ async function addSegmentationsToState() {
     },
   ]);
 }
+
+addButtonToToolbar({
+  title: 'Set Random Orientation',
+  onClick: () => {
+    const viewport = renderingEngine.getViewport(viewportId1);
+    const { viewUp, viewPlaneNormal } = viewport.getCamera();
+
+    viewport.setOrientation({
+      viewUp: [
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+      ],
+      viewPlaneNormal: [
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+      ],
+    });
+  },
+});
 
 /**
  * Runs the demo
@@ -199,11 +225,7 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_3D';
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   const viewportInputArray = [
     {

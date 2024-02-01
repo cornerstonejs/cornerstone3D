@@ -37,19 +37,23 @@ const obj = {
     clippingFilter.setGenerateOutline(true);
     clippingFilter.setGenerateFaces(false);
 
+    const plane1 = vtkPlane.newInstance();
+    const plane2 = vtkPlane.newInstance();
+
+    // Reusable array for clipping planes
+    const clippingPlanes = [plane1, plane2];
+
     try {
       for (const [index, planeInfo] of planesInfo.entries()) {
         const { sliceIndex, planes } = planeInfo;
 
-        const plane1 = vtkPlane.newInstance();
+        // Directly update plane instances
         plane1.setOrigin(planes[0].origin);
         plane1.setNormal(planes[0].normal);
-
-        const plane2 = vtkPlane.newInstance();
         plane2.setOrigin(planes[1].origin);
         plane2.setNormal(planes[1].normal);
 
-        clippingFilter.setClippingPlanes([plane1, plane2]);
+        clippingFilter.setClippingPlanes(clippingPlanes);
         clippingFilter.update();
 
         const polyData = clippingFilter.getOutputData();
@@ -61,10 +65,6 @@ const obj = {
         }
 
         progressCallback({ progress: (index + 1) / numberOfPlanes });
-
-        // Potential memory management: explicitly delete the planes when done.
-        plane1.delete();
-        plane2.delete();
       }
     } catch (e) {
       console.error('Error during processing', e);
@@ -72,6 +72,8 @@ const obj = {
       // Cleanup on completion
       surfacePolyData.delete();
       clippingFilter.delete();
+      plane1.delete();
+      plane2.delete();
     }
   },
 };
