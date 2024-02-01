@@ -2,6 +2,8 @@ import {
   getEnabledElement,
   Enums,
   VolumeViewport3D,
+  VolumeViewport,
+  getWebWorkerManager,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -10,6 +12,9 @@ import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurf
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { pointToString } from '../../../utilities/pointToString';
+import { registerDisplayToolsWorker } from '../registerDisplayToolsWorker';
+
+const workerManager = getWebWorkerManager();
 
 const polyDataCache = new Map();
 
@@ -73,16 +78,18 @@ function addOrUpdateSurfaceToElement(
   const points = surface.getPoints();
   const polys = surface.getPolys();
   const color = surface.getColor();
+  const id = surface.id;
 
-  const polyData = vtkPolyData.newInstance();
-  polyData.getPoints().setData(points, 3);
+  const surfacePolyData = vtkPolyData.newInstance();
+  surfacePolyData.getPoints().setData(points, 3);
 
   const triangles = vtkCellArray.newInstance({
     values: Float32Array.from(polys),
   });
-  polyData.setPolys(triangles);
+  surfacePolyData.setPolys(triangles);
 
   const mapper = vtkMapper.newInstance({});
+
   let clippingFilter;
   if (!(viewport instanceof VolumeViewport3D)) {
     clippingFilter = vtkClipClosedSurface.newInstance({
@@ -90,7 +97,7 @@ function addOrUpdateSurfaceToElement(
       activePlaneId: 2,
       passPointData: false,
     });
-    clippingFilter.setInputData(polyData);
+    clippingFilter.setInputData(surfacePolyData);
     clippingFilter.setGenerateOutline(true);
     clippingFilter.setGenerateFaces(false);
     clippingFilter.update();
@@ -102,7 +109,7 @@ function addOrUpdateSurfaceToElement(
       updateSurfacePlanes
     );
   } else {
-    mapper.setInputData(polyData);
+    mapper.setInputData(surfacePolyData);
   }
 
   const actor = vtkActor.newInstance();
@@ -111,11 +118,79 @@ function addOrUpdateSurfaceToElement(
   // sets the color of the surface actor
   actor.getProperty().setColor(color[0] / 255, color[1] / 255, color[2] / 255);
 
+  // set line width
+  // Todo: make this configurable
+  actor.getProperty().setLineWidth(2);
+
   viewport.addActor({
     actor,
     uid: actorUID,
     clippingFilter,
   });
+
+  if (viewport instanceof VolumeViewport) {
+    registerDisplayToolsWorker();
+    // All planes is an array of planes pairs for each slice, so we should loop over them and
+    // add the planes to the clipping filter and cache the results for that slice
+    const planesInfo = viewport.getSlicesClippingPlanes?.();
+
+    // planesInfo = planesInfo.filter(({ sliceIndex }) => sliceIndex === 68);
+
+    const camera = viewport.getCamera();
+    // triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+
+    workerManager
+      .executeTask(
+        'displayTools',
+        'clipSurfaceWithPlanes',
+        {
+          planesInfo,
+          polyDataInfo: {
+            points,
+            polys,
+          },
+          id,
+        },
+        {
+          callbacks: [
+            // progress callback
+            (progress) => {
+              console.debug(progress);
+            },
+            // update cache callback
+            ({ points, lines, sliceIndex }) => {
+              const polyData = vtkPolyData.newInstance();
+              polyData.getPoints().setData(points, 3);
+
+              const linesArray = vtkCellArray.newInstance({
+                values: Int16Array.from(lines),
+              });
+              polyData.setLines(linesArray);
+
+              // cacheId is the sliceIndex
+              const cacheId = `${viewport.id}-${pointToString(
+                camera.viewPlaneNormal
+              )}-${sliceIndex}`;
+
+              let actorCache = polyDataCache.get(actorUID);
+              if (!actorCache) {
+                actorCache = new Map();
+                polyDataCache.set(actorUID, actorCache);
+              }
+              actorCache.set(cacheId, polyData);
+
+              mapper.setInputData(polyData);
+            },
+          ],
+        }
+      )
+      .then((results) => {
+        console.debug(results);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
 
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();
@@ -130,17 +205,17 @@ function updateSurfacePlanes(evt) {
   if (!actorEntry?.clippingFilter) {
     return;
   }
+  const sliceIndex = viewport.getSliceIndex();
 
   const mapper = actorEntry.actor.getMapper();
 
   const { viewPlaneNormal } = viewport.getCamera();
-  const imageIndex = viewport.getCurrentImageIdIndex();
 
   // we should not use the focalPoint here, since the pan and zoom updates it,
-  // imageIndex is reliable enough
+  // sliceIndex is reliable enough
   const cacheId = `${viewport.id}-${pointToString(
     viewPlaneNormal
-  )}-${imageIndex}`;
+  )}-${sliceIndex}`;
 
   let actorCache = polyDataCache.get(actorEntry.uid);
   if (!actorCache) {

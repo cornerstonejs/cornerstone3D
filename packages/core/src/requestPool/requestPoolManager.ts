@@ -120,7 +120,7 @@ class RequestPoolManager {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
-      compute: 15,
+      compute: 5,
     };
   }
 

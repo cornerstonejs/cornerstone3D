@@ -46,6 +46,8 @@ class CentralizedWorkerManager {
       lastActiveTime: [],
       // used for termination
       nativeWorkers: [],
+      // auto termination
+      autoTerminateOnIdle: autoTerminateOnIdle.enabled,
       idleCheckIntervalId: null,
       idleTimeThreshold: autoTerminateOnIdle.idleTimeThreshold,
     };
@@ -152,13 +154,15 @@ class CentralizedWorkerManager {
               return Comlink.proxy(cb);
             });
           }
+          const workerProperties = this.workerRegistry[workerName];
+
           const results = await api[methodName](args, ...finalCallbacks);
 
-          const workerProperties = this.workerRegistry[workerName];
           workerProperties.lastActiveTime[index] = Date.now();
 
           // If auto termination is enabled and the interval is not set, set it.
           if (
+            workerProperties.autoTerminateOnIdle &&
             !workerProperties.idleCheckIntervalId &&
             workerProperties.idleTimeThreshold
           ) {
@@ -198,7 +202,10 @@ class CentralizedWorkerManager {
 
     workerProperties.instances.forEach((workerInstance, index) => {
       // If the worker has not yet executed any task, skip this iteration
-      if (workerProperties.lastActiveTime[index] == null) {
+      if (
+        workerProperties.lastActiveTime[index] == null ||
+        workerProperties.loadCounters[index] > 0
+      ) {
         return;
       }
 

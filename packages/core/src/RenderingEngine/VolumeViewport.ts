@@ -17,8 +17,10 @@ import type { ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   getClosestImageId,
+  getSliceRange,
   getSpacingInNormalDirection,
   isImageActor,
+  snapFocalPointToSlice,
   triggerEvent,
 } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
@@ -86,6 +88,15 @@ class VolumeViewport extends BaseVolumeViewport {
   public getNumberOfSlices = (): number => {
     const { numberOfSlices } = getImageSliceDataForVolumeViewport(this);
     return numberOfSlices;
+  };
+
+  /**
+   * Returns the image index associated with the volume viewport.
+   * @returns The image index.
+   */
+  public getSliceIndex = (): number => {
+    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
+    return imageIndex;
   };
 
   /**
@@ -455,6 +466,105 @@ class VolumeViewport extends BaseVolumeViewport {
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
+
+  /**
+   * Retrieves the clipping planes for the slices in the volume viewport.
+   * @returns An array of vtkPlane objects representing the clipping planes, or an array of objects with normal and origin properties if raw is true.
+   */
+  getSlicesClippingPlanes(): Array<{
+    sliceIndex: number;
+    planes: Array<{
+      normal: Point3;
+      origin: Point3;
+    }>;
+  }> {
+    const focalPoints = this.getSlicePlaneCoordinates();
+    const { viewPlaneNormal } = this.getCamera();
+    const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+
+    return focalPoints.map(({ point, sliceIndex }) => {
+      const vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+
+      this.setOrientationOfClippingPlanes(
+        vtkPlanes,
+        slabThickness,
+        viewPlaneNormal,
+        point
+      );
+
+      return {
+        sliceIndex,
+        planes: vtkPlanes.map((plane) => ({
+          normal: plane.getNormal(),
+          origin: plane.getOrigin(),
+        })),
+      };
+    });
+  }
+
+  /**
+   * Returns an array of 3D coordinates representing the slice plane positions.
+   * It starts by the focal point as a reference point on the current slice that
+   * the camera is looking at, and then it calculates the slice plane positions
+   * by moving the focal point in the direction of the view plane normal back and
+   * forward, and snaps them to the slice.
+   *
+   * @returns An array of Point3 representing the slice plane coordinates.
+   */
+  public getSlicePlaneCoordinates = (): Array<{
+    sliceIndex: number;
+    point: Point3;
+  }> => {
+    const actorEntry = this.getDefaultActor();
+
+    if (!actorEntry?.actor) {
+      console.warn('No image data found for calculating vtkPlanes.');
+      return [];
+    }
+
+    const volumeId = actorEntry.uid;
+    const imageVolume = cache.getVolume(volumeId);
+
+    const camera = this.getCamera();
+    const { focalPoint, position, viewPlaneNormal } = camera;
+    const spacingInNormalDirection = getSpacingInNormalDirection(
+      imageVolume,
+      viewPlaneNormal
+    );
+    const sliceRange = getSliceRange(
+      actorEntry.actor as vtkVolume,
+      viewPlaneNormal,
+      focalPoint
+    );
+
+    // calculate the number of slices that is possible to visit
+    // in the direction of the view back and forward
+    const numSlicesBackward = Math.round(
+      (sliceRange.current - sliceRange.min) / spacingInNormalDirection
+    );
+
+    const numSlicesForward = Math.round(
+      (sliceRange.max - sliceRange.current) / spacingInNormalDirection
+    );
+
+    const currentSliceIndex = this.getSliceIndex();
+    const focalPoints = [];
+
+    for (let i = -numSlicesBackward; i <= numSlicesForward; i++) {
+      const { newFocalPoint: point } = snapFocalPointToSlice(
+        focalPoint,
+        position,
+        sliceRange,
+        viewPlaneNormal,
+        spacingInNormalDirection,
+        i
+      );
+
+      focalPoints.push({ sliceIndex: currentSliceIndex + i, point });
+    }
+
+    return focalPoints;
+  };
 }
 
 export default VolumeViewport;

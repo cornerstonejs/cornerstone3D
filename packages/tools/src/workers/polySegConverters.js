@@ -3,9 +3,9 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import ICRPolySeg from '@icr/polyseg-wasm';
 import { utilities } from '@cornerstonejs/core';
-import { getBoundingBoxAroundShapeWorld } from '../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../utilities';
-import { isPointInsidePolyline3D } from '../../../utilities/math/polyline';
+import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
+import { pointInShapeCallback } from '../utilities';
+import { isPointInsidePolyline3D } from '../utilities/math/polyline';
 
 const obj = {
   polySeg: null,
