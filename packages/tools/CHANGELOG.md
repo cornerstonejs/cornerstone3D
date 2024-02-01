@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.51.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.3...v1.51.4) (2024-02-01)
+
+### Bug Fixes
+
+- **Magnify:** add flag to jump error and unnecessary logic ([#1053](https://github.com/cornerstonejs/cornerstone3D/issues/1053)) ([9b4321c](https://github.com/cornerstonejs/cornerstone3D/commit/9b4321cd59797452453664e9acc1416c5d8ad458))
+
 ## [1.51.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.2...v1.51.3) (2024-02-01)
 
 **Note:** Version bump only for package @cornerstonejs/tools
