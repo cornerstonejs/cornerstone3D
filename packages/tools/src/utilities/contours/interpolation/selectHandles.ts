@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { utilities } from '@cornerstonejs/core';
 import type { PointsArray3 } from './interpolate';
+import { add } from '@kitware/vtk.js/Common/Core/Math';
 
 const { PointsManager } = utilities;
 
@@ -14,53 +15,78 @@ const { PointsManager } = utilities;
  */
 export default function selectHandles(
   polyline: PointsArray3,
-  handleCount: number
+  handleCount = 8
 ): PointsArray3 {
   const handles = PointsManager.create3(handleCount) as PointsArray3;
   handles.sources = [];
   const { sources: destPoints } = handles;
   const { length, sources: sourcePoints = [] } = polyline;
   const distance = 6;
-  if (length < distance * 2) {
-    return polyline.subselect(3);
+  if (length < distance * 3) {
+    return polyline.subselect(handleCount);
   }
-  const interval = Math.floor(length / handleCount / 4);
+  const interval = Math.min(35, Math.floor(length / 3));
   sourcePoints.forEach(() =>
     destPoints.push(PointsManager.create3(handleCount))
   );
 
   const dotValues = createDotValues(polyline, distance);
 
-  const inflectionIndices = findMinimumRegions(dotValues, handleCount);
-  if (inflectionIndices?.length > 2) {
-    inflectionIndices.forEach((index) => {
-      handles.push(polyline.getPoint(index));
-      sourcePoints.forEach((source, destSourceIndex) =>
-        destPoints[destSourceIndex].push(source.getPoint(index))
-      );
-    });
-    return handles;
-  }
-
-  for (let i = 0; i < handleCount; i++) {
-    const centerIndex = Math.floor((length * i) / handleCount);
-    let minIndex = centerIndex;
-    let minValue = dotValues[centerIndex];
-    for (let j = 0; j < 2 * interval; j++) {
-      // Start with values near the index, then move outward
-      const jSigned = j % 2 ? -(j - 1) / 2 : j / 2;
-      const testIndex = (centerIndex + jSigned + length) % length;
-      if (dotValues[testIndex] < minValue) {
-        minValue = dotValues[testIndex];
-        minIndex = testIndex;
+  const minimumRegions = findMinimumRegions(dotValues, handleCount);
+  const indices = [];
+  if (minimumRegions?.length > 2) {
+    let lastHandle = -1;
+    const thirdInterval = interval / 3;
+    minimumRegions.forEach((region) => {
+      const [start, _, end] = region;
+      const midIndex = Math.ceil((start + end) / 2);
+      if (midIndex - start > 2 * thirdInterval) {
+        addInterval(indices, lastHandle, start, interval, length);
+        lastHandle = addInterval(indices, start, midIndex, interval, length);
+      } else {
+        lastHandle = addInterval(
+          indices,
+          lastHandle,
+          midIndex,
+          interval,
+          length
+        );
       }
+      if (end - lastHandle > thirdInterval) {
+        lastHandle = addInterval(indices, lastHandle, end, interval, length);
+      }
+    });
+    const firstHandle = indices[0];
+    const lastDistance =
+      lastHandle < firstHandle
+        ? lastHandle - firstHandle + length
+        : lastHandle - firstHandle;
+    if (lastDistance > thirdInterval) {
+      addInterval(
+        indices,
+        lastHandle,
+        firstHandle - thirdInterval,
+        interval,
+        length
+      );
     }
-    handles.push(polyline.getPoint(minIndex));
-    sourcePoints.forEach((source, index) =>
-      destPoints[index].push(source.getPoint(minIndex))
+  } else {
+    addInterval(
+      indices,
+      -1,
+      length - 1,
+      Math.floor(length / handleCount),
+      length
     );
   }
 
+  indices.forEach((index) => {
+    const point = polyline.getPointArray(index);
+    handles.push(point);
+    sourcePoints.forEach((source, destSourceIndex) =>
+      destPoints[destSourceIndex].push(source.getPoint(index))
+    );
+  });
   return handles;
 }
 
@@ -113,13 +139,23 @@ function findMinimumRegions(dotValues, handleCount) {
 
   const inflection = [];
   let pair = null;
+  let minValue;
+  let minIndex = 0;
+
   for (let i = 0; i < length; i++) {
     const dot = dotValues[i];
     if (dot < max - deviation) {
       if (pair) {
-        pair[1] = i;
+        pair[2] = i;
+        if (dot < minValue) {
+          minValue = dot;
+          minIndex = i;
+        }
+        pair[1] = minIndex;
       } else {
-        pair = [i, i];
+        minValue = dot;
+        minIndex = i;
+        pair = [i, i, i];
       }
     } else {
       if (pair) {
@@ -132,25 +168,13 @@ function findMinimumRegions(dotValues, handleCount) {
     if (inflection[0][0] === 0) {
       inflection[0][0] = pair[0];
     } else {
-      pair[1] = length - 1;
+      pair[1] = minIndex;
+      pair[2] = length - 1;
       inflection.push(pair);
     }
   }
-  const selectedIndices = [];
-  const increment = 10;
-  for (let i = 0; i < inflection.length; i++) {
-    const lastInflection =
-      inflection[(i - 1 + inflection.length) % inflection.length];
-    const current = inflection[i];
-    const [start, finish] = current;
-    const distanceLast = indexValue(start - lastInflection[1], length);
-    if (distanceLast > increment) {
-      const previousMidpoint = indexValue(start - distanceLast / 2, length);
-      selectedIndices.push(previousMidpoint);
-    }
-    addIncrement(selectedIndices, start, finish, increment, length);
-  }
-  return selectedIndices;
+
+  return inflection;
 }
 
 /**
@@ -158,14 +182,25 @@ function findMinimumRegions(dotValues, handleCount) {
  * This is currently just the center point for short values and the start/center/end
  * for ranges where the distance between these is at least the increment.
  */
-function addIncrement(indices, start, finish, increment, length) {
-  const distance = indexValue(finish - start, length);
-  if (distance >= increment * 2) {
-    indices.push(start, indexValue(start + distance / 2, length), finish);
-    return indices;
+export function addInterval(indices, start, finish, interval, length) {
+  if (finish < start) {
+    // Always want a positive distance even if the long way round
+    finish += length;
   }
-  indices.push(indexValue(start + distance / 2, length));
-  return indices;
+  const distance = finish - start;
+  const count = Math.ceil(distance / interval);
+  if (count <= 0) {
+    if (indices[indices.length - 1] !== finish) {
+      indices.push(indexValue(finish, length));
+    }
+    return finish;
+  }
+  // Don't add the start index, and always add the end index
+  for (let i = 1; i <= count; i++) {
+    const index = indexValue(start + (i * distance) / count, length);
+    indices.push(index);
+  }
+  return indices[indices.length - 1];
 }
 
 /**

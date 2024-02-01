@@ -64,20 +64,17 @@ const interpolation = {
 };
 
 const configuration = {
-  interpolation: { enabled: true },
+  interpolation,
   actions,
 };
+interpolationTools.set('LivewireInterpolation', {
+  baseTool: LivewireContourSegmentationTool.toolName,
+  configuration,
+});
 interpolationTools.set('LivewireInterpolationNearest3', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration: {
     interpolation: { ...interpolation, nearestEdge: 3 },
-    actions,
-  },
-});
-interpolationTools.set('LivewireInterpolationNearest5', {
-  baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: {
-    interpolation: { ...interpolation, nearestEdge: 5 },
     actions,
   },
 });
@@ -87,10 +84,6 @@ interpolationTools.set('LivewireInterpolationNearest3RepeatInterpolation', {
     interpolation: { enabled: true, nearestEdge: 3, repeatInterpolation: true },
     actions,
   },
-});
-interpolationTools.set('LivewireInterpolation', {
-  baseTool: LivewireContourSegmentationTool.toolName,
-  configuration,
 });
 interpolationTools.set('FreeformInterpolation', {
   baseTool: PlanarFreehandContourSegmentationTool.toolName,

@@ -154,6 +154,16 @@ function _linearlyInterpolateBetween(
   });
 }
 
+function getPointCount(pointArray) {
+  let sum = 0;
+  for (let i = 0; i < pointArray.I.length; i++) {
+    if (pointArray.I[i]) {
+      sum++;
+    }
+  }
+  return sum;
+}
+
 /**
  * _linearlyInterpolateContour - Inserts a linearly interpolated contour at
  * specified slice index.
@@ -161,7 +171,7 @@ function _linearlyInterpolateBetween(
  * @param c1Interp - object, The first reference contour.
  * @param c2Interp - object,  The second reference contour.
  * @param sliceIndex - Number, The slice index to interpolate.
- * @param annotationPair - Number[], The slice indicies of the reference contours.
+ * @param annotationPair - Number[], The slice indices of the reference contours.
  * @param interpolationData - object[], Data for the slice location of contours
  *                                  for the ROIContour.
  * @param c1HasMoreNodes - boolean, True if c1 has more nodes than c2.
@@ -190,17 +200,7 @@ function _linearlyInterpolateContour(
     annotationPair[zInterp > 0.5 ? 1 : 0]
   )[0];
 
-  // A bit adhoc figuring out how many handles to use, but this seems to generate
-  // enough handles for use.
-  const handleCount = Math.round(
-    Math.max(
-      8,
-      interpolationData.get(startIndex)[0].data.handles.points.length,
-      interpolationData.get(endIndex)[0].data.handles.points.length,
-      interpolated3DPoints.length / 40
-    )
-  );
-  const handlePoints = selectHandles(interpolated3DPoints, handleCount);
+  const handlePoints = selectHandles(interpolated3DPoints);
 
   if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(

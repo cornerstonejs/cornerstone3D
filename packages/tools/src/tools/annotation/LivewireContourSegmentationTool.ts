@@ -30,18 +30,26 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
     // behaviour would be to perform a livewire between the two planes
     // closest to this plane for each point, and use that handle.  That is
     // oblique, however, which is not currently supported.
-    const { points, interpolationSources } = annotation.data.handles;
-    if (this.editData || !annotation.invalidated || !interpolationSources) {
+    if (
+      this.editData ||
+      !annotation.invalidated ||
+      !annotation.data.handles.interpolationSources
+    ) {
       return;
     }
+    annotation.data.contour.originalPolyline = annotation.data.contour.polyline;
+
     // See docs above for why this is a microtask
     queueMicrotask(() => {
+      if (!annotation.data.handles.interpolationSources) {
+        return;
+      }
+      const { points } = annotation.data.handles;
+
       const { element } = enabledElement.viewport;
       this.setupBaseEditData(points[0], element, annotation);
       const { length: count } = points;
       const { scissors } = this;
-      annotation.data.contour.originalPolyline =
-        annotation.data.contour.polyline;
       const { nearestEdge, repeatInterpolation } =
         this.configuration.interpolation;
       annotation.data.handles.originalPoints = points;
@@ -101,11 +109,11 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
     const { annotationUID } = annotation;
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
-    const { originalPolyline } = annotation.data.contour;
     const { showInterpolationPolyline } =
       this.configuration.interpolation || {};
 
     this.updateInterpolatedAnnotation?.(annotation, enabledElement);
+    const { originalPolyline } = annotation.data.contour;
 
     const rendered = super.renderAnnotationInstance(renderContext);
 

@@ -74,7 +74,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
          * not be an edge and can result in jagged outlines.
          * The unit is image pixels (index).
          */
-        snapHandleNearby: 1,
+        snapHandleNearby: 2,
 
         /**
          * Interpolation is only available for segmentation versions of these
@@ -92,7 +92,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
            * Setting to too large a value may result in many points outside the contour
            * being chosen.
            */
-          nearestEdge: 1,
+          nearestEdge: 2,
           /**
            * Set to true to show the interpolated polyline, which can be useful
            * when understanding the nearest edge and
@@ -466,7 +466,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { element } = eventDetail;
     const { currentPoints } = eventDetail;
     const { canvas: canvasPos, world: worldPosOriginal } = currentPoints;
-    const worldPos = worldPosOriginal;
+    let worldPos = worldPosOriginal;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
@@ -504,16 +504,23 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       }
     }
 
+    const { snapHandleNearby } = this.configuration;
+    // Snap the handles as they get created, but not during edit
+    if (snapHandleNearby && !this.editData.closed) {
+      const currentPath = new LivewirePath();
+      const snapPoint = this.scissors.findMinNearby(
+        worldToSlice(worldPosOriginal),
+        1
+      );
+      const pathPoints = this.scissors.findPathToPoint(snapPoint);
+      currentPath.addPoints(pathPoints);
+      currentPath.prependPath(this.editData.confirmedPath);
+      worldPos = sliceToWorld(snapPoint);
+      this.editData.currentPath = currentPath;
+    }
+
     this.editData.closed = this.editData.closed || closePath;
     this.editData.confirmedPath = this.editData.currentPath;
-
-    const { snapHandleNearby } = this.configuration;
-    if (snapHandleNearby) {
-      this.editData.currentPath.removeLastPoints(1);
-      this.editData.currentPath.addPoint(
-        this.scissors.findMinNearby(worldToSlice(worldPosOriginal), 1)
-      );
-    }
 
     // Add the current cursor position as a new control point after clicking
     const lastPoint = this.editData.currentPath.getLastPoint();
