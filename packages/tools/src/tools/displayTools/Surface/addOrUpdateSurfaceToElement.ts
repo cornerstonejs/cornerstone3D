@@ -144,63 +144,72 @@ function addOrUpdateSurfaceToElement(
     clippingFilter,
   });
 
-  // if (viewport instanceof VolumeViewport) {
-  //   registerDisplayToolsWorker();
-  //   // All planes is an array of planes pairs for each slice, so we should loop over them and
-  //   // add the planes to the clipping filter and cache the results for that slice
-  //   const planesInfo = viewport.getSlicesClippingPlanes?.();
+  if (viewport instanceof VolumeViewport) {
+    registerDisplayToolsWorker();
+    // All planes is an array of planes pairs for each slice, so we should loop over them and
+    // add the planes to the clipping filter and cache the results for that slice
+    const planesInfo = viewport.getSlicesClippingPlanes?.();
 
-  //   const camera = viewport.getCamera();
+    const currentSliceIndex = viewport.getSliceIndex();
 
-  //   workerManager
-  //     .executeTask(
-  //       'displayTools',
-  //       'clipSurfaceWithPlanes',
-  //       {
-  //         planesInfo,
-  //         polyDataInfo: {
-  //           points,
-  //           polys,
-  //         },
-  //         id,
-  //       },
-  //       {
-  //         callbacks: [
-  //           // progress callback
-  //           (progress) => {
-  //             console.debug(progress);
-  //           },
-  //           // update cache callback
-  //           ({ points, lines, sliceIndex }) => {
-  //             const polyData = vtkPolyData.newInstance();
-  //             polyData.getPoints().setData(points, 3);
+    // Reorder planesInfo based on proximity to currentSliceIndex
+    planesInfo.sort((a, b) => {
+      const diffA = Math.abs(a.sliceIndex - currentSliceIndex);
+      const diffB = Math.abs(b.sliceIndex - currentSliceIndex);
+      return diffA - diffB;
+    });
 
-  //             const linesArray = vtkCellArray.newInstance({
-  //               values: Int16Array.from(lines),
-  //             });
-  //             polyData.setLines(linesArray);
+    const camera = viewport.getCamera();
 
-  //             // cacheId is the sliceIndex
-  //             const cacheId = `${viewport.id}-${pointToString(
-  //               camera.viewPlaneNormal
-  //             )}-${sliceIndex}`;
+    workerManager
+      .executeTask(
+        'displayTools',
+        'clipSurfaceWithPlanes',
+        {
+          planesInfo,
+          polyDataInfo: {
+            points,
+            polys,
+          },
+          id,
+        },
+        {
+          callbacks: [
+            // progress callback
+            (progress) => {
+              console.debug(progress);
+            },
+            // update cache callback
+            ({ points, lines, sliceIndex }) => {
+              const polyData = vtkPolyData.newInstance();
+              polyData.getPoints().setData(points, 3);
 
-  //             let actorCache = polyDataCache.get(actorUID);
-  //             if (!actorCache) {
-  //               actorCache = new Map();
-  //               polyDataCache.set(actorUID, actorCache);
-  //             }
-  //             actorCache.set(cacheId, polyData);
+              const linesArray = vtkCellArray.newInstance({
+                values: Int16Array.from(lines),
+              });
+              polyData.setLines(linesArray);
 
-  //             mapper.setInputData(polyData);
-  //           },
-  //         ],
-  //       }
-  //     )
-  //     .catch((error) => {
-  //       console.error(error);
-  //     });
-  // }
+              // cacheId is the sliceIndex
+              const cacheId = `${viewport.id}-${pointToString(
+                camera.viewPlaneNormal
+              )}-${sliceIndex}`;
+
+              let actorCache = polyDataCache.get(actorUID);
+              if (!actorCache) {
+                actorCache = new Map();
+                polyDataCache.set(actorUID, actorCache);
+              }
+              actorCache.set(cacheId, polyData);
+
+              mapper.setInputData(polyData);
+            },
+          ],
+        }
+      )
+      .catch((error) => {
+        console.error(error);
+      });
+  }
 
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();
