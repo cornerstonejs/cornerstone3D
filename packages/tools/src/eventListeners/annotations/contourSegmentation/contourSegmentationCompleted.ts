@@ -119,20 +119,6 @@ function convertContourPolylineToCanvasSpace(
   return projectedPolyline;
 }
 
-function convertPolylineToWorldSpace(
-  polyline: Types.Point2[],
-  viewport: Types.IViewport
-): Types.Point3[] {
-  const numPoints = polyline.length;
-  const projectedPolyline = new Array(numPoints);
-
-  for (let i = 0; i < numPoints; i++) {
-    projectedPolyline[i] = viewport.canvasToWorld(polyline[i]);
-  }
-
-  return projectedPolyline;
-}
-
 function getValidContourSegmentationAnnotations(
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
