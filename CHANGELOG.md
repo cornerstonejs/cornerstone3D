@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.51.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.2...v1.51.3) (2024-02-01)
+
+### Bug Fixes
+
+- Supplementary conditions to determine whether the error message exists ([#1052](https://github.com/cornerstonejs/cornerstone3D/issues/1052)) ([2909415](https://github.com/cornerstonejs/cornerstone3D/commit/29094159401977cc0e687d87db6a1435bf7cefa6))
+
 ## [1.51.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.1...v1.51.2) (2024-01-31)
 
 ### Bug Fixes
