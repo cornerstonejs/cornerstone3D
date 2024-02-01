@@ -12,7 +12,6 @@ import { point } from '../utilities/math';
 import { Events, ToolModes, AnnotationStyleStates } from '../enums';
 import { drawCircle as drawCircleSvg } from '../drawingSvg';
 import { ToolGroupManager } from '../store';
-import getViewportIdsWithToolToRender from './../utilities/viewportFilters/getViewportIdsWithToolToRender';
 import { triggerAnnotationRenderForViewportIds } from './../utilities/triggerAnnotationRenderForViewportIds';
 import {
   hideElementCursor,
@@ -20,6 +19,7 @@ import {
 } from '../cursors/elementCursor';
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
+import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
 
 type CommonData = {
   selectedIndex: number | null;
@@ -54,7 +54,10 @@ class FreehandROISculptorTool extends BaseTool {
       configuration: {
         maxToolSize: null,
         minSpacing: 1,
-        referencedToolNames: ['PlanarFreehandROI', 'LivewireContour'],
+        referencedToolNames: [
+          'PlanarFreehandROI',
+          'PlanarFreehandContourSegmentationTool',
+        ],
         referencedToolName: 'PlanarFreehandROI',
       },
     }
@@ -105,10 +108,6 @@ class FreehandROISculptorTool extends BaseTool {
     const { renderingEngine, viewport } = enabledElement;
 
     this._commonData.viewportIdsToRender = [viewport.id];
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      config.referencedToolName
-    );
 
     const annotations =
       this._filterInteractableFreehandRoiAnnotationsForElement(element);
@@ -133,7 +132,10 @@ class FreehandROISculptorTool extends BaseTool {
       }
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(
+      renderingEngine,
+      this._commonData.viewportIdsToRender
+    );
   }
 
   /**
@@ -448,7 +450,7 @@ class FreehandROISculptorTool extends BaseTool {
     }
 
     this._commonData.isEditingOpenContour =
-      annotations[closest.toolIndex].data.isOpenContour;
+      !annotations[closest.toolIndex].data.contour.closed;
 
     config.referencedToolName =
       annotations[closest.toolIndex].metadata.toolName;
@@ -463,8 +465,8 @@ class FreehandROISculptorTool extends BaseTool {
   ): number {
     let distance = Infinity;
 
-    for (let i = 0; i < data?.polyline?.length; i++) {
-      const canvasPoint = viewport.worldToCanvas(data.polyline[i]);
+    for (let i = 0; i < data?.contour?.polyline?.length; i++) {
+      const canvasPoint = viewport.worldToCanvas(data.contour.polyline[i]);
       const distanceToPoint = point.distanceToPoint(canvasPoint, coords);
 
       distance = Math.min(distance, distanceToPoint);
@@ -511,9 +513,9 @@ class FreehandROISculptorTool extends BaseTool {
       annotations[this._commonData.selectedIndex].invalidated = true;
     }
 
-    toolInstance.triggerAnnotationModified(
+    triggerAnnotationModified(
       annotations[this._commonData.selectedIndex],
-      enabledElement
+      element
     );
   };
 
@@ -534,7 +536,8 @@ class FreehandROISculptorTool extends BaseTool {
       return;
     }
 
-    const points = annotations[this._commonData.selectedIndex].data.polyline;
+    const points =
+      annotations[this._commonData.selectedIndex].data.contour.polyline;
 
     this._sculpt(eventData, points);
   }

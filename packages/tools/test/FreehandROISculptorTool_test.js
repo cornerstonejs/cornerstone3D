@@ -137,22 +137,24 @@ describe('freeHandROISculptor Tool: ', () => {
               },
             },
           },
-          polyline: [
-            [10, 10, 0],
-            [10, 10.2, 0],
-            [10, 10.4, 0],
-            [10, 10.6, 0],
-            [10, 10.8, 0],
-            [10, 11, 0],
-            [10.2, 11.2, 0],
-            [10.4, 11.4, 0],
-            [10.6, 11.6, 0],
-            [10.8, 11.8, 0],
-            [11, 12, 0],
-          ],
+          contour: {
+            closed: false,
+            polyline: [
+              [10, 10, 0],
+              [10, 10.2, 0],
+              [10, 10.4, 0],
+              [10, 10.6, 0],
+              [10, 10.8, 0],
+              [10, 11, 0],
+              [10.2, 11.2, 0],
+              [10.4, 11.4, 0],
+              [10.6, 11.6, 0],
+              [10.8, 11.8, 0],
+              [11, 12, 0],
+            ],
+          },
           label: '',
           cachedStats: {},
-          isOpenContour: true,
         },
         annotationUID: 'dfb767d6-1302-4535-a0e8-d80fb3d62c2f',
         isLocked: false,
@@ -180,8 +182,8 @@ describe('freeHandROISculptor Tool: ', () => {
           expect(freehandRoiAnnotations.length).toBe(1);
 
           const freehandRoiAnnotation = freehandRoiAnnotations[0];
-          const pointsAfterSculpt = freehandRoiAnnotation.data.polyline;
-          expect(freehandRoiAnnotation.data.polyline).toBeDefined();
+          const pointsAfterSculpt = freehandRoiAnnotation.data.contour.polyline;
+          expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
           expect(pointsAfterSculpt).not.toEqual(initialPoints);
           annotation.state.removeAnnotation(
             freehandRoiAnnotation.annotationUID
@@ -201,11 +203,13 @@ describe('freeHandROISculptor Tool: ', () => {
           expect(freehandRoiAnnotations.length).toBe(1);
 
           const freehandRoiAnnotation = freehandRoiAnnotations[0];
-          expect(freehandRoiAnnotation.data.polyline).toBeDefined();
+          expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
           expect(freehandRoiAnnotation.metadata.toolName).toBe(
             PlanarFreehandROITool.toolName
           );
-          initialPoints = _cloneDeep(freehandRoiAnnotation.data.polyline);
+          initialPoints = _cloneDeep(
+            freehandRoiAnnotation.data.contour.polyline
+          );
         });
       };
 
@@ -309,22 +313,24 @@ describe('freeHandROISculptor Tool: ', () => {
               },
             },
           },
-          polyline: [
-            [50, 10, 2],
-            [51, 11, 2],
-            [52, 12, 2],
-            [53, 13, 2],
-            [54, 14, 2],
-            [55, 15, 2],
-            [56, 16, 2],
-            [57, 17, 2],
-            [58, 18, 2],
-            [59, 19, 2],
-            [60, 20, 2],
-          ],
+          contour: {
+            closed: false,
+            polyline: [
+              [50, 10, 2],
+              [51, 11, 2],
+              [52, 12, 2],
+              [53, 13, 2],
+              [54, 14, 2],
+              [55, 15, 2],
+              [56, 16, 2],
+              [57, 17, 2],
+              [58, 18, 2],
+              [59, 19, 2],
+              [60, 20, 2],
+            ],
+          },
           label: '',
           cachedStats: {},
-          isOpenContour: true,
         },
         annotationUID: '0ffb55d1-845b-4dfe-85ff-26f435ffeb0a',
         isLocked: false,
@@ -350,11 +356,13 @@ describe('freeHandROISculptor Tool: ', () => {
           expect(freehandRoiAnnotations).toBeDefined();
           expect(freehandRoiAnnotations.length).toBe(1);
           const freehandRoiAnnotation = freehandRoiAnnotations[0];
-          expect(freehandRoiAnnotation.data.polyline).toBeDefined();
+          expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
           expect(freehandRoiAnnotation.metadata.toolName).toBe(
             PlanarFreehandROITool.toolName
           );
-          initialPoints = _cloneDeep(freehandRoiAnnotation.data.polyline);
+          initialPoints = _cloneDeep(
+            freehandRoiAnnotation.data.contour.polyline
+          );
         });
       };
 
@@ -369,8 +377,8 @@ describe('freeHandROISculptor Tool: ', () => {
           expect(freehandRoiAnnotations.length).toBe(1);
 
           const freehandRoiAnnotation = freehandRoiAnnotations[0];
-          const pointsAfterSculpt = freehandRoiAnnotation.data.polyline;
-          expect(freehandRoiAnnotation.data.polyline).toBeDefined();
+          const pointsAfterSculpt = freehandRoiAnnotation.data.contour.polyline;
+          expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
           expect(pointsAfterSculpt).not.toEqual(initialPoints);
           annotation.state.removeAnnotation(
             freehandRoiAnnotation.annotationUID

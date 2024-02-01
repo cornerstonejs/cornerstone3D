@@ -9,6 +9,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -19,11 +20,7 @@ console.warn(
 
 const {
   PlanarFreehandROITool,
-  PanTool,
-  StackScrollMouseWheelTool,
-  ZoomTool,
   FreehandROISculptorTool,
-  LivewireContourTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -74,31 +71,39 @@ Drawing:
 
 - Click on FreeHandROI button and drag to draw a freehand annotation.
 - If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line).
-- Click on LivewireContour button to draw LivewireContour annotations
 
 Editing:
 
 - Click on Sculpt button then adjustable cursor will appear.
-- Nearest freehand ROI will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation
-- Drag to sculpt freehand ROI
+- Nearest freehand ROI will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation.
+- Moving the cursor closer to the active ROI reduces the tool diameter.
+- Moving the cursor away from the active increases the tool diameter.
+- Upon clicking, the diameter is locked , then drag to sculpt active freehand ROI.
 
 `;
 
 content.append(instructions);
 
+let selectedToolName = PlanarFreehandROITool.toolName;
+
 function addFreeHandRoiToolButton(toolGroup) {
   addButtonToToolbar({
     title: 'FreeHandROI',
     onClick: () => {
-      toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
+      const newSelectedToolName = <string>PlanarFreehandROITool.toolName;
+
+      // Set the old tool passive
+      toolGroup.setToolPassive(selectedToolName);
+
+      // Set the new tool active
+      toolGroup.setToolActive(newSelectedToolName, {
         bindings: [
           {
             mouseButton: MouseBindings.Primary, // Left Click
           },
         ],
       });
-      toolGroup.setToolPassive(FreehandROISculptorTool.toolName);
-      toolGroup.setToolPassive(LivewireContourTool.toolName);
+      selectedToolName = <string>newSelectedToolName;
     },
   });
 }
@@ -107,32 +112,21 @@ function addSculptingToolButton(toolGroup) {
   addButtonToToolbar({
     title: 'Sculpt',
     onClick: () => {
-      toolGroup.setToolActive(FreehandROISculptorTool.toolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Primary, // Left Click
-          },
-        ],
-      });
-      toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
-      toolGroup.setToolPassive(LivewireContourTool.toolName);
-    },
-  });
-}
+      const newSelectedToolName = <string>FreehandROISculptorTool.toolName;
 
-function addLivewireContourToolButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'LivewireContour',
-    onClick: () => {
-      toolGroup.setToolActive(LivewireContourTool.toolName, {
+      // Set the old tool passive
+      toolGroup.setToolPassive(selectedToolName);
+
+      // Set the new tool active
+      toolGroup.setToolActive(newSelectedToolName, {
         bindings: [
           {
             mouseButton: MouseBindings.Primary, // Left Click
           },
         ],
       });
-      toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
-      toolGroup.setToolPassive(FreehandROISculptorTool.toolName);
+
+      selectedToolName = <string>newSelectedToolName;
     },
   });
 }
@@ -147,12 +141,8 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(FreehandROISculptorTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(LivewireContourTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -160,12 +150,7 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(FreehandROISculptorTool.toolName);
-  toolGroup.addTool(LivewireContourTool.toolName);
-
   // Set the initial state of the tools.
   toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
     bindings: [
@@ -174,34 +159,13 @@ async function run() {
       },
     ],
   });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  addManipulationBindings(toolGroup);
 
   // set up Freehand ROI tool button.
   addFreeHandRoiToolButton(toolGroup);
 
   // set up sculp tool button.
   addSculptingToolButton(toolGroup);
-
-  // set up LivewireContourTool tool button.
-  addLivewireContourToolButton(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({
