@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.51.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.4...v1.51.5) (2024-02-01)
+
+### Bug Fixes
+
+- Refactor image splitting logic for 4D datasets ([#1055](https://github.com/cornerstonejs/cornerstone3D/issues/1055)) ([a19ea8f](https://github.com/cornerstonejs/cornerstone3D/commit/a19ea8fd4b06e7ba39000219c8476660cd661504))
+
 ## [1.51.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.51.3...v1.51.4) (2024-02-01)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
