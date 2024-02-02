@@ -53,7 +53,7 @@ export default function drawPolyline(
   let pointsAttribute = '';
 
   for (const point of points) {
-    pointsAttribute += `${point[0]}, ${point[1]} `;
+    pointsAttribute += `${point[0].toFixed(1)}, ${point[1].toFixed(1)} `;
   }
 
   if (options.connectLastToFirst) {

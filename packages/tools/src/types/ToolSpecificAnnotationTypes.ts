@@ -141,11 +141,7 @@ export type SplineROIAnnotation = ContourAnnotation & {
 export type SplineContourSegmentationAnnotation = SplineROIAnnotation &
   ContourSegmentationAnnotationData;
 
-export type LivewireContourAnnotation = ContourAnnotation & {
-  data: {
-    label?: string;
-  };
-};
+export type LivewireContourAnnotation = ContourAnnotation;
 
 export type LivewireContourSegmentationAnnotation = LivewireContourAnnotation &
   ContourSegmentationAnnotationData;
@@ -277,6 +273,12 @@ export type InterpolationROIAnnotation = ContourAnnotation & {
     referencedSliceIndex?: number;
   };
   interpolationUID?: string;
+  /**
+   * A flag to track updates to annotations caused by things like
+   * spline or livewire regeenration of the data, and which should cause further
+   * updates to occur (or not as the tool decides).
+   */
+  isInterpolationUpdate?: boolean;
 };
 
 export interface ArrowAnnotation extends Annotation {
