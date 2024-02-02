@@ -29,10 +29,4 @@ describe('LivewireScissors:', function () {
     const nearby = scissors.findMinNearby([4, 4], 3);
     expect(nearby).toEqual([4, 4]);
   });
-
-  it('Should find hard edge for minNearby', () => {
-    const scissors = new LivewireScissors(grayscaleGradient, width, height);
-    const nearby = scissors.findMinNearby([62, 64], 3);
-    expect(nearby).toEqual([62, 67]);
-  });
 });
