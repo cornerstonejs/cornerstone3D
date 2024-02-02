@@ -23,6 +23,7 @@ export default function selectHandles(
   const { length, sources: sourcePoints = [] } = polyline;
   const distance = 6;
   if (length < distance * 3) {
+    console.log('Adding subselect handles', handleCount, length);
     return polyline.subselect(handleCount);
   }
   const interval = Math.min(35, Math.floor(length / 3));
@@ -38,8 +39,11 @@ export default function selectHandles(
     let lastHandle = -1;
     const thirdInterval = interval / 3;
     minimumRegions.forEach((region) => {
-      const [start, _, end] = region;
+      const [start, , end] = region;
       const midIndex = Math.ceil((start + end) / 2);
+      if (end - lastHandle < thirdInterval) {
+        return;
+      }
       if (midIndex - start > 2 * thirdInterval) {
         addInterval(indices, lastHandle, start, interval, length);
         lastHandle = addInterval(indices, start, midIndex, interval, length);
@@ -57,27 +61,22 @@ export default function selectHandles(
       }
     });
     const firstHandle = indices[0];
-    const lastDistance =
-      lastHandle < firstHandle
-        ? lastHandle - firstHandle + length
-        : lastHandle - firstHandle;
-    if (lastDistance > thirdInterval) {
+    const lastDistance = indexValue(firstHandle + length - lastHandle, length);
+    // Check that there is enough space between the last and first handle to
+    // need an extra handle.
+    if (lastDistance > 2 * thirdInterval) {
       addInterval(
         indices,
         lastHandle,
+        // Don't add a point too close to the first handle
         firstHandle - thirdInterval,
         interval,
         length
       );
     }
   } else {
-    addInterval(
-      indices,
-      -1,
-      length - 1,
-      Math.floor(length / handleCount),
-      length
-    );
+    const interval = Math.floor(length / handleCount);
+    addInterval(indices, -1, length - interval, interval, length);
   }
 
   indices.forEach((index) => {

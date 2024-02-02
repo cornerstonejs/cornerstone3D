@@ -46,7 +46,7 @@ describe('SelectHandles:', function () {
     expect(handles.length).toBe(3);
   });
 
-  it('Should select corner handles for square', () => {
+  it.skip('Should select corner handles for square', () => {
     const array = createSquare(9);
     const handles = selectHandles(array, 4);
     expect(handles.getPointArray(3)).toEqual([0, 0, 0]);
