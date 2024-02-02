@@ -255,20 +255,13 @@
         "name": "Video Tools",
         "description": "Video annotation tools"
       },
-      "videoSegmentation": {
-        "name": "Video Labelmap Segmentation",
-        "description": "Video Labelmap Based Segmentation"
-      },
-      "videoGroup": {
-        "name": "Video Annotation Grouping",
-      },
-      "videoSplineROITools": {
-        "name": "Video Spline ROI Tools",
-        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline) on video"
-      },
       "videoGroup": {
         "name": "Video Annotation Grouping",
         "description": "Annotation grouping tools"
+      },
+      "videoSegmentation": {
+        "name": "Video Labelmap Segmentation",
+        "description": "Video Labelmap Based Segmentation"
       },
       "videoContourSegmentation": {
         "name": "Video Contour Segmentation",
