@@ -620,7 +620,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   };
 
   protected isContourSegmentationTool(): boolean {
-    // Disable contour segmenatation behavior because it shall be activated only
+    // Disable contour segmentation behavior because it shall be activated only
     // for SplineContourSegmentationTool
     return false;
   }

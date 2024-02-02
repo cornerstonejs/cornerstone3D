@@ -505,7 +505,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   }
 
   protected isContourSegmentationTool(): boolean {
-    // Disable contour segmenatation behavior because it shall be activated only
+    // Disable contour segmentation behavior because it shall be activated only
     // for PlanarFreehandContourSegmentationTool
     return false;
   }
@@ -534,8 +534,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   protected renderAnnotationInstance(
     renderContext: AnnotationRenderContext
   ): boolean {
-    const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
-      renderContext;
+    const { enabledElement, targetId, svgDrawingHelper } = renderContext;
     const annotation = renderContext.annotation as PlanarFreehandROIAnnotation;
 
     let renderStatus = false;
@@ -659,7 +658,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     enabledElement
   ) => {
     const { data } = annotation;
-    const { element } = viewport;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
 

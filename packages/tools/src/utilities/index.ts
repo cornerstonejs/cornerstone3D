@@ -46,6 +46,7 @@ import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
 import * as voi from './voi';
+import * as contourSegmentation from './contourSegmentation';
 
 const roundNumber = utilities.roundNumber;
 
@@ -93,4 +94,5 @@ export {
   polyDataUtils,
   voi,
   annotationFrameRange,
+  contourSegmentation,
 };

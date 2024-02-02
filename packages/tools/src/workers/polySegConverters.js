@@ -185,7 +185,7 @@ const obj = {
 
       for (const annotation of annotations) {
         if (!annotation?.data) {
-          debugger;
+          continue;
         }
         const bounds = getBoundingBoxAroundShapeWorld(
           annotation.data.contour.polyline

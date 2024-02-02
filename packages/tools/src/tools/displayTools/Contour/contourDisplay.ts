@@ -2,15 +2,10 @@ import {
   getEnabledElementByIds,
   Types,
   StackViewport,
-  utilities as csUtils,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import {
-  addRepresentationData,
-  polySeg,
-} from '../../../stateManagement/segmentation';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
   SegmentationRepresentationConfig,
@@ -19,7 +14,6 @@ import {
 import { addOrUpdateVTKContourSets } from './vtkContour/addOrUpdateVTKContourSets';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './vtkContour/contourConfigCache';
-import { addAnnotation } from '../../../stateManagement';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -79,9 +73,9 @@ async function render(
 
   const contourData = segmentation.representationData[Representations.Contour];
 
-  const { geometryIds } = contourData;
+  const { geometryIds, annotationUIDsMap } = contourData;
 
-  if (!geometryIds?.length) {
+  if (!geometryIds?.length && !annotationUIDsMap?.size) {
     return;
   }
 

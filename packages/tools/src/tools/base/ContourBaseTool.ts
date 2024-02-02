@@ -184,7 +184,7 @@ abstract class ContourBaseTool extends AnnotationTool {
    * @returns Polyline points in world space
    */
   protected getPolylinePoints(annotation: ContourAnnotation): Types.Point3[] {
-    // Attenttion: `contour.polyline` is the new way to store a polyline but it
+    // Attention: `contour.polyline` is the new way to store a polyline but it
     // may be undefined because it was `data.polyline` before (fallback)
     return annotation.data.contour?.polyline ?? annotation.data.polyline;
   }

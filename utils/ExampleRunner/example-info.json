@@ -304,10 +304,6 @@
         "name": "Contour rendering configuration ",
         "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
       },
-      "interpolationContourSegmentation": {
-        "name": "Interpolation of Contours between slices",
-        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
-      },
       "labelmapToolGroupSpecificConfiguration": {
         "name": "ToolGroup Specific Labelmap Segmentation Configuration",
         "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
@@ -343,6 +339,14 @@
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
+      "interpolationContourSegmentation": {
+        "name": "Interpolation of Contours between slices",
+        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
+      },
+      "contourSegmentationConfiguration": {
+        "name": "Contour Segmentation Configuration",
+        "description": "Demonstrates how to set a configuration for contour segmentations"
       },
       "segmentBidirectionalTool": {
         "name": "Segmentation Bidirectional Tool",
