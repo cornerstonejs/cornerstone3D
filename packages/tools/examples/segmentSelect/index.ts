@@ -2,6 +2,7 @@ import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
+  addManipulationBindings,
   createImageIdsAndCacheMetaData,
   initDemo,
   setCtTransferFunctionForVolumeActor,
@@ -10,6 +11,7 @@ import {
 import {
   fillStackSegmentationWithMockData,
   fillVolumeSegmentationWithMockData,
+  addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
@@ -20,18 +22,15 @@ console.warn(
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  StackScrollMouseWheelTool,
-  ZoomTool,
   Enums: csToolsEnums,
   SegmentSelectTool,
   BrushTool,
-  PanTool,
   segmentation,
   PlanarFreehandContourSegmentationTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
@@ -42,7 +41,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segment Select Tool in Both Stack and Volume Viewport',
-  'Here, we demonstrate how you can use the Segment Select Tool in both stack and volume viewports to hover and select the active segment based on the mouse position. In the first row, you can use the brushes to select the active segment on the labelmap data. And for the second row viewports, you can use annotation tools and contour segmentation to select the active segment on the volume data.'
+  'Here, we demonstrate how you can use the Segment Select Tool in both stack and volume viewports to hover and select the active segment based on the mouse position. It works after some deliberate delay. In the first row, you can use the brushes to select the active segment on the labelmap data. And for the second row viewports, you can use annotation tools and contour segmentation to select the active segment on the volume data.'
 );
 
 const size = '500px';
@@ -111,10 +110,6 @@ const viewportId4 = 'viewport4';
 
 // ============================= //
 
-// Add tools to Cornerstone3D
-cornerstoneTools.addTool(PanTool);
-cornerstoneTools.addTool(ZoomTool);
-cornerstoneTools.addTool(StackScrollMouseWheelTool);
 cornerstoneTools.addTool(SegmentationDisplayTool);
 cornerstoneTools.addTool(BrushTool);
 cornerstoneTools.addTool(SegmentSelectTool);
@@ -125,14 +120,11 @@ function setupTools(toolGroupId, isContour = false) {
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  // Manipulation Tools
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-
   if (isContour) {
     toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   }
+
+  addManipulationBindings(toolGroup);
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -147,29 +139,6 @@ function setupTools(toolGroupId, isContour = false) {
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(SegmentSelectTool.toolName);
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   if (isContour) {
     toolGroup.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
@@ -326,15 +295,27 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   ]);
 
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
+  const [contourSegRepUID] = await segmentation.addSegmentationRepresentations(
     volumeSegContourToolGroupId,
     [
       {
-        segmentationId: stackSegContourId,
+        segmentationId: volumeSegContourId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
     ]
   );
+
+  addMockContourSegmentation({
+    segmentationId: volumeSegContourId,
+    viewport: renderingEngine.getViewport(viewportId4),
+    segmentationRepresentationUID: contourSegRepUID,
+    contours: [
+      {
+        segmentIndex: 1,
+        radius: 10,
+      },
+    ],
+  });
 }
 
 async function _handleStackViewports(stackImageIds: string[]) {
