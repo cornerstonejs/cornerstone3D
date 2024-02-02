@@ -62,11 +62,18 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
         // Nearest edge handling
         points.forEach((point, hIndex) => {
           const testPoint = worldToSlice(point);
-          scissors.startSearch(lastPoint);
-          scissors.findPathToPoint(testPoint);
           lastPoint = testPoint;
           handleSmoothing.push(testPoint);
 
+          // Fill the costs buffer and then find the minimum cost
+          // This is a little too aggressive about pulling the line in
+          scissors.startSearch(lastPoint);
+          scissors.findPathToPoint(testPoint);
+          // Fill the costs for a point a bit further along by searching for a
+          // point further along.
+          scissors.findPathToPoint(
+            worldToSlice(points[(hIndex + 3) % points.length])
+          );
           const minPoint = scissors.findMinNearby(testPoint, nearestEdge);
           if (!csUtils.isEqual(testPoint, minPoint)) {
             handleSmoothing[hIndex] = minPoint;
