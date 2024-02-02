@@ -1962,18 +1962,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     // If Photometric Interpretation is not the same for the next image we are trying to load
-    // invalidate the stack to recreate the VTK imageData
+    // invalidate the stack to recreate the VTK imageData.  Get the PMI from
+    // the base csImage if imageFrame isn't defined, which happens when the images
+    // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const csImgFrame = (<any>this.csImage)?.imageFrame;
     const imgFrame = image?.imageFrame;
+    const photometricInterpretation =
+      csImgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation;
+    const newPhotometricInterpretation =
+      imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
-    // if a volume is decached into images then the imageFrame will be undefined
-    if (
-      csImgFrame?.photometricInterpretation !==
-        imgFrame?.photometricInterpretation ||
-      this.csImage?.photometricInterpretation !==
-        image?.photometricInterpretation
-    ) {
+    if (photometricInterpretation !== newPhotometricInterpretation) {
       this.stackInvalidated = true;
     }
 

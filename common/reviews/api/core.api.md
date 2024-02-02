@@ -666,12 +666,12 @@ const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
 type DisplayArea = {
-    imageArea: [number, number];
-    imageCanvasPoint: {
+    imageArea?: [number, number];
+    imageCanvasPoint?: {
         imagePoint: [number, number];
         canvasPoint: [number, number];
     };
-    storeAsInitialCamera: boolean;
+    storeAsInitialCamera?: boolean;
 };
 
 // @public (undocumented)
@@ -2438,6 +2438,59 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
+class PointsManager<T> {
+    constructor(configuration?: PolyDataPointConfiguration);
+    // (undocumented)
+    array: ArrayBuffer;
+    // (undocumented)
+    _byteSize: number;
+    // (undocumented)
+    static create2(initialSize?: number): PointsManager<Point2>;
+    // (undocumented)
+    static create3(initialSize?: number): PointsManager<Point3>;
+    // (undocumented)
+    data: Float32Array;
+    // (undocumented)
+    get dimensionLength(): number;
+    // (undocumented)
+    get dimensions(): number;
+    // (undocumented)
+    _dimensions: number;
+    // (undocumented)
+    forEach(func: (value: T, index: number) => void): void;
+    // (undocumented)
+    static fromXYZ({ x, y, z }: PointsXYZ): PointsManager<Point3>;
+    // (undocumented)
+    getPoint(index: number): T;
+    // (undocumented)
+    getPointArray(index: number): T;
+    // (undocumented)
+    protected grow(additionalSize?: number, growSize?: number): void;
+    // (undocumented)
+    growSize: number;
+    // (undocumented)
+    kIndex: number;
+    // (undocumented)
+    get length(): number;
+    // (undocumented)
+    _length: number;
+    // (undocumented)
+    map<R>(f: (value: any, index: number) => R): R[];
+    // (undocumented)
+    get points(): T[];
+    // (undocumented)
+    push(point: T): void;
+    // (undocumented)
+    reverse(): void;
+    // (undocumented)
+    sources: PointsManager<T>[];
+    // (undocumented)
+    subselect(count?: number, offset?: number): PointsManager<T>;
+    // (undocumented)
+    toXYZ(): PointsXYZ;
+}
+
+// @public (undocumented)
 type PointsXYZ = {
     x: number[];
     y: number[];
@@ -3059,6 +3112,7 @@ declare namespace Types {
         IRenderingEngine,
         ScalingParameters,
         PTScaling,
+        PointsManager,
         Scaling,
         IStreamingImageVolume,
         IImage,
@@ -3211,6 +3265,7 @@ declare namespace utilities {
         hasNaNValues,
         applyPreset,
         deepMerge,
+        PointsManager,
         getScalingParameters,
         getScalarDataType,
         colormap,

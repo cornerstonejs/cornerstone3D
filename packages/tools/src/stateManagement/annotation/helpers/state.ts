@@ -4,7 +4,7 @@ import {
   eventTarget,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
-import { Events } from '../../../enums';
+import { Events, ChangeTypes } from '../../../enums';
 import { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
 import {
@@ -85,7 +85,8 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
  */
 function triggerAnnotationModified(
   annotation: Annotation,
-  element: HTMLDivElement
+  element: HTMLDivElement,
+  changeType = ChangeTypes.HandlesUpdated
 ): void {
   const enabledElement = getEnabledElement(element);
   const { viewportId, renderingEngineId } = enabledElement;
@@ -94,6 +95,7 @@ function triggerAnnotationModified(
     annotation,
     viewportId,
     renderingEngineId,
+    changeType,
   };
 
   triggerEvent(eventTarget, eventType, eventDetail);

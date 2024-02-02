@@ -886,6 +886,8 @@ enum ChangeTypes {
     // (undocumented)
     Interaction = "Interaction",
     // (undocumented)
+    InterpolationUpdated = "InterpolationUpdated",
+    // (undocumented)
     StatsUpdated = "StatsUpdated"
 }
 
@@ -1392,7 +1394,14 @@ type ContourSegmentationAnnotationData = {
             segmentIndex: number;
             segmentationRepresentationUID: string;
         };
+        contour: {
+            originalPolyline?: Types_2.Point3[];
+        };
     };
+    handles: {
+        interpolationSources?: Types_2.PointsManager<Types_2.Point3>[];
+    };
+    onInterpolationComplete?: (annotation: ContourSegmentationAnnotation) => unknown;
 };
 
 // @public (undocumented)
@@ -2558,6 +2567,7 @@ type InterpolationROIAnnotation = ContourAnnotation & {
         referencedSliceIndex?: number;
     };
     interpolationUID?: string;
+    isInterpolationUpdate?: boolean;
 };
 
 // @public (undocumented)
@@ -2566,6 +2576,7 @@ type InterpolationViewportData = {
     interpolationUID: string;
     viewport: Types_2.IViewport;
     sliceData: Types_2.ImageSliceData;
+    isInterpolationUpdate?: boolean;
 };
 
 // @public (undocumented)
@@ -3071,11 +3082,7 @@ declare namespace lineSegment {
 }
 
 // @public (undocumented)
-type LivewireContourAnnotation = ContourAnnotation & {
-    data: {
-        label?: string;
-    };
-};
+type LivewireContourAnnotation = ContourAnnotation;
 
 // @public (undocumented)
 type LivewireContourSegmentationAnnotation = LivewireContourAnnotation & ContourSegmentationAnnotationData;
@@ -3085,7 +3092,11 @@ export class LivewireContourSegmentationTool extends LivewireContourTool {
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
     // (undocumented)
+    protected renderAnnotationInstance(renderContext: any): boolean;
+    // (undocumented)
     static toolName: any;
+    // (undocumented)
+    updateInterpolatedAnnotation(annotation: ContourSegmentationAnnotation, enabledElement: Types_2.IEnabledElement): void;
 }
 
 // @public (undocumented)
@@ -3096,7 +3107,9 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected clearEditData(): void;
+    // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     editData: {
         annotation: LivewireContourAnnotation;
@@ -3116,7 +3129,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     editHandle(worldPos: Types_2.Point3, element: any, annotation: any, handleIndex: number): void;
     // (undocumented)
-    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    _endCallback: (evt: EventTypes_2.InteractionEventType, clearAnnotation?: boolean) => void;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -3135,10 +3148,14 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     protected renderAnnotationInstance(renderContext: {
         enabledElement: Types_2.IEnabledElement;
         targetId: string;
-        annotation: Annotation;
+        annotation: LivewireContourAnnotation;
         annotationStyle: Record<string, any>;
         svgDrawingHelper: SVGDrawingHelper;
     }): boolean;
+    // (undocumented)
+    protected scissors: LivewireScissors;
+    // (undocumented)
+    protected scissorsRight: LivewireScissors;
     // (undocumented)
     protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any): void;
     // (undocumented)
@@ -3148,11 +3165,11 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationCompleted: (annotation: LivewireContourAnnotation) => void;
-    // (undocumented)
-    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
-    // (undocumented)
     triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    // (undocumented)
+    undo(element: any, config: any, evt: any): void;
+    // (undocumented)
+    protected updateAnnotation(_: any, livewirePath: LivewirePath): void;
 }
 
 declare namespace locking {
