@@ -2,9 +2,8 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
-  getAnnotation,
   getAnnotations,
-  getChildrenAnnotations,
+  getChildAnnotations,
 } from '../../stateManagement/annotation/annotationState';
 import type {
   Annotation,
@@ -18,6 +17,7 @@ import type {
 import { drawPath as drawPathSvg } from '../../drawingSvg';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
+import { getChildContourCanvasPolylines } from '../../utilities/contours';
 
 /**
  * A contour base class responsible for rendering contour instances such as
@@ -180,7 +180,12 @@ abstract class ContourBaseTool extends AnnotationTool {
   }
 
   /**
-   * Move an annotation and all its children annotations in a recursive way
+   * Move an annotation and all its child annotations in a recursive way.
+   *
+   * That is useful when clicking on a spline contour to completely translate
+   * it to a different place. In that case all holes (child annotations) must
+   * also be translated too.
+   *
    * @param annotation - Annotation
    * @param worldPosDelta - Delta in world space
    */
@@ -200,7 +205,7 @@ abstract class ContourBaseTool extends AnnotationTool {
 
     annotation.invalidated = true;
 
-    getChildrenAnnotations(annotation).forEach((childAnnotation) =>
+    getChildAnnotations(annotation).forEach((childAnnotation) =>
       this.moveAnnotation(childAnnotation, worldPosDelta)
     );
   }
@@ -225,6 +230,12 @@ abstract class ContourBaseTool extends AnnotationTool {
   ): boolean {
     const { enabledElement, annotationStyle, svgDrawingHelper } = renderContext;
     const annotation = renderContext.annotation as ContourAnnotation;
+
+    // Do not render the contour because it must be rendered by the parent annotation
+    if (annotation.parentAnnotationUID) {
+      return;
+    }
+
     const { annotationUID } = annotation;
     const { viewport } = enabledElement;
     const { worldToCanvas } = viewport;
@@ -234,26 +245,14 @@ abstract class ContourBaseTool extends AnnotationTool {
     const { lineWidth, lineDash, color, fillColor, fillOpacity } =
       annotationStyle;
 
-    // Get children polylines
-    const childContourPointsArrays = annotation.childrenAnnotationUIDs?.length
-      ? annotation.childrenAnnotationUIDs.map((childAnnotationUID) => {
-          const childAnnotation = getAnnotation(childAnnotationUID);
-
-          return this.getPolylinePoints(
-            childAnnotation as ContourAnnotation
-          ).map((point) => worldToCanvas(point));
-        })
-      : [];
-
-    const polylineCanvasPointsArrays = childContourPointsArrays.length
-      ? [polylineCanvasPoints, ...childContourPointsArrays]
-      : polylineCanvasPoints;
+    const childContours = getChildContourCanvasPolylines(annotation, viewport);
+    const allContours = [polylineCanvasPoints, ...childContours];
 
     drawPathSvg(
       svgDrawingHelper,
       annotationUID,
       'contourPolyline',
-      polylineCanvasPointsArrays,
+      allContours,
       {
         color,
         lineDash,

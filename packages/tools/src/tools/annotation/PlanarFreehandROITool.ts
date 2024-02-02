@@ -501,9 +501,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       }
     }
 
-    return annotationsWithinSlice.filter(
-      (annotation) => !annotation.parentAnnotationUID
-    );
+    return annotationsWithinSlice;
   }
 
   protected isContourSegmentationTool(): boolean {

@@ -230,7 +230,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     {
       points: fusedCanvasPoints,
       closed: true,
-      windingDirection: ContourWindingDirection.Clockwise,
+      targetWindingDirection: ContourWindingDirection.Clockwise,
     },
     viewport
   );
@@ -457,7 +457,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
       {
         points: updatedPoints,
         closed: true,
-        windingDirection: ContourWindingDirection.Clockwise,
+        targetWindingDirection: ContourWindingDirection.Clockwise,
       },
       viewport
     );

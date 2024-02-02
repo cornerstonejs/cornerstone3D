@@ -889,7 +889,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       {
         points: imagePoints,
         closed: annotation.data.contour.closed,
-        windingDirection: ContourWindingDirection.Clockwise,
+        targetWindingDirection: ContourWindingDirection.Clockwise,
       },
       {
         canvasToWorld: sliceToWorld,

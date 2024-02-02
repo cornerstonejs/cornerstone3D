@@ -60,14 +60,26 @@ function getAnnotations(
 }
 
 /**
+ * Returns the parent annotation of a given one since annotations can be
+ * associated in a parent/child way (eg: polyline holes)
+ * @param annotation - Annotation
+ * @returns Parent annotation
+ */
+function getParentAnnotation(annotation: Annotation) {
+  return annotation.parentAnnotationUID
+    ? getAnnotation(annotation.parentAnnotationUID)
+    : undefined;
+}
+
+/**
  * Returns all children annotation of a given one since annotations can be
  * associated in a parent/child way (eg: polyline holes)
  * @param annotation - Annotation
- * @returns Children annotations
+ * @returns Child annotations
  */
-function getChildrenAnnotations(annotation: Annotation) {
+function getChildAnnotations(annotation: Annotation) {
   return (
-    annotation.childrenAnnotationUIDs?.map((childAnnotationUID) =>
+    annotation.childAnnotationUIDs?.map((childAnnotationUID) =>
       getAnnotation(childAnnotationUID)
     ) ?? []
   );
@@ -151,8 +163,8 @@ function removeAnnotation(annotationUID: string): void {
     return;
   }
 
-  // Remove all children annotations first
-  annotation.childrenAnnotationUIDs?.forEach((childAnnotationUID) =>
+  // Remove all child annotations first
+  annotation.childAnnotationUIDs?.forEach((childAnnotationUID) =>
     removeAnnotation(childAnnotationUID)
   );
 
@@ -188,9 +200,26 @@ function removeAllAnnotations(): void {
   manager.removeAllAnnotations();
 }
 
+/**
+ * Invalidate current and all parent annotations (eg: contour holes)
+ * @param annotation - Annotation
+ */
+function invalidateAnnotation(annotation: Annotation): void {
+  let currAnnotation = annotation;
+
+  while (currAnnotation) {
+    currAnnotation.invalidated = true;
+
+    currAnnotation = currAnnotation.parentAnnotationUID
+      ? getAnnotation(currAnnotation.parentAnnotationUID)
+      : undefined;
+  }
+}
+
 export {
   getAnnotations,
-  getChildrenAnnotations,
+  getParentAnnotation,
+  getChildAnnotations,
   getNumberOfAnnotations,
   addAnnotation,
   getAnnotation,
@@ -200,4 +229,5 @@ export {
   setAnnotationManager,
   getAnnotationManager,
   resetAnnotationManager,
+  invalidateAnnotation,
 };

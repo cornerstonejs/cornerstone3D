@@ -144,19 +144,6 @@ function getValidContourSegmentationAnnotations(
   }, []);
 }
 
-function doesPolylineContainsPoints(
-  polyline: Types.Point2[],
-  points: Types.Point2[]
-) {
-  for (let i = 0, numPoint = points.length; i < numPoint; i++) {
-    if (!math.polyline.containsPoint(polyline, points[i])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function findIntersectingContour(
   viewport: Types.IViewport,
   sourcePolyline: Types.Point2[],
@@ -183,7 +170,7 @@ function findIntersectingContour(
     const isHole =
       aabbIntersect &&
       !lineSegmentsIntersect &&
-      doesPolylineContainsPoints(targetPolyline, sourcePolyline);
+      math.polyline.containsPoints(targetPolyline, sourcePolyline);
 
     if (lineSegmentsIntersect || isHole) {
       return { targetAnnotation, targetPolyline, isHole };
@@ -209,11 +196,11 @@ function createPolylineHole(
     holeAnnotation.data.contour.windingDirection = targetWindingDirection * -1;
   }
 
-  targetAnnotation.childrenAnnotationUIDs =
-    targetAnnotation.childrenAnnotationUIDs || [];
+  targetAnnotation.childAnnotationUIDs =
+    targetAnnotation.childAnnotationUIDs || [];
 
   // Link both annotations
-  targetAnnotation.childrenAnnotationUIDs.push(holeAnnotation.annotationUID);
+  targetAnnotation.childAnnotationUIDs.push(holeAnnotation.annotationUID);
   holeAnnotation.parentAnnotationUID = targetAnnotation.annotationUID;
 
   // ---------------------------------------------------------------------------
@@ -316,7 +303,7 @@ function combinePolylines(
       {
         points: polyline,
         closed: true,
-        windingDirection: ContourWindingDirection.Clockwise,
+        targetWindingDirection: ContourWindingDirection.Clockwise,
       },
       viewport
     );

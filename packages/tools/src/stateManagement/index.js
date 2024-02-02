@@ -9,11 +9,13 @@ import {
   addAnnotation,
   removeAnnotation,
   getAnnotation,
-  getChildrenAnnotations,
+  getParentAnnotation,
+  getChildAnnotations,
   getNumberOfAnnotations,
   setAnnotationManager,
   getAnnotationManager,
   resetAnnotationManager,
+  invalidateAnnotation,
 } from './annotation/annotationState';
 
 import {
@@ -32,10 +34,12 @@ export {
   getNumberOfAnnotations,
   removeAnnotation,
   getAnnotation,
-  getChildrenAnnotations,
+  getParentAnnotation,
+  getChildAnnotations,
   setAnnotationManager,
   getAnnotationManager,
   resetAnnotationManager,
+  invalidateAnnotation,
   // segmentations
   addSegmentationRepresentations,
   removeSegmentationsFromToolGroup,

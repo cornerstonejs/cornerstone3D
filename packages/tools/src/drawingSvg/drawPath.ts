@@ -7,7 +7,7 @@ import { SVGDrawingHelper } from '../types';
 /**
  * Draws an SVG path with the given points.
  *
- * The `connectLastToFirst` option, if true, draws a closed path (last point
+ * The `closePath` option, if true, draws a closed path (last point
  * connected to the first).
  */
 export default function drawPath(
@@ -22,7 +22,7 @@ export default function drawPath(
     width?: number;
     lineWidth?: number;
     lineDash?: string;
-    connectLastToFirst?: boolean;
+    closePath?: boolean;
   }
 ): void {
   // It may be a polyline with holes that will be an array with multiple
@@ -31,19 +31,15 @@ export default function drawPath(
     points.length && points[0].length && Array.isArray(points[0][0]);
 
   const pointsArrays = hasSubArrays ? points : [points];
-  const { fillColor, fillOpacity, color, width, lineWidth, lineDash } =
-    Object.assign(
-      {
-        color: 'dodgerblue',
-        width: '2',
-        fillColor: 'none',
-        fillOpacity: 0,
-        lineWidth: undefined,
-        lineDash: undefined,
-        connectLastToFirst: false,
-      },
-      options
-    );
+  const {
+    color = 'dodgerblue',
+    width = 10,
+    fillColor = 'none',
+    fillOpacity = 0,
+    lineWidth,
+    lineDash,
+    closePath = false,
+  } = options;
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
@@ -68,8 +64,8 @@ export default function drawPath(
       pointsAttribute += `${cmd} ${point[0]},${point[1]} `;
     }
 
-    if (options.connectLastToFirst) {
-      pointsAttribute += 'Z';
+    if (closePath) {
+      pointsAttribute += 'Z ';
     }
   }
 

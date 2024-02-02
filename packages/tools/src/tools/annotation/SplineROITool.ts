@@ -7,7 +7,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import {
-  getChildrenAnnotations,
+  getChildAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import {
@@ -657,16 +657,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const splineConfig = this._getSplineConfig(splineType);
     const spline = annotation.data.spline.instance;
 
-    // Update current and all children annotations/splines
+    // Update current and all child annotations/splines
     if (annotation.invalidated) {
       const splineAnnotationsGroup = [
         annotation,
-        ...getChildrenAnnotations(annotation),
+        ...getChildAnnotations(annotation),
       ].filter((annotation) =>
         this._isSplineROIAnnotation(annotation)
       ) as SplineROIAnnotation[];
-
-      let windingDirection = ContourWindingDirection.Clockwise;
 
       splineAnnotationsGroup.forEach((annotation) => {
         const spline = this._updateSplineInstance(element, annotation);
@@ -677,13 +675,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
           {
             points: splinePolylineCanvas,
             closed: data.contour.closed,
-            windingDirection,
+            targetWindingDirection: ContourWindingDirection.Clockwise,
           },
           viewport
         );
-
-        // Each inner annotation (hole) must go to the opposite direction
-        windingDirection *= -1;
       });
     }
 

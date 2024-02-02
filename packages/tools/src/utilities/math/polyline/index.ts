@@ -1,5 +1,6 @@
 import isClosed from './isClosed';
 import containsPoint from './containsPoint';
+import containsPoints from './containsPoints';
 import getAABB from './getAABB';
 import getArea from './getArea';
 import getSignedArea from './getSignedArea';
@@ -20,6 +21,7 @@ import pointCanProjectOnLine from './pointCanProjectOnLine';
 export {
   isClosed,
   containsPoint,
+  containsPoints,
   getAABB,
   getArea,
   getSignedArea,

@@ -1,8 +1,12 @@
-import { glMatrix } from 'gl-matrix';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import type { ContourAnnotation } from '../../types';
 import type { ContourWindingDirection } from '../../types/ContourAnnotation';
 import * as math from '../math';
+import {
+  getParentAnnotation,
+  invalidateAnnotation,
+} from '../../stateManagement';
 
 /**
  * Update the contour polyline data
@@ -16,7 +20,7 @@ export default function updateContourPolyline(
   polylineData: {
     points: Types.Point2[];
     closed?: boolean;
-    windingDirection?: ContourWindingDirection;
+    targetWindingDirection?: ContourWindingDirection;
   },
   transforms: {
     canvasToWorld: (point: Types.Point2) => Types.Point3;
@@ -24,26 +28,33 @@ export default function updateContourPolyline(
 ) {
   const { canvasToWorld } = transforms;
   const { data } = annotation;
-  const { points: polyline } = polylineData;
-  let { closed, windingDirection } = polylineData;
+  const { points: polyline, targetWindingDirection } = polylineData;
+  let { closed } = polylineData;
   const numPoints = polyline.length;
   const polylineWorldPoints = new Array(numPoints);
   const currentWindingDirection = math.polyline.getWindingDirection(polyline);
+  const parentAnnotation = getParentAnnotation(annotation) as ContourAnnotation;
 
   if (closed === undefined) {
     let currentClosedState = false;
 
+    // With two points it is just a line and do not make sense to consider it closed
     if (polyline.length > 3) {
       const lastToFirstDist = math.point.distanceToPointSquared(
         polyline[0],
         polyline[numPoints - 1]
       );
 
-      currentClosedState = glMatrix.equals(0, lastToFirstDist);
+      currentClosedState = csUtils.isEqual(0, lastToFirstDist);
     }
 
     closed = currentClosedState;
   }
+
+  // It must be in the opposite direction if it is a child annotation (hole)
+  let windingDirection = parentAnnotation
+    ? parentAnnotation.data.contour.windingDirection * -1
+    : targetWindingDirection;
 
   if (windingDirection === undefined) {
     windingDirection = currentWindingDirection;
@@ -58,5 +69,6 @@ export default function updateContourPolyline(
   data.contour.polyline = polylineWorldPoints;
   data.contour.closed = closed;
   data.contour.windingDirection = windingDirection;
-  annotation.invalidated = true;
+
+  invalidateAnnotation(annotation);
 }
