@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import {
   Events as EVENTS,
-  VideoViewport as VideoViewportEnum,
+  VideoEnums as VideoViewportEnum,
   MetadataModules,
 } from '../enums';
 import type {
@@ -227,11 +227,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.play();
       // This is ugly, but without it, the video often fails to render initially
       // so having a play, followed by a pause fixes things.
-      // 50 ms is a tested value that seems to work to prevent exceptions
-      window.setTimeout(() => {
-        this.pause();
-        this.setFrameNumber(frameNumber || 1);
-      }, 50);
+      // 100 ms is a tested value that seems to work to prevent exceptions
+      return new Promise((resolve) => {
+        window.setTimeout(() => {
+          this.pause();
+          this.setFrameNumber(frameNumber || 1);
+          resolve(this);
+        }, 100);
+      });
     });
   }
 
@@ -258,6 +261,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
         loadedMetadataEventHandler
       );
     });
+  }
+
+  /**
+   * Gets all the image ids associated with this video element.  This will
+   * have # of frames elements.
+   */
+  public getImageIds(): string[] {
+    const imageIds = new Array<string>(this.numberOfFrames);
+    const baseImageId = this.imageId.replace(/[0-9]+$/, '');
+    for (let i = 0; i < this.numberOfFrames; i++) {
+      imageIds[i] = `${baseImageId}${i + 1}`;
+    }
+    return imageIds;
   }
 
   public togglePlayPause(): boolean {

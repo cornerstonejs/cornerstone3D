@@ -11,6 +11,7 @@ import {
   setTitleAndDescription,
   addManipulationBindings,
   getLocalUrl,
+  addVideoTime,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -116,18 +117,6 @@ viewportGrid.appendChild(element);
 
 content.appendChild(viewportGrid);
 
-const rangeDiv = document.createElement('div');
-rangeDiv.innerHTML =
-  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
-content.appendChild(rangeDiv);
-const rangeElement = document.getElementById('range') as HTMLInputElement;
-rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-
 createInfoSection(content, { ordered: true })
   .addInstruction('Select a segmentation index')
   .addInstruction('Select a spline curve type')
@@ -158,13 +147,6 @@ function updateInputsForCurrentSegmentation() {
   (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
     contourConfig.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
   );
-
-  (document.getElementById('outlineDashActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineDashActive?.split(',')[0] ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineDashActive?.split(',')[0] ??
-        '0'
-    );
 }
 
 function updateActiveSegmentIndex(segmentIndex: number): void {
@@ -329,29 +311,6 @@ addSliderToToolbar({
   },
 });
 
-addSliderToToolbar({
-  id: 'outlineDashActive',
-  title: 'Outline Dash',
-  range: [0, 10],
-  step: 1,
-  defaultValue: 0,
-  onSelectedValueChange: (value) => {
-    const outlineDash = value === '0' ? undefined : `${value},${value}`;
-    updateSegmentationConfig({ outlineDashActive: outlineDash });
-  },
-});
-
-function initializeGlobalConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
 /**
  * Runs the demo
  */
@@ -423,23 +382,13 @@ async function run() {
 
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  addVideoTime(viewportGrid, viewport);
 
   // Set the stack on the viewport
-  viewport.setVideo(videoId, 1);
+  await viewport.setVideo(videoId, 1);
 
   // Render the image
   renderingEngine.render();
-  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
-
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
-    const { time, duration } = evt.detail;
-    rangeElement.value = time;
-    rangeElement.max = duration;
-    const timeElement = document.getElementById('time');
-    timeElement.innerText = seconds(time);
-    const remainingElement = document.getElementById('remaining');
-    remainingElement.innerText = seconds(duration - time);
-  });
 
   // Add a segmentation that will contains the contour annotations
   segmentation.addSegmentations([
@@ -463,7 +412,6 @@ async function run() {
   // Store the segmentation representation that was just created
   [segmentationRepresentationUID] = segmentationRepresentationUIDs;
 
-  initializeGlobalConfig();
   updateInputsForCurrentSegmentation();
 }
 

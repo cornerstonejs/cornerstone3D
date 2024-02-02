@@ -8,6 +8,8 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   getLocalUrl,
+  addManipulationBindings,
+  addVideoTime,
 } from '../../../../utils/demo/helpers';
 import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
@@ -19,20 +21,16 @@ console.warn(
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  StackScrollMouseWheelTool,
-  ZoomTool,
-  StackScrollTool,
   Enums: csToolsEnums,
   RectangleScissorsTool,
   CircleScissorsTool,
   BrushTool,
   PaintFillTool,
-  PanTool,
   segmentation,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -254,10 +252,6 @@ addDropdownToToolbar({
 
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
@@ -267,12 +261,7 @@ function setupTools(toolGroupId) {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Manipulation Tools
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
+  addManipulationBindings(toolGroup);
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -321,40 +310,6 @@ function setupTools(toolGroupId) {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-
   return toolGroup;
 }
 // ============================= //
@@ -397,11 +352,11 @@ async function run() {
 
   const imageIdsArray = [videoId];
 
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(imageIdsArray);
-
   await viewport.setVideo(videoId);
-  viewport.pause();
+  addVideoTime(viewportGrid, viewport);
+  const allImageIds = viewport.getImageIds().slice(0, 60);
+  const { imageIds: segmentationImageIds } =
+    await imageLoader.createAndCacheDerivedImages(allImageIds);
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,
@@ -418,7 +373,7 @@ async function run() {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
           imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            imageIdsArray,
+            allImageIds,
             segmentationImageIds
           ),
         },

@@ -45,7 +45,7 @@ export class CanvasProperties {
     const g = cfun.getGreenValue(index);
     const b = cfun.getBlueValue(index);
     const a = cfun.getAlpha();
-    return `rgb(${r * 255},${g * 255},${b * 255},${a * this.opacity})`;
+    return [r, g, b, a];
   }
 }
 
@@ -71,6 +71,7 @@ export default class CanvasActor implements ICanvasActor {
   private mapper = new CanvasMapper(this);
   private viewport;
   protected className = 'CanvasActor';
+  protected canvas: OffscreenCanvas;
 
   constructor(viewport: IViewport, image) {
     this.image = image;
@@ -81,23 +82,68 @@ export default class CanvasActor implements ICanvasActor {
     if (!this.visibility) {
       return;
     }
-    context.fillStyle = '#ff000040';
+
     const { width, height } = this.image;
+
     const data = this.image.getPixelData();
+    let { canvas } = this;
+    if (!canvas || canvas.width !== width || canvas.height !== height) {
+      this.canvas = canvas = new OffscreenCanvas(width, height);
+    }
+    const localContext = canvas.getContext('2d');
+    const imageData = localContext.createImageData(width, height);
+    const { data: imageArray } = imageData;
     let offset = 0;
-    const fillVLast = 0;
+    let destOffset = 0;
+    let dirtyX = Infinity;
+    let dirtyY = Infinity;
+    let dirtyX2 = -Infinity;
+    let dirtyY2 = -Infinity;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
+        // const destOffset = (x + y * width) * 4;
         const v = data[offset++];
         if (v) {
-          if (v !== fillVLast) {
-            const rgb = this.canvasProperties.getColor(v);
-            context.fillStyle = this.canvasProperties.getColor(v);
-          }
-          context.fillRect(x, y, 1, 1);
+          dirtyX = Math.min(x, dirtyX);
+          dirtyY = Math.min(y, dirtyY);
+          dirtyX2 = Math.max(x, dirtyX2);
+          dirtyY2 = Math.max(y, dirtyY2);
+          const rgb = this.canvasProperties.getColor(v);
+          imageArray[destOffset] = rgb[0] * 255;
+          imageArray[destOffset + 1] = rgb[1] * 255;
+          imageArray[destOffset + 2] = rgb[2] * 255;
+          imageArray[destOffset + 3] = 127;
+          // imageArray.fill(55, offset, offset + 4);
         }
+        destOffset += 4;
       }
     }
+
+    if (dirtyX > width) {
+      return;
+    }
+    const dirtyWidth = dirtyX2 - dirtyX + 1;
+    const dirtyHeight = dirtyY2 - dirtyY + 1;
+    localContext.putImageData(
+      imageData,
+      0,
+      0,
+      dirtyX,
+      dirtyY,
+      dirtyWidth,
+      dirtyHeight
+    );
+    context.drawImage(
+      canvas,
+      dirtyX,
+      dirtyY,
+      dirtyWidth,
+      dirtyHeight,
+      dirtyX,
+      dirtyY,
+      dirtyWidth,
+      dirtyHeight
+    );
   }
 
   public getClassName() {

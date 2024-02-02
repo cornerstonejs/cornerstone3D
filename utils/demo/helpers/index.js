@@ -16,8 +16,10 @@ import createInfoSection from './createInfoSection';
 import camera from './camera';
 import getLocalUrl from './getLocalUrl';
 import addManipulationBindings from './addManipulationBindings';
+import addVideoTime from './addVideoTime';
 
 export {
+  addVideoTime,
   createImageIdsAndCacheMetaData,
   wadoURICreateImageIds,
   initDemo,
