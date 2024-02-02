@@ -42,6 +42,8 @@ class MagnifyTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
+  private _hasBeenRemoved = false;
+
   _getReferencedImageId(
     viewport: Types.IStackViewport | Types.IVolumeViewport
   ): string {
@@ -155,8 +157,10 @@ class MagnifyTool extends BaseTool {
     const magnifyViewport = renderingEngine.getViewport(
       MAGNIFY_VIEWPORT_ID
     ) as Types.IStackViewport;
-
     magnifyViewport.setStack([referencedImageId]).then(() => {
+      if (this._hasBeenRemoved) {
+        return;
+      }
       // match the original viewport voi range
       magnifyViewport.setProperties(viewportProperties);
 
@@ -261,10 +265,12 @@ class MagnifyTool extends BaseTool {
 
     this._deactivateDraw(element);
     resetElementCursor(element);
+    this._hasBeenRemoved = true;
   };
 
   _activateDraw = (element: HTMLDivElement) => {
     state.isInteractingWithTool = true;
+    this._hasBeenRemoved = false;
 
     element.addEventListener(
       Events.MOUSE_UP,

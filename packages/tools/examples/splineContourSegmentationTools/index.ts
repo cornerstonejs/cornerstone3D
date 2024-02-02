@@ -9,6 +9,7 @@ import {
   createInfoSection,
   initDemo,
   setTitleAndDescription,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -31,12 +32,10 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
+  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  ZoomTool,
-  PanTool,
-  StackScrollMouseWheelTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -65,7 +64,7 @@ const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const viewportId = 'CT_STACK_AXIAL';
+const viewportId = 'CT_STACK_ACQUISITION';
 const element = document.createElement('div');
 
 element.oncontextmenu = () => false;
@@ -255,7 +254,7 @@ addButtonToToolbar({
 
 addSliderToToolbar({
   id: 'outlineWidthActive',
-  title: 'Segment Thickness',
+  title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
@@ -319,19 +318,16 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
 
   toolGroup.addToolInstance(
     'CatmullRomSplineROI',
@@ -373,23 +369,8 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  // Spline curves may be converted into freehand contours when they overlaps (append/remove)
+  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

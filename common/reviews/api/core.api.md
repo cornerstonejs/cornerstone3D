@@ -109,8 +109,6 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     abstract getCurrentImageId(): string;
     // (undocumented)
-    abstract getCurrentImageIdIndex(): number;
-    // (undocumented)
     getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -128,6 +126,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     getRotation: () => number;
     // (undocumented)
     getSlabThickness(): number;
+    // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
@@ -318,6 +318,9 @@ function convertStackToVolumeViewport({ viewport, options, }: {
         orientation?: OrientationAxis;
     };
 }): Promise<IVolumeViewport>;
+
+// @public (undocumented)
+function convertToGrayscale(scalarData: any, width: number, height: number): any;
 
 // @public (undocumented)
 function convertVolumeToStackViewport({ viewport, options, }: {
@@ -663,12 +666,12 @@ const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
 type DisplayArea = {
-    imageArea: [number, number];
-    imageCanvasPoint: {
+    imageArea?: [number, number];
+    imageCanvasPoint?: {
         imagePoint: [number, number];
         canvasPoint: [number, number];
     };
-    storeAsInitialCamera: boolean;
+    storeAsInitialCamera?: boolean;
 };
 
 // @public (undocumented)
@@ -2113,6 +2116,8 @@ interface IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
     getDisplayArea(): DisplayArea | undefined;
@@ -2128,6 +2133,8 @@ interface IViewport {
     getRenderingEngine(): any;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    getTargetId(forTarget?: TargetSpecifier): string;
     // (undocumented)
     getZoom(): number;
     // (undocumented)
@@ -2443,6 +2450,66 @@ type Point3 = [number, number, number];
 
 // @public (undocumented)
 type Point4 = [number, number, number, number];
+
+// @public (undocumented)
+class PointsManager<T> {
+    constructor(configuration?: PolyDataPointConfiguration);
+    // (undocumented)
+    array: ArrayBuffer;
+    // (undocumented)
+    _byteSize: number;
+    // (undocumented)
+    static create2(initialSize?: number): PointsManager<Point2>;
+    // (undocumented)
+    static create3(initialSize?: number): PointsManager<Point3>;
+    // (undocumented)
+    data: Float32Array;
+    // (undocumented)
+    get dimensionLength(): number;
+    // (undocumented)
+    get dimensions(): number;
+    // (undocumented)
+    _dimensions: number;
+    // (undocumented)
+    forEach(func: (value: T, index: number) => void): void;
+    // (undocumented)
+    static fromXYZ({ x, y, z }: PointsXYZ): PointsManager<Point3>;
+    // (undocumented)
+    getPoint(index: number): T;
+    // (undocumented)
+    getPointArray(index: number): T;
+    // (undocumented)
+    protected grow(additionalSize?: number, growSize?: number): void;
+    // (undocumented)
+    growSize: number;
+    // (undocumented)
+    kIndex: number;
+    // (undocumented)
+    get length(): number;
+    // (undocumented)
+    _length: number;
+    // (undocumented)
+    map<R>(f: (value: any, index: number) => R): R[];
+    // (undocumented)
+    get points(): T[];
+    // (undocumented)
+    push(point: T): void;
+    // (undocumented)
+    reverse(): void;
+    // (undocumented)
+    sources: PointsManager<T>[];
+    // (undocumented)
+    subselect(count?: number, offset?: number): PointsManager<T>;
+    // (undocumented)
+    toXYZ(): PointsXYZ;
+}
+
+// @public (undocumented)
+type PointsXYZ = {
+    x: number[];
+    y: number[];
+    z: number[];
+};
 
 // @public (undocumented)
 const presets: ViewportPreset[];
@@ -2885,6 +2952,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
+    // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
     hasImageId: (imageId: string) => boolean;
@@ -2992,6 +3061,14 @@ class TargetEventListeners {
 }
 
 // @public (undocumented)
+type TargetSpecifier = {
+    sliceIndex?: number;
+    forFrameOfReference?: boolean;
+    points?: Point3[];
+    volumeId?: string;
+};
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -3049,6 +3126,7 @@ declare namespace Types {
         IRenderingEngine,
         ScalingParameters,
         PTScaling,
+        PointsManager,
         Scaling,
         IStreamingImageVolume,
         IImage,
@@ -3062,6 +3140,7 @@ declare namespace Types {
         IRegisterImageLoader,
         IStreamingVolumeProperties,
         IViewport,
+        TargetSpecifier,
         StackViewportProperties,
         VolumeViewportProperties,
         ViewportProperties,
@@ -3083,6 +3162,7 @@ declare namespace Types {
         AABB2,
         Point2,
         Point3,
+        PointsXYZ,
         Point4,
         Mat3,
         Plane,
@@ -3168,6 +3248,7 @@ declare namespace utilities {
         createInt16SharedArray,
         getViewportModality,
         windowLevel,
+        convertToGrayscale,
         getClosestImageId,
         getSpacingInNormalDirection,
         getTargetVolumeAndSpacingInNormalDir,
@@ -3199,6 +3280,7 @@ declare namespace utilities {
         hasNaNValues,
         applyPreset,
         deepMerge,
+        PointsManager,
         getScalingParameters,
         getScalarDataType,
         colormap,
@@ -3252,6 +3334,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCurrentImageId(): string;
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -3293,6 +3377,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected getScalarData(): Uint8ClampedArray;
     // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
+    // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
     hasImageURI(imageURI: string): boolean;
@@ -3307,7 +3393,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     pause(): Promise<void>;
     // (undocumented)
-    play(): void;
+    play(): Promise<void>;
     // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)
@@ -3429,6 +3515,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
     getDisplayArea(): DisplayArea | undefined;
@@ -3453,6 +3541,8 @@ export class Viewport implements IViewport {
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)

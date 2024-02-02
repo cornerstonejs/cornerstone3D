@@ -4,7 +4,7 @@ import {
   VideoViewport as VideoViewportEnum,
   MetadataModules,
 } from '../enums';
-import {
+import type {
   IVideoViewport,
   VideoViewportProperties,
   Point3,
@@ -14,6 +14,7 @@ import {
   VideoViewportInput,
   VOIRange,
   ICanvasActor,
+  TargetSpecifier,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -159,6 +160,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       columnCosines[1],
       columnCosines[2]
     );
+
+    const { rows, columns } = imagePlaneModule;
+    this.videoWidth = columns;
+    this.videoHeight = rows;
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
@@ -219,10 +224,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
-      if (frameNumber !== undefined) {
+      this.play();
+      // This is ugly, but without it, the video often fails to render initially
+      // so having a play, followed by a pause fixes things.
+      // 50 ms is a tested value that seems to work to prevent exceptions
+      window.setTimeout(() => {
         this.pause();
-        this.setFrameNumber(frameNumber);
-      }
+        this.setFrameNumber(frameNumber || 1);
+      }, 50);
     });
   }
 
@@ -261,17 +270,27 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
-  public play() {
-    if (!this.isPlaying) {
-      this.videoElement.play();
-      this.isPlaying = true;
-      this.renderWhilstPlaying();
+  public async play() {
+    try {
+      if (!this.isPlaying) {
+        // Play returns a promise that is true when playing completes.
+        await this.videoElement.play();
+        this.isPlaying = true;
+        this.renderWhilstPlaying();
+      }
+    } catch (e) {
+      // No-op, an exception sometimes gets thrown on the initial play, not
+      // quite sure why.  Catching it prevents displaying an error
     }
   }
 
   public async pause() {
-    await this.videoElement.pause();
-    this.isPlaying = false;
+    try {
+      await this.videoElement.pause();
+      this.isPlaying = false;
+    } catch (e) {
+      // No-op - sometimes this happens on startup
+    }
   }
 
   public async scroll(delta = 1) {
@@ -460,7 +479,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     const spacing = metadata.spacing;
 
-    return {
+    const imageData = {
       dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
@@ -489,6 +508,11 @@ class VideoViewport extends Viewport implements IVideoViewport {
         scaled: false,
       },
     };
+    Object.defineProperty(imageData, 'scalarData', {
+      get: () => this.getScalarData(),
+      enumerable: true,
+    });
+    return imageData;
   }
 
   /**
@@ -619,9 +643,28 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return current;
   }
 
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    const { sliceIndex } = specifier;
+    if (sliceIndex === undefined) {
+      return `videoId:${this.getCurrentImageId()}`;
+    }
+    const baseTarget = this.imageId.replace(
+      '/frames/1',
+      `/frames/${1 + sliceIndex}`
+    );
+    return `videoId:${baseTarget}`;
+  }
+
+  /**
+   * Gets the 1 based frame number (ala DICOM value), eg `1+ currentImageIdIndex`
+   */
   public getFrameNumber() {
     // Need to round this as the fps/time isn't exact
-    return 1 + Math.round(this.videoElement.currentTime * this.fps);
+    return 1 + this.getCurrentImageIdIndex();
+  }
+
+  public getCurrentImageIdIndex() {
+    return Math.round(this.videoElement.currentTime * this.fps);
   }
 
   public getCamera(): ICamera {

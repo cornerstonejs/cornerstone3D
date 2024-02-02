@@ -7,7 +7,7 @@ import type { Types } from '@cornerstonejs/core';
  * the points are in canvas, then the result is in canvas pixels ^2; If they are
  * in mm, then the result is in mm^2; etc.
  */
-export default function calculateAreaOfPoints(points: Types.Point2[]): number {
+export default function getArea(points: Types.Point2[]): number {
   // Shoelace algorithm.
   const n = points.length;
   let area = 0.0;

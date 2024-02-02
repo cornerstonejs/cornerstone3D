@@ -261,7 +261,18 @@
       },
       "videoGroup": {
         "name": "Video Annotation Grouping",
+      },
+      "videoSplineROITools": {
+        "name": "Video Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline) on video"
+      },
+      "videoGroup": {
+        "name": "Video Annotation Grouping",
         "description": "Annotation grouping tools"
+      },
+      "videoContourSegmentation": {
+        "name": "Video Contour Segmentation",
+        "description": "Demonstrates spline and livewire contour segmentation on video viewports"
       },
       "videoRange": {
         "name": "Video Range Selection",
@@ -296,6 +307,10 @@
       "contourRenderingConfiguration": {
         "name": "Contour rendering configuration ",
         "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
+      },
+      "interpolationContourSegmentation": {
+        "name": "Interpolation of Contours between slices",
+        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
       },
       "labelmapToolGroupSpecificConfiguration": {
         "name": "ToolGroup Specific Labelmap Segmentation Configuration",

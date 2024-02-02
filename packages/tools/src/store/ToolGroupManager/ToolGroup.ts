@@ -87,6 +87,16 @@ export default class ToolGroup implements IToolGroup {
 
     return toolInstance;
   }
+
+  /**
+   * Check if a tool is already added to the tool group
+   * @param toolName - Tool name
+   * @returns True if the tool is already added or false otherwise
+   */
+  hasTool(toolName: string): boolean {
+    return !!this._toolInstances[toolName];
+  }
+
   /**
    * Add a tool to the tool group with the given tool name and tool configuration.
    * Note that adding a tool to a tool group will not automatically set the tool

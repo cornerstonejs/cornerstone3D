@@ -46,6 +46,7 @@ import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataPr
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
+import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
@@ -66,6 +67,7 @@ import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import roundNumber, { roundToPrecision } from './roundNumber';
+import convertToGrayscale from './convertToGrayscale';
 
 // name spaces
 import * as planar from './planar';
@@ -97,6 +99,7 @@ export {
   createInt16SharedArray,
   getViewportModality,
   windowLevel,
+  convertToGrayscale,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
@@ -128,6 +131,7 @@ export {
   hasNaNValues,
   applyPreset,
   deepMerge,
+  PointsManager,
   getScalingParameters,
   getScalarDataType,
   colormap,
