@@ -132,7 +132,6 @@ function getValidContourSegmentationAnnotations(
 
   // Get all annotations and filter all contour segmentations locally
   const allAnnotations = getAllAnnotations();
-  debugger;
   return allAnnotations.filter(
     (targetAnnotation) =>
       targetAnnotation.annotationUID &&
