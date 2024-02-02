@@ -27,6 +27,10 @@ enum ChangeTypes {
    * Completed occurs only for the annotation completed event, just to identify it
    */
   Completed = 'Completed',
+  /**
+   * Occurs when an interpolation result is updated with more tool specific data.
+   */
+  InterpolationUpdated = 'InterpolationUpdated',
 }
 
 export default ChangeTypes;

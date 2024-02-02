@@ -115,6 +115,9 @@ import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';
 import type BoundsLPS from './BoundsLPS';
+// Sometimes the type is needed rather than the class, so import
+// the type only here.
+import type PointsManager from '../utilities/PointsManager';
 
 export type {
   // config
@@ -134,6 +137,7 @@ export type {
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
+  PointsManager,
   Scaling,
   IStreamingImageVolume,
   IImage,

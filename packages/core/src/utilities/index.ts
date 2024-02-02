@@ -46,6 +46,7 @@ import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataPr
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
+import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
@@ -130,6 +131,7 @@ export {
   hasNaNValues,
   applyPreset,
   deepMerge,
+  PointsManager,
   getScalingParameters,
   getScalarDataType,
   colormap,
