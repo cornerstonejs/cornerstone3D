@@ -9,7 +9,7 @@ import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedCon
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../../types/AnnotationStyle';
 import { SVGDrawingHelper } from '../../../types';
-import { getChildContourCanvasPolylines } from '../../../utilities/contours';
+import { getContourHolesDataCanvas } from '../../../utilities/contours';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
@@ -124,7 +124,7 @@ function renderClosedContour(
     viewport.worldToCanvas(worldPos)
   );
 
-  const childContours = getChildContourCanvasPolylines(annotation, viewport);
+  const childContours = getContourHolesDataCanvas(annotation, viewport);
   const allContours = [canvasPolyline, ...childContours];
   const polylineUID = '1';
 
@@ -356,7 +356,7 @@ function renderClosedContourBeingEdited(
   }
 
   // Get the polylines from child annotations (holes)
-  const childContours = getChildContourCanvasPolylines(annotation, viewport);
+  const childContours = getContourHolesDataCanvas(annotation, viewport);
 
   const allContours = [fusedCanvasPoints, ...childContours];
   const options = this._getRenderingOptions(enabledElement, annotation);

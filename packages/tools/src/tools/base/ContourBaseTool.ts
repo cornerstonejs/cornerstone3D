@@ -17,7 +17,7 @@ import type {
 import { drawPath as drawPathSvg } from '../../drawingSvg';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
-import { getChildContourCanvasPolylines } from '../../utilities/contours';
+import { getContourHolesDataCanvas } from '../../utilities/contours';
 
 /**
  * A contour base class responsible for rendering contour instances such as
@@ -245,7 +245,7 @@ abstract class ContourBaseTool extends AnnotationTool {
     const { lineWidth, lineDash, color, fillColor, fillOpacity } =
       annotationStyle;
 
-    const childContours = getChildContourCanvasPolylines(annotation, viewport);
+    const childContours = getContourHolesDataCanvas(annotation, viewport);
     const allContours = [polylineCanvasPoints, ...childContours];
 
     drawPathSvg(
