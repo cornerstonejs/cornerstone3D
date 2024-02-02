@@ -58,14 +58,19 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
 
       // New path generation - go through the handles and regenerate the polyline
       if (nearestEdge) {
+        let lastPoint = worldToSlice(points[points.length - 1]);
         // Nearest edge handling
         points.forEach((point, hIndex) => {
           const testPoint = worldToSlice(point);
+          scissors.startSearch(lastPoint);
+          scissors.findPathToPoint(testPoint);
+          lastPoint = testPoint;
           handleSmoothing.push(testPoint);
 
           const minPoint = scissors.findMinNearby(testPoint, nearestEdge);
           if (!csUtils.isEqual(testPoint, minPoint)) {
             handleSmoothing[hIndex] = minPoint;
+            lastPoint = minPoint;
             points[hIndex] = sliceToWorld(minPoint);
           }
         });

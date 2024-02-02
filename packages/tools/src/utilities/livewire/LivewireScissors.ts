@@ -105,7 +105,7 @@ export class LivewireScissors {
   }
 
   /**
-   * Finds a nearby point with a minimum local weight.
+   * Finds a nearby point with a minimum cost nearby
    *
    * @param testPoint - to look nearby
    * @param delta - how long a distance to look
@@ -113,6 +113,8 @@ export class LivewireScissors {
    */
   public findMinNearby(testPoint: Types.Point2, delta = 2) {
     const [x, y] = testPoint;
+    const { costs } = this;
+
     const xRange = [
       Math.max(0, x - delta),
       Math.min(x + delta + 1, this.width),
@@ -121,7 +123,8 @@ export class LivewireScissors {
       Math.max(0, y - delta),
       Math.min(y + delta + 1, this.height),
     ];
-    let minValue = this._getWeightedDistance(testPoint, testPoint) * 0.8;
+    let minValue = costs[this._getPointIndex(y, x)] * 0.8;
+
     let minPoint = testPoint;
     for (let xTest = xRange[0]; xTest < xRange[1]; xTest++) {
       for (let yTest = yRange[0]; yTest < yRange[1]; yTest++) {
@@ -133,7 +136,8 @@ export class LivewireScissors {
           (Math.abs(xTest - testPoint[0]) + Math.abs(yTest - testPoint[1])) /
             delta /
             2;
-        const weightCost = this._getWeightedDistance(testPoint, [xTest, yTest]);
+        const weightCost = costs[this._getPointIndex(yTest, xTest)];
+
         const weight = weightCost * 0.8 + distanceCost * 0.2;
         if (weight < minValue) {
           minPoint = [xTest, yTest];
