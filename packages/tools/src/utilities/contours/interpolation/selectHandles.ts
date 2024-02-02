@@ -26,7 +26,7 @@ export default function selectHandles(
     console.log('Adding subselect handles', handleCount, length);
     return polyline.subselect(handleCount);
   }
-  const interval = Math.min(35, Math.floor(length / 3));
+  const interval = Math.min(30, Math.floor(length / 3));
   sourcePoints.forEach(() =>
     destPoints.push(PointsManager.create3(handleCount))
   );
