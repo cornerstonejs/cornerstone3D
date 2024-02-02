@@ -730,7 +730,7 @@ declare namespace Enums {
         VOILUTFunctionType,
         DynamicOperatorType,
         ViewportStatus,
-        VideoViewport_2 as VideoViewport,
+        VideoEnums,
         MetadataModules,
         ImageQualityStatus
     }
@@ -2076,6 +2076,8 @@ interface IVideoViewport extends IViewport {
     // (undocumented)
     setProperties(props: VideoViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
+    setTime(time: number): any;
+    // (undocumented)
     setVideo: (imageIds: string, imageIdIndex?: number) => Promise<unknown>;
     // (undocumented)
     setVideoURL: (url: string) => void;
@@ -3310,6 +3312,12 @@ export { utilities }
 // @public (undocumented)
 function uuidv4(): string;
 
+declare namespace VideoEnums {
+    export {
+        SpeedUnit
+    }
+}
+
 // @public (undocumented)
 export class VideoViewport extends Viewport implements IVideoViewport {
     constructor(props: VideoViewportInput);
@@ -3367,6 +3375,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         };
     };
     // (undocumented)
+    getImageIds(): string[];
+    // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
     getPan(): Point2;
@@ -3419,7 +3429,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setProperties(props: VideoViewportProperties): void;
     // (undocumented)
-    setScrollSpeed(scrollSpeed?: number, unit?: VideoViewport_2.SpeedUnit): void;
+    setScrollSpeed(scrollSpeed?: number, unit?: VideoEnums.SpeedUnit): void;
     // (undocumented)
     setTime(timeInSeconds: number): Promise<void>;
     // (undocumented)
@@ -3440,12 +3450,6 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
-}
-
-declare namespace VideoViewport_2 {
-    export {
-        SpeedUnit
-    }
 }
 
 // @public (undocumented)

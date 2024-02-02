@@ -71,7 +71,7 @@ export default class CanvasActor implements ICanvasActor {
   private mapper = new CanvasMapper(this);
   private viewport;
   protected className = 'CanvasActor';
-  protected canvas: OffscreenCanvas;
+  protected canvas;
 
   constructor(viewport: IViewport, image) {
     this.image = image;
@@ -88,7 +88,7 @@ export default class CanvasActor implements ICanvasActor {
     const data = this.image.getPixelData();
     let { canvas } = this;
     if (!canvas || canvas.width !== width || canvas.height !== height) {
-      this.canvas = canvas = new OffscreenCanvas(width, height);
+      this.canvas = canvas = new window.OffscreenCanvas(width, height);
     }
     const localContext = canvas.getContext('2d');
     const imageData = localContext.createImageData(width, height);
