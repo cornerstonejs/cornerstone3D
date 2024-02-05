@@ -4,7 +4,7 @@ import {
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
-import { EventTypes } from '../../../types';
+import { EventTypes, IToolBinding } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
@@ -32,6 +32,7 @@ const {
  */
 function activateDraw(
   evt: EventTypes.InteractionEventType,
+  toolBinding: IToolBinding,
   annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
@@ -42,7 +43,7 @@ function activateDraw(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
-  const postProcessingEnabled = !!evt.detail.event.shiftKey;
+  const contourProcessingEnabled = !!toolBinding.data?.contourProcessingEnabled;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
@@ -52,7 +53,7 @@ function activateDraw(
   this.drawData = {
     canvasPoints: [canvasPos],
     polylineIndex: 0,
-    postProcessingEnabled,
+    contourProcessingEnabled,
   };
 
   this.commonData = {
@@ -174,7 +175,7 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints, postProcessingEnabled } = this.drawData;
+  const { canvasPoints, contourProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
@@ -188,9 +189,9 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element, postProcessingEnabled);
+    this.completeDrawOpenContour(element, contourProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element, postProcessingEnabled);
+    this.completeDrawClosedContour(element, contourProcessingEnabled);
   }
 }
 
@@ -199,7 +200,7 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function completeDrawClosedContour(
   element: HTMLDivElement,
-  postProcessingEnabled: boolean
+  contourProcessingEnabled: boolean
 ): boolean {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
@@ -247,7 +248,7 @@ function completeDrawClosedContour(
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    triggerContourAnnotationCompleted(annotation, postProcessingEnabled);
+    triggerContourAnnotationCompleted(annotation, contourProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -291,7 +292,7 @@ function removeCrossedLinesOnCompleteDraw(): void {
  */
 function completeDrawOpenContour(
   element: HTMLDivElement,
-  postProcessingEnabled: boolean
+  contourProcessingEnabled: boolean
 ): boolean {
   const { canvasPoints } = this.drawData;
 
@@ -338,7 +339,7 @@ function completeDrawOpenContour(
   }
 
   if (!textBox.hasMoved) {
-    triggerContourAnnotationCompleted(annotation, postProcessingEnabled);
+    triggerContourAnnotationCompleted(annotation, contourProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -423,7 +424,7 @@ function applyCreateOnCross(
  */
 function cancelDrawing(element: HTMLElement) {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints, postProcessingEnabled } = this.drawData;
+  const { canvasPoints, contourProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
 
@@ -435,9 +436,9 @@ function cancelDrawing(element: HTMLElement) {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element, postProcessingEnabled);
+    this.completeDrawOpenContour(element, contourProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element, postProcessingEnabled);
+    this.completeDrawClosedContour(element, contourProcessingEnabled);
   }
 }
 

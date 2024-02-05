@@ -35,11 +35,11 @@ const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 export default function contourSegmentationCompletedListener(
   evt: AnnotationCompletedEventType
 ) {
-  const { postProcessingEnabled } =
+  const { contourProcessingEnabled } =
     evt.detail as ContourAnnotationCompletedEventDetail;
 
-  // Do not append, remove or create holes when postProcessingEnabled is `false`
-  if (!postProcessingEnabled) {
+  // Do not append, remove or create holes when contourProcessingEnabled is `false`
+  if (!contourProcessingEnabled) {
     return;
   }
 

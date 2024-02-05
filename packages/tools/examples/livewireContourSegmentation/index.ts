@@ -329,6 +329,7 @@ async function run() {
       {
         mouseButton: MouseBindings.Primary, // Left Click+Shift
         modifierKey: KeyboardBindings.Shift,
+        data: { contourProcessingEnabled: true },
       },
     ],
   });

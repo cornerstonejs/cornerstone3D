@@ -33,6 +33,8 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   AnnotationRenderContext,
+  InteractionTypes,
+  IToolBinding,
 } from '../../types';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
@@ -127,6 +129,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
   protected activateDraw: (
     evt: EventTypes.InteractionEventType,
+    toolBinding: IToolBinding,
     annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
   ) => void;
@@ -258,7 +261,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    * @returns The `PlanarFreehandROIAnnotation` object.
    */
   addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
+    evt: EventTypes.InteractionEventType,
+    _interactionType: InteractionTypes,
+    toolBinding: IToolBinding
   ): PlanarFreehandROIAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -276,7 +281,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       this.getToolName()
     );
 
-    this.activateDraw(evt, annotation, viewportIdsToRender);
+    this.activateDraw(evt, toolBinding, annotation, viewportIdsToRender);
     evt.preventDefault();
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 

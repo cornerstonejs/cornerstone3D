@@ -17,6 +17,8 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  InteractionTypes,
+  IToolBinding,
 } from '../../types';
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
@@ -58,7 +60,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     worldToSlice?: (point: Types.Point3) => Types.Point2;
     sliceToWorld?: (point: Types.Point2) => Types.Point3;
     originalPath?: Types.Point3[];
-    postProcessingEnabled: boolean;
+    contourProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -122,7 +124,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     element,
     annotation,
     rightPos?,
-    postProcessingEnabled?
+    contourProcessingEnabled?
   ) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -241,7 +243,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         this.editData?.handleIndex ?? annotation.handles?.activeHandleIndex,
       worldToSlice,
       sliceToWorld,
-      postProcessingEnabled,
+      contourProcessingEnabled,
     };
   }
 
@@ -254,21 +256,24 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
    *
    */
   addNewAnnotation(
-    evt: EventTypes.InteractionEventType
+    evt: EventTypes.InteractionEventType,
+    _interactionType: InteractionTypes,
+    toolBinding: IToolBinding
   ): LivewireContourAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { world: worldPos } = currentPoints;
     const { renderingEngine } = getEnabledElement(element);
     const annotation = this.createAnnotation(evt);
-    const postProcessingEnabled = !!evt.detail.event.shiftKey;
+    const contourProcessingEnabled =
+      !!toolBinding.data?.contourProcessingEnabled;
 
     this.setupBaseEditData(
       worldPos,
       element,
       annotation,
       undefined,
-      postProcessingEnabled
+      contourProcessingEnabled
     );
     this.addAnnotation(annotation, element);
 
@@ -399,7 +404,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation,
       viewportIdsToRender,
       newAnnotation,
-      postProcessingEnabled,
+      contourProcessingEnabled,
     } = this.editData;
     const { data } = annotation;
 
@@ -437,7 +442,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation,
       enabledElement,
       changeType,
-      postProcessingEnabled
+      contourProcessingEnabled
     );
     this.clearEditData();
   };
@@ -456,10 +461,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotation: LivewireContourAnnotation,
     enabledElement: Types.IEnabledElement,
     changeType = ChangeTypes.StatsUpdated,
-    postProcessingEnabled = false
+    contourProcessingEnabled = false
   ): void => {
     if (changeType === ChangeTypes.Completed) {
-      triggerContourAnnotationCompleted(annotation, postProcessingEnabled);
+      triggerContourAnnotationCompleted(annotation, contourProcessingEnabled);
     } else {
       triggerAnnotationModified(
         annotation,

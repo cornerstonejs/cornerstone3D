@@ -11,7 +11,7 @@ export default function touchDrag(evt: TouchDragEventType) {
     return;
   }
 
-  const activeTool = getActiveToolForTouchEvent(evt);
+  const { toolInstance: activeTool } = getActiveToolForTouchEvent(evt);
 
   const noFoundToolOrDoesNotHaveTouchDragCallback =
     !activeTool || typeof activeTool.touchDragCallback !== 'function';

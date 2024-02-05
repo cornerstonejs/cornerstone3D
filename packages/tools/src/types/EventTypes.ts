@@ -219,7 +219,7 @@ type AnnotationInterpolationRemovedEventDetail = {
  * completed drawing on the viewport.
  */
 type ContourAnnotationCompletedEventDetail = AnnotationCompletedEventDetail & {
-  postProcessingEnabled: boolean;
+  contourProcessingEnabled: boolean;
 };
 
 /**

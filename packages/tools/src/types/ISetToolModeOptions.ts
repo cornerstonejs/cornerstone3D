@@ -12,6 +12,8 @@ type IToolBinding = {
   modifierKey?: ToolBindingKeyboardType;
   /** Number of touch points */
   numTouchPoints?: number;
+  /** Binding data that is shaed to the tool when its called */
+  data?: Record<string, unknown>;
 };
 
 type SetToolBindingsType = {

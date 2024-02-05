@@ -18,7 +18,8 @@ export default function mouseDownActivate(
     return;
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt);
+  const { toolInstance: activeTool, toolBinding } =
+    getActiveToolForMouseEvent(evt);
 
   if (!activeTool) {
     return;
@@ -29,7 +30,7 @@ export default function mouseDownActivate(
   }
 
   if (activeTool.addNewAnnotation) {
-    const annotation = activeTool.addNewAnnotation(evt, 'mouse');
+    const annotation = activeTool.addNewAnnotation(evt, 'mouse', toolBinding);
     setAnnotationSelected(annotation.annotationUID);
   }
 }

@@ -13,7 +13,7 @@ export default function mouseDrag(evt: MouseDragEventType) {
     return;
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt);
+  const { toolInstance: activeTool } = getActiveToolForMouseEvent(evt);
 
   const noFoundToolOrDoesNotHaveMouseDragCallback =
     !activeTool || typeof activeTool.mouseDragCallback !== 'function';
