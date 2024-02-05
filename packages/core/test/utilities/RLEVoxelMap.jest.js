@@ -20,7 +20,7 @@ describe('RLEVoxelMap', () => {
     for (let i = index; i < endIndex; i++) {
       rleMap.set(i, 1);
     }
-    const run = rleMap.getRun(2, 2)?.run;
+    const run = rleMap.getRun(2, 2);
     expect(run).not.toBeUndefined();
     expect(run.value).toBe(1);
     expect(run.i).toBe(4);

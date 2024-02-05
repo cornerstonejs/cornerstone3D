@@ -7,63 +7,36 @@ export type RLERun<T> = {
   run: RLERun<T>;
 };
 
-export type RLERow<T> = {
-  run: RLERun<T>;
-  j: number;
-};
-
-export type RLEPlane<T> = {
-  rows: Map<number, RLERow<T>>;
-  k: number;
-};
-
 /**
- * RLE based run of values
+ * RLE based implementation of a voxel map.
+ * This can be used as single or multi-plane, as the underlying indexes are
+ * mapped to rows and hte rows are indexed started at 0 and continuing
+ * incrementing for all rows in the multi-plane voxel.
  */
 export default class RLEVoxelMap<T> {
-  protected planes = new Map<number, RLEPlane<T>>();
+  protected rows = new Map<number, RLERun<T>>();
   protected height = 1;
   protected width = 1;
   protected depth = 1;
-  protected jMultiple;
-  protected kMultiple;
+  protected jMultiple = 1;
+  protected kMultiple = 1;
 
-  constructor(width: number, height: number, depth: number) {
+  constructor(width: number, height: number, depth = 1) {
     this.width = width;
     this.height = height;
     this.depth = depth;
     this.jMultiple = width;
-    this.kMultiple = width * height;
-  }
-
-  /**
-   * Returns an RLE run containing the start/end and the next sequence.
-   *
-   * @param k - index (eg the plane)
-   * @param j - index (eg the row)
-   */
-  public getRun(k: number, j: number): RLERow<T> {
-    const plane = this.planes.get(k);
-    if (!plane) {
-      return;
-    }
-    const row = plane.rows.get(j);
-    return row;
+    this.kMultiple = this.jMultiple * height;
   }
 
   public get = (index): T => {
-    const k = Math.floor(index / this.kMultiple);
-    const plane = this.planes.get(k);
-    if (!plane) {
-      return;
-    }
     const i = index % this.jMultiple;
-    const j = (index - k * this.kMultiple - i) / this.jMultiple;
-    const row = plane.rows.get(j);
+    const j = (index - i) / this.jMultiple;
+    const row = this.rows.get(j);
     if (!row) {
       return;
     }
-    for (let run = row.run; run; run = run.run) {
+    for (let run = row; run; run = run.run) {
       if (i >= run.i && i < run.iEnd) {
         return run.value;
       }
@@ -71,52 +44,39 @@ export default class RLEVoxelMap<T> {
     return;
   };
 
+  public getRun = (j: number, k: number) => {
+    const runIndex = j + k * this.height;
+    return this.rows.get(runIndex);
+  };
+
   public set = (index, value: T) => {
-    const k = Math.floor(index / this.kMultiple);
-    let plane = this.planes.get(k);
     const isDefault = !value;
-    if (!plane) {
-      if (isDefault) {
-        return;
-      }
-      plane = {
-        rows: new Map(),
-        k,
-      };
-      this.planes.set(k, plane);
-    }
     const i = index % this.jMultiple;
-    const j = (index - k * this.kMultiple - i) / this.jMultiple;
-    let row = plane.rows.get(j);
+    const j = (index - i) / this.jMultiple;
+    const row = this.rows.get(j);
+    const newRun = {
+      run: null,
+      i,
+      iEnd: i + 1,
+      value,
+    };
     if (!row) {
-      row = {
-        run: null,
-        j,
-      };
-      plane.rows.set(j, row);
-    }
-    if (!row.run) {
       if (isDefault) {
         return;
       }
-      row.run = {
-        value,
-        i,
-        iEnd: i + 1,
-        run: null,
-      };
+      this.rows.set(j, newRun);
       return;
     }
-    let lastRun = row as unknown as RLERun<T>;
-    for (let run = row.run; run; run = run.run) {
+    let lastRun;
+    for (let run = row; run; run = run.run) {
       if (i < run.i) {
         if (!isDefault) {
-          lastRun.run = {
-            run,
-            i,
-            iEnd: i + 1,
-            value,
-          };
+          newRun.run = run;
+          if (lastRun) {
+            lastRun.run = newRun;
+          } else {
+            this.rows.set(j, newRun);
+          }
         }
         return;
       }
@@ -131,7 +91,7 @@ export default class RLEVoxelMap<T> {
           value,
         };
         run.iEnd = i;
-        this.optimizeRow(row);
+        this.optimizeRow(row, j);
         return;
       }
       lastRun = run;
@@ -139,19 +99,16 @@ export default class RLEVoxelMap<T> {
     if (isDefault) {
       return;
     }
-    lastRun.run = {
-      run: null,
-      i,
-      iEnd: i + 1,
-      value,
-    };
-    this.optimizeRow(row);
+    lastRun.run = newRun;
+    this.optimizeRow(row, j);
   };
 
-  protected optimizeRow(row: RLERow<T>) {
-    let { run } = row;
+  protected optimizeRow(row: RLERun<T>, j: number) {
+    let run = row;
+    const firstRow = { run, i: -Infinity, iEnd: -Infinity, value: null };
+    let lastRun = firstRow;
+
     // Cast this through unknown so that we can pretend it is a run
-    let lastRun = row as unknown as RLERun<T>;
     while (run) {
       if (!run.value) {
         // Delete the run since it isn't needed
@@ -179,10 +136,15 @@ export default class RLEVoxelMap<T> {
       lastRun = run;
       run = run.run;
     }
+    if (!firstRow.run) {
+      this.rows.delete(j);
+    } else {
+      this.rows.set(j, firstRow.run);
+    }
   }
 
   public clear() {
-    this.planes.clear();
+    this.rows.clear();
   }
 
   public keys(): number[] {
