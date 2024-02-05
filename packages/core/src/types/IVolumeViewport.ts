@@ -169,14 +169,4 @@ export default interface IVolumeViewport extends IViewport {
   getImageData(volumeId?: string): IImageData | undefined;
 
   setOrientation(orientation: OrientationAxis): void;
-
-  getSlicesClippingPlanes(): Array<{
-    sliceIndex: number;
-    planes: Array<{
-      normal: Point3;
-      origin: Point3;
-    }>;
-  }>;
-
-  getSlicePlaneCoordinates(): Point3[];
 }

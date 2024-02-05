@@ -1004,6 +1004,9 @@ function getUnknownVolumeLoaderSchema(): string;
 function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
 
 // @public (undocumented)
+function getViewportImageIds(viewport: IViewport): string[];
+
+// @public (undocumented)
 function getViewportModality(viewport: IViewport, volumeId?: string): string;
 
 // @public (undocumented)
@@ -3352,7 +3355,8 @@ declare namespace utilities {
         convertVolumeToStackViewport,
         cacheUtils,
         roundNumber,
-        roundToPrecision
+        roundToPrecision,
+        getViewportImageIds
     }
 }
 export { utilities }
@@ -3905,13 +3909,28 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
+    getSliceIndex: () => number;
+    // (undocumented)
+    getSlicePlaneCoordinates: () => Array<{
+        sliceIndex: number;
+        point: Point3;
+    }>;
+    // (undocumented)
+    getSlicesClippingPlanes(): Array<{
+        sliceIndex: number;
+        planes: Array<{
+            normal: Point3;
+            origin: Point3;
+        }>;
+    }>;
+    // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
-    setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
+    setOrientation(orientation: OrientationAxis | OrientationVectors, immediate?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
