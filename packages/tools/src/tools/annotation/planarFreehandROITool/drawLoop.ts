@@ -12,7 +12,7 @@ import {
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
+import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
@@ -42,6 +42,7 @@ function activateDraw(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
+  const postProcessingEnabled = !!evt.detail.event.shiftKey;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
@@ -51,6 +52,7 @@ function activateDraw(
   this.drawData = {
     canvasPoints: [canvasPos],
     polylineIndex: 0,
+    postProcessingEnabled,
   };
 
   this.commonData = {
@@ -172,7 +174,7 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints } = this.drawData;
+  const { canvasPoints, postProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
@@ -186,16 +188,19 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element);
+    this.completeDrawOpenContour(element, postProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element);
+    this.completeDrawClosedContour(element, postProcessingEnabled);
   }
 }
 
 /**
  * Completes the contour being drawn, creating a closed contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawClosedContour(element: HTMLDivElement): boolean {
+function completeDrawClosedContour(
+  element: HTMLDivElement,
+  postProcessingEnabled: boolean
+): boolean {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
 
@@ -242,7 +247,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    triggerAnnotationCompleted(annotation);
+    triggerContourAnnotationCompleted(annotation, postProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -284,7 +289,10 @@ function removeCrossedLinesOnCompleteDraw(): void {
 /**
  * Completes the contour being drawn, creating an open contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawOpenContour(element: HTMLDivElement): boolean {
+function completeDrawOpenContour(
+  element: HTMLDivElement,
+  postProcessingEnabled: boolean
+): boolean {
   const { canvasPoints } = this.drawData;
 
   // check and halt if necessary the drawing process, last chance to complete drawing and fire events.
@@ -330,7 +338,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   }
 
   if (!textBox.hasMoved) {
-    triggerAnnotationCompleted(annotation);
+    triggerContourAnnotationCompleted(annotation, postProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -415,7 +423,7 @@ function applyCreateOnCross(
  */
 function cancelDrawing(element: HTMLElement) {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints } = this.drawData;
+  const { canvasPoints, postProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
 
@@ -427,9 +435,9 @@ function cancelDrawing(element: HTMLElement) {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element);
+    this.completeDrawOpenContour(element, postProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element);
+    this.completeDrawClosedContour(element, postProcessingEnabled);
   }
 }
 
