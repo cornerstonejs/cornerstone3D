@@ -1,4 +1,5 @@
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import type { Types } from '@cornerstonejs/tools';
 
 const {
   LengthTool,
@@ -22,7 +23,24 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
  * * Stack Scroll on Mouse Wheel, Primary+Alt
  * * Length Tool on fourth button
  */
-export default function addManipulationBindings(toolGroup, register = true) {
+export default function addManipulationBindings(
+  toolGroup,
+  register = true,
+  options?
+) {
+  const zoomBindings: Types.IToolBinding[] = [
+    {
+      mouseButton: MouseBindings.Secondary,
+    },
+  ];
+
+  if (options?.disableShiftClickZoom !== true) {
+    zoomBindings.push({
+      mouseButton: MouseBindings.Primary, // Shift Left Click
+      modifierKey: KeyboardBindings.Shift,
+    });
+  }
+
   if (register) {
     cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -50,15 +68,7 @@ export default function addManipulationBindings(toolGroup, register = true) {
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
+    bindings: zoomBindings,
   });
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [

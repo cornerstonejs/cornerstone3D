@@ -29,6 +29,8 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
@@ -205,13 +207,17 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
+    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary, // Left Click
+        },
+        {
+          mouseButton: MouseBindings.Primary, // Left Click+Shift
+          modifierKey: KeyboardBindings.Shift,
         },
       ],
     });
@@ -323,7 +329,7 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  addManipulationBindings(toolGroup, true, { disableShiftClickZoom: true });
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
@@ -365,6 +371,10 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click+Shift
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });
