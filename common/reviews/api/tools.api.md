@@ -54,6 +54,9 @@ function addColorLUT(colorLUT: Types_2.ColorLUT, index: number): void;
 function addColorLUT_2(colorLUT: Types_2.ColorLUT, colorLUTIndex: number): void;
 
 // @public (undocumented)
+function addContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
+
+// @public (undocumented)
 function addRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
 
 // @public (undocumented)
@@ -542,6 +545,9 @@ type AnnotationVisibilityChangeEventType = Types_2.CustomEventType<AnnotationVis
 function areCoplanarContours(firstAnnotation: ContourAnnotation, secondAnnotation: ContourAnnotation): boolean;
 
 // @public (undocumented)
+function areSameSegment(firstAnnotation: ContourSegmentationAnnotation, secondAnnotation: ContourSegmentationAnnotation): boolean;
+
+// @public (undocumented)
 export class ArrowAnnotateTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -895,6 +901,20 @@ enum ChangeTypes {
     InterpolationUpdated = "InterpolationUpdated",
     // (undocumented)
     StatsUpdated = "StatsUpdated"
+}
+
+// @public (undocumented)
+enum ChangeTypes_2 {
+    // (undocumented)
+    DISPLAY_TOOL_CLIP_SURFACE = "displayTool/clipSurface",
+    // (undocumented)
+    POLYSEG_CONTOUR_TO_LABELMAP = "polySeg/convertContourToVolumeLabelmap",
+    // (undocumented)
+    POLYSEG_CONTOUR_TO_SURFACE = "polySeg/convertContourToSurface",
+    // (undocumented)
+    POLYSEG_LABELMAP_TO_SURFACE = "polySeg/convertLabelmapToSurface",
+    // (undocumented)
+    POLYSEG_SURFACE_TO_LABELMAP = "polySeg/convertSurfacesToVolumeLabelmap"
 }
 
 // @public (undocumented)
@@ -1399,6 +1419,15 @@ declare namespace contours {
     }
 }
 
+declare namespace contourSegmentation {
+    export {
+        areSameSegment,
+        isContourSegmentationAnnotation,
+        addContourSegmentationAnnotation,
+        removeContourSegmentationAnnotation
+    }
+}
+
 // @public (undocumented)
 type ContourSegmentationAnnotation = ContourAnnotation & ContourSegmentationAnnotationData;
 
@@ -1409,7 +1438,6 @@ type ContourSegmentationAnnotationData = {
         segmentation: {
             segmentationId: string;
             segmentIndex: number;
-            segmentationRepresentationUID: string;
         };
         contour: {
             originalPolyline?: Types_2.Point3[];
@@ -1941,7 +1969,8 @@ declare namespace Enums {
         SegmentationRepresentations,
         Swipe,
         StrategyCallbacks,
-        ChangeTypes
+        ChangeTypes,
+        ChangeTypes_2 as WorkerTypes
     }
 }
 export { Enums }
@@ -1994,8 +2023,6 @@ enum Events {
     MOUSE_UP = "CORNERSTONE_TOOLS_MOUSE_UP",
     // (undocumented)
     MOUSE_WHEEL = "CORNERSTONE_TOOLS_MOUSE_WHEEL",
-    // (undocumented)
-    POLYSEG_CONVERSION = "CORNERSTONE_TOOLS_POLYSEG_CONVERSION",
     // (undocumented)
     SEGMENTATION_DATA_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED",
     // (undocumented)
@@ -2655,6 +2682,9 @@ function isAxisAlignedRectangle(rectangleCornersIJK: any): boolean;
 
 // @public (undocumented)
 function isClosed(polyline: Types_2.Point2[]): boolean;
+
+// @public (undocumented)
+function isContourSegmentationAnnotation(annotation: Annotation): annotation is ContourSegmentationAnnotation;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3598,8 +3628,6 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
     // (undocumented)
-    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
-    // (undocumented)
     static toolName: any;
 }
 
@@ -4271,6 +4299,9 @@ function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
+
+// @public (undocumented)
+function removeContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
 
 // @public (undocumented)
 function removeSegmentation(segmentationId: string): void;
@@ -5409,6 +5440,9 @@ export class TrackballRotateTool extends BaseTool {
 function triggerAnnotationRender(element: HTMLDivElement): void;
 
 // @public (undocumented)
+function triggerAnnotationRenderForToolGroupIds(toolGroupIds: string[]): void;
+
+// @public (undocumented)
 function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
 // @public (undocumented)
@@ -5641,6 +5675,7 @@ declare namespace utilities {
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,
+        triggerAnnotationRenderForToolGroupIds,
         triggerAnnotationRender,
         pointInShapeCallback,
         getSphereBoundsInfo,
@@ -5662,7 +5697,8 @@ declare namespace utilities {
         pointToString,
         polyDataUtils,
         voi,
-        AnnotationFrameRange as annotationFrameRange
+        AnnotationFrameRange as annotationFrameRange,
+        contourSegmentation
     }
 }
 export { utilities }

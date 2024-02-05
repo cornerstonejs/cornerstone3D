@@ -12,6 +12,7 @@ export function registerPolySegWorker() {
   const workerFn = () => {
     // @ts-ignore
     return new Worker(
+      // @ts-ignore
       new URL('../../../workers/polySegConverters', import.meta.url),
       {
         name: 'polySeg',

@@ -215,8 +215,12 @@ async function generateAndCacheClippedSurfaces(
 
   // All planes is an array of planes pairs for each slice, so we should loop over them and
   // add the planes to the clipping filter and cache the results for that slice
+
+  // Fix these ts ignores
+  // @ts-ignore
   const planesInfo = viewport.getSlicesClippingPlanes?.();
 
+  // @ts-ignore
   const currentSliceIndex = viewport.getSliceIndex();
 
   // Reorder planesInfo based on proximity to currentSliceIndex

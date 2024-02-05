@@ -114,6 +114,7 @@ function addOrUpdateSurfaceToElement(
           clippingFilter,
           uid: actorUID,
         },
+        // @ts-ignore
         vtkPlanes: viewport.getClippingPlanesForActor?.(),
         viewport,
       },

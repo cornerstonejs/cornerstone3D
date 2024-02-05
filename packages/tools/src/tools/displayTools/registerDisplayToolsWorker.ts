@@ -12,6 +12,7 @@ export function registerDisplayToolsWorker() {
   const workerFn = () => {
     // @ts-ignore
     return new Worker(
+      // @ts-ignore
       new URL('../../workers/clippingPlaneWorker', import.meta.url),
       {
         name: 'displayTools',
