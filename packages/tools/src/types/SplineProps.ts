@@ -10,6 +10,9 @@ export type SplineProps = {
    */
   resolution?: number;
 
+  /** Fixed resolution (Linear spline) */
+  fixedResolution?: boolean;
+
   /** Flag that is set to true when the curve is closed */
   closed?: boolean;
 };
