@@ -295,7 +295,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   ]);
 
   // Add the segmentation representation to the toolgroup
-  const [contourSegRepUID] = await segmentation.addSegmentationRepresentations(
+  await segmentation.addSegmentationRepresentations(
     volumeSegContourToolGroupId,
     [
       {
@@ -308,11 +308,15 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
     viewport: renderingEngine.getViewport(viewportId4),
-    segmentationRepresentationUID: contourSegRepUID,
     contours: [
       {
         segmentIndex: 1,
-        radius: 10,
+        radius: 75,
+      },
+      {
+        segmentIndex: 2,
+        radius: 75,
+        centerOffset: [0, -150],
       },
     ],
   });
@@ -381,4 +385,21 @@ async function _handleStackViewports(stackImageIds: string[]) {
       },
     ]
   );
+
+  addMockContourSegmentation({
+    segmentationId: stackSegContourId,
+    viewport: renderingEngine.getViewport(viewportId3),
+    contours: [
+      {
+        segmentIndex: 1,
+        radius: 50,
+        centerOffset: [50, 0],
+      },
+      {
+        segmentIndex: 2,
+        radius: 50,
+        centerOffset: [-50, 0],
+      },
+    ],
+  });
 }
