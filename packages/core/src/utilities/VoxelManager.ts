@@ -1,4 +1,4 @@
-import type { BoundsIJK, Point3, PixelDataTypedArray } from '../types';
+import type { BoundsIJK, Point3, PixelDataTypedArray, IImage } from '../types';
 import RLEVoxelMap from './RLEVoxelMap';
 
 /**
@@ -349,6 +349,27 @@ export default class VoxelManager<T> {
     );
     voxelManager.map = map;
     return voxelManager;
+  }
+
+  /**
+   * This method adds a voxelManager instance to the image or volume object
+   * where the object added is of type:
+   * 1. RLE map if the scalar data is missing
+   * 2. Volume map for the imageId scalarData
+   */
+  public static addInstanceToImage(image: IImage) {
+    const { width, height } = image;
+    const scalarData = image.getPixelData();
+    if (scalarData.length >= width * height) {
+      image.voxelManager = VoxelManager.createVolumeVoxelManager(
+        [width, height, 1],
+        scalarData
+      );
+      return;
+    }
+    image.voxelManager = VoxelManager.createRLEVoxelManager([width, height, 1]);
+    // Some return value which can be used as the cache size.
+    return 1024;
   }
 }
 

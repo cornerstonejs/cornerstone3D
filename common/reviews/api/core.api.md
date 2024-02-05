@@ -591,7 +591,7 @@ type CPUImageData = {
 function createAndCacheDerivedImage(referencedImageId: string, options?: DerivedImageOptions, preventCache?: boolean): Promise<IImage>;
 
 // @public (undocumented)
-function createAndCacheDerivedImages(referencedImageIds: Array<string>, options?: {
+function createAndCacheDerivedImages(referencedImageIds: Array<string>, options?: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
     targetBufferType?: PixelDataTypedArrayString;
 }): DerivedImages;
@@ -1362,6 +1362,8 @@ interface IImage {
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
     voiLUTFunction: string;
+    // (undocumented)
+    voxelManager?: VoxelManager<number>;
     // (undocumented)
     width: number;
     // (undocumented)
@@ -3924,6 +3926,8 @@ class VoxelManager<T> {
     constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean | void);
     // (undocumented)
     static addBounds(bounds: BoundsIJK, point: Point3): void;
+    // (undocumented)
+    static addInstanceToImage(image: IImage): number;
     // (undocumented)
     addPoint(point: Point3 | number): void;
     // (undocumented)

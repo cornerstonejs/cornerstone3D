@@ -32,6 +32,23 @@ describe('RLEVoxelMap', () => {
     expect(rleMap.getRun(2, 1)).toBeUndefined();
   });
 
+  it('allowsMultipleValues', () => {
+    const j = 16;
+    const baseIndex = voxelMap.toIndex([0, j, 0]);
+    for (let i = 16; i <= 32; i++) {
+      const value = (Math.floor((i - 16) / 2) % 2) + 1;
+      rleMap.set(i + baseIndex, value);
+    }
+    const run = rleMap.getRun(j, 0);
+    expect(run.value).toBe(1);
+    expect(run.i).toBe(16);
+    expect(run.iEnd).toBe(18);
+    const run2 = run.run;
+    expect(run2.value).toBe(2);
+    expect(run2.i).toBe(18);
+    expect(run2.iEnd).toBe(20);
+  });
+
   describe('RLEVoxelManager', () => {
     it('sets', () => {
       const map = VoxelManager.createRLEVoxelManager(size);

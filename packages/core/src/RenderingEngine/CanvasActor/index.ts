@@ -79,6 +79,76 @@ export default class CanvasActor implements ICanvasActor {
     this.viewport = viewport;
   }
 
+  /**
+   * Renders an RLE representation of the viewport data.  This is optimized to
+   * use avoid iteration where possible.
+   */
+  protected renderRLE(viewport, context, voxelManager) {
+    const { width, height } = this.image;
+    let { canvas } = this;
+    if (!canvas || canvas.width !== width || canvas.height !== height) {
+      this.canvas = canvas = new window.OffscreenCanvas(width, height);
+    }
+    const localContext = canvas.getContext('2d');
+    const imageData = localContext.createImageData(width, height);
+    const { data: imageArray } = imageData;
+    imageArray.fill(0);
+    const { map } = voxelManager;
+    let dirtyX = Infinity;
+    let dirtyY = Infinity;
+    let dirtyX2 = -Infinity;
+    let dirtyY2 = -Infinity;
+    for (let y = 0; y < height; y++) {
+      let run = map.getRun(y, 0);
+      if (!run) {
+        continue;
+      }
+      dirtyY = Math.min(dirtyY, y);
+      dirtyY2 = Math.max(dirtyY2, y);
+      const baseOffset = y * width * 4;
+      for (; run; run = run.run) {
+        const { i: iStart, iEnd, value } = run;
+        dirtyX = Math.min(dirtyX, iStart);
+        dirtyX2 = Math.max(dirtyX2, iEnd);
+        const rgb = this.canvasProperties.getColor(value).map((v) => v * 255);
+        let startOffset = baseOffset + run.i * 4;
+
+        for (let i = iStart; i < iEnd; i++) {
+          imageArray[startOffset++] = rgb[0];
+          imageArray[startOffset++] = rgb[1];
+          imageArray[startOffset++] = rgb[2];
+          imageArray[startOffset++] = rgb[3];
+        }
+      }
+    }
+
+    if (dirtyX > width) {
+      return;
+    }
+    const dirtyWidth = dirtyX2 - dirtyX;
+    const dirtyHeight = dirtyY2 - dirtyY;
+    localContext.putImageData(
+      imageData,
+      0,
+      0,
+      dirtyX,
+      dirtyY,
+      dirtyWidth,
+      dirtyHeight
+    );
+    context.drawImage(
+      canvas,
+      dirtyX,
+      dirtyY,
+      dirtyWidth,
+      dirtyHeight,
+      dirtyX,
+      dirtyY,
+      dirtyWidth,
+      dirtyHeight
+    );
+  }
+
   public render(viewport: IViewport, context: CanvasRenderingContext2D): void {
     if (!this.visibility) {
       return;
@@ -90,6 +160,12 @@ export default class CanvasActor implements ICanvasActor {
     const data = image.getScalarData();
     if (!data) {
       return;
+    }
+    const { voxelManager } = image;
+    if (voxelManager) {
+      if (voxelManager.map.getRun) {
+        return this.renderRLE(viewport, context, voxelManager);
+      }
     }
     let { canvas } = this;
     if (!canvas || canvas.width !== width || canvas.height !== height) {

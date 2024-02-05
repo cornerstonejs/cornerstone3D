@@ -31,6 +31,16 @@ export interface ImageLoaderOptions {
 interface DerivedImageOptions {
   imageId?: string;
   targetBufferType?: PixelDataTypedArrayString;
+  /**
+   * Avoid creating the actual buffer object.
+   * This can be used to create a lazy response object.
+   */
+  noCreateBuffer?: boolean;
+  /**
+   * Updates the copy of the value which is cached.  May return a number
+   * which can be used as the cache size.
+   */
+  updateCacheInstance?: (image: IImage) => number | void;
 }
 
 interface DerivedImages {
@@ -248,6 +258,8 @@ export function createAndCacheDerivedImage(
     options.imageId = `derived:${uuidv4()}`;
   }
 
+  const { imageId, noCreateBuffer } = options;
+
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
@@ -257,8 +269,11 @@ export function createAndCacheDerivedImage(
     length
   );
 
-  const imageScalarData = new TypedArrayConstructor(length);
-  const derivedImageId = options.imageId;
+  // Use a buffer of size 1 for no data
+  const imageScalarData = new TypedArrayConstructor(
+    noCreateBuffer ? 1 : length
+  );
+  const derivedImageId = imageId;
 
   ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
     (type) => {
@@ -271,9 +286,11 @@ export function createAndCacheDerivedImage(
 
   const localImage = createAndCacheLocalImage(
     { scalarData: imageScalarData },
-    options.imageId,
+    imageId,
     true
   );
+  // Add other options to use
+  options.updateCacheInstance?.(localImage);
 
   const imageLoadObject = {
     promise: Promise.resolve(localImage),
@@ -292,10 +309,11 @@ export function createAndCacheDerivedImage(
  * @param options
  * @param options.getDerivedImageId - function to get the derived imageId
  * @param options.targetBufferType - target buffer type
+ * @param options.skipBufferCreate - avoid creating the buffer
  */
 export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
-  options: {
+  options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
     targetBufferType?: PixelDataTypedArrayString;
   } = {}
@@ -309,9 +327,8 @@ export function createAndCacheDerivedImages(
   const derivedImageIds = [];
   const allPromises = referencedImageIds.map((referencedImageId) => {
     const newOptions: DerivedImageOptions = {
-      imageId: options.getDerivedImageId
-        ? options.getDerivedImageId(referencedImageId)
-        : `derived:${uuidv4()}`,
+      imageId:
+        options.getDerivedImageId?.(referencedImageId) || `derived:${uuidv4()}`,
       ...options,
     };
     derivedImageIds.push(newOptions.imageId);

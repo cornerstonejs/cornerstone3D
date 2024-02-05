@@ -1,4 +1,9 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  imageLoader,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -354,9 +359,13 @@ async function run() {
 
   await viewport.setVideo(videoId);
   addVideoTime(viewportGrid, viewport);
-  const allImageIds = viewport.getImageIds().slice(0, 60);
+  // We need the map on all image ids
+  const allImageIds = viewport.getImageIds();
   const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(allImageIds);
+    await imageLoader.createAndCacheDerivedImages(allImageIds, {
+      noCreateBuffer: true,
+      updateCacheInstance: csUtils.VoxelManager.addInstanceToImage,
+    });
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,

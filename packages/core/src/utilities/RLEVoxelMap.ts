@@ -44,7 +44,10 @@ export default class RLEVoxelMap<T> {
     return;
   };
 
-  public getRun = (j: number, k: number) => {
+  /**
+   * Gets the run for the given j,k indices.  This is mostly used for unit tests
+   */
+  protected getRun = (j: number, k: number) => {
     const runIndex = j + k * this.height;
     return this.rows.get(runIndex);
   };
