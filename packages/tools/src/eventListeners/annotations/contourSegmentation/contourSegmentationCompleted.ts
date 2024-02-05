@@ -14,6 +14,8 @@ import {
   getAnnotations,
   addAnnotation,
   removeAnnotation,
+  getChildAnnotations,
+  addChildAnnotation,
 } from '../../../stateManagement/annotation/annotationState';
 import { AnnotationCompletedEventType } from '../../../types/EventTypes';
 import * as contourUtils from '../../../utilities/contours';
@@ -196,33 +198,40 @@ function createPolylineHole(
     holeAnnotation.data.contour.windingDirection = targetWindingDirection * -1;
   }
 
-  targetAnnotation.childAnnotationUIDs =
-    targetAnnotation.childAnnotationUIDs || [];
-
-  // Link both annotations
-  targetAnnotation.childAnnotationUIDs.push(holeAnnotation.annotationUID);
-  holeAnnotation.parentAnnotationUID = targetAnnotation.annotationUID;
-
-  // ---------------------------------------------------------------------------
+  addChildAnnotation(targetAnnotation, holeAnnotation);
 
   const { element } = viewport;
   const enabledElement = getEnabledElement(element);
   const { renderingEngine } = enabledElement;
 
   // Updating a Spline contours, for example, should also update freehand contours
-  const updatedTtoolNames = new Set([
+  const updatedToolNames = new Set([
     DEFAULT_CONTOUR_SEG_TOOLNAME,
     targetAnnotation.metadata.toolName,
     holeAnnotation.metadata.toolName,
   ]);
 
-  for (const toolName of updatedTtoolNames.values()) {
+  for (const toolName of updatedToolNames.values()) {
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       toolName
     );
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   }
+}
+
+function getContourHolesData(
+  viewport: Types.IViewport,
+  annotation: ContourAnnotation
+) {
+  return getChildAnnotations(annotation).map((holeAnnotation) => {
+    const polyline = convertContourPolylineToCanvasSpace(
+      holeAnnotation.data.contour.polyline,
+      viewport
+    );
+
+    return { annotation: holeAnnotation, polyline };
+  });
 }
 
 function combinePolylines(
@@ -238,6 +247,20 @@ function combinePolylines(
     sourceStartPoint
   );
 
+  const contourHolesData = getContourHolesData(viewport, targetAnnotation);
+  const unassignedContourHolesSet = new Set(contourHolesData);
+  const reassignedContourHolesMap = new Map();
+  const assignHoleToPolyline = (parentPolyline, holeData) => {
+    let holes = reassignedContourHolesMap.get(parentPolyline);
+
+    if (!holes) {
+      holes = [];
+      reassignedContourHolesMap.set(parentPolyline, holes);
+    }
+
+    holes.push(holeData);
+    unassignedContourHolesSet.delete(holeData);
+  };
   const newPolylines = [];
 
   if (mergePolylines) {
@@ -247,19 +270,33 @@ function combinePolylines(
     );
 
     newPolylines.push(mergedPolyline);
+
+    // Keep all holes because the contour can only grow when merging
+    Array.from(unassignedContourHolesSet.keys()).forEach((holeData) =>
+      assignHoleToPolyline(mergedPolyline, holeData)
+    );
   } else {
     const subtractedPolylines = math.polyline.subtractPolylines(
       targetPolyline,
       sourcePolyline
     );
 
-    subtractedPolylines.forEach((newPolyline) =>
-      newPolylines.push(newPolyline)
-    );
-  }
+    subtractedPolylines.forEach((newPolyline) => {
+      newPolylines.push(newPolyline);
 
-  removeAnnotation(sourceAnnotation.annotationUID);
-  removeAnnotation(targetAnnotation.annotationUID);
+      Array.from(unassignedContourHolesSet.keys()).forEach((holeData) => {
+        const containsHole = math.polyline.containsPoints(
+          newPolyline,
+          holeData.polyline
+        );
+
+        if (containsHole) {
+          assignHoleToPolyline(newPolyline, holeData);
+          unassignedContourHolesSet.delete(holeData);
+        }
+      });
+    });
+  }
 
   const { element } = viewport;
   const enabledElement = getEnabledElement(element);
@@ -298,6 +335,8 @@ function combinePolylines(
       isVisible: undefined,
     };
 
+    // Calling `updateContourPolyline` method instead of setting it locally
+    // because it is also responsible for checking/setting the winding direction.
     contourUtils.updateContourPolyline(
       newAnnotation,
       {
@@ -308,6 +347,12 @@ function combinePolylines(
       viewport
     );
     addAnnotation(newAnnotation, element);
+
+    reassignedContourHolesMap
+      .get(polyline)
+      ?.forEach((holeData) =>
+        addChildAnnotation(newAnnotation, holeData.annotation)
+      );
 
     // Updating a Spline contours, for example, should also update freehand contours
     const updatedTtoolNames = new Set([
@@ -327,4 +372,7 @@ function combinePolylines(
       );
     }
   }
+
+  removeAnnotation(sourceAnnotation.annotationUID);
+  removeAnnotation(targetAnnotation.annotationUID);
 }

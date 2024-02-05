@@ -59,6 +59,43 @@ function getAnnotations(
   return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
+function clearParentAnnotation(childAnnotation: Annotation) {
+  const { annotationUID: childUID, parentAnnotationUID } = childAnnotation;
+
+  if (!parentAnnotationUID) {
+    return;
+  }
+
+  const parentAnnotation = getAnnotation(parentAnnotationUID);
+  const childUIDIndex = parentAnnotation.childAnnotationUIDs.indexOf(childUID);
+
+  parentAnnotation.childAnnotationUIDs.splice(childUIDIndex, 1);
+  childAnnotation.parentAnnotationUID = undefined;
+}
+
+function addChildAnnotation(
+  parentAnnotation: Annotation,
+  childAnnotation: Annotation
+) {
+  const { annotationUID: parentUID } = parentAnnotation;
+  const { annotationUID: childUID } = childAnnotation;
+
+  // Make sure it is not associated with any other tool
+  clearParentAnnotation(childAnnotation);
+
+  if (!parentAnnotation.childAnnotationUIDs) {
+    parentAnnotation.childAnnotationUIDs = [];
+  }
+
+  // Check if it is already a child
+  if (parentAnnotation.childAnnotationUIDs.includes(childUID)) {
+    return;
+  }
+
+  parentAnnotation.childAnnotationUIDs.push(childUID);
+  childAnnotation.parentAnnotationUID = parentUID;
+}
+
 /**
  * Returns the parent annotation of a given one since annotations can be
  * associated in a parent/child way (eg: polyline holes)
@@ -220,6 +257,8 @@ export {
   getAnnotations,
   getParentAnnotation,
   getChildAnnotations,
+  clearParentAnnotation,
+  addChildAnnotation,
   getNumberOfAnnotations,
   addAnnotation,
   getAnnotation,
