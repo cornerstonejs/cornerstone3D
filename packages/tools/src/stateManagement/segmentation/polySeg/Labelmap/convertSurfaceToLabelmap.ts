@@ -1,4 +1,5 @@
 import {
+  Enums,
   Types,
   cache,
   eventTarget,
@@ -6,9 +7,16 @@ import {
   triggerEvent,
 } from '@cornerstonejs/core';
 import { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
-import { Events } from '../../../../enums';
+import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
+
+const triggerWorkerProgress = (eventTarget, progress) => {
+  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
+    progress,
+    type: WorkerTypes.POLYSEG_SURFACE_TO_LABELMAP,
+  });
+};
 
 export async function convertSurfaceToVolumeLabelmap(
   surfaceRepresentationData: SurfaceSegmentationData,
@@ -41,7 +49,7 @@ export async function convertSurfaceToVolumeLabelmap(
 
   const { dimensions, direction, origin, spacing } = segmentationVolume;
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+  triggerWorkerProgress(eventTarget, 0);
 
   const newScalarData = await workerManager.executeTask(
     'polySeg',
@@ -56,13 +64,13 @@ export async function convertSurfaceToVolumeLabelmap(
     {
       callbacks: [
         (progress) => {
-          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
+          triggerWorkerProgress(eventTarget, progress);
         },
       ],
     }
   );
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
+  triggerWorkerProgress(eventTarget, 100);
 
   segmentationVolume.imageData
     .getPointData()

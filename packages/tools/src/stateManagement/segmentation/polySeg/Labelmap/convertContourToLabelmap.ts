@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import {
   Types,
   cache,
@@ -16,10 +17,16 @@ import {
   PolySegConversionOptions,
 } from '../../../../types';
 import { getAnnotation } from '../../..';
-import { vec3 } from 'gl-matrix';
-import { Events } from '../../../../enums';
+import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
+
+const triggerWorkerProgress = (eventTarget, progress) => {
+  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
+    progress,
+    type: WorkerTypes.POLYSEG_CONTOUR_TO_LABELMAP,
+  });
+};
 
 export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ContourSegmentationData,
@@ -61,7 +68,7 @@ export async function convertContourToVolumeLabelmap(
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+  triggerWorkerProgress(eventTarget, 0);
 
   const newScalarData = await workerManager.executeTask(
     'polySeg',
@@ -78,13 +85,13 @@ export async function convertContourToVolumeLabelmap(
     {
       callbacks: [
         (progress) => {
-          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
+          triggerWorkerProgress(eventTarget, progress);
         },
       ],
     }
   );
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
+  triggerWorkerProgress(eventTarget, 100);
 
   segmentationVolume.imageData
     .getPointData()
@@ -201,7 +208,8 @@ export async function convertContourToStackLabelmap(
     });
   });
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+  triggerWorkerProgress(eventTarget, 0);
+
   const newSegmentationsScalarData = await workerManager.executeTask(
     'polySeg',
     'convertContourToStackLabelmap',
@@ -213,13 +221,13 @@ export async function convertContourToStackLabelmap(
     {
       callbacks: [
         (progress) => {
-          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
+          triggerWorkerProgress(eventTarget, progress);
         },
       ],
     }
   );
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
+  triggerWorkerProgress(eventTarget, 100);
 
   const imageIdReferenceMap = new Map();
   newSegmentationsScalarData.forEach(({ scalarData }, referencedImageId) => {

@@ -164,8 +164,6 @@ enum Events {
    */
   SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
 
-  POLYSEG_CONVERSION = 'CORNERSTONE_TOOLS_POLYSEG_CONVERSION',
-
   ///////////////////////////////////////
   //         Keyboard Events
   ///////////////////////////////////////

@@ -2,9 +2,6 @@ import {
   getEnabledElement,
   Enums,
   VolumeViewport3D,
-  VolumeViewport,
-  getWebWorkerManager,
-  utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -12,20 +9,21 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { pointToString } from '../../../utilities/pointToString';
-import { registerDisplayToolsWorker } from '../registerDisplayToolsWorker';
-
-const workerManager = getWebWorkerManager();
-
-const polyDataCache = new Map();
-const currentViewportNormal = new Map();
+import {
+  generateCacheId,
+  getOrCreatePolyData,
+  getSurfaceActorUID,
+} from './surfaceDisplay';
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
   surface: Types.ISurface,
   segmentationRepresentationUID: string
 ): void {
-  const actorUID = `${segmentationRepresentationUID}_${surface.id}}`;
+  const actorUID = getSurfaceActorUID(
+    segmentationRepresentationUID,
+    surface.id
+  );
 
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
@@ -147,120 +145,11 @@ function addOrUpdateSurfaceToElement(
     clippingFilter,
   });
 
-  if (viewport instanceof VolumeViewport) {
-    const { viewPlaneNormal } = viewport.getCamera();
-    currentViewportNormal.set(surface.id, structuredClone(viewPlaneNormal));
-    // if the viewport is not 3D means we should calculate
-    // the clipping planes for the surface and cache the results
-    newFunction(surface, viewport, actorUID);
-  }
-
   viewport.resetCamera();
 
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();
   }, 0);
-}
-
-function newFunction(
-  surface: Types.ISurface,
-  viewport: Types.IVolumeViewport,
-  actorUID: string
-) {
-  const id = surface.id;
-  const points = surface.getPoints();
-  const polys = surface.getPolys();
-  registerDisplayToolsWorker();
-  // All planes is an array of planes pairs for each slice, so we should loop over them and
-  // add the planes to the clipping filter and cache the results for that slice
-  const planesInfo = viewport.getSlicesClippingPlanes?.();
-
-  const currentSliceIndex = viewport.getSliceIndex();
-
-  // Reorder planesInfo based on proximity to currentSliceIndex
-  planesInfo.sort((a, b) => {
-    const diffA = Math.abs(a.sliceIndex - currentSliceIndex);
-    const diffB = Math.abs(b.sliceIndex - currentSliceIndex);
-    return diffA - diffB;
-  });
-
-  const camera = viewport.getCamera();
-
-  workerManager
-    .executeTask(
-      'displayTools',
-      'clipSurfaceWithPlanes',
-      {
-        planesInfo,
-        polyDataInfo: {
-          points,
-          polys,
-        },
-        id,
-      },
-      {
-        callbacks: [
-          // progress callback
-          (progress) => {},
-          // update cache callback
-          ({ points, lines, sliceIndex }) => {
-            const polyData = vtkPolyData.newInstance();
-            polyData.getPoints().setData(points, 3);
-
-            const linesArray = vtkCellArray.newInstance({
-              values: Int16Array.from(lines),
-            });
-            polyData.setLines(linesArray);
-
-            // cacheId is the sliceIndex
-            const cacheId = `${viewport.id}-${pointToString(
-              camera.viewPlaneNormal
-            )}-${sliceIndex}`;
-
-            let actorCache = polyDataCache.get(actorUID);
-            if (!actorCache) {
-              actorCache = new Map();
-              polyDataCache.set(actorUID, actorCache);
-            }
-            actorCache.set(cacheId, polyData);
-          },
-        ],
-      }
-    )
-    .catch((error) => {
-      console.error(error);
-    });
-
-  function cameraModifiedCallback(evt: Types.EventTypes.CameraModifiedEvent) {
-    const { camera } = evt.detail;
-    const { viewPlaneNormal } = camera;
-
-    if (utilities.isEqual(viewPlaneNormal, currentViewportNormal.get(id))) {
-      return;
-    }
-
-    currentViewportNormal.set(id, viewPlaneNormal);
-
-    workerManager.terminate('displayTools');
-
-    setTimeout(() => {
-      console.debug('camera modified identified, running again', surface.id);
-      newFunction(surface, viewport, actorUID);
-    }, 2000);
-    viewport.render();
-  }
-
-  // Remove the existing event listener
-  viewport.element.removeEventListener(
-    Enums.Events.CAMERA_MODIFIED,
-    cameraModifiedCallback as EventListener
-  );
-
-  // Add the event listener
-  viewport.element.addEventListener(
-    Enums.Events.CAMERA_MODIFIED,
-    cameraModifiedCallback as EventListener
-  );
 }
 
 /**
@@ -272,34 +161,10 @@ function updateSurfacePlanes(evt) {
     return;
   }
   const sliceIndex = viewport.getSliceIndex();
-
   const mapper = actorEntry.actor.getMapper();
   const { viewPlaneNormal } = viewport.getCamera();
-
-  // we should not use the focalPoint here, since the pan and zoom updates it,
-  // sliceIndex is reliable enough
-  const cacheId = `${viewport.id}-${pointToString(
-    viewPlaneNormal
-  )}-${sliceIndex}`;
-
-  let actorCache = polyDataCache.get(actorEntry.uid);
-  if (!actorCache) {
-    actorCache = new Map();
-    polyDataCache.set(actorEntry.uid, actorCache);
-  }
-
-  let polyData = actorCache.get(cacheId);
-  if (!polyData) {
-    const clippingFilter = actorEntry.clippingFilter;
-    clippingFilter.setClippingPlanes(vtkPlanes);
-    try {
-      clippingFilter.update();
-      polyData = clippingFilter.getOutputData();
-      actorCache.set(cacheId, polyData);
-    } catch (e) {
-      console.error('Error clipping surface', e);
-    }
-  }
+  const cacheId = generateCacheId(viewport, viewPlaneNormal, sliceIndex);
+  const polyData = getOrCreatePolyData(actorEntry, cacheId, vtkPlanes);
   mapper.setInputData(polyData);
 }
 

@@ -1,10 +1,17 @@
-import { Types, eventTarget, triggerEvent } from '@cornerstonejs/core';
+import { Enums, Types, eventTarget, triggerEvent } from '@cornerstonejs/core';
 import { getWebWorkerManager } from '@cornerstonejs/core';
 import { ContourSegmentationData } from '../../../../types';
 import { getAnnotation } from '../../../annotation/annotationState';
-import { Events } from '../../../../enums';
+import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
+
+const triggerWorkerProgress = (eventTarget, progress) => {
+  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
+    progress,
+    type: WorkerTypes.POLYSEG_CONTOUR_TO_SURFACE,
+  });
+};
 
 /**
  * Converts a contour representation to a surface representation.
@@ -31,7 +38,7 @@ export async function convertContourToSurface(
     polyline.forEach((polyline) => polylines.push(...polyline));
   }
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 0 });
+  triggerWorkerProgress(eventTarget, 0);
 
   const results = await workerManager.executeTask(
     'polySeg',
@@ -43,13 +50,13 @@ export async function convertContourToSurface(
     {
       callbacks: [
         (progress) => {
-          triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress });
+          triggerWorkerProgress(eventTarget, progress);
         },
       ],
     }
   );
 
-  triggerEvent(eventTarget, Events.POLYSEG_CONVERSION, { progress: 100 });
+  triggerWorkerProgress(eventTarget, 100);
 
   return results;
 }

@@ -16,61 +16,67 @@ const obj = {
    * @throws Will throw an error if the clipping process encounters an issue.
    */
   clipSurfaceWithPlanes(
-    { planesInfo, polyDataInfo },
+    { planesInfo, pointsAndPolys },
     progressCallback,
     updateCacheCallback
   ) {
     const numberOfPlanes = planesInfo.length;
-
-    const { points, polys } = polyDataInfo;
-
-    const surfacePolyData = vtkPolyData.newInstance();
-    surfacePolyData.getPoints().setData(points, 3);
-    surfacePolyData.getPolys().setData(polys, 3);
-
     const clippingFilter = vtkClipClosedSurface.newInstance({
       clippingPlanes: [],
       activePlaneId: 2,
       passPointData: false,
     });
-    clippingFilter.setInputData(surfacePolyData);
     clippingFilter.setGenerateOutline(true);
     clippingFilter.setGenerateFaces(false);
 
     const plane1 = vtkPlane.newInstance();
     const plane2 = vtkPlane.newInstance();
 
-    // Reusable array for clipping planes
-    const clippingPlanes = [plane1, plane2];
-
     try {
       for (const [index, planeInfo] of planesInfo.entries()) {
         const { sliceIndex, planes } = planeInfo;
 
-        // Directly update plane instances
-        plane1.setOrigin(planes[0].origin);
-        plane1.setNormal(planes[0].normal);
-        plane2.setOrigin(planes[1].origin);
-        plane2.setNormal(planes[1].normal);
+        const polyDataResults = new Map();
+        for (const polyDataInfo of pointsAndPolys) {
+          const { points, polys, id } = polyDataInfo;
 
-        clippingFilter.setClippingPlanes(clippingPlanes);
-        clippingFilter.update();
+          const surfacePolyData = vtkPolyData.newInstance();
+          surfacePolyData.getPoints().setData(points, 3);
+          surfacePolyData.getPolys().setData(polys, 3);
 
-        const polyData = clippingFilter.getOutputData();
+          clippingFilter.setInputData(surfacePolyData);
 
-        if (polyData) {
-          const points = polyData.getPoints().getData();
-          const lines = polyData.getLines().getData();
-          updateCacheCallback({ sliceIndex, points, lines });
+          // Reusable array for clipping planes
+          const clippingPlanes = [plane1, plane2];
+
+          // Directly update plane instances
+          plane1.setOrigin(planes[0].origin);
+          plane1.setNormal(planes[0].normal);
+          plane2.setOrigin(planes[1].origin);
+          plane2.setNormal(planes[1].normal);
+
+          clippingFilter.setClippingPlanes(clippingPlanes);
+          clippingFilter.update();
+
+          const polyData = clippingFilter.getOutputData();
+
+          if (polyData) {
+            polyDataResults.set(id, {
+              points: polyData.getPoints().getData(),
+              lines: polyData.getLines().getData(),
+            });
+          }
         }
 
         progressCallback({ progress: (index + 1) / numberOfPlanes });
+
+        updateCacheCallback({ sliceIndex, polyDataResults });
       }
     } catch (e) {
       console.error('Error during processing', e);
     } finally {
       // Cleanup on completion
-      surfacePolyData.delete();
+      pointsAndPolys = null;
       clippingFilter.delete();
       plane1.delete();
       plane2.delete();
