@@ -7,6 +7,7 @@ import {
   utilities,
   geometryLoader,
   CONSTANTS,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -14,6 +15,7 @@ import {
   setTitleAndDescription,
   downloadSurfacesData,
   addButtonToToolbar,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -139,6 +141,28 @@ addButtonToToolbar({
       ],
     });
   },
+});
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Caching Progress:',
+  paddings: {
+    left: 10,
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  if (
+    evt.detail.type !==
+    cornerstoneTools.Enums.WorkerTypes.DISPLAY_TOOL_CLIP_SURFACE
+  ) {
+    return;
+  }
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
 });
 
 /**

@@ -9,6 +9,7 @@ import {
   getWebWorkerManager,
   eventTarget,
   triggerEvent,
+  utilities,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -235,36 +236,47 @@ async function generateAndCacheClippedSurfaces(
 
   const camera = viewport.getCamera();
 
-  // function cameraModifiedCallback(evt: Types.EventTypes.CameraModifiedEvent) {
-  //   const { camera } = evt.detail;
-  //   const { viewPlaneNormal } = camera;
+  function cameraModifiedCallback(evt: Types.EventTypes.CameraModifiedEvent) {
+    const { camera } = evt.detail;
+    const { viewPlaneNormal } = camera;
 
-  //   if (utilities.isEqual(viewPlaneNormal, currentViewportNormal.get(id))) {
-  //     return;
-  //   }
+    // Note: I think choosing one of the surfaces to see
+    // if the viewPlaneNormal is the same for all surfaces is ok enough
+    // to decide if we should recompute the clipping planes
+    const surface1 = surfaces[0];
 
-  //   currentViewportNormal.set(id, viewPlaneNormal);
+    if (
+      utilities.isEqual(viewPlaneNormal, currentViewportNormal.get(surface1.id))
+    ) {
+      return;
+    }
 
-  //   workerManager.terminate('displayTools');
+    currentViewportNormal.set(surface1.id, viewPlaneNormal);
 
-  //   setTimeout(() => {
-  //     console.debug('camera modified identified, running again', surface.id);
-  //     generateAndCacheClippedSurfaces(surface, viewport, actorUID);
-  //   }, 2000);
-  //   viewport.render();
-  // }
+    workerManager.terminate('displayTools');
 
-  // // Remove the existing event listener
-  // viewport.element.removeEventListener(
-  //   Enums.Events.CAMERA_MODIFIED,
-  //   cameraModifiedCallback as EventListener
-  // );
+    setTimeout(() => {
+      generateAndCacheClippedSurfaces(
+        surfaces,
+        viewport,
+        segmentationRepresentationUID
+      );
+    }, 0);
 
-  // // Add the event listener
-  // viewport.element.addEventListener(
-  //   Enums.Events.CAMERA_MODIFIED,
-  //   cameraModifiedCallback as EventListener
-  // );
+    viewport.render();
+  }
+
+  // Remove the existing event listener
+  viewport.element.removeEventListener(
+    Enums.Events.CAMERA_MODIFIED,
+    cameraModifiedCallback as EventListener
+  );
+
+  // Add the event listener
+  viewport.element.addEventListener(
+    Enums.Events.CAMERA_MODIFIED,
+    cameraModifiedCallback as EventListener
+  );
 
   triggerWorkerProgress(eventTarget, 0);
 
@@ -279,7 +291,7 @@ async function generateAndCacheClippedSurfaces(
       {
         callbacks: [
           // progress callback
-          (progress) => {
+          ({ progress }) => {
             triggerWorkerProgress(eventTarget, progress);
           },
           // update cache callback
