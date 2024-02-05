@@ -17,7 +17,10 @@ import {
   getChildAnnotations,
   addChildAnnotation,
 } from '../../../stateManagement/annotation/annotationState';
-import { AnnotationCompletedEventType } from '../../../types/EventTypes';
+import {
+  AnnotationCompletedEventType,
+  ContourAnnotationCompletedEventDetail,
+} from '../../../types/EventTypes';
 import * as contourUtils from '../../../utilities/contours';
 import * as contourSegUtils from '../../../utilities/contourSegmentation';
 import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
@@ -32,6 +35,14 @@ const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 export default function contourSegmentationCompletedListener(
   evt: AnnotationCompletedEventType
 ) {
+  const { postProcessingEnabled } =
+    evt.detail as ContourAnnotationCompletedEventDetail;
+
+  // Do not append, remove or create holes when postProcessingEnabled is `false`
+  if (!postProcessingEnabled) {
+    return;
+  }
+
   const sourceAnnotation = evt.detail
     .annotation as ContourSegmentationAnnotation;
 
