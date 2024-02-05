@@ -18,7 +18,7 @@ import { registerDisplayToolsWorker } from '../registerDisplayToolsWorker';
 const workerManager = getWebWorkerManager();
 
 const polyDataCache = new Map();
-let currentViewportNormal = null;
+const currentViewportNormal = new Map();
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
@@ -141,9 +141,6 @@ function addOrUpdateSurfaceToElement(
   // Todo: make this configurable
   actor.getProperty().setLineWidth(2);
 
-  const { viewPlaneNormal } = viewport.getCamera();
-  currentViewportNormal = viewPlaneNormal;
-
   viewport.addActor({
     actor,
     uid: actorUID,
@@ -151,6 +148,8 @@ function addOrUpdateSurfaceToElement(
   });
 
   if (viewport instanceof VolumeViewport) {
+    const { viewPlaneNormal } = viewport.getCamera();
+    currentViewportNormal.set(surface.id, structuredClone(viewPlaneNormal));
     // if the viewport is not 3D means we should calculate
     // the clipping planes for the surface and cache the results
     newFunction(surface, viewport, actorUID);
@@ -236,15 +235,19 @@ function newFunction(
     const { camera } = evt.detail;
     const { viewPlaneNormal } = camera;
 
-    if (utilities.isEqual(viewPlaneNormal, currentViewportNormal)) {
+    if (utilities.isEqual(viewPlaneNormal, currentViewportNormal.get(id))) {
       return;
     }
 
-    currentViewportNormal = viewPlaneNormal;
+    currentViewportNormal.set(id, viewPlaneNormal);
 
     workerManager.terminate('displayTools');
 
-    // newFunction(surface, viewport, actorUID);
+    setTimeout(() => {
+      console.debug('camera modified identified, running again', surface.id);
+      newFunction(surface, viewport, actorUID);
+    }, 2000);
+    viewport.render();
   }
 
   // Remove the existing event listener
