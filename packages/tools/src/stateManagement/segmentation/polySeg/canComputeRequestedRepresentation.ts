@@ -35,6 +35,10 @@ const conversionPaths = new Map<
 /**
  * Determines whether the requested representation can be computed, based on
  * the existing representation types and available conversion paths.
+ * This is used in the labelmapDisplay and surfaceDisplay logic if the
+ * requested representation is not available whether we can use the existing
+ * representation to compute the requested representation. You can checkout the polySeg
+ * examples to see how this is used polyDataActorManipulationTools and others
  *
  * @param segmentationRepresentationUID - The UID of the desired segmentation representation.
  * @returns true if the requested representation can be computed, otherwise false.
@@ -110,13 +114,10 @@ function getExistingRepresentationTypes(
 }
 
 async function canConvertFromTo(fromRepresentationType, toRepresentationType) {
-  const availablePaths = conversionPaths.get(fromRepresentationType);
-
-  if (!availablePaths) {
-    return false;
-  }
-
-  return availablePaths.has(toRepresentationType);
+  return (
+    conversionPaths.get(fromRepresentationType)?.has(toRepresentationType) ||
+    false
+  );
 }
 
 export { canComputeRequestedRepresentation };

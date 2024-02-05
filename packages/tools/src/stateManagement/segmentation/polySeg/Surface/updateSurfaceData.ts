@@ -76,20 +76,16 @@ export async function updateSurfaceData(segmentationId) {
           );
         });
       });
+    } else if (indices.includes(segmentIndex)) {
+      // if the geometry already exists and the segmentIndex is
+      // still present, update the geometry data
+      const surface = geometry.data as Types.ISurface;
+      surface.setPoints(data.points);
+      surface.setPolys(data.polys);
     } else {
-      if (indices.includes(segmentIndex)) {
-        // if the geometry already exists and the segmentIndex is
-        // still present, update the geometry data
-        const surface = geometry.data as Types.ISurface;
-        surface.setPoints(data.points);
-        surface.setPolys(data.polys);
-        return;
-      } else {
-        const surface = geometry.data as Types.ISurface;
-        surface.setPoints([]);
-        surface.setPolys([]);
-        return;
-      }
+      const surface = geometry.data as Types.ISurface;
+      surface.setPoints([]);
+      surface.setPolys([]);
     }
   });
 

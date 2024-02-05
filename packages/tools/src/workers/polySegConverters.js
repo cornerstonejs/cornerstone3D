@@ -7,10 +7,30 @@ import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
 import { pointInShapeCallback } from '../utilities';
 import { isPointInsidePolyline3D } from '../utilities/math/polyline';
 
-const obj = {
+/**
+ * Object containing methods for converting between different representations of
+ * segmentations (e.g., contour, labelmap, surface, etc.) These logics
+ * are used in a webworker to avoid blocking the main thread. You can
+ * search for workerManager.executeTask('polySeg', ...) to see
+ * how these methods are used.
+ *
+ * See also the webworker docs at packages/docs/docs/concepts/cornerstone-core/web-worker.md
+ * to learn more about how to use webworkers in the context of Cornerstone.
+ */
+const polySegConverters = {
+  /**
+   * The polySeg instance that is used to convert between different representations
+   */
   polySeg: null,
+  /**
+   * Utilities to keep track of the initialization state of the polySeg instance
+   * and avoid initializing it multiple times
+   */
   polySegInitializing: false,
   polySegInitializingPromise: null,
+  /**
+   * This method initializes the polySeg instance and sets it to this.polySeg
+   */
   async initializePolySeg(progressCallback) {
     if (this.polySegInitializing) {
       await this.polySegInitializingPromise;
@@ -36,6 +56,14 @@ const obj = {
 
     await this.polySegInitializingPromise;
   },
+  /**
+   * Converts a contour to a surface using the PolySeg library.
+   * @param {Object} args - The arguments for the conversion.
+   * @param {Array} args.polylines - The polylines representing the contour.
+   * @param {Array} args.numPointsArray - The number of points in each polyline.
+   * @param {...Function} callbacks - Optional callback functions.
+   * @returns {Promise} - A promise that resolves to the converted surface.
+   */
   async convertContourToSurface(args, ...callbacks) {
     const { polylines, numPointsArray } = args;
     const [progressCallback] = callbacks;
@@ -47,6 +75,18 @@ const obj = {
 
     return results;
   },
+  /**
+   * Converts a labelmap to a surface using the specified arguments.
+   * @param {Object} args - The arguments for the conversion.
+   * @param {Array} args.scalarData - The scalar data of the labelmap.
+   * @param {Array} args.dimensions - The dimensions of the labelmap.
+   * @param {Array} args.spacing - The spacing of the labelmap.
+   * @param {Array} args.direction - The direction of the labelmap.
+   * @param {Array} args.origin - The origin of the labelmap.
+   * @param {number} args.segmentIndex - The segment index of the labelmap.
+   * @param {Function} progressCallback - The callback function for progress updates.
+   * @returns {Promise} - A promise that resolves with the converted surface results.
+   */
   async convertLabelmapToSurface(args, ...callbacks) {
     const [progressCallback] = callbacks;
     await this.initializePolySeg(progressCallback);
@@ -61,6 +101,20 @@ const obj = {
     );
     return results;
   },
+  /**
+   * Converts a contour to a volume labelmap.
+   * @param {Object} args - The arguments for the conversion.
+   * @param {Array} args.segmentIndices - The indices of the segments.
+   * @param {Array} args.scalarData - The scalar data.
+   * @param {Map} args.annotationUIDsInSegmentMap - The map of annotation UIDs in segment.
+   * @param {Array} args.dimensions - The dimensions of the image data.
+   * @param {Array} args.origin - The origin of the image data.
+   * @param {Array} args.direction - The direction of the image data.
+   * @param {Array} args.spacing - The spacing of the image data.
+   * @param {...Function} callbacks - Optional callbacks.
+   * @param {Function} callbacks[0] - The progress callback.
+   * @returns {Array} - The scalar data of the segmentation voxel manager.
+   */
   async convertContourToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
     const polySeg = await new ICRPolySeg();
@@ -141,6 +195,12 @@ const obj = {
 
     return segmentationVoxelManager.scalarData;
   },
+  /**
+   * Converts a contour to a stack labelmap.
+   * @param {Object} args - The arguments for the conversion.
+   * @param {Array} callbacks - Optional callbacks for progress updates.
+   * @returns {Promise<Object>} - The converted segmentations information.
+   */
   async convertContourToStackLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
     const polySeg = await new ICRPolySeg();
@@ -238,6 +298,19 @@ const obj = {
     });
     return segmentationsInfo;
   },
+  /**
+   * Converts a surface to a volume labelmap.
+   *
+   * @param {Object} args - The arguments for the conversion.
+   * @param {Array} args.points - The points defining the surface.
+   * @param {Array} args.polys - The polygons defining the surface.
+   * @param {Array} args.dimensions - The dimensions of the volume.
+   * @param {Array} args.spacing - The spacing between voxels in the volume.
+   * @param {Array} args.direction - The direction of the volume.
+   * @param {Array} args.origin - The origin of the volume.
+   * @param {Function} progressCallback - The callback function for reporting progress.
+   * @returns {Promise} - A promise that resolves with the converted labelmap.
+   */
   async convertSurfaceToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
     await this.initializePolySeg(progressCallback);
@@ -253,6 +326,13 @@ const obj = {
 
     return results;
   },
+  /**
+   * Converts surfaces to a volume labelmap.
+   * @param {Object} args - The arguments for the conversion.
+   * @param {Map} args.segmentsInfo - A map containing information about the segments.
+   * @param {Function} progressCallback - A callback function for reporting progress.
+   * @returns {Uint8Array} - The resulting volume labelmap.
+   */
   async convertSurfacesToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
     await this.initializePolySeg(progressCallback);
@@ -384,4 +464,4 @@ const obj = {
   },
 };
 
-expose(obj);
+expose(polySegConverters);

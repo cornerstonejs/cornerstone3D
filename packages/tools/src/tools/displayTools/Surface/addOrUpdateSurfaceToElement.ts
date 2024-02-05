@@ -176,9 +176,7 @@ function addOrUpdateSurfaceToElement(
         {
           callbacks: [
             // progress callback
-            (progress) => {
-              console.debug(progress);
-            },
+            (progress) => {},
             // update cache callback
             ({ points, lines, sliceIndex }) => {
               const polyData = vtkPolyData.newInstance();

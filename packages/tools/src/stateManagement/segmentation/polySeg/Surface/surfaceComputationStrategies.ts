@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   ContourSegmentationData,
   PolySegConversionOptions,
@@ -111,11 +111,21 @@ async function computeSurfaceFromLabelmapSegmentation(
     return surface;
   });
 
-  const surfaces = await Promise.all(promises);
+  const surfaces = await Promise.allSettled(promises);
+  const errors = surfaces.filter((p) => p.status === 'rejected');
 
-  const rawSurfacesData = surfaces.map((surface, index) => {
-    return { segmentIndex: segmentIndices[index], data: surface };
-  });
+  if (errors.length > 0) {
+    console.error(errors);
+    throw new Error('Failed to convert labelmap to surface');
+  }
+
+  const rawSurfacesData = surfaces
+    .map((surface, index) => {
+      if (surface.status === 'fulfilled') {
+        return { segmentIndex: segmentIndices[index], data: surface.value };
+      }
+    })
+    .filter(Boolean);
 
   return rawSurfacesData;
 }

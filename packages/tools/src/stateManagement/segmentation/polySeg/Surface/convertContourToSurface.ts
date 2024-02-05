@@ -6,6 +6,13 @@ import { Events } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
+/**
+ * Converts a contour representation to a surface representation.
+ *
+ * @param contourRepresentationData - The contour segmentation data.
+ * @param segmentIndex - The index of the segment to convert.
+ * @returns A promise that resolves to the surface data.
+ */
 export async function convertContourToSurface(
   contourRepresentationData: ContourSegmentationData,
   segmentIndex: number

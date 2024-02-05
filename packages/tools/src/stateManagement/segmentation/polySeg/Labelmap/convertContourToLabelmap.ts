@@ -1,7 +1,5 @@
 import {
-  StackViewport,
   Types,
-  VolumeViewport,
   cache,
   utilities,
   getWebWorkerManager,
@@ -29,15 +27,7 @@ export async function convertContourToVolumeLabelmap(
 ) {
   const { viewport } = options;
 
-  let imageIds;
-  if (viewport instanceof VolumeViewport) {
-    const defaultActor = viewport.getDefaultActor();
-    const volumeId = defaultActor.uid;
-    const volume = cache.getVolume(volumeId);
-    imageIds = volume.imageIds;
-  } else if (viewport instanceof StackViewport) {
-    imageIds = viewport.getImageIds();
-  }
+  const imageIds = utilities.getViewportImageIds(viewport);
 
   if (!imageIds) {
     throw new Error(

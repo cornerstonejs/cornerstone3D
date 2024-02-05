@@ -10,6 +10,14 @@ import { Events } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
+/**
+ * Converts a labelmap representation to a surface representation.
+ *
+ * @param labelmapRepresentationData - The labelmap segmentation data.
+ * @param segmentIndex - The index of the segment to convert.
+ * @param isVolume - Optional flag indicating whether the labelmap is a volume or a stack. Default is true.
+ * @returns A promise that resolves to the surface data.
+ */
 export async function convertLabelmapToSurface(
   labelmapRepresentationData: LabelmapSegmentationData,
   segmentIndex: number,

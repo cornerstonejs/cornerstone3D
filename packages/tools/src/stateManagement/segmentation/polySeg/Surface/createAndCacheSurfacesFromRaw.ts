@@ -41,13 +41,18 @@ export async function createAndCacheSurfacesFromRaw(
     const segmentIndex = rawSurfaceData.segmentIndex;
 
     // Get the color either from the segmentation representation or randomly generated
-    const color = segmentationRepresentation
-      ? getColorForSegmentIndex(
-          toolGroupId,
-          segmentationRepresentation.segmentationRepresentationUID,
-          segmentIndex
-        ).slice(0, 3)
-      : [Math.random() * 255, Math.random() * 255, Math.random() * 255];
+    const color = segmentationRepresentation;
+    getColorForSegmentIndex(
+      toolGroupId,
+      segmentationRepresentation.segmentationRepresentationUID,
+      segmentIndex
+    ).slice(0, 3);
+
+    if (!color) {
+      throw new Error(
+        'No color found for segment index, unable to create surface'
+      );
+    }
 
     const closedSurface = {
       id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
