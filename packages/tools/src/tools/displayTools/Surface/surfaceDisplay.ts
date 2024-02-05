@@ -108,7 +108,7 @@ async function render(
     );
   }
 
-  let newSurfaceForRendering = false;
+  const newSurfaceForRendering = false;
 
   const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
 
@@ -137,23 +137,13 @@ async function render(
     const color = colorLUT[segmentIndex];
     surface.setColor(color.slice(0, 3) as Types.Point3);
 
-    const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
-    const actorUID = surfaceUID;
-
-    if (viewport.getActor(actorUID) === undefined) {
-      newSurfaceForRendering = true;
-    }
-
     addOrUpdateSurfaceToElement(
       viewport.element,
       surface as Types.ISurface,
-      actorUID
+      segmentationRepresentationUID
     );
   });
 
-  if (newSurfaceForRendering) {
-    viewport.resetCamera();
-  }
   viewport.render();
 }
 

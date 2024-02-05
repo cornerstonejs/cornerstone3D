@@ -222,6 +222,10 @@ class CentralizedWorkerManager {
     });
   }
 
+  /**
+   * Terminates a web worker by its name.
+   * @param  workerName - The name of the web worker to terminate.
+   */
   terminate(workerName) {
     const workerProperties = this.workerRegistry[workerName];
     if (!workerProperties) {
@@ -230,7 +234,9 @@ class CentralizedWorkerManager {
     }
 
     workerProperties.instances.forEach((workerInstance) => {
-      workerInstance[Comlink.releaseProxy]();
+      try {
+        workerInstance[Comlink.releaseProxy]();
+      } catch (err) {}
     });
 
     workerProperties.nativeWorkers.forEach((worker) => {

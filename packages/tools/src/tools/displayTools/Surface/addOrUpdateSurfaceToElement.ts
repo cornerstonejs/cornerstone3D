@@ -4,6 +4,7 @@ import {
   VolumeViewport3D,
   VolumeViewport,
   getWebWorkerManager,
+  utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -17,12 +18,15 @@ import { registerDisplayToolsWorker } from '../registerDisplayToolsWorker';
 const workerManager = getWebWorkerManager();
 
 const polyDataCache = new Map();
+let currentViewportNormal = null;
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
   surface: Types.ISurface,
-  actorUID: string
+  segmentationRepresentationUID: string
 ): void {
+  const actorUID = `${segmentationRepresentationUID}_${surface.id}}`;
+
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
   const surfaceActor = viewport.getActor(actorUID)?.actor as Types.Actor;
@@ -78,7 +82,6 @@ function addOrUpdateSurfaceToElement(
   const points = surface.getPoints();
   const polys = surface.getPolys();
   const color = surface.getColor();
-  const id = surface.id;
 
   const surfacePolyData = vtkPolyData.newInstance();
   surfacePolyData.getPoints().setData(points, 3);
@@ -138,6 +141,9 @@ function addOrUpdateSurfaceToElement(
   // Todo: make this configurable
   actor.getProperty().setLineWidth(2);
 
+  const { viewPlaneNormal } = viewport.getCamera();
+  currentViewportNormal = viewPlaneNormal;
+
   viewport.addActor({
     actor,
     uid: actorUID,
@@ -145,73 +151,113 @@ function addOrUpdateSurfaceToElement(
   });
 
   if (viewport instanceof VolumeViewport) {
-    registerDisplayToolsWorker();
-    // All planes is an array of planes pairs for each slice, so we should loop over them and
-    // add the planes to the clipping filter and cache the results for that slice
-    const planesInfo = viewport.getSlicesClippingPlanes?.();
-
-    const currentSliceIndex = viewport.getSliceIndex();
-
-    // Reorder planesInfo based on proximity to currentSliceIndex
-    planesInfo.sort((a, b) => {
-      const diffA = Math.abs(a.sliceIndex - currentSliceIndex);
-      const diffB = Math.abs(b.sliceIndex - currentSliceIndex);
-      return diffA - diffB;
-    });
-
-    const camera = viewport.getCamera();
-
-    workerManager
-      .executeTask(
-        'displayTools',
-        'clipSurfaceWithPlanes',
-        {
-          planesInfo,
-          polyDataInfo: {
-            points,
-            polys,
-          },
-          id,
-        },
-        {
-          callbacks: [
-            // progress callback
-            (progress) => {},
-            // update cache callback
-            ({ points, lines, sliceIndex }) => {
-              const polyData = vtkPolyData.newInstance();
-              polyData.getPoints().setData(points, 3);
-
-              const linesArray = vtkCellArray.newInstance({
-                values: Int16Array.from(lines),
-              });
-              polyData.setLines(linesArray);
-
-              // cacheId is the sliceIndex
-              const cacheId = `${viewport.id}-${pointToString(
-                camera.viewPlaneNormal
-              )}-${sliceIndex}`;
-
-              let actorCache = polyDataCache.get(actorUID);
-              if (!actorCache) {
-                actorCache = new Map();
-                polyDataCache.set(actorUID, actorCache);
-              }
-              actorCache.set(cacheId, polyData);
-
-              mapper.setInputData(polyData);
-            },
-          ],
-        }
-      )
-      .catch((error) => {
-        console.error(error);
-      });
+    // if the viewport is not 3D means we should calculate
+    // the clipping planes for the surface and cache the results
+    newFunction(surface, viewport, actorUID);
   }
+
+  viewport.resetCamera();
 
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();
   }, 0);
+}
+
+function newFunction(
+  surface: Types.ISurface,
+  viewport: Types.IVolumeViewport,
+  actorUID: string
+) {
+  const id = surface.id;
+  const points = surface.getPoints();
+  const polys = surface.getPolys();
+  registerDisplayToolsWorker();
+  // All planes is an array of planes pairs for each slice, so we should loop over them and
+  // add the planes to the clipping filter and cache the results for that slice
+  const planesInfo = viewport.getSlicesClippingPlanes?.();
+
+  const currentSliceIndex = viewport.getSliceIndex();
+
+  // Reorder planesInfo based on proximity to currentSliceIndex
+  planesInfo.sort((a, b) => {
+    const diffA = Math.abs(a.sliceIndex - currentSliceIndex);
+    const diffB = Math.abs(b.sliceIndex - currentSliceIndex);
+    return diffA - diffB;
+  });
+
+  const camera = viewport.getCamera();
+
+  workerManager
+    .executeTask(
+      'displayTools',
+      'clipSurfaceWithPlanes',
+      {
+        planesInfo,
+        polyDataInfo: {
+          points,
+          polys,
+        },
+        id,
+      },
+      {
+        callbacks: [
+          // progress callback
+          (progress) => {},
+          // update cache callback
+          ({ points, lines, sliceIndex }) => {
+            const polyData = vtkPolyData.newInstance();
+            polyData.getPoints().setData(points, 3);
+
+            const linesArray = vtkCellArray.newInstance({
+              values: Int16Array.from(lines),
+            });
+            polyData.setLines(linesArray);
+
+            // cacheId is the sliceIndex
+            const cacheId = `${viewport.id}-${pointToString(
+              camera.viewPlaneNormal
+            )}-${sliceIndex}`;
+
+            let actorCache = polyDataCache.get(actorUID);
+            if (!actorCache) {
+              actorCache = new Map();
+              polyDataCache.set(actorUID, actorCache);
+            }
+            actorCache.set(cacheId, polyData);
+          },
+        ],
+      }
+    )
+    .catch((error) => {
+      console.error(error);
+    });
+
+  function cameraModifiedCallback(evt: Types.EventTypes.CameraModifiedEvent) {
+    const { camera } = evt.detail;
+    const { viewPlaneNormal } = camera;
+
+    if (utilities.isEqual(viewPlaneNormal, currentViewportNormal)) {
+      return;
+    }
+
+    currentViewportNormal = viewPlaneNormal;
+
+    workerManager.terminate('displayTools');
+
+    // newFunction(surface, viewport, actorUID);
+  }
+
+  // Remove the existing event listener
+  viewport.element.removeEventListener(
+    Enums.Events.CAMERA_MODIFIED,
+    cameraModifiedCallback as EventListener
+  );
+
+  // Add the event listener
+  viewport.element.addEventListener(
+    Enums.Events.CAMERA_MODIFIED,
+    cameraModifiedCallback as EventListener
+  );
 }
 
 /**
@@ -225,7 +271,6 @@ function updateSurfacePlanes(evt) {
   const sliceIndex = viewport.getSliceIndex();
 
   const mapper = actorEntry.actor.getMapper();
-
   const { viewPlaneNormal } = viewport.getCamera();
 
   // we should not use the focalPoint here, since the pan and zoom updates it,

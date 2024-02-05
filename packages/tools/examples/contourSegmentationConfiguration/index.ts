@@ -199,7 +199,7 @@ async function run() {
     contours: [
       {
         segmentIndex: 1,
-        radius: 10,
+        radius: 100,
       },
     ],
   });
