@@ -48,6 +48,9 @@ function addAnnotation(annotation: Annotation, annotationGroupSelector: Annotati
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
 
 // @public (undocumented)
+function addChildAnnotation(parentAnnotation: Annotation, childAnnotation: Annotation): void;
+
+// @public (undocumented)
 function addColorLUT(colorLUT: Types_2.ColorLUT, index: number): void;
 
 // @public (undocumented)
@@ -475,7 +478,7 @@ enum AnnotationStyleStates {
 export abstract class AnnotationTool extends AnnotationDisplayTool {
     constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
-    abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes): Annotation;
+    abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes, toolBinding: IToolBinding): Annotation;
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
@@ -1054,6 +1057,9 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
+function clearParentAnnotation(childAnnotation: Annotation): void;
+
+// @public (undocumented)
 function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
@@ -1362,6 +1368,11 @@ function contourAndFindLargestBidirectional(segmentation: any): any;
 
 // @public (undocumented)
 type ContourAnnotation = Annotation & ContourAnnotationData;
+
+// @public (undocumented)
+type ContourAnnotationCompletedEventDetail = AnnotationCompletedEventDetail & {
+    contourProcessingEnabled: boolean;
+};
 
 // @public (undocumented)
 type ContourAnnotationData = {
@@ -2076,6 +2087,7 @@ declare namespace EventTypes_2 {
         AnnotationInterpolationCompletedEventType,
         AnnotationInterpolationRemovedEventDetail,
         AnnotationInterpolationRemovedEventType,
+        ContourAnnotationCompletedEventDetail,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
         SegmentationRepresentationModifiedEventType,
@@ -2679,6 +2691,8 @@ interface ISpline {
     // (undocumented)
     deleteControlPointByIndex(index: number): boolean;
     // (undocumented)
+    get fixedResolution(): boolean;
+    // (undocumented)
     getClosestControlPoint(point: Types_2.Point2): ClosestControlPoint;
     // (undocumented)
     getClosestControlPointWithinDistance(point: Types_2.Point2, range: number): ClosestControlPoint;
@@ -2731,6 +2745,7 @@ type IToolBinding = {
     mouseButton?: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
     numTouchPoints?: number;
+    data?: Record<string, unknown>;
 };
 
 // @public (undocumented)
@@ -2804,7 +2819,9 @@ interface IToolGroup {
     };
     // (undocumented)
     setToolPassive: {
-        (toolName: string): void;
+        (toolName: string, options?: {
+            removeAllBindings?: boolean;
+        }): void;
     };
     // (undocumented)
     setViewportsCursorByToolName: {
@@ -3142,7 +3159,7 @@ export class LivewireContourSegmentationTool extends LivewireContourTool {
 export class LivewireContourTool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation(evt: EventTypes_2.InteractionEventType): LivewireContourAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType, _interactionType: InteractionTypes, toolBinding: IToolBinding): LivewireContourAnnotation;
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
@@ -3164,6 +3181,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         worldToSlice?: (point: Types_2.Point3) => Types_2.Point2;
         sliceToWorld?: (point: Types_2.Point2) => Types_2.Point3;
         originalPath?: Types_2.Point3[];
+        contourProcessingEnabled?: boolean;
     } | null;
     // (undocumented)
     editHandle(worldPos: Types_2.Point3, element: any, annotation: any, handleIndex: number): void;
@@ -3196,7 +3214,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected scissorsRight: LivewireScissors;
     // (undocumented)
-    protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any): void;
+    protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any, contourProcessingEnabled?: any): void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -3204,11 +3222,11 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourProcessingEnabled?: boolean) => void;
     // (undocumented)
     undo(element: any, config: any, evt: any): void;
     // (undocumented)
-    protected updateAnnotation(_: any, livewirePath: LivewirePath): void;
+    protected updateAnnotation(livewirePath: LivewirePath): void;
 }
 
 declare namespace locking {
@@ -3611,9 +3629,9 @@ type PlanarFreehandROIAnnotation = ContourAnnotation & {
 export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    protected activateDraw: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, viewportIdsToRender: string[]) => void;
+    protected activateDraw: (evt: EventTypes_2.InteractionEventType, toolBinding: IToolBinding, annotation: PlanarFreehandROIAnnotation, viewportIdsToRender: string[]) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType, _interactionType: InteractionTypes, toolBinding: IToolBinding) => PlanarFreehandROIAnnotation;
     // (undocumented)
     _calculateStatsIfActive(annotation: PlanarFreehandROIAnnotation, targetId: string, viewport: any, renderingEngine: any, enabledElement: any): void;
     // (undocumented)
@@ -4763,6 +4781,7 @@ type SplineLineSegment = {
 // @public (undocumented)
 type SplineProps = {
     resolution?: number;
+    fixedResolution?: boolean;
     closed?: boolean;
 };
 
@@ -4793,7 +4812,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     addControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
-    addNewAnnotation(evt: EventTypes_2.InteractionEventType): SplineROIAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType, _interactionType: InteractionTypes, toolBinding: IToolBinding): SplineROIAnnotation;
     // (undocumented)
     cancel(element: HTMLDivElement): string;
     // (undocumented)
@@ -4811,6 +4830,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
         lastCanvasPoint?: Types_2.Point2;
+        contourProcessingEnabled?: boolean;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -4818,6 +4838,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     fireChangeOnUpdate: {
         annotationUID: string;
         changeType: ChangeTypes;
+        contourProcessingEnabled: boolean;
     };
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
@@ -4846,11 +4867,11 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationCompleted: (annotation: SplineROIAnnotation) => void;
+    triggerAnnotationCompleted: (annotation: SplineROIAnnotation, contourProcessingEnabled: boolean) => void;
     // (undocumented)
     triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
     // (undocumented)
-    triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
+    triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType: ChangeTypes, contourProcessingEnabled: any) => void;
 }
 
 // @public (undocumented)
@@ -4913,6 +4934,8 @@ declare namespace state_2 {
         getAnnotations,
         getParentAnnotation,
         getChildAnnotations,
+        clearParentAnnotation,
+        addChildAnnotation,
         getNumberOfAnnotations,
         addAnnotation,
         getAnnotation,
