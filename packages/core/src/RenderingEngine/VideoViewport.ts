@@ -14,6 +14,7 @@ import type {
   VideoViewportInput,
   VOIRange,
   ICanvasActor,
+  IImage,
   TargetSpecifier,
 } from '../types';
 import * as metaData from '../metaData';
@@ -135,11 +136,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement.remove();
   }
 
-  private _getImageDataMetadata() {
-    const imagePlaneModule = metaData.get(
-      MetadataModules.IMAGE_PLANE,
-      this.imageId
-    );
+  public getImageDataMetadata(image: IImage | string) {
+    const imageId = typeof image === 'string' ? image : image.imageId;
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
     let rowCosines = <Point3>imagePlaneModule.rowCosines;
     let columnCosines = <Point3>imagePlaneModule.columnCosines;
@@ -162,8 +161,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
 
     const { rows, columns } = imagePlaneModule;
-    this.videoWidth = columns;
-    this.videoHeight = rows;
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
@@ -186,6 +183,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       bitsAllocated: 8,
       numComps: 3,
       origin,
+      rows,
+      columns,
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
@@ -205,7 +204,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
-    this.metadata = this._getImageDataMetadata();
+    this.metadata = this.getImageDataMetadata(imageId);
 
     return this.setVideoURL(rendered).then(() => {
       let { cineRate, numberOfFrames } = metaData.get(
@@ -932,7 +931,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
     this.canvasContext.resetTransform();
 
-    triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
+    // This is stack new image to agree with stack/non-volume viewports
+    triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, {
       element: this.element,
       viewportId: this.id,
       viewport: this,

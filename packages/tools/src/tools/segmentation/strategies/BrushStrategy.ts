@@ -154,6 +154,11 @@ export default class BrushStrategy {
   ) => {
     const initializedData = this.initialize(enabledElement, operationData);
 
+    if (!initializedData) {
+      // Happens when there is no label map
+      return;
+    }
+
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
@@ -260,6 +265,10 @@ export default class BrushStrategy {
       return;
     }
     const initializedData = this.initialize(enabledElement, operationData);
+    if (!initializedData) {
+      // Happens if there isn't a labelmap to apply to
+      return;
+    }
     this._onInteractionStart.forEach((func) =>
       func.call(this, initializedData)
     );

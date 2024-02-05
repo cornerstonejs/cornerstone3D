@@ -21,7 +21,7 @@ export default function addVideoTime(
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 
-  viewport.element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt) => {
+  viewport.element.addEventListener(Enums.Events.STACK_NEW_IMAGE, (evt) => {
     const { time, duration } = evt.detail;
     rangeElement.value = time;
     rangeElement.max = duration;

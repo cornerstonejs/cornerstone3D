@@ -47,6 +47,10 @@ export default function addManipulationBindings(toolGroup, register = true) {
         mouseButton: MouseBindings.Primary, // Ctrl Left drag
         modifierKey: KeyboardBindings.Ctrl,
       },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Ctrl,
+      },
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
@@ -56,14 +60,39 @@ export default function addManipulationBindings(toolGroup, register = true) {
         modifierKey: KeyboardBindings.Shift,
       },
       {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Shift,
+      },
+      {
         mouseButton: MouseBindings.Secondary,
       },
     ],
   });
+  // Need a binding to navigate without a wheel mouse
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift Left Click
+        modifierKey: KeyboardBindings.Alt,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Alt,
+      },
+    ],
+  });
+  // Add a length tool binding to allow testing annotations on examples targetting
+  // other use cases.  Use a primary button with shift+ctrl as that is relatively
+  // unlikely to be otherwise used.
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Fifth_Button,
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.ShiftCtrl,
       },
     ],
   });

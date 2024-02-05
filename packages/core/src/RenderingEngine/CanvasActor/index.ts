@@ -66,6 +66,7 @@ export class CanvasMapper {
  */
 export default class CanvasActor implements ICanvasActor {
   private image;
+  private derivedImage;
   private canvasProperties = new CanvasProperties(this);
   private visibility = false;
   private mapper = new CanvasMapper(this);
@@ -73,8 +74,8 @@ export default class CanvasActor implements ICanvasActor {
   protected className = 'CanvasActor';
   protected canvas;
 
-  constructor(viewport: IViewport, image) {
-    this.image = image;
+  constructor(viewport: IViewport, derivedImage) {
+    this.derivedImage = derivedImage;
     this.viewport = viewport;
   }
 
@@ -82,10 +83,14 @@ export default class CanvasActor implements ICanvasActor {
     if (!this.visibility) {
       return;
     }
+    const image = this.image || this.getImage();
 
-    const { width, height } = this.image;
+    const { width, height } = image;
 
-    const data = this.image.getPixelData();
+    const data = image.getScalarData();
+    if (!data) {
+      return;
+    }
     let { canvas } = this;
     if (!canvas || canvas.width !== width || canvas.height !== height) {
       this.canvas = canvas = new window.OffscreenCanvas(width, height);
@@ -167,17 +172,26 @@ export default class CanvasActor implements ICanvasActor {
   }
 
   public getImage() {
+    if (this.image) {
+      return this.image;
+    }
+    this.image = { ...this.derivedImage };
     const imageData = this.viewport.getImageData();
     this.image.worldToIndex = (worldPos) =>
       imageData.imageData.worldToIndex(worldPos);
     this.image.indexToWorld = (index) =>
       imageData.imageData.indexToWorld(index);
     this.image.getDimensions = () => imageData.dimensions;
-    this.image.getScalarData = () => this.image.getPixelData();
+    this.image.getScalarData = () => this.derivedImage?.getPixelData();
     this.image.getDirection = () => imageData.direction;
     this.image.getSpacing = () => imageData.spacing;
+    this.image.setOrigin = () => null;
+    this.image.setDerivedImage = (image) => {
+      this.derivedImage = image;
+      this.image = null;
+    };
     this.image.modified = () => {
-      // No-op
+      this.image = null;
     };
     return this.image;
   }

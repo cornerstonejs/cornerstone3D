@@ -484,7 +484,7 @@ class BrushTool extends BaseTool {
 
     this._previewData.preview = this.applyActiveStrategy(
       enabledElement,
-      this.getOperationData()
+      this.getOperationData(element)
     );
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont

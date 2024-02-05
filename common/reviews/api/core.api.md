@@ -3375,6 +3375,20 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         };
     };
     // (undocumented)
+    getImageDataMetadata(image: IImage | string): {
+        bitsAllocated: number;
+        numComps: number;
+        origin: any;
+        rows: any;
+        columns: any;
+        direction: number[];
+        dimensions: any[];
+        spacing: any[];
+        hasPixelSpacing: boolean;
+        numVoxels: number;
+        imagePlaneModule: any;
+    };
+    // (undocumented)
     getImageIds(): string[];
     // (undocumented)
     getNumberOfSlices: () => number;

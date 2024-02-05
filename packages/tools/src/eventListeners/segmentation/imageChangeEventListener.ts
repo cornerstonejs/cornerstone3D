@@ -1,7 +1,7 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
-  StackViewport,
+  BaseVolumeViewport,
   getEnabledElement,
   Enums,
   getEnabledElementByIds,
@@ -19,7 +19,7 @@ import triggerSegmentationRender from '../../utilities/segmentation/triggerSegme
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
 
-  if (!(viewport instanceof StackViewport)) {
+  if (viewport instanceof BaseVolumeViewport) {
     return;
   }
 
@@ -35,12 +35,6 @@ const enable = function (element: HTMLDivElement): void {
 };
 
 const disable = function (element: HTMLDivElement): void {
-  const { viewport } = getEnabledElement(element);
-
-  if (!(viewport instanceof StackViewport)) {
-    return;
-  }
-
   element.removeEventListener(
     Enums.Events.STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
@@ -150,6 +144,10 @@ function _imageChangeEventListener(evt) {
     const segmentationImageData = segmentationActor.getMapper().getInputData();
 
     if (!derivedImageId) {
+      if (segmentationImageData.setDerivedImage) {
+        segmentationImageData.setDerivedImage(null);
+        return;
+      }
       // this means that this slice doesn't have a segmentation for this representation
       // this can be a case where the segmentation was added to certain slices only
       // so we can keep the actor but empty out the imageData
@@ -170,7 +168,11 @@ function _imageChangeEventListener(evt) {
     const { dimensions, spacing, direction } =
       viewport.getImageDataMetadata(derivedImage);
 
-    const currentImage = cache.getImage(currentImageId);
+    const currentImage =
+      cache.getImage(currentImageId) ||
+      ({
+        imageId: currentImageId,
+      } as Types.IImage);
     const { origin: currentOrigin } =
       viewport.getImageDataMetadata(currentImage);
 
@@ -231,10 +233,15 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    utilities.updateVTKImageDataWithCornerstoneImage(
-      segmentationImageData,
-      derivedImage
-    );
+    if (segmentationImageData.setDerivedImage) {
+      segmentationImageData.setDerivedImage(derivedImage);
+    } else {
+      // TODO - use setDerivedImage for this functionality
+      utilities.updateVTKImageDataWithCornerstoneImage(
+        segmentationImageData,
+        derivedImage
+      );
+    }
     viewport.render();
 
     // This is put here to make sure that the segmentation is rendered
