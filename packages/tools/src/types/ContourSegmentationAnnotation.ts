@@ -8,7 +8,6 @@ export type ContourSegmentationAnnotationData = {
     segmentation: {
       segmentationId: string;
       segmentIndex: number;
-      segmentationRepresentationUID: string;
     };
     contour: {
       /** The original polyline before livewire, to show comparison with

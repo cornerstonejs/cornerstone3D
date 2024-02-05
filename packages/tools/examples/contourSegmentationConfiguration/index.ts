@@ -20,7 +20,6 @@ const {
   SegmentationDisplayTool,
   Enums: csToolsEnums,
   SegmentSelectTool,
-  BrushTool,
   segmentation,
   PlanarFreehandContourSegmentationTool,
 } = cornerstoneTools;
@@ -35,8 +34,8 @@ const renderingEngineId = 'myRenderingEngine';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Segment Select Tool in Both Stack and Volume Viewport',
-  'Here, we demonstrate how you can use the Segment Select Tool in both stack and volume viewports to hover and select the active segment based on the mouse position. It works after some deliberate delay. In the first row, you can use the brushes to select the active segment on the labelmap data. And for the second row viewports, you can use annotation tools and contour segmentation to select the active segment on the volume data.'
+  'Contour Segmentation Configuration',
+  'Here, we demonstrate how you can customize the appearance of one contour segmentation in two different toolGroups. As you see, the same segmentation is able to appear differently in different toolGroups. As you can see the left viewport has a dashed and thicker line for the same contour segmentation.'
 );
 
 const size = '500px';
@@ -206,29 +205,34 @@ async function run() {
   });
 
   // Add the segmentation representation to the toolgroup
-  const [contourSegRepUIDStack] =
-    await segmentation.addSegmentationRepresentations(
-      stackSegContourToolGroupId,
-      [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Contour,
-        },
-      ]
-    );
-  const [contourSegRepUIDVolume] =
-    await segmentation.addSegmentationRepresentations(
-      volumeSegContourToolGroupId,
-      [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Contour,
-        },
-      ]
-    );
+  await segmentation.addSegmentationRepresentations(
+    stackSegContourToolGroupId,
+    [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]
+  );
+  await segmentation.addSegmentationRepresentations(
+    volumeSegContourToolGroupId,
+    [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]
+  );
 
-  // Todo: figure out why append/remove does not work, or adding new annotation
-  // only renders contour ROI not segmentation
+  segmentation.config.setToolGroupSpecificConfig(stackSegContourToolGroupId, {
+    renderInactiveSegmentations: true,
+    representations: {
+      CONTOUR: {
+        outlineWidthActive: 5,
+        outlineDashActive: '10, 10',
+      },
+    },
+  });
 
   renderingEngine.render();
 }

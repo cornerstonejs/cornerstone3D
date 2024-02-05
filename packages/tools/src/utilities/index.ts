@@ -17,6 +17,7 @@ import {
   getCalibratedScale,
 } from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
 
@@ -72,6 +73,7 @@ export {
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,
+  triggerAnnotationRenderForToolGroupIds,
   triggerAnnotationRender,
   pointInShapeCallback,
   getSphereBoundsInfo,
