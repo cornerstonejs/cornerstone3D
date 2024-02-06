@@ -1057,7 +1057,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clearParentAnnotation(childAnnotation: Annotation): void;
+function clearParentAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
 function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
