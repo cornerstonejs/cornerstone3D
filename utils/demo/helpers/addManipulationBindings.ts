@@ -1,4 +1,5 @@
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import type { Types } from '@cornerstonejs/tools';
 
 const {
   LengthTool,
@@ -26,13 +27,25 @@ let registered = false;
  */
 export default function addManipulationBindings(
   toolGroup,
-  options: {
-    is3DViewport?: boolean;
-  } = {}
+  register = true,
+  options?
 ) {
-  const { is3DViewport = false } = options;
+  const zoomBindings: Types.IToolBinding[] = [
+    {
+      mouseButton: MouseBindings.Secondary,
+    },
+  ];
 
-  if (!registered) {
+  if (options?.enableShiftClickZoom === true) {
+    zoomBindings.push({
+      mouseButton: MouseBindings.Primary, // Shift Left Click
+      modifierKey: KeyboardBindings.Shift,
+    });
+  }
+
+  if (register) {
+    cornerstoneTools.addTool(LengthTool);
+    cornerstoneTools.addTool(StackScrollMouseWheelTool);
     cornerstoneTools.addTool(PanTool);
     cornerstoneTools.addTool(ZoomTool);
     cornerstoneTools.addTool(TrackballRotateTool);
@@ -65,34 +78,13 @@ export default function addManipulationBindings(
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: zoomBindings,
+  });
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-      {
-        mouseButton: MouseBindings.Secondary,
+        mouseButton: MouseBindings.Fifth_Button,
       },
     ],
   });
-
-  if (is3DViewport) {
-    toolGroup.setToolActive(TrackballRotateTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
-  } else {
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolActive(StackScrollTool.toolName);
-    toolGroup.setToolActive(LengthTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Fifth_Button,
-        },
-      ],
-    });
-  }
 }

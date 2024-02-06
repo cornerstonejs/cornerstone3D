@@ -46,7 +46,7 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import { ChangeTypes } from '../../enums';
+import { KeyboardBindings, ChangeTypes } from '../../enums';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -178,6 +178,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        /**
+         * Specify which modifier key is used to add a hole to a contour. The
+         * modifier must be pressed when the first point of a new contour is added.
+         */
+        contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather
           // than just rendering a line.

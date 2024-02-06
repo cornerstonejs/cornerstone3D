@@ -11,6 +11,7 @@ import {
   AnnotationAddedEventDetail,
   AnnotationModifiedEventDetail,
   AnnotationCompletedEventDetail,
+  ContourAnnotationCompletedEventDetail,
 } from '../../../types/EventTypes';
 
 /**
@@ -105,11 +106,37 @@ function triggerAnnotationModified(
  * Triggers an annotation completed event.
  */
 function triggerAnnotationCompleted(annotation: Annotation): void {
-  const eventType = Events.ANNOTATION_COMPLETED;
   const eventDetail: AnnotationCompletedEventDetail = {
     annotation,
   };
 
+  _triggerAnnotationCompleted(eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event for contours (same annotation completed
+ * event but with more specific details).
+ */
+function triggerContourAnnotationCompleted(
+  annotation: Annotation,
+  contourHoleProcessingEnabled = false
+): void {
+  const eventDetail: ContourAnnotationCompletedEventDetail = {
+    annotation,
+    contourHoleProcessingEnabled,
+  };
+
+  _triggerAnnotationCompleted(eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event for the `detail` provided
+ * @param eventDetail - Event detail
+ */
+function _triggerAnnotationCompleted(
+  eventDetail: AnnotationCompletedEventDetail
+) {
+  const eventType = Events.ANNOTATION_COMPLETED;
   triggerEvent(eventTarget, eventType, eventDetail);
 }
 
@@ -118,4 +145,5 @@ export {
   triggerAnnotationAddedForFOR,
   triggerAnnotationModified,
   triggerAnnotationCompleted,
+  triggerContourAnnotationCompleted,
 };

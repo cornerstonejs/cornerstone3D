@@ -2,12 +2,14 @@ import type { Types } from '@cornerstonejs/core';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
+  drawPath as drawPathSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
 import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../../types/AnnotationStyle';
 import { SVGDrawingHelper } from '../../../types';
+import { getContourHolesDataCanvas } from '../../../utilities/contours';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
@@ -42,7 +44,7 @@ function _getRenderingOptions(
     lineDash,
     fillColor,
     fillOpacity,
-    connectLastToFirst: isClosedContour,
+    closePath: isClosedContour,
   };
 
   return options;
@@ -106,6 +108,10 @@ function renderClosedContour(
   svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
+  if (annotation.parentAnnotationUID) {
+    return;
+  }
+
   const { viewport } = enabledElement;
   const options = this._getRenderingOptions(enabledElement, annotation);
 
@@ -114,17 +120,19 @@ function renderClosedContour(
   // element on the tool? That feels very weird also as we'd need to manage
   // it/clean them up. Its a pre-optimisation for now and we can tackle it if it
   // becomes a problem.
-  const canvasPoints = annotation.data.contour.polyline.map((worldPos) =>
+  const canvasPolyline = annotation.data.contour.polyline.map((worldPos) =>
     viewport.worldToCanvas(worldPos)
   );
 
+  const childContours = getContourHolesDataCanvas(annotation, viewport);
+  const allContours = [canvasPolyline, ...childContours];
   const polylineUID = '1';
 
-  drawPolylineSvg(
+  drawPathSvg(
     svgDrawingHelper,
     annotation.annotationUID,
     polylineUID,
-    canvasPoints,
+    allContours,
     options
   );
 }
@@ -245,7 +253,7 @@ function renderOpenUShapedContour(
     {
       color: options.color,
       width: options.width,
-      connectLastToFirst: false,
+      closePath: false,
       lineDash: '2,2',
     }
   );
@@ -262,7 +270,7 @@ function renderOpenUShapedContour(
     {
       color: options.color,
       width: options.width,
-      connectLastToFirst: false,
+      closePath: false,
       lineDash: '2,2',
     }
   );
@@ -284,7 +292,7 @@ function renderContourBeingDrawn(
 
   // Override rendering whilst drawing the contour, we don't know if its open
   // or closed yet
-  options.connectLastToFirst = false;
+  options.closePath = false;
 
   drawPolylineSvg(
     svgDrawingHelper,
@@ -337,6 +345,7 @@ function renderClosedContourBeingEdited(
   svgDrawingHelper,
   annotation
 ): void {
+  const { viewport } = enabledElement;
   const { fusedCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints === undefined) {
@@ -346,15 +355,24 @@ function renderClosedContourBeingEdited(
     return;
   }
 
-  const options = this._getRenderingOptions(enabledElement, annotation);
+  // Get the polylines from child annotations (holes)
+  const childContours = getContourHolesDataCanvas(annotation, viewport);
 
+  const allContours = [fusedCanvasPoints, ...childContours];
+  const options = this._getRenderingOptions(enabledElement, annotation);
   const polylineUIDToRender = 'preview-1';
 
-  drawPolylineSvg(
+  // Set `fillOpacity` to zero if it is a child annotation (hole) otherwise
+  // it would "close" the hole when editing it
+  if (annotation.parentAnnotationUID && options.fillOpacity) {
+    options.fillOpacity = 0;
+  }
+
+  drawPathSvg(
     svgDrawingHelper,
     annotation.annotationUID,
     polylineUIDToRender,
-    fusedCanvasPoints,
+    allContours,
     options
   );
 }
