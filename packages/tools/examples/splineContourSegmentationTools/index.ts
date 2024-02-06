@@ -330,7 +330,7 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup, true, { disableShiftClickZoom: true });
+  addManipulationBindings(toolGroup);
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);

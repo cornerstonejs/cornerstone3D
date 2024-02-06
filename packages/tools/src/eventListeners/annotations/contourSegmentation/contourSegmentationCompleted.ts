@@ -25,10 +25,8 @@ import * as contourUtils from '../../../utilities/contours';
 import * as contourSegUtils from '../../../utilities/contourSegmentation';
 import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
 import { PlanarFreehandContourSegmentationTool } from '../../../tools';
-import {
-  ContourAnnotation,
-  ContourWindingDirection,
-} from '../../../types/ContourAnnotation';
+import type { ContourAnnotation } from '../../../types/ContourAnnotation';
+import { ContourWindingDirection } from '../../../types/ContourAnnotation';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 

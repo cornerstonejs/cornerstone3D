@@ -315,7 +315,7 @@ async function run() {
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-  addManipulationBindings(toolGroup, true, { disableShiftClickZoom: true });
+  addManipulationBindings(toolGroup);
 
   // Set the initial state of the tools
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);

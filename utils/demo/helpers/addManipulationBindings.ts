@@ -34,7 +34,7 @@ export default function addManipulationBindings(
     },
   ];
 
-  if (options?.disableShiftClickZoom !== true) {
+  if (options?.enableShiftClickZoom === true) {
     zoomBindings.push({
       mouseButton: MouseBindings.Primary, // Shift Left Click
       modifierKey: KeyboardBindings.Shift,

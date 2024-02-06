@@ -59,8 +59,13 @@ function getAnnotations(
   return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
-function clearParentAnnotation(childAnnotation: Annotation) {
-  const { annotationUID: childUID, parentAnnotationUID } = childAnnotation;
+/**
+ * Removes the association between the annotation passed as parameter and its
+ * parent in case it has one (eg: contour holes).
+ * @param annotation - Annotation
+ */
+function clearParentAnnotation(annotation: Annotation): void {
+  const { annotationUID: childUID, parentAnnotationUID } = annotation;
 
   if (!parentAnnotationUID) {
     return;
@@ -70,13 +75,20 @@ function clearParentAnnotation(childAnnotation: Annotation) {
   const childUIDIndex = parentAnnotation.childAnnotationUIDs.indexOf(childUID);
 
   parentAnnotation.childAnnotationUIDs.splice(childUIDIndex, 1);
-  childAnnotation.parentAnnotationUID = undefined;
+  annotation.parentAnnotationUID = undefined;
 }
 
+/**
+ * Creates a parent/child association between annotations.
+ * A annotation may have only one parent and multiple children (eg: a contour
+ * may have multiple holes in it).
+ * @param parentAnnotation - Parent annotation
+ * @param childAnnotation - Child annotation
+ */
 function addChildAnnotation(
   parentAnnotation: Annotation,
   childAnnotation: Annotation
-) {
+): void {
   const { annotationUID: parentUID } = parentAnnotation;
   const { annotationUID: childUID } = childAnnotation;
 
