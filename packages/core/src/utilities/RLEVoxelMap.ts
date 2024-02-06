@@ -4,7 +4,6 @@ export type RLERun<T> = {
   value: T;
   i: number;
   iEnd: number;
-  run: RLERun<T>;
 };
 
 /**
@@ -14,7 +13,7 @@ export type RLERun<T> = {
  * incrementing for all rows in the multi-plane voxel.
  */
 export default class RLEVoxelMap<T> {
-  protected rows = new Map<number, RLERun<T>>();
+  protected rows = new Map<number, RLERun<T>[]>();
   protected height = 1;
   protected width = 1;
   protected depth = 1;
@@ -32,119 +31,98 @@ export default class RLEVoxelMap<T> {
   public get = (index): T => {
     const i = index % this.jMultiple;
     const j = (index - i) / this.jMultiple;
+    const rle = this.getRLE(i, j);
+    return rle?.value;
+  };
+
+  protected getRLE(i: number, j: number): RLERun<T> {
     const row = this.rows.get(j);
     if (!row) {
       return;
     }
-    for (let run = row; run; run = run.run) {
-      if (i >= run.i && i < run.iEnd) {
-        return run.value;
+    const index = this.findIndex(row, i);
+    const rle = row[index];
+    return i >= rle?.i ? rle : undefined;
+  }
+
+  protected findIndex(row: RLERun<T>[], i: number) {
+    for (let index = 0; index < row.length; index++) {
+      const { iEnd } = row[index];
+      if (i < iEnd) {
+        return index;
       }
     }
-    return;
-  };
+    return row.length;
+  }
 
   /**
-   * Gets the run for the given j,k indices.  This is mostly used for unit tests
+   * Gets the run for the given j,k indices.  This is used to allow fast access
+   * to runs for data for things like rendering entire rows of data.
    */
-  protected getRun = (j: number, k: number) => {
+  public getRun = (j: number, k: number) => {
     const runIndex = j + k * this.height;
     return this.rows.get(runIndex);
   };
 
-  public set = (index, value: T) => {
+  /**
+   * Adds to the RLE at the given position.  This is unfortunately fairly
+   * complex since it is desirable to minimize the number of runs, but to still
+   * allow it to be efficient.
+   */
+  public set = (index: number, value: T) => {
     const isDefault = !value;
-    const i = index % this.jMultiple;
-    const j = (index - i) / this.jMultiple;
+    const i = index % this.width;
+    const j = (index - i) / this.width;
     const row = this.rows.get(j);
-    const newRun = {
-      run: null,
-      i,
-      iEnd: i + 1,
-      value,
-    };
     if (!row) {
       if (isDefault) {
         return;
       }
-      this.rows.set(j, newRun);
+      this.rows.set(j, [{ i, iEnd: i + 1, value }]);
       return;
     }
-    let lastRun;
-    for (let run = row; run; run = run.run) {
-      if (i < run.i) {
-        if (!isDefault) {
-          newRun.run = run;
-          if (lastRun) {
-            lastRun.run = newRun;
-          } else {
-            this.rows.set(j, newRun);
-          }
-        }
+    const rleIndex = this.findIndex(row, i);
+    const rle = row[rleIndex];
+    const rleLast = row[rleIndex - 1];
+    if (!rle) {
+      // We are at the end, check if the previous rle can be extended
+      if (!rleLast || rleLast.value !== value || rleLast.iEnd !== i) {
+        row[rleIndex] = { i, iEnd: i + 1, value };
         return;
       }
-      if (i >= run.i && i < run.iEnd) {
-        if (isEqual(value, run.value)) {
+      // Just add it to the previous element.
+      rleLast.iEnd++;
+      return;
+    }
+    if (value === rle.value) {
+      if (i >= rle.i) {
+        return;
+      }
+      if (i === rle.i - 1) {
+        rle.i--;
+        if (!rleLast || rleLast.iEnd < i || rleLast.value !== value) {
           return;
         }
-        run.run = {
-          run: run.run,
-          i,
-          iEnd: i + 1,
-          value,
-        };
-        run.iEnd = i;
-        this.optimizeRow(row, j);
+        rle.i = rleLast.i;
+        row.splice(rleIndex, 1);
         return;
       }
-      lastRun = run;
     }
-    if (isDefault) {
+    // Value is not the same
+    if (i > rle.i) {
+      // Split after rle
+      row.splice(rleIndex, 0, { i, iEnd: i + 1, value });
       return;
     }
-    lastRun.run = newRun;
-    this.optimizeRow(row, j);
+    if (i === rle.i) {
+      if (rle.iEnd === i + 1) {
+        rle.value = value;
+        return;
+      }
+      rle.i++;
+    }
+    row.splice(rleIndex - 1, 0, { i, iEnd: i + 1, value });
   };
-
-  protected optimizeRow(row: RLERun<T>, j: number) {
-    let run = row;
-    const firstRow = { run, i: -Infinity, iEnd: -Infinity, value: null };
-    let lastRun = firstRow;
-
-    // Cast this through unknown so that we can pretend it is a run
-    while (run) {
-      if (!run.value) {
-        // Delete the run since it isn't needed
-        lastRun.run = run.run;
-        run = run.run;
-        continue;
-      }
-      if (lastRun.iEnd >= run.i) {
-        if (isEqual(lastRun.value, run.value)) {
-          lastRun.iEnd = run.iEnd;
-          // Deletes the run, incorporating it into lastRun
-          lastRun.run = run.run;
-          run = run.run;
-          continue;
-        }
-        run.i = lastRun.iEnd;
-        if (run.i >= run.iEnd) {
-          // This run is gone, so remove it
-          lastRun.run = run.run;
-          run = run.run;
-          continue;
-        }
-        // The run is shortened, but not gone, so leave it.
-      }
-      lastRun = run;
-      run = run.run;
-    }
-    if (!firstRow.run) {
-      this.rows.delete(j);
-    } else {
-      this.rows.set(j, firstRow.run);
-    }
-  }
 
   public clear() {
     this.rows.clear();

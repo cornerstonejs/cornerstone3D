@@ -20,12 +20,12 @@ describe('RLEVoxelMap', () => {
     for (let i = index; i < endIndex; i++) {
       rleMap.set(i, 1);
     }
-    const run = rleMap.getRun(2, 2);
+    const row = rleMap.getRun(2, 2);
+    const [run] = row;
     expect(run).not.toBeUndefined();
     expect(run.value).toBe(1);
     expect(run.i).toBe(4);
     expect(run.iEnd).toBe(64);
-    expect(run.run).toBeNull();
     expect(rleMap.getRun(3, 2)).toBeUndefined();
     expect(rleMap.getRun(2, 3)).toBeUndefined();
     expect(rleMap.getRun(1, 2)).toBeUndefined();
@@ -39,11 +39,11 @@ describe('RLEVoxelMap', () => {
       const value = (Math.floor((i - 16) / 2) % 2) + 1;
       rleMap.set(i + baseIndex, value);
     }
-    const run = rleMap.getRun(j, 0);
+    const row = rleMap.getRun(j, 0);
+    const [run, run2] = row;
     expect(run.value).toBe(1);
     expect(run.i).toBe(16);
     expect(run.iEnd).toBe(18);
-    const run2 = run.run;
     expect(run2.value).toBe(2);
     expect(run2.i).toBe(18);
     expect(run2.iEnd).toBe(20);

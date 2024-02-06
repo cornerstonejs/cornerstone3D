@@ -99,14 +99,14 @@ export default class CanvasActor implements ICanvasActor {
     let dirtyX2 = -Infinity;
     let dirtyY2 = -Infinity;
     for (let y = 0; y < height; y++) {
-      let run = map.getRun(y, 0);
-      if (!run) {
+      const row = map.getRun(y, 0);
+      if (!row) {
         continue;
       }
       dirtyY = Math.min(dirtyY, y);
       dirtyY2 = Math.max(dirtyY2, y);
       const baseOffset = y * width * 4;
-      for (; run; run = run.run) {
+      for (const run of row) {
         const { i: iStart, iEnd, value } = run;
         dirtyX = Math.min(dirtyX, iStart);
         dirtyX2 = Math.max(dirtyX2, iEnd);
