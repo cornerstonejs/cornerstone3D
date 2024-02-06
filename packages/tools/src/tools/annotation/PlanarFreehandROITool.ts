@@ -178,6 +178,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        /**
+         * Specify which modifier key is used to add a hole to a contour. The
+         * modifier must be pressed when the first point of a new contour is added.
+         */
         contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather

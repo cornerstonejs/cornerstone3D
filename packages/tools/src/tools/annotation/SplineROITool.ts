@@ -116,6 +116,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
         preventHandleOutsideImage: false,
         calculateStats: true,
         getTextLines: defaultGetTextLines,
+        /**
+         * Specify which modifier key is used to add a hole to a contour. The
+         * modifier must be pressed when the first point of a new contour is added.
+         */
         contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         spline: {
           configuration: {
