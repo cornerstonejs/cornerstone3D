@@ -68,7 +68,9 @@ export default function getInterpolationData(
       }
     );
 
-    interpolationDatas.set(i, filteredInterpolatedAnnotations);
+    if (filteredInterpolatedAnnotations.length) {
+      interpolationDatas.set(i, filteredInterpolatedAnnotations);
+    }
   }
 
   return interpolationDatas;

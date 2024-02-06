@@ -14,6 +14,8 @@ export type InterpolationViewportData = {
   /** The viewport that this interpolation is occurring within */
   viewport: Types.IViewport;
   sliceData: Types.ImageSliceData;
+  /** True if the interpolation data is being regenerated because of an update */
+  isInterpolationUpdate?: boolean;
 };
 
 export type ImageInterpolationData = {
@@ -39,4 +41,8 @@ export type AcceptInterpolationSelector = {
    * Applies just to the given segment index.
    */
   segmentIndex?: number;
+  /**
+   * Only apply to the given slice index
+   */
+  sliceIndex?: number;
 };

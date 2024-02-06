@@ -136,6 +136,7 @@ export type {
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
+  PointsManager,
   Scaling,
   IStreamingImageVolume,
   IImage,
