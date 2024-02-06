@@ -59,7 +59,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     worldToSlice?: (point: Types.Point3) => Types.Point2;
     sliceToWorld?: (point: Types.Point2) => Types.Point3;
     originalPath?: Types.Point3[];
-    contourProcessingEnabled?: boolean;
+    contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -70,7 +70,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
-        contourProcessingModifiers: KeyboardBindings.Shift,
+        contourHoleAdditionModifierKey: KeyboardBindings.Shift,
 
         /**
          * Configuring this to a value larger than 0 will snap handles to nearby
@@ -125,7 +125,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     element,
     annotation,
     rightPos?,
-    contourProcessingEnabled?
+    contourHoleProcessingEnabled?
   ) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -244,7 +244,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         this.editData?.handleIndex ?? annotation.handles?.activeHandleIndex,
       worldToSlice,
       sliceToWorld,
-      contourProcessingEnabled,
+      contourHoleProcessingEnabled,
     };
   }
 
@@ -264,16 +264,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { world: worldPos } = currentPoints;
     const { renderingEngine } = getEnabledElement(element);
     const annotation = this.createAnnotation(evt);
-    const contourProcessingEnabled =
+    const contourHoleProcessingEnabled =
       getMouseModifierKey(evt.detail.event) ===
-      this.configuration.contourProcessingModifiers;
+      this.configuration.contourHoleAdditionModifierKey;
 
     this.setupBaseEditData(
       worldPos,
       element,
       annotation,
       undefined,
-      contourProcessingEnabled
+      contourHoleProcessingEnabled
     );
     this.addAnnotation(annotation, element);
 
@@ -404,7 +404,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation,
       viewportIdsToRender,
       newAnnotation,
-      contourProcessingEnabled,
+      contourHoleProcessingEnabled,
     } = this.editData;
     const { data } = annotation;
 
@@ -442,7 +442,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation,
       enabledElement,
       changeType,
-      contourProcessingEnabled
+      contourHoleProcessingEnabled
     );
     this.clearEditData();
   };
@@ -461,10 +461,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotation: LivewireContourAnnotation,
     enabledElement: Types.IEnabledElement,
     changeType = ChangeTypes.StatsUpdated,
-    contourProcessingEnabled = false
+    contourHoleProcessingEnabled = false
   ): void => {
     if (changeType === ChangeTypes.Completed) {
-      triggerContourAnnotationCompleted(annotation, contourProcessingEnabled);
+      triggerContourAnnotationCompleted(
+        annotation,
+        contourHoleProcessingEnabled
+      );
     } else {
       triggerAnnotationModified(
         annotation,

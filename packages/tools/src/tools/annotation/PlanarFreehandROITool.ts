@@ -178,7 +178,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
-        contourProcessingModifiers: KeyboardBindings.Shift,
+        contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather
           // than just rendering a line.

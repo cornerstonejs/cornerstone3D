@@ -43,9 +43,9 @@ function activateDraw(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
-  const contourProcessingEnabled =
+  const contourHoleProcessingEnabled =
     getMouseModifierKey(evt.detail.event) ===
-    this.configuration.contourProcessingModifiers;
+    this.configuration.contourHoleAdditionModifierKey;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
@@ -55,7 +55,7 @@ function activateDraw(
   this.drawData = {
     canvasPoints: [canvasPos],
     polylineIndex: 0,
-    contourProcessingEnabled,
+    contourHoleProcessingEnabled,
   };
 
   this.commonData = {
@@ -177,7 +177,7 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints, contourProcessingEnabled } = this.drawData;
+  const { canvasPoints, contourHoleProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
@@ -191,9 +191,9 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element, contourProcessingEnabled);
+    this.completeDrawOpenContour(element, contourHoleProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element, contourProcessingEnabled);
+    this.completeDrawClosedContour(element, contourHoleProcessingEnabled);
   }
 }
 
@@ -202,7 +202,7 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function completeDrawClosedContour(
   element: HTMLDivElement,
-  contourProcessingEnabled: boolean
+  contourHoleProcessingEnabled: boolean
 ): boolean {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
@@ -250,7 +250,7 @@ function completeDrawClosedContour(
   const { textBox } = annotation.data.handles;
 
   if (!textBox.hasMoved) {
-    triggerContourAnnotationCompleted(annotation, contourProcessingEnabled);
+    triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -294,7 +294,7 @@ function removeCrossedLinesOnCompleteDraw(): void {
  */
 function completeDrawOpenContour(
   element: HTMLDivElement,
-  contourProcessingEnabled: boolean
+  contourHoleProcessingEnabled: boolean
 ): boolean {
   const { canvasPoints } = this.drawData;
 
@@ -341,7 +341,7 @@ function completeDrawOpenContour(
   }
 
   if (!textBox.hasMoved) {
-    triggerContourAnnotationCompleted(annotation, contourProcessingEnabled);
+    triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -426,7 +426,7 @@ function applyCreateOnCross(
  */
 function cancelDrawing(element: HTMLElement) {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints, contourProcessingEnabled } = this.drawData;
+  const { canvasPoints, contourHoleProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
 
@@ -438,9 +438,9 @@ function cancelDrawing(element: HTMLElement) {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element, contourProcessingEnabled);
+    this.completeDrawOpenContour(element, contourHoleProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element, contourProcessingEnabled);
+    this.completeDrawClosedContour(element, contourHoleProcessingEnabled);
   }
 }
 

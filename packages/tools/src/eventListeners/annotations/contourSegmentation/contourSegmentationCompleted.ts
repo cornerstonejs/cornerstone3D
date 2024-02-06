@@ -33,14 +33,6 @@ const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 export default function contourSegmentationCompletedListener(
   evt: AnnotationCompletedEventType
 ) {
-  const { contourProcessingEnabled } =
-    evt.detail as ContourAnnotationCompletedEventDetail;
-
-  // Do not append, remove or create holes when contourProcessingEnabled is `false`
-  if (!contourProcessingEnabled) {
-    return;
-  }
-
   const sourceAnnotation = evt.detail
     .annotation as ContourSegmentationAnnotation;
 
@@ -78,6 +70,14 @@ export default function contourSegmentationCompletedListener(
   const { targetAnnotation, targetPolyline, isHole } = targetAnnotationInfo;
 
   if (isHole) {
+    const { contourHoleProcessingEnabled = false } =
+      evt.detail as ContourAnnotationCompletedEventDetail;
+
+    // Do not create holes when contourHoleProcessingEnabled is `false`
+    if (!contourHoleProcessingEnabled) {
+      return;
+    }
+
     createPolylineHole(viewport, targetAnnotation, sourceAnnotation);
   } else {
     combinePolylines(

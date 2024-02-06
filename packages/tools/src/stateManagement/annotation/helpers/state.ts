@@ -119,11 +119,11 @@ function triggerAnnotationCompleted(annotation: Annotation): void {
  */
 function triggerContourAnnotationCompleted(
   annotation: Annotation,
-  contourProcessingEnabled = false
+  contourHoleProcessingEnabled = false
 ): void {
   const eventDetail: ContourAnnotationCompletedEventDetail = {
     annotation,
-    contourProcessingEnabled,
+    contourHoleProcessingEnabled,
   };
 
   _triggerAnnotationCompleted(eventDetail);
