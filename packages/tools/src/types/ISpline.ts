@@ -19,6 +19,9 @@ export interface ISpline {
   /** Set the resolution of the spline curve */
   set resolution(resolution: number);
 
+  /** Fixed resolution (eg: Linear Spline) */
+  get fixedResolution(): boolean;
+
   /** Flag that is set to true when the curve is already closed */
   get closed(): boolean;
 

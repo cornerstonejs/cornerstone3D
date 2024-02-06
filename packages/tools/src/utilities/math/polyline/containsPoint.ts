@@ -10,7 +10,7 @@ import isClosed from './isClosed';
  *
  * @param polyline - Polyline points (2D)
  * @param point - 2D Point
- * @returns True is the point is inside the polyline or false otherwise
+ * @returns True if the point is inside the polyline or false otherwise
  */
 export default function containsPoint(
   polyline: Types.Point2[],

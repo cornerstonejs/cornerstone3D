@@ -1,8 +1,10 @@
 import isClosed from './isClosed';
 import containsPoint from './containsPoint';
+import containsPoints from './containsPoints';
 import getAABB from './getAABB';
 import getArea from './getArea';
 import getSignedArea from './getSignedArea';
+import getWindingDirection from './getWindingDirection';
 import getNormal3 from './getNormal3';
 import getNormal2 from './getNormal2';
 import { mergePolylines, subtractPolylines } from './combinePolyline';
@@ -19,9 +21,11 @@ import pointCanProjectOnLine from './pointCanProjectOnLine';
 export {
   isClosed,
   containsPoint,
+  containsPoints,
   getAABB,
   getArea,
   getSignedArea,
+  getWindingDirection,
   getNormal3,
   getNormal2,
   intersectPolyline,

@@ -29,6 +29,8 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
@@ -213,6 +215,10 @@ addDropdownToToolbar({
         {
           mouseButton: MouseBindings.Primary, // Left Click
         },
+        {
+          mouseButton: MouseBindings.Primary, // Left Click+Shift
+          modifierKey: KeyboardBindings.Shift,
+        },
       ],
     });
 
@@ -365,6 +371,10 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click+Shift
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });

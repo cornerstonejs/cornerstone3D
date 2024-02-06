@@ -19,6 +19,7 @@ import {
   InteractionTypes,
   ToolProps,
   PublicToolProps,
+  IToolBinding,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
