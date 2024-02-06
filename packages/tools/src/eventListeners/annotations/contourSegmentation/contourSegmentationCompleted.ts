@@ -138,6 +138,10 @@ function getValidContourSegmentationAnnotations(
   const { annotationUID: sourceAnnotationUID } = sourceAnnotation;
   const { FrameOfReferenceUID } = sourceAnnotation.metadata;
 
+  if (!FrameOfReferenceUID) {
+    return [];
+  }
+
   // Get all annotations and filter all contour segmentations locally
   const toolName = undefined;
   const annotationsGroups = getAnnotations(toolName, FrameOfReferenceUID);
