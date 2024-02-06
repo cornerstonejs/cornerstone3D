@@ -51,12 +51,14 @@ import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
+import ThresholdPreviewTool from './segmentation/ThresholdPreviewTool';
 
 export {
   // ~~ BASE
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
@@ -69,6 +71,7 @@ export {
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   ReferenceCursors,
+
   // Annotation Tools
   CrosshairsTool,
   ReferenceLinesTool,
@@ -90,8 +93,10 @@ export {
   CobbAngleTool,
   UltrasoundDirectionalTool,
   KeyImageTool,
+
   // Segmentations Display
   SegmentationDisplayTool,
+
   // Segmentations Tools
   RectangleScissorsTool,
   CircleScissorsTool,
@@ -107,4 +112,5 @@ export {
   ScaleOverlayTool,
   OrientationMarkerTool,
   SegmentSelectTool,
+  ThresholdPreviewTool,
 };

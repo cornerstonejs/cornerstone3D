@@ -70,6 +70,7 @@ import {
   OverlayGridTool,
   SegmentationIntersectionTool,
   SegmentSelectTool,
+  ThresholdPreviewTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -84,10 +85,12 @@ export {
   addTool,
   removeTool,
   cancelActiveManipulations,
+
   // Base Tools
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
@@ -99,6 +102,7 @@ export {
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
+
   // Annotation Tools
   LengthTool,
   CrosshairsTool,
@@ -126,8 +130,10 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+
   // Segmentation Display
   SegmentationDisplayTool,
+
   // Segmentation Editing Tools
   RectangleScissorsTool,
   CircleScissorsTool,
@@ -137,6 +143,8 @@ export {
   BrushTool,
   OrientationMarkerTool,
   SegmentSelectTool,
+  ThresholdPreviewTool,
+
   // Synchronizers
   synchronizers,
   Synchronizer,
@@ -144,18 +152,25 @@ export {
   PaintFillTool,
   Types,
   state,
+
   // ToolGroups
   ToolGroupManager,
+
   // Enums
   Enums,
+
   // Constants
   CONSTANTS,
+
   // Drawing API
   drawing,
+
   // Annotation
   annotation,
+
   // Segmentations
   segmentation,
+
   // Utilities
   utilities,
   cursors,

@@ -8,20 +8,31 @@ import { ToolConfiguration } from '../types';
 export default interface IToolGroup {
   /** Unserializable instantiated tool classes, keyed by name */
   _toolInstances: Record<string, any>;
+
   /** ToolGroup ID */
   id: string;
+
   /** Viewports Info inside the ToolGroup - including viewportId and renderingEngineId */
   viewportsInfo: Array<Types.IViewportId>;
+
   /** Options for each tool including bindings and mode */
   toolOptions: Record<string, any>;
+
   /** Get viewportIds in the toolGroup*/
   getViewportIds: () => string[];
+
   /** Get viewports info in the toolGroup*/
   getViewportsInfo: () => Array<Types.IViewportId>;
+
+  /** Get viewports info in the toolGroup*/
+  getViewports: () => Array<Types.IVolumeViewport>;
+
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any };
+
   /** Check if a tool is already added to the tool group */
   hasTool(toolName: string): boolean;
+
   /** Add a tool to toolGroup with its configuration and custom calculator if wanted */
   addTool: {
     (toolName: string, toolConfiguration?: ToolConfiguration): void;

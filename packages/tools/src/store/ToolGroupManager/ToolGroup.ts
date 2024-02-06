@@ -72,11 +72,28 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
-   * Get the tool instance for a given tool name in the toolGroup
-   * @param toolName - The name of the tool.
-   * @returns A tool instance.
+   * Returns the toolGroup viewports  which is an array of {viewportId, renderingEngineId}
    */
-  public getToolInstance(toolInstanceName: string) {
+  getViewports(): Array<Types.IVolumeViewport> {
+    return this.getViewportsInfo().map(
+      ({ renderingEngineId, viewportId }: Types.IViewportId) => {
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+
+        if (enabledElement) {
+          return enabledElement.viewport;
+        }
+      }
+    ) as Array<Types.IVolumeViewport>;
+  }
+
+  /**
+   * Get the tool instance for a given tool name in the toolGroup
+   * @param toolInstanceName - The name of the tool.
+   * @returns A tool instance.
+   */ public getToolInstance(toolInstanceName: string) {
     const toolInstance = this._toolInstances[toolInstanceName];
     if (!toolInstance) {
       console.warn(

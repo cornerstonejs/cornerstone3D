@@ -325,6 +325,10 @@
         "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
+      "labelmapThresholdPreviewTool":{
+        "name": "Threshold preview tool",
+        "description": "Demonstrates threshold preview for different HU ranges"
+      },
       "labelmapRenderingDifferentResolutions": {
         "name": "Rendering Labelmap with Different Resolutions",
         "description": "Demonstrates that the segmentation resolution need not to be the same as the source data"
