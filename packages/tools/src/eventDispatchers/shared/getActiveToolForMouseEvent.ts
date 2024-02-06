@@ -34,7 +34,7 @@ export default function getActiveToolForMouseEvent(
   );
 
   if (!toolGroup) {
-    return null;
+    return {};
   }
 
   const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
@@ -62,4 +62,6 @@ export default function getActiveToolForMouseEvent(
       return { toolInstance, toolBinding };
     }
   }
+
+  return {};
 }
