@@ -31,8 +31,6 @@ import type {
   PublicToolProps,
   ToolProps,
   AnnotationRenderContext,
-  InteractionTypes,
-  IToolBinding,
 } from '../../types';
 import {
   math,
@@ -180,16 +178,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation(
-    evt: EventTypes.InteractionEventType,
-    _interactionType: InteractionTypes,
-    toolBinding: IToolBinding
-  ): SplineROIAnnotation {
+  addNewAnnotation(evt: EventTypes.InteractionEventType): SplineROIAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { canvas: canvasPos } = currentPoints;
-    const contourProcessingEnabled =
-      !!toolBinding.data?.contourProcessingEnabled;
+    const contourProcessingEnabled = !!evt.detail.event.shiftKey;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;

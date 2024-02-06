@@ -17,8 +17,6 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-  InteractionTypes,
-  IToolBinding,
 } from '../../types';
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
@@ -256,17 +254,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
    *
    */
   addNewAnnotation(
-    evt: EventTypes.InteractionEventType,
-    _interactionType: InteractionTypes,
-    toolBinding: IToolBinding
+    evt: EventTypes.InteractionEventType
   ): LivewireContourAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { world: worldPos } = currentPoints;
     const { renderingEngine } = getEnabledElement(element);
     const annotation = this.createAnnotation(evt);
-    const contourProcessingEnabled =
-      !!toolBinding.data?.contourProcessingEnabled;
+    const contourProcessingEnabled = !!evt.detail.event.shiftKey;
 
     this.setupBaseEditData(
       worldPos,

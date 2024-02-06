@@ -4,7 +4,7 @@ import {
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
-import { EventTypes, IToolBinding } from '../../../types';
+import { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
@@ -32,7 +32,6 @@ const {
  */
 function activateDraw(
   evt: EventTypes.InteractionEventType,
-  toolBinding: IToolBinding,
   annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
@@ -43,7 +42,7 @@ function activateDraw(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
-  const contourProcessingEnabled = !!toolBinding.data?.contourProcessingEnabled;
+  const contourProcessingEnabled = !!evt.detail.event.shiftKey;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,

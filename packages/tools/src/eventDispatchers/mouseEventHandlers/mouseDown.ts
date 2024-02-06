@@ -55,7 +55,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     return;
   }
 
-  const { toolInstance: activeTool } = getActiveToolForMouseEvent(evt);
+  const activeTool = getActiveToolForMouseEvent(evt);
 
   // Check for preMouseDownCallbacks,
   // If the tool claims it consumed the event, prevent further checks.

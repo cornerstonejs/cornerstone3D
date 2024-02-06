@@ -34,7 +34,7 @@ export default function getActiveToolForMouseEvent(
   );
 
   if (!toolGroup) {
-    return {};
+    return null;
   }
 
   const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
@@ -46,22 +46,18 @@ export default function getActiveToolForMouseEvent(
 
     // tool has binding that matches the mouse button, if mouseEvent is undefined
     // it uses the primary button
-    const toolBinding = toolOptions.bindings.length
-      ? toolOptions.bindings.find((binding) => {
-          return (
-            binding.mouseButton ===
-              (mouseEvent ? mouseEvent.buttons : defaultMousePrimary) &&
-            binding.modifierKey === modifierKey
-          );
-        })
-      : null;
+    const correctBinding =
+      toolOptions.bindings.length &&
+      toolOptions.bindings.some((binding) => {
+        return (
+          binding.mouseButton ===
+            (mouseEvent ? mouseEvent.buttons : defaultMousePrimary) &&
+          binding.modifierKey === modifierKey
+        );
+      });
 
-    if (toolOptions.mode === Active && toolBinding) {
-      const toolInstance = toolGroup.getToolInstance(toolName);
-
-      return { toolInstance, toolBinding };
+    if (toolOptions.mode === Active && correctBinding) {
+      return toolGroup.getToolInstance(toolName);
     }
   }
-
-  return {};
 }

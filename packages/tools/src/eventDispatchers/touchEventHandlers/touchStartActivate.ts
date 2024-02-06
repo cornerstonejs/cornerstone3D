@@ -19,8 +19,7 @@ export default function touchStartActivate(
     return;
   }
 
-  const { toolInstance: activeTool, toolBinding } =
-    getActiveToolForTouchEvent(evt);
+  const activeTool = getActiveToolForTouchEvent(evt);
 
   if (!activeTool) {
     return;
@@ -31,7 +30,7 @@ export default function touchStartActivate(
   }
 
   if (activeTool.addNewAnnotation) {
-    const annotation = activeTool.addNewAnnotation(evt, 'touch', toolBinding);
+    const annotation = activeTool.addNewAnnotation(evt, 'touch');
     setAnnotationSelected(annotation.annotationUID);
   }
 }

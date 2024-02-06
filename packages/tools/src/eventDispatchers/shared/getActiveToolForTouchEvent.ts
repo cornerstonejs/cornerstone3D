@@ -44,26 +44,24 @@ export default function getActiveToolForTouchEvent(
     const toolName = toolGroupToolNames[j];
     const toolOptions = toolGroup.toolOptions[toolName];
 
-    const toolBinding = toolOptions.bindings.length
-      ? /**
-         * TODO: setActiveTool treats MouseBindings.Primary in a special way
-         * which is analgous to numTouchPoints === 1 as the primary interaction
-         * for touch based applications. The ToolGroup set active and get active
-         * logic should be updated to account for numTouchPoints === 1
-         */
-        toolOptions.bindings.find(
-          (binding) =>
-            (binding.numTouchPoints === numTouchPoints ||
-              (numTouchPoints === 1 &&
-                binding.mouseButton === defaultMousePrimary)) &&
-            binding.modifierKey === modifierKey
-        )
-      : null;
+    const correctBinding =
+      toolOptions.bindings.length &&
+      /**
+       * TODO: setActiveTool treats MouseBindings.Primary in a special way
+       * which is analgous to numTouchPoints === 1 as the primary interaction
+       * for touch based applications. The ToolGroup set active and get active
+       * logic should be updated to account for numTouchPoints === 1
+       */
+      toolOptions.bindings.some(
+        (binding) =>
+          (binding.numTouchPoints === numTouchPoints ||
+            (numTouchPoints === 1 &&
+              binding.mouseButton === defaultMousePrimary)) &&
+          binding.modifierKey === modifierKey
+      );
 
-    if (toolOptions.mode === Active && toolBinding) {
-      const toolInstance = toolGroup.getToolInstance(toolName);
-
-      return { toolInstance, toolBinding };
+    if (toolOptions.mode === Active && correctBinding) {
+      return toolGroup.getToolInstance(toolName);
     }
   }
 }

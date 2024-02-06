@@ -31,7 +31,7 @@ export default function touchStart(evt: EventTypes.TouchStartEventType) {
   if (state.isInteractingWithTool) {
     return;
   }
-  const { toolInstance: activeTool } = getActiveToolForTouchEvent(evt);
+  const activeTool = getActiveToolForTouchEvent(evt);
 
   // Check for preTouchStartCallbacks,
   // If the tool claims it consumed the event, prevent further checks.

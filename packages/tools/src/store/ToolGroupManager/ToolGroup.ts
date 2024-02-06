@@ -418,6 +418,9 @@ export default class ToolGroup implements IToolGroup {
    * - Renders data if the tool has a `renderAnnotation` method.
    *
    * @param toolName - tool name
+   * @param options - Options used when setting the tool as passive
+   *  - removeAllBindings: only the primary button bindings are removed but
+   *  if this parameter is set to true all bindings are removed.
    */
   public setToolPassive(
     toolName: string,

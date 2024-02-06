@@ -57,12 +57,10 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    *
    * @param evt - The normalized mouse event
    * @param interactionType -  The interaction type used to add the annotation.
-   * @param toolBinding - Tool binding information
    */
   abstract addNewAnnotation(
     evt: EventTypes.InteractionEventType,
-    interactionType: InteractionTypes,
-    toolBinding: IToolBinding
+    interactionType: InteractionTypes
   ): Annotation;
 
   /**
