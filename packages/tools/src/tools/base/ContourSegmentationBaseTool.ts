@@ -175,6 +175,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const annotation = context.annotation as ContourSegmentationAnnotation;
     const { segmentationRepresentationUID, segmentationId, segmentIndex } =
       annotation.data.segmentation;
+    const segmentation = segmentationState.getSegmentation(segmentationId);
     const segmentationRepresentation =
       segmentationState.getSegmentationRepresentationByUID(
         toolGroupId,
@@ -253,7 +254,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     }
 
     // Change the line thickness when the mouse is over the contour segment
-    if (annotation.highlighted && mergedConfig.activeSegmentOutlineWidthDelta) {
+    if (segmentation.activeSegmentIndex === segmentIndex) {
       lineWidth += mergedConfig.activeSegmentOutlineWidthDelta;
     }
 
