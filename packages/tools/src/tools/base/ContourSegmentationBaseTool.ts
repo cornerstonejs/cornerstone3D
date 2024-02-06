@@ -252,6 +252,11 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       fillOpacity = mergedConfig.fillAlphaInactive ?? fillOpacity;
     }
 
+    // Change the line thickness when the mouse is over the contour segment
+    if (annotation.highlighted && mergedConfig.activeSegmentOutlineWidthDelta) {
+      lineWidth += mergedConfig.activeSegmentOutlineWidthDelta;
+    }
+
     lineWidth = mergedConfig.renderOutline ? lineWidth : 0;
     fillOpacity = mergedConfig.renderFill ? fillOpacity : 0;
 
