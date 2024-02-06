@@ -18,12 +18,11 @@ type Options = {
   representationType?: SegmentationRepresentations;
   viewport?: Types.IViewport;
 };
+
 /**
  * Get the segment at the specified world point in the viewport.
  * @param segmentationId - The ID of the segmentation to get the segment for.
  * @param worldPoint - The world point to get the segment for.
- *
- * Todo: we should add unit test for this function
  *
  * @returns The index of the segment at the world point, or undefined if not found.
  */

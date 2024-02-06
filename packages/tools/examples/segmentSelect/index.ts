@@ -24,7 +24,6 @@ const {
   SegmentationDisplayTool,
   Enums: csToolsEnums,
   SegmentSelectTool,
-  BrushTool,
   segmentation,
   PlanarFreehandContourSegmentationTool,
   utilities: cstUtils,
@@ -83,16 +82,6 @@ viewportGrid.appendChild(row2);
 
 content.appendChild(viewportGrid);
 
-const brushInstanceNames = {
-  CircularBrush: 'CircularBrush',
-  CircularEraser: 'CircularEraser',
-};
-
-const brushStrategies = {
-  [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
-  [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-};
-
 const stackSegLabelmapId = 'SEGMENTATION_LABELMAP_STACK';
 const volumeSegLabelmapId = 'SEGMENTATION_LABELMAP_VOLUME';
 const stackSegContourId = 'SEGMENTATION_CONTOUR_STACK';
@@ -111,7 +100,6 @@ const viewportId4 = 'viewport4';
 // ============================= //
 
 cornerstoneTools.addTool(SegmentationDisplayTool);
-cornerstoneTools.addTool(BrushTool);
 cornerstoneTools.addTool(SegmentSelectTool);
 cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -129,13 +117,6 @@ function setupTools(toolGroupId, isContour = false) {
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SegmentSelectTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularBrush,
-    }
-  );
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(SegmentSelectTool.toolName);
@@ -147,10 +128,6 @@ function setupTools(toolGroupId, isContour = false) {
           mouseButton: MouseBindings.Primary,
         },
       ],
-    });
-  } else {
-    toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
     });
   }
 
@@ -227,8 +204,25 @@ async function run() {
   _handleStackViewports(stackImageIds);
   _handleVolumeViewports(volumeImageIds, renderingEngine);
 
+  // set the fillAlpha for the labelmap to 0
+  const globalConfig = segmentation.config.getGlobalConfig();
+  segmentation.config.setGlobalRepresentationConfig(
+    cornerstoneTools.Enums.SegmentationRepresentations.Labelmap,
+    {
+      ...globalConfig.representations.LABELMAP,
+      fillAlpha: 0.05,
+    }
+  );
+  segmentation.config.setGlobalRepresentationConfig(
+    cornerstoneTools.Enums.SegmentationRepresentations.Contour,
+    {
+      ...globalConfig.representations.CONTOUR,
+      fillAlpha: 0,
+    }
+  );
+
   const config = segmentation.config.getGlobalConfig();
-  config.representations.LABELMAP.activeSegmentOutlineWidthDelta = 1;
+  config.representations.LABELMAP.activeSegmentOutlineWidthDelta = 3;
 }
 
 run();
@@ -402,4 +396,10 @@ async function _handleStackViewports(stackImageIds: string[]) {
       },
     ],
   });
+
+  setTimeout(() => {
+    viewport1.setZoom(5);
+    viewport3.setZoom(5);
+    renderingEngine.render();
+  }, 100);
 }

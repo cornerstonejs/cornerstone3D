@@ -13,8 +13,13 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
 import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
-import { getSegmentAtWorldPoint } from '../../utilities/segmentation';
+import {
+  getHoveredContourSegmentationAnnotation,
+  getSegmentAtLabelmapBorder,
+  getSegmentAtWorldPoint,
+} from '../../utilities/segmentation';
 import { state } from '../../store';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -35,8 +40,9 @@ class SegmentSelectTool extends BaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        hoverTimeout: 200,
-        mode: SegmentSelectTool.SelectMode.Inside,
+        hoverTimeout: 100,
+        mode: SegmentSelectTool.SelectMode.Border,
+        searchRadius: 20, // search for border in a 10px radius
       },
     }
   ) {
@@ -123,16 +129,32 @@ class SegmentSelectTool extends BaseTool {
       return;
     }
 
-    const { segmentationId, segmentationRepresentationUID } =
-      activeSegmentationReps;
+    const { segmentationId, type } = activeSegmentationReps;
 
     let hoveredSegmentIndex;
+
     if (this.configuration.mode === SegmentSelectTool.SelectMode.Inside) {
       hoveredSegmentIndex = getSegmentAtWorldPoint(segmentationId, worldPoint, {
         viewport,
       });
     } else {
-      hoveredSegmentIndex = getSegmentAt(segmentationId, worldPoint);
+      switch (type) {
+        case SegmentationRepresentations.Labelmap:
+          hoveredSegmentIndex = getSegmentAtLabelmapBorder(
+            segmentationId,
+            worldPoint,
+            {
+              viewport,
+              searchRadius: this.configuration.searchRadius,
+            }
+          );
+          break;
+
+        case SegmentationRepresentations.Contour:
+          hoveredSegmentIndex =
+            getHoveredContourSegmentationAnnotation(segmentationId);
+          break;
+      }
     }
 
     // No need to select background
