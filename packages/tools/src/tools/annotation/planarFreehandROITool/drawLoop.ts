@@ -11,6 +11,7 @@ import {
   shouldSmooth,
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
+import getMouseModifierKey from '../../../eventDispatchers/shared/getMouseModifier';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
@@ -42,7 +43,9 @@ function activateDraw(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
-  const contourProcessingEnabled = !!evt.detail.event.shiftKey;
+  const contourProcessingEnabled =
+    getMouseModifierKey(evt.detail.event) ===
+    this.configuration.contourProcessingModifiers;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,

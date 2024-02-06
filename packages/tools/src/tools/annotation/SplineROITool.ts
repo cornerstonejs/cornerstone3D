@@ -40,6 +40,7 @@ import {
   getCalibratedScale,
   getCalibratedAreaUnits,
 } from '../../utilities';
+import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
@@ -115,6 +116,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         preventHandleOutsideImage: false,
         calculateStats: true,
         getTextLines: defaultGetTextLines,
+        contourProcessingModifiers: KeyboardBindings.Shift,
         spline: {
           configuration: {
             [SplineTypesEnum.Cardinal]: {
@@ -182,7 +184,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { canvas: canvasPos } = currentPoints;
-    const contourProcessingEnabled = !!evt.detail.event.shiftKey;
+    const contourProcessingEnabled =
+      getMouseModifierKey(evt.detail.event) ===
+      this.configuration.contourProcessingModifiers;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;

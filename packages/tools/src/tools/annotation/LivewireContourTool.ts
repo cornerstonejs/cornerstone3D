@@ -9,7 +9,7 @@ import type { Types } from '@cornerstonejs/core';
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
 import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store';
-import { Events, ChangeTypes } from '../../enums';
+import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import type {
   EventTypes,
@@ -18,6 +18,7 @@ import type {
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
+import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -69,6 +70,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         preventHandleOutsideImage: false,
+        contourProcessingModifiers: KeyboardBindings.Shift,
+
         /**
          * Configuring this to a value larger than 0 will snap handles to nearby
          * livewire points, within the given rectangle surrounding the clicked point.
@@ -261,7 +264,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { world: worldPos } = currentPoints;
     const { renderingEngine } = getEnabledElement(element);
     const annotation = this.createAnnotation(evt);
-    const contourProcessingEnabled = !!evt.detail.event.shiftKey;
+    const contourProcessingEnabled =
+      getMouseModifierKey(evt.detail.event) ===
+      this.configuration.contourProcessingModifiers;
 
     this.setupBaseEditData(
       worldPos,

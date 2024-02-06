@@ -207,7 +207,7 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
+    toolGroup.setToolPassive(selectedToolName);
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {

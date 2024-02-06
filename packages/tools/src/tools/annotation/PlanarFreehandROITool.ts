@@ -46,7 +46,7 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import { ChangeTypes } from '../../enums';
+import { KeyboardBindings, ChangeTypes } from '../../enums';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -178,6 +178,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        contourProcessingModifiers: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather
           // than just rendering a line.
