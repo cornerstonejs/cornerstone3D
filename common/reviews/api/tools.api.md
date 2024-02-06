@@ -2336,7 +2336,7 @@ function getBoundingBoxAroundShapeIJK(points: Types_2.Point2[] | Types_2.Point3[
 function getBoundingBoxAroundShapeWorld(points: Types_2.Point2[] | Types_2.Point3[], clipBounds?: Types_2.Point2 | Types_2.Point3): BoundingBox;
 
 // @public (undocumented)
-function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
+function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options_3): any;
 
 // @public (undocumented)
 function getBrushSizeForToolGroup(toolGroupId: string, toolName?: string): void;
@@ -2427,6 +2427,9 @@ function getGlobalConfig_2(): SegmentationRepresentationConfig;
 function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
 
 // @public (undocumented)
+function getHoveredContourSegmentationAnnotation(segmentationId: any): number;
+
+// @public (undocumented)
 function getLineSegmentIntersectionsCoordinates(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2[];
 
 // @public (undocumented)
@@ -2475,6 +2478,9 @@ function getPolyDataPoints(polyData: vtkPolyData): any[];
 function getSegmentation(segmentationId: string): Segmentation | undefined;
 
 // @public (undocumented)
+function getSegmentationIdRepresentations(segmentationId: any): any[];
+
+// @public (undocumented)
 function getSegmentationRepresentationByUID(toolGroupId: string, segmentationRepresentationUID: string): ToolGroupSpecificRepresentation | undefined;
 
 // @public (undocumented)
@@ -2493,7 +2499,10 @@ function getSegmentations(): Segmentation[] | [];
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
-function getSegmentAtWorldPoint(viewport: Types_2.IViewport, worldPoint: Types_2.Point3, segmentationRepresentationUID: string): number;
+function getSegmentAtLabelmapBorder(segmentationId: string, worldPoint: Types_2.Point3, { viewport, searchRadius }: Options_2): number;
+
+// @public (undocumented)
+function getSegmentAtWorldPoint(segmentationId: string, worldPoint: Types_2.Point3, options?: Options): number;
 
 // @public (undocumented)
 function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
@@ -4531,7 +4540,9 @@ declare namespace segmentation_2 {
         segmentContourAction,
         invalidateBrushCursor,
         getUniqueSegmentIndices,
-        getSegmentAtWorldPoint
+        getSegmentAtWorldPoint,
+        getSegmentAtLabelmapBorder,
+        getHoveredContourSegmentationAnnotation
     }
 }
 
@@ -4682,6 +4693,11 @@ export class SegmentSelectTool extends BaseTool {
     onSetToolDisabled: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
+    // (undocumented)
+    static SelectMode: {
+        Inside: string;
+        Border: string;
+    };
     // (undocumented)
     _setActiveSegment(evt?: EventTypes_2.InteractionEventType): void;
     // (undocumented)
@@ -5064,6 +5080,7 @@ declare namespace state_3 {
         getToolGroupIdsWithSegmentation,
         getAllSegmentationRepresentations,
         getSegmentationRepresentationByUID,
+        getSegmentationIdRepresentations,
         addColorLUT,
         getColorLUT,
         getNextColorLUTIndex,
