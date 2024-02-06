@@ -25,12 +25,18 @@ class SegmentSelectTool extends BaseTool {
   static toolName;
   private hoverTimer: ReturnType<typeof setTimeout> | null;
 
+  static SelectMode = {
+    Inside: 'Inside',
+    Border: 'Border',
+  };
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        hoverTimeout: 750,
+        hoverTimeout: 200,
+        mode: SegmentSelectTool.SelectMode.Inside,
       },
     }
   ) {
@@ -88,11 +94,12 @@ class SegmentSelectTool extends BaseTool {
       return;
     }
 
-    if (
-      [RepresentationTypes.Labelmap, RepresentationTypes.Contour].includes(
-        activeSegmentationReps.type
-      )
-    ) {
+    const supportedTypes = [
+      RepresentationTypes.Labelmap,
+      RepresentationTypes.Contour,
+    ];
+
+    if (supportedTypes.includes(activeSegmentationReps.type)) {
       this._setActiveSegmentForType(
         activeSegmentationReps,
         worldPoint,
@@ -119,11 +126,14 @@ class SegmentSelectTool extends BaseTool {
     const { segmentationId, segmentationRepresentationUID } =
       activeSegmentationReps;
 
-    const hoveredSegmentIndex = getSegmentAtWorldPoint(
-      viewport,
-      worldPoint,
-      segmentationRepresentationUID
-    );
+    let hoveredSegmentIndex;
+    if (this.configuration.mode === SegmentSelectTool.SelectMode.Inside) {
+      hoveredSegmentIndex = getSegmentAtWorldPoint(segmentationId, worldPoint, {
+        viewport,
+      });
+    } else {
+      hoveredSegmentIndex = getSegmentAt(segmentationId, worldPoint);
+    }
 
     // No need to select background
     if (!hoveredSegmentIndex || hoveredSegmentIndex === 0) {

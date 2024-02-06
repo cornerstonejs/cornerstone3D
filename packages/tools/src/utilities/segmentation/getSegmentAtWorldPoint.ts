@@ -2,73 +2,76 @@ import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
-  findSegmentationRepresentationByUID,
   getSegmentation,
+  getSegmentationIdRepresentations,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
-  LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import {
-  ContourSegmentationAnnotation,
-  ContourSegmentationData,
-} from '../../types';
+import { ContourSegmentationAnnotation, Segmentation } from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
 
+type Options = {
+  representationType?: SegmentationRepresentations;
+  viewport?: Types.IViewport;
+};
 /**
  * Get the segment at the specified world point in the viewport.
- * @param viewport - The viewport where the point resides.
+ * @param segmentationId - The ID of the segmentation to get the segment for.
  * @param worldPoint - The world point to get the segment for.
- * @param segmentationRepresentationUID - The UID of the segmentation representation to use.
  *
  * Todo: we should add unit test for this function
  *
  * @returns The index of the segment at the world point, or undefined if not found.
  */
 export function getSegmentAtWorldPoint(
-  viewport: Types.IViewport,
+  segmentationId: string,
   worldPoint: Types.Point3,
-  segmentationRepresentationUID: string
+  options = {} as Options
 ): number {
-  const { segmentationRepresentation } = findSegmentationRepresentationByUID(
-    segmentationRepresentationUID
-  );
-
-  const { segmentationId, type } = segmentationRepresentation;
   const segmentation = getSegmentation(segmentationId);
 
-  if (type === SegmentationRepresentations.Labelmap) {
-    const representationData = segmentation.representationData.LABELMAP;
-    return getSegmentAtWorldForLabelmap(
-      viewport,
-      worldPoint,
-      representationData,
-      segmentationRepresentationUID
-    );
-  } else if (type === SegmentationRepresentations.Contour) {
-    const representationData = segmentation.representationData.CONTOUR;
-    return getSegmentAtWorldForContour(
-      viewport,
-      worldPoint,
-      representationData
-    );
-  } else {
+  const representationData = segmentation.representationData;
+
+  // if representationType is not provided, we will use the first representation
+  const desiredRepresentation =
+    options?.representationType ?? Object.keys(representationData)[0];
+
+  if (!desiredRepresentation) {
     throw new Error(
-      `Segmentation representation type ${type} is not supported by getSegmentAtWorldPoint.`
+      `Segmentation ${segmentationId} does not have any representations`
     );
+  }
+
+  switch (desiredRepresentation) {
+    case SegmentationRepresentations.Labelmap:
+      return getSegmentAtWorldForLabelmap(segmentation, worldPoint, options);
+    case SegmentationRepresentations.Contour:
+      return getSegmentAtWorldForContour(segmentation, worldPoint, options);
+    default:
+      return;
   }
 }
 
+/**
+ * Retrieves the segment index at a given world point for a labelmap.
+ *
+ * @param labelmapData - The labelmap segmentation data.
+ * @param worldPoint - The world point to retrieve the segment at.
+ *
+ * @returns The segment index at the given world point, or undefined if not found.
+ */
 export function getSegmentAtWorldForLabelmap(
-  viewport: Types.IViewport,
+  segmentation: Segmentation,
   worldPoint: Types.Point3,
-  labelmapData: LabelmapSegmentationData,
-  segmentationRepresentationUID: string
+  { viewport }: Options
 ): number | undefined {
-  if (isVolumeSegmentation(labelmapData, viewport)) {
+  const labelmapData = segmentation.representationData.LABELMAP;
+
+  if (isVolumeSegmentation(labelmapData)) {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
     const segmentationVolume = cache.getVolume(volumeId);
 
@@ -94,8 +97,16 @@ export function getSegmentAtWorldForLabelmap(
     return;
   }
 
-  const segmentationActor = viewport.getActor(segmentationRepresentationUID);
+  // find the first segmentationRepresentationUID for the segmentationId, since
+  // that is what we use as actorUID in the viewport
 
+  const segmentationRepresentations = getSegmentationIdRepresentations(
+    segmentation.segmentationId
+  );
+
+  const { segmentationRepresentationUID } = segmentationRepresentations[0];
+
+  const segmentationActor = viewport.getActor(segmentationRepresentationUID);
   const imageData = segmentationActor?.actor.getMapper().getInputData();
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
@@ -110,11 +121,21 @@ export function getSegmentAtWorldForLabelmap(
   return segmentIndex;
 }
 
+/**
+ * Retrieves the segment index at a given world point for contour segmentation.
+ *
+ * @param segmentation - The segmentation data.
+ * @param worldPoint - The world point to check.
+ * @param options - The options for segmentation.
+ * @returns The segment index at the given world point, or undefined if not found.
+ */
 export function getSegmentAtWorldForContour(
-  viewport: Types.IViewport,
+  segmentation: Segmentation,
   worldPoint: Types.Point3,
-  contourData: ContourSegmentationData
+  { viewport }: Options
 ): number {
+  const contourData = segmentation.representationData.CONTOUR;
+
   const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
   const { viewPlaneNormal } = viewport.getCamera();
 

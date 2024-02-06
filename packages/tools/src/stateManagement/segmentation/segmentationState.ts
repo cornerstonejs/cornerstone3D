@@ -98,6 +98,30 @@ function getAllSegmentationRepresentations(): Record<
 }
 
 /**
+ * Finds all segmentation representations with the given segmentationId.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns An array of found segmentation representations.
+ */
+function getSegmentationIdRepresentations(segmentationId) {
+  const allRepresentations = getAllSegmentationRepresentations() || {};
+  const foundRepresentations = [];
+
+  for (const toolGroupId in allRepresentations) {
+    const toolGroupRepresentations = allRepresentations[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) => representation.segmentationId === segmentationId
+    );
+
+    if (foundRepresentation) {
+      foundRepresentations.push(foundRepresentation);
+    }
+  }
+
+  return foundRepresentations;
+}
+
+/**
  * Finds a segmentation representation by its UID.
  *
  * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
@@ -480,6 +504,7 @@ export {
   getToolGroupIdsWithSegmentation,
   getAllSegmentationRepresentations,
   getSegmentationRepresentationByUID,
+  getSegmentationIdRepresentations,
   // color
   addColorLUT,
   getColorLUT,
