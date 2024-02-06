@@ -1371,7 +1371,7 @@ type ContourAnnotation = Annotation & ContourAnnotationData;
 
 // @public (undocumented)
 type ContourAnnotationCompletedEventDetail = AnnotationCompletedEventDetail & {
-    contourProcessingEnabled: boolean;
+    contourHoleProcessingEnabled: boolean;
 };
 
 // @public (undocumented)
@@ -3178,7 +3178,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         worldToSlice?: (point: Types_2.Point3) => Types_2.Point2;
         sliceToWorld?: (point: Types_2.Point2) => Types_2.Point3;
         originalPath?: Types_2.Point3[];
-        contourProcessingEnabled?: boolean;
+        contourHoleProcessingEnabled?: boolean;
     } | null;
     // (undocumented)
     editHandle(worldPos: Types_2.Point3, element: any, annotation: any, handleIndex: number): void;
@@ -3211,7 +3211,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected scissorsRight: LivewireScissors;
     // (undocumented)
-    protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any, contourProcessingEnabled?: any): void;
+    protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any, contourHoleProcessingEnabled?: any): void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -3219,7 +3219,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourProcessingEnabled?: boolean) => void;
+    triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourHoleProcessingEnabled?: boolean) => void;
     // (undocumented)
     undo(element: any, config: any, evt: any): void;
     // (undocumented)
@@ -4827,7 +4827,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
         lastCanvasPoint?: Types_2.Point2;
-        contourProcessingEnabled?: boolean;
+        contourHoleProcessingEnabled?: boolean;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -4835,7 +4835,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     fireChangeOnUpdate: {
         annotationUID: string;
         changeType: ChangeTypes;
-        contourProcessingEnabled: boolean;
+        contourHoleProcessingEnabled: boolean;
     };
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
@@ -4864,11 +4864,11 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
-    triggerAnnotationCompleted: (annotation: SplineROIAnnotation, contourProcessingEnabled: boolean) => void;
+    triggerAnnotationCompleted: (annotation: SplineROIAnnotation, contourHoleProcessingEnabled: boolean) => void;
     // (undocumented)
     triggerAnnotationModified: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
     // (undocumented)
-    triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType: ChangeTypes, contourProcessingEnabled: any) => void;
+    triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType: ChangeTypes, contourHoleProcessingEnabled: any) => void;
 }
 
 // @public (undocumented)
