@@ -478,7 +478,7 @@ enum AnnotationStyleStates {
 export abstract class AnnotationTool extends AnnotationDisplayTool {
     constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
-    abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes, toolBinding: IToolBinding): Annotation;
+    abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes): Annotation;
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
@@ -2745,7 +2745,6 @@ type IToolBinding = {
     mouseButton?: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
     numTouchPoints?: number;
-    data?: Record<string, unknown>;
 };
 
 // @public (undocumented)
@@ -2819,9 +2818,7 @@ interface IToolGroup {
     };
     // (undocumented)
     setToolPassive: {
-        (toolName: string, options?: {
-            removeAllBindings?: boolean;
-        }): void;
+        (toolName: string): void;
     };
     // (undocumented)
     setViewportsCursorByToolName: {
@@ -3159,7 +3156,7 @@ export class LivewireContourSegmentationTool extends LivewireContourTool {
 export class LivewireContourTool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation(evt: EventTypes_2.InteractionEventType, _interactionType: InteractionTypes, toolBinding: IToolBinding): LivewireContourAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType): LivewireContourAnnotation;
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
@@ -3629,9 +3626,9 @@ type PlanarFreehandROIAnnotation = ContourAnnotation & {
 export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    protected activateDraw: (evt: EventTypes_2.InteractionEventType, toolBinding: IToolBinding, annotation: PlanarFreehandROIAnnotation, viewportIdsToRender: string[]) => void;
+    protected activateDraw: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, viewportIdsToRender: string[]) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType, _interactionType: InteractionTypes, toolBinding: IToolBinding) => PlanarFreehandROIAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
     _calculateStatsIfActive(annotation: PlanarFreehandROIAnnotation, targetId: string, viewport: any, renderingEngine: any, enabledElement: any): void;
     // (undocumented)
@@ -4812,7 +4809,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     addControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
-    addNewAnnotation(evt: EventTypes_2.InteractionEventType, _interactionType: InteractionTypes, toolBinding: IToolBinding): SplineROIAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType): SplineROIAnnotation;
     // (undocumented)
     cancel(element: HTMLDivElement): string;
     // (undocumented)
