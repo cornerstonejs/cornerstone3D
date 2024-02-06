@@ -27,8 +27,10 @@ let registered = false;
  */
 export default function addManipulationBindings(
   toolGroup,
-  register = true,
-  options?
+  options: {
+    enableShiftClickZoom?: boolean;
+    is3DViewport?: boolean;
+  }
 ) {
   const zoomBindings: Types.IToolBinding[] = [
     {
@@ -36,14 +38,16 @@ export default function addManipulationBindings(
     },
   ];
 
-  if (options?.enableShiftClickZoom === true) {
+  const { is3DViewport = false, enableShiftClickZoom = false } = options;
+
+  if (enableShiftClickZoom === true) {
     zoomBindings.push({
       mouseButton: MouseBindings.Primary, // Shift Left Click
       modifierKey: KeyboardBindings.Shift,
     });
   }
 
-  if (register) {
+  if (!registered) {
     cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
     cornerstoneTools.addTool(PanTool);
@@ -70,10 +74,6 @@ export default function addManipulationBindings(
     bindings: [
       {
         mouseButton: MouseBindings.Auxiliary,
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
       },
     ],
   });
