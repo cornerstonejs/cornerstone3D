@@ -155,12 +155,7 @@ function isSegmentOnEdgeIJK(
       indexIJK[2] + deltaK,
     ];
 
-    if (
-      neighborIJK.every((coord, idx) => coord >= 0 && coord < dimensions[idx])
-    ) {
-      return voxelManager.getAtIJK(...neighborIJK);
-    }
-    return undefined;
+    return voxelManager.getAtIJK(...neighborIJK);
   };
 
   return isSegmentOnEdge(getNeighborIndex, segmentIndex, searchRadius);

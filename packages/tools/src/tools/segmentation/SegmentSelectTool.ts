@@ -42,7 +42,7 @@ class SegmentSelectTool extends BaseTool {
       configuration: {
         hoverTimeout: 100,
         mode: SegmentSelectTool.SelectMode.Border,
-        searchRadius: 20, // search for border in a 10px radius
+        searchRadius: 6, // search for border in a 10px radius
       },
     }
   ) {
