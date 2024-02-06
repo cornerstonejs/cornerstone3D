@@ -67,9 +67,10 @@ export default function contourSegmentationCompletedListener(
     return;
   }
 
-  const { targetAnnotation, targetPolyline, isHole } = targetAnnotationInfo;
+  const { targetAnnotation, targetPolyline, isContourHole } =
+    targetAnnotationInfo;
 
-  if (isHole) {
+  if (isContourHole) {
     const { contourHoleProcessingEnabled = false } =
       evt.detail as ContourAnnotationCompletedEventDetail;
 
@@ -162,7 +163,7 @@ function findIntersectingContour(
 ): {
   targetAnnotation: ContourSegmentationAnnotation;
   targetPolyline: Types.Point2[];
-  isHole: boolean;
+  isContourHole: boolean;
 } {
   const sourceAABB = math.polyline.getAABB(sourcePolyline);
 
@@ -178,13 +179,13 @@ function findIntersectingContour(
     const lineSegmentsIntersect =
       aabbIntersect &&
       math.polyline.intersectPolyline(sourcePolyline, targetPolyline);
-    const isHole =
+    const isContourHole =
       aabbIntersect &&
       !lineSegmentsIntersect &&
       math.polyline.containsPoints(targetPolyline, sourcePolyline);
 
-    if (lineSegmentsIntersect || isHole) {
-      return { targetAnnotation, targetPolyline, isHole };
+    if (lineSegmentsIntersect || isContourHole) {
+      return { targetAnnotation, targetPolyline, isContourHole };
     }
   }
 }
