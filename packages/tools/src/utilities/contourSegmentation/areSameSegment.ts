@@ -17,8 +17,6 @@ export default function areSameSegment(
 
   return (
     firstSegmentation.segmentationId === secondSegmentation.segmentationId &&
-    firstSegmentation.segmentationRepresentationUID ===
-      secondSegmentation.segmentationRepresentationUID &&
     firstSegmentation.segmentIndex === secondSegmentation.segmentIndex
   );
 }

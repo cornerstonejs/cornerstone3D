@@ -81,10 +81,18 @@ interface IImageVolume {
   destroy(): void;
 
   /** decache */
-  decache?: () => void;
+  decache?: (completelyRemove?: boolean) => void;
 
   /** */
   get imageCacheOffsetMap(): Map<string, any>;
+
+  /**
+   * Mark the volume as having had the pixel data changed externally
+   * which in background will re-configure the volume to use the new
+   * pixel data.
+   *
+   */
+  modified(): void;
 }
 
 export default IImageVolume;

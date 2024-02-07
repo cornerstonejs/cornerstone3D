@@ -2,14 +2,42 @@ import {
   volumeLoader,
   utilities as csUtils,
   eventTarget,
+  cache,
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
-import addSegmentations from './addSegmentations';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
-import { getSegmentation, removeSegmentation } from './segmentationState';
+import { getSegmentation } from './segmentationState';
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
+
+async function computeVolumeSegmentationFromStack({
+  imageIdReferenceMap,
+  options,
+}: {
+  imageIdReferenceMap: Map<string, string>;
+  options?: {
+    volumeId?: string;
+  };
+}): Promise<{ volumeId: string }> {
+  const segmentationImageIds = Array.from(imageIdReferenceMap.values());
+
+  const additionalDetails = {
+    imageIdReferenceMap,
+  };
+
+  const volumeId = options?.volumeId ?? csUtils.uuidv4();
+
+  await volumeLoader.createAndCacheVolumeFromImages(
+    volumeId,
+    segmentationImageIds,
+    {
+      additionalDetails,
+    }
+  );
+
+  return { volumeId };
+}
 
 /**
  * Converts a stack-based segmentation to a volume-based segmentation.
@@ -32,57 +60,66 @@ async function convertStackToVolumeSegmentation({
   options?: {
     toolGroupId: string;
     volumeId?: string;
-    newSegmentationId?: string;
     removeOriginal?: boolean;
   };
 }): Promise<void> {
   const segmentation = getSegmentation(segmentationId);
-  const { toolGroupId } = options;
+
   const data = segmentation.representationData
     .LABELMAP as LabelmapSegmentationDataStack;
 
-  const imageIdReferenceMap = data.imageIdReferenceMap;
+  const { volumeId } = await computeVolumeSegmentationFromStack({
+    imageIdReferenceMap: data.imageIdReferenceMap,
+    options,
+  });
 
-  // Get the imageIds from the imageIdReferenceMap
-  const segmentationImageIds = Array.from(imageIdReferenceMap.values());
-
-  const additionalDetails = {
-    imageIdReferenceMap,
-  };
-
-  // Since segmentations are already cached and are not
-  // loaded like volumes, we can create a volume out of their images
-  const volumeId = options?.volumeId;
-
-  await volumeLoader.createAndCacheVolumeFromImages(
+  await updateSegmentationState({
+    segmentationId,
+    toolGroupId: options.toolGroupId,
+    options,
     volumeId,
-    segmentationImageIds,
-    {
-      additionalDetails,
-    }
-  );
+  });
+}
 
-  const newSegmentationId = options?.newSegmentationId ?? csUtils.uuidv4();
+// This function is responsible for updating the segmentation state
+async function updateSegmentationState({
+  segmentationId,
+  toolGroupId,
+  volumeId,
+  options,
+}: {
+  segmentationId: string;
+  toolGroupId: string;
+  volumeId: string;
+  options?: {
+    removeOriginal?: boolean;
+  };
+}): Promise<void> {
+  const segmentation = getSegmentation(segmentationId);
 
-  if (options?.removeOriginal ?? true) {
-    removeSegmentation(segmentationId);
+  if (options?.removeOriginal) {
+    const data = segmentation.representationData
+      .LABELMAP as LabelmapSegmentationDataStack;
+
+    const imageIdReferenceMap = data.imageIdReferenceMap;
+
+    Array.from(imageIdReferenceMap.values()).forEach((imageId) => {
+      cache.removeImageLoadObject(imageId);
+    });
+
+    segmentation.representationData.LABELMAP = {
+      volumeId,
+    };
+  } else {
+    segmentation.representationData.LABELMAP = {
+      ...segmentation.representationData.LABELMAP,
+      volumeId,
+    };
   }
-
-  await addSegmentations([
-    {
-      segmentationId: newSegmentationId,
-      representation: {
-        type: SegmentationRepresentations.Labelmap,
-        data: {
-          volumeId,
-        },
-      },
-    },
-  ]);
 
   await addSegmentationRepresentations(toolGroupId, [
     {
-      segmentationId: newSegmentationId,
+      segmentationId,
       type: SegmentationRepresentations.Labelmap,
     },
   ]);
@@ -91,8 +128,8 @@ async function convertStackToVolumeSegmentation({
   // Note: It is crucial to trigger the data modified event. This ensures that the
   // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
-    triggerSegmentationDataModified(newSegmentationId)
+    triggerSegmentationDataModified(segmentationId)
   );
 }
 
-export { convertStackToVolumeSegmentation };
+export { convertStackToVolumeSegmentation, computeVolumeSegmentationFromStack };

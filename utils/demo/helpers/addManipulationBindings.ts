@@ -7,11 +7,13 @@ const {
   StackScrollTool,
   PanTool,
   ZoomTool,
-
+  TrackballRotateTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
+
+let registered = false;
 
 /**
  * Adds navigation bindings to the given tool group.  Registers the basic
@@ -25,8 +27,10 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
  */
 export default function addManipulationBindings(
   toolGroup,
-  register = true,
-  options?
+  options: {
+    enableShiftClickZoom?: boolean;
+    is3DViewport?: boolean;
+  }
 ) {
   const zoomBindings: Types.IToolBinding[] = [
     {
@@ -34,36 +38,42 @@ export default function addManipulationBindings(
     },
   ];
 
-  if (options?.enableShiftClickZoom === true) {
+  const { is3DViewport = false, enableShiftClickZoom = false } = options;
+
+  if (enableShiftClickZoom === true) {
     zoomBindings.push({
       mouseButton: MouseBindings.Primary, // Shift Left Click
       modifierKey: KeyboardBindings.Shift,
     });
   }
 
-  if (register) {
+  if (!registered) {
     cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
     cornerstoneTools.addTool(PanTool);
     cornerstoneTools.addTool(ZoomTool);
+    cornerstoneTools.addTool(TrackballRotateTool);
+    cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollTool);
+    cornerstoneTools.addTool(StackScrollMouseWheelTool);
   }
 
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(LengthTool.toolName);
+  registered = true;
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  if (is3DViewport) {
+    toolGroup.addTool(TrackballRotateTool.toolName);
+  } else {
+    toolGroup.addTool(LengthTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
+    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  }
+
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Auxiliary,
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
       },
     ],
   });

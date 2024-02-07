@@ -17,6 +17,7 @@ import getSubPixelSpacingAndXYDirections from './getSubPixelSpacingAndXYDirectio
 import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity';
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
+import { isPointInsidePolyline3D } from './isPointInsidePolyline3D';
 
 export {
   isClosed,
@@ -39,4 +40,5 @@ export {
   pointCanProjectOnLine,
   mergePolylines,
   subtractPolylines,
+  isPointInsidePolyline3D,
 };

@@ -7,19 +7,18 @@ import {
   utilities,
   geometryLoader,
   CONSTANTS,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  downloadSurfacesData,
+  addButtonToToolbar,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 
-import surface13 from '../../../../utils/assets/surfaces/lung13.json';
-import surface14 from '../../../../utils/assets/surfaces/lung14.json';
-import surface15 from '../../../../utils/assets/surfaces/lung15.json';
-import surface16 from '../../../../utils/assets/surfaces/lung16.json';
-import surface17 from '../../../../utils/assets/surfaces/lung17.json';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
@@ -45,11 +44,12 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
+const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Surface Segmentation Representation for Volume Viewports',
-  'In this demonstration, we will show you how to render surfaces. On the left side, you will find a volume viewport, and on the right side, there is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
+  'This example first downloads the surface data. In this demonstration, we will show you how to render surfaces. On the left side, you will find a volume viewport, and on the right side, there is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
 );
 
 const size = '500px';
@@ -74,39 +74,96 @@ viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
-
+let renderingEngine;
 const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
 
-const surfaces = [surface13, surface14, surface15, surface16, surface17];
+// Create the viewports
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_3D';
 
+let surfaces;
 async function addSegmentationsToState() {
-  surfaces.forEach((surface) => {
-    const geometryId = surface.closedSurface.id;
-    const segmentationId = geometryId;
-    geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.SURFACE,
-      geometryData: surface.closedSurface as Types.PublicSurfaceData,
-    });
+  // Download the surface data. Please note that this is a large file
+  // and may take a while to download
+  surfaces = await downloadSurfacesData();
 
-    // Add the segmentations to state
-    segmentation.addSegmentations([
-      {
-        segmentationId,
-        representation: {
-          // The type of segmentation
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-          // The actual segmentation data, in the case of contour geometry
-          // this is a reference to the geometry data
-          data: {
-            geometryId,
-          },
+  const geometriesInfo = surfaces.reduce(
+    (acc: Map<number, string>, surface, index) => {
+      const geometryId = surface.closedSurface.id;
+      geometryLoader.createAndCacheGeometry(geometryId, {
+        type: GeometryType.SURFACE,
+        geometryData: surface.closedSurface as Types.PublicSurfaceData,
+      });
+
+      const segmentIndex = index + 1;
+      acc.set(segmentIndex, geometryId);
+
+      return acc;
+    },
+    new Map()
+  );
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          geometryIds: geometriesInfo,
         },
       },
-    ]);
-  });
+    },
+  ]);
 }
+
+addButtonToToolbar({
+  title: 'Set Random Orientation',
+  onClick: () => {
+    const viewport = renderingEngine.getViewport(viewportId1);
+    const { viewUp, viewPlaneNormal } = viewport.getCamera();
+
+    viewport.setOrientation({
+      viewUp: [
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+      ],
+      viewPlaneNormal: [
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+      ],
+    });
+  },
+});
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Caching Progress:',
+  paddings: {
+    left: 10,
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  if (
+    evt.detail.type !==
+    cornerstoneTools.Enums.WorkerTypes.DISPLAY_TOOL_CLIP_SURFACE
+  ) {
+    return;
+  }
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
+});
 
 /**
  * Runs the demo
@@ -192,11 +249,7 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_3D';
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   const viewportInputArray = [
     {
@@ -248,24 +301,20 @@ async function run() {
     viewport3d.render();
   });
 
-  surfaces.forEach(async (surface) => {
-    const segmentationId = surface.closedSurface.id;
+  // // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
-    // // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-
-    await segmentation.addSegmentationRepresentations(toolGroupId3d, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-  });
+  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
   // Render the image
   renderingEngine.render();

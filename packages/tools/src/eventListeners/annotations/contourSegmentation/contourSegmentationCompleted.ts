@@ -11,9 +11,9 @@ import {
 } from '../../../utilities';
 import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters';
 import {
-  getAnnotations,
   addAnnotation,
   removeAnnotation,
+  getAllAnnotations,
   getChildAnnotations,
   addChildAnnotation,
   clearParentAnnotation,
@@ -143,22 +143,15 @@ function getValidContourSegmentationAnnotations(
   }
 
   // Get all annotations and filter all contour segmentations locally
-  const toolName = undefined;
-  const annotationsGroups = getAnnotations(toolName, FrameOfReferenceUID);
-  const toolNames = Object.keys(annotationsGroups);
-
-  return toolNames.reduce((validAnnotations, toolName) => {
-    const toolAnnotations = annotationsGroups[toolName].filter(
-      (targetAnnotation) =>
-        targetAnnotation.annotationUID &&
-        targetAnnotation.annotationUID !== sourceAnnotationUID &&
-        contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
-        contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
-        contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
-    );
-
-    return validAnnotations.concat(toolAnnotations);
-  }, []);
+  const allAnnotations = getAllAnnotations();
+  return allAnnotations.filter(
+    (targetAnnotation) =>
+      targetAnnotation.annotationUID &&
+      targetAnnotation.annotationUID !== sourceAnnotationUID &&
+      contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
+      contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
+      contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
+  ) as ContourSegmentationAnnotation[];
 }
 
 function findIntersectingContour(

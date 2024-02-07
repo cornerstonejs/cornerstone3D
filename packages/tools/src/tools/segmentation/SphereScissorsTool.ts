@@ -177,7 +177,9 @@ class SphereScissorsTool extends BaseTool {
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
 
-    if (isVolumeSegmentation(labelmapData as LabelmapSegmentationData)) {
+    if (
+      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
+    ) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 

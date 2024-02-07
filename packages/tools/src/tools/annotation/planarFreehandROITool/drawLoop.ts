@@ -235,7 +235,7 @@ function completeDrawClosedContour(
     : clockwise;
 
   // Note: -> This is pretty expensive and may not scale well with hundreds of
-  // contours. A future optimisation if we use this for segmentation is to re-do
+  // contours. A future optimization if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
 
   updateContourPolyline(
@@ -249,7 +249,7 @@ function completeDrawClosedContour(
 
   const { textBox } = annotation.data.handles;
 
-  if (!textBox.hasMoved) {
+  if (!textBox?.hasMoved) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 

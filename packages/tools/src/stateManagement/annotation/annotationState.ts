@@ -59,6 +59,11 @@ function getAnnotations(
   return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
+function getAllAnnotations(): Annotations {
+  const manager = getAnnotationManager();
+  return manager.getAllAnnotations();
+}
+
 /**
  * Removes the association between the annotation passed as parameter and its
  * parent in case it has one (eg: contour holes).
@@ -266,6 +271,7 @@ function invalidateAnnotation(annotation: Annotation): void {
 }
 
 export {
+  getAllAnnotations,
   getAnnotations,
   getParentAnnotation,
   getChildAnnotations,

@@ -104,7 +104,7 @@ export default class VoxelManager<T> {
    * Records the z index modified.
    * Will record the index value if the VoxelManager is backed by a map.
    */
-  public setAtIJKPoint = ([i, j, k], v) => this.setAtIJK(i, j, k, v);
+  public setAtIJKPoint = ([i, j, k]: Point3, v) => this.setAtIJK(i, j, k, v);
 
   /**
    * Gets the value at the given index.
@@ -241,6 +241,12 @@ export default class VoxelManager<T> {
     dimensions: Point3,
     scalarData
   ): VoxelManager<number> {
+    if (dimensions.length !== 3) {
+      throw new Error(
+        'Dimensions must be provided as [number, number, number] for [width, height, depth]'
+      );
+    }
+
     const voxels = new VoxelManager(
       dimensions,
       (index) => scalarData[index],

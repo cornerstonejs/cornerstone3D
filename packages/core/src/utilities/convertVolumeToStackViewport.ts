@@ -114,7 +114,7 @@ async function convertVolumeToStackViewport({
     imageIdIndexToJump = minDistanceIndex;
   }
 
-  await stackViewport.setStack(stack, imageIdIndexToJump);
+  await stackViewport.setStack(stack, imageIdIndexToJump ?? 0);
 
   // Render the image
   stackViewport.render();

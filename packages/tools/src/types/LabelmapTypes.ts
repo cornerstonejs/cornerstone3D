@@ -53,4 +53,10 @@ export type LabelmapSegmentationDataStack = {
 
 export type LabelmapSegmentationData =
   | LabelmapSegmentationDataVolume
-  | LabelmapSegmentationDataStack;
+  | LabelmapSegmentationDataStack
+  // PolySeg version that has both
+  | {
+      volumeId?: string;
+      referencedVolumeId?: string;
+      imageIdReferenceMap?: Map<string, string>;
+    };
