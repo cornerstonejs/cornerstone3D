@@ -28,7 +28,8 @@ export default function updateContourPolyline(
 ) {
   const { canvasToWorld } = transforms;
   const { data } = annotation;
-  const { points: polyline, targetWindingDirection } = polylineData;
+  const { targetWindingDirection } = polylineData;
+  const polyline = math.polyline.simplify(polylineData.points);
   let { closed } = polylineData;
   const numPoints = polyline.length;
   const polylineWorldPoints = new Array(numPoints);
