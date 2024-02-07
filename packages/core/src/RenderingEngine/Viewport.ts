@@ -506,6 +506,10 @@ class Viewport implements IViewport {
     const renderer = this.getRenderer();
     renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
+
+    // when we add an actor we should update the camera clipping range and
+    // clipping planes as well
+    this.updateCameraClippingPlanesAndRange();
   }
 
   /**
@@ -1205,6 +1209,15 @@ class Viewport implements IViewport {
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
+  }
+
+  /**
+   * Updates the camera's clipping planes and range.
+   */
+  public updateCameraClippingPlanesAndRange(): void {
+    const currentCamera = this.getCamera();
+    this.updateClippingPlanesForActors(currentCamera);
+    this.getRenderer().resetCameraClippingRange();
   }
 
   /**

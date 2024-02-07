@@ -5,11 +5,11 @@ import {
   getEnabledElementByIds,
   Types,
   Enums,
-  VolumeViewport,
   getWebWorkerManager,
   eventTarget,
   triggerEvent,
   utilities,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -29,6 +29,7 @@ import { WorkerTypes } from '../../../enums';
 const workerManager = getWebWorkerManager();
 
 const polyDataCache = new Map();
+window.poly = polyDataCache;
 const currentViewportNormal = new Map();
 
 const triggerWorkerProgress = (eventTarget, progress) => {
@@ -166,7 +167,7 @@ async function render(
     surfaces.push(surface);
   });
 
-  if (viewport instanceof VolumeViewport) {
+  if (!(viewport instanceof VolumeViewport3D)) {
     // const { viewPlaneNormal } = viewport.getCamera();
     // currentViewportNormal.set(surface.id, structuredClone(viewPlaneNormal));
     // if the viewport is not 3D means we should calculate
@@ -208,7 +209,7 @@ function _removeSurfaceFromToolGroupViewports(
 
 async function generateAndCacheClippedSurfaces(
   surfaces: Types.ISurface[],
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
   segmentationRepresentationUID: string
 ) {
   registerDisplayToolsWorker();
@@ -219,6 +220,13 @@ async function generateAndCacheClippedSurfaces(
   // Fix these ts ignores
   // @ts-ignore
   const planesInfo = viewport.getSlicesClippingPlanes?.();
+
+  if (!planesInfo) {
+    // this means it is probably the stack viewport not being ready
+    // in terms of planes which we should wait for the first render to
+    // get the planes
+    return;
+  }
 
   // @ts-ignore
   const currentSliceIndex = viewport.getSliceIndex();
