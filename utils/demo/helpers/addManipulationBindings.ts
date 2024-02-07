@@ -30,7 +30,7 @@ export default function addManipulationBindings(
   options: {
     enableShiftClickZoom?: boolean;
     is3DViewport?: boolean;
-  }
+  } = {}
 ) {
   const zoomBindings: Types.IToolBinding[] = [
     {
@@ -48,14 +48,12 @@ export default function addManipulationBindings(
   }
 
   if (!registered) {
-    cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
     cornerstoneTools.addTool(PanTool);
     cornerstoneTools.addTool(ZoomTool);
     cornerstoneTools.addTool(TrackballRotateTool);
     cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollTool);
-    cornerstoneTools.addTool(StackScrollMouseWheelTool);
   }
 
   registered = true;
@@ -87,4 +85,10 @@ export default function addManipulationBindings(
       },
     ],
   });
+
+  if (is3DViewport) {
+    toolGroup.setToolActive(TrackballRotateTool.toolName, {
+      mouseButtonMask: MouseBindings.Primary,
+    });
+  }
 }

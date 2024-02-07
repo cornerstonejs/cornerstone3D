@@ -13,7 +13,7 @@
       "description": "Advanced Tools library"
     },
     "polymorph-segmentation": {
-      "description": "Advanced Tools library"
+      "description": "Polymorph Segmentation"
     },
     "dicom-image-loader": {
       "description": "DICOM image loader"
