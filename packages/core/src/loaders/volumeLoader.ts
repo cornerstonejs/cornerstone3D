@@ -45,12 +45,19 @@ interface DerivedVolumeOptions {
   };
 }
 interface LocalVolumeOptions {
-  scalarData: PixelDataTypedArray;
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;
   origin: Point3;
   direction: Mat3;
+  scalarData?: PixelDataTypedArray;
+  imageIds?: Array<string>;
+  referencedImageIds?: Array<string>;
+  referencedVolumeId?: string;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+    sharedArrayBuffer?: boolean;
+  };
 }
 
 /**
@@ -295,31 +302,10 @@ export async function createAndCacheDerivedVolume(
   const scalarData = referencedVolume.getScalarData();
   const scalarLength = scalarData.length;
 
-  const { useNorm16Texture } = getConfiguration().rendering;
-
-  // If target buffer is provided
-  const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
-    targetBuffer?.type,
-    scalarLength,
-    {
-      use16BitTexture: useNorm16Texture,
-      isVolumeBuffer: true,
-    }
+  const { volumeScalarData, numBytes } = generateVolumeScalarData(
+    targetBuffer,
+    scalarLength
   );
-
-  // check if there is enough space in unallocated + image Cache
-  const isCacheable = cache.isCacheable(numBytes);
-  if (!isCacheable) {
-    throw new Error(Events.CACHE_SIZE_EXCEEDED);
-  }
-
-  let volumeScalarData;
-  if (targetBuffer?.sharedArrayBuffer) {
-    const buffer = new SharedArrayBuffer(numBytes);
-    volumeScalarData = new TypedArrayConstructor(buffer);
-  } else {
-    volumeScalarData = new TypedArrayConstructor(scalarLength);
-  }
 
   // Todo: handle more than one component for segmentation (RGB)
   const scalarArray = vtkDataArray.newInstance({
@@ -346,7 +332,6 @@ export async function createAndCacheDerivedVolume(
     imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
-    referencedVolumeId,
     imageIds: [],
   });
 
@@ -374,21 +359,35 @@ export function createLocalVolume(
   volumeId: string,
   preventCache = false
 ): IImageVolume {
-  const { scalarData, metadata, dimensions, spacing, origin, direction } =
+  const { metadata, dimensions, spacing, origin, direction, targetBuffer } =
     options;
 
-  if (
-    !scalarData ||
-    !(
-      scalarData instanceof Uint8Array ||
-      scalarData instanceof Float32Array ||
-      scalarData instanceof Uint16Array ||
-      scalarData instanceof Int16Array
-    )
-  ) {
-    throw new Error(
-      'To use createLocalVolume you should pass scalarData of type Uint8Array, Uint16Array, Int16Array or Float32Array'
-    );
+  let { scalarData } = options;
+
+  // Define the valid data types for scalarData
+  const validDataTypes = [
+    'Uint8Array',
+    'Float32Array',
+    'Uint16Array',
+    'Int16Array',
+  ];
+
+  const scalarLength = dimensions[0] * dimensions[1] * dimensions[2];
+
+  // Check if scalarData is provided and is of a valid type
+  if (!scalarData || !validDataTypes.includes(scalarData.constructor.name)) {
+    // Check if targetBuffer is provided and has a valid type
+    if (!targetBuffer?.type || !validDataTypes.includes(targetBuffer.type)) {
+      throw new Error(
+        'createLocalVolume: parameter scalarData must be provided and must be either Uint8Array, Float32Array, Uint16Array or Int16Array'
+      );
+    }
+
+    // Generate volume scalar data if scalarData is not provided or invalid
+    ({ volumeScalarData: scalarData } = generateVolumeScalarData(
+      targetBuffer,
+      scalarLength
+    ));
   }
 
   // Todo: handle default values for spacing, origin, direction if not provided
@@ -401,8 +400,6 @@ export function createLocalVolume(
   if (cachedVolume) {
     return cachedVolume as IImageVolume;
   }
-
-  const scalarLength = dimensions[0] * dimensions[1] * dimensions[2];
 
   const numBytes = scalarData ? scalarData.buffer.byteLength : scalarLength * 4;
 
@@ -436,7 +433,9 @@ export function createLocalVolume(
     imageData: imageData,
     scalarData,
     sizeInBytes: numBytes,
-    imageIds: [],
+    referencedImageIds: options.referencedImageIds || [],
+    referencedVolumeId: options.referencedVolumeId,
+    imageIds: options.imageIds || [],
   });
 
   if (preventCache) {
@@ -573,7 +572,7 @@ export function getUnknownVolumeLoaderSchema(): string {
  */
 export async function createAndCacheDerivedSegmentationVolume(
   referencedVolumeId: string,
-  options: DerivedVolumeOptions
+  options = {} as DerivedVolumeOptions
 ): Promise<IImageVolume> {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
@@ -581,4 +580,71 @@ export async function createAndCacheDerivedSegmentationVolume(
       type: 'Uint8Array',
     },
   });
+}
+
+/**
+ * Creates a local segmentation volume.
+ *
+ * @param options - The options for creating the volume.
+ * @param volumeId - The ID of the volume.
+ * @param preventCache - Whether to prevent caching the volume.
+ * @returns A promise that resolves to the created image volume.
+ */
+export async function createLocalSegmentationVolume(
+  options: LocalVolumeOptions,
+  volumeId: string,
+  preventCache = false
+): Promise<IImageVolume> {
+  if (!options.scalarData) {
+    options.scalarData = new Uint8Array(
+      options.dimensions[0] * options.dimensions[1] * options.dimensions[2]
+    );
+  }
+
+  return createLocalVolume(options, volumeId, preventCache);
+}
+
+/**
+ * This function generates volume scalar data based on the provided target buffer and scalar length.
+ * It checks if the cache can accommodate the data size and throws an error if it exceeds the cache size.
+ * If a shared array buffer is available in the target buffer, it uses that to create the typed array.
+ * Otherwise, it creates a typed array based on the scalar length.
+ *
+ * @param targetBuffer - The target buffer object which may contain a type and a shared array buffer.
+ * @param scalarLength - The scalar length for creating the typed array.
+ * @param useNorm16Texture - A flag to specify whether to use a 16-bit texture or not.
+ * @returns The volume scalar data as a typed array.
+ */
+function generateVolumeScalarData(
+  targetBuffer: {
+    type: PixelDataTypedArrayString;
+    sharedArrayBuffer?: boolean;
+  },
+  scalarLength: number
+) {
+  const { useNorm16Texture } = getConfiguration().rendering;
+
+  const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
+    targetBuffer?.type,
+    scalarLength,
+    {
+      use16BitTexture: useNorm16Texture,
+      isVolumeBuffer: true,
+    }
+  );
+
+  const isCacheable = cache.isCacheable(numBytes);
+  if (!isCacheable) {
+    throw new Error(Events.CACHE_SIZE_EXCEEDED);
+  }
+
+  let volumeScalarData;
+  if (targetBuffer?.sharedArrayBuffer) {
+    const buffer = new SharedArrayBuffer(numBytes);
+    volumeScalarData = new TypedArrayConstructor(buffer);
+  } else {
+    volumeScalarData = new TypedArrayConstructor(scalarLength);
+  }
+
+  return { volumeScalarData, numBytes };
 }

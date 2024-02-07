@@ -1,9 +1,4 @@
-import {
-  StackViewport,
-  utilities,
-  BaseVolumeViewport,
-  VideoViewport,
-} from '@cornerstonejs/core';
+import { utilities, BaseVolumeViewport } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import StrategyCallbacks from '../../enums/StrategyCallbacks';

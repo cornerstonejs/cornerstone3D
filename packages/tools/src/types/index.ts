@@ -87,6 +87,7 @@ import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
+import type { PolySegConversionOptions } from './PolySeg';
 
 export type {
   // AnnotationState
@@ -174,4 +175,6 @@ export type {
   SplineCurveSegment,
   SplineLineSegment,
   SplineProps,
+  // polySeg
+  PolySegConversionOptions,
 };

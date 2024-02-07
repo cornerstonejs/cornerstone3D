@@ -19,10 +19,9 @@ function generateVolumePropsFromImageIds(
     getConfiguration().rendering;
 
   const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
-
   const volumeMetadata = makeVolumeMetadata(imageIds);
 
-  // For a streaming volume, the data type cannot rely on cswil to load
+  // For a streaming volume, the data type cannot rely on CSWIL to load
   // the proper array buffer type. This is because the target buffer container
   // must be decided ahead of time.
   // TODO: move this logic into CSWIL to avoid logic duplication.

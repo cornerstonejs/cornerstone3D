@@ -16,6 +16,9 @@ export type ContourConfig = {
   outlineDashActive?: string;
   /** dash style of the outline when segmentation is inactive */
   outlineDashInactive?: string;
+  /** delta thickness of the active segment index outline (0 means same thickness,
+   * 1 means 1px thicker, -1 means 1px thinner) */
+  activeSegmentOutlineWidthDelta?: number;
   /**
    * Dash style of the outline when segmentation is auto-generated
    */

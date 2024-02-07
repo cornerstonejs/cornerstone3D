@@ -4,6 +4,7 @@ import { fakeVolumeLoader } from './testUtilsVolumeLoader';
 import { createNormalizedMouseEvent } from './testUtilsMouseEvents';
 import { fillStackSegmentationWithMockData } from './fillStackSegmentationWithMockData';
 import { fillVolumeSegmentationWithMockData } from './fillVolumeSegmentationWithMockData';
+import { addMockContourSegmentation } from './addMockContourSegmentation';
 
 /**
  * TestUtils: used for colorizing the image and comparing it to a baseline,
@@ -81,4 +82,5 @@ export {
   colors,
   fillStackSegmentationWithMockData,
   fillVolumeSegmentationWithMockData,
+  addMockContourSegmentation,
 };

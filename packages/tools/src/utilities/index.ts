@@ -17,6 +17,7 @@ import {
   getCalibratedScale,
 } from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
 
@@ -46,6 +47,7 @@ import * as touch from './touch';
 import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
 import * as voi from './voi';
+import * as contourSegmentation from './contourSegmentation';
 
 const roundNumber = utilities.roundNumber;
 
@@ -71,6 +73,7 @@ export {
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,
+  triggerAnnotationRenderForToolGroupIds,
   triggerAnnotationRender,
   pointInShapeCallback,
   getSphereBoundsInfo,
@@ -93,4 +96,5 @@ export {
   polyDataUtils,
   voi,
   annotationFrameRange,
+  contourSegmentation,
 };

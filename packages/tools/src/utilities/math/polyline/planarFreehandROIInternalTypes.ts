@@ -6,6 +6,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 type PlanarFreehandROIDrawData = {
   polylineIndex: number;
   canvasPoints: Types.Point2[];
+  contourHoleProcessingEnabled: boolean;
 };
 
 type PlanarFreehandROIEditData = {

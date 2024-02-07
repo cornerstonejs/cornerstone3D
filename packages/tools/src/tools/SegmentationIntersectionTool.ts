@@ -146,7 +146,7 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
           color: color,
           fillColor: color,
           fillOpacity: this.configuration.opacity,
-          connectLastToFirst: true,
+          closePath: true,
         };
 
         const polyLineUID = actorEntry.uid + '#' + polyLineIdx;

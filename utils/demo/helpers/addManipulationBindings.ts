@@ -1,4 +1,5 @@
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import type { Types } from '@cornerstonejs/tools';
 
 const {
   LengthTool,
@@ -6,11 +7,13 @@ const {
   StackScrollTool,
   PanTool,
   ZoomTool,
-
+  TrackballRotateTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
+
+let registered = false;
 
 /**
  * Adds navigation bindings to the given tool group.  Registers the basic
@@ -22,30 +25,53 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
  * * Stack Scroll on Mouse Wheel, Primary+Alt
  * * Length Tool on fourth button
  */
-export default function addManipulationBindings(toolGroup, register = true) {
-  if (register) {
-    cornerstoneTools.addTool(LengthTool);
+export default function addManipulationBindings(
+  toolGroup,
+  options: {
+    enableShiftClickZoom?: boolean;
+    is3DViewport?: boolean;
+  } = {}
+) {
+  const zoomBindings: Types.IToolBinding[] = [
+    {
+      mouseButton: MouseBindings.Secondary,
+    },
+  ];
+
+  const { is3DViewport = false, enableShiftClickZoom = false } = options;
+
+  if (enableShiftClickZoom === true) {
+    zoomBindings.push({
+      mouseButton: MouseBindings.Primary, // Shift Left Click
+      modifierKey: KeyboardBindings.Shift,
+    });
+  }
+
+  if (!registered) {
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
     cornerstoneTools.addTool(PanTool);
     cornerstoneTools.addTool(ZoomTool);
+    cornerstoneTools.addTool(TrackballRotateTool);
+    cornerstoneTools.addTool(LengthTool);
     cornerstoneTools.addTool(StackScrollTool);
   }
 
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(LengthTool.toolName);
+  registered = true;
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  if (is3DViewport) {
+    toolGroup.addTool(TrackballRotateTool.toolName);
+  } else {
+    toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
+    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  }
+
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Auxiliary,
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
       },
       {
         numTouchPoints: 1,
@@ -54,19 +80,7 @@ export default function addManipulationBindings(toolGroup, register = true) {
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-      {
-        numTouchPoints: 1,
-        modifierKey: KeyboardBindings.Shift,
-      },
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
+    bindings: zoomBindings,
   });
   // Need a binding to navigate without a wheel mouse
   toolGroup.setToolActive(StackScrollTool.toolName, {
@@ -96,4 +110,10 @@ export default function addManipulationBindings(toolGroup, register = true) {
       },
     ],
   });
+
+  if (is3DViewport) {
+    toolGroup.setToolActive(TrackballRotateTool.toolName, {
+      mouseButtonMask: MouseBindings.Primary,
+    });
+}
 }

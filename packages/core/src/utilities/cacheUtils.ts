@@ -83,6 +83,30 @@ function _processImageCacheOffsetMap(volume, scalarData) {
  * @param scalarData - The scalar data to use for the volume.
  */
 function _processVolumeImages(volume, scalarData) {
+  let compatibleScalarData = scalarData;
+
+  const sampleImageIdWithImage = volume.imageIds.find((imageId) => {
+    const image = cache.getImage(imageId);
+    return image;
+  });
+
+  if (!sampleImageIdWithImage) {
+    return;
+  }
+
+  const sampleImage = cache.getImage(sampleImageIdWithImage);
+  const samplePixelData =
+    sampleImage.imageFrame?.pixelData || sampleImage.getPixelData();
+
+  // Check if the types of scalarData and pixelData are different.
+  if (scalarData.constructor !== samplePixelData.constructor) {
+    // If so, create a new typed array of the same type as pixelData and copy the values from scalarData.
+    compatibleScalarData = new samplePixelData.constructor(scalarData.length);
+
+    // Copy values from scalarData to compatibleScalarData.
+    compatibleScalarData.set(scalarData);
+  }
+
   volume.imageIds.forEach((imageId) => {
     const image = cache.getImage(imageId);
     if (!image) {
@@ -92,7 +116,7 @@ function _processVolumeImages(volume, scalarData) {
     const index = volume.getImageIdIndex(imageId);
     const offset = index * image.getPixelData().byteLength;
 
-    _updateImageWithScalarDataView(image, scalarData, offset);
+    _updateImageWithScalarDataView(image, compatibleScalarData, offset);
     cache.decrementImageCacheSize(image.sizeInBytes);
   });
 }

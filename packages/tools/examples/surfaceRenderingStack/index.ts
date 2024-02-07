@@ -12,15 +12,10 @@ import {
   setTitleAndDescription,
   addToggleButtonToToolbar,
   addSliderToToolbar,
+  downloadSurfacesData,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { sortImageIds } from './utils';
-
-import surface13 from '../../../../utils/assets/surfaces/lung13.json';
-import surface14 from '../../../../utils/assets/surfaces/lung14.json';
-import surface15 from '../../../../utils/assets/surfaces/lung15.json';
-import surface16 from '../../../../utils/assets/surfaces/lung16.json';
-import surface17 from '../../../../utils/assets/surfaces/lung17.json';
 
 // This is for debugging purposes
 console.warn(
@@ -46,6 +41,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupIdStack = 'MY_TOOLGROUP_ID_STACK';
 const toolGroupIdVolume = 'MY_TOOLGROUP_ID_VOLUME';
+const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -119,33 +115,46 @@ addSliderToToolbar({
   },
 });
 
-//const surfaces = [surface];
-const surfaces = [surface13, surface14, surface15, surface16, surface17];
-async function addSegmentationsToState() {
-  surfaces.forEach((surface) => {
-    const geometryId = surface.closedSurface.id;
-    const segmentationId = geometryId;
-    geometryLoader.createAndCacheGeometry(surface.closedSurface.id, {
-      type: GeometryType.SURFACE,
-      geometryData: surface.closedSurface as Types.PublicSurfaceData,
-    });
+let surfaces;
 
-    // Add the segmentations to state
-    segmentation.addSegmentations([
-      {
-        segmentationId,
-        representation: {
-          // The type of segmentation
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-          // The actual segmentation data, in the case of contour geometry
-          // this is a reference to the geometry data
-          data: {
-            geometryId,
-          },
+async function addSegmentationsToState() {
+  // Download the surface data. Please note that this is a large file
+  // and may take a while to download
+  surfaces = await downloadSurfacesData();
+
+  const geometriesInfo = surfaces.reduce(
+    (acc: Map<number, string>, surface, index) => {
+      const geometryId = surface.closedSurface.id;
+      geometryLoader.createAndCacheGeometry(geometryId, {
+        type: GeometryType.SURFACE,
+        geometryData: surface.closedSurface as Types.PublicSurfaceData,
+      });
+
+      const segmentIndex = index + 1;
+      acc.set(segmentIndex, geometryId);
+
+      return acc;
+    },
+    new Map()
+  );
+
+  // create a Set from the geometriesInfo to Set<number, string>[]
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          geometryIds: geometriesInfo,
         },
       },
-    ]);
-  });
+    },
+  ]);
 }
 
 /**
@@ -295,24 +304,20 @@ async function run() {
     [viewportId2, viewportId3]
   );
 
-  await surfaces.forEach((surface) => {
-    const segmentationId = surface.closedSurface.id;
+  // // Add the segmentation representation to the toolgroup
+  segmentation.addSegmentationRepresentations(toolGroupIdStack, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
-    // // Add the segmentation representation to the toolgroup
-    segmentation.addSegmentationRepresentations(toolGroupIdStack, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-
-    segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-  });
+  segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
   // Render the image
   renderingEngine.render();

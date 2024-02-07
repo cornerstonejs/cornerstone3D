@@ -29,6 +29,8 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
@@ -36,7 +38,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
@@ -213,6 +214,10 @@ addDropdownToToolbar({
         {
           mouseButton: MouseBindings.Primary, // Left Click
         },
+        {
+          mouseButton: MouseBindings.Primary, // Left Click+Shift
+          modifierKey: KeyboardBindings.Shift,
+        },
       ],
     });
 
@@ -319,7 +324,6 @@ async function run() {
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -365,6 +369,10 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click+Shift
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });

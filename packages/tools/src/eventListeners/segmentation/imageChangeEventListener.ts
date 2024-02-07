@@ -87,14 +87,13 @@ function _imageChangeEventListener(evt) {
       representation.segmentationId
     );
 
-    if (!segmentation) {
+    if (!segmentation || !segmentation.representationData?.LABELMAP) {
       return;
     }
 
-    const labelmapData =
-      segmentation.representationData[Representations.Labelmap];
+    const labelmapData = segmentation.representationData.LABELMAP;
 
-    if (isVolumeSegmentation(labelmapData)) {
+    if (isVolumeSegmentation(labelmapData, viewport)) {
       return;
     }
 

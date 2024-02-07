@@ -116,6 +116,7 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';
@@ -220,6 +221,7 @@ export type {
   // Surface
   PublicSurfaceData,
   SurfaceData,
+  ISurface,
   // Color
   RGB,
   ColormapPublic,
