@@ -15,11 +15,11 @@ import {
  * @param polylineData - Polyline data (points, winding direction and closed)
  * @param transforms - Methods to convert points to/from canvas and world spaces
  * @param options - Options
- *   - simplify: allow to set some parameters to simplify the polyline reducing
+ *   - decimate: allow to set some parameters to decimate the polyline reducing
  *   the amount of points stored which also affects how fast it will draw the
  *   annotation in a viewport, compute the winding direction, append/remove
- *   contours and create holes. A higher `epsilon` value results in a more
- *   simplified polyline version with less points.
+ *   contours and create holes. A higher `epsilon` value results in a polyline
+ *   with less points.
  */
 export default function updateContourPolyline(
   annotation: ContourAnnotation,
@@ -32,7 +32,7 @@ export default function updateContourPolyline(
     canvasToWorld: (point: Types.Point2) => Types.Point3;
   },
   options?: {
-    simplify?: {
+    decimate?: {
       enabled?: boolean;
       epsilon?: number;
     };
@@ -43,11 +43,11 @@ export default function updateContourPolyline(
   const { targetWindingDirection } = polylineData;
   let { points: polyline } = polylineData;
 
-  // Simplify the polyline by default to reduce tha amount of points
-  if (options?.simplify?.enabled !== false) {
-    polyline = math.polyline.simplify(
+  // Decimate the polyline to reduce tha amount of points
+  if (options?.decimate?.enabled) {
+    polyline = math.polyline.decimate(
       polylineData.points,
-      options?.simplify?.epsilon
+      options?.decimate?.epsilon
     );
   }
 

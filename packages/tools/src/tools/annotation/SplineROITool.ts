@@ -56,7 +56,6 @@ import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import updateContourPolyline from '../../utilities/contours/updateContourPolyline';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -121,6 +120,18 @@ class SplineROITool extends ContourSegmentationBaseTool {
          * modifier must be pressed when the first point of a new contour is added.
          */
         contourHoleAdditionModifierKey: KeyboardBindings.Shift,
+        /**
+         * The polyline may get processed in order to reduce the number of points
+         * for better performance and storage.
+         */
+        decimate: {
+          enabled: true,
+          /** A maximum given distance 'epsilon' to decide if a point should or
+           * shouldn't be added the resulting polyline which will have a lower
+           * number of points for higher `epsilon` values.
+           */
+          epsilon: 0.1,
+        },
         spline: {
           configuration: {
             [SplineTypesEnum.Cardinal]: {
@@ -693,7 +704,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         const spline = this._updateSplineInstance(element, annotation);
         const splinePolylineCanvas = spline.getPolylinePoints();
 
-        updateContourPolyline(
+        this.updateContourPolyline(
           annotation,
           {
             points: splinePolylineCanvas,

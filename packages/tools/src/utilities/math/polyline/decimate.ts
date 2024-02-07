@@ -11,15 +11,15 @@ const DEFAULT_EPSILON = 0.1;
  * https://rosettacode.org/wiki/Ramer-Douglas-Peucker_line_simplification
  * https://karthaus.nl/rdp/
  *
- * @param polyline - Polyline to simplify
+ * @param polyline - Polyline to decimate
  * @param epsilon - A maximum given distance 'epsilon' to decide if a point
- * should or shouldn't be added the the simplified polyline version. In each
+ * should or shouldn't be added the decimated polyline version. In each
  * iteration the polyline is split into two polylines and the distance of each
  * point from those new polylines are checked against the line that connects
  * the first and last points.
- * @returns Simplified polyline
+ * @returns Decimated polyline
  */
-export default function simplify(
+export default function decimate(
   polyline: Types.Point2[],
   epsilon = DEFAULT_EPSILON
 ) {
@@ -33,15 +33,15 @@ export default function simplify(
   const epsilonSquared = epsilon * epsilon;
   const partitionQueue = [[0, numPoints - 1]];
 
-  // Used a boolean array to set each point that will be in the simplified polyline
+  // Used a boolean array to set each point that will be in the decimated polyline
   // because pre-allocated arrays are 3-4x faster than thousands of push() calls
   // to add all points to a new array.
   const polylinePointFlags = new Array(numPoints).fill(false);
 
-  // Start and end points are always added to the simplified polyline
-  let numSimplifiedPoints = 2;
+  // Start and end points are always added to the decimated polyline
+  let numDecimatedPoints = 2;
 
-  // Add start and end points to the simplified polyline
+  // Add start and end points to the decimated polyline
   polylinePointFlags[0] = true;
   polylinePointFlags[numPoints - 1] = true;
 
@@ -82,9 +82,9 @@ export default function simplify(
     }
 
     // Update the flag for the furthest point because it will be added to the
-    // simplified polyline
+    // decimated polyline
     polylinePointFlags[maxDistIndex] = true;
-    numSimplifiedPoints++;
+    numDecimatedPoints++;
 
     // Partition the points into two parts using maxDistIndex as the pivot point
     // and process both sides
@@ -93,13 +93,13 @@ export default function simplify(
   }
 
   // A pre-allocated array is 3-4x faster then multiple push() calls
-  const simplifiedPolyline: Types.Point2[] = new Array(numSimplifiedPoints);
+  const decimatedPolyline: Types.Point2[] = new Array(numDecimatedPoints);
 
   for (let srcIndex = 0, dstIndex = 0; srcIndex < numPoints; srcIndex++) {
     if (polylinePointFlags[srcIndex]) {
-      simplifiedPolyline[dstIndex++] = polyline[srcIndex];
+      decimatedPolyline[dstIndex++] = polyline[srcIndex];
     }
   }
 
-  return simplifiedPolyline;
+  return decimatedPolyline;
 }

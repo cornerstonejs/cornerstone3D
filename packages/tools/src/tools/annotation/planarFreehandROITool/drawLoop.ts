@@ -18,7 +18,6 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
-import { updateContourPolyline } from '../../../utilities/contours/';
 import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClockwise';
 
 const {
@@ -238,7 +237,7 @@ function completeDrawClosedContour(
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
 
-  updateContourPolyline(
+  this.updateContourPolyline(
     annotation,
     {
       points: updatedPoints,
@@ -315,7 +314,7 @@ function completeDrawOpenContour(
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
 
-  updateContourPolyline(
+  this.updateContourPolyline(
     annotation,
     {
       points: updatedPoints,

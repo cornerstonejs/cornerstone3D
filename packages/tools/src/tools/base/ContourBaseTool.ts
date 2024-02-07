@@ -17,7 +17,9 @@ import type {
 import { drawPath as drawPathSvg } from '../../drawingSvg';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
+import { updateContourPolyline } from '../../utilities/contours/';
 import { getContourHolesDataCanvas } from '../../utilities/contours';
+import { ContourWindingDirection } from '../../types/ContourAnnotation';
 
 /**
  * A contour base class responsible for rendering contour instances such as
@@ -208,6 +210,31 @@ abstract class ContourBaseTool extends AnnotationTool {
     getChildAnnotations(annotation).forEach((childAnnotation) =>
       this.moveAnnotation(childAnnotation, worldPosDelta)
     );
+  }
+
+  protected updateContourPolyline(
+    annotation: ContourAnnotation,
+    polylineData: {
+      points: Types.Point2[];
+      closed?: boolean;
+      targetWindingDirection?: ContourWindingDirection;
+    },
+    transforms: {
+      canvasToWorld: (point: Types.Point2) => Types.Point3;
+    }
+  ) {
+    const decimateConfig = this.configuration?.decimate || {};
+    console.log('>>>>> decimate', {
+      enabled: !!decimateConfig.enabled,
+      epsilon: decimateConfig.epsilon,
+    });
+
+    updateContourPolyline(annotation, polylineData, transforms, {
+      decimate: {
+        enabled: !!decimateConfig.enabled,
+        epsilon: decimateConfig.epsilon,
+      },
+    });
   }
 
   /**
