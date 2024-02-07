@@ -1647,6 +1647,9 @@ function debounce(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
+function decimate(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
+
+// @public (undocumented)
 const _default: {
     filterAnnotationsWithinSlice: typeof filterAnnotationsWithinSlice;
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
@@ -3745,7 +3748,7 @@ declare namespace polyline {
         getNormal3,
         getNormal2,
         intersectPolyline,
-        simplify,
+        decimate,
         getFirstLineSegmentIntersectionIndexes,
         getLineSegmentIntersectionsIndexes,
         getLineSegmentIntersectionsCoordinates,
@@ -4696,9 +4699,6 @@ function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresent
 function showAllAnnotations(): void;
 
 // @public (undocumented)
-function simplify(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
-
-// @public (undocumented)
 function smoothAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
 
 // @public (undocumented)
@@ -5627,7 +5627,7 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
 }, transforms: {
     canvasToWorld: (point: Types_2.Point2) => Types_2.Point3;
 }, options?: {
-    simplify?: {
+    decimate?: {
         enabled?: boolean;
         epsilon?: number;
     };
