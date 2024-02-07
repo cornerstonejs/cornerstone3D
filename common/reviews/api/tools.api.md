@@ -3745,6 +3745,7 @@ declare namespace polyline {
         getNormal3,
         getNormal2,
         intersectPolyline,
+        simplify,
         getFirstLineSegmentIntersectionIndexes,
         getLineSegmentIntersectionsIndexes,
         getLineSegmentIntersectionsCoordinates,
@@ -4695,6 +4696,9 @@ function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresent
 function showAllAnnotations(): void;
 
 // @public (undocumented)
+function simplify(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
+
+// @public (undocumented)
 function smoothAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
 
 // @public (undocumented)
@@ -5622,6 +5626,11 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
     targetWindingDirection?: ContourWindingDirection;
 }, transforms: {
     canvasToWorld: (point: Types_2.Point2) => Types_2.Point3;
+}, options?: {
+    simplify?: {
+        enabled?: boolean;
+        epsilon?: number;
+    };
 }): void;
 
 declare namespace utilities {
