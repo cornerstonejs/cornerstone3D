@@ -12,6 +12,7 @@ import {
   addManipulationBindings,
   getLocalUrl,
   addVideoTime,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -51,7 +52,6 @@ const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
-let activeSegmentIndex = 1;
 
 const configuredTools = new Map<string, any>();
 const interpolationConfiguration = {
@@ -149,11 +149,6 @@ function updateInputsForCurrentSegmentation() {
   );
 }
 
-function updateActiveSegmentIndex(segmentIndex: number): void {
-  activeSegmentIndex = segmentIndex;
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, segmentIndex);
-}
-
 function getSegmentsVisibilityState() {
   let segmentsVisibility = segmentVisibilityMap.get(segmentationId);
 
@@ -209,13 +204,7 @@ element.addEventListener(
   cancelDrawingEventListener
 );
 
-addDropdownToToolbar({
-  labelText: 'Segment Index',
-  options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    updateActiveSegmentIndex(Number(nameAsStringOrNumber));
-  },
-});
+addSegmentIndexDropdown(segmentationId);
 
 const toolNames = [
   PlanarFreehandContourSegmentationTool.toolName,
@@ -265,6 +254,7 @@ addButtonToToolbar({
   title: 'Show/Hide Current Segment',
   onClick: function () {
     const segmentsVisibility = getSegmentsVisibilityState();
+    const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     segmentation.config.visibility.setSegmentVisibility(

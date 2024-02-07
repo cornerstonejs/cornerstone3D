@@ -26,6 +26,14 @@ import CanvasActor from './CanvasActor';
 import cache from '../cache';
 
 /**
+ * A data type for the scalar data for video data.
+ */
+export type CanvasScalarData = Uint8ClampedArray & {
+  frameNumber?: number;
+  getRange?: () => [number, number];
+};
+
+/**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
@@ -47,6 +55,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private isPlaying = false;
   private scrollSpeed = 1;
   private playbackRate = 1;
+  private scalarData: CanvasScalarData;
+
   /**
    * The range is the set of frames to play
    */
@@ -472,7 +482,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     });
   }
 
-  protected getScalarData() {
+  protected getScalarData(): CanvasScalarData {
+    if (this.scalarData?.frameNumber === this.getFrameNumber()) {
+      return this.scalarData;
+    }
     const canvas = document.createElement('canvas');
     canvas.width = this.videoWidth;
     canvas.height = this.videoHeight;
@@ -484,8 +497,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.videoWidth,
       this.videoHeight
     );
-    const { data: scalarData } = canvasData;
-    (scalarData as any).getRange = () => [0, 255];
+    const scalarData = canvasData.data as CanvasScalarData;
+    scalarData.getRange = () => [0, 255];
+    scalarData.frameNumber = this.getFrameNumber();
+    this.scalarData = scalarData;
     return scalarData;
   }
 

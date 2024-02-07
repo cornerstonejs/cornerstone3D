@@ -1363,7 +1363,7 @@ interface IImage {
     // (undocumented)
     voiLUTFunction: string;
     // (undocumented)
-    voxelManager?: VoxelManager<number>;
+    voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
     // (undocumented)
     width: number;
     // (undocumented)
@@ -3360,12 +3360,12 @@ export class VideoViewport extends Viewport implements IVideoViewport {
         metadata: {
             Modality: any;
         };
-        getScalarData: () => Uint8ClampedArray;
+        getScalarData: () => CanvasScalarData;
         imageData: {
             getDirection: () => any;
             getDimensions: () => any;
             getRange: () => number[];
-            getScalarData: () => Uint8ClampedArray;
+            getScalarData: () => CanvasScalarData;
             getSpacing: () => any;
             worldToIndex: (point: Point3) => number[];
             indexToWorld: (point: Point3) => Point3;
@@ -3401,7 +3401,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    protected getScalarData(): Uint8ClampedArray;
+    protected getScalarData(): CanvasScalarData;
     // (undocumented)
     getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
@@ -3927,7 +3927,7 @@ class VoxelManager<T> {
     // (undocumented)
     static addBounds(bounds: BoundsIJK, point: Point3): void;
     // (undocumented)
-    static addInstanceToImage(image: IImage): number;
+    static addInstanceToImage(image: IImage): void;
     // (undocumented)
     addPoint(point: Point3 | number): void;
     // (undocumented)
@@ -3937,13 +3937,13 @@ class VoxelManager<T> {
     // (undocumented)
     static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
     // (undocumented)
-    static createLazyVoxelManager<T>(dimensions: Point3, layerFactory: (width: number, height: number) => T): VoxelManager<T>;
+    static createLazyVoxelManager<T>(dimensions: Point3, planeFactory: (width: number, height: number) => T): VoxelManager<T>;
     // (undocumented)
     static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
     // (undocumented)
     static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
     // (undocumented)
-    static createVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
+    static createVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents?: number): VoxelManager<number> | VoxelManager<RGB>;
     // (undocumented)
     readonly dimensions: Point3;
     // (undocumented)
@@ -3963,6 +3963,8 @@ class VoxelManager<T> {
     // (undocumented)
     getBoundsIJK(): BoundsIJK;
     // (undocumented)
+    getPixelData: (sliceIndex?: number, pixelData?: PixelDataTypedArray) => PixelDataTypedArray;
+    // (undocumented)
     getPointIndices(): number[];
     // (undocumented)
     getPoints(): Point3[];
@@ -3972,6 +3974,8 @@ class VoxelManager<T> {
     map: Map<number, T> | RLEVoxelMap<T>;
     // (undocumented)
     modifiedSlices: Set<number>;
+    // (undocumented)
+    numComps: number;
     // (undocumented)
     points: Set<number>;
     // (undocumented)

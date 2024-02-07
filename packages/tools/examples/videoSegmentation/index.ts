@@ -11,10 +11,11 @@ import {
   initDemo,
   addDropdownToToolbar,
   setTitleAndDescription,
-  addButtonToToolbar,
   getLocalUrl,
   addManipulationBindings,
   addVideoTime,
+  addBrushSizeSlider,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
@@ -37,7 +38,6 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
 let renderingEngine;
@@ -48,7 +48,7 @@ const toolGroupId = 'TOOL_GROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation in VideoViewport',
-  'Here we demonstrate how to render a segmentation in a VideoViewport'
+  'Here we demonstrate how to render a labelmap based segmentation on a VideoViewport'
 );
 
 const size = '500px';
@@ -90,58 +90,27 @@ content.append(instructions);
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
   CircularEraser: 'CircularEraser',
-  ThresholdBrush: 'ThresholdBrush',
   DynamicThreshold: 'DynamicThreshold',
 };
 
 const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
 
 const brushValues = [
+  brushInstanceNames.DynamicThreshold,
   brushInstanceNames.CircularBrush,
   brushInstanceNames.CircularEraser,
-  brushInstanceNames.ThresholdBrush,
-  brushInstanceNames.DynamicThreshold,
 ];
 
-const optionsValues = [
-  ...brushValues,
-  RectangleScissorsTool.toolName,
-  CircleScissorsTool.toolName,
-  PaintFillTool.toolName,
-];
+const optionsValues = [...brushValues, RectangleScissorsTool.toolName];
 
 let viewport;
 
-const segmentationIds = ['VIDEO_SEGMENTATION'];
+const segmentationId = 'VIDEO_SEGMENTATION';
 const segmentationRepresentationUIDs = [];
-const dropDownId = 'SEGMENTATION_DROPDOWN';
-
-function updateSegmentationDropdownOptions(
-  segmentationIds,
-  activeSegmentationId
-) {
-  const dropdown = document.getElementById(
-    'SEGMENTATION_DROPDOWN'
-  ) as HTMLSelectElement;
-
-  dropdown.innerHTML = '';
-
-  segmentationIds.forEach((segmentationId) => {
-    const option = document.createElement('option');
-    option.value = segmentationId;
-    option.innerText = segmentationId;
-    dropdown.appendChild(option);
-  });
-
-  if (activeSegmentationId) {
-    dropdown.value = activeSegmentationId;
-  }
-}
 
 // ============================= //
 addDropdownToToolbar({
@@ -171,87 +140,9 @@ addDropdownToToolbar({
   },
 });
 
-const thresholdOptions = ['CT Fat: (-150, -70)', 'CT Bone: (200, 1000)'];
+addBrushSizeSlider();
 
-addDropdownToToolbar({
-  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-
-    let threshold;
-    if (name === thresholdOptions[0]) {
-      threshold = [-150, -70];
-    } else if (name == thresholdOptions[1]) {
-      threshold = [100, 1000];
-    }
-
-    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Create New Segmentation on Current Image',
-  onClick: async () => {
-    const currentImageId = viewport.getCurrentImageId();
-
-    const { imageId: newSegImageId } =
-      await imageLoader.createAndCacheDerivedImage(currentImageId);
-
-    const newSegmentationId = `SEGMENTATION_${newSegImageId}`;
-    segmentationIds.push(newSegmentationId);
-
-    segmentation.addSegmentations([
-      {
-        segmentationId: newSegmentationId,
-        representation: {
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          data: {
-            imageIdReferenceMap: new Map([[currentImageId, newSegImageId]]),
-          },
-        },
-      },
-    ]);
-
-    // Add the segmentation representation to the toolgroup
-    const [uid] = await segmentation.addSegmentationRepresentations(
-      toolGroupId,
-      [
-        {
-          segmentationId: newSegmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]
-    );
-
-    segmentationRepresentationUIDs.push(uid);
-
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
-
-    // update the dropdown
-    updateSegmentationDropdownOptions(segmentationIds, newSegmentationId);
-  },
-});
-
-addDropdownToToolbar({
-  id: dropDownId,
-  labelText: 'Set Active Segmentation',
-  options: { values: segmentationIds, defaultValue: '' },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-    const index = segmentationIds.indexOf(name);
-    const uid = segmentationRepresentationUIDs[index];
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
-
-    // Update the dropdown
-    updateSegmentationDropdownOptions(segmentationIds, name);
-  },
-});
+addSegmentIndexDropdown(segmentationId);
 
 // ============================= //
 
@@ -304,14 +195,14 @@ function setupTools(toolGroupId) {
       },
       strategySpecificConfiguration: {
         useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
+        THRESHOLD: { isDynamic: true, dynamicRadius: 1 },
       },
     }
   );
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+  toolGroup.setToolActive(brushInstanceNames.DynamicThreshold, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -363,8 +254,8 @@ async function run() {
   const allImageIds = viewport.getImageIds();
   const { imageIds: segmentationImageIds } =
     await imageLoader.createAndCacheDerivedImages(allImageIds, {
-      noCreateBuffer: true,
-      updateCacheInstance: csUtils.VoxelManager.addInstanceToImage,
+      skipCreateBuffer: true,
+      onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
     });
 
   fillStackSegmentationWithMockData({
@@ -377,7 +268,7 @@ async function run() {
 
   segmentation.addSegmentations([
     {
-      segmentationId: segmentationIds[0],
+      segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
@@ -392,7 +283,7 @@ async function run() {
   // Add the segmentation representation to the toolgroup
   const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
-      segmentationId: segmentationIds[0],
+      segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);

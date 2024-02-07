@@ -1,9 +1,14 @@
-import isEqual from './isEqual';
+import { PixelDataTypedArray } from '../types';
 
+/**
+ * The RLERun specifies a contigous run of values for a row,
+ * where all indices (i only) from `[start,end)` have the specified
+ * value.
+ */
 export type RLERun<T> = {
   value: T;
-  i: number;
-  iEnd: number;
+  start: number;
+  end: number;
 };
 
 /**
@@ -19,6 +24,21 @@ export default class RLEVoxelMap<T> {
   protected depth = 1;
   protected jMultiple = 1;
   protected kMultiple = 1;
+  // Number of components in the value
+  protected numComps = 1;
+
+  /**
+   * The default value returned for get.
+   * This allows treting the voxel map more like scalar data, returning the right
+   * default value for unset values.
+   * Set to 0 by default, but any maps where 0 not in T should update this value.
+   */
+  public defaultValue: T = 0 as unknown as T;
+
+  /**
+   * The constructor for creating pixel data.
+   */
+  public pixelDataConstructor = Uint8Array;
 
   constructor(width: number, height: number, depth = 1) {
     this.width = width;
@@ -28,13 +48,25 @@ export default class RLEVoxelMap<T> {
     this.kMultiple = this.jMultiple * height;
   }
 
+  /**
+   * Gets the value encoded in the map at the given index, which is
+   * an integer `[i,j,k]` voxel index, equal to `index=i+(j+k*height)*with`
+   * value (eg a standard ScalarData index for stack/volume).
+   *
+   * Returns defaultValue if the RLE value is not found.
+   */
   public get = (index): T => {
     const i = index % this.jMultiple;
     const j = (index - i) / this.jMultiple;
     const rle = this.getRLE(i, j);
-    return rle?.value;
+    return rle?.value || this.defaultValue;
   };
 
+  /**
+   * Gets a list of RLERun values which specify the data on the row j
+   * This allows applying or modifying the run directly.  See CanvasActor
+   * for an example in the RLE rendering.
+   */
   protected getRLE(i: number, j: number): RLERun<T> {
     const row = this.rows.get(j);
     if (!row) {
@@ -42,12 +74,19 @@ export default class RLEVoxelMap<T> {
     }
     const index = this.findIndex(row, i);
     const rle = row[index];
-    return i >= rle?.i ? rle : undefined;
+    return i >= rle?.start ? rle : undefined;
   }
 
+  /**
+   * Finds the index in the row that i is contained in, OR that i would be
+   * before.   That is, the rle value for the returned index in that row
+   * has `i ε [start,end)` if a direct RLE is found, or `i ε [end_-1,start)` if
+   * in the prefix.  If no RLE is found with that index, then
+   * `i ε [end_final,length)`
+   */
   protected findIndex(row: RLERun<T>[], i: number) {
     for (let index = 0; index < row.length; index++) {
-      const { iEnd } = row[index];
+      const { end: iEnd } = row[index];
       if (i < iEnd) {
         return index;
       }
@@ -70,65 +109,203 @@ export default class RLEVoxelMap<T> {
    * allow it to be efficient.
    */
   public set = (index: number, value: T) => {
-    const isDefault = !value;
+    if (value === undefined) {
+      throw new Error(`Can't set undefined at ${index % this.width}`);
+    }
     const i = index % this.width;
     const j = (index - i) / this.width;
     const row = this.rows.get(j);
     if (!row) {
-      if (isDefault) {
-        return;
-      }
-      this.rows.set(j, [{ i, iEnd: i + 1, value }]);
+      this.rows.set(j, [{ start: i, end: i + 1, value }]);
       return;
     }
     const rleIndex = this.findIndex(row, i);
-    const rle = row[rleIndex];
-    const rleLast = row[rleIndex - 1];
-    if (!rle) {
+    const rle1 = row[rleIndex];
+    const rle0 = row[rleIndex - 1];
+
+    // Adding to the end of the row
+    if (!rle1) {
       // We are at the end, check if the previous rle can be extended
-      if (!rleLast || rleLast.value !== value || rleLast.iEnd !== i) {
-        row[rleIndex] = { i, iEnd: i + 1, value };
+      if (!rle0 || rle0.value !== value || rle0.end !== i) {
+        row[rleIndex] = { start: i, end: i + 1, value };
+        // validateRow(row, i, rleIndex, value);
         return;
       }
       // Just add it to the previous element.
-      rleLast.iEnd++;
+      rle0.end++;
       return;
     }
-    if (value === rle.value) {
-      if (i >= rle.i) {
-        return;
-      }
-      if (i === rle.i - 1) {
-        rle.i--;
-        if (!rleLast || rleLast.iEnd < i || rleLast.value !== value) {
-          return;
-        }
-        rle.i = rleLast.i;
+
+    const { start, end, value: oldValue } = rle1;
+
+    // Handle the already in place case
+    if (value === oldValue && i >= start) {
+      // validateRow(row, i, rleIndex, value, start);
+      return;
+    }
+
+    const rleInsert = { start: i, end: i + 1, value };
+    const isAfter = i > start;
+    const insertIndex = isAfter ? rleIndex + 1 : rleIndex;
+    const rlePrev = isAfter ? rle1 : rle0;
+    let rleNext = isAfter ? row[rleIndex + 1] : rle1;
+
+    // Can merge with previous value, so no insert
+    if (rlePrev?.value === value && rlePrev?.end === i) {
+      rlePrev.end++;
+      if (rleNext?.value === value && rleNext.start === i + 1) {
+        rlePrev.end = rleNext.end;
         row.splice(rleIndex, 1);
-        return;
+        // validateRow(row, i, rleIndex, value);
+      } else if (rleNext?.start === i) {
+        rleNext.start++;
+        if (rleNext.start === rleNext.end) {
+          row.splice(rleIndex, 1);
+          rleNext = row[rleIndex];
+          // Check if we can merge twice
+          if (rleNext?.start === i + 1 && rleNext.value === value) {
+            rlePrev.end = rleNext.end;
+            row.splice(rleIndex, 1);
+          }
+        }
+        // validateRow(row, i, rleIndex, value);
       }
-    }
-    // Value is not the same
-    if (i > rle.i) {
-      // Split after rle
-      row.splice(rleIndex, 0, { i, iEnd: i + 1, value });
       return;
     }
-    if (i === rle.i) {
-      if (rle.iEnd === i + 1) {
-        rle.value = value;
-        return;
+
+    // Can merge with next, so no insert
+    if (rleNext?.value === value && rleNext.start === i + 1) {
+      rleNext.start--;
+      if (rlePrev?.end > i) {
+        rlePrev.end = i;
+        if (rlePrev.end === rlePrev.start) {
+          row.splice(rleIndex, 1);
+        }
       }
-      rle.i++;
+      // validateRow(row, i, rleIndex, value);
+      return;
     }
-    row.splice(rleIndex - 1, 0, { i, iEnd: i + 1, value });
+
+    // Can't merge, need to see if we can replace
+    if (rleNext?.start === i && rleNext.end === i + 1) {
+      rleNext.value = value;
+      const nextnext = row[rleIndex + 1];
+      if (nextnext?.start == i + 1 && nextnext.value === value) {
+        row.splice(rleIndex + 1, 1);
+        rleNext.end = nextnext.end;
+      }
+      // validateRow(row, i, rleIndex, value);
+      return;
+    }
+
+    // Need to fix the next start value
+    if (i === rleNext?.start) {
+      rleNext.start++;
+    }
+    if (isAfter && end > i + 1) {
+      // Insert two items, to split the existing into three
+      row.splice(insertIndex, 0, rleInsert, {
+        start: i + 1,
+        end: rlePrev.end,
+        value: rlePrev.value,
+      });
+    } else {
+      row.splice(insertIndex, 0, rleInsert);
+    }
+    if (rlePrev?.end > i) {
+      rlePrev.end = i;
+    }
+    // validateRow(row, i, rleIndex, value, insertIndex);
   };
 
+  /**
+   * Clears all entries.
+   */
   public clear() {
     this.rows.clear();
   }
 
+  /**
+   * Gets the set of key entries - that is j values.  This may include
+   * `j>=height`, where `j = key % height`, and `k = Math.floor(j / height)`
+   */
   public keys(): number[] {
-    throw new Error('TODO - implement this');
+    return [...this.rows.keys()];
+  }
+
+  /**
+   * Gets the pixel data into the provided pixel data array, or creates one
+   * according to the assigned type.
+   */
+  public getPixelData(
+    k = 0,
+    pixelData?: PixelDataTypedArray
+  ): PixelDataTypedArray {
+    if (!pixelData) {
+      pixelData = new this.pixelDataConstructor(
+        this.width * this.height * this.numComps
+      );
+    } else {
+      pixelData.fill(0);
+    }
+    const { width, height, numComps } = this;
+
+    for (let j = 0; j < height; j++) {
+      const row = this.getRun(j, k);
+      if (!row) {
+        continue;
+      }
+      if (numComps === 1) {
+        for (const rle of row) {
+          const rowOffset = j * width;
+          const { start, end, value } = rle;
+          for (let i = start; i < end; i++) {
+            pixelData[rowOffset + i] = value as unknown as number;
+          }
+        }
+      } else {
+        for (const rle of row) {
+          const rowOffset = j * width * numComps;
+          const { start, end, value } = rle;
+          for (let i = start; i < end; i += numComps) {
+            for (let comp = 0; comp < numComps; comp++) {
+              pixelData[rowOffset + i + comp] = value[comp];
+            }
+          }
+        }
+      }
+    }
+    return pixelData;
   }
 }
+
+// This is some code to allow debugging RLE maps
+// To be deleted along with references once RLE is better tested.
+// Might move to testing code at that point
+// function validateRow(row, ...inputs) {
+//   if (!row) {
+//     return;
+//   }
+//   let lastRle;
+//   for (const rle of row) {
+//     const { start, end, value } = rle;
+//     if (start < 0 || end > 1920 || start >= end) {
+//       console.log('Wrong order', ...inputs);
+//       debugger;
+//     }
+//     if (!lastRle) {
+//       lastRle = rle;
+//       continue;
+//     }
+//     const { start: lastStart, end: lastEnd, value: lastValue } = lastRle;
+//     lastRle = rle;
+//     if (start < lastEnd) {
+//       console.log('inputs for wrong overlap', ...inputs);
+//       debugger;
+//     }
+//     if (start === lastEnd && value === lastValue) {
+//       console.log('inputs for two in a row same', ...inputs);
+//       debugger;
+//     }
+//   }
+// }

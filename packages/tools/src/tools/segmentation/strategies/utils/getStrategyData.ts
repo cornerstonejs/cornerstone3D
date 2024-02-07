@@ -9,6 +9,8 @@ function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
   let dimensions: Types.Point3;
   let segmentationVoxelManager;
+  let numComps = 1;
+  let imageVoxelManager;
 
   if (isVolumeSegmentation(operationData)) {
     const { volumeId, referencedVolumeId } = operationData;
@@ -41,6 +43,9 @@ function getStrategyData({ operationData, viewport }) {
     // and always circle modifies the current imageId which in fact is the imageData
     // of that actor at that moment so we have the imageData already
     const actor = viewport.getActor(segmentationRepresentationUID);
+    if (!actor) {
+      return;
+    }
     segmentationImageData = actor.actor.getMapper().getInputData();
     segmentationVoxelManager = segmentationImageData.voxelManager;
     const currentSegmentationImageId = imageIdReferenceMap.get(currentImageId);
@@ -56,6 +61,9 @@ function getStrategyData({ operationData, viewport }) {
     // and we need to use this to for the modification
     imageScalarData = image?.getPixelData() || imageData.getScalarData();
     dimensions = image ? [image.columns, image.rows, 1] : imageData.dimensions;
+    imageVoxelManager = image?.voxelManager;
+    numComps =
+      image?.numComps || imageScalarData.length / dimensions[0] / dimensions[1];
   }
 
   return {
@@ -67,7 +75,8 @@ function getStrategyData({ operationData, viewport }) {
     imageScalarData,
     imageVoxelManager: VoxelManager.createVolumeVoxelManager(
       dimensions,
-      imageScalarData
+      imageScalarData,
+      numComps
     ),
   };
 }

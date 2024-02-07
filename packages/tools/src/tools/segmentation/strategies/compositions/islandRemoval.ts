@@ -14,6 +14,7 @@ export default {
   [StrategyCallbacks.OnInteractionEnd]: (
     operationData: InitializedOperationData
   ) => {
+    console.time('fillIsland');
     const {
       previewVoxelManager: previewVoxelManager,
       segmentationVoxelManager: segmentationVoxelManager,
@@ -89,7 +90,7 @@ export default {
       floodedSet.add(index);
       floodedCount++;
     };
-
+    console.time('outsideFlood');
     clickedPoints.forEach((clickedPoint, index) => {
       // @ts-ignore - need to ignore the spread appication to array params
       if (getter(...clickedPoint) === 1) {
@@ -118,6 +119,7 @@ export default {
     };
 
     previewVoxelManager.forEach(callback, {});
+    console.timeEnd('outsideFlood');
 
     if (floodedCount - previewCount !== 0) {
       console.warn(
@@ -134,6 +136,7 @@ export default {
     const islandMap = new Set(segmentationVoxelManager.points || []);
     floodedSet.clear();
 
+    console.time('islandFlood');
     for (const index of islandMap.keys()) {
       if (floodedSet.has(index)) {
         continue;
@@ -171,6 +174,8 @@ export default {
         }
       }
     }
+    console.timeEnd('islandFlood');
+    console.timeEnd('fillIsland');
     triggerSegmentationDataModified(
       operationData.segmentationId,
       previewVoxelManager.getArrayOfSlices()

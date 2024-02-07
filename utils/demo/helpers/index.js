@@ -17,8 +17,12 @@ import camera from './camera';
 import getLocalUrl from './getLocalUrl';
 import addManipulationBindings from './addManipulationBindings';
 import addVideoTime from './addVideoTime';
+import addBrushSizeSlider from './addBrushSizeSlider';
+import addSegmentIndexDropdown from './addSegmentIndexDropdown';
 
 export {
+  addBrushSizeSlider,
+  addSegmentIndexDropdown,
   addVideoTime,
   createImageIdsAndCacheMetaData,
   wadoURICreateImageIds,

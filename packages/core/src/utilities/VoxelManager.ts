@@ -1,5 +1,12 @@
-import type { BoundsIJK, Point3, PixelDataTypedArray, IImage } from '../types';
+import type {
+  BoundsIJK,
+  Point3,
+  PixelDataTypedArray,
+  IImage,
+  RGB,
+} from '../types';
 import RLEVoxelMap from './RLEVoxelMap';
+import isEqual from './isEqual';
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
@@ -18,6 +25,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
+  public numComps = 1;
 
   points: Set<number>;
   width: number;
@@ -235,14 +243,52 @@ export default class VoxelManager<T> {
   }
 
   /**
+   * Gets the pixel data for the given array.
+   */
+  public getPixelData: (
+    sliceIndex?: number,
+    pixelData?: PixelDataTypedArray
+  ) => PixelDataTypedArray;
+
+  /**
    *  Creates a volume value accessor, based on a volume scalar data instance.
    * This also works for image value accessors for single plane (k=0) accessors.
    */
   public static createVolumeVoxelManager(
     dimensions: Point3,
-    scalarData
-  ): VoxelManager<number> {
-    const voxels = new VoxelManager(
+    scalarData,
+    numComponents = 0
+  ): VoxelManager<number> | VoxelManager<RGB> {
+    if (!numComponents) {
+      numComponents =
+        scalarData.length / dimensions[0] / dimensions[1] / dimensions[2];
+      numComponents = numComponents < 5 ? numComponents : 1;
+    }
+    if (numComponents > 1) {
+      const voxels = new VoxelManager<RGB>(
+        dimensions,
+        (index) => {
+          index *= numComponents;
+          return [
+            scalarData[index++],
+            scalarData[index++],
+            scalarData[index++],
+          ];
+        },
+        (index, v) => {
+          index *= 3;
+          const isChanged = !isEqual(scalarData[index], v);
+          scalarData[index++] = v[0];
+          scalarData[index++] = v[1];
+          scalarData[index++] = v[2];
+          return isChanged;
+        }
+      );
+      voxels.numComps = numComponents;
+      voxels.scalarData = scalarData;
+      return voxels;
+    }
+    const voxels = new VoxelManager<number>(
       dimensions,
       (index) => scalarData[index],
       (index, v) => {
@@ -311,23 +357,23 @@ export default class VoxelManager<T> {
    */
   public static createLazyVoxelManager<T>(
     dimensions: Point3,
-    layerFactory: (width: number, height: number) => T
+    planeFactory: (width: number, height: number) => T
   ): VoxelManager<T> {
     const map = new Map<number, T>();
     const [width, height, depth] = dimensions;
-    const layerSize = width * height;
+    const planeSize = width * height;
 
     const voxelManager = new VoxelManager(
       dimensions,
-      (index) => map.get(Math.floor(index / layerSize))?.[index % layerSize],
-      function (index, v) {
-        const k = Math.floor(index / layerSize);
+      (index) => map.get(Math.floor(index / planeSize))?.[index % planeSize],
+      (index, v) => {
+        const k = Math.floor(index / planeSize);
         let layer = map.get(k);
         if (!layer) {
-          layer = layerFactory(width, height);
+          layer = planeFactory(width, height);
           map.set(k, layer);
         }
-        layer[index % layerSize] = v;
+        layer[index % planeSize] = v;
       }
     );
     voxelManager.map = map;
@@ -342,12 +388,13 @@ export default class VoxelManager<T> {
     const [width, height, depth] = dimensions;
     const map = new RLEVoxelMap<T>(width, height, depth);
 
-    const voxelManager = new VoxelManager(
+    const voxelManager = new VoxelManager<T>(
       dimensions,
       (index) => map.get(index),
       (index, v) => map.set(index, v)
     );
     voxelManager.map = map;
+    voxelManager.getPixelData = map.getPixelData.bind(map);
     return voxelManager;
   }
 
@@ -360,16 +407,19 @@ export default class VoxelManager<T> {
   public static addInstanceToImage(image: IImage) {
     const { width, height } = image;
     const scalarData = image.getPixelData();
-    if (scalarData.length >= width * height) {
+    if (scalarData?.length >= width * height) {
       image.voxelManager = VoxelManager.createVolumeVoxelManager(
         [width, height, 1],
         scalarData
       );
       return;
     }
-    image.voxelManager = VoxelManager.createRLEVoxelManager([width, height, 1]);
-    // Some return value which can be used as the cache size.
-    return 1024;
+    image.voxelManager = VoxelManager.createRLEVoxelManager<number>([
+      width,
+      height,
+      1,
+    ]);
+    image.getPixelData = image.voxelManager.getPixelData;
   }
 }
 

@@ -28,34 +28,35 @@ export interface ImageLoaderOptions {
   additionalDetails?: Record<string, unknown>;
 }
 
-interface DerivedImageOptions {
-  imageId?: string;
-  targetBufferType?: PixelDataTypedArrayString;
-  /**
-   * Avoid creating the actual buffer object.
-   * This can be used to create a lazy response object.
-   */
-  noCreateBuffer?: boolean;
-  /**
-   * Updates the copy of the value which is cached.  May return a number
-   * which can be used as the cache size.
-   */
-  updateCacheInstance?: (image: IImage) => number | void;
-}
-
 interface DerivedImages {
   imageIds: Array<string>;
   promises: Array<Promise<IImage>>;
 }
 
-interface LocalImageOptions {
+type LocalImageOptions = {
   scalarData?: PixelDataTypedArray;
   targetBufferType?: PixelDataTypedArrayString;
   dimensions?: Point2;
   spacing?: Point3;
   origin?: Point3;
   direction?: Mat3;
-}
+  /**
+   * Skip creation of the actual buffer object.
+   * In fact, this creates a very short buffer, as there are lots of places
+   * assuming a buffer exists.
+   * This can be used when there are alternative representations of the image data.
+   */
+  skipCreateBuffer?: boolean;
+  /**
+   * Updates the copy of the value which is cached.
+   */
+  onCacheAdd?: (image: IImage) => void;
+};
+
+type DerivedImageOptions = LocalImageOptions & {
+  imageId?: string;
+  targetBufferType?: PixelDataTypedArrayString;
+};
 
 /**
  * This module deals with ImageLoaders, loading images and caching images
@@ -258,7 +259,7 @@ export function createAndCacheDerivedImage(
     options.imageId = `derived:${uuidv4()}`;
   }
 
-  const { imageId, noCreateBuffer } = options;
+  const { imageId, skipCreateBuffer, onCacheAdd } = options;
 
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
@@ -271,7 +272,7 @@ export function createAndCacheDerivedImage(
 
   // Use a buffer of size 1 for no data
   const imageScalarData = new TypedArrayConstructor(
-    noCreateBuffer ? 1 : length
+    skipCreateBuffer ? 1 : length
   );
   const derivedImageId = imageId;
 
@@ -285,12 +286,10 @@ export function createAndCacheDerivedImage(
   );
 
   const localImage = createAndCacheLocalImage(
-    { scalarData: imageScalarData },
+    { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },
     imageId,
     true
   );
-  // Add other options to use
-  options.updateCacheInstance?.(localImage);
 
   const imageLoadObject = {
     promise: Promise.resolve(localImage),
@@ -387,7 +386,7 @@ export function createAndCacheLocalImage(
 
     image.sizeInBytes = imageScalarData.byteLength;
     image.getPixelData = () => imageScalarData;
-  } else {
+  } else if (options.skipCreateBuffer !== true) {
     const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
       options.targetBufferType,
       length
@@ -397,6 +396,14 @@ export function createAndCacheLocalImage(
 
     image.sizeInBytes = numBytes;
     image.getPixelData = () => imageScalarData;
+  }
+
+  options.onCacheAdd?.(image);
+
+  if (image.sizeInBytes <= 4) {
+    // Sometimes the buffer data is truncated, with another representation, so
+    // set a default size to use for those representations.
+    image.sizeInBytes = 1024;
   }
 
   const imageLoadObject = {

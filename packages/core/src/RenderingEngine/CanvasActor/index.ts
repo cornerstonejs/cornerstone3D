@@ -1,68 +1,14 @@
 import type { IViewport } from '../../types/IViewport';
 import type { ICanvasActor } from '../../types/IActor';
-
-export class CanvasProperties {
-  private actor: CanvasActor;
-  private opacity = 0.4;
-  private outlineOpacity = 0.4;
-  private transferFunction = [];
-
-  constructor(actor: CanvasActor) {
-    this.actor = actor;
-  }
-
-  public setRGBTransferFunction(index, cfun) {
-    this.transferFunction[index] = cfun;
-  }
-
-  public setScalarOpacity(opacity: number) {
-    if (opacity > 0.05) {
-      this.opacity = opacity;
-    } else {
-      this.opacity = 0.4;
-    }
-  }
-
-  public setInterpolationTypeToNearest() {
-    // No-op
-  }
-
-  public setUseLabelOutline() {
-    // No-op
-  }
-
-  public setLabelOutlineOpacity(opacity) {
-    this.outlineOpacity = opacity;
-  }
-
-  public setLabelOutlineThickness() {
-    // No-op
-  }
-
-  public getColor(index: number) {
-    const cfun = this.transferFunction[0];
-    const r = cfun.getRedValue(index);
-    const g = cfun.getGreenValue(index);
-    const b = cfun.getBlueValue(index);
-    const a = cfun.getAlpha();
-    return [r, g, b, a];
-  }
-}
-
-export class CanvasMapper {
-  private actor: CanvasActor;
-
-  constructor(actor: CanvasActor) {
-    this.actor = actor;
-  }
-
-  getInputData() {
-    return this.actor.getImage();
-  }
-}
+import CanvasProperties from './CanvasProperties';
+import CanvasMapper from './CanvasMapper';
 
 /**
- * Handles canvas rendering of image data.
+ * Handles canvas rendering of derived image data, typically label maps.
+ * This class will update the canvas from the given viewport with a
+ * derived image.  The derived image can be a standard Cornerstone labelmap
+ * or be an RLE based one.  The RLE based ones are significantly faster to
+ * render as they only render the area actually relevant.
  */
 export default class CanvasActor implements ICanvasActor {
   private image;
@@ -81,7 +27,7 @@ export default class CanvasActor implements ICanvasActor {
 
   /**
    * Renders an RLE representation of the viewport data.  This is optimized to
-   * use avoid iteration where possible.
+   * avoid iterating over any data not actually containing data.
    */
   protected renderRLE(viewport, context, voxelManager) {
     const { width, height } = this.image;
@@ -105,15 +51,23 @@ export default class CanvasActor implements ICanvasActor {
       }
       dirtyY = Math.min(dirtyY, y);
       dirtyY2 = Math.max(dirtyY2, y);
-      const baseOffset = y * width * 4;
+      const baseOffset = (y * width) << 2;
+      let indicesToDelete;
       for (const run of row) {
-        const { i: iStart, iEnd, value } = run;
-        dirtyX = Math.min(dirtyX, iStart);
-        dirtyX2 = Math.max(dirtyX2, iEnd);
-        const rgb = this.canvasProperties.getColor(value).map((v) => v * 255);
-        let startOffset = baseOffset + run.i * 4;
+        const { start: start, end, value: segmentIndex } = run;
+        if (segmentIndex === 0) {
+          indicesToDelete ||= [];
+          indicesToDelete.push(row.indexOf(run));
+          continue;
+        }
+        dirtyX = Math.min(dirtyX, start);
+        dirtyX2 = Math.max(dirtyX2, end);
+        const rgb = this.canvasProperties
+          .getColor(segmentIndex)
+          .map((v) => v * 255);
+        let startOffset = baseOffset + (start << 2);
 
-        for (let i = iStart; i < iEnd; i++) {
+        for (let i = start; i < end; i++) {
           imageArray[startOffset++] = rgb[0];
           imageArray[startOffset++] = rgb[1];
           imageArray[startOffset++] = rgb[2];
@@ -183,13 +137,13 @@ export default class CanvasActor implements ICanvasActor {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         // const destOffset = (x + y * width) * 4;
-        const v = data[offset++];
-        if (v) {
+        const segmentIndex = data[offset++];
+        if (segmentIndex) {
           dirtyX = Math.min(x, dirtyX);
           dirtyY = Math.min(y, dirtyY);
           dirtyX2 = Math.max(x, dirtyX2);
           dirtyY2 = Math.max(y, dirtyY2);
-          const rgb = this.canvasProperties.getColor(v);
+          const rgb = this.canvasProperties.getColor(segmentIndex);
           imageArray[destOffset] = rgb[0] * 255;
           imageArray[destOffset + 1] = rgb[1] * 255;
           imageArray[destOffset + 2] = rgb[2] * 255;
@@ -253,22 +207,25 @@ export default class CanvasActor implements ICanvasActor {
     }
     this.image = { ...this.derivedImage };
     const imageData = this.viewport.getImageData();
-    this.image.worldToIndex = (worldPos) =>
-      imageData.imageData.worldToIndex(worldPos);
-    this.image.indexToWorld = (index) =>
-      imageData.imageData.indexToWorld(index);
-    this.image.getDimensions = () => imageData.dimensions;
-    this.image.getScalarData = () => this.derivedImage?.getPixelData();
-    this.image.getDirection = () => imageData.direction;
-    this.image.getSpacing = () => imageData.spacing;
-    this.image.setOrigin = () => null;
-    this.image.setDerivedImage = (image) => {
-      this.derivedImage = image;
-      this.image = null;
-    };
-    this.image.modified = () => {
-      this.image = null;
-    };
+    Object.assign(this.image, {
+      worldToIndex: (worldPos) => imageData.imageData.worldToIndex(worldPos),
+      indexToWorld: (index) => imageData.imageData.indexToWorld(index),
+      getDimensions: () => imageData.dimensions,
+      getScalarData: () => this.derivedImage?.getPixelData(),
+      getDirection: () => imageData.direction,
+      getSpacing: () => imageData.spacing,
+      setOrigin: () => null,
+      /**
+       * Stores the new image cache data to update the image object, and sets
+       * the image instance (this object) to null so that the next getImage
+       * refreshes the display.
+       */
+      setDerivedImage: (image) => {
+        this.derivedImage = image;
+        this.image = null;
+      },
+      modified: () => null,
+    });
     return this.image;
   }
 }

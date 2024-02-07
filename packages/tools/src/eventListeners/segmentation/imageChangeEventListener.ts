@@ -144,13 +144,19 @@ function _imageChangeEventListener(evt) {
     const segmentationImageData = segmentationActor.getMapper().getInputData();
 
     if (!derivedImageId) {
-      if (segmentationImageData.setDerivedImage) {
-        segmentationImageData.setDerivedImage(null);
-        return;
-      }
       // this means that this slice doesn't have a segmentation for this representation
       // this can be a case where the segmentation was added to certain slices only
       // so we can keep the actor but empty out the imageData
+      if (segmentationImageData.setDerivedImage) {
+        // If the image data has a set derived image, then it should be called
+        // to update any vtk or actor data associated with it.  In this case, null
+        // is used to clear the data.  THis allows intercepting/alternative
+        // to vtk calls.  Eventually the vtk version should also use this.
+        segmentationImageData.setDerivedImage(null);
+        return;
+      }
+      // This is the vtk version of the clearing out the image data, and fails
+      // to work for non scalar image data.
       const scalarArray = vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: 1,
@@ -234,6 +240,8 @@ function _imageChangeEventListener(evt) {
     }
 
     if (segmentationImageData.setDerivedImage) {
+      // Update the derived image data, whether vtk or other as appropriate
+      // to the actor(s) displaying the data.
       segmentationImageData.setDerivedImage(derivedImage);
     } else {
       // TODO - use setDerivedImage for this functionality
