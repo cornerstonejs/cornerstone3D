@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "1.53.0",
+  "version": "1.54.0",
   "description": "Cornerstone3D Tools",
   "main": "src/index.ts",
   "types": "dist/types/index.d.ts",
@@ -36,8 +36,8 @@
     "lodash.get": "^4.4.2"
   },
   "peerDependencies": {
-    "@kitware/vtk.js": "29.3.0",
     "@icr/polyseg-wasm": "0.4.0",
+    "@kitware/vtk.js": "29.3.0",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",
