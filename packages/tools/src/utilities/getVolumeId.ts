@@ -1,6 +1,8 @@
 export const getVolumeId = (targetId: string) => {
-  if (targetId.includes('nifti:')) {
-    return targetId.split(/volumeId:/)[1];
+  const str = targetId.substring('volumeId:'.length);
+  if (str.startsWith('nifti:')) {
+    return str;
   }
-  return targetId.split(/volumeId:|\?/)[1];
+  const index = str.indexOf('?');
+  return index === -1 ? str : str.substring(0, index);
 };
