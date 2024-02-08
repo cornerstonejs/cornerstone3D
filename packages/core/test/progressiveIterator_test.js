@@ -22,7 +22,7 @@ async function retrieve(it) {
 }
 
 describe('ProgressiveIterator', () => {
-  it('Delivers final value', async function (done) {
+  it('Delivers final value', function (done) {
     const iterator = new ProgressiveIterator();
     deliver(iterator, [{}, {}, {}]);
     retrieve(iterator).then((items) => {
