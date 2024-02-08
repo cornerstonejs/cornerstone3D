@@ -63,10 +63,10 @@ export default function addManipulationBindings(
   if (is3DViewport) {
     toolGroup.addTool(TrackballRotateTool.toolName);
   } else {
-    toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   }
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -115,5 +115,7 @@ export default function addManipulationBindings(
     toolGroup.setToolActive(TrackballRotateTool.toolName, {
       mouseButtonMask: MouseBindings.Primary,
     });
-}
+  } else {
+    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  }
 }
