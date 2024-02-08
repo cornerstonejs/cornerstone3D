@@ -20,7 +20,13 @@ import type {
   ViewCompatibleOptions,
   ViewTarget,
 } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
+import type {
+  VolumeActor,
+  Actor,
+  ActorEntry,
+  ImageActor,
+  ICanvasActor,
+} from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -164,6 +170,7 @@ export type {
   Actor,
   ActorEntry,
   ImageActor,
+  ICanvasActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,

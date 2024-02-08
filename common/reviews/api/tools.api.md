@@ -1684,6 +1684,9 @@ function debounce(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
+function decimate(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
+
+// @public (undocumented)
 const _default: {
     filterAnnotationsWithinSlice: typeof filterAnnotationsWithinSlice;
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
@@ -3821,6 +3824,7 @@ declare namespace polyline {
         getNormal3,
         getNormal2,
         intersectPolyline,
+        decimate,
         getFirstLineSegmentIntersectionIndexes,
         getLineSegmentIntersectionsIndexes,
         getLineSegmentIntersectionsCoordinates,
@@ -5738,6 +5742,11 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
     targetWindingDirection?: ContourWindingDirection;
 }, transforms: {
     canvasToWorld: (point: Types_2.Point2) => Types_2.Point3;
+}, options?: {
+    decimate?: {
+        enabled?: boolean;
+        epsilon?: number;
+    };
 }): void;
 
 declare namespace utilities {

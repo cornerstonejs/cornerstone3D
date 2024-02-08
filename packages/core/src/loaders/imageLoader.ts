@@ -28,24 +28,37 @@ export interface ImageLoaderOptions {
   additionalDetails?: Record<string, unknown>;
 }
 
-interface DerivedImageOptions {
-  imageId?: string;
-  targetBufferType?: PixelDataTypedArrayString;
-}
-
 interface DerivedImages {
   imageIds: Array<string>;
   promises: Array<Promise<IImage>>;
 }
 
-interface LocalImageOptions {
+type LocalImageOptions = {
   scalarData?: PixelDataTypedArray;
   targetBufferType?: PixelDataTypedArrayString;
   dimensions?: Point2;
   spacing?: Point3;
   origin?: Point3;
   direction?: Mat3;
-}
+  /**
+   * Skip creation of the actual buffer object.
+   * In fact, this creates a very short buffer, as there are lots of places
+   * assuming a buffer exists.
+   * This can be used when there are alternative representations of the image data.
+   */
+  skipCreateBuffer?: boolean;
+  /**
+   * A method to call to update the image object when it gets added to the cache.
+   * This can be used to create alternative representations of the image data,
+   * such as a VoxelManager.
+   */
+  onCacheAdd?: (image: IImage) => void;
+};
+
+type DerivedImageOptions = LocalImageOptions & {
+  imageId?: string;
+  targetBufferType?: PixelDataTypedArrayString;
+};
 
 /**
  * This module deals with ImageLoaders, loading images and caching images
@@ -248,6 +261,8 @@ export function createAndCacheDerivedImage(
     options.imageId = `derived:${uuidv4()}`;
   }
 
+  const { imageId, skipCreateBuffer, onCacheAdd } = options;
+
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
@@ -257,8 +272,11 @@ export function createAndCacheDerivedImage(
     length
   );
 
-  const imageScalarData = new TypedArrayConstructor(length);
-  const derivedImageId = options.imageId;
+  // Use a buffer of size 1 for no data
+  const imageScalarData = new TypedArrayConstructor(
+    skipCreateBuffer ? 1 : length
+  );
+  const derivedImageId = imageId;
 
   ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
     (type) => {
@@ -270,8 +288,8 @@ export function createAndCacheDerivedImage(
   );
 
   const localImage = createAndCacheLocalImage(
-    { scalarData: imageScalarData },
-    options.imageId,
+    { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },
+    imageId,
     true
   );
 
@@ -292,10 +310,11 @@ export function createAndCacheDerivedImage(
  * @param options
  * @param options.getDerivedImageId - function to get the derived imageId
  * @param options.targetBufferType - target buffer type
+ * @param options.skipBufferCreate - avoid creating the buffer
  */
 export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
-  options: {
+  options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
     targetBufferType?: PixelDataTypedArrayString;
   } = {}
@@ -309,9 +328,8 @@ export function createAndCacheDerivedImages(
   const derivedImageIds = [];
   const allPromises = referencedImageIds.map((referencedImageId) => {
     const newOptions: DerivedImageOptions = {
-      imageId: options.getDerivedImageId
-        ? options.getDerivedImageId(referencedImageId)
-        : `derived:${uuidv4()}`,
+      imageId:
+        options.getDerivedImageId?.(referencedImageId) || `derived:${uuidv4()}`,
       ...options,
     };
     derivedImageIds.push(newOptions.imageId);
@@ -370,7 +388,7 @@ export function createAndCacheLocalImage(
 
     image.sizeInBytes = imageScalarData.byteLength;
     image.getPixelData = () => imageScalarData;
-  } else {
+  } else if (options.skipCreateBuffer !== true) {
     const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
       options.targetBufferType,
       length
@@ -381,6 +399,11 @@ export function createAndCacheLocalImage(
     image.sizeInBytes = numBytes;
     image.getPixelData = () => imageScalarData;
   }
+
+  // The onCacheAdd may modify the size in bytes for this image, which is ok,
+  // as this is used after resolution for cache storage.  It may also do
+  // thinks like adding alternative representations such as VoxelManager
+  options.onCacheAdd?.(image);
 
   const imageLoadObject = {
     promise: Promise.resolve(image),

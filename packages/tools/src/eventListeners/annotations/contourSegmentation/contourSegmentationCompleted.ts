@@ -259,7 +259,7 @@ function getContourHolesData(
   });
 }
 
-async function combinePolylines(
+function combinePolylines(
   viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   targetPolyline: Types.Point2[],

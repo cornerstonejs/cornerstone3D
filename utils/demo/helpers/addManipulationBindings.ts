@@ -62,25 +62,51 @@ export default function addManipulationBindings(
   toolGroup.addTool(ZoomTool.toolName);
   if (is3DViewport) {
     toolGroup.addTool(TrackballRotateTool.toolName);
+  } else {
+    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   }
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Auxiliary,
       },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Ctrl,
+      },
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: zoomBindings,
   });
+  // Need a binding to navigate without a wheel mouse
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift Left Click
+        modifierKey: KeyboardBindings.Alt,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Alt,
+      },
+    ],
+  });
+  // Add a length tool binding to allow testing annotations on examples targetting
+  // other use cases.  Use a primary button with shift+ctrl as that is relatively
+  // unlikely to be otherwise used.
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Fifth_Button,
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.ShiftCtrl,
       },
     ],
   });

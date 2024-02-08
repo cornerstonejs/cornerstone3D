@@ -24,7 +24,8 @@ export default function distanceToPointSquaredInfo(
   let closestPoint: Types.Point2;
   const distanceSquared = math.point.distanceToPointSquared(lineStart, lineEnd);
 
-  // Check if lineStart is the same as lineEnd which means
+  // Check if lineStart equal to the lineEnd which means the closest point
+  // is any of these two points
   if (lineStart[0] === lineEnd[0] && lineStart[1] === lineEnd[1]) {
     closestPoint = lineStart;
   }
