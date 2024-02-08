@@ -85,13 +85,8 @@ async function render(
   representation: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {
-  const {
-    colorLUTIndex,
-    active,
-    segmentationId,
-    segmentationRepresentationUID,
-    segmentsHidden,
-  } = representation;
+  const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
+    representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
@@ -206,7 +201,7 @@ function _removeSurfaceFromToolGroupViewports(
   }
 }
 
-async function generateAndCacheClippedSurfaces(
+export async function generateAndCacheClippedSurfaces(
   surfaces: Types.ISurface[],
   viewport: Types.IVolumeViewport | Types.IStackViewport,
   segmentationRepresentationUID: string
@@ -325,6 +320,8 @@ async function generateAndCacheClippedSurfaces(
     });
 
   triggerWorkerProgress(eventTarget, 100);
+
+  return polyDataCache;
 }
 
 export function getSurfaceActorUID(

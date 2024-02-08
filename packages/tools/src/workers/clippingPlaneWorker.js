@@ -55,8 +55,13 @@ const obj = {
           plane2.setOrigin(planes[1].origin);
           plane2.setNormal(planes[1].normal);
 
-          clippingFilter.setClippingPlanes(clippingPlanes);
-          clippingFilter.update();
+          try {
+            clippingFilter.setClippingPlanes(clippingPlanes);
+            clippingFilter.update();
+          } catch (e) {
+            console.warn('Error during clipping', e);
+            continue;
+          }
 
           const polyData = clippingFilter.getOutputData();
 
@@ -73,7 +78,7 @@ const obj = {
         updateCacheCallback({ sliceIndex, polyDataResults });
       }
     } catch (e) {
-      console.error('Error during processing', e);
+      console.warn('Error during processing', e);
     } finally {
       // Cleanup on completion
       pointsAndPolys = null;
