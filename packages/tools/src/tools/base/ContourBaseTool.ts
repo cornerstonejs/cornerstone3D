@@ -224,10 +224,6 @@ abstract class ContourBaseTool extends AnnotationTool {
     }
   ) {
     const decimateConfig = this.configuration?.decimate || {};
-    console.log('>>>>> decimate', {
-      enabled: !!decimateConfig.enabled,
-      epsilon: decimateConfig.epsilon,
-    });
 
     updateContourPolyline(annotation, polylineData, transforms, {
       decimate: {

@@ -125,7 +125,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
          * for better performance and storage.
          */
         decimate: {
-          enabled: true,
+          enabled: false,
           /** A maximum given distance 'epsilon' to decide if a point should or
            * shouldn't be added the resulting polyline which will have a lower
            * number of points for higher `epsilon` values.
