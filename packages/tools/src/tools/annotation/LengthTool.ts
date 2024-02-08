@@ -138,9 +138,7 @@ class LengthTool extends AnnotationTool {
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
     const referencedImageId = this.getReferencedImageId(
       viewport,
       worldPos,
@@ -148,16 +146,12 @@ class LengthTool extends AnnotationTool {
       viewUp
     );
 
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
     const annotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
+        ...viewport.getViewTarget(),
         toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {

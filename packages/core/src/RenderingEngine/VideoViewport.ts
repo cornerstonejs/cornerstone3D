@@ -679,7 +679,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
    *  Gets a target id that can be used to specify how to show this
    */
   public getTargetId(specifier: TargetSpecifier = {}): string {
-    const { sliceIndex } = specifier;
+    const { sliceIndex: sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
     }

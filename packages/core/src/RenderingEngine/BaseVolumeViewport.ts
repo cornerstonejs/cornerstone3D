@@ -36,6 +36,7 @@ import type {
   EventTypes,
   VolumeViewportProperties,
   TargetSpecifier,
+  ViewCompatibleOptions,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -547,7 +548,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     // TODO - add referencedImageId as a base URL for an image to allow a generic
     // method to specify which volumes this should apply to.
-    return target;
+    return {
+      ...target,
+      referencedSliceIndex: this.getCurrentImageIdIndex(),
+    };
   }
 
   /**
@@ -555,11 +559,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
-   *                  Not yet implemented.
    * @returns true if the target is compatible with this view
    */
-  public isViewCompatible(target: ViewTarget): boolean {
-    const { FrameOfReferenceUID, viewPlaneNormal } = target;
+  public isViewCompatible(
+    target: ViewTarget,
+    options?: ViewCompatibleOptions
+  ): boolean {
+    const { FrameOfReferenceUID, viewPlaneNormal, referencedSliceIndex } =
+      target;
     if (FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
       return false;
     }
@@ -573,7 +580,19 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     ) {
       return false;
     }
-    return true;
+    if (options?.withNavigation) {
+      return true;
+    }
+    const sliceIndex = this.getCurrentImageIdIndex();
+    if (Array.isArray(referencedSliceIndex)) {
+      return (
+        referencedSliceIndex[0] <= sliceIndex &&
+        sliceIndex <= referencedSliceIndex[1]
+      );
+    }
+    return (
+      referencedSliceIndex === undefined || referencedSliceIndex === sliceIndex
+    );
   }
 
   /**
@@ -1442,7 +1461,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   public getTargetId(specifier: TargetSpecifier = {}): string {
-    let { volumeId, sliceIndex } = specifier;
+    let { volumeId, sliceIndex: sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();
       if (!actorEntries) {

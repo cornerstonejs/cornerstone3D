@@ -2867,7 +2867,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Gets a standard target to show this image instance.
    */
   public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
-    const { sliceIndex = this.currentImageIdIndex } = forTarget;
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = forTarget;
     return {
       ...super.getViewTarget(forTarget),
       referencedImageId: `${this.imageIds[sliceIndex as number]}`,
@@ -2876,7 +2876,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   public getTargetId(specifier: TargetSpecifier = {}): string {
-    const { sliceIndex = this.currentImageIdIndex } = specifier;
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
     if (Array.isArray(sliceIndex)) {
       throw new Error('Use of slice ranges for stacks not supported');
     }

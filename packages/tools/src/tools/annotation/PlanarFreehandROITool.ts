@@ -531,6 +531,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const worldPos = evt.detail.currentPoints.world;
     const contourAnnotation = super.createAnnotation(evt);
 
+    const onInterpolationComplete = (annotation) => {
+      // Clear out the handles because they aren't used for straight freeform
+      annotation.data.handles.points.length = 0;
+    };
+
     return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
       data: {
         contour: {
@@ -539,6 +544,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         label: '',
         cachedStats: {},
       },
+      onInterpolationComplete,
     });
   }
 

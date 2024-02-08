@@ -146,7 +146,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     protected initialViewUp: Point3;
     // (undocumented)
-    isViewCompatible(target: ViewTarget): boolean;
+    isViewCompatible(target: ViewTarget, options?: ViewCompatibleOptions): boolean;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)

@@ -66,6 +66,8 @@ export default async function contourSegmentationCompletedListener(
     return;
   }
 
+  // This check ensures that freehand is at least registered, so that combining
+  // is a reasonable thing to do.
   if (
     !isFreehandContourSegToolRegistered(
       viewport,
@@ -78,6 +80,9 @@ export default async function contourSegmentationCompletedListener(
   const { targetAnnotation, targetPolyline, isContourHole } =
     targetAnnotationInfo;
 
+  // If combining is enabled, it only makes sense when there are no handles
+  // defining this object, because that is when the contour itself defines
+  // the object, so IF we have handles, then don't combine/add holes
   if (targetAnnotation.data.handles.points.length) {
     return;
   }
