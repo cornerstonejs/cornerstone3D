@@ -1,5 +1,8 @@
 import { utilities } from '@cornerstonejs/core';
 import type { PublicToolProps } from '../../types';
+import type { AnnotationRenderContext } from '../../types';
+import { PlanarFreehandContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import PlanarFreehandROITool from './PlanarFreehandROITool';
 
 class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
@@ -27,6 +30,28 @@ class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
   protected isContourSegmentationTool(): boolean {
     // Re-enable contour segmentation behavior disabled by PlanarFreehandROITool
     return true;
+  }
+
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
+    const annotation =
+      renderContext.annotation as PlanarFreehandContourSegmentationAnnotation;
+    const { invalidated } = annotation;
+
+    // Render the annotation before triggering events
+    const renderResult = super.renderAnnotationInstance(renderContext);
+
+    if (invalidated) {
+      const { segmentationId } = annotation.data.segmentation;
+
+      // This event is trigged by ContourSegmentationBaseTool but PlanarFreehandROITool
+      // is the only contour class that does not call `renderAnnotationInstace` from
+      // its base class.
+      triggerSegmentationDataModified(segmentationId);
+    }
+
+    return renderResult;
   }
 }
 
