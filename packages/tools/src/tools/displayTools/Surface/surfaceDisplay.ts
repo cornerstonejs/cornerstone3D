@@ -29,7 +29,6 @@ import { WorkerTypes } from '../../../enums';
 const workerManager = getWebWorkerManager();
 
 const polyDataCache = new Map();
-window.poly = polyDataCache;
 const currentViewportNormal = new Map();
 
 const triggerWorkerProgress = (eventTarget, progress) => {
