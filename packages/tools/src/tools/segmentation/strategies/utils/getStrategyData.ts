@@ -9,6 +9,9 @@ function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
   let imageDimensions: Types.Point3;
   let segmentationDimensions: Types.Point3;
+  let imageVoxelManager;
+  let segmentationVoxelManager;
+
   if (isVolumeSegmentation(operationData, viewport)) {
     const { volumeId, referencedVolumeId } = operationData;
 
@@ -17,6 +20,7 @@ function getStrategyData({ operationData, viewport }) {
     if (!segmentationVolume) {
       return;
     }
+    segmentationVoxelManager = segmentationVolume.voxelManager;
 
     // we only need the referenceVolumeId if we do thresholding
     // but for other operations we don't need it so make it optional
@@ -46,32 +50,43 @@ function getStrategyData({ operationData, viewport }) {
     // and always circle modifies the current imageId which in fact is the imageData
     // of that actor at that moment so we have the imageData already
     const actor = viewport.getActor(segmentationRepresentationUID);
+    if (!actor) {
+      return;
+    }
     segmentationImageData = actor.actor.getMapper().getInputData();
+    segmentationVoxelManager = segmentationImageData.voxelManager;
     const currentSegmentationImageId = imageIdReferenceMap.get(currentImageId);
 
     const segmentationImage = cache.getImage(currentSegmentationImageId);
-    segmentationScalarData = segmentationImage.getPixelData();
+    if (!segmentationImage) {
+      return;
+    }
+    segmentationScalarData = segmentationImage.getPixelData?.();
 
     const image = cache.getImage(currentImageId);
+    const imageData = image ? null : viewport.getImageData();
 
     // VERY IMPORTANT
     // This is the pixel data of the image that is being segmented in the cache
     // and we need to use this to for the modification
-    imageScalarData = image.getPixelData();
-    imageDimensions = [image.columns, image.rows, 1];
+    imageScalarData = image?.getPixelData() || imageData.getScalarData();
+    imageDimensions = image
+      ? [image.columns, image.rows, 1]
+      : imageData.dimensions;
     segmentationDimensions = [
       segmentationImage.columns,
       segmentationImage.rows,
       1,
     ];
+    imageVoxelManager = image?.voxelManager;
   }
 
-  const segmentationVoxelManager = VoxelManager.createVolumeVoxelManager(
+  segmentationVoxelManager ||= VoxelManager.createVolumeVoxelManager(
     segmentationDimensions,
     segmentationScalarData
   );
 
-  const imageVoxelManager =
+  imageVoxelManager ||=
     imageDimensions &&
     VoxelManager.createVolumeVoxelManager(imageDimensions, imageScalarData);
 

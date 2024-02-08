@@ -1,3 +1,5 @@
+import { utilities } from '@cornerstonejs/core';
+
 /**
  * Creates a mock ellipsoid stack segmentation.
  *
@@ -29,7 +31,12 @@ export function fillStackSegmentationWithMockData({
   for (let z = 0; z < dimensions[2]; z++) {
     let voxelIndex = 0;
     const image = cache.getImage(segmentationImageIds[z]);
-    const scalarData = image.getPixelData();
+    const voxelManager =
+      image.voxelManager ||
+      utilities.VoxelManager.createVolumeVoxelManager(
+        [columns, rows, 1],
+        image.getPixelData()
+      );
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(
@@ -38,9 +45,9 @@ export function fillStackSegmentationWithMockData({
             (z - center[2]) * (z - center[2])
         );
         if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = innerValue;
+          voxelManager.setAtIndex(voxelIndex, innerValue);
         } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = outerValue;
+          voxelManager.setAtIndex(voxelIndex, outerValue);
         }
         voxelIndex++;
       }

@@ -31,9 +31,13 @@
   "dependencies": {
     "@cornerstonejs/core": "^1.55.0",
     "@icr/polyseg-wasm": "0.4.0",
+    "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
+  },
+  "devDependencies": {
+    "canvas": "^2.11.2"
   },
   "peerDependencies": {
     "@icr/polyseg-wasm": "0.4.0",

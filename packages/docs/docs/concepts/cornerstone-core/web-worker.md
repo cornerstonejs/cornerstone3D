@@ -198,7 +198,6 @@ In the worker we have
 ```js
 import { expose } from 'comlink';
 
-
 const obj = {
   async convertContourToSurface(args, ...callbacks) {
     const { polylines, numPointsArray } = args;
@@ -214,7 +213,6 @@ const obj = {
 };
 
 expose(obj);
-
 ```
 
 ### `terminate`

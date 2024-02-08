@@ -504,7 +504,7 @@ class Viewport implements IViewport {
     }
 
     const renderer = this.getRenderer();
-    renderer.addActor(actor);
+    renderer?.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
 
     // when we add an actor we should update the camera clipping range and
@@ -516,7 +516,7 @@ class Viewport implements IViewport {
    * Remove all actors from the renderer
    */
   public removeAllActors(): void {
-    this.getRenderer().removeAllViewProps();
+    this.getRenderer()?.removeAllViewProps();
     this._actors = new Map();
     return;
   }
