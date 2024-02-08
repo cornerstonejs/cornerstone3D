@@ -13,6 +13,7 @@ import {
   annotationCompletedListener,
   annotationSelectionListener,
   annotationModifiedListener,
+  annotationRemovedListener,
 } from './annotations';
 //import touchEventListeners from './touchEventListeners';
 
@@ -29,4 +30,5 @@ export {
   annotationCompletedListener,
   annotationSelectionListener,
   annotationModifiedListener,
+  annotationRemovedListener,
 };

@@ -4,8 +4,8 @@ import {
   Types,
 } from '@cornerstonejs/core';
 import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
+import getViewportsForAnnotation from '../../../utilities/getViewportsForAnnotation';
 import {
-  getViewportForAnnotation,
   math,
   triggerAnnotationRenderForViewportIds,
 } from '../../../utilities';
@@ -26,6 +26,7 @@ import * as contourUtils from '../../../utilities/contours';
 import * as contourSegUtils from '../../../utilities/contourSegmentation';
 import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
 import { PlanarFreehandContourSegmentationTool } from '../../../tools';
+import type { Annotation } from '../../../types';
 import type { ContourAnnotation } from '../../../types/ContourAnnotation';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
 
@@ -41,7 +42,7 @@ export default async function contourSegmentationCompletedListener(
     return;
   }
 
-  const viewport = getViewportForAnnotation(sourceAnnotation);
+  const viewport = getViewport(sourceAnnotation);
   const contourSegmentationAnnotations =
     getValidContourSegmentationAnnotations(sourceAnnotation);
 
@@ -61,10 +62,6 @@ export default async function contourSegmentationCompletedListener(
   );
 
   if (!targetAnnotationInfo) {
-    return;
-  }
-
-  if (!isFreehandContourSegToolRegistered(viewport)) {
     return;
   }
 
@@ -92,30 +89,43 @@ export default async function contourSegmentationCompletedListener(
   }
 }
 
-function isFreehandContourSegToolRegistered(viewport: Types.IViewport) {
+function isFreehandContourSegToolRegisteredForViewport(
+  viewport: Types.IViewport,
+  silent = false
+) {
   const { toolName } = PlanarFreehandContourSegmentationTool;
-
-  if (!cstHasTool(PlanarFreehandContourSegmentationTool)) {
-    console.warn(`${toolName} is not registered in cornerstone`);
-    return false;
-  }
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewport.id,
     viewport.renderingEngineId
   );
 
+  let errorMessage;
+
   if (!toolGroup.hasTool(toolName)) {
-    console.warn(`Tool ${toolName} not added to ${toolGroup.id} toolGroup`);
-    return false;
+    errorMessage = `Tool ${toolName} not added to ${toolGroup.id} toolGroup`;
+  } else if (!toolGroup.getToolOptions(toolName)) {
+    errorMessage = `Tool ${toolName} must be in active/passive state`;
   }
 
-  if (!toolGroup.getToolOptions(toolName)) {
-    console.warn(`Tool ${toolName} must be in active/passive state`);
-    return false;
+  if (errorMessage && !silent) {
+    console.warn(errorMessage);
   }
 
-  return true;
+  return !errorMessage;
+}
+
+function getViewport(annotation: Annotation) {
+  const viewports = getViewportsForAnnotation(annotation);
+  const viewportWithToolRegistered = viewports.find((viewport) =>
+    isFreehandContourSegToolRegisteredForViewport(viewport, true)
+  );
+
+  // Returns the first viewport even if freehand contour segmentation is not
+  // registered because it can be used to project the polyline to create holes.
+  // Another verification is done before appending/removing contours which is
+  // possible only when the tool is registered.
+  return viewportWithToolRegistered ?? viewports[0];
 }
 
 function convertContourPolylineToCanvasSpace(
@@ -136,11 +146,6 @@ function getValidContourSegmentationAnnotations(
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
   const { annotationUID: sourceAnnotationUID } = sourceAnnotation;
-  const { FrameOfReferenceUID } = sourceAnnotation.metadata;
-
-  if (!FrameOfReferenceUID) {
-    return [];
-  }
 
   // Get all annotations and filter all contour segmentations locally
   const allAnnotations = getAllAnnotations();
@@ -242,13 +247,25 @@ function getContourHolesData(
   });
 }
 
-async function combinePolylines(
+function combinePolylines(
   viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   targetPolyline: Types.Point2[],
   sourceAnnotation: ContourSegmentationAnnotation,
   sourcePolyline: Types.Point2[]
 ) {
+  if (!cstHasTool(PlanarFreehandContourSegmentationTool)) {
+    console.warn(
+      `${PlanarFreehandContourSegmentationTool.toolName} is not registered in cornerstone`
+    );
+    return;
+  }
+
+  // Cannot append/remove an annotation if it will not be available on any viewport
+  if (!isFreehandContourSegToolRegisteredForViewport(viewport)) {
+    return;
+  }
+
   const sourceStartPoint = sourcePolyline[0];
   const mergePolylines = math.polyline.containsPoint(
     targetPolyline,
@@ -329,7 +346,7 @@ async function combinePolylines(
     const polyline = newPolylines[i];
     const startPoint = viewport.canvasToWorld(polyline[0]);
     const endPoint = viewport.canvasToWorld(polyline[polyline.length - 1]);
-    const newAnnotation: ContourAnnotation = {
+    const newAnnotation: ContourSegmentationAnnotation = {
       metadata: {
         ...metadata,
         toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
@@ -368,6 +385,7 @@ async function combinePolylines(
     );
 
     addAnnotation(newAnnotation, element);
+    contourSegUtils.addContourSegmentationAnnotation(newAnnotation);
 
     reassignedContourHolesMap
       .get(polyline)
