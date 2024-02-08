@@ -6,6 +6,7 @@ import { addEnabledElement, removeEnabledElement } from './store';
 import { resetCornerstoneToolsState } from './store/state';
 import {
   annotationCompletedListener,
+  annotationRemovedListener,
   annotationSelectionListener,
   annotationModifiedListener,
   segmentationDataModifiedEventListener,
@@ -122,6 +123,11 @@ function _addCornerstoneToolsEventListeners() {
   eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
     annotationSelectionListener
+  );
+
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.ANNOTATION_REMOVED,
+    annotationRemovedListener
   );
 
   /**

@@ -1,5 +1,5 @@
-import { getEnabledElements, utilities as csUtils } from '@cornerstonejs/core';
 import type { Annotation } from '../types';
+import getViewportsForAnnotation from './getViewportsForAnnotation';
 
 /**
  * Finds a matching viewport in terms of the orientation of the annotation data
@@ -11,9 +11,7 @@ import type { Annotation } from '../types';
  * @returns The viewport to display in
  */
 export default function getViewportForAnnotation(annotation: Annotation) {
-  const { metadata } = annotation;
-  const enabledElement = getEnabledElements().find((enabledElement) =>
-    enabledElement.viewport.isViewCompatible(metadata, { withNavigation: true })
-  );
-  return enabledElement?.viewport;
+  const viewports = getViewportsForAnnotation(annotation);
+
+  return viewports.length ? viewports[0] : undefined;
 }

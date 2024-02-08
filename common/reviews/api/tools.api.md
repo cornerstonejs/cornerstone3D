@@ -1456,7 +1456,7 @@ type ContourSegmentationAnnotationData = {
             originalPolyline?: Types_2.Point3[];
         };
     };
-    handles: {
+    handles?: {
         interpolationSources?: Types_2.PointsManager<Types_2.Point3>[];
     };
     onInterpolationComplete?: (annotation: ContourSegmentationAnnotation) => unknown;
@@ -3686,6 +3686,8 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
     constructor(toolProps: PublicToolProps);
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
+    // (undocumented)
+    protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
     // (undocumented)
     static toolName: any;
 }
