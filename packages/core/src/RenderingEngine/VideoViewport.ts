@@ -733,7 +733,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (sliceIndex !== undefined) {
       return currentIndex === sliceIndex;
     }
-    const match = referencedImageId.match(frameRangeExtractor);
+    const match = referencedImageId.match(VideoViewport.frameRangeExtractor);
     if (!match || !match[2]) {
       return true;
     }
