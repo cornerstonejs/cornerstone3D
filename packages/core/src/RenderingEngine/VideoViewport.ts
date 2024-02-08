@@ -716,12 +716,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
       const colonIndex = imageId.indexOf(':');
       imageURI = imageId.substring(colonIndex + 1, imageId.length - 1);
     }
-    if (!referencedImageId) {
-      return false;
-    }
-    if (referencedImageId.indexOf(imageURI) === -1) {
-      return false;
-    }
 
     if (options.withNavigation) {
       return true;
@@ -732,6 +726,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
     if (sliceIndex !== undefined) {
       return currentIndex === sliceIndex;
+    }
+    if (!referencedImageId) {
+      return false;
     }
     const match = referencedImageId.match(VideoViewport.frameRangeExtractor);
     if (!match || !match[2]) {
@@ -1030,6 +1027,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     // This is stack new image to agree with stack/non-volume viewports
     triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, {
+      element: this.element,
+      viewportId: this.id,
+      viewport: this,
+      renderingEngineId: this.renderingEngineId,
+      time: this.videoElement.currentTime,
+      duration: this.videoElement.duration,
+    });
+    triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
       element: this.element,
       viewportId: this.id,
       viewport: this,
