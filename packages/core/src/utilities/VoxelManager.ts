@@ -9,6 +9,13 @@ import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
 
 /**
+ * Have a default size for cached RLE encoded images.  This is hard to guess
+ * up front because the RLE is usually used to store new/updated data, but this
+ * is a first guess.
+ */
+const DEFAULT_RLE_SIZE = 5 * 1024;
+
+/**
  * This is a simple, standard interface to values associated with a voxel.
  */
 export default class VoxelManager<T> {
@@ -251,6 +258,37 @@ export default class VoxelManager<T> {
   ) => PixelDataTypedArray;
 
   /**
+   * Creates a voxel manager backed by an array of scalar data having the
+   * given number of components.
+   * Note that the number of components can be larger than three, in case data
+   * is stored in additional pixels.  However, the return type is still RGB.
+   */
+  public static createRGBVolumeVoxelManager(
+    dimensions: Point3,
+    scalarData,
+    numComponents
+  ): VoxelManager<RGB> {
+    const voxels = new VoxelManager<RGB>(
+      dimensions,
+      (index) => {
+        index *= numComponents;
+        return [scalarData[index++], scalarData[index++], scalarData[index++]];
+      },
+      (index, v) => {
+        index *= 3;
+        const isChanged = !isEqual(scalarData[index], v);
+        scalarData[index++] = v[0];
+        scalarData[index++] = v[1];
+        scalarData[index++] = v[2];
+        return isChanged;
+      }
+    );
+    voxels.numComps = numComponents;
+    voxels.scalarData = scalarData;
+    return voxels;
+  }
+
+  /**
    *  Creates a volume value accessor, based on a volume scalar data instance.
    * This also works for image value accessors for single plane (k=0) accessors.
    */
@@ -267,32 +305,32 @@ export default class VoxelManager<T> {
     if (!numComponents) {
       numComponents =
         scalarData.length / dimensions[0] / dimensions[1] / dimensions[2];
-      numComponents = numComponents < 5 ? numComponents : 1;
+      // We only support 1,3,4 component data, and sometimes the scalar data
+      // doesn't match for some reason, so throw an exception
+      if (numComponents > 4 || numComponents < 1 || numComponents === 2) {
+        throw new Error(
+          `Number of components ${numComponents} must be 1, 3 or 4`
+        );
+      }
     }
     if (numComponents > 1) {
-      const voxels = new VoxelManager<RGB>(
+      return VoxelManager.createRGBVolumeVoxelManager(
         dimensions,
-        (index) => {
-          index *= numComponents;
-          return [
-            scalarData[index++],
-            scalarData[index++],
-            scalarData[index++],
-          ];
-        },
-        (index, v) => {
-          index *= 3;
-          const isChanged = !isEqual(scalarData[index], v);
-          scalarData[index++] = v[0];
-          scalarData[index++] = v[1];
-          scalarData[index++] = v[2];
-          return isChanged;
-        }
+        scalarData,
+        numComponents
       );
-      voxels.numComps = numComponents;
-      voxels.scalarData = scalarData;
-      return voxels;
     }
+    return VoxelManager.createNumberVolumeVoxelManager(dimensions, scalarData);
+  }
+
+  /**
+   * Creates a volume voxel manager that works on single numeric values stored
+   * in an array like structure of numbers.
+   */
+  public static createNumberVolumeVoxelManager(
+    dimensions: Point3,
+    scalarData
+  ): VoxelManager<number> {
     const voxels = new VoxelManager<number>(
       dimensions,
       (index) => scalarData[index],
@@ -356,9 +394,9 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Creates a history remembering voxel manager.
-   * This will remember the original values in the voxels, and will apply the
-   * update to the underlying source voxel manager.
+   * Creates a lazy voxel manager that will create an image plane as required
+   * for each slice of a volume as it gets changed.  This can be used to
+   * store image data that gets created as required.
    */
   public static createLazyVoxelManager<T>(
     dimensions: Point3,
@@ -387,7 +425,7 @@ export default class VoxelManager<T> {
 
   /**
    * Creates a RLE based voxel manager.  This is effective for storing
-   * segmentation maps.
+   * segmentation maps or already RLE encoded data such as ultrasounds.
    */
   public static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T> {
     const [width, height, depth] = dimensions;
@@ -404,27 +442,41 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * This method adds a voxelManager instance to the image or volume object
+   * This method adds a voxelManager instance to the image object
    * where the object added is of type:
-   * 1. RLE map if the scalar data is missing
-   * 2. Volume map for the imageId scalarData
+   * 1. RLE map if the scalar data is missing or too small (dummy data)
+   * 2. Volume VoxelManager scalar data representations
    */
   public static addInstanceToImage(image: IImage) {
     const { width, height } = image;
     const scalarData = image.getPixelData();
+    // This test works for single images, or single representations of images
+    // from a volume representation, for grayscale, indexed and RGB or RGBA images.
     if (scalarData?.length >= width * height) {
+      // This case means there is enough scalar data for at least one image,
+      // with 1 or more components, and creates a volume voxel manager
+      // that can lookup the data
       image.voxelManager = VoxelManager.createVolumeVoxelManager(
         [width, height, 1],
         scalarData
       );
       return;
     }
+    // This case occurs when the image data is a dummy image data set
+    // created just to prevent exceptions in the caching logic.  Then, the
+    // RLE voxel manager can be created to store the data instead.
     image.voxelManager = VoxelManager.createRLEVoxelManager<number>([
       width,
       height,
       1,
     ]);
+    // The RLE voxel manager knows how to get scalar data pixel data representations.
+    // That allows using the RLE representation as a normal pixel data representation
+    // for VIEWING purposes.
     image.getPixelData = image.voxelManager.getPixelData;
+    // Assign a different size to the cached data because this is actually
+    // storing an RLE representation, which doesn't have an up front size.
+    image.sizeInBytes = DEFAULT_RLE_SIZE;
   }
 }
 

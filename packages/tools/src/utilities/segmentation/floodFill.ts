@@ -77,6 +77,8 @@ function floodFill(
    */
   function visited(key) {
     const [x, y, z = 0] = key;
+    // Use an integer key value for checking visited, since JavaScript does not
+    // provide a generic hash key indexed hash map.
     const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
     return visits.has(iKey);
   }
@@ -103,6 +105,8 @@ function floodFill(
 
   function markAsBoundary(prevArgs) {
     const [x, y, z = 0] = prevArgs;
+    // Use an integer key value for checking visited, since JavaScript does not
+    // provide a generic hash key indexed hash map.
     const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
     bounds.set(iKey, prevArgs);
     if (onBoundary) {

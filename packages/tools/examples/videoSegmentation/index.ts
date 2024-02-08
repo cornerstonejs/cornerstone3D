@@ -28,10 +28,7 @@ const {
   ToolGroupManager,
   SegmentationDisplayTool,
   Enums: csToolsEnums,
-  RectangleScissorsTool,
-  CircleScissorsTool,
   BrushTool,
-  PaintFillTool,
   segmentation,
   utilities: cstUtils,
 } = cornerstoneTools;
@@ -105,7 +102,7 @@ const brushValues = [
   brushInstanceNames.CircularEraser,
 ];
 
-const optionsValues = [...brushValues, RectangleScissorsTool.toolName];
+const optionsValues = [...brushValues];
 
 let viewport;
 
@@ -149,9 +146,6 @@ addSegmentIndexDropdown(segmentationId);
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(RectangleScissorsTool);
-  cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -161,9 +155,6 @@ function setupTools(toolGroupId) {
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(RectangleScissorsTool.toolName);
-  toolGroup.addTool(CircleScissorsTool.toolName);
-  toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,

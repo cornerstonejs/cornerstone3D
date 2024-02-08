@@ -18,13 +18,32 @@ export type RLERun<T> = {
  * incrementing for all rows in the multi-plane voxel.
  */
 export default class RLEVoxelMap<T> {
+  /**
+   * The rows for the voxel map is a map from the j index location (or for
+   * volumes, `j + k*height`) to a list of RLE runs.  That is, each entry in
+   * the rows specifies the voxel data for a given row in the image.
+   * Then, the RLE runs themselves specify the pixel values for given rows as
+   * a pair of start/end indices, plus the value to apply.
+   */
   protected rows = new Map<number, RLERun<T>[]>();
+  /** The height of the images stored in the voxel map (eg the height of each plane) */
   protected height = 1;
+  /** The width of the image planes */
   protected width = 1;
+  /**
+   * The number of image planes stored (the depth of the indices), with the k
+   * index going from 0...depth.
+   */
   protected depth = 1;
+  /**
+   * A multiplier value to go from j values to overall index values.
+   */
   protected jMultiple = 1;
+  /**
+   * A multiplier value to go from k values to overall index values.
+   */
   protected kMultiple = 1;
-  // Number of components in the value
+  /** Number of components in the value */
   protected numComps = 1;
 
   /**
@@ -50,12 +69,13 @@ export default class RLEVoxelMap<T> {
 
   /**
    * Gets the value encoded in the map at the given index, which is
-   * an integer `[i,j,k]` voxel index, equal to `index=i+(j+k*height)*with`
-   * value (eg a standard ScalarData index for stack/volume).
+   * an integer `[i,j,k]` voxel index, equal to `index=i+(j+k*height)*width`
+   * value (eg a standard ScalarData index for stack/volume single component
+   * indices.)
    *
    * Returns defaultValue if the RLE value is not found.
    */
-  public get = (index): T => {
+  public get = (index: number): T => {
     const i = index % this.jMultiple;
     const j = (index - i) / this.jMultiple;
     const rle = this.getRLE(i, j);
@@ -67,8 +87,8 @@ export default class RLEVoxelMap<T> {
    * This allows applying or modifying the run directly.  See CanvasActor
    * for an example in the RLE rendering.
    */
-  protected getRLE(i: number, j: number): RLERun<T> {
-    const row = this.rows.get(j);
+  protected getRLE(i: number, j: number, k = 0): RLERun<T> {
+    const row = this.rows.get(j + k * this.height);
     if (!row) {
       return;
     }

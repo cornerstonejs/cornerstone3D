@@ -900,6 +900,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return transform;
   }
 
+  /**
+   * Nothing to do for the clipping planes for video as they don't exist.
+   */
+  public updateCameraClippingPlanesAndRange() {
+    // No-op
+  }
+
   public addImages(stackInputs: Array<any>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {

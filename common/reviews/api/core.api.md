@@ -3538,6 +3538,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     readonly uid: any;
     // (undocumented)
+    updateCameraClippingPlanesAndRange(): void;
+    // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
@@ -4029,6 +4031,10 @@ class VoxelManager<T> {
     static createLazyVoxelManager<T>(dimensions: Point3, planeFactory: (width: number, height: number) => T): VoxelManager<T>;
     // (undocumented)
     static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T>;
+    // (undocumented)
+    static createNumberVolumeVoxelManager(dimensions: Point3, scalarData: any): VoxelManager<number>;
+    // (undocumented)
+    static createRGBVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents: any): VoxelManager<RGB>;
     // (undocumented)
     static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
     // (undocumented)

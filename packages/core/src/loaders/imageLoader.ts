@@ -48,7 +48,9 @@ type LocalImageOptions = {
    */
   skipCreateBuffer?: boolean;
   /**
-   * Updates the copy of the value which is cached.
+   * A method to call to update the image object when it gets added to the cache.
+   * This can be used to create alternative representations of the image data,
+   * such as a VoxelManager.
    */
   onCacheAdd?: (image: IImage) => void;
 };
@@ -398,13 +400,10 @@ export function createAndCacheLocalImage(
     image.getPixelData = () => imageScalarData;
   }
 
+  // The onCacheAdd may modify the size in bytes for this image, which is ok,
+  // as this is used after resolution for cache storage.  It may also do
+  // thinks like adding alternative representations such as VoxelManager
   options.onCacheAdd?.(image);
-
-  if (image.sizeInBytes <= 4) {
-    // Sometimes the buffer data is truncated, with another representation, so
-    // set a default size to use for those representations.
-    image.sizeInBytes = 1024;
-  }
 
   const imageLoadObject = {
     promise: Promise.resolve(image),
