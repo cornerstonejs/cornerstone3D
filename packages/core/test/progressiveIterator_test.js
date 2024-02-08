@@ -22,15 +22,16 @@ async function retrieve(it) {
 }
 
 describe('ProgressiveIterator', () => {
-  it('Delivers final value', async (done) => {
+  it('Delivers final value', function (done) {
     const iterator = new ProgressiveIterator();
     deliver(iterator, [{}, {}, {}]);
-    const items = await retrieve(iterator);
-    expect(items).toEqual([0, 1, 2]);
-    done();
+    retrieve(iterator).then((items) => {
+      expect(items).toEqual([0, 1, 2]);
+      done();
+    });
   });
 
-  it('Skips intermediates', async (done) => {
+  it('Skips intermediates', function (done) {
     const iterator = new ProgressiveIterator();
     deliver(iterator, [
       { value: 8, ms: 10 },
@@ -39,8 +40,9 @@ describe('ProgressiveIterator', () => {
       { value: 12, ms: 50 },
       { value: 20, ms: 10 },
     ]);
-    const items = await retrieve(iterator);
-    expect(items).toEqual([8, 20]);
-    done();
+    retrieve(iterator).then((items) => {
+      expect(items).toEqual([8, 20]);
+      done();
+    });
   });
 });
