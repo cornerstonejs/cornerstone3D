@@ -36,6 +36,9 @@
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
   },
+  "devDependencies": {
+    "canvas": "^2.11.2"
+  },
   "peerDependencies": {
     "@icr/polyseg-wasm": "0.4.0",
     "@kitware/vtk.js": "29.3.0",

@@ -179,13 +179,6 @@ function setupTools(toolGroupId) {
     }
   );
   toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.ThresholdBrush,
-    }
-  );
-  toolGroup.addToolInstance(
     brushInstanceNames.DynamicThreshold,
     BrushTool.toolName,
     {
@@ -195,7 +188,7 @@ function setupTools(toolGroupId) {
       },
       strategySpecificConfiguration: {
         useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 1 },
+        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
       },
     }
   );
