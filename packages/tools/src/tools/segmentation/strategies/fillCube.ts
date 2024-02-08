@@ -30,9 +30,7 @@ function fillCube(
     strategySpecificConfiguration,
   } = operationData;
 
-  const {
-    THRESHOLD_INSIDE_CUBE: { threshold },
-  } = strategySpecificConfiguration;
+  const { threshold } = strategySpecificConfiguration;
 
   const scalarData = segmentation.getScalarData();
 

@@ -18,43 +18,44 @@ import { debounce } from '../../src/utilities';
 
 // This is for debugging purposes
 console.warn(
-  'Click on index.ts to open source code for this example --------->'
+  'Click on index.ts to open the source code for this example --------->'
 );
 
-const lowerThreshold = -150;
-const upperThreshold = -70;
 const {
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  RectangleScissorsTool,
-  SphereScissorsTool,
-  CircleScissorsTool,
-  BrushTool,
-  PaintFillTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
   ThresholdPreviewTool,
-  utilities: cstUtils,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const VOLUME_NAME = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const VOLUME_LOADER_SCHEME = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const VOLUME_ID = `${VOLUME_LOADER_SCHEME}:${VOLUME_NAME}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const THRESHOLD_RANGE = [-2000, 2000];
+const LOWER_THRESHOLD = -150;
+const UPPER_THRESHOLD = -70;
+const thresholdOptions = [
+  'CT Fat: (-150, -70)',
+  'CT Bone: (200, 1000)',
+  'Adipose: (-190, -30)',
+  'Muscle: (-29, 150)',
+];
+const debounceWaitTime = 1000;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Threshold preview Tool',
-  'Here we demontrate threshold preview tool'
+  'Here we demonstrate threshold preview tool'
 );
 
 const size = '500px';
@@ -86,6 +87,15 @@ viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
+const lowerThresholdValueElement = document.createElement('p');
+const upperThresholdValueElement = document.createElement('p');
+
+lowerThresholdValueElement.innerText = `Lower Threshold Value: ${LOWER_THRESHOLD}`;
+upperThresholdValueElement.innerText = `Upper Threshold Value: ${UPPER_THRESHOLD}`;
+
+content.append(lowerThresholdValueElement);
+content.append(upperThresholdValueElement);
+
 const instructions = document.createElement('p');
 instructions.innerText = `
   Left Click: Use selected Segmentation Tool.
@@ -96,78 +106,111 @@ instructions.innerText = `
 
 content.append(instructions);
 
+type ThresholdElementsValue = string | number | undefined | null;
+
+/**
+ * Updates the threshold elements value
+ * @param newThreshold - [string, string] lower and upper threshold values
+ * @returns void *
+ */
+const updateThresholdElementsValue = (
+  newThreshold: [ThresholdElementsValue, ThresholdElementsValue]
+) => {
+  const [lowerThreshold, upperThreshold] = newThreshold;
+
+  if (lowerThreshold !== undefined && lowerThreshold !== null) {
+    lowerThresholdValueElement.innerText = `Lower Threshold Value: ${lowerThreshold}`;
+  }
+  if (upperThreshold !== undefined && upperThreshold !== null) {
+    upperThresholdValueElement.innerText = `Upper Threshold Value: ${upperThreshold}`;
+  }
+};
+
 // ============================= //
 
 // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4309522/
 
-const thresholdOptions = [
-  'CT Fat: (-150, -70)',
-  'CT Bone: (200, 1000)',
-  'Adipose: (-190, -30)',
-  'Muscle: (-29, 150)',
-];
-const debounceWaitTime = 500;
+/**
+ * Debounced function to set the threshold
+ * @param values - The values to set the threshold to (lower, upper)
+ * @param thresholdToUpdate - The threshold to update (lower, upper, both)
+ * @returns void
+ */
+const debouncedSetThreshold = debounce(
+  (
+    newThreshold: [string, string],
+    thresholdToUpdate: 'lower' | 'upper' | 'both'
+  ): void => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const labelmapThresholdPreview = toolGroup.getToolInstance(
+      'LabelmapThresholdPreview'
+    );
+    const [currentLowerThreshold, currentUpperThreshold] =
+      labelmapThresholdPreview.getThreshold();
+    const [newLowerThreshold, newUpperThreshold] = newThreshold;
+
+    if (thresholdToUpdate === 'lower') {
+      labelmapThresholdPreview.setThreshold([
+        Number.parseInt(newLowerThreshold),
+        currentUpperThreshold,
+      ]);
+    } else if (thresholdToUpdate === 'upper') {
+      labelmapThresholdPreview.setThreshold([
+        currentLowerThreshold,
+        Number.parseInt(newUpperThreshold),
+      ]);
+    } else if (thresholdToUpdate === 'both') {
+      labelmapThresholdPreview.setThreshold([
+        Number.parseInt(newLowerThreshold),
+        Number.parseInt(newUpperThreshold),
+      ]);
+    }
+  },
+  500
+); // Adjust the debounce delay as needed
 
 addDropdownToToolbar({
   options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-
-    let threshold;
-    if (name === thresholdOptions[0]) {
-      threshold = [-150, -70];
-    } else if (name === thresholdOptions[1]) {
-      threshold = [100, 1000];
-    } else if (name === thresholdOptions[2]) {
-      threshold = [-190, -30];
-    } else {
-      threshold = [-29, 150];
-    }
-
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
     const thresholdPreviewToolInstance =
       toolGroup._toolInstances['LabelmapThresholdPreview'];
+    const name = String(nameAsStringOrNumber);
 
-    thresholdPreviewToolInstance.setConfiguration(threshold);
+    if (name === thresholdOptions[0]) {
+      updateThresholdElementsValue([-150, -70]);
+      thresholdPreviewToolInstance.setThreshold([-150, -70]);
+    } else if (name === thresholdOptions[1]) {
+      updateThresholdElementsValue([200, 1000]);
+      thresholdPreviewToolInstance.setThreshold([200, 1000]);
+    } else if (name === thresholdOptions[2]) {
+      updateThresholdElementsValue([-190, -30]);
+      thresholdPreviewToolInstance.setThreshold([-190, -30]);
+    } else if (name === thresholdOptions[3]) {
+      updateThresholdElementsValue([-29, 150]);
+      thresholdPreviewToolInstance.setThreshold([-29, 150]);
+    }
   },
 });
 
 addSliderToToolbar({
-  title: 'Minimum threshold value',
-  range: [-3024, 3000],
-  defaultValue: -150,
-  onSelectedValueChange: debounce((valueAsStringOrNumber) => {
-    // const value = Number(valueAsStringOrNumber);
-    // segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
-
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    const thresholdPreviewToolInstance =
-      toolGroup._toolInstances['ThresholdPreview'];
-
-    const threshold = [valueAsStringOrNumber, upperThreshold];
-    thresholdPreviewToolInstance.setConfiguration(threshold);
-  }, debounceWaitTime),
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `PT Lower Thresh: ${value}`;
+  // title: `Lower Threshold value: ${LOWER_THRESHOLD}`,
+  title: `Lower Threshold`,
+  range: THRESHOLD_RANGE,
+  defaultValue: LOWER_THRESHOLD,
+  onSelectedValueChange: (value: string) => {
+    updateThresholdElementsValue([value, undefined]);
+    debouncedSetThreshold([value, undefined], 'lower');
   },
 });
 
 addSliderToToolbar({
-  title: 'Maximum threshold value',
-  range: [-3024, 3000],
-  defaultValue: 120,
-  onSelectedValueChange: debounce((valueAsStringOrNumber) => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    const thresholdPreviewToolInstance =
-      toolGroup._toolInstances['ThresholdPreview'];
-    const threshold = [lowerThreshold, valueAsStringOrNumber];
-    thresholdPreviewToolInstance.setConfiguration(threshold);
-  }, debounceWaitTime),
-  updateLabelOnChange: (value, label) => {
-    label.innerText = `PT Lower Thresh: ${value}`;
+  title: `Upper threshold`,
+  range: THRESHOLD_RANGE,
+  defaultValue: UPPER_THRESHOLD,
+  onSelectedValueChange: (value: string) => {
+    updateThresholdElementsValue([undefined, value]);
+    debouncedSetThreshold([undefined, value], 'upper');
   },
 });
 // ============================= //
@@ -175,7 +218,7 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedVolume(VOLUME_ID, {
     volumeId: segmentationId,
   });
 
@@ -252,7 +295,7 @@ async function run() {
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(VOLUME_ID, {
     imageIds,
   });
 
@@ -313,7 +356,7 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [{ volumeId: VOLUME_ID, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId1, viewportId2, viewportId3]
   );
 

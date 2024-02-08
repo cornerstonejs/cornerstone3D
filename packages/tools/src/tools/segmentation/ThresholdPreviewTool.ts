@@ -14,6 +14,10 @@ import { getToolGroup } from '../../store/ToolGroupManager';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import { easeInOutBell } from '../../utilities/animationHelpers';
 
+const LOWER_THRESHOLD = -150;
+const UPPER_THRESHOLD = -70;
+const STRATEGY_NAME = 'FILL_INSIDE_CUBE';
+
 class ThresholdPreviewTool extends BaseTool {
   static toolName;
 
@@ -44,12 +48,10 @@ class ThresholdPreviewTool extends BaseTool {
           FILL_INSIDE_CUBE: fillInsideCube,
         },
         strategySpecificConfiguration: {
-          THRESHOLD_INSIDE_CUBE: {
-            threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
-          },
+          threshold: [LOWER_THRESHOLD, UPPER_THRESHOLD], // E.g. CT Fat // Only used during threshold strategies.
         },
-        defaultStrategy: 'FILL_INSIDE_CUBE',
-        activeStrategy: 'FILL_INSIDE_CUBE',
+        defaultStrategy: STRATEGY_NAME,
+        activeStrategy: STRATEGY_NAME,
       },
     }
   ) {
@@ -84,12 +86,16 @@ class ThresholdPreviewTool extends BaseTool {
     };
   };
 
-  setConfiguration = (newConfiguration: Record<string, any>): void => {
-    this.configuration.strategySpecificConfiguration.THRESHOLD_INSIDE_CUBE = {
-      threshold: newConfiguration,
+  public setThreshold = (newThreshold: [number, number]): void => {
+    this.configuration.strategySpecificConfiguration = {
+      threshold: newThreshold,
     };
 
     this.onSetToolEnabled(null);
+  };
+
+  public getThreshold = (): [number, number] => {
+    return this.configuration.strategySpecificConfiguration.threshold;
   };
 
   onSetToolEnabled(event): void {
