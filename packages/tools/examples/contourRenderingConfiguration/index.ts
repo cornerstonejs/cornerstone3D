@@ -16,7 +16,7 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import circle from './Circle.json';
+import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes
 console.warn(
@@ -47,7 +47,7 @@ const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Contour Segmentation Configuration',
-  'Here we demonstrate how to configure the contour rendering'
+  'Here we demonstrate how to configure the contour rendering. This example download the contour data.'
 );
 
 const size = '500px';
@@ -159,6 +159,8 @@ addSliderToToolbar({
 });
 
 async function addSegmentationsToState() {
+  const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
+
   // load the contour data
   const geometryIds = [];
 

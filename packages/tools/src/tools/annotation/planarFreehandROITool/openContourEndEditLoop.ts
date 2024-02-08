@@ -47,7 +47,7 @@ function activateOpenContourEndEdit(
   }
 
   let movingTextBox = false;
-  if ((handle as TextBoxHandle).worldPosition) {
+  if ((handle as TextBoxHandle)?.worldPosition) {
     movingTextBox = true;
   }
 

@@ -358,7 +358,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
-      getLocalUrl() || 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory

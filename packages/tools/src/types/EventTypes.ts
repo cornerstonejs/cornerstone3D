@@ -215,6 +215,14 @@ type AnnotationInterpolationRemovedEventDetail = {
 };
 
 /**
+ * The data that is passed to the event handler when a new contour annotation is
+ * completed drawing on the viewport.
+ */
+type ContourAnnotationCompletedEventDetail = AnnotationCompletedEventDetail & {
+  contourHoleProcessingEnabled: boolean;
+};
+
+/**
  * EventDetail for when a Segmentation Data is modified by a tool
  */
 type SegmentationDataModifiedEventDetail = {
@@ -713,6 +721,7 @@ export {
   AnnotationInterpolationCompletedEventType,
   AnnotationInterpolationRemovedEventDetail,
   AnnotationInterpolationRemovedEventType,
+  ContourAnnotationCompletedEventDetail,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
   SegmentationRepresentationModifiedEventType,

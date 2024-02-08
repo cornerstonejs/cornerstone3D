@@ -435,8 +435,14 @@ export default class ToolGroup implements IToolGroup {
    * - Renders data if the tool has a `renderAnnotation` method.
    *
    * @param toolName - tool name
+   * @param options - Options used when setting the tool as passive
+   *  - removeAllBindings: only the primary button bindings are removed but
+   *  if this parameter is set to true all bindings are removed.
    */
-  public setToolPassive(toolName: string): void {
+  public setToolPassive(
+    toolName: string,
+    options?: { removeAllBindings?: boolean }
+  ): void {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
@@ -465,7 +471,8 @@ export default class ToolGroup implements IToolGroup {
     // Remove the primary button bindings without modifiers, if they exist
     toolOptions.bindings = toolOptions.bindings.filter(
       (binding) =>
-        binding.mouseButton !== defaultMousePrimary || binding.modifierKey
+        options?.removeAllBindings !== true &&
+        (binding.mouseButton !== defaultMousePrimary || binding.modifierKey)
     );
     // If there are other bindings, set the tool to be active
     let mode = Passive;

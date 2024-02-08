@@ -198,7 +198,7 @@ class BrushTool extends BaseTool {
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
 
-    if (isVolumeSegmentation(labelmapData)) {
+    if (isVolumeSegmentation(labelmapData, viewport)) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;

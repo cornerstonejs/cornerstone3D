@@ -15,6 +15,7 @@ import {
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { updateContourPolyline } from '../../../utilities/contours';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
@@ -213,12 +214,17 @@ function openContourEditOverwriteEnd(
   const { annotation, viewportIdsToRender } = this.commonData;
   const fusedCanvasPoints = this.fuseEditPointsForOpenContourEndEdit();
 
-  const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+  updateContourPolyline(
+    annotation,
+    {
+      points: fusedCanvasPoints,
+      closed: false,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = false;
+  const worldPoints = annotation.data.contour.polyline;
+
   // Note: Contours generate from fusedCanvasPoints will be in the direction
   // with the last point being the current mouse position
   annotation.data.handles.points = [
@@ -495,12 +501,17 @@ function finishEditOpenOnSecondCrossing(
   const { annotation, viewportIdsToRender } = this.commonData;
   const { fusedCanvasPoints, editCanvasPoints } = this.editData;
 
-  const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+  updateContourPolyline(
+    annotation,
+    {
+      points: fusedCanvasPoints,
+      closed: false,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = false;
+  const worldPoints = annotation.data.contour.polyline;
+
   annotation.data.handles.points = [
     worldPoints[0],
     worldPoints[worldPoints.length - 1],
@@ -551,13 +562,17 @@ function completeOpenContourEdit(element: HTMLDivElement) {
         )
       : fusedCanvasPoints;
 
-    const worldPoints = updatedPoints.map((canvasPoint) =>
-      viewport.canvasToWorld(canvasPoint)
+    updateContourPolyline(
+      annotation,
+      {
+        points: updatedPoints,
+        closed: false,
+      },
+      viewport
     );
 
-    annotation.invalidated = true;
-    annotation.data.contour.polyline = worldPoints;
-    annotation.data.contour.closed = false;
+    const worldPoints = annotation.data.contour.polyline;
+
     annotation.data.handles.points = [
       worldPoints[0],
       worldPoints[worldPoints.length - 1],

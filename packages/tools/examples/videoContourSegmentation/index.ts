@@ -38,7 +38,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
@@ -362,7 +361,6 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(LivewireContourSegmentationTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 

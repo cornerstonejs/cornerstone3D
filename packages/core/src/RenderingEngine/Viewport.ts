@@ -87,7 +87,6 @@ class Viewport implements IViewport {
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
   /** informs if a new actor was added before a resetCameraClippingRange phase */
-  protected newActorAdded = false;
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
@@ -507,7 +506,10 @@ class Viewport implements IViewport {
     const renderer = this.getRenderer();
     renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
-    this.newActorAdded = true;
+
+    // when we add an actor we should update the camera clipping range and
+    // clipping planes as well
+    this.updateCameraClippingPlanesAndRange();
   }
 
   /**
@@ -764,6 +766,10 @@ class Viewport implements IViewport {
 
     // compute the radius of the enclosing sphere
     radius = Math.sqrt(radius) * 0.5;
+
+    // For 3D viewport, we should increase the radius to make sure the whole
+    // volume is visible and we don't get clipping artifacts.
+    radius = this.type === ViewportType.VOLUME_3D ? radius * 10 : radius;
 
     const distance = this.insetImageMultiplier * radius;
 
@@ -1152,7 +1158,7 @@ class Viewport implements IViewport {
 
       // only modify the clipping planes if the camera is modified out of plane
       // or a new actor is added and we need to update the clipping planes
-      if (cameraModifiedOutOfPlane || viewUpHasChanged || this.newActorAdded) {
+      if (cameraModifiedOutOfPlane || viewUpHasChanged) {
         const actorEntry = this.getDefaultActor();
         if (!actorEntry?.actor) {
           return;
@@ -1162,7 +1168,10 @@ class Viewport implements IViewport {
           this.updateClippingPlanesForActors(updatedCamera);
         }
 
-        if (actorIsA(actorEntry, 'vtkImageSlice')) {
+        if (
+          actorIsA(actorEntry, 'vtkImageSlice') ||
+          this.type === ViewportType.VOLUME_3D
+        ) {
           const renderer = this.getRenderer();
           renderer.resetCameraClippingRange();
         }
@@ -1200,6 +1209,15 @@ class Viewport implements IViewport {
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
+  }
+
+  /**
+   * Updates the camera's clipping planes and range.
+   */
+  public updateCameraClippingPlanesAndRange(): void {
+    const currentCamera = this.getCamera();
+    this.updateClippingPlanesForActors(currentCamera);
+    this.getRenderer().resetCameraClippingRange();
   }
 
   /**
@@ -1251,12 +1269,6 @@ class Viewport implements IViewport {
         viewport: this,
       });
     });
-
-    this.posProcessNewActors();
-  }
-
-  protected posProcessNewActors(): void {
-    this.newActorAdded = false;
   }
 
   public setOrientationOfClippingPlanes(
@@ -1289,6 +1301,32 @@ class Viewport implements IViewport {
     const newOrigin2 = <Point3>[0, 0, 0];
     vtkMath.add(focalPoint, scaledDistance, newOrigin2);
     vtkPlanes[1].setOrigin(newOrigin2);
+  }
+
+  /**
+   * Method to get the clipping planes of a given actor
+   * @param actorEntry - The actor entry (a specific type you'll define dependent on your code)
+   * @returns vtkPlanes - An array of vtkPlane objects associated with the given actor
+   */
+  public getClippingPlanesForActor(actorEntry?: ActorEntry): vtkPlane[] {
+    if (!actorEntry) {
+      actorEntry = this.getDefaultActor();
+    }
+
+    if (!actorEntry.actor) {
+      throw new Error('Invalid actor entry: Actor is undefined');
+    }
+
+    const mapper = actorEntry.actor.getMapper();
+    let vtkPlanes = actorEntry?.clippingFilter
+      ? actorEntry.clippingFilter.getClippingPlanes()
+      : mapper.getClippingPlanes();
+
+    if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
+      vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+    }
+
+    return vtkPlanes;
   }
 
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {

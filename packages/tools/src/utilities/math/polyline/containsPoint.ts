@@ -8,9 +8,11 @@ import isClosed from './isClosed';
  * ray emanating from the given point and to the right and the line segments is odd.
  * https://www.eecs.umich.edu/courses/eecs380/HANDOUTS/PROJ2/InsidePoly.html
  *
+ * Note that a point on the polyline is considered inside.
+ *
  * @param polyline - Polyline points (2D)
  * @param point - 2D Point
- * @returns True is the point is inside the polyline or false otherwise
+ * @returns True if the point is inside the polyline or false otherwise
  */
 export default function containsPoint(
   polyline: Types.Point2[],
@@ -24,7 +26,7 @@ export default function containsPoint(
   const numPolylinePoints = polyline.length;
   let numIntersections = 0;
 
-  // Test intersection agains [end, start] line segment if it should be closed
+  // Test intersection against [end, start] line segment if it should be closed
   const shouldClose = !(closed === undefined ? isClosed(polyline) : closed);
   const maxSegmentIndex = polyline.length - (shouldClose ? 1 : 2);
 

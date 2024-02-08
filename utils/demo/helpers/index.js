@@ -14,8 +14,10 @@ import addDropdownToToolbar from './addDropdownToToolbar';
 import addSliderToToolbar from './addSliderToToolbar';
 import createInfoSection from './createInfoSection';
 import camera from './camera';
+import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
 import addManipulationBindings from './addManipulationBindings';
+import { addLabelToToolbar } from './addLabelToToolbar';
 
 export {
   createImageIdsAndCacheMetaData,
@@ -26,6 +28,7 @@ export {
   addManipulationBindings,
   addCheckboxToToolbar,
   addDropdownToToolbar,
+  addLabelToToolbar,
   addSliderToToolbar,
   addToggleButtonToToolbar,
   createInfoSection,
@@ -34,5 +37,6 @@ export {
   setCtTransferFunctionForVolumeActor,
   ctVoiRange,
   camera,
+  downloadSurfacesData,
   getLocalUrl,
 };

@@ -3,6 +3,20 @@ import type { Types } from '@cornerstonejs/core';
 type Annotation = {
   /** A unique identifier for this annotation */
   annotationUID?: string;
+  /**
+   * Parent annotation UID
+   *
+   * An annotation may have a parent annotation when it is, for example, a
+   * hole inside a contour.
+   */
+  parentAnnotationUID?: string;
+  /**
+   * Array that contains all child annotation UID
+   *
+   * An annotation may have one or more child annotations when it is contour
+   * and have some holes in it.
+   */
+  childAnnotationUIDs?: string[];
   /** If the annotation is being hovered over and is highlighted */
   highlighted?: boolean;
   /** If the annotation is locked for manipulation */

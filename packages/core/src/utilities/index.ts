@@ -68,6 +68,7 @@ import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
+import getViewportImageIds from './getViewportImageIds';
 
 // name spaces
 import * as planar from './planar';
@@ -154,4 +155,5 @@ export {
   cacheUtils,
   roundNumber,
   roundToPrecision,
+  getViewportImageIds,
 };

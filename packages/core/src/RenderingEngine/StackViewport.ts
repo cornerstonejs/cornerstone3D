@@ -2823,6 +2823,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
   public getTargetId(specifier: TargetSpecifier = {}): string {
     const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
     return `imageId:${this.imageIds[imageIdIndex]}`;
