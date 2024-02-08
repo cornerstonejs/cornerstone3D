@@ -32,7 +32,6 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import updateContourPolyline from '../../utilities/contours/updateContourPolyline';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -108,6 +107,20 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
            */
           showInterpolationPolyline: false,
         },
+
+        /**
+         * The polyline may get processed in order to reduce the number of points
+         * for better performance and storage.
+         */
+        decimate: {
+          enabled: false,
+          /** A maximum given distance 'epsilon' to decide if a point should or
+           * shouldn't be added the resulting polyline which will have a lower
+           * number of points for higher `epsilon` values.
+           */
+          epsilon: 0.1,
+        },
+
         actions: {
           undo: {
             method: 'undo',
@@ -922,7 +935,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       imagePoints = [...imagePoints, imagePoints[0]];
     }
 
-    updateContourPolyline(
+    this.updateContourPolyline(
       annotation,
       {
         points: imagePoints,

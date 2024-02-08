@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.55.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.54.2...v1.55.0) (2024-02-08)
+
+### Features
+
+- **contourSeg:** polyline performance improvements ([#1061](https://github.com/cornerstonejs/cornerstone3D/issues/1061)) ([1df02d4](https://github.com/cornerstonejs/cornerstone3D/commit/1df02d4da24789c15acd8d9fc250454e47ed46a7))
+
 ## [1.54.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.54.1...v1.54.2) (2024-02-08)
 
 ### Bug Fixes
