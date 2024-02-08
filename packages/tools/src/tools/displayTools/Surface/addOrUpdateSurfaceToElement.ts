@@ -105,6 +105,9 @@ function addOrUpdateSurfaceToElement(
     const filteredData = clippingFilter.getOutputData();
     mapper.setInputData(filteredData);
 
+    // @ts-ignore
+    const viewportPlanes = viewport.getClippingPlanesForActor?.();
+
     const evt = {
       detail: {
         actorEntry: {
@@ -114,9 +117,7 @@ function addOrUpdateSurfaceToElement(
           clippingFilter,
           uid: actorUID,
         },
-        // @ts-ignore
-        vtkPlanes: viewport.getClippingPlanesForActor?.(),
-        viewport,
+        vtkPlanes: viewportPlanes,
       },
     };
 
@@ -147,6 +148,7 @@ function addOrUpdateSurfaceToElement(
   });
 
   viewport.resetCamera();
+  viewport.render();
 
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();
@@ -158,7 +160,7 @@ function addOrUpdateSurfaceToElement(
  */
 function updateSurfacePlanes(evt) {
   const { actorEntry, vtkPlanes, viewport } = evt.detail;
-  if (!actorEntry?.clippingFilter) {
+  if (!actorEntry?.clippingFilter || vtkPlanes.length === 0) {
     return;
   }
   const sliceIndex = viewport.getSliceIndex();

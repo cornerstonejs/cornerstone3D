@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.55.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.54.2...v1.55.0) (2024-02-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.54.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.54.1...v1.54.2) (2024-02-08)
+
+### Bug Fixes
+
+- **karma:** fixed the test coverage not appearing ([#1062](https://github.com/cornerstonejs/cornerstone3D/issues/1062)) ([1d2a8c3](https://github.com/cornerstonejs/cornerstone3D/commit/1d2a8c3f0d995ecb363a149894cc0d1fb090bb7a))
+
 ## [1.54.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.54.0...v1.54.1) (2024-02-07)
 
 **Note:** Version bump only for package @cornerstonejs/core

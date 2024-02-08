@@ -3000,6 +3000,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex: () => number;
+    // (undocumented)
     getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
     getTargetImageIdIndex: () => number;
@@ -3712,6 +3714,8 @@ export class Viewport implements IViewport {
     triggerCameraModifiedEventIfNecessary(previousCamera: ICamera, updatedCamera: ICamera): void;
     // (undocumented)
     readonly type: ViewportType;
+    // (undocumented)
+    updateCameraClippingPlanesAndRange(): void;
     // (undocumented)
     protected updateClippingPlanesForActors(updatedCamera: ICamera): Promise<void>;
     // (undocumented)
