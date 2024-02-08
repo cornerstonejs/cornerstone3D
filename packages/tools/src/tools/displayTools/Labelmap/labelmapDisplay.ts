@@ -143,7 +143,7 @@ async function render(
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
 
   if (
-    !actorEntry &&
+    !labelmapData &&
     polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID) &&
     !polySegConversionInProgress
   ) {

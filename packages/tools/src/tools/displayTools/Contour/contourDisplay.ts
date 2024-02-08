@@ -1,7 +1,6 @@
 import {
   getEnabledElementByIds,
   Types,
-  StackViewport,
   BaseVolumeViewport,
 } from '@cornerstonejs/core';
 
@@ -74,17 +73,9 @@ async function render(
 
   const contourData = segmentation.representationData[Representations.Contour];
 
-  const { geometryIds, annotationUIDsMap } = contourData;
+  const { geometryIds } = contourData;
 
-  if (!geometryIds?.length && !annotationUIDsMap?.size) {
-    return;
-  }
-
-  // this means we would like to use vtk actors for contour data
-
-  if (!(viewport instanceof BaseVolumeViewport)) {
-    // We don't have a good way to handle stack viewports for contours at the moment.
-    // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
+  if (!geometryIds?.length || !(viewport instanceof BaseVolumeViewport)) {
     return;
   }
 
