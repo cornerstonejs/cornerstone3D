@@ -76,7 +76,11 @@ function interpolate(viewportData: InterpolationViewportData) {
 function startInterpolation(viewportData: InterpolationViewportData) {
   const toolData = viewportData.annotation;
   const { interpolationData, interpolationList } =
-    findAnnotationsForInterpolation(toolData, viewportData);
+    findAnnotationsForInterpolation(toolData, viewportData) || {};
+
+  if (!interpolationData || !interpolationList) {
+    return;
+  }
 
   const eventData = {
     toolName: toolData.metadata.toolName,

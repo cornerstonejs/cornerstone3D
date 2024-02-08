@@ -14,12 +14,16 @@ import type {
   VideoViewportInput,
   VOIRange,
   TargetSpecifier,
+  ViewTarget,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
+import { ViewCompatibleOptions } from '../types/IViewport';
+
+const frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -640,16 +644,89 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return current;
   }
 
+  /**
+   *  Gets a target id that can be used to specify how to show this
+   */
   public getTargetId(specifier: TargetSpecifier = {}): string {
     const { sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
+    }
+    if (Array.isArray(sliceIndex)) {
+      // Just remove the 1 from the end of the base URL - TODO, handle other types
+      return `videoId:${this.imageId.substring(0, this.imageId.length - 1)}${
+        sliceIndex[0] + 1
+      }-${sliceIndex[1] + 1}`;
     }
     const baseTarget = this.imageId.replace(
       '/frames/1',
       `/frames/${1 + sliceIndex}`
     );
     return `videoId:${baseTarget}`;
+  }
+
+  /**
+   * Figure out if a given view can be shown in the current viewport.
+   */
+  public isViewCompatible(
+    target: ViewTarget,
+    options: ViewCompatibleOptions = {}
+  ): boolean {
+    let { imageURI } = options;
+    const { referencedImageId, referencedSliceIndex: sliceIndex } = target;
+    if (!super.isViewCompatible(target)) {
+      return false;
+    }
+
+    const imageId = this.getCurrentImageId();
+    if (!imageURI) {
+      // Remove the dataLoader scheme and frame number
+      // TODO - handle more imageURI types.
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1, imageId.length - 1);
+    }
+    if (!referencedImageId) {
+      return false;
+    }
+    if (referencedImageId.indexOf(imageURI) === -1) {
+      return false;
+    }
+
+    if (options.withNavigation) {
+      return true;
+    }
+    const currentIndex = this.getCurrentImageIdIndex();
+    if (Array.isArray(sliceIndex)) {
+      return currentIndex >= sliceIndex[0] && currentIndex <= sliceIndex[1];
+    }
+    if (sliceIndex !== undefined) {
+      return currentIndex === sliceIndex;
+    }
+    const match = referencedImageId.match(frameRangeExtractor);
+    if (!match || !match[2]) {
+      return true;
+    }
+    const range = match[2].split('-').map((it) => Number(it));
+    const frame = currentIndex + 1;
+    return range[0] <= frame && frame <= (range[1] ?? range[0]);
+  }
+
+  /**
+   * Gets a view target that species what type of view is required to show
+   * the current view, or the one specified in the forTarget modifiers.
+   */
+  public getViewTarget(forTarget?: TargetSpecifier): ViewTarget {
+    let sliceIndex = forTarget?.sliceIndex;
+    if (!sliceIndex) {
+      sliceIndex = this.isPlaying
+        ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
+        : this.getCurrentImageIdIndex();
+    }
+    return {
+      ...super.getViewTarget(forTarget),
+      referencedImageId: this.getTargetId(forTarget),
+      referencedSliceIndex: sliceIndex,
+    };
   }
 
   /**

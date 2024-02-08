@@ -6,19 +6,99 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
+import BoundsLPS from './BoundsLPS';
 
 /**
  * Specifies what image to get a reference for.
  */
 export type TargetSpecifier = {
   /** The slice index within the current viewport camera to get a reference for */
-  sliceIndex?: number;
-  /** True to get a frame of reference UID reference instead of a regular image one */
+  sliceIndex?: number | [number, number];
+  /**
+   * true to get a frame of reference UID reference instead of a regular image one,
+   * or false to not get it when it would otherwise do so.
+   * The default depends on the view type, but in general showing multiple images
+   * combined, the return will be only for frame of reference, while showing a
+   * single one, it will be for frame of reference.
+   */
   forFrameOfReference?: boolean;
   /** Set of points to get a reference for, in world space */
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
+  /**
+   * true to include the bounds, if it would not otherwise do so, or
+   * false to exclude them if it would normally do so.
+   * Bounds are normally only included if the viewport is very magnified
+   * AND the points are included in the request, or the view is for a range
+   * of slices.
+   */
+  includeBounds?: boolean;
+};
+
+export type ViewCompatibleOptions = {
+  /** Indicate if the test should proceed if the view were navigated */
+  withNavigation?: boolean;
+  /**
+   * Test to see if this view could be shown in the volume equivalent (eg by
+   * changing the normal etc)
+   */
+  asVolume?: boolean;
+  /**
+   * Use this imageURI for testing - may or may not be the current one.
+   * Should be a straight contains URI for the set of imageIds in any of
+   * the volumes or set of image ids.
+   */
+  imageURI?: string;
+};
+
+/**
+ * A view target is used to get a reference to a view for a viewport.  It
+ * basically says would this viewport show this view, or can direct a viewport
+ * to show a specific view.
+ */
+export type ViewTarget = {
+  /**
+   * The FrameOfReferenceUID
+   */
+  FrameOfReferenceUID: string;
+  /**
+   * An optional property used to specify a slice that this view includes.
+   * For volumes, that will specify which volumes the view applies to, without
+   * necessarily specifying the volumeId.
+   */
+  referencedImageId?: string;
+
+  /**
+   * The position of the camera in world space
+   */
+  cameraPosition?: Point3;
+  /**
+   * The focal point of the camera in world space
+   */
+  cameraFocalPoint?: Point3;
+  /**
+   * The normal for the current view
+   */
+  viewPlaneNormal?: Point3;
+  /**
+   * The viewUp for the view position
+   */
+  viewUp?: Point3;
+  /**
+   * The slice index or range for this view
+   */
+  referencedSliceIndex?: number | [number, number];
+
+  /**
+   * VolumeId that the referencedImageId was chosen from
+   */
+  volumeId?: string;
+  /**
+   * The bounds that are shown.  Allows specifying whether a view includes
+   * particular bounds or not.  This will be in world coordinates.
+   */
+  bounds?: BoundsLPS;
 };
 
 /**
@@ -125,6 +205,23 @@ interface IViewport {
   getCurrentImageIdIndex(): number;
   /** Gets a referenced image url of some sort - could be a real image id, or could be a URL with parameters */
   getTargetId(forTarget?: TargetSpecifier): string;
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   */
+  getViewTarget(forTarget?: TargetSpecifier): ViewTarget;
+  /**
+   * Find out if this viewport would show this view
+   *
+   * @param options - allows specifying whether the view COULD display this with
+   *                  some modification - either navigation or displaying as volume.
+   * @returns true if the target is compatible with this view
+   */
+  isViewCompatible(
+    target: ViewTarget,
+    options?: ViewCompatibleOptions
+  ): boolean;
+
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];

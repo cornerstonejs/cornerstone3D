@@ -40,6 +40,7 @@ import type {
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
+import type { ViewTarget } from '../types/IViewport';
 import {
   actorIsA,
   applyPreset,
@@ -49,6 +50,7 @@ import {
   invertRgbTransferFunction,
   triggerEvent,
   colormap as colormapUtils,
+  isEqual,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
@@ -532,6 +534,46 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.perVolumeIdDefaultProperties.delete(volumeId);
       this.resetToDefaultProperties(volumeId);
     }
+  }
+
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   */
+  public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
+    const target = super.getViewTarget(forTarget);
+    if (forTarget?.forFrameOfReference !== false) {
+      target.volumeId = this.getVolumeId(forTarget);
+    }
+    // TODO - add referencedImageId as a base URL for an image to allow a generic
+    // method to specify which volumes this should apply to.
+    return target;
+  }
+
+  /**
+   * Find out if this viewport would show this view
+   *
+   * @param options - allows specifying whether the view COULD display this with
+   *                  some modification - either navigation or displaying as volume.
+   *                  Not yet implemented.
+   * @returns true if the target is compatible with this view
+   */
+  public isViewCompatible(target: ViewTarget): boolean {
+    const { FrameOfReferenceUID, viewPlaneNormal } = target;
+    if (FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
+      return false;
+    }
+    const camera = this.getCamera();
+    if (
+      !isEqual(viewPlaneNormal, camera.viewPlaneNormal) &&
+      !isEqual(
+        vec3.negate(camera.viewPlaneNormal, camera.viewPlaneNormal),
+        viewPlaneNormal
+      )
+    ) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -1383,6 +1425,21 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   };
 
   abstract getCurrentImageId(): string;
+
+  /** Gets the volumeId to use for references */
+  protected getVolumeId(specifier: TargetSpecifier) {
+    if (!specifier?.volumeId) {
+      const actorEntries = this.getActors();
+      if (!actorEntries) {
+        return;
+      }
+      // find the first image actor of instance type vtkVolume
+      return actorEntries.find(
+        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      )?.uid;
+    }
+    return specifier.volumeId;
+  }
 
   public getTargetId(specifier: TargetSpecifier = {}): string {
     let { volumeId, sliceIndex } = specifier;

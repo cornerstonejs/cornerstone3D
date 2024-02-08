@@ -62,11 +62,10 @@ export default function addManipulationBindings(
   toolGroup.addTool(ZoomTool.toolName);
   if (is3DViewport) {
     toolGroup.addTool(TrackballRotateTool.toolName);
-  } else {
-    toolGroup.addTool(LengthTool.toolName);
-    toolGroup.addTool(StackScrollTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   }
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [

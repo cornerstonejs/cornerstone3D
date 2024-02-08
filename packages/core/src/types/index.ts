@@ -17,6 +17,8 @@ import type {
   IViewport,
   PublicViewportInput,
   TargetSpecifier,
+  ViewCompatibleOptions,
+  ViewTarget,
 } from './IViewport';
 import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
 import type {
@@ -151,6 +153,8 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  ViewTarget,
+  ViewCompatibleOptions,
   TargetSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,

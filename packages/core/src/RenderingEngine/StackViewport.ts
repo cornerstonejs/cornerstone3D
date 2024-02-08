@@ -33,9 +33,14 @@ import type {
   Scaling,
   StackViewportProperties,
   VOIRange,
+  ViewTarget,
   VolumeActor,
 } from '../types';
-import { TargetSpecifier, ViewportInput } from '../types/IViewport';
+import {
+  TargetSpecifier,
+  ViewCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -2827,9 +2832,55 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
+  /**
+   * Checks to see if this target is or could be shown in this viewport
+   */
+  public isViewCompatible(
+    target: ViewTarget,
+    options: ViewCompatibleOptions = {}
+  ): boolean {
+    if (!super.isViewCompatible(target, options)) {
+      return false;
+    }
+
+    let { imageURI } = options;
+    const {
+      referencedImageId,
+      referencedSliceIndex: sliceIndex = this.getCurrentImageIdIndex(),
+    } = target;
+
+    if (target.volumeId || !referencedImageId) {
+      // TODO - check if this is coplanar/compatible in acquisition space
+      return false;
+    }
+
+    const imageId = this.imageIds[sliceIndex as number];
+    if (!imageURI) {
+      // Remove the dataLoader scheme since that can change
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1);
+    }
+    return referencedImageId.endsWith(imageURI);
+  }
+
+  /**
+   * Gets a standard target to show this image instance.
+   */
+  public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
+    const { sliceIndex = this.currentImageIdIndex } = forTarget;
+    return {
+      ...super.getViewTarget(forTarget),
+      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
+      referencedSliceIndex: sliceIndex,
+    };
+  }
+
   public getTargetId(specifier: TargetSpecifier = {}): string {
-    const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
-    return `imageId:${this.imageIds[imageIdIndex]}`;
+    const { sliceIndex = this.currentImageIdIndex } = specifier;
+    if (Array.isArray(sliceIndex)) {
+      throw new Error('Use of slice ranges for stacks not supported');
+    }
+    return `imageId:${this.imageIds[sliceIndex]}`;
   }
 
   /**

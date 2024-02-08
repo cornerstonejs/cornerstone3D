@@ -34,6 +34,8 @@ import type {
   ViewportInput,
   IViewport,
   TargetSpecifier,
+  ViewTarget,
+  ViewCompatibleOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -1379,6 +1381,35 @@ class Viewport implements IViewport {
     }
 
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
+  }
+
+  public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
+    const {
+      position: cameraPosition,
+      focalPoint: cameraFocalPoint,
+      viewPlaneNormal,
+      viewUp,
+    } = this.getCamera();
+    const target: ViewTarget = {
+      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      cameraPosition,
+      cameraFocalPoint,
+      viewPlaneNormal,
+      viewUp,
+      referencedSliceIndex:
+        forTarget.sliceIndex ?? this.getCurrentImageIdIndex(),
+    };
+    return target;
+  }
+
+  public isViewCompatible(
+    target: ViewTarget,
+    options?: ViewCompatibleOptions
+  ): boolean {
+    return (
+      !target.FrameOfReferenceUID ||
+      target.FrameOfReferenceUID === this.getFrameOfReferenceUID()
+    );
   }
 
   protected _shouldUseNativeDataType() {

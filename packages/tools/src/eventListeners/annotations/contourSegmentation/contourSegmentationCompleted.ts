@@ -42,8 +42,10 @@ export default async function contourSegmentationCompletedListener(
   }
 
   const viewport = getViewportForAnnotation(sourceAnnotation);
-  const contourSegmentationAnnotations =
-    getValidContourSegmentationAnnotations(sourceAnnotation);
+  const contourSegmentationAnnotations = getValidContourSegmentationAnnotations(
+    viewport,
+    sourceAnnotation
+  );
 
   if (!contourSegmentationAnnotations.length) {
     return;
@@ -64,12 +66,21 @@ export default async function contourSegmentationCompletedListener(
     return;
   }
 
-  if (!isFreehandContourSegToolRegistered(viewport)) {
+  if (
+    !isFreehandContourSegToolRegistered(
+      viewport,
+      sourceAnnotation.metadata.toolName
+    )
+  ) {
     return;
   }
 
   const { targetAnnotation, targetPolyline, isContourHole } =
     targetAnnotationInfo;
+
+  if (targetAnnotation.data.handles.points.length) {
+    return;
+  }
 
   if (isContourHole) {
     const { contourHoleProcessingEnabled = false } =
@@ -92,9 +103,10 @@ export default async function contourSegmentationCompletedListener(
   }
 }
 
-function isFreehandContourSegToolRegistered(viewport: Types.IViewport) {
-  const { toolName } = PlanarFreehandContourSegmentationTool;
-
+function isFreehandContourSegToolRegistered(
+  viewport: Types.IViewport,
+  toolName = PlanarFreehandContourSegmentationTool.toolName
+) {
   if (!cstHasTool(PlanarFreehandContourSegmentationTool)) {
     console.warn(`${toolName} is not registered in cornerstone`);
     return false;
@@ -133,6 +145,7 @@ function convertContourPolylineToCanvasSpace(
 }
 
 function getValidContourSegmentationAnnotations(
+  viewport: Types.IViewport,
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
   const { annotationUID: sourceAnnotationUID } = sourceAnnotation;
@@ -150,10 +163,14 @@ function getValidContourSegmentationAnnotations(
       targetAnnotation.annotationUID !== sourceAnnotationUID &&
       contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
       contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
-      contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
+      viewport.isViewCompatible(targetAnnotation.metadata)
   ) as ContourSegmentationAnnotation[];
 }
 
+/**
+ * Finds other contours on the same slice which intersect the source polyline,
+ * represented as canvas points.
+ */
 function findIntersectingContour(
   viewport: Types.IViewport,
   sourcePolyline: Types.Point2[],

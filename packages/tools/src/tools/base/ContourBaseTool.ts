@@ -117,19 +117,15 @@ abstract class ContourBaseTool extends AnnotationTool {
       viewUp
     );
 
-    const referencedSliceIndex = viewport.getCurrentImageIdIndex();
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const viewTarget = viewport.getViewTarget();
 
     return <ContourAnnotation>{
       highlighted: true,
       invalidated: true,
       metadata: {
         toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
+        ...viewTarget,
         referencedImageId,
-        referencedSliceIndex,
       },
       data: {
         handles: {

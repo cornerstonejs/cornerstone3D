@@ -134,6 +134,10 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
+    getViewTarget(forTarget?: TargetSpecifier): ViewTarget;
+    // (undocumented)
+    protected getVolumeId(specifier: TargetSpecifier): string;
+    // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     hasVolumeId(volumeId: string): boolean;
@@ -141,6 +145,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     protected initialTransferFunctionNodes: any;
     // (undocumented)
     protected initialViewUp: Point3;
+    // (undocumented)
+    isViewCompatible(target: ViewTarget): boolean;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -2164,11 +2170,15 @@ interface IViewport {
     // (undocumented)
     getTargetId(forTarget?: TargetSpecifier): string;
     // (undocumented)
+    getViewTarget(forTarget?: TargetSpecifier): ViewTarget;
+    // (undocumented)
     getZoom(): number;
     // (undocumented)
     id: string;
     // (undocumented)
     isDisabled: boolean;
+    // (undocumented)
+    isViewCompatible(target: ViewTarget, options?: ViewCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -2986,11 +2996,15 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
+    getViewTarget(forTarget?: TargetSpecifier): ViewTarget;
+    // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     protected imagesLoader: IImagesLoader;
+    // (undocumented)
+    isViewCompatible(target: ViewTarget, options?: ViewCompatibleOptions): boolean;
     // (undocumented)
     loadImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
@@ -3119,10 +3133,11 @@ class TargetEventListeners {
 
 // @public (undocumented)
 type TargetSpecifier = {
-    sliceIndex?: number;
+    sliceIndex?: number | [number, number];
     forFrameOfReference?: boolean;
     points?: Point3[];
     volumeId?: string;
+    includeBounds?: boolean;
 };
 
 // @public (undocumented)
@@ -3197,6 +3212,8 @@ declare namespace Types {
         IRegisterImageLoader,
         IStreamingVolumeProperties,
         IViewport,
+        ViewTarget,
+        ViewCompatibleOptions,
         TargetSpecifier,
         StackViewportProperties,
         VolumeViewportProperties,
@@ -3435,11 +3452,15 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
+    getViewTarget(forTarget?: TargetSpecifier): ViewTarget;
+    // (undocumented)
     hasImageURI(imageURI: string): boolean;
     // (undocumented)
     protected imageId: string;
     // (undocumented)
     protected indexToCanvas: (indexPos: Point2) => Point2;
+    // (undocumented)
+    isViewCompatible(target: ViewTarget, options?: ViewCompatibleOptions): boolean;
     // (undocumented)
     protected metadata: any;
     // (undocumented)
@@ -3526,6 +3547,13 @@ type VideoViewportProperties = ViewportProperties & {
 };
 
 // @public (undocumented)
+type ViewCompatibleOptions = {
+    withNavigation?: boolean;
+    asVolume?: boolean;
+    imageURI?: string;
+};
+
+// @public (undocumented)
 export class Viewport implements IViewport {
     constructor(props: ViewportInput);
     // (undocumented)
@@ -3600,6 +3628,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getTargetId(specifier?: TargetSpecifier): string;
     // (undocumented)
+    getViewTarget(forTarget?: TargetSpecifier): ViewTarget;
+    // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
     getZoom(): number;
@@ -3615,6 +3645,8 @@ export class Viewport implements IViewport {
     isDisabled: boolean;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
+    // (undocumented)
+    isViewCompatible(target: ViewTarget, options?: ViewCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -3757,6 +3789,19 @@ enum ViewportType {
     // (undocumented)
     VOLUME_3D = "volume3d"
 }
+
+// @public (undocumented)
+type ViewTarget = {
+    FrameOfReferenceUID: string;
+    referencedImageId?: string;
+    cameraPosition?: Point3;
+    cameraFocalPoint?: Point3;
+    viewPlaneNormal?: Point3;
+    viewUp?: Point3;
+    referencedSliceIndex?: number | [number, number];
+    volumeId?: string;
+    bounds?: BoundsLPS;
+};
 
 // @public (undocumented)
 type VOI = {
