@@ -880,7 +880,7 @@ class CobbAngleTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
 
-      if (showArcLines){
+      if (this.configuration.showArcLines){
         const arc1TextBoxUID = 'arcAngle1';
 
         const arc1TextLine = [
