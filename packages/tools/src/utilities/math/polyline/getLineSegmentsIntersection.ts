@@ -30,7 +30,10 @@ export default function getLineSegmentsIntersection(
   const denominator = diffQ2P2[1] * diffQ1P1[0] - diffQ2P2[0] * diffQ1P1[1];
 
   if (denominator == 0) {
-    return;
+    return [
+      (p1[0] + p2[0] + q1[0] + q2[0]) / 4,
+      (p1[1] + p2[1] + q1[1] + q2[1]) / 4,
+    ];
   }
 
   let a = p1[1] - p2[1];

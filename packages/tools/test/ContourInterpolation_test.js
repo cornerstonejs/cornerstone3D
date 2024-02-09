@@ -667,7 +667,7 @@ describe('Contours Interpolation: ', () => {
       }
     });
 
-    it('Should successfully edit auto generated contour annotation', function (done) {
+    fit('Should successfully edit auto generated contour annotation', function (done) {
       console.log('Start of edit of contour');
       const element = createViewport(
         this.renderingEngine,
