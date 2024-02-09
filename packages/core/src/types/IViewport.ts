@@ -18,25 +18,16 @@ export type ViewReferenceSpecifier = {
   /** The slice index within the current viewport camera to get a reference for */
   sliceIndex?: number | [number, number];
   /**
-   * true to get a frame of reference UID reference instead of a regular image one,
-   * or false to not get it when it would otherwise do so.
-   * The default depends on the view type, but in general showing multiple images
-   * combined, the return will be only for frame of reference, while showing a
-   * single one, it will be for frame of reference.
+   * Specifies to get a view reference that refers to the generic frame of
+   * reference rather than to a specific volume or stack.  Thus, the view
+   * reference would be compatible with any view showing the same frame of
+   * reference UID.
    */
   forFrameOfReference?: boolean;
   /** Set of points to get a reference for, in world space */
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
-  /**
-   * true to include the bounds, if it would not otherwise do so, or
-   * false to exclude them if it would normally do so.
-   * Bounds are normally only included if the viewport is very magnified
-   * AND the points are included in the request, or the view is for a range
-   * of slices.
-   */
-  includeBounds?: boolean;
 };
 
 /**
@@ -217,12 +208,12 @@ interface IViewport {
   /** Gets the current slice in the current camera orientation */
   getCurrentImageIdIndex(): number;
   /** Gets a referenced image url of some sort - could be a real image id, or could be a URL with parameters */
-  getReferenceId(forTarget?: ViewReferenceSpecifier): string;
+  getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
   /**
    * Gets a view target, allowing comparison between view positions as well
    * as restoring views later.
    */
-  getViewReference(forTarget?: ViewReferenceSpecifier): ViewReference;
+  getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
   /**
    * Find out if this viewport does or could show this view reference.
    *
@@ -231,7 +222,7 @@ interface IViewport {
    * @returns true if the viewport could show this view reference
    */
   isReferenceViewable(
-    target: ViewReference,
+    viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean;
 

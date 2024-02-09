@@ -1384,25 +1384,25 @@ class Viewport implements IViewport {
   }
 
   public getViewReference(
-    forTarget: ViewReferenceSpecifier = {}
+    viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
     const { focalPoint: cameraFocalPoint, viewPlaneNormal } = this.getCamera();
     const target: ViewReference = {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
       cameraFocalPoint,
       viewPlaneNormal,
-      sliceIndex: forTarget.sliceIndex ?? this.getCurrentImageIdIndex(),
+      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
     };
     return target;
   }
 
   public isReferenceViewable(
-    target: ViewReference,
+    viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
     return (
-      !target.FrameOfReferenceUID ||
-      target.FrameOfReferenceUID === this.getFrameOfReferenceUID()
+      !viewRef.FrameOfReferenceUID ||
+      viewRef.FrameOfReferenceUID === this.getFrameOfReferenceUID()
     );
   }
 

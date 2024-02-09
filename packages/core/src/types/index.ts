@@ -161,7 +161,7 @@ export type {
   IViewport,
   ViewReference,
   ReferenceCompatibleOptions,
-  ViewReferenceSpecifier as TargetSpecifier,
+  ViewReferenceSpecifier as ViewReferenceSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
