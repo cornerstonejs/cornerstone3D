@@ -2680,6 +2680,7 @@ type InterpolationROIAnnotation = ContourAnnotation & {
         annotationUID?: string;
     };
     interpolationUID?: string;
+    interpolationCompleted?: boolean;
     isInterpolationUpdate?: boolean;
 };
 

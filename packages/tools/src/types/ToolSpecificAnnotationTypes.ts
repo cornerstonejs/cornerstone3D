@@ -264,7 +264,13 @@ export type InterpolationROIAnnotation = ContourAnnotation & {
   metadata: {
     annotationUID?: string;
   };
+  /** The interpolationUID links contours which are interpolated together */
   interpolationUID?: string;
+  /**
+   *  The interpolation completed flag is used to mark interpolations as being done
+   * and no longer elligible for matching.
+   */
+  interpolationCompleted?: boolean;
   /**
    * A flag to track updates to annotations caused by things like
    * spline or livewire regeenration of the data, and which should cause further
