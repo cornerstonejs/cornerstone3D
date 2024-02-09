@@ -33,9 +33,9 @@ import type {
 import type {
   ViewportInput,
   IViewport,
-  TargetSpecifier,
-  ViewTarget,
-  ViewCompatibleOptions,
+  ViewReferenceSpecifier,
+  ViewReference,
+  ReferenceCompatibleOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -900,7 +900,7 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
-  public getTargetId(specifier?: TargetSpecifier): string {
+  public getReferenceId(specifier?: ViewReferenceSpecifier): string {
     return null;
   }
 
@@ -1383,28 +1383,22 @@ class Viewport implements IViewport {
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
   }
 
-  public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
-    const {
-      position: cameraPosition,
-      focalPoint: cameraFocalPoint,
-      viewPlaneNormal,
-      viewUp,
-    } = this.getCamera();
-    const target: ViewTarget = {
+  public getViewReference(
+    forTarget: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { focalPoint: cameraFocalPoint, viewPlaneNormal } = this.getCamera();
+    const target: ViewReference = {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
-      cameraPosition,
       cameraFocalPoint,
       viewPlaneNormal,
-      viewUp,
-      referencedSliceIndex:
-        forTarget.sliceIndex ?? this.getCurrentImageIdIndex(),
+      sliceIndex: forTarget.sliceIndex ?? this.getCurrentImageIdIndex(),
     };
     return target;
   }
 
-  public isViewCompatible(
-    target: ViewTarget,
-    options?: ViewCompatibleOptions
+  public isReferenceViewable(
+    target: ViewReference,
+    options?: ReferenceCompatibleOptions
   ): boolean {
     return (
       !target.FrameOfReferenceUID ||

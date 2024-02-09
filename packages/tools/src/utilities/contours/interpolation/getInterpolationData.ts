@@ -49,7 +49,7 @@ export default function getInterpolationData(
 
   for (let i = 0; i < sliceData.numberOfSlices; i++) {
     const imageAnnotations = annotations.filter(
-      (x) => x.metadata.referencedSliceIndex === i
+      (x) => x.metadata.sliceIndex === i
     );
 
     if (!imageAnnotations?.length) {

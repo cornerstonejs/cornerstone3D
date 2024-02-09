@@ -33,12 +33,12 @@ import type {
   Scaling,
   StackViewportProperties,
   VOIRange,
-  ViewTarget,
+  ViewReference,
   VolumeActor,
 } from '../types';
 import {
-  TargetSpecifier,
-  ViewCompatibleOptions,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
   ViewportInput,
 } from '../types/IViewport';
 import {
@@ -2835,18 +2835,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   /**
    * Checks to see if this target is or could be shown in this viewport
    */
-  public isViewCompatible(
-    target: ViewTarget,
-    options: ViewCompatibleOptions = {}
+  public isReferenceViewable(
+    target: ViewReference,
+    options: ReferenceCompatibleOptions = {}
   ): boolean {
-    if (!super.isViewCompatible(target, options)) {
+    if (!super.isReferenceViewable(target, options)) {
       return false;
     }
 
     let { imageURI } = options;
     const {
       referencedImageId,
-      referencedSliceIndex: sliceIndex = this.getCurrentImageIdIndex(),
+      sliceIndex: sliceIndex = this.getCurrentImageIdIndex(),
     } = target;
 
     if (target.volumeId || !referencedImageId) {
@@ -2866,16 +2866,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   /**
    * Gets a standard target to show this image instance.
    */
-  public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
+  public getViewReference(
+    forTarget: ViewReferenceSpecifier = {}
+  ): ViewReference {
     const { sliceIndex: sliceIndex = this.currentImageIdIndex } = forTarget;
     return {
-      ...super.getViewTarget(forTarget),
+      ...super.getViewReference(forTarget),
       referencedImageId: `${this.imageIds[sliceIndex as number]}`,
-      referencedSliceIndex: sliceIndex,
+      sliceIndex: sliceIndex,
     };
   }
 
-  public getTargetId(specifier: TargetSpecifier = {}): string {
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
     if (Array.isArray(sliceIndex)) {
       throw new Error('Use of slice ranges for stacks not supported');

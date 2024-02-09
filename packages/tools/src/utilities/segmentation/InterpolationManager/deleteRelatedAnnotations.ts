@@ -21,7 +21,7 @@ export default function deleteRelatedAnnotations(
     { key: 'interpolationUID', value: viewportData.interpolationUID },
   ]);
 
-  const referencedSliceIndex = annotation.metadata.referencedSliceIndex;
+  const referencedSliceIndex = annotation.metadata.sliceIndex as number;
   let minInterpolation = -1;
   let maxInterpolation = viewportData.sliceData.numberOfSlices;
   for (const [sliceIndex, annotations] of interpolationAnnotations.entries()) {
@@ -87,7 +87,7 @@ export default function deleteRelatedAnnotations(
       viewport: viewportData.viewport,
       sliceData: {
         numberOfSlices: viewportData.sliceData.numberOfSlices,
-        imageIndex: nextAnnotation.metadata.referencedSliceIndex,
+        imageIndex: nextAnnotation.metadata.sliceIndex as number,
       },
       annotation: nextAnnotation,
       interpolationUID: nextAnnotation.interpolationUID,

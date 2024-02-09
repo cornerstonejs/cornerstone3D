@@ -36,12 +36,12 @@ import type {
   EventTypes,
   VolumeViewportProperties,
   TargetSpecifier,
-  ViewCompatibleOptions,
+  ReferenceCompatibleOptions,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import type { ViewTarget } from '../types/IViewport';
+import type { ViewReference } from '../types/IViewport';
 import {
   actorIsA,
   applyPreset,
@@ -541,8 +541,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * Gets a view target, allowing comparison between view positions as well
    * as restoring views later.
    */
-  public getViewTarget(forTarget: TargetSpecifier = {}): ViewTarget {
-    const target = super.getViewTarget(forTarget);
+  public getViewReference(forTarget: TargetSpecifier = {}): ViewReference {
+    const target = super.getViewReference(forTarget);
     if (forTarget?.forFrameOfReference !== false) {
       target.volumeId = this.getVolumeId(forTarget);
     }
@@ -550,7 +550,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     // method to specify which volumes this should apply to.
     return {
       ...target,
-      referencedSliceIndex: this.getCurrentImageIdIndex(),
+      sliceIndex: this.getCurrentImageIdIndex(),
     };
   }
 
@@ -561,12 +561,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the target is compatible with this view
    */
-  public isViewCompatible(
-    target: ViewTarget,
-    options?: ViewCompatibleOptions
+  public isReferenceViewable(
+    target: ViewReference,
+    options?: ReferenceCompatibleOptions
   ): boolean {
-    const { FrameOfReferenceUID, viewPlaneNormal, referencedSliceIndex } =
-      target;
+    const { FrameOfReferenceUID, viewPlaneNormal, sliceIndex } = target;
     if (FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
       return false;
     }
@@ -578,21 +577,19 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         viewPlaneNormal
       )
     ) {
-      return false;
+      // Could navigate as a volume to the reference
+      return options.asVolume === true;
     }
     if (options?.withNavigation) {
       return true;
     }
-    const sliceIndex = this.getCurrentImageIdIndex();
-    if (Array.isArray(referencedSliceIndex)) {
+    const currentSliceIndex = this.getCurrentImageIdIndex();
+    if (Array.isArray(sliceIndex)) {
       return (
-        referencedSliceIndex[0] <= sliceIndex &&
-        sliceIndex <= referencedSliceIndex[1]
+        sliceIndex[0] <= currentSliceIndex && currentSliceIndex <= sliceIndex[1]
       );
     }
-    return (
-      referencedSliceIndex === undefined || referencedSliceIndex === sliceIndex
-    );
+    return sliceIndex === undefined || sliceIndex === currentSliceIndex;
   }
 
   /**
@@ -1460,7 +1457,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return specifier.volumeId;
   }
 
-  public getTargetId(specifier: TargetSpecifier = {}): string {
+  public getReferenceId(specifier: TargetSpecifier = {}): string {
     let { volumeId, sliceIndex: sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();

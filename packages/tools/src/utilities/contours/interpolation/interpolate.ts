@@ -251,9 +251,9 @@ function _addInterpolatedContour(
     referencedToolData
   );
 
-  const targetId = viewport.getTargetId({ sliceIndex });
+  const targetId = viewport.getReferenceId({ sliceIndex });
   interpolatedAnnotation.metadata.referencedImageId = targetId;
-  interpolatedAnnotation.metadata.referencedSliceIndex = sliceIndex;
+  interpolatedAnnotation.metadata.sliceIndex = sliceIndex;
   annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
   referencedToolData.onInterpolationComplete?.(
     interpolatedAnnotation,
@@ -293,7 +293,7 @@ function _editInterpolatedContour(
     const annotation = annotations[i] as InterpolationROIAnnotation;
     if (
       annotation.interpolationUID === referencedToolData.interpolationUID &&
-      annotation.metadata.referencedSliceIndex === sliceIndex
+      annotation.metadata.sliceIndex === sliceIndex
     ) {
       toolDataIndex = i;
       break;

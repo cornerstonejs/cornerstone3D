@@ -17,7 +17,7 @@ import type { Annotations } from '../../types';
 export default function filterAnnotationsForDisplay(
   viewport: Types.IViewport,
   annotations: Annotations,
-  filterOptions: Types.ViewCompatibleOptions = {}
+  filterOptions: Types.ReferenceCompatibleOptions = {}
 ): Annotations {
   if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();
@@ -47,6 +47,6 @@ export default function filterAnnotationsForDisplay(
     if (!annotation.isVisible) {
       return false;
     }
-    return viewport.isViewCompatible(annotation.metadata, filterOptions);
+    return viewport.isReferenceViewable(annotation.metadata, filterOptions);
   });
 }

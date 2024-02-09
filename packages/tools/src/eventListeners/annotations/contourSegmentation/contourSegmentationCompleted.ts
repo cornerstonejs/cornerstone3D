@@ -158,7 +158,7 @@ function getValidContourSegmentationAnnotations(
       targetAnnotation.annotationUID !== sourceAnnotationUID &&
       contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
       contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
-      viewport.isViewCompatible(targetAnnotation.metadata)
+      viewport.isReferenceViewable(targetAnnotation.metadata)
   ) as ContourSegmentationAnnotation[];
 }
 

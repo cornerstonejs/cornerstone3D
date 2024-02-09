@@ -16,8 +16,8 @@ import type {
   ICanvasActor,
   IImage,
   TargetSpecifier,
-  ViewTarget,
-  ViewCompatibleOptions,
+  ViewReference,
+  ReferenceCompatibleOptions,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -678,7 +678,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    *  Gets a target id that can be used to specify how to show this
    */
-  public getTargetId(specifier: TargetSpecifier = {}): string {
+  public getReferenceId(specifier: TargetSpecifier = {}): string {
     const { sliceIndex: sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
@@ -699,13 +699,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    * Figure out if a given view can be shown in the current viewport.
    */
-  public isViewCompatible(
-    target: ViewTarget,
-    options: ViewCompatibleOptions = {}
+  public isReferenceViewable(
+    target: ViewReference,
+    options: ReferenceCompatibleOptions = {}
   ): boolean {
     let { imageURI } = options;
-    const { referencedImageId, referencedSliceIndex: sliceIndex } = target;
-    if (!super.isViewCompatible(target)) {
+    const { referencedImageId, sliceIndex: sliceIndex } = target;
+    if (!super.isReferenceViewable(target)) {
       return false;
     }
 
@@ -743,7 +743,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * Gets a view target that species what type of view is required to show
    * the current view, or the one specified in the forTarget modifiers.
    */
-  public getViewTarget(forTarget?: TargetSpecifier): ViewTarget {
+  public getViewReference(forTarget?: TargetSpecifier): ViewReference {
     let sliceIndex = forTarget?.sliceIndex;
     if (!sliceIndex) {
       sliceIndex = this.isPlaying
@@ -751,9 +751,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
         : this.getCurrentImageIdIndex();
     }
     return {
-      ...super.getViewTarget(forTarget),
-      referencedImageId: this.getTargetId(forTarget),
-      referencedSliceIndex: sliceIndex,
+      ...super.getViewReference(forTarget),
+      referencedImageId: this.getReferenceId(forTarget),
+      sliceIndex: sliceIndex,
     };
   }
 

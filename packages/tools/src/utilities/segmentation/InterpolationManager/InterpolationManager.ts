@@ -84,7 +84,7 @@ export default class InterpolationManager {
         if (
           sliceIndex !== undefined &&
           metadata &&
-          sliceIndex !== (metadata as any).referencedSliceIndex
+          sliceIndex !== metadata.sliceIndex
         ) {
           continue;
         }
