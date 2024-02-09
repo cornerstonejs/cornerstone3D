@@ -41,7 +41,7 @@ const {
   Enums: csToolsEnums,
   segmentation,
 } = cornerstoneTools;
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define various constants for the tool definition

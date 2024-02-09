@@ -106,11 +106,9 @@ function getSourceAndTargetPointsList(
       const p2 = sourcePolyline[intersectedLineSegment[0]];
       const q2 = sourcePolyline[intersectedLineSegment[1]];
 
-      // lineSegment.intersectLine returns `undefined` when the intersection
-      // is at one of the line vertices.
-      // Examples:
-      //   - [(0, 0), (1, 1)] x [(1, 1), (1, 2)]
-      //   - [(0, 1), (2, 1)] x [(1, 1), (1, 2)]
+      // lineSegment.intersectLine returns the midpoint of the four points
+      // when the lines are parallel or co-incident.  Otherwise it will return
+      // an extension of the line.
       const intersectionCoordinate = getLineSegmentsIntersection(
         p1,
         q1,

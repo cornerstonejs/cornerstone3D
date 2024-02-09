@@ -14,7 +14,7 @@ const { PointsManager } = utilities;
  */
 export default function selectHandles(
   polyline: PointsArray3,
-  handleCount = 8
+  handleCount = 12
 ): PointsArray3 {
   const handles = PointsManager.create3(handleCount) as PointsArray3;
   handles.sources = [];
