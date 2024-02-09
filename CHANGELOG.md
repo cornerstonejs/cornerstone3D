@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.57.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.56.2...v1.57.0) (2024-02-09)
+
+### Features
+
+- **shades:** add light shades to volume rendering ([#1068](https://github.com/cornerstonejs/cornerstone3D/issues/1068)) ([65c6bd9](https://github.com/cornerstonejs/cornerstone3D/commit/65c6bd998d51a884a7d1286ff24e33df95f4f058))
+
 ## [1.56.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.56.1...v1.56.2) (2024-02-08)
 
 ### Bug Fixes
