@@ -22,19 +22,19 @@ import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
 
 type CommonData = {
-  selectedIndex: number | null;
+  activeAnnotationUID: string | null;
   viewportIdsToRender: any[];
   isEditingOpenContour: boolean;
-  mouseLocation: Types.Point2 | undefined;
+  canvasLocation: Types.Point2 | undefined;
 };
 
 class FreehandROISculptorTool extends BaseTool {
   static toolName: string;
-  private _commonData?: CommonData = {
-    selectedIndex: null,
+  private _commonData: CommonData = {
+    activeAnnotationUID: null,
     viewportIdsToRender: [],
     isEditingOpenContour: false,
-    mouseLocation: undefined,
+    canvasLocation: undefined,
   };
   private _sculptData?: {
     mousePoint: Types.Point3;
@@ -74,7 +74,7 @@ class FreehandROISculptorTool extends BaseTool {
     this._configureToolSize(evt);
     this._selectFreehandTool(eventData);
 
-    if (this._commonData.selectedIndex === null) {
+    if (this._commonData.activeAnnotationUID === null) {
       return;
     }
 
@@ -90,9 +90,102 @@ class FreehandROISculptorTool extends BaseTool {
       this._configureToolSize(evt);
       this._updateCursor(evt);
     } else {
-      this._commonData.mouseLocation = undefined;
+      this._commonData.canvasLocation = undefined;
     }
   };
+
+  /**
+   * Sculpts the freehand ROI with the circular freehandSculpter tool, moving,
+   * adding and removing handles as necessary.
+   *
+   * @param eventData - Data object associated with the event.
+   * @param points - Array of points
+   */
+  protected sculpt(eventData: any, points: Array<Types.Point3>): void {
+    const config = this.configuration;
+    const element = eventData.element;
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    this._sculptData = {
+      mousePoint: eventData.currentPoints.world,
+      mouseCanvasPoint: eventData.currentPoints.canvas,
+      points,
+      toolSize: this.toolSize,
+      maxSpacing: Math.max(this.toolSize / 4, config.minSpacing),
+      element: element,
+    };
+
+    const pushedHandles = this.pushHandles(viewport);
+
+    if (pushedHandles.first !== undefined) {
+      this._insertNewHandles(pushedHandles);
+    }
+  }
+
+  /**
+   * Pushes the points radially away from the mouse if they are
+   * contained within the circle defined by the freehandSculpter's toolSize and
+   * the mouse position.
+   *
+   * @param viewport
+   */
+  protected pushHandles(viewport: Types.IViewport) {
+    const { points, toolSize, mouseCanvasPoint } = this._sculptData;
+    const pushedHandles = { first: undefined, last: undefined };
+
+    for (let i = 0; i < points.length; i++) {
+      const handleCanvasPoint = viewport.worldToCanvas(points[i]);
+      const distanceToHandle = point.distanceToPoint(
+        handleCanvasPoint,
+        mouseCanvasPoint
+      );
+
+      if (distanceToHandle > toolSize) {
+        continue;
+      }
+
+      // Push point if inside circle, to edge of circle.
+      this._pushOneHandle(i, distanceToHandle);
+      if (pushedHandles.first === undefined) {
+        pushedHandles.first = i;
+        pushedHandles.last = i;
+      } else {
+        pushedHandles.last = i;
+      }
+    }
+
+    return pushedHandles;
+  }
+
+  /**
+   * Interpolates or fills in points between two points within a specified
+   * maximum spacing constraint.
+   */
+  protected interpolatePointsWithinMaxSpacing(
+    i: number,
+    points: Array<Types.Point3>,
+    indicesToInsertAfter: Array<number>,
+    maxSpacing: number
+  ): void {
+    const { element } = this._sculptData;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const nextHandleIndex = contourIndex(i + 1, points.length);
+
+    const currentCanvasPoint = viewport.worldToCanvas(points[i]);
+    const nextCanvasPoint = viewport.worldToCanvas(points[nextHandleIndex]);
+
+    const distanceToNextHandle = point.distanceToPoint(
+      currentCanvasPoint,
+      nextCanvasPoint
+    );
+
+    if (distanceToNextHandle > maxSpacing) {
+      indicesToInsertAfter.push(i);
+    }
+  }
 
   /**
    * Updates cursor size
@@ -109,22 +202,26 @@ class FreehandROISculptorTool extends BaseTool {
 
     this._commonData.viewportIdsToRender = [viewport.id];
 
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+    const annotations = this._filterSculptableAnnotationsForElement(element);
 
     if (!annotations?.length) {
       return;
     }
 
-    this._commonData.mouseLocation = eventData.currentPoints.canvas;
+    const activeAnnotation = annotations.find(
+      (annotation) =>
+        annotation.annotationUID === this._commonData.activeAnnotationUID
+    );
+
+    this._commonData.canvasLocation = eventData.currentPoints.canvas;
 
     if (this.isActive) {
-      annotations[this._commonData.selectedIndex].highlighted = true;
+      activeAnnotation.highlighted = true;
     } else {
       const canvasCoords = eventData.currentPoints.canvas;
       const radius = this._distanceFromPoint(
         viewport,
-        annotations[this._commonData.selectedIndex]?.data,
+        activeAnnotation?.data,
         canvasCoords
       );
       if (radius > 0) {
@@ -143,11 +240,11 @@ class FreehandROISculptorTool extends BaseTool {
    *
    * @param element - The viewport element
    */
-  _filterInteractableFreehandRoiAnnotationsForElement(element: HTMLDivElement) {
+  _filterSculptableAnnotationsForElement(element: HTMLDivElement) {
     const config = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { renderingEngineId, viewportId } = enabledElement;
-    let interactableAnnotation = [];
+    let sculptableAnnotations = [];
 
     const toolGroup = ToolGroupManager.getToolGroupForViewport(
       viewportId,
@@ -157,19 +254,19 @@ class FreehandROISculptorTool extends BaseTool {
     const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 
     config.referencedToolNames.forEach((referencedToolName: string) => {
-      const annotation = getAnnotations(referencedToolName, element);
-      if (annotation) {
-        interactableAnnotation = [...interactableAnnotation, ...annotation];
+      const annotations = getAnnotations(referencedToolName, element);
+      if (annotations) {
+        sculptableAnnotations = [...sculptableAnnotations, ...annotations];
       }
     });
 
-    interactableAnnotation =
+    sculptableAnnotations =
       toolInstance.filterInteractableAnnotationsForElement(
         element,
-        interactableAnnotation
+        sculptableAnnotations
       );
 
-    return interactableAnnotation;
+    return sculptableAnnotations;
   }
 
   _configureToolSize(evt: EventTypes.InteractionEventType): void {
@@ -182,41 +279,11 @@ class FreehandROISculptorTool extends BaseTool {
     const eventData = evt.detail;
     const element = eventData.element;
     const minDim = Math.min(element.clientWidth, element.clientHeight);
-    const sampleArea = Math.pow(minDim / 5, 2);
-    const maxRadius = Math.pow(sampleArea / Math.PI, 0.5);
+    const sampleArea = (minDim * minDim) / 25;
+    const maxRadius = Math.sqrt(sampleArea / 3.14);
 
     this.toolSize = maxRadius;
     config.maxToolSize = maxRadius;
-  }
-
-  /**
-   * Sculpts the freehand ROI with the circular freehandSculpter tool, moving,
-   * adding and removing handles as necessary.
-   *
-   * @param eventData - Data object associated with the event.
-   * @param points - Array of points
-   */
-  _sculpt(eventData: any, points: Array<Types.Point3>): void {
-    const config = this.configuration;
-    const element = eventData.element;
-
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    this._sculptData = {
-      mousePoint: eventData.currentPoints.world,
-      mouseCanvasPoint: eventData.currentPoints.canvas,
-      points,
-      toolSize: this.toolSize,
-      maxSpacing: Math.max(this.toolSize / 4, config.minSpacing),
-      element: element,
-    };
-
-    const pushedHandles = this._pushHandles(viewport);
-
-    if (pushedHandles.first !== undefined) {
-      this._insertNewHandles(pushedHandles);
-    }
   }
 
   /**
@@ -251,7 +318,12 @@ class FreehandROISculptorTool extends BaseTool {
     const indicesToInsertAfter = [];
 
     for (let i = pushedHandles.first; i <= pushedHandles.last; i++) {
-      this._checkSpacing(i, points, indicesToInsertAfter, maxSpacing);
+      this.interpolatePointsWithinMaxSpacing(
+        i,
+        points,
+        indicesToInsertAfter,
+        maxSpacing
+      );
     }
 
     return indicesToInsertAfter;
@@ -273,10 +345,7 @@ class FreehandROISculptorTool extends BaseTool {
     }
 
     const previousIndex = insertIndex - 1;
-    const nextIndex = this._getNextHandleIndexBeforeInsert(
-      insertIndex,
-      points.length
-    );
+    const nextIndex = contourIndex(insertIndex, points.length);
     const insertPosition = this._getInsertPosition(previousIndex, nextIndex);
     const handleData = insertPosition;
 
@@ -327,41 +396,6 @@ class FreehandROISculptorTool extends BaseTool {
   }
 
   /**
-   * Pushes the points radially away from the mouse if they are
-   * contained within the circle defined by the freehandSculpter's toolSize and
-   * the mouse position.
-   *
-   * @param viewport
-   */
-  _pushHandles(viewport: Types.IViewport) {
-    const { points, toolSize, mouseCanvasPoint } = this._sculptData;
-    const pushedHandles = { first: undefined, last: undefined };
-
-    for (let i = 0; i < points.length; i++) {
-      const handleCanvasPoint = viewport.worldToCanvas(points[i]);
-      const distanceToHandle = point.distanceToPoint(
-        handleCanvasPoint,
-        mouseCanvasPoint
-      );
-
-      if (distanceToHandle > toolSize) {
-        continue;
-      }
-
-      // Push point if inside circle, to edge of circle.
-      this._pushOneHandle(i, distanceToHandle);
-      if (pushedHandles.first === undefined) {
-        pushedHandles.first = i;
-        pushedHandles.last = i;
-      } else {
-        pushedHandles.last = i;
-      }
-    }
-
-    return pushedHandles;
-  }
-
-  /**
    * Pushes one handle.
    * @param i - Index of the handle to push
    * @param distanceToHandle -  - The distance between the mouse cursor and the handle.
@@ -393,13 +427,14 @@ class FreehandROISculptorTool extends BaseTool {
    * @param eventData - Data object associated with the event.
    */
   _selectFreehandTool(eventData: any): void {
-    const closestToolIndex = this._getClosestFreehandToolOnElement(eventData);
+    const closestAnnotationUID =
+      this._getClosestFreehandToolOnElement(eventData);
 
-    if (closestToolIndex === undefined) {
+    if (closestAnnotationUID === undefined) {
       return;
     }
 
-    this._commonData.selectedIndex = closestToolIndex;
+    this._commonData.activeAnnotationUID = closestAnnotationUID;
   }
 
   /**
@@ -408,14 +443,13 @@ class FreehandROISculptorTool extends BaseTool {
    *
    * @param eventData - Data object associated with the event.
    */
-  _getClosestFreehandToolOnElement(eventData: any): number {
+  _getClosestFreehandToolOnElement(eventData: any): string {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const config = this.configuration;
 
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+    const annotations = this._filterSculptableAnnotationsForElement(element);
 
     if (!annotations?.length) {
       return;
@@ -426,6 +460,7 @@ class FreehandROISculptorTool extends BaseTool {
     const closest = {
       distance: Infinity,
       toolIndex: undefined,
+      annotationUID: undefined,
     };
 
     for (let i = 0; i < annotations?.length; i++) {
@@ -446,6 +481,7 @@ class FreehandROISculptorTool extends BaseTool {
       if (distanceFromTool < closest.distance) {
         closest.distance = distanceFromTool;
         closest.toolIndex = i;
+        closest.annotationUID = annotations[i].annotationUID;
       }
     }
 
@@ -455,7 +491,7 @@ class FreehandROISculptorTool extends BaseTool {
     config.referencedToolName =
       annotations[closest.toolIndex].metadata.toolName;
 
-    return closest.toolIndex;
+    return closest.annotationUID;
   }
 
   _distanceFromPoint(
@@ -506,17 +542,18 @@ class FreehandROISculptorTool extends BaseTool {
 
     const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+    const annotations = this._filterSculptableAnnotationsForElement(element);
+
+    const activeAnnotation = annotations.find(
+      (annotation) =>
+        annotation.annotationUID === this._commonData.activeAnnotationUID
+    );
 
     if (toolInstance.configuration.calculateStats) {
-      annotations[this._commonData.selectedIndex].invalidated = true;
+      activeAnnotation.invalidated = true;
     }
 
-    triggerAnnotationModified(
-      annotations[this._commonData.selectedIndex],
-      element
-    );
+    triggerAnnotationModified(activeAnnotation, element);
   };
 
   /**
@@ -527,19 +564,22 @@ class FreehandROISculptorTool extends BaseTool {
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const eventData = evt.detail;
     const element = eventData.element;
+
     this._updateCursor(evt);
 
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+    const annotations = this._filterSculptableAnnotationsForElement(element);
+    const activeAnnotation = annotations.find(
+      (annotation) =>
+        annotation.annotationUID === this._commonData.activeAnnotationUID
+    );
 
     if (!annotations?.length || !this.isActive) {
       return;
     }
 
-    const points =
-      annotations[this._commonData.selectedIndex].data.contour.polyline;
+    const points = activeAnnotation.data.contour.polyline;
 
-    this._sculpt(eventData, points);
+    this.sculpt(eventData, points);
   }
 
   /**
@@ -580,46 +620,6 @@ class FreehandROISculptorTool extends BaseTool {
     );
   }
 
-  _checkSpacing(
-    i: number,
-    points: Array<Types.Point3>,
-    indicesToInsertAfter: Array<number>,
-    maxSpacing: number
-  ): void {
-    const { element } = this._sculptData;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const nextHandleIndex = this._getNextHandleIndex(i, points.length);
-
-    const currentCanvasPoint = viewport.worldToCanvas(points[i]);
-    const nextCanvasPoint = viewport.worldToCanvas(points[nextHandleIndex]);
-
-    const distanceToNextHandle = point.distanceToPoint(
-      currentCanvasPoint,
-      nextCanvasPoint
-    );
-
-    if (distanceToNextHandle > maxSpacing) {
-      indicesToInsertAfter.push(i);
-    }
-  }
-
-  _getNextHandleIndex(i: number, length: number): number {
-    if (i === length - 1) {
-      return 0;
-    }
-
-    return i + 1;
-  }
-
-  _getNextHandleIndexBeforeInsert(insertIndex: number, length: number): number {
-    if (insertIndex === length) {
-      return 0;
-    }
-
-    return insertIndex;
-  }
-
   renderAnnotation(
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
@@ -630,15 +630,14 @@ class FreehandROISculptorTool extends BaseTool {
     const viewportIdsToRender = this._commonData.viewportIdsToRender;
 
     if (
-      !this._commonData.mouseLocation ||
+      !this._commonData.canvasLocation ||
       this.mode !== ToolModes.Active ||
       !viewportIdsToRender.includes(viewport.id)
     ) {
       return;
     }
 
-    const annotations =
-      this._filterInteractableFreehandRoiAnnotationsForElement(element);
+    const annotations = this._filterSculptableAnnotationsForElement(element);
 
     if (!annotations?.length) {
       return;
@@ -670,9 +669,9 @@ class FreehandROISculptorTool extends BaseTool {
 
     drawCircleSvg(
       svgDrawingHelper,
-      '',
+      'FreehandROISculptorTool',
       circleUID,
-      this._commonData.mouseLocation,
+      this._commonData.canvasLocation,
       this.toolSize,
       {
         color,
@@ -680,6 +679,10 @@ class FreehandROISculptorTool extends BaseTool {
     );
   }
 }
+
+const contourIndex = (i: number, length: number) => {
+  return (i + length) % length;
+};
 
 FreehandROISculptorTool.toolName = 'FreehandROISculptorTool';
 export default FreehandROISculptorTool;

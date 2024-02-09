@@ -8,7 +8,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addButtonToToolbar,
+  addDropdownToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -18,11 +18,25 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
+const DEFAULT_SEGMENTATION_CONFIG = {
+  fillAlpha: 0.5,
+  fillAlphaInactive: 0.3,
+  outlineOpacity: 1,
+  outlineOpacityInactive: 0.85,
+  outlineWidthActive: 3,
+  outlineWidthInactive: 1,
+  outlineDashActive: 0,
+  outlineDashInactive: 1,
+};
+
 const {
+  SegmentationDisplayTool,
+  PlanarFreehandContourSegmentationTool,
   PlanarFreehandROITool,
   FreehandROISculptorTool,
   ToolGroupManager,
   Enums: csToolsEnums,
+  segmentation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -35,10 +49,14 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
+const segmentationId = `SEGMENTATION_ID`;
+let segmentationRepresentationUID = '';
+let activeSegmentIndex = 0;
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Freehand ROI Sculptor Tool',
-  'Here we demonstrate how to use the Freehand ROI Sculptor Tool to sculpt freehand ROIs'
+  'Here we demonstrate how to use the Freehand ROI Sculptor Tool to sculpt freehand ROIs and FreehandContourSegmentations '
 );
 
 const size = '500px';
@@ -69,66 +87,65 @@ const instructions = document.createElement('p');
 instructions.innerText = `
 Drawing:
 
-- Click on FreeHandROI button and drag to draw a freehand annotation.
+- Select PlanarFreehandROI from dropdown button to draw freehandROIs.
 - If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line).
+- Select PlanarFreehandContourSegmentationTool from dropdown to draw FreehandContourSegmentations.
 
 Editing:
 
-- Click on Sculpt button then adjustable cursor will appear.
-- Nearest freehand ROI will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation.
+- Select FreehandROISculptorTool from dropdown ,then adjustable cursor will appear.
+- Nearest freehand ROI/Freehand Contour Segmentation will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation.
 - Moving the cursor closer to the active ROI reduces the tool diameter.
 - Moving the cursor away from the active increases the tool diameter.
-- Upon clicking, the diameter is locked , then drag to sculpt active freehand ROI.
+- Upon clicking, the diameter is locked , then drag to sculpt active freehand ROI/Freehand Contour Segmentation.
 
 `;
 
 content.append(instructions);
 
-let selectedToolName = PlanarFreehandROITool.toolName;
+const toolsNames = [
+  PlanarFreehandROITool.toolName,
+  PlanarFreehandContourSegmentationTool.toolName,
+  FreehandROISculptorTool.toolName,
+];
+let selectedToolName = toolsNames[0];
 
-function addFreeHandRoiToolButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'FreeHandROI',
-    onClick: () => {
-      const newSelectedToolName = <string>PlanarFreehandROITool.toolName;
-
-      // Set the old tool passive
-      toolGroup.setToolPassive(selectedToolName);
-
-      // Set the new tool active
-      toolGroup.setToolActive(newSelectedToolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Primary, // Left Click
-          },
-        ],
-      });
-      selectedToolName = <string>newSelectedToolName;
-    },
-  });
+function updateActiveSegmentIndex(segmentIndex: number): void {
+  activeSegmentIndex = segmentIndex;
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, segmentIndex);
 }
 
-function addSculptingToolButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'Sculpt',
-    onClick: () => {
-      const newSelectedToolName = <string>FreehandROISculptorTool.toolName;
+addDropdownToToolbar({
+  options: { values: toolsNames, defaultValue: selectedToolName },
+  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
+    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-      // Set the old tool passive
-      toolGroup.setToolPassive(selectedToolName);
+    // Set the old tool passive
+    toolGroup.setToolPassive(selectedToolName);
 
-      // Set the new tool active
-      toolGroup.setToolActive(newSelectedToolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Primary, // Left Click
-          },
-        ],
-      });
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
 
-      selectedToolName = <string>newSelectedToolName;
-    },
-  });
+    selectedToolName = <string>newSelectedToolName;
+  },
+});
+
+function initializeGlobalConfig() {
+  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
+
+  Object.assign(
+    globalSegmentationConfig.representations.CONTOUR,
+    DEFAULT_SEGMENTATION_CONFIG
+  );
+
+  segmentation.config.setGlobalConfig(globalSegmentationConfig);
 }
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -143,6 +160,8 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(FreehandROISculptorTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
+  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -151,6 +170,8 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
   toolGroup.addTool(FreehandROISculptorTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
   // Set the initial state of the tools.
   toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
     bindings: [
@@ -159,13 +180,8 @@ async function run() {
       },
     ],
   });
+
   addManipulationBindings(toolGroup);
-
-  // set up Freehand ROI tool button.
-  addFreeHandRoiToolButton(toolGroup);
-
-  // set up sculp tool button.
-  addSculptingToolButton(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({
@@ -242,6 +258,38 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    },
+  ]);
+
+  // Create a segmentation representation associated to the toolGroupId
+  const segmentationRepresentationUIDs =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
+
+  // Store the segmentation representation that was just created
+  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
+
+  // Make the segmentation created as the active one
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+
+  updateActiveSegmentIndex(1);
+  initializeGlobalConfig();
 }
 
 run();
