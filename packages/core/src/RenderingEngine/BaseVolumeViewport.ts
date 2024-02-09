@@ -35,7 +35,7 @@ import type {
   VOIRange,
   EventTypes,
   VolumeViewportProperties,
-  TargetSpecifier,
+  ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
@@ -541,10 +541,12 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * Gets a view target, allowing comparison between view positions as well
    * as restoring views later.
    */
-  public getViewReference(forTarget: TargetSpecifier = {}): ViewReference {
-    const target = super.getViewReference(forTarget);
-    if (forTarget?.forFrameOfReference !== false) {
-      target.volumeId = this.getVolumeId(forTarget);
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const target = super.getViewReference(viewRefSpecifier);
+    if (viewRefSpecifier?.forFrameOfReference !== false) {
+      target.volumeId = this.getVolumeId(viewRefSpecifier);
     }
     // TODO - add referencedImageId as a base URL for an image to allow a generic
     // method to specify which volumes this should apply to.
@@ -562,10 +564,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns true if the target is compatible with this view
    */
   public isReferenceViewable(
-    target: ViewReference,
+    viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    const { FrameOfReferenceUID, viewPlaneNormal, sliceIndex } = target;
+    const { FrameOfReferenceUID, viewPlaneNormal, sliceIndex } = viewRef;
     if (FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
       return false;
     }
@@ -1454,7 +1456,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   abstract getCurrentImageId(): string;
 
   /** Gets the volumeId to use for references */
-  protected getVolumeId(specifier: TargetSpecifier) {
+  protected getVolumeId(specifier: ViewReferenceSpecifier) {
     if (!specifier?.volumeId) {
       const actorEntries = this.getActors();
       if (!actorEntries) {
@@ -1468,7 +1470,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return specifier.volumeId;
   }
 
-  public getReferenceId(specifier: TargetSpecifier = {}): string {
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     let { volumeId, sliceIndex: sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();

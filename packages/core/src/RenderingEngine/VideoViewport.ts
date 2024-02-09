@@ -15,7 +15,7 @@ import type {
   VOIRange,
   ICanvasActor,
   IImage,
-  TargetSpecifier,
+  ViewReferenceSpecifier,
   ViewReference,
   ReferenceCompatibleOptions,
 } from '../types';
@@ -678,7 +678,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    *  Gets a target id that can be used to specify how to show this
    */
-  public getReferenceId(specifier: TargetSpecifier = {}): string {
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
@@ -700,12 +700,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * Figure out if a given view can be shown in the current viewport.
    */
   public isReferenceViewable(
-    target: ViewReference,
+    viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
     let { imageURI } = options;
-    const { referencedImageId, sliceIndex: sliceIndex } = target;
-    if (!super.isReferenceViewable(target)) {
+    const { referencedImageId, sliceIndex: sliceIndex } = viewRef;
+    if (!super.isReferenceViewable(viewRef)) {
       return false;
     }
 
@@ -743,16 +743,18 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * Gets a view target that species what type of view is required to show
    * the current view, or the one specified in the forTarget modifiers.
    */
-  public getViewReference(forTarget?: TargetSpecifier): ViewReference {
-    let sliceIndex = forTarget?.sliceIndex;
+  public getViewReference(
+    viewRefSpecifier?: ViewReferenceSpecifier
+  ): ViewReference {
+    let sliceIndex = viewRefSpecifier?.sliceIndex;
     if (!sliceIndex) {
       sliceIndex = this.isPlaying
         ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
         : this.getCurrentImageIdIndex();
     }
     return {
-      ...super.getViewReference(forTarget),
-      referencedImageId: this.getReferenceId(forTarget),
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: this.getReferenceId(viewRefSpecifier),
       sliceIndex: sliceIndex,
     };
   }

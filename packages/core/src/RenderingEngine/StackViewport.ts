@@ -2836,10 +2836,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Checks to see if this target is or could be shown in this viewport
    */
   public isReferenceViewable(
-    target: ViewReference,
+    viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    if (!super.isReferenceViewable(target, options)) {
+    if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
 
@@ -2847,9 +2847,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const {
       referencedImageId,
       sliceIndex: sliceIndex = this.getCurrentImageIdIndex(),
-    } = target;
+    } = viewRef;
 
-    if (target.volumeId || !referencedImageId) {
+    if (viewRef.volumeId || !referencedImageId) {
       // TODO - check if this is coplanar/compatible in acquisition space
       return false;
     }
@@ -2867,11 +2867,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Gets a standard target to show this image instance.
    */
   public getViewReference(
-    forTarget: ViewReferenceSpecifier = {}
+    viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = forTarget;
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
+      viewRefSpecifier;
     return {
-      ...super.getViewReference(forTarget),
+      ...super.getViewReference(viewRefSpecifier),
       referencedImageId: `${this.imageIds[sliceIndex as number]}`,
       sliceIndex: sliceIndex,
     };
