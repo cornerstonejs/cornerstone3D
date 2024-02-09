@@ -92,12 +92,12 @@ export default async function contourSegmentationCompletedListener(
   }
 }
 
-/** Indicates if this contour tool can handle combining */
-function isContourToolCombineAvailable(
+function isFreehandContourSegToolRegisteredForViewport(
   viewport: Types.IViewport,
-  toolName: string,
   silent = false
 ) {
+  const { toolName } = PlanarFreehandContourSegmentationTool;
+
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewport.id,
     viewport.renderingEngineId
@@ -109,8 +109,6 @@ function isContourToolCombineAvailable(
     errorMessage = `Tool ${toolName} not added to ${toolGroup.id} toolGroup`;
   } else if (!toolGroup.getToolOptions(toolName)) {
     errorMessage = `Tool ${toolName} must be in active/passive state`;
-  } else if (!toolGroup.getToolConfiguration(toolName).allowCombine) {
-    errorMessage = `Tool ${toolName} doesn't allow combining`;
   }
 
   if (errorMessage && !silent) {
@@ -123,7 +121,7 @@ function isContourToolCombineAvailable(
 function getViewport(annotation: Annotation) {
   const viewports = getViewportsForAnnotation(annotation);
   const viewportWithToolRegistered = viewports.find((viewport) =>
-    isContourToolCombineAvailable(viewport, annotation.metadata.toolName, true)
+    isFreehandContourSegToolRegisteredForViewport(viewport, true)
   );
 
   // Returns the first viewport even if freehand contour segmentation is not
@@ -271,9 +269,8 @@ function combinePolylines(
     return;
   }
 
-  const { toolName } = targetAnnotation.metadata;
   // Cannot append/remove an annotation if it will not be available on any viewport
-  if (!isContourToolCombineAvailable(viewport, toolName)) {
+  if (!isFreehandContourSegToolRegisteredForViewport(viewport)) {
     return;
   }
 
@@ -360,7 +357,8 @@ function combinePolylines(
     const newAnnotation: ContourSegmentationAnnotation = {
       metadata: {
         ...metadata,
-        toolName,
+        toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
+        originalToolName: targetAnnotation.metadata.toolName,
       },
       data: {
         cachedStats: {},
@@ -381,7 +379,8 @@ function combinePolylines(
       invalidated: true,
       isLocked: false,
       isVisible: undefined,
-      // Make it interpolate in the same way
+      // Allow this object to be interpolated against the original interpolation
+      // data.
       interpolationUID: targetAnnotation.interpolationUID,
       interpolationCompleted: targetAnnotation.interpolationCompleted,
     };
@@ -399,8 +398,8 @@ function combinePolylines(
     );
 
     addAnnotation(newAnnotation, element);
-    contourSegUtils.addContourSegmentationAnnotation(newAnnotation);
     triggerAnnotationModified(newAnnotation, viewport.element);
+    contourSegUtils.addContourSegmentationAnnotation(newAnnotation);
 
     reassignedContourHolesMap
       .get(polyline)

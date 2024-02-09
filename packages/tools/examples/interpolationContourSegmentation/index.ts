@@ -67,6 +67,7 @@ const configuration = {
   interpolation,
   actions,
 };
+
 interpolationTools.set('LivewireInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
@@ -74,25 +75,30 @@ interpolationTools.set('LivewireInterpolation', {
 interpolationTools.set('LivewireInterpolationNearest3', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration: {
+    ...interpolation,
     interpolation: { ...interpolation, nearestEdge: 3 },
-    actions,
   },
 });
 interpolationTools.set('LivewireInterpolationNearest3RepeatInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration: {
+    ...configuration,
     interpolation: { enabled: true, nearestEdge: 3, repeatInterpolation: true },
-    actions,
   },
 });
 interpolationTools.set('FreeformInterpolation', {
   baseTool: PlanarFreehandContourSegmentationTool.toolName,
   configuration,
+  passive: true,
 });
 interpolationTools.set('SplineInterpolation', {
   baseTool: SplineContourSegmentationTool.toolName,
   configuration,
 });
+interpolationTools.set(PlanarFreehandContourSegmentationTool.toolName, {
+  passive: true,
+});
+
 const interpolationToolName = [...interpolationTools.keys()][0];
 
 const segmentIndexes = [1, 2, 3, 4, 5];
@@ -138,7 +144,6 @@ addDropdownToToolbar({
 const toolsNames = [
   ...interpolationTools.keys(),
   PlanarFreehandROITool.toolName,
-  PlanarFreehandContourSegmentationTool.toolName,
   SplineContourSegmentationTool.toolName,
   SplineROITool.toolName,
   LivewireContourSegmentationTool.toolName,
@@ -278,9 +283,20 @@ async function run() {
   toolGroup.addTool(SegmentationDisplayTool.toolName);
 
   for (const [toolName, config] of interpolationTools.entries()) {
-    toolGroup.addToolInstance(toolName, config.baseTool, config.configuration);
+    if (config.baseTool) {
+      toolGroup.addToolInstance(
+        toolName,
+        config.baseTool,
+        config.configuration
+      );
+    } else {
+      toolGroup.addTool(toolName, config.configuration);
+    }
+    if (config.passive) {
+      // This can be applied during add/remove contours
+      toolGroup.setToolPassive(toolName);
+    }
   }
-  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
   toolGroup.addTool(SplineROITool.toolName);

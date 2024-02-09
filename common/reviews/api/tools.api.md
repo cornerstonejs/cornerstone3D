@@ -1460,6 +1460,9 @@ type ContourSegmentationAnnotationData = {
             originalPolyline?: Types_2.Point3[];
         };
     };
+    metadata?: {
+        originalToolName?: string;
+    };
     handles?: {
         interpolationSources?: Types_2.PointsManager<Types_2.Point3>[];
     };

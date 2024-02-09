@@ -18,6 +18,10 @@ export type ContourSegmentationAnnotationData = {
       originalPolyline?: Types.Point3[];
     };
   };
+  metadata?: {
+    /** The original name of the tool before adding/removing holes and contours */
+    originalToolName?: string;
+  };
   handles?: {
     /**
      * Segmentation contours can be interpolated between slices to produce

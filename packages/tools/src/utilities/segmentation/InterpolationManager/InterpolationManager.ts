@@ -114,9 +114,12 @@ export default class InterpolationManager {
     if (!annotation?.metadata) {
       return;
     }
-    const { toolName } = annotation.metadata;
+    const { toolName, originalToolName } = annotation.metadata;
 
-    if (!this.toolNames.includes(toolName)) {
+    if (
+      !this.toolNames.includes(toolName) &&
+      !this.toolNames.includes(originalToolName)
+    ) {
       return;
     }
 
@@ -197,10 +200,11 @@ export default class InterpolationManager {
     if (!annotation?.metadata) {
       return;
     }
-    const { toolName } = annotation.metadata;
+    const { toolName, originalToolName } = annotation.metadata;
 
     if (
-      !this.toolNames.includes(toolName) ||
+      (!this.toolNames.includes(toolName) &&
+        !this.toolNames.includes(originalToolName)) ||
       !ChangeTypesForInterpolation.includes(changeType)
     ) {
       return;

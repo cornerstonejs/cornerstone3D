@@ -191,11 +191,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           radius: 2,
         },
         allowOpenContours: true,
-        // Allows the combining of contours for the polylines by starting
-        // outside or inside the area and working outside.  This is only
-        // enabled for PlanarFreehand tools, but is a flag to allow setting the
-        // destination type appropriately.
-        allowCombine: true,
         // Proximity in canvas coordinates used to join contours.
         closeContourProximity: 10,
         // The proximity at which we fallback to the simplest grabbing logic for
