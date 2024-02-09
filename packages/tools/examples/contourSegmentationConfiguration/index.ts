@@ -24,7 +24,7 @@ const {
   PlanarFreehandContourSegmentationTool,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume

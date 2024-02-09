@@ -15,6 +15,9 @@ import { Types } from '@cornerstonejs/core';
 
 /**
  * Gets the intersection between the line segments (`p1`,`q1`) and (`p2`,`q2`)
+ * Returns the average of the four points if the lines are parallel, and may return
+ * an intersection point beyond the extents of the segments - that is, it extends
+ * out to infinity in both directions.
  *
  * http://jsfiddle.net/justin_c_rounds/Gd2S2/light/
  * https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
@@ -30,6 +33,8 @@ export default function getLineSegmentsIntersection(
   const denominator = diffQ2P2[1] * diffQ1P1[0] - diffQ2P2[0] * diffQ1P1[1];
 
   if (denominator == 0) {
+    // For parallel lines this isn't really a good approximation, but
+    // for co-incident lines, the midpoint of all 4 points is an intersection.
     return [
       (p1[0] + p2[0] + q1[0] + q2[0]) / 4,
       (p1[1] + p2[1] + q1[1] + q2[1]) / 4,
