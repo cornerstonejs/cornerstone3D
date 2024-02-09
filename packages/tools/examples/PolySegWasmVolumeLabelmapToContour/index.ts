@@ -115,24 +115,6 @@ addButtonToToolbar({
 
 addSegmentIndexDropdown(segmentationId);
 
-addToggleButtonToToolbar({
-  title: 'Toggle Brush and Eraser',
-  defaultToggle: true,
-  onClick: async (toggle) => {
-    const toolToToggle = toggle ? 'SphereBrush' : 'EraserBrush';
-    const toolToDisable = toggle ? 'EraserBrush' : 'SphereBrush';
-
-    toolGroup1.setToolDisabled(toolToDisable, {});
-    toolGroup1.setToolActive(toolToToggle, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Middle Click
-        },
-      ],
-    });
-  },
-});
-
 /**
  * Runs the demo
  */
@@ -264,8 +246,6 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-
-  // setBrushSizeForToolGroup(toolGroupId, 100);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2]);

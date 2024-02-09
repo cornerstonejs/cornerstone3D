@@ -3,6 +3,11 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import ICRPolySeg from '@icr/polyseg-wasm';
 import { utilities } from '@cornerstonejs/core';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
+import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
+
 import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
 import { pointInShapeCallback } from '../utilities';
 import { isPointInsidePolyline3D } from '../utilities/math/polyline';
@@ -461,6 +466,82 @@ const polySegConverters = {
     );
 
     return segmentationVoxelManager.scalarData;
+  },
+  /**
+   * Cuts the surfaces into planes.
+   *
+   * @param {Object} options - The options object.
+   * @param {Array} options.planesInfo - The information about the planes.
+   * @param {Array} options.surfacesInfo - The information about the surfaces.
+   * @param {Function} progressCallback - The callback function for progress updates.
+   * @param {Function} updateCacheCallback - The callback function for updating the cache.
+   */
+  cutSurfacesIntoPlanes(
+    { planesInfo, surfacesInfo },
+    progressCallback,
+    updateCacheCallback
+  ) {
+    const numberOfPlanes = planesInfo.length;
+    const cutter = vtkCutter.newInstance();
+
+    const plane1 = vtkPlane.newInstance();
+
+    cutter.setCutFunction(plane1);
+
+    const surfacePolyData = vtkPolyData.newInstance();
+
+    try {
+      for (const [index, planeInfo] of planesInfo.entries()) {
+        const { sliceIndex, planes } = planeInfo;
+
+        const polyDataResults = new Map();
+        for (const polyDataInfo of surfacesInfo) {
+          const { points, polys, id } = polyDataInfo;
+
+          surfacePolyData.getPoints().setData(points, 3);
+          surfacePolyData.getPolys().setData(polys, 3);
+          surfacePolyData.modified();
+
+          cutter.setInputData(surfacePolyData);
+
+          plane1.setOrigin(planes[0].origin);
+          plane1.setNormal(planes[0].normal);
+
+          try {
+            cutter.update();
+          } catch (e) {
+            console.warn('Error during clipping', e);
+            continue;
+          }
+
+          const polyData = cutter.getOutputData();
+
+          const cutterOutput = polyData;
+          cutterOutput.buildLinks();
+          const loopExtraction = vtkContourLoopExtraction.newInstance();
+          loopExtraction.setInputData(cutterOutput);
+
+          const loopOutput = loopExtraction.getOutputData();
+          if (polyData) {
+            polyDataResults.set(id, {
+              points: loopOutput.getPoints().getData(),
+              lines: loopOutput.getLines().getData(),
+              numberOfCells: loopOutput.getLines().getNumberOfCells(),
+            });
+          }
+        }
+
+        progressCallback({ progress: (index + 1) / numberOfPlanes });
+
+        updateCacheCallback({ sliceIndex, polyDataResults });
+      }
+    } catch (e) {
+      console.warn('Error during processing', e);
+    } finally {
+      // Cleanup on completion
+      surfacesInfo = null;
+      plane1.delete();
+    }
   },
 };
 
