@@ -219,13 +219,17 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
+    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary, // Left Click
+        },
+        {
+          mouseButton: MouseBindings.Primary, // Shift + Left Click
+          modifierKey: KeyboardBindings.Shift,
         },
       ],
     });

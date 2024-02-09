@@ -33,7 +33,7 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType, InterpolationType } = Enums;
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -158,11 +158,15 @@ addDropdownToToolbar({
         {
           mouseButton: MouseBindings.Primary, // Left Click
         },
+        {
+          mouseButton: MouseBindings.Primary, // Shift + Left Click
+          modifierKey: KeyboardBindings.Shift,
+        },
       ],
     });
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
+    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
 
     selectedToolName = <string>newSelectedToolName;
   },
@@ -288,6 +292,10 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });
