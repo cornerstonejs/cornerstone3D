@@ -1400,10 +1400,26 @@ class Viewport implements IViewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    return (
-      !viewRef.FrameOfReferenceUID ||
-      viewRef.FrameOfReferenceUID === this.getFrameOfReferenceUID()
-    );
+    if (
+      viewRef.FrameOfReferenceUID &&
+      viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
+    ) {
+      return false;
+    }
+
+    const { viewPlaneNormal } = viewRef;
+    const camera = this.getCamera();
+    if (
+      !isEqual(viewPlaneNormal, camera.viewPlaneNormal) &&
+      !isEqual(
+        vec3.negate(camera.viewPlaneNormal, camera.viewPlaneNormal),
+        viewPlaneNormal
+      )
+    ) {
+      // Could navigate as a volume to the reference
+      return options?.asVolume === true;
+    }
+    return true;
   }
 
   protected _shouldUseNativeDataType() {

@@ -567,25 +567,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    const { FrameOfReferenceUID, viewPlaneNormal, sliceIndex } = viewRef;
-    if (FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
+    if (!super.isReferenceViewable(viewRef, options)) {
       return false;
-    }
-    const camera = this.getCamera();
-    if (
-      !isEqual(viewPlaneNormal, camera.viewPlaneNormal) &&
-      !isEqual(
-        vec3.negate(camera.viewPlaneNormal, camera.viewPlaneNormal),
-        viewPlaneNormal
-      )
-    ) {
-      // Could navigate as a volume to the reference
-      return options?.asVolume === true;
     }
     if (options?.withNavigation) {
       return true;
     }
     const currentSliceIndex = this.getCurrentImageIdIndex();
+    const { sliceIndex } = viewRef;
     if (Array.isArray(sliceIndex)) {
       return (
         sliceIndex[0] <= currentSliceIndex && currentSliceIndex <= sliceIndex[1]
