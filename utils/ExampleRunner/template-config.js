@@ -62,8 +62,8 @@ module.exports = {
   module: {
     rules,
   },
-  externals: {
-
+  experiments: {
+    asyncWebAssembly: true
   },
   resolve: {
     alias: {

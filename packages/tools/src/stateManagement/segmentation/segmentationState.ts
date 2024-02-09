@@ -98,6 +98,65 @@ function getAllSegmentationRepresentations(): Record<
 }
 
 /**
+ * Finds all segmentation representations with the given segmentationId.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns An array of found segmentation representations.
+ */
+function getSegmentationIdRepresentations(segmentationId) {
+  const allRepresentations = getAllSegmentationRepresentations() || {};
+  const foundRepresentations = [];
+
+  for (const toolGroupId in allRepresentations) {
+    const toolGroupRepresentations = allRepresentations[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) => representation.segmentationId === segmentationId
+    );
+
+    if (foundRepresentation) {
+      foundRepresentations.push(foundRepresentation);
+    }
+  }
+
+  return foundRepresentations;
+}
+
+/**
+ * Finds a segmentation representation by its UID.
+ *
+ * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
+ * @returns The found segmentation representation, or undefined if not found.
+ */
+function findSegmentationRepresentationByUID(
+  segmentationRepresentationUID: string
+): {
+  toolGroupId: string;
+  segmentationRepresentation: ToolGroupSpecificRepresentation;
+} {
+  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
+
+  const toolGroupIds = Object.keys(allToolGroupRepresentations);
+
+  for (const toolGroupId of toolGroupIds) {
+    const toolGroupRepresentations =
+      getAllSegmentationRepresentations()[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) =>
+        representation.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    );
+
+    if (foundRepresentation) {
+      return {
+        segmentationRepresentation: foundRepresentation,
+        toolGroupId,
+      };
+    }
+  }
+}
+
+/**
  * Get the tool group IDs that have a segmentation representation with the given
  * segmentationId
  * @param segmentationId - The id of the segmentation
@@ -445,9 +504,12 @@ export {
   getToolGroupIdsWithSegmentation,
   getAllSegmentationRepresentations,
   getSegmentationRepresentationByUID,
+  getSegmentationIdRepresentations,
   // color
   addColorLUT,
   getColorLUT,
   getNextColorLUTIndex,
   removeColorLUT,
+  //
+  findSegmentationRepresentationByUID,
 };

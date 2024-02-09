@@ -39,6 +39,12 @@ enum Events {
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
   /**
+   * Triggers on the HTML element when viewport modifies its preset (used in volume viewport 3D)
+   *
+   * Make use of {@link EventTypes.PresetModifiedEvent | PresetModified Event Type } for typing your event listeners for PRESET_MODIFIED event,
+   */
+  PRESET_MODIFIED = 'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED',
+  /**
    * Triggers on the HTML element when viewport modifies its display area
    *
    * Make use of {@link EventTypes.DisplayAreaModifiedEvent | DisplayAreaModified Event Type } for typing your event listeners for DISPLAY_AREA_MODIFIED event,
@@ -215,6 +221,14 @@ enum Events {
    * Triggers when the clipping planes has been updated
    */
   CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
+
+  /**
+   * Triggers when the webworker has made progress
+   * You should use it with a workerType to indicate the type of worker that is making progress
+   * Checkout the polySEG convertors in the cornerstone tools
+   * to lean how to use it
+   */
+  WEB_WORKER_PROGRESS = 'CORNERSTONE_WEB_WORKER_PROGRESS',
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',

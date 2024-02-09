@@ -34,6 +34,8 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
@@ -430,6 +432,10 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });

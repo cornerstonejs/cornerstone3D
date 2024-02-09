@@ -2,6 +2,7 @@ import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import Events from '../../enums/Events';
+import { MouseBindings } from '../../enums/ToolBindings';
 import mouseMoveListener from './mouseMoveListener';
 import { EventTypes, IPoints } from '../../types';
 import getMouseEventPoints from './getMouseEventPoints';
@@ -314,6 +315,7 @@ function _onMouseUp(evt: MouseEvent): void {
 
     const currentPoints = getMouseEventPoints(evt, state.element);
     const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints);
+
     const eventDetail:
       | EventTypes.MouseUpEventDetail
       | EventTypes.MouseClickEventType = {

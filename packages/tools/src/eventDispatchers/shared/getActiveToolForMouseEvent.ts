@@ -1,5 +1,5 @@
 import { ToolGroupManager } from '../../store';
-import { MouseBindings, ToolModes } from '../../enums';
+import { ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
 import { EventTypes } from '../../types';
 import getMouseModifier from './getMouseModifier';

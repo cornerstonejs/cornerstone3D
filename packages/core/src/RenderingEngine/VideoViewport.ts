@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import {
   Events as EVENTS,
-  VideoViewport as VideoViewportEnum,
+  VideoEnums as VideoViewportEnum,
   MetadataModules,
 } from '../enums';
-import {
+import type {
   IVideoViewport,
   VideoViewportProperties,
   Point3,
@@ -13,12 +13,25 @@ import {
   InternalVideoCamera,
   VideoViewportInput,
   VOIRange,
+  ICanvasActor,
+  IImage,
+  TargetSpecifier,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
+import CanvasActor from './CanvasActor';
+import cache from '../cache';
+
+/**
+ * A data type for the scalar data for video data.
+ */
+export type CanvasScalarData = Uint8ClampedArray & {
+  frameNumber?: number;
+  getRange?: () => [number, number];
+};
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -42,6 +55,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private isPlaying = false;
   private scrollSpeed = 1;
   private playbackRate = 1;
+  private scalarData: CanvasScalarData;
+
   /**
    * The range is the set of frames to play
    */
@@ -131,11 +146,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement.remove();
   }
 
-  private _getImageDataMetadata() {
-    const imagePlaneModule = metaData.get(
-      MetadataModules.IMAGE_PLANE,
-      this.imageId
-    );
+  public getImageDataMetadata(image: IImage | string) {
+    const imageId = typeof image === 'string' ? image : image.imageId;
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
     let rowCosines = <Point3>imagePlaneModule.rowCosines;
     let columnCosines = <Point3>imagePlaneModule.columnCosines;
@@ -156,6 +169,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       columnCosines[1],
       columnCosines[2]
     );
+
+    const { rows, columns } = imagePlaneModule;
     const scanAxisNormal = vec3.create();
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
@@ -178,6 +193,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       bitsAllocated: 8,
       numComps: 3,
       origin,
+      rows,
+      columns,
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
@@ -197,7 +214,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
-    this.metadata = this._getImageDataMetadata();
+    this.metadata = this.getImageDataMetadata(imageId);
 
     return this.setVideoURL(rendered).then(() => {
       let { cineRate, numberOfFrames } = metaData.get(
@@ -216,10 +233,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
-      if (frameNumber !== undefined) {
-        this.pause();
-        this.setFrameNumber(frameNumber);
-      }
+      this.play();
+      // This is ugly, but without it, the video often fails to render initially
+      // so having a play, followed by a pause fixes things.
+      // 100 ms is a tested value that seems to work to prevent exceptions
+      return new Promise((resolve) => {
+        window.setTimeout(() => {
+          this.pause();
+          this.setFrameNumber(frameNumber || 1);
+          resolve(this);
+        }, 100);
+      });
     });
   }
 
@@ -248,6 +272,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
     });
   }
 
+  /**
+   * Gets all the image ids associated with this video element.  This will
+   * have # of frames elements.
+   */
+  public getImageIds(): string[] {
+    const imageIds = new Array<string>(this.numberOfFrames);
+    const baseImageId = this.imageId.replace(/[0-9]+$/, '');
+    for (let i = 0; i < this.numberOfFrames; i++) {
+      imageIds[i] = `${baseImageId}${i + 1}`;
+    }
+    return imageIds;
+  }
+
   public togglePlayPause(): boolean {
     if (this.isPlaying) {
       this.pause();
@@ -258,17 +295,27 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
-  public play() {
-    if (!this.isPlaying) {
-      this.videoElement.play();
-      this.isPlaying = true;
-      this.renderWhilstPlaying();
+  public async play() {
+    try {
+      if (!this.isPlaying) {
+        // Play returns a promise that is true when playing completes.
+        await this.videoElement.play();
+        this.isPlaying = true;
+        this.renderWhilstPlaying();
+      }
+    } catch (e) {
+      // No-op, an exception sometimes gets thrown on the initial play, not
+      // quite sure why.  Catching it prevents displaying an error
     }
   }
 
   public async pause() {
-    await this.videoElement.pause();
-    this.isPlaying = false;
+    try {
+      await this.videoElement.pause();
+      this.isPlaying = false;
+    } catch (e) {
+      // No-op - sometimes this happens on startup
+    }
   }
 
   public async scroll(delta = 1) {
@@ -435,7 +482,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     });
   }
 
-  protected getScalarData() {
+  protected getScalarData(): CanvasScalarData {
+    if (this.scalarData?.frameNumber === this.getFrameNumber()) {
+      return this.scalarData;
+    }
     const canvas = document.createElement('canvas');
     canvas.width = this.videoWidth;
     canvas.height = this.videoHeight;
@@ -447,8 +497,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.videoWidth,
       this.videoHeight
     );
-    const { data: scalarData } = canvasData;
-    (scalarData as any).getRange = () => [0, 255];
+    const scalarData = canvasData.data as CanvasScalarData;
+    scalarData.getRange = () => [0, 255];
+    scalarData.frameNumber = this.getFrameNumber();
+    this.scalarData = scalarData;
     return scalarData;
   }
 
@@ -457,7 +509,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     const spacing = metadata.spacing;
 
-    return {
+    const imageData = {
       dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
@@ -486,6 +538,11 @@ class VideoViewport extends Viewport implements IVideoViewport {
         scaled: false,
       },
     };
+    Object.defineProperty(imageData, 'scalarData', {
+      get: () => this.getScalarData(),
+      enumerable: true,
+    });
+    return imageData;
   }
 
   /**
@@ -610,15 +667,34 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const current = this.imageId.replace(
       '/frames/1',
       this.isPlaying
-        ? `/frames/1-${this.numberOfFrames}`
+        ? `/frames/${this.frameRange[0]}-${this.frameRange[1]}`
         : `/frames/${this.getFrameNumber()}`
     );
     return current;
   }
 
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    const { sliceIndex } = specifier;
+    if (sliceIndex === undefined) {
+      return `videoId:${this.getCurrentImageId()}`;
+    }
+    const baseTarget = this.imageId.replace(
+      '/frames/1',
+      `/frames/${1 + sliceIndex}`
+    );
+    return `videoId:${baseTarget}`;
+  }
+
+  /**
+   * Gets the 1 based frame number (ala DICOM value), eg `1+ currentImageIdIndex`
+   */
   public getFrameNumber() {
     // Need to round this as the fps/time isn't exact
-    return 1 + Math.round(this.videoElement.currentTime * this.fps);
+    return 1 + this.getCurrentImageIdIndex();
+  }
+
+  public getCurrentImageIdIndex() {
+    return Math.round(this.videoElement.currentTime * this.fps);
   }
 
   public getCamera(): ICamera {
@@ -823,6 +899,34 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
     return transform;
   }
+
+  /**
+   * Nothing to do for the clipping planes for video as they don't exist.
+   */
+  public updateCameraClippingPlanesAndRange() {
+    // No-op
+  }
+
+  public addImages(stackInputs: Array<any>) {
+    const actors = this.getActors();
+    stackInputs.forEach((stackInput) => {
+      const image = cache.getImage(stackInput.imageId);
+
+      const imageActor = this.createActorMapper(image);
+      if (imageActor) {
+        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        if (stackInput.callback) {
+          stackInput.callback({ imageActor, imageId: stackInput.imageId });
+        }
+      }
+    });
+    this.setActors(actors);
+  }
+
+  protected createActorMapper(image) {
+    return new CanvasActor(this, image);
+  }
+
   private renderFrame = () => {
     const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
@@ -844,9 +948,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.videoHeight
     );
 
+    for (const actor of this.getActors()) {
+      (actor.actor as ICanvasActor).render(this, this.canvasContext);
+    }
     this.canvasContext.resetTransform();
 
-    triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
+    // This is stack new image to agree with stack/non-volume viewports
+    triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, {
       element: this.element,
       viewportId: this.id,
       viewport: this,

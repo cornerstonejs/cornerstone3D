@@ -35,7 +35,7 @@ import type {
   VOIRange,
   VolumeActor,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
+import { TargetSpecifier, ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -842,18 +842,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
+    this.setInvertColor(this.initialInvert);
+
+    this.setInterpolationType(InterpolationType.LINEAR);
+
     if (this.getRotation() !== 0) {
       this.setRotation(0);
     }
-    this.setInterpolationType(InterpolationType.LINEAR);
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
       transferFunction,
       this.initialTransferFunctionNodes
     );
-
-    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {
@@ -1961,18 +1962,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     // If Photometric Interpretation is not the same for the next image we are trying to load
-    // invalidate the stack to recreate the VTK imageData
+    // invalidate the stack to recreate the VTK imageData.  Get the PMI from
+    // the base csImage if imageFrame isn't defined, which happens when the images
+    // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const csImgFrame = (<any>this.csImage)?.imageFrame;
     const imgFrame = image?.imageFrame;
+    const photometricInterpretation =
+      csImgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation;
+    const newPhotometricInterpretation =
+      imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
-    // if a volume is decached into images then the imageFrame will be undefined
-    if (
-      csImgFrame?.photometricInterpretation !==
-        imgFrame?.photometricInterpretation ||
-      this.csImage?.photometricInterpretation !==
-        image?.photometricInterpretation
-    ) {
+    if (photometricInterpretation !== newPhotometricInterpretation) {
       this.stackInvalidated = true;
     }
 
@@ -2040,11 +2042,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return options;
   }
 
-  public loadImages(
+  public async loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
-    return Promise.allSettled(
+    const resultList = await Promise.allSettled(
       imageIds.map((imageId) => {
         const options = this.getLoaderImageOptions(
           imageId
@@ -2062,6 +2064,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         );
       })
     );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList && errorList.length) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
@@ -2811,6 +2822,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public getCurrentImageIdIndex = (): number => {
     return this.currentImageIdIndex;
   };
+
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  public getTargetId(specifier: TargetSpecifier = {}): string {
+    const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
+    return `imageId:${this.imageIds[imageIdIndex]}`;
+  }
 
   /**
    *

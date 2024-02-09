@@ -36,7 +36,7 @@ async function addLabelmapToElement(
   const immediateRender = false;
   const suppressEvents = true;
 
-  if (isVolumeSegmentation(labelMapData)) {
+  if (isVolumeSegmentation(labelMapData, viewport)) {
     // Todo: Right now we use MIP blend mode for the labelmap, since the
     // composite blend mode has a non linear behavior regarding fill and line
     // opacity. This should be changed to a custom labelmap blendMode which does

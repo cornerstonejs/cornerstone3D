@@ -33,9 +33,9 @@ async function addImageSlicesToViewports(
     }
 
     // if not instance of BaseVolumeViewport, throw
-    if (!(viewport instanceof StackViewport)) {
+    if (!(viewport as IStackViewport).addImages) {
       console.warn(
-        `Viewport with Id ${viewportId} is not a StackViewport. Cannot add image segmentation to this viewport.`
+        `Viewport with Id ${viewportId} does not have addImages. Cannot add image segmentation to this viewport.`
       );
 
       return;

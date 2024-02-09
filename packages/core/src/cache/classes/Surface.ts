@@ -1,4 +1,4 @@
-import { SurfaceData, Point3 } from '../../types';
+import { SurfaceData, Point3, ISurface, Color, RGB } from '../../types';
 
 type SurfaceProps = {
   id: string;
@@ -10,11 +10,11 @@ type SurfaceProps = {
 /**
  * Surface class for storing surface data
  */
-export class Surface {
+export class Surface implements ISurface {
   readonly id: string;
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;
-  private color: Point3 = [200, 0, 0]; // default color
+  private color: RGB = [200, 0, 0]; // default color
   private points: number[];
   private polys: number[];
 
@@ -31,7 +31,7 @@ export class Surface {
     return this.points.length * 4 + this.polys.length * 4;
   }
 
-  public getColor(): Point3 {
+  public getColor(): RGB {
     return this.color;
   }
 
@@ -41,6 +41,18 @@ export class Surface {
 
   public getPolys(): number[] {
     return this.polys;
+  }
+
+  public setColor(color: RGB): void {
+    this.color = color;
+  }
+
+  public setPoints(points: number[]): void {
+    this.points = points;
+  }
+
+  public setPolys(polys: number[]): void {
+    this.polys = polys;
   }
 
   public getSizeInBytes(): number {

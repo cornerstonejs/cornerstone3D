@@ -19,6 +19,7 @@ import {
   InteractionTypes,
   ToolProps,
   PublicToolProps,
+  IToolBinding,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
@@ -223,7 +224,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       }
     }
 
-    for (let i = 0; i < points.length; i++) {
+    for (let i = 0; i < points?.length; i++) {
       const point = points[i];
       const annotationCanvasCoordinate = viewport.worldToCanvas(point);
 
@@ -301,7 +302,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = targetId.split(/volumeId:|\?/)[1];
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }

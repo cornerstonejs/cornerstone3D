@@ -5,7 +5,7 @@ import {
   addAnnotation,
   getAnnotations,
 } from '../stateManagement/annotation/annotationState';
-import { drawPolyline } from '../drawingSvg';
+import { drawPath } from '../drawingSvg';
 import { getToolGroup } from '../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
@@ -146,11 +146,12 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
           color: color,
           fillColor: color,
           fillOpacity: this.configuration.opacity,
-          connectLastToFirst: true,
+          closePath: true,
+          lineWidth: 2,
         };
 
         const polyLineUID = actorEntry.uid + '#' + polyLineIdx;
-        drawPolyline(
+        drawPath(
           svgDrawingHelper,
           annotationUID,
           polyLineUID,

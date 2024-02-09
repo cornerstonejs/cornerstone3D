@@ -17,8 +17,10 @@ import type { ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   getClosestImageId,
+  getSliceRange,
   getSpacingInNormalDirection,
   isImageActor,
+  snapFocalPointToSlice,
   triggerEvent,
 } from '../utilities';
 import BaseVolumeViewport from './BaseVolumeViewport';
@@ -89,6 +91,15 @@ class VolumeViewport extends BaseVolumeViewport {
   };
 
   /**
+   * Returns the image index associated with the volume viewport.
+   * @returns The image index.
+   */
+  public getSliceIndex = (): number => {
+    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
+    return imageIndex;
+  };
+
+  /**
    * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
    *
@@ -125,26 +136,35 @@ class VolumeViewport extends BaseVolumeViewport {
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
    */
-  public setOrientation(orientation: OrientationAxis, immediate = true): void {
+  public setOrientation(
+    orientation: OrientationAxis | OrientationVectors,
+    immediate = true
+  ): void {
     let viewPlaneNormal, viewUp;
 
-    if (MPR_CAMERA_VALUES[orientation]) {
-      ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
-    } else if (orientation === 'acquisition') {
-      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
+    // check if the orientation is a string or an object
+    if (typeof orientation === 'string') {
+      if (MPR_CAMERA_VALUES[orientation]) {
+        ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
+      } else if (orientation === 'acquisition') {
+        ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
+      } else {
+        throw new Error(
+          `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
+        );
+      }
+
+      this.setCamera({
+        viewPlaneNormal,
+        viewUp,
+      });
+
+      this.viewportProperties.orientation = orientation;
+      this.resetCamera();
     } else {
-      throw new Error(
-        `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
-      );
+      ({ viewPlaneNormal, viewUp } = orientation);
+      this.applyViewOrientation(orientation);
     }
-
-    this.setCamera({
-      viewPlaneNormal,
-      viewUp,
-    });
-
-    this.viewportProperties.orientation = orientation;
-    this.resetCamera();
 
     if (immediate) {
       this.render();
@@ -455,6 +475,105 @@ class VolumeViewport extends BaseVolumeViewport {
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
+
+  /**
+   * Retrieves the clipping planes for the slices in the volume viewport.
+   * @returns An array of vtkPlane objects representing the clipping planes, or an array of objects with normal and origin properties if raw is true.
+   */
+  getSlicesClippingPlanes(): Array<{
+    sliceIndex: number;
+    planes: Array<{
+      normal: Point3;
+      origin: Point3;
+    }>;
+  }> {
+    const focalPoints = this.getSlicePlaneCoordinates();
+    const { viewPlaneNormal } = this.getCamera();
+    const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+
+    return focalPoints.map(({ point, sliceIndex }) => {
+      const vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+
+      this.setOrientationOfClippingPlanes(
+        vtkPlanes,
+        slabThickness,
+        viewPlaneNormal,
+        point
+      );
+
+      return {
+        sliceIndex,
+        planes: vtkPlanes.map((plane) => ({
+          normal: plane.getNormal(),
+          origin: plane.getOrigin(),
+        })),
+      };
+    });
+  }
+
+  /**
+   * Returns an array of 3D coordinates representing the slice plane positions.
+   * It starts by the focal point as a reference point on the current slice that
+   * the camera is looking at, and then it calculates the slice plane positions
+   * by moving the focal point in the direction of the view plane normal back and
+   * forward, and snaps them to the slice.
+   *
+   * @returns An array of Point3 representing the slice plane coordinates.
+   */
+  public getSlicePlaneCoordinates = (): Array<{
+    sliceIndex: number;
+    point: Point3;
+  }> => {
+    const actorEntry = this.getDefaultActor();
+
+    if (!actorEntry?.actor) {
+      console.warn('No image data found for calculating vtkPlanes.');
+      return [];
+    }
+
+    const volumeId = actorEntry.uid;
+    const imageVolume = cache.getVolume(volumeId);
+
+    const camera = this.getCamera();
+    const { focalPoint, position, viewPlaneNormal } = camera;
+    const spacingInNormalDirection = getSpacingInNormalDirection(
+      imageVolume,
+      viewPlaneNormal
+    );
+    const sliceRange = getSliceRange(
+      actorEntry.actor as vtkVolume,
+      viewPlaneNormal,
+      focalPoint
+    );
+
+    // calculate the number of slices that is possible to visit
+    // in the direction of the view back and forward
+    const numSlicesBackward = Math.round(
+      (sliceRange.current - sliceRange.min) / spacingInNormalDirection
+    );
+
+    const numSlicesForward = Math.round(
+      (sliceRange.max - sliceRange.current) / spacingInNormalDirection
+    );
+
+    const currentSliceIndex = this.getSliceIndex();
+    const focalPoints = [];
+
+    for (let i = -numSlicesBackward; i <= numSlicesForward; i++) {
+      const { newFocalPoint: point } = snapFocalPointToSlice(
+        focalPoint,
+        position,
+        sliceRange,
+        viewPlaneNormal,
+        spacingInNormalDirection,
+        i
+      );
+
+      focalPoints.push({ sliceIndex: currentSliceIndex + i, point });
+    }
+
+    return focalPoints;
+  };
 }
 
 export default VolumeViewport;

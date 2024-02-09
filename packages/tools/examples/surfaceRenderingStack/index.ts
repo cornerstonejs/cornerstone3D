@@ -12,15 +12,11 @@ import {
   setTitleAndDescription,
   addToggleButtonToToolbar,
   addSliderToToolbar,
+  downloadSurfacesData,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { sortImageIds } from './utils';
-
-import surface13 from '../../../../utils/assets/surfaces/lung13.json';
-import surface14 from '../../../../utils/assets/surfaces/lung14.json';
-import surface15 from '../../../../utils/assets/surfaces/lung15.json';
-import surface16 from '../../../../utils/assets/surfaces/lung16.json';
-import surface17 from '../../../../utils/assets/surfaces/lung17.json';
 
 // This is for debugging purposes
 console.warn(
@@ -46,6 +42,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupIdStack = 'MY_TOOLGROUP_ID_STACK';
 const toolGroupIdVolume = 'MY_TOOLGROUP_ID_VOLUME';
+const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -63,21 +60,16 @@ viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
-const element3 = document.createElement('div');
 element1.oncontextmenu = () => false;
 element2.oncontextmenu = () => false;
-element3.oncontextmenu = () => false;
 
 element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
 element2.style.height = size;
-element3.style.width = size;
-element3.style.height = size;
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
-viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
@@ -119,33 +111,46 @@ addSliderToToolbar({
   },
 });
 
-//const surfaces = [surface];
-const surfaces = [surface13, surface14, surface15, surface16, surface17];
-async function addSegmentationsToState() {
-  surfaces.forEach((surface) => {
-    const geometryId = surface.closedSurface.id;
-    const segmentationId = geometryId;
-    geometryLoader.createAndCacheGeometry(surface.closedSurface.id, {
-      type: GeometryType.SURFACE,
-      geometryData: surface.closedSurface as Types.PublicSurfaceData,
-    });
+let surfaces;
 
-    // Add the segmentations to state
-    segmentation.addSegmentations([
-      {
-        segmentationId,
-        representation: {
-          // The type of segmentation
-          type: csToolsEnums.SegmentationRepresentations.Surface,
-          // The actual segmentation data, in the case of contour geometry
-          // this is a reference to the geometry data
-          data: {
-            geometryId,
-          },
+async function addSegmentationsToState() {
+  // Download the surface data. Please note that this is a large file
+  // and may take a while to download
+  surfaces = await downloadSurfacesData();
+
+  const geometriesInfo = surfaces.reduce(
+    (acc: Map<number, string>, surface, index) => {
+      const geometryId = surface.closedSurface.id;
+      geometryLoader.createAndCacheGeometry(geometryId, {
+        type: GeometryType.SURFACE,
+        geometryData: surface.closedSurface as Types.PublicSurfaceData,
+      });
+
+      const segmentIndex = index + 1;
+      acc.set(segmentIndex, geometryId);
+
+      return acc;
+    },
+    new Map()
+  );
+
+  // create a Set from the geometriesInfo to Set<number, string>[]
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Surface,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          geometryIds: geometriesInfo,
         },
       },
-    ]);
-  });
+    },
+  ]);
 }
 
 /**
@@ -157,62 +162,26 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationIntersectionTool);
 
   // Define tool groups to add the segmentation display tool to
   toolGroupStack = ToolGroupManager.createToolGroup(toolGroupIdStack);
   toolGroupVolume = ToolGroupManager.createToolGroup(toolGroupIdVolume);
 
+  addManipulationBindings(toolGroupStack);
+  addManipulationBindings(toolGroupVolume);
+
   toolGroupStack.addTool(SegmentationDisplayTool.toolName);
   toolGroupStack.addTool(SegmentationIntersectionTool.toolName);
-  toolGroupStack.addTool(PanTool.toolName);
-  toolGroupStack.addTool(ZoomTool.toolName);
-  toolGroupStack.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroupStack.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroupStack.setToolEnabled(SegmentationIntersectionTool.toolName);
-  toolGroupStack.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroupStack.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  toolGroupStack.setToolActive(StackScrollMouseWheelTool.toolName);
 
   toolGroupVolume.addTool(SegmentationDisplayTool.toolName);
   toolGroupVolume.addTool(SegmentationIntersectionTool.toolName);
-  toolGroupVolume.addTool(PanTool.toolName);
-  toolGroupVolume.addTool(ZoomTool.toolName);
-  toolGroupVolume.addTool(StackScrollMouseWheelTool.toolName);
 
   toolGroupVolume.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroupVolume.setToolEnabled(SegmentationIntersectionTool.toolName);
-  toolGroupVolume.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroupVolume.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  toolGroupVolume.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -237,8 +206,7 @@ async function run() {
 
   // Create the viewports
   const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_VOLUME_AXIAL';
-  const viewportId3 = 'CT_VOLUME_SAG';
+  const viewportId2 = 'CT_VOLUME_SAG';
 
   const viewportInputArray = [
     {
@@ -255,15 +223,6 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.5, 0, 0.2],
-      },
-    },
-    {
-      viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element3,
-      defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.5, 0, 0.2],
       },
@@ -274,7 +233,6 @@ async function run() {
 
   toolGroupStack.addViewport(viewportId1, renderingEngineId);
   toolGroupVolume.addViewport(viewportId2, renderingEngineId);
-  toolGroupVolume.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
   volume.load();
@@ -289,30 +247,22 @@ async function run() {
   );
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId2, viewportId3]
-  );
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId2]);
 
-  await surfaces.forEach((surface) => {
-    const segmentationId = surface.closedSurface.id;
+  // // Add the segmentation representation to the toolgroup
+  segmentation.addSegmentationRepresentations(toolGroupIdStack, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
-    // // Add the segmentation representation to the toolgroup
-    segmentation.addSegmentationRepresentations(toolGroupIdStack, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-
-    segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Surface,
-      },
-    ]);
-  });
+  segmentation.addSegmentationRepresentations(toolGroupIdVolume, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Surface,
+    },
+  ]);
 
   // Render the image
   renderingEngine.render();

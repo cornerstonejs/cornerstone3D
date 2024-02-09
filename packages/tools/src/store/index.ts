@@ -1,4 +1,4 @@
-import { addTool, removeTool } from './addTool';
+import { addTool, hasTool, removeTool } from './addTool';
 import addEnabledElement from './addEnabledElement';
 import removeEnabledElement from './removeEnabledElement';
 import cancelActiveManipulations from './cancelActiveManipulations';
@@ -16,6 +16,7 @@ export {
   // Store
   state,
   addTool,
+  hasTool,
   removeTool,
   addEnabledElement,
   removeEnabledElement,

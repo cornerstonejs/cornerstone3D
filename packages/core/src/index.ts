@@ -20,7 +20,7 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume } from './cache';
+import cache, { ImageVolume, Surface } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 
@@ -105,6 +105,7 @@ export {
   WSIViewport,
   RenderingEngine,
   ImageVolume,
+  Surface,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,
