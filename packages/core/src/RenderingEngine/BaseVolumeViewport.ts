@@ -578,7 +578,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       )
     ) {
       // Could navigate as a volume to the reference
-      return options.asVolume === true;
+      return options?.asVolume === true;
     }
     if (options?.withNavigation) {
       return true;
