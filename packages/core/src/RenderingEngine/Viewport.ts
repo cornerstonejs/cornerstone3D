@@ -33,7 +33,9 @@ import type {
 import type {
   ViewportInput,
   IViewport,
-  TargetSpecifier,
+  ViewReferenceSpecifier,
+  ViewReference,
+  ReferenceCompatibleOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -898,7 +900,7 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
-  public getTargetId(specifier?: TargetSpecifier): string {
+  public getReferenceId(specifier?: ViewReferenceSpecifier): string {
     return null;
   }
 
@@ -1379,6 +1381,45 @@ class Viewport implements IViewport {
     }
 
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
+  }
+
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { focalPoint: cameraFocalPoint, viewPlaneNormal } = this.getCamera();
+    const target: ViewReference = {
+      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      cameraFocalPoint,
+      viewPlaneNormal,
+      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
+    };
+    return target;
+  }
+
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
+    if (
+      viewRef.FrameOfReferenceUID &&
+      viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
+    ) {
+      return false;
+    }
+
+    const { viewPlaneNormal } = viewRef;
+    const camera = this.getCamera();
+    if (
+      !isEqual(viewPlaneNormal, camera.viewPlaneNormal) &&
+      !isEqual(
+        vec3.negate(camera.viewPlaneNormal, camera.viewPlaneNormal),
+        viewPlaneNormal
+      )
+    ) {
+      // Could navigate as a volume to the reference
+      return options?.asVolume === true;
+    }
+    return true;
   }
 
   protected _shouldUseNativeDataType() {

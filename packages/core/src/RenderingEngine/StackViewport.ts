@@ -33,9 +33,14 @@ import type {
   Scaling,
   StackViewportProperties,
   VOIRange,
+  ViewReference,
   VolumeActor,
 } from '../types';
-import { TargetSpecifier, ViewportInput } from '../types/IViewport';
+import {
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -2827,9 +2832,61 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
-  public getTargetId(specifier: TargetSpecifier = {}): string {
-    const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
-    return `imageId:${this.imageIds[imageIdIndex]}`;
+  /**
+   * Checks to see if this target is or could be shown in this viewport
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+
+    let { imageURI } = options;
+    const { referencedImageId, sliceIndex } = viewRef;
+
+    if (viewRef.volumeId && !referencedImageId) {
+      return options.asVolume === true;
+    }
+
+    let testIndex = this.getCurrentImageIdIndex();
+    if (options.withNavigation && typeof sliceIndex === 'number') {
+      testIndex = sliceIndex;
+    }
+    const imageId = this.imageIds[testIndex];
+    if (!imageId) {
+      return false;
+    }
+    if (!imageURI) {
+      // Remove the dataLoader scheme since that can change
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1);
+    }
+    return referencedImageId.endsWith(imageURI);
+  }
+
+  /**
+   * Gets a standard target to show this image instance.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
+      viewRefSpecifier;
+    return {
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
+      sliceIndex: sliceIndex,
+    };
+  }
+
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
+    if (Array.isArray(sliceIndex)) {
+      throw new Error('Use of slice ranges for stacks not supported');
+    }
+    return `imageId:${this.imageIds[sliceIndex]}`;
   }
 
   /**
