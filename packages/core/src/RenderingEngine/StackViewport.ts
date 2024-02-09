@@ -2844,17 +2844,20 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     let { imageURI } = options;
-    const {
-      referencedImageId,
-      sliceIndex: sliceIndex = this.getCurrentImageIdIndex(),
-    } = viewRef;
+    const { referencedImageId, sliceIndex } = viewRef;
 
-    if (viewRef.volumeId || !referencedImageId) {
-      // TODO - check if this is coplanar/compatible in acquisition space
-      return false;
+    if (viewRef.volumeId && !referencedImageId) {
+      return options.asVolume === true;
     }
 
-    const imageId = this.imageIds[sliceIndex as number];
+    let testIndex = this.getCurrentImageIdIndex();
+    if (options.withNavigation && typeof sliceIndex === 'number') {
+      testIndex = sliceIndex;
+    }
+    const imageId = this.imageIds[testIndex];
+    if (!imageId) {
+      return false;
+    }
     if (!imageURI) {
       // Remove the dataLoader scheme since that can change
       const colonIndex = imageId.indexOf(':');
