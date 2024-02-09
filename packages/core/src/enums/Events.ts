@@ -39,6 +39,12 @@ enum Events {
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
   /**
+   * Triggers on the HTML element when viewport modifies its preset (used in volume viewport 3D)
+   *
+   * Make use of {@link EventTypes.PresetModifiedEvent | PresetModified Event Type } for typing your event listeners for PRESET_MODIFIED event,
+   */
+  PRESET_MODIFIED = 'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED',
+  /**
    * Triggers on the HTML element when viewport modifies its display area
    *
    * Make use of {@link EventTypes.DisplayAreaModifiedEvent | DisplayAreaModified Event Type } for typing your event listeners for DISPLAY_AREA_MODIFIED event,

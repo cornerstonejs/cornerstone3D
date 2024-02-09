@@ -5,13 +5,13 @@ import {
   RenderingEngine,
   setVolumesForViewports,
   Types,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
+  addManipulationBindings,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
@@ -22,11 +22,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const {
-  ToolGroupManager,
-  TrackballRotateTool,
-  Enums: csToolsEnums,
-} = cornerstoneTools;
+const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
@@ -91,20 +87,14 @@ addDropdownToToolbar({
     defaultValue: 'CT-Bone',
   },
   onSelectedValueChange: (presetName) => {
-    const volumeActor = renderingEngine
-      .getViewport(viewportId)
-      .getDefaultActor().actor as Types.VolumeActor;
-
-    utilities.applyPreset(
-      volumeActor,
-      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === presetName)
-    );
-
-    renderingEngine.render();
+    viewport.setProperties({ preset: presetName });
+    viewport.render();
   },
 });
 
 // ============================= //
+
+let viewport;
 
 /**
  * Runs the demo
@@ -115,26 +105,13 @@ async function run() {
 
   const toolGroupId = 'TOOL_GROUP_ID';
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(TrackballRotateTool);
-
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(TrackballRotateTool.toolName, {
-    configuration: { volumeId },
-  });
-
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
-  toolGroup.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+  addManipulationBindings(toolGroup, {
+    is3DViewport: true,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
@@ -158,7 +135,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
       },
     },
   ];
@@ -175,24 +152,16 @@ async function run() {
 
   // Set the volume to load
   volume.load();
+  viewport = renderingEngine.getViewport(viewportId);
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
-      const volumeActor = renderingEngine
-        .getViewport(viewportId)
-        .getDefaultActor().actor as Types.VolumeActor;
-
-      utilities.applyPreset(
-        volumeActor,
-        CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-      );
-
+      viewport.setProperties({
+        preset: 'CT-Bone',
+      });
       viewport.render();
     }
   );
-
-  const viewport = renderingEngine.getViewport(viewportId);
-  renderingEngine.render();
 }
 
 run();

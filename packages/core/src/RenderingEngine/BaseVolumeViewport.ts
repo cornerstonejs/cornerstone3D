@@ -721,7 +721,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @returns void
    */
-  private setPreset(presetName, volumeId, suppressEvents) {
+  private setPreset(presetNameOrObj, volumeId, suppressEvents) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {
@@ -730,9 +730,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const preset = VIEWPORT_PRESETS.find((preset) => {
-      return preset.name === presetName;
-    });
+    let preset = presetNameOrObj;
+
+    if (typeof preset === 'string') {
+      preset = VIEWPORT_PRESETS.find((preset) => {
+        return preset.name === presetNameOrObj;
+      });
+    }
 
     if (!preset) {
       return;
@@ -740,7 +744,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     applyPreset(volumeActor, preset);
 
-    this.viewportProperties.preset = presetName;
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.PRESET_MODIFIED, {
+        viewportId: this.id,
+        volumeId: applicableVolumeActorInfo.volumeId,
+        actor: volumeActor,
+        presetName: preset.name,
+      });
+    }
   }
 
   /**
