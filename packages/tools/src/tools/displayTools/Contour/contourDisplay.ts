@@ -14,6 +14,9 @@ import {
 import { addOrUpdateVTKContourSets } from './vtkContour/addOrUpdateVTKContourSets';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './vtkContour/contourConfigCache';
+import { polySeg } from '../../../stateManagement/segmentation';
+
+let polySegConversionInProgress = false;
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -71,8 +74,32 @@ async function render(
     return;
   }
 
-  const contourData = segmentation.representationData[Representations.Contour];
+  let contourData = segmentation.representationData[Representations.Contour];
 
+  if (
+    !contourData &&
+    polySeg.canComputeRequestedRepresentation(
+      representationConfig.segmentationRepresentationUID
+    ) &&
+    !polySegConversionInProgress
+  ) {
+    polySegConversionInProgress = true;
+
+    contourData = await polySeg.computeAndAddContourRepresentation(
+      segmentationId,
+      {
+        segmentationRepresentationUID:
+          representationConfig.segmentationRepresentationUID,
+        viewport,
+      }
+    );
+  }
+
+  // From here to below it is basically the legacy geometryId based
+  // contour rendering via vtkActors that has some bugs for display,
+  // as it sometimes appear and sometimes not, and it is not clear.
+  // We have moved to the new SVG based contours via our annotation tools
+  // check out annotationUIDsMap in the ContourSegmentationData type
   const { geometryIds } = contourData;
 
   if (!geometryIds?.length || !(viewport instanceof BaseVolumeViewport)) {
