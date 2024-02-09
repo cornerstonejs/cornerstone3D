@@ -10,7 +10,8 @@ import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 
 import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
 import { pointInShapeCallback } from '../utilities';
-import { isPointInsidePolyline3D } from '../utilities/math/polyline';
+import { getAABB, isPointInsidePolyline3D } from '../utilities/math/polyline';
+import { isPlaneIntersectingAABB } from '../utilities/planar';
 
 /**
  * Object containing methods for converting between different representations of
@@ -467,6 +468,14 @@ const polySegConverters = {
 
     return segmentationVoxelManager.scalarData;
   },
+  getSurfacesAABBs({ surfacesInfo }) {
+    const aabbs = new Map();
+    for (const { points, id } of surfacesInfo) {
+      const aabb = getAABB(points, { numDimensions: 3 });
+      aabbs.set(id, aabb);
+    }
+    return aabbs;
+  },
   /**
    * Cuts the surfaces into planes.
    *
@@ -477,7 +486,7 @@ const polySegConverters = {
    * @param {Function} updateCacheCallback - The callback function for updating the cache.
    */
   cutSurfacesIntoPlanes(
-    { planesInfo, surfacesInfo },
+    { planesInfo, surfacesInfo, surfacesAABB = new Map() },
     progressCallback,
     updateCacheCallback
   ) {
@@ -498,14 +507,40 @@ const polySegConverters = {
         for (const polyDataInfo of surfacesInfo) {
           const { points, polys, id } = polyDataInfo;
 
+          const aabb3 =
+            surfacesAABB.get(id) || getAABB(points, { numDimensions: 3 });
+
+          if (!surfacesAABB.has(id)) {
+            surfacesAABB.set(id, aabb3);
+          }
+
+          const { minX, minY, minZ, maxX, maxY, maxZ } = aabb3;
+
+          const { origin, normal } = planes[0];
+
+          // Check if the plane intersects the AABB
+          if (
+            !isPlaneIntersectingAABB(
+              origin,
+              normal,
+              minX,
+              minY,
+              minZ,
+              maxX,
+              maxY,
+              maxZ
+            )
+          ) {
+            continue;
+          }
+
           surfacePolyData.getPoints().setData(points, 3);
           surfacePolyData.getPolys().setData(polys, 3);
           surfacePolyData.modified();
 
           cutter.setInputData(surfacePolyData);
-
-          plane1.setOrigin(planes[0].origin);
-          plane1.setNormal(planes[0].normal);
+          plane1.setOrigin(origin);
+          plane1.setNormal(normal);
 
           try {
             cutter.update();

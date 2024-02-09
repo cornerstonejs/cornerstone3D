@@ -14,6 +14,14 @@ const workerManager = getWebWorkerManager();
 
 const polyDataCache = new Map();
 const currentViewportNormal = new Map();
+const surfacesAABBCache = new Map();
+
+type SurfacesInfo = {
+  id: string;
+  points: number[];
+  polys: number[];
+  segmentIndex: number;
+};
 
 const triggerWorkerProgress = (eventTarget, progress) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
@@ -23,12 +31,7 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 };
 
 export async function clipAndCacheSurfacesForViewport(
-  surfacesInfo: {
-    id: string;
-    points: number[];
-    polys: number[];
-    segmentIndex: number;
-  }[],
+  surfacesInfo: SurfacesInfo[],
   viewport: Types.IVolumeViewport,
   segmentationRepresentationUID: string
 ) {
@@ -103,6 +106,15 @@ export async function clipAndCacheSurfacesForViewport(
 
   triggerWorkerProgress(eventTarget, 0);
 
+  // check which surfaces don't have a cached AABB
+  // make a list of the surfaces that don't have a cached AABB
+  await updateSurfacesAABBCache(surfacesInfo);
+
+  const surfacesAABB = new Map();
+  surfacesInfo.forEach((surface) => {
+    surfacesAABB.set(surface.id, surfacesAABBCache.get(surface.id));
+  });
+
   await workerManager
     .executeTask(
       'polySeg',
@@ -110,6 +122,7 @@ export async function clipAndCacheSurfacesForViewport(
       {
         surfacesInfo,
         planesInfo,
+        surfacesAABB,
       },
       {
         callbacks: [
@@ -139,6 +152,37 @@ export async function clipAndCacheSurfacesForViewport(
   triggerWorkerProgress(eventTarget, 100);
 
   return polyDataCache;
+}
+
+async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
+  const surfacesWithoutAABB = surfacesInfo.filter(
+    (surface) => !surfacesAABBCache.has(surface.id)
+  );
+
+  if (!surfacesWithoutAABB.length) {
+    return;
+  }
+
+  const surfacesAABB = await workerManager.executeTask(
+    'polySeg',
+    'getSurfacesAABBs',
+    {
+      surfacesInfo: surfacesWithoutAABB,
+    },
+    {
+      callbacks: [
+        // progress callback
+        ({ progress }) => {
+          triggerWorkerProgress(eventTarget, progress);
+        },
+      ],
+    }
+  );
+
+  // update the surfacesAABBCache with the new surfacesAABB
+  surfacesAABB.forEach((aabb, id) => {
+    surfacesAABBCache.set(id, aabb);
+  });
 }
 
 export function getSurfaceActorUID(
