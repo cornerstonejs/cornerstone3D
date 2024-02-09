@@ -434,7 +434,7 @@ async function run() {
         mouseButton: MouseBindings.Primary, // Left Click
       },
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
         modifierKey: KeyboardBindings.Shift,
       },
     ],
