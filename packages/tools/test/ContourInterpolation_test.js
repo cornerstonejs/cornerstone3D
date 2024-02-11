@@ -390,7 +390,7 @@ describe('Contours Interpolation: ', () => {
           );
           contourAnnotations.forEach((x) => {
             expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
-              imageIds[x.metadata.referencedSliceIndex]
+              imageIds[x.metadata.sliceIndex]
             );
           });
           expect(contourAnnotations.length).toBe(4);
@@ -446,8 +446,8 @@ describe('Contours Interpolation: ', () => {
             element
           );
           contourAnnotations = contourAnnotations.sort((a, b) => {
-            const aSliceIndex = a.metadata.referencedSliceIndex;
-            const bSliceIndex = b.metadata.referencedSliceIndex;
+            const aSliceIndex = a.metadata.sliceIndex;
+            const bSliceIndex = b.metadata.sliceIndex;
             if (aSliceIndex < bSliceIndex) {
               return -1;
             }
@@ -458,7 +458,7 @@ describe('Contours Interpolation: ', () => {
           });
           contourAnnotations.forEach((x, xIndex) => {
             expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
-              imageIds[x.metadata.referencedSliceIndex]
+              imageIds[x.metadata.sliceIndex]
             );
             const hasSamePoint = expectedContourSet[xIndex].every(
               (point, pIndex) => {
@@ -483,11 +483,11 @@ describe('Contours Interpolation: ', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         // first slice points
-        firstSliceAnnotation.metadata.referencedSliceIndex = 0;
+        firstSliceAnnotation.metadata.sliceIndex = 0;
         firstSliceAnnotation.metadata.referencedImageId = imageIds[0];
         firstSliceAnnotation.data.contour.polyline = firstSlicePoints;
         // last slice points
-        lastSliceAnnotation.metadata.referencedSliceIndex = 4;
+        lastSliceAnnotation.metadata.sliceIndex = 4;
         lastSliceAnnotation.metadata.referencedImageId = imageIds[4];
         lastSliceAnnotation.data.contour.polyline = lastSlicePoints;
 
@@ -550,7 +550,7 @@ describe('Contours Interpolation: ', () => {
             viewUp: [...viewUp],
             FrameOfReferenceUID,
             referencedImageId: imageIds[index],
-            referencedSliceIndex: index,
+            sliceIndex: index,
             toolName: interpolationToolName,
           },
           data: {
@@ -628,7 +628,7 @@ describe('Contours Interpolation: ', () => {
                   );
                   const currentIndex = vp.getCurrentImageIdIndex();
                   const currentAnnotation = addedAnnotations.find(
-                    (ann) => ann.metadata.referencedSliceIndex === currentIndex
+                    (ann) => ann.metadata.sliceIndex === currentIndex
                   );
                   annotation.state.removeAnnotation(
                     currentAnnotation.annotationUID
@@ -694,8 +694,8 @@ describe('Contours Interpolation: ', () => {
             element
           );
           contourAnnotations = contourAnnotations.sort((a, b) => {
-            const aSliceIndex = a.metadata.referencedSliceIndex;
-            const bSliceIndex = b.metadata.referencedSliceIndex;
+            const aSliceIndex = a.metadata.sliceIndex;
+            const bSliceIndex = b.metadata.sliceIndex;
             if (aSliceIndex < bSliceIndex) {
               return -1;
             }
@@ -719,7 +719,7 @@ describe('Contours Interpolation: ', () => {
           }
           contourAnnotations.forEach((x, xIndex) => {
             expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
-              imageIds[x.metadata.referencedSliceIndex]
+              imageIds[x.metadata.sliceIndex]
             );
             const hasSamePoint = expectedContourEditSet[xIndex].every(
               (point, pIndex) => {
@@ -745,11 +745,11 @@ describe('Contours Interpolation: ', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         // first slice points
-        firstSliceAnnotation.metadata.referencedSliceIndex = 0;
+        firstSliceAnnotation.metadata.sliceIndex = 0;
         firstSliceAnnotation.metadata.referencedImageId = imageIds[0];
         firstSliceAnnotation.data.contour.polyline = firstSlicePoints;
         // last slice points
-        lastSliceAnnotation.metadata.referencedSliceIndex = 4;
+        lastSliceAnnotation.metadata.sliceIndex = 4;
         lastSliceAnnotation.metadata.referencedImageId = imageIds[4];
         lastSliceAnnotation.data.contour.polyline = lastSliceEditCasePoints;
 

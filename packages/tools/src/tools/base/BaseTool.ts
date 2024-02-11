@@ -243,7 +243,7 @@ abstract class BaseTool implements IBaseTool {
    * @returns targetId
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
-    const targetId = viewport.getTargetId?.();
+    const targetId = viewport.getReferenceId?.();
     if (targetId) {
       return targetId;
     }

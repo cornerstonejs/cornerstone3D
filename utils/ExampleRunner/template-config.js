@@ -65,6 +65,9 @@ module.exports = {
   experiments: {
     asyncWebAssembly: true
   },
+  externals: {
+
+  },
   resolve: {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
