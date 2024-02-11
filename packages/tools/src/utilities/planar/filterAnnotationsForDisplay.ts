@@ -47,6 +47,10 @@ export default function filterAnnotationsForDisplay(
     if (!annotation.isVisible) {
       return false;
     }
+    if (annotation.frameRange){
+      const frameNumber = viewport.getCurrentImageIdIndex()
+      return frameNumber >= annotation.frameRange[0] && frameNumber <= annotation.frameRange[1];
+    }
     return viewport.isReferenceViewable(annotation.metadata, filterOptions);
   });
 }
