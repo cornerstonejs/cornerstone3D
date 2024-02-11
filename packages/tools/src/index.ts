@@ -55,6 +55,7 @@ import {
   SphereScissorsTool,
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
+  RedactionTool,
   SegmentationDisplayTool,
   BrushTool,
   AngleTool,
@@ -126,6 +127,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  RedactionTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
