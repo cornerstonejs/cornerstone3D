@@ -33,9 +33,16 @@
     "@kitware/vtk.js": "29.3.0",
     "comlink": "^4.4.1",
     "detect-gpu": "^5.0.22",
-    "dicom-microscopy-viewer": "^0.45.1",
     "gl-matrix": "^3.4.3",
     "lodash.clonedeep": "4.5.0"
+  },
+  "peerDependencies": {
+    "dicom-microscopy-viewer": "^0.45.1"
+  },
+  "peerDependenciesMeta": {
+    "dicom-microscopy-viewer": {
+      "optional": true
+    }
   },
   "contributors": [
     {

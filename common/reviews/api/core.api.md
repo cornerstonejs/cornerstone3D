@@ -1912,8 +1912,6 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getVideoViewports(): Array<IVideoViewport>;
-    // (undocumented)
     getViewport(id: string): IViewport;
     // (undocumented)
     getViewports(): Array<IViewport>;
@@ -2192,6 +2190,8 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getTargetId?: () => string;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     getZoom(): number;
@@ -2340,6 +2340,28 @@ interface IVolumeViewport extends IViewport {
     useCPURendering: boolean;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public (undocumented)
+interface IWSIViewport extends IViewport {
+    // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
+    getProperties: () => WSIViewportProperties;
+    // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    // (undocumented)
+    resetProperties(): void;
+    // (undocumented)
+    resize: () => void;
+    // (undocumented)
+    setFrameNumber(frameNo: number): any;
+    // (undocumented)
+    setProperties(props: WSIViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setWSI: (imageIds: string[], client: any) => Promise<unknown>;
 }
 
 // @public (undocumented)
@@ -2730,8 +2752,6 @@ export class RenderingEngine implements IRenderingEngine {
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
-    // (undocumented)
-    getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
     getViewport(viewportId: string): IViewport;
     // (undocumented)
@@ -3207,6 +3227,7 @@ declare namespace Types {
         ICamera,
         IStackViewport,
         IVideoViewport,
+        IWSIViewport,
         IVolumeViewport,
         IEnabledElement,
         ICache,
@@ -3262,6 +3283,7 @@ declare namespace Types {
         Plane,
         ViewportInputOptions,
         VideoViewportProperties,
+        WSIViewportProperties,
         VOIRange,
         VOI,
         DisplayArea,
@@ -3304,6 +3326,7 @@ declare namespace Types {
         ImageLoadListener,
         InternalVideoCamera,
         VideoViewportInput,
+        WSIViewportInput,
         BoundsIJK,
         BoundsLPS,
         Color,
@@ -3823,7 +3846,9 @@ enum ViewportType {
     // (undocumented)
     VIDEO = "video",
     // (undocumented)
-    VOLUME_3D = "volume3d"
+    VOLUME_3D = "volume3d",
+    // (undocumented)
+    WSI = "wsi"
 }
 
 // @public (undocumented)
@@ -4146,6 +4171,123 @@ declare namespace windowLevel {
 
 // @public (undocumented)
 function worldToImageCoords(imageId: string, worldCoords: Point3): Point2 | undefined;
+
+// @public (undocumented)
+export class WSIViewport extends Viewport implements IWSIViewport {
+    constructor(props: WSIViewportInput);
+    // (undocumented)
+    protected canvasToIndex: (canvasPos: Point2) => Point2;
+    // (undocumented)
+    canvasToWorld: (canvasPosition: Point2) => Point3;
+    // (undocumented)
+    customRenderViewportToCanvas: () => void;
+    // (undocumented)
+    getCamera(): ICamera;
+    // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
+    getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getImageData(): {
+        dimensions: any;
+        spacing: any;
+        origin: any;
+        direction: any;
+        metadata: {
+            Modality: any;
+        };
+        getScalarData: () => any;
+        imageData: {
+            getDirection: () => any;
+            getDimensions: () => any;
+            getRange: () => number[];
+            getScalarData: () => any;
+            getSpacing: () => any;
+            worldToIndex: (point: Point3) => number[];
+            indexToWorld: (point: Point3) => Point3;
+        };
+        hasPixelSpacing: boolean;
+        calibration: IImageCalibration;
+        preScale: {
+            scaled: boolean;
+        };
+    };
+    // (undocumented)
+    getImportPath(): string;
+    // (undocumented)
+    getNumberOfSlices: () => number;
+    // (undocumented)
+    getPan(): Point2;
+    // (undocumented)
+    getProperties: () => WSIViewportProperties;
+    // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
+    protected getScalarData(): any;
+    // (undocumented)
+    getTargetId(): string;
+    // (undocumented)
+    protected getTransform(): Transform;
+    // (undocumented)
+    getView(): any;
+    // (undocumented)
+    getZoom(): any;
+    // (undocumented)
+    hasImageURI(imageURI: string): boolean;
+    // (undocumented)
+    protected imageIds: string[];
+    // (undocumented)
+    protected indexToCanvas: (indexPos: Point2) => Point2;
+    // (undocumented)
+    protected metadata: any;
+    // (undocumented)
+    protected metadataDicomweb: any;
+    // (undocumented)
+    modality: any;
+    // (undocumented)
+    readonly renderingEngineId: string;
+    // (undocumented)
+    resetCamera: () => boolean;
+    // (undocumented)
+    resetProperties(): void;
+    // (undocumented)
+    resize: () => void;
+    // (undocumented)
+    setCamera(camera: ICamera): void;
+    // (undocumented)
+    setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    setProperties(props: WSIViewportProperties): void;
+    // (undocumented)
+    setWSI(imageIds: string[], client: any): Promise<void>;
+    // (undocumented)
+    setZoom(zoom: number): void;
+    // (undocumented)
+    readonly uid: any;
+    // (undocumented)
+    static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public (undocumented)
+type WSIViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
+
+// @public (undocumented)
+type WSIViewportProperties = ViewportProperties;
 
 // (No @packageDocumentation comment for this package)
 

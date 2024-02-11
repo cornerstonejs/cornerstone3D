@@ -123,8 +123,6 @@ module.exports = function (config) {
           '@cornerstonejs/streaming-image-volume-loader': path.resolve(
             'packages/streaming-image-volume-loader/src/index'
           ),
-          'dicom-microscopy-viewer':
-            'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
         },
       },
     },

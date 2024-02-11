@@ -355,6 +355,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return 1;
   };
 
+  public getImportPath() {
+    return '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
+  }
+
   public getFrameOfReferenceUID = (): string => {
     return this.frameOfReferenceUID;
   };
@@ -421,7 +425,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.microscopyElement.style.background = 'red';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
-    const DicomMicroscopyViewer = await import('dicom-microscopy-viewer');
+    // Import the straight module so that webpack doesn't touch it.
+    await import(/* webpackIgnore: true */ this.getImportPath());
+    const DicomMicroscopyViewer = (window as any).dicomMicroscopyViewer;
     this.frameOfReferenceUID = null;
 
     const metadataDicomweb = this.imageIds.map((imageId) => {
