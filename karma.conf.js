@@ -88,6 +88,10 @@ module.exports = function (config) {
             },
           },
           {
+            test: /\.wasm/,
+            type: 'asset/inline',
+          },
+          {
             test: /\.png$/i,
             use: [
               {
