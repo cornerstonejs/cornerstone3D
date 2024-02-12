@@ -275,152 +275,152 @@ describe('Contours Interpolation: ', () => {
     });
 
     // TODO - reenable this when the cause of the failure is understood.
-    it.skip('Should successfully create a interpolated annotations on slices', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
-      this.DOMElements.push(element);
+    // it('Should successfully create a interpolated annotations on slices', function (done) {
+    //   const element = createViewport(
+    //     this.renderingEngine,
+    //     ViewportType.STACK,
+    //     512,
+    //     128
+    //   );
+    //   this.DOMElements.push(element);
 
-      const imageIds = [
-        'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
-        'fakeImageLoader:imageURI_64_64_0_20_1_1_0',
-        'fakeImageLoader:imageURI_64_64_10_5_3_2_0',
-        'fakeImageLoader:imageURI_64_64_15_5_3_2_0',
-      ];
-      const vp = this.renderingEngine.getViewport(viewportId);
-      let expectedContourCount = 0;
+    //   const imageIds = [
+    //     'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
+    //     'fakeImageLoader:imageURI_64_64_0_20_1_1_0',
+    //     'fakeImageLoader:imageURI_64_64_10_5_3_2_0',
+    //     'fakeImageLoader:imageURI_64_64_15_5_3_2_0',
+    //   ];
+    //   const vp = this.renderingEngine.getViewport(viewportId);
+    //   let expectedContourCount = 0;
 
-      function drawAnnotation(slicePoints) {
-        const { imageData } = vp.getImageData();
-        const eventDataList = [];
-        slicePoints.forEach((x) => {
-          const { pageX, pageY, clientX, clientY, worldCoord } =
-            createNormalizedMouseEvent(imageData, x, element, vp);
-          eventDataList.push({ pageX, pageY, clientX, clientY, worldCoord });
-        });
+    //   function drawAnnotation(slicePoints) {
+    //     const { imageData } = vp.getImageData();
+    //     const eventDataList = [];
+    //     slicePoints.forEach((x) => {
+    //       const { pageX, pageY, clientX, clientY, worldCoord } =
+    //         createNormalizedMouseEvent(imageData, x, element, vp);
+    //       eventDataList.push({ pageX, pageY, clientX, clientY, worldCoord });
+    //     });
 
-        // Mouse Down
-        let evt = new MouseEvent('mousedown', {
-          target: element,
-          buttons: 1,
-          clientX: eventDataList[0].clientX,
-          clientY: eventDataList[0].clientY,
-          pageX: eventDataList[0].pageX,
-          pageY: eventDataList[0].pageY,
-        });
-        element.dispatchEvent(evt);
+    //     // Mouse Down
+    //     let evt = new MouseEvent('mousedown', {
+    //       target: element,
+    //       buttons: 1,
+    //       clientX: eventDataList[0].clientX,
+    //       clientY: eventDataList[0].clientY,
+    //       pageX: eventDataList[0].pageX,
+    //       pageY: eventDataList[0].pageY,
+    //     });
+    //     element.dispatchEvent(evt);
 
-        // Mouse move to put the end somewhere else
-        eventDataList.forEach((x, index) => {
-          if (index !== 0) {
-            evt = new MouseEvent('mousemove', {
-              target: element,
-              buttons: 1,
-              clientX: x.clientX,
-              clientY: x.clientY,
-              pageX: x.pageX,
-              pageY: x.pageY,
-            });
-            document.dispatchEvent(evt);
-          }
-        });
-      }
+    //     // Mouse move to put the end somewhere else
+    //     eventDataList.forEach((x, index) => {
+    //       if (index !== 0) {
+    //         evt = new MouseEvent('mousemove', {
+    //           target: element,
+    //           buttons: 1,
+    //           clientX: x.clientX,
+    //           clientY: x.clientY,
+    //           pageX: x.pageX,
+    //           pageY: x.pageY,
+    //         });
+    //         document.dispatchEvent(evt);
+    //       }
+    //     });
+    //   }
 
-      function renderEventHandler() {
-        drawAnnotation(firstSlicePoints);
-        expectedContourCount++;
-        attachEventHandler();
+    //   function renderEventHandler() {
+    //     drawAnnotation(firstSlicePoints);
+    //     expectedContourCount++;
+    //     attachEventHandler();
 
-        element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler);
-      }
+    //     element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+    //   }
 
-      function attachEventHandler() {
-        element.addEventListener(
-          Events.IMAGE_RENDERED,
-          function secondImageRendered() {
-            // Second render is as a result of scrolling
-            element.removeEventListener(
-              Events.IMAGE_RENDERED,
-              secondImageRendered
-            );
-            drawAnnotation(lastSlicePoints);
-            expectedContourCount++;
-          }
-        );
-      }
+    //   function attachEventHandler() {
+    //     element.addEventListener(
+    //       Events.IMAGE_RENDERED,
+    //       function secondImageRendered() {
+    //         // Second render is as a result of scrolling
+    //         element.removeEventListener(
+    //           Events.IMAGE_RENDERED,
+    //           secondImageRendered
+    //         );
+    //         drawAnnotation(lastSlicePoints);
+    //         expectedContourCount++;
+    //       }
+    //     );
+    //   }
 
-      element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+    //   element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-        const contourAnnotations = annotation.state.getAnnotations(
-          interpolationToolName,
-          element
-        );
+    //   element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+    //     const contourAnnotations = annotation.state.getAnnotations(
+    //       interpolationToolName,
+    //       element
+    //     );
 
-        expect(contourAnnotations).toBeDefined();
-        expect(contourAnnotations.length).toBe(expectedContourCount);
+    //     expect(contourAnnotations).toBeDefined();
+    //     expect(contourAnnotations.length).toBe(expectedContourCount);
 
-        const contourAnnotation = contourAnnotations[expectedContourCount - 1];
+    //     const contourAnnotation = contourAnnotations[expectedContourCount - 1];
 
-        expect(contourAnnotation.metadata.toolName).toBe(interpolationToolName);
+    //     expect(contourAnnotation.metadata.toolName).toBe(interpolationToolName);
 
-        // Mouse Up instantly after
-        const evt = new MouseEvent('mouseup');
-        document.dispatchEvent(evt);
-        if (contourAnnotation.data.label === '') {
-          contourAnnotation.data.label = 'Label1';
-          triggerContourUpdateCallback(
-            { element, viewport: vp },
-            contourAnnotation
-          );
-        }
-        if (expectedContourCount === 1) {
-          scrollToIndex(vp, 3);
-        }
-      });
+    //     // Mouse Up instantly after
+    //     const evt = new MouseEvent('mouseup');
+    //     document.dispatchEvent(evt);
+    //     if (contourAnnotation.data.label === '') {
+    //       contourAnnotation.data.label = 'Label1';
+    //       triggerContourUpdateCallback(
+    //         { element, viewport: vp },
+    //         contourAnnotation
+    //       );
+    //     }
+    //     if (expectedContourCount === 1) {
+    //       scrollToIndex(vp, 3);
+    //     }
+    //   });
 
-      element.addEventListener(
-        EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
-        (evt) => {
-          const contourAnnotations = annotation.state.getAnnotations(
-            interpolationToolName,
-            element
-          );
-          contourAnnotations.forEach((x) => {
-            expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
-              imageIds[x.metadata.sliceIndex]
-            );
-          });
-          expect(contourAnnotations.length).toBe(4);
-          done();
-        }
-      );
+    //   element.addEventListener(
+    //     EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
+    //     (evt) => {
+    //       const contourAnnotations = annotation.state.getAnnotations(
+    //         interpolationToolName,
+    //         element
+    //       );
+    //       contourAnnotations.forEach((x) => {
+    //         expect(x.metadata.referencedImageId.replace('imageId:', '')).toBe(
+    //           imageIds[x.metadata.sliceIndex]
+    //         );
+    //       });
+    //       expect(contourAnnotations.length).toBe(4);
+    //       done();
+    //     }
+    //   );
 
-      const scrollToIndex = (viewportElement, index) => {
-        scroll(viewportElement, {
-          delta: index,
-          debounceLoading: false,
-          loop: false,
-          volumeId,
-          scrollSlabs: -1,
-        });
-        this.renderingEngine.render();
-      };
+    //   const scrollToIndex = (viewportElement, index) => {
+    //     scroll(viewportElement, {
+    //       delta: index,
+    //       debounceLoading: false,
+    //       loop: false,
+    //       volumeId,
+    //       scrollSlabs: -1,
+    //     });
+    //     this.renderingEngine.render();
+    //   };
 
-      element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+    //   element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
+    //   this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
-      try {
-        vp.setStack(imageIds, 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
-    });
+    //   try {
+    //     vp.setStack(imageIds, 0);
+    //     this.renderingEngine.render();
+    //   } catch (e) {
+    //     done.fail(e);
+    //   }
+    // });
 
     it('Should successfully create interpolated annotations with expected points', function (done) {
       const element = createViewport(
