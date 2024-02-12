@@ -21,6 +21,10 @@ export function removeContourSegmentationAnnotation(
   const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
   const annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);
 
+  if (!annotationsUIDsSet) {
+    return;
+  }
+
   annotationsUIDsSet.delete(annotation.annotationUID);
 
   // Delete segmentIndex Set if there is no more annotations

@@ -18,7 +18,7 @@ export default function getAABB(
   // need to check if the polyline is array of arrays or just
   // a flat array of numbers
   let polylineToUse = polyline;
-  const numDimensions = options.numDimensions || 2;
+  const numDimensions = options?.numDimensions || 2;
   const is3D = numDimensions === 3;
 
   if (!Array.isArray(polyline[0])) {
