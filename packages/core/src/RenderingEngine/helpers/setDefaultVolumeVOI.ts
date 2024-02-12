@@ -42,6 +42,10 @@ async function setDefaultVolumeVOI(
   voi = handlePreScaledVolume(imageVolume, voi);
   const { lower, upper } = voi;
 
+  if (lower === 0 && upper === 0) {
+    return;
+  }
+
   volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
@@ -181,7 +185,7 @@ async function getVOIFromMinMax(
   // know how to do it better.
   let image = cache.getImage(imageId);
 
-  if (!image?.referencedImageId) {
+  if (!imageVolume.referencedImageIds?.length) {
     image = await loadAndCacheImage(imageId, options);
   }
 

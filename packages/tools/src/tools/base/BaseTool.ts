@@ -104,6 +104,13 @@ abstract class BaseTool implements IBaseTool {
     callbackType: StrategyCallbacks | string
   ): any {
     const { strategies, activeStrategy } = this.configuration;
+
+    if (!strategies[activeStrategy]) {
+      throw new Error(
+        `applyActiveStrategyCallback: active strategy ${activeStrategy} not found, check tool configuration or spellings`
+      );
+    }
+
     return strategies[activeStrategy][callbackType]?.call(
       this,
       enabledElement,

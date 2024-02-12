@@ -27,6 +27,16 @@ type AABB2 = {
 };
 
 // @public (undocumented)
+type AABB3 = {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
+};
+
+// @public (undocumented)
 type Actor = vtkActor;
 
 // @public (undocumented)
@@ -3254,6 +3264,7 @@ declare namespace Types {
         Metadata,
         OrientationVectors,
         AABB2,
+        AABB3,
         Point2,
         Point3,
         PointsXYZ,
