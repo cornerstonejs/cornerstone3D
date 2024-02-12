@@ -1,10 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import { ISculptToolShape } from './ISculptToolShape';
+import { distanceFromPoint, SculptData } from '../FreehandROISculptorTool';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import { point } from '../../utilities/math';
-import { getEnabledElement } from '@cornerstonejs/core';
-import { distanceFromPoint, SculptData } from '../FreehandROISculptorTool';
 import { SVGDrawingHelper, EventTypes, Annotation } from '../../types';
-import type { Types } from '@cornerstonejs/core';
 
 export interface PushedHandles {
   first?: number;

@@ -1,5 +1,5 @@
-import { SVGDrawingHelper, EventTypes } from '../../types';
 import type { Types } from '@cornerstonejs/core';
+import { SVGDrawingHelper, EventTypes } from '../../types';
 import { PushedHandles } from './CircleSculptCursor';
 
 /**
