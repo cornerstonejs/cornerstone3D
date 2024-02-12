@@ -61,7 +61,9 @@ export default function drawPath(
       const point = points[j];
       const cmd = j ? 'L' : 'M';
 
-      pointsAttribute += `${cmd} ${point[0]},${point[1]} `;
+      pointsAttribute += `${cmd} ${point[0].toFixed(1)}, ${point[1].toFixed(
+        1
+      )} `;
     }
 
     if (closePath) {

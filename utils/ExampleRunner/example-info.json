@@ -301,10 +301,6 @@
         "name": "Surface Segmentation Representation",
         "description": "Demonstrates how to use the Surface Segmentation Representation"
       },
-      "surfaceRenderingStack": {
-        "name": "Surface Segmentation on Stack Viewport and Volume Viewports",
-        "description": "Demonstrates how to render surface intersections with stack and volume viewports"
-      },
       "labelmapSwapping": {
         "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
@@ -468,6 +464,10 @@
       "PolySegWasmSurfaceToStackLabelmap":{
         "name": "Convert surface to stack labelmap",
         "description": "Demonstrates how to convert a closed surface to a stack labelmap"
+      },
+      "PolySegWasmVolumeLabelmapToContour":{
+        "name": "Convert volume labelmap to contour",
+        "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
       }
     },
     "dicom-image-loader": {

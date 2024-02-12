@@ -91,7 +91,7 @@ export async function convertContourToVolumeLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 100);
+  triggerWorkerProgress(eventTarget, 1);
 
   segmentationVolume.imageData
     .getPointData()
@@ -227,7 +227,7 @@ export async function convertContourToStackLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 100);
+  triggerWorkerProgress(eventTarget, 1);
 
   const imageIdReferenceMap = new Map();
   newSegmentationsScalarData.forEach(({ scalarData }, referencedImageId) => {

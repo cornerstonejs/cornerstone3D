@@ -1,19 +1,10 @@
-import {
-  getEnabledElement,
-  Enums,
-  VolumeViewport3D,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import {
-  generateCacheId,
-  getOrCreatePolyData,
-  getSurfaceActorUID,
-} from './surfaceDisplay';
+import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport';
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
@@ -92,44 +83,7 @@ function addOrUpdateSurfaceToElement(
   const mapper = vtkMapper.newInstance({});
 
   let clippingFilter;
-  if (!(viewport instanceof VolumeViewport3D)) {
-    clippingFilter = vtkClipClosedSurface.newInstance({
-      clippingPlanes: [],
-      activePlaneId: 2,
-      passPointData: false,
-    });
-    clippingFilter.setInputData(surfacePolyData);
-    clippingFilter.setGenerateOutline(true);
-    clippingFilter.setGenerateFaces(false);
-    clippingFilter.update();
-    const filteredData = clippingFilter.getOutputData();
-    mapper.setInputData(filteredData);
-
-    // @ts-ignore
-    const viewportPlanes = viewport.getClippingPlanesForActor?.();
-
-    const evt = {
-      detail: {
-        actorEntry: {
-          actor: {
-            getMapper: () => mapper,
-          },
-          clippingFilter,
-          uid: actorUID,
-        },
-        vtkPlanes: viewportPlanes,
-      },
-    };
-
-    updateSurfacePlanes(evt);
-
-    element.addEventListener(
-      Enums.Events.CLIPPING_PLANES_UPDATED,
-      updateSurfacePlanes
-    );
-  } else {
-    mapper.setInputData(surfacePolyData);
-  }
+  mapper.setInputData(surfacePolyData);
 
   const actor = vtkActor.newInstance();
   actor.setMapper(mapper);
@@ -153,22 +107,6 @@ function addOrUpdateSurfaceToElement(
   setTimeout(() => {
     viewport.getRenderer().resetCameraClippingRange();
   }, 0);
-}
-
-/**
- * Updates the clipping planes of a surface and caches the resulting poly data
- */
-function updateSurfacePlanes(evt) {
-  const { actorEntry, vtkPlanes, viewport } = evt.detail;
-  if (!actorEntry?.clippingFilter || vtkPlanes.length === 0) {
-    return;
-  }
-  const sliceIndex = viewport.getSliceIndex();
-  const mapper = actorEntry.actor.getMapper();
-  const { viewPlaneNormal } = viewport.getCamera();
-  const cacheId = generateCacheId(viewport, viewPlaneNormal, sliceIndex);
-  const polyData = getOrCreatePolyData(actorEntry, cacheId, vtkPlanes);
-  mapper.setInputData(polyData);
 }
 
 export default addOrUpdateSurfaceToElement;
