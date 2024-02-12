@@ -366,7 +366,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
     if (!this.metadata) {
       return;
     }
-    const { resolution } = this.internalCamera;
     // compute the pixel coordinate in the image
     const [px, py] = this.canvasToIndex(canvasPos);
     // convert pixel coordinate to world coordinate

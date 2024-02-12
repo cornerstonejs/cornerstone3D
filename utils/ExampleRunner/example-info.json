@@ -248,6 +248,10 @@
       "wsi": {
         "name": "Whole Slide Imaging",
         "description": "Basic WSI Viewport"
+      },
+      "wsiAnnotationTools": {
+        "name": "WSI Annotation Tools",
+        "description": "WSI Viewport With Length Tool"
       }
     },
     "video" : {
