@@ -451,6 +451,10 @@
       "PolySegWasmSurfaceToStackLabelmap":{
         "name": "Convert surface to stack labelmap",
         "description": "Demonstrates how to convert a closed surface to a stack labelmap"
+      },
+      "PolySegWasmVolumeLabelmapToContour":{
+        "name": "Convert volume labelmap to contour",
+        "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
       }
     },
     "dicom-image-loader": {
