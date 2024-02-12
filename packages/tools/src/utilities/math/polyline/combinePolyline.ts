@@ -4,7 +4,7 @@ import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsInd
 import containsPoint from './containsPoint';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
-import getLineSegmentsIntersection from './getLineSegmentsIntersection';
+import getLinesIntersection from './getLinesIntersection';
 
 enum PolylinePointType {
   Vertex,
@@ -109,7 +109,7 @@ function getSourceAndTargetPointsList(
       // lineSegment.intersectLine returns the midpoint of the four points
       // when the lines are parallel or co-incident.  Otherwise it will return
       // an extension of the line.
-      const intersectionCoordinate = getLineSegmentsIntersection(
+      const intersectionCoordinate = getLinesIntersection(
         p1,
         q1,
         p2,
