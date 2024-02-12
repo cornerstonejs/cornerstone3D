@@ -14,6 +14,7 @@ import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   addButtonToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -21,14 +22,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const {
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
-  StackScrollTool,
-  ToolGroupManager,
-  Enums: csToolsEnums,
-} = cornerstoneTools;
+const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
 
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
@@ -101,54 +95,11 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
 
-function registerTools() {
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
-}
-
 function createToolGroup(toolGroupId = 'default') {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Add tools to the tool group
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-      },
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
-  });
+  addManipulationBindings(toolGroup);
 
   return toolGroup;
 }
@@ -159,7 +110,6 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  registerTools();
   const toolGroupId = 'default';
   const toolGroup = createToolGroup(toolGroupId);
 

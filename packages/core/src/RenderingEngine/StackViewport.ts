@@ -2705,7 +2705,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     const diff = vec3.subtract(vec3.create(), worldPos, origin);
 
-    const worldPoint: Point2 = [
+    const indexPoint: Point2 = [
       vec3.dot(diff, iVector) / spacing[0],
       vec3.dot(diff, jVector) / spacing[1],
     ];
@@ -2713,7 +2713,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // pixel to canvas
     const canvasPoint = pixelToCanvas(
       this._cpuFallbackEnabledElement,
-      worldPoint
+      indexPoint
     );
     return canvasPoint;
   };

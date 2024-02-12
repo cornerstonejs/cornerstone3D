@@ -38,14 +38,13 @@ class WSIViewport extends Viewport implements IWSIViewport {
   private microscopyElement: HTMLDivElement;
 
   private internalCamera = {
-    worldToCanvasRatio: 1,
     rotation: 0,
-    centerWorld: vec3.create() as Point3,
-    focalPoint: vec3.create() as Point3,
+    centerIndex: [0, 0],
     extent: [0, -2, 1, -1],
-    panWorld: [0, 0],
     xSpacing: 1,
     ySpacing: 1,
+    resolution: 1,
+    zoom: 1,
   };
 
   private viewer;
@@ -279,21 +278,28 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const { parallelScale, focalPoint } = camera;
     const view = this.getView();
     this.refreshRenderValues();
-    const { xSpacing, ySpacing, extent } = this.internalCamera;
+    const { xSpacing } = this.internalCamera;
 
     if (parallelScale) {
-      const worldToCanvasRatio = this.element.clientHeight / 2 / parallelScale;
+      const worldToCanvasRatio = this.element.clientHeight / parallelScale;
       const resolution = 1 / xSpacing / worldToCanvasRatio;
 
       view.setResolution(resolution);
+      console.log('Setting resolution', resolution);
     }
 
     if (focalPoint) {
-      const newCenter = [
-        focalPoint[0] / xSpacing + extent[0],
-        focalPoint[1] / ySpacing + extent[1],
-      ];
-      view.setCenter(newCenter);
+      const newCanvas = this.worldToCanvas(focalPoint);
+      const newIndex = this.canvasToIndex(newCanvas);
+      console.log(
+        'Setting new center',
+        JSON.stringify(focalPoint),
+        newCanvas[0],
+        newCanvas[1],
+        newIndex[0],
+        newIndex[1]
+      );
+      view.setCenter(newIndex);
     }
     this.refreshRenderValues();
   }
@@ -320,29 +326,21 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   public getCamera(): ICamera {
     this.refreshRenderValues();
-
-    const { worldToCanvasRatio, focalPoint } = this.internalCamera;
+    const { resolution, xSpacing } = this.internalCamera;
+    const canvasToWorldRatio = resolution * xSpacing;
 
     const canvasCenter: Point2 = [
       this.element.clientWidth / 2,
       this.element.clientHeight / 2,
     ];
-
-    // All other viewports have the focal point in canvas coordinates in the center
-    // of the canvas, so to make tools work the same, we need to do the same here
-    // and convert to the world coordinate system since focal point is in world coordinates.
-    const view = this.getView();
-    if (!view) {
-      return null;
-    }
-    const canvasCenterWorld = this.canvasToWorld(canvasCenter);
+    const focalPoint = this.canvasToWorld(canvasCenter);
 
     return {
       parallelProjection: true,
       focalPoint,
-      position: canvasCenterWorld,
+      position: focalPoint,
       viewUp: [0, -1, 0],
-      parallelScale: this.element.clientHeight / 2 / worldToCanvasRatio, // Reverse zoom direction back
+      parallelScale: this.element.clientHeight * canvasToWorldRatio, // Reverse zoom direction back
       viewPlaneNormal: [0, 0, 1],
     };
   }
@@ -372,7 +370,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
       canvas.width = clientWidth;
       canvas.height = clientHeight;
     }
-
     this.refreshRenderValues();
   };
 
@@ -382,20 +379,27 @@ class WSIViewport extends Viewport implements IWSIViewport {
    * @param canvasPosition - to convert to world
    * @returns World position
    */
-  public canvasToWorld = (canvasPosition: Point2): Point3 => {
-    const { focalPoint, worldToCanvasRatio } = this.internalCamera;
+  public canvasToWorld = (canvasPos: Point2): Point3 => {
+    if (!this.metadata) {
+      return;
+    }
+    // compute the pixel coordinate in the image
+    const [px, py] = this.canvasToIndex(canvasPos);
+    console.log('canvasToWorld', canvasPos[0], canvasPos[1], px, py);
+    // convert pixel coordinate to world coordinate
+    const { origin, spacing, direction } = this.getImageData();
 
-    const centerRelativeCanvas = [
-      canvasPosition[0] - this.canvas.offsetWidth / 2,
-      canvasPosition[1] - this.canvas.offsetHeight / 2,
-    ];
-    const centerRelativeWorld = vec3.fromValues(
-      centerRelativeCanvas[0] / worldToCanvasRatio,
-      centerRelativeCanvas[1] / worldToCanvasRatio,
-      0
-    );
-    const worldPos = vec3.add(vec3.create(), centerRelativeWorld, focalPoint);
-    return [worldPos[0], worldPos[1], worldPos[2]];
+    const worldPos = vec3.fromValues(0, 0, 0);
+
+    // Calculate size of spacing vector in normal direction
+    const iVector = direction.slice(0, 3) as Point3;
+    const jVector = direction.slice(3, 6) as Point3;
+
+    // Calculate the world coordinate of the pixel
+    vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
+    vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
+
+    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
   };
 
   /**
@@ -405,20 +409,24 @@ class WSIViewport extends Viewport implements IWSIViewport {
    * @returns Canvas position
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const { focalPoint, worldToCanvasRatio } = this.internalCamera;
+    if (!this.metadata) {
+      return;
+    }
+    const { spacing, direction, origin } = this.metadata;
 
-    const centerRelativeWorld = vec3.sub(vec3.create(), worldPos, focalPoint);
-    const centerRelativeCanvas = vec3.scale(
-      vec3.create(),
-      centerRelativeWorld,
-      worldToCanvasRatio
-    );
-    const canvasPosition = [
-      this.canvas.offsetWidth / 2 - centerRelativeCanvas[0],
-      this.canvas.offsetHeight / 2 - centerRelativeCanvas[1],
+    const iVector = direction.slice(0, 3) as Point3;
+    const jVector = direction.slice(3, 6) as Point3;
+
+    const diff = vec3.subtract([0, 0, 0], worldPos, origin);
+
+    const indexPoint: Point2 = [
+      vec3.dot(diff, iVector) / spacing[0],
+      vec3.dot(diff, jVector) / spacing[1],
     ];
 
-    return canvasPosition as Point2;
+    // pixel to canvas
+    const canvasPoint = this.indexToCanvas(indexPoint);
+    return canvasPoint;
   };
 
   public async setWSI(imageIds: string[], client) {
@@ -487,22 +495,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.microscopyElement.innerText = '';
   }
 
-  public getPan(): Point2 {
-    const worldPan = this.internalCamera.panWorld;
-    return [worldPan[0], worldPan[1]];
-  }
-
   public getRotation = () => 0;
 
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
-    console.log(
-      'canvasToIndex',
-      canvasPos,
-      transform.transformPoint(canvasPos),
-      transform
-    );
     return transform.transformPoint(canvasPos);
   };
 
@@ -526,6 +523,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return map?.getView();
   }
 
+  /**
+   * Updates the internal camera rendering values from the underlying open layers
+   * data.
+   */
   private refreshRenderValues() {
     const view = this.getView();
     if (!view) {
@@ -537,8 +538,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
       return;
     }
     // The location of the center right now
-    const center = view.getCenter();
+    const centerIndex = view.getCenter();
     const extent = view.getProjection().getExtent();
+    const rotation = view.getRotation();
+    const zoom = view.getZoom();
 
     const {
       metadata: {
@@ -550,24 +553,16 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // represented by n pixels in the canvas.
     const worldToCanvasRatio = 1 / resolution / xSpacing;
 
-    const centerX = (extent[0] + extent[2]) / 2;
-    const centerY = (extent[1] + extent[3]) / 2;
-    const focalPoint = vec3.fromValues(
-      (center[0] - extent[0]) * xSpacing,
-      (center[1] - extent[1]) * ySpacing,
-      0
-    );
-
-    this.internalCamera.extent = extent;
-    this.internalCamera.focalPoint = focalPoint as Point3;
-    this.internalCamera.worldToCanvasRatio = worldToCanvasRatio;
-    this.internalCamera.centerWorld = [
-      centerX * xSpacing,
-      centerY * ySpacing,
-      0,
-    ];
-    this.internalCamera.xSpacing = xSpacing;
-    this.internalCamera.ySpacing = ySpacing;
+    Object.assign(this.internalCamera, {
+      extent,
+      centerIndex,
+      worldToCanvasRatio,
+      xSpacing,
+      ySpacing,
+      resolution,
+      rotation,
+      zoom,
+    });
   }
 
   public customRenderViewportToCanvas = () => {
@@ -583,10 +578,25 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.refreshRenderValues();
   }
 
+  /**
+   * The transform here is from index to canvas points, so this takes
+   * into account the scaling applied and the center location, but nothing to do
+   * with world coordinate transforms.
+   *  Note that the 'index' values are often negative values with respect to the overall
+   * image area, as that is what is used internally for the view.
+   *
+   * @returns A transform from index to canvas points
+   */
   protected getTransform() {
     this.refreshRenderValues();
-    const { focalPoint, worldToCanvasRatio, xSpacing, ySpacing } =
-      this.internalCamera;
+    const {
+      centerIndex: center,
+      xSpacing,
+      ySpacing,
+      resolution,
+      zoom,
+      rotation,
+    } = this.internalCamera;
 
     const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
     const transform = new Transform();
@@ -594,17 +604,18 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // Translate to the center of the canvas (move origin of the transform
     // to the center of the canvas)
     transform.translate(halfCanvas[0], halfCanvas[1]);
-
-    // Scale
-    transform.scale(
-      // 1 / worldToCanvasRatio / xSpacing,
-      // 1 / worldToCanvasRatio / ySpacing
-      worldToCanvasRatio * xSpacing,
-      worldToCanvasRatio * ySpacing
+    // Difference in sign for x/y to account for screen coordinates
+    console.log(
+      'getTransform',
+      xSpacing,
+      ySpacing,
+      resolution,
+      zoom,
+      rotation,
+      center
     );
-
-    // Translate back
-    transform.translate(-focalPoint[0] / xSpacing, -focalPoint[1] / ySpacing);
+    transform.scale(-resolution, resolution);
+    transform.translate(-center[0], -center[1]);
     return transform;
   }
 
