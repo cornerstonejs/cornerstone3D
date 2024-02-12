@@ -57,10 +57,10 @@ setTitleAndDescription(
 
 const toolsNames = [
   LengthTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
+  // ProbeTool.toolName,
+  // RectangleROITool.toolName,
+  // EllipticalROITool.toolName,
+  // CircleROITool.toolName,
   BidirectionalTool.toolName,
   AngleTool.toolName,
   CobbAngleTool.toolName,
