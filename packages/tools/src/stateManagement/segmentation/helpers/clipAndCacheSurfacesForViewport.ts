@@ -47,6 +47,14 @@ const triggerWorkerProgress = (eventTarget, progress) => {
   });
 };
 
+/**
+ * Clips and caches surfaces for a specific viewport.
+ *
+ * @param surfacesInfo - An array of surfaces information.
+ * @param viewport - The volume viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns The cached polydata.
+ */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
   viewport: Types.IVolumeViewport,
@@ -129,6 +137,12 @@ export async function clipAndCacheSurfacesForViewport(
   return polyDataCache;
 }
 
+/**
+ * Updates the surfaces AABB cache with the AABB information for the given surfaces.
+ * If the AABB information for a surface already exists in the cache, it will not be updated.
+ * @param surfacesInfo - An array of surfaces information.
+ * @returns A Promise that resolves when the surfaces AABB cache has been updated.
+ */
 async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
   const surfacesWithoutAABB = surfacesInfo.filter(
     (surface) => !surfacesAABBCache.has(surface.id)

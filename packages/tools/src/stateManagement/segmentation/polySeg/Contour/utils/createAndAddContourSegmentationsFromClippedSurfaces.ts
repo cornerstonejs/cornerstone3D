@@ -12,12 +12,10 @@ import { utilities, type Types } from '@cornerstonejs/core';
  */
 export function createAndAddContourSegmentationsFromClippedSurfaces(
   rawContourData: RawContourData,
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   segmentationId: string
 ) {
   const annotationUIDsMap = new Map<number, Set<string>>();
-  const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-  const { viewPlaneNormal } = viewport.getCamera();
 
   for (const [segmentIndex, contoursData] of rawContourData) {
     for (const contourData of contoursData) {
@@ -67,10 +65,8 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
           isLocked: false,
           isVisible: true,
           metadata: {
-            referencedImageId: viewport.getCurrentImageId?.(),
             toolName: PlanarFreehandContourSegmentationTool.toolName,
-            FrameOfReferenceUID,
-            viewPlaneNormal,
+            ...viewport.getViewReference(),
           },
         };
 
