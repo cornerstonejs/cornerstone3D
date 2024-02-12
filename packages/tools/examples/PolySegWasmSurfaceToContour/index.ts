@@ -124,34 +124,12 @@ addLabelToToolbar({
 eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
   const label = document.getElementById('progress');
 
-  if (
-    evt.detail.type !==
-    cornerstoneTools.Enums.WorkerTypes.DISPLAY_TOOL_CLIP_SURFACE
-  ) {
+  if (evt.detail.type !== cornerstoneTools.Enums.WorkerTypes.SURFACE_CLIPPING) {
     return;
   }
 
   const { progress } = evt.detail;
   label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
-});
-
-addButtonToToolbar({
-  title: 'Set Random Orientation',
-  onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId2);
-    viewport.setOrientation({
-      viewUp: [
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-      ],
-      viewPlaneNormal: [
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-      ],
-    });
-  },
 });
 
 /**

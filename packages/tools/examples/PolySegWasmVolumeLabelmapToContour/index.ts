@@ -3,6 +3,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -10,10 +11,10 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
-  addToggleButtonToToolbar,
   createInfoSection,
   addManipulationBindings,
   addSegmentIndexDropdown,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -114,6 +115,25 @@ addButtonToToolbar({
 });
 
 addSegmentIndexDropdown(segmentationId);
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Caching Progress:',
+  paddings: {
+    left: 10,
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  if (evt.detail.type !== cornerstoneTools.Enums.WorkerTypes.SURFACE_CLIPPING) {
+    return;
+  }
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
+});
 
 /**
  * Runs the demo
