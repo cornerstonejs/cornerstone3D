@@ -691,7 +691,10 @@ class Viewport implements IViewport {
     // fix the flip right away, since we rely on the viewPlaneNormal and
     // viewUp for later. Basically, we need to flip back if flipHorizontal
     // is true or flipVertical is true
-    this.setCamera({
+    // we should use resetCamera no event here, since we don't want to fire
+    // camera modified events yet since a proper one will be fired later down
+    // below
+    this.setCameraNoEvent({
       flipHorizontal: false,
       flipVertical: false,
     });

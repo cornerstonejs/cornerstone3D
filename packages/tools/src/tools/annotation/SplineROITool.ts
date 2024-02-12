@@ -692,29 +692,27 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const spline = annotation.data.spline.instance;
 
     // Update current and all child annotations/splines
-    if (annotation.invalidated) {
-      const splineAnnotationsGroup = [
+    const splineAnnotationsGroup = [
+      annotation,
+      ...getChildAnnotations(annotation),
+    ].filter((annotation) =>
+      this._isSplineROIAnnotation(annotation)
+    ) as SplineROIAnnotation[];
+
+    splineAnnotationsGroup.forEach((annotation) => {
+      const spline = this._updateSplineInstance(element, annotation);
+      const splinePolylineCanvas = spline.getPolylinePoints();
+
+      this.updateContourPolyline(
         annotation,
-        ...getChildAnnotations(annotation),
-      ].filter((annotation) =>
-        this._isSplineROIAnnotation(annotation)
-      ) as SplineROIAnnotation[];
-
-      splineAnnotationsGroup.forEach((annotation) => {
-        const spline = this._updateSplineInstance(element, annotation);
-        const splinePolylineCanvas = spline.getPolylinePoints();
-
-        this.updateContourPolyline(
-          annotation,
-          {
-            points: splinePolylineCanvas,
-            closed: data.contour.closed,
-            targetWindingDirection: ContourWindingDirection.Clockwise,
-          },
-          viewport
-        );
-      });
-    }
+        {
+          points: splinePolylineCanvas,
+          closed: data.contour.closed,
+          targetWindingDirection: ContourWindingDirection.Clockwise,
+        },
+        viewport
+      );
+    });
 
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
@@ -1069,6 +1067,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const splineConfig = this._getSplineConfig(splineType);
     const worldPoints = data.handles.points;
     const canvasPoints = worldPoints.map(worldToCanvas);
+    const resolution =
+      splineConfig.resolution !== undefined
+        ? parseInt(splineConfig.resolution)
+        : undefined;
+    const scale =
+      splineConfig.scale !== undefined
+        ? parseFloat(splineConfig.scale)
+        : undefined;
 
     spline.setControlPoints(canvasPoints);
     spline.closed = !!data.contour.closed;
@@ -1076,9 +1082,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // Update spline resolution in case it has changed
     if (
       !spline.fixedResolution &&
-      spline.resolution !== splineConfig.resolution
+      resolution !== undefined &&
+      spline.resolution !== resolution
     ) {
-      spline.resolution = parseInt(splineConfig.resolution);
+      spline.resolution = resolution;
       annotation.invalidated = true;
     }
 
@@ -1086,10 +1093,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     if (
       spline instanceof CardinalSpline &&
       !spline.fixedScale &&
-      splineConfig.scale !== undefined &&
-      spline.scale !== splineConfig.scale
+      scale !== undefined &&
+      spline.scale !== scale
     ) {
-      spline.scale = splineConfig.scale;
+      spline.scale = scale;
       annotation.invalidated = true;
     }
 

@@ -36,7 +36,7 @@ async function computeAndAddRepresentation<T>(
   addRepresentationData({
     segmentationId,
     type: representationType,
-    data: { ...data },
+    data,
   });
 
   // Update internal structures and possibly UI components

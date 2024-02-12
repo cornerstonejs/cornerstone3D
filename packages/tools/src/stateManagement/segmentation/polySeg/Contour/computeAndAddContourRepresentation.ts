@@ -1,5 +1,7 @@
+import { SegmentationRepresentations } from '../../../../enums';
 import { PolySegConversionOptions } from '../../../../types';
-
+import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
+import { computeContourData } from './contourComputationStrategies';
 /**
  * Computes and adds the contour representation for a given segmentation.
  *
@@ -13,5 +15,10 @@ export function computeAndAddContourRepresentation(
   segmentationId: string,
   options: PolySegConversionOptions = {}
 ) {
-  throw new Error('Not implemented yet');
+  return computeAndAddRepresentation(
+    segmentationId,
+    SegmentationRepresentations.Contour,
+    () => computeContourData(segmentationId, options),
+    () => undefined
+  );
 }

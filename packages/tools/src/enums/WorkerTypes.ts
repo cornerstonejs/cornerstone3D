@@ -10,7 +10,7 @@ enum ChangeTypes {
 
   POLYSEG_LABELMAP_TO_SURFACE = 'polySeg/convertLabelmapToSurface',
 
-  DISPLAY_TOOL_CLIP_SURFACE = 'displayTool/clipSurface',
+  SURFACE_CLIPPING = 'surfaceClipping',
 }
 
 export default ChangeTypes;
