@@ -911,15 +911,15 @@ enum ChangeTypes {
 // @public (undocumented)
 enum ChangeTypes_2 {
     // (undocumented)
-    DISPLAY_TOOL_CLIP_SURFACE = "displayTool/clipSurface",
-    // (undocumented)
     POLYSEG_CONTOUR_TO_LABELMAP = "polySeg/convertContourToVolumeLabelmap",
     // (undocumented)
     POLYSEG_CONTOUR_TO_SURFACE = "polySeg/convertContourToSurface",
     // (undocumented)
     POLYSEG_LABELMAP_TO_SURFACE = "polySeg/convertLabelmapToSurface",
     // (undocumented)
-    POLYSEG_SURFACE_TO_LABELMAP = "polySeg/convertSurfacesToVolumeLabelmap"
+    POLYSEG_SURFACE_TO_LABELMAP = "polySeg/convertSurfacesToVolumeLabelmap",
+    // (undocumented)
+    SURFACE_CLIPPING = "surfaceClipping"
 }
 
 // @public (undocumented)
@@ -1352,7 +1352,9 @@ type ColorbarTicksStyle = {
 type ColorbarVOIRange = ColorbarImageRange;
 
 // @public (undocumented)
-function computeAndAddContourRepresentation(segmentationId: string, options?: PolySegConversionOptions): void;
+function computeAndAddContourRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<{
+    annotationUIDsMap: Map<number, Set<string>>;
+}>;
 
 // @public (undocumented)
 function computeAndAddLabelmapRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<RawLabelmapData>;
@@ -1699,6 +1701,7 @@ const _default: {
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
+    isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
 };
 
 // @public (undocumented)
@@ -2276,7 +2279,9 @@ function generateContourSetsFromLabelmap({ segmentations }: {
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
 
 // @public (undocumented)
-function getAABB(polyline: Types_2.Point2[]): Types_2.AABB2;
+function getAABB(polyline: Types_2.Point2[] | Types_2.Point3[] | number[], options?: {
+    numDimensions: number;
+}): Types_2.AABB2 | Types_2.AABB3;
 
 // @public (undocumented)
 function getActiveSegmentation(toolGroupId: string): Segmentation;
@@ -2551,7 +2556,7 @@ function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): 
 function getToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupForViewport(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
+function getToolGroupForViewport(viewportId: string, renderingEngineId?: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[];
@@ -2569,7 +2574,7 @@ function getToolGroupsWithToolName(toolName: string): IToolGroup[] | [];
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
-function getUniqueSegmentIndices(segmentationId: any): number[];
+function getUniqueSegmentIndices(segmentationId: any): any;
 
 // @public (undocumented)
 function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | IStackViewport_2;
@@ -2751,6 +2756,9 @@ function isContourSegmentationAnnotation(annotation: Annotation): annotation is 
 
 // @public (undocumented)
 function isObject(value: any): boolean;
+
+// @public (undocumented)
+const isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
 
 // @public (undocumented)
 interface ISpline {
@@ -3673,7 +3681,8 @@ declare namespace planar {
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
-        getPointInLineOfSightWithCriteria
+        getPointInLineOfSightWithCriteria,
+        isPlaneIntersectingAABB
     }
 }
 
@@ -3852,7 +3861,7 @@ declare namespace polyline {
 type PolySegConversionOptions = {
     segmentIndices?: number[];
     segmentationRepresentationUID?: string;
-    viewport?: Types_2.IViewport;
+    viewport?: Types_2.IStackViewport | Types_2.IVolumeViewport;
 };
 
 declare namespace polySegManager {
@@ -4564,6 +4573,8 @@ type SegmentationDataModifiedEventType = Types_2.CustomEventType<SegmentationDat
 // @public (undocumented)
 export class SegmentationDisplayTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addPlanarFreeHandToolIfAbsent(toolGroupId: any): void;
     // (undocumented)
     _getMergedRepresentationsConfig(toolGroupId: string): SegmentationRepresentationConfig;
     // (undocumented)

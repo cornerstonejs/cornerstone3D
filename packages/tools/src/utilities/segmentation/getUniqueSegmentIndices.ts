@@ -134,7 +134,9 @@ function handleContourSegmentation(segmentation) {
 function handleSurfaceSegmentation(segmentation) {
   const geometryIds =
     segmentation.representationData.SURFACE?.geometryIds ?? [];
-  return Array.from(geometryIds.keys()).sort((a, b) => a - b);
+  return Array.from(geometryIds.keys())
+    .map(Number)
+    .sort((a, b) => a - b);
 }
 
 export { getUniqueSegmentIndices };

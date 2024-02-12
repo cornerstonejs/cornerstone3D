@@ -1,6 +1,7 @@
 import { utilities, type Types, Enums } from '@cornerstonejs/core';
 import { extractContourData } from './extractContourData';
 import { clipAndCacheSurfacesForViewport } from '../../../helpers/clipAndCacheSurfacesForViewport';
+import { createAndAddContourSegmentationsFromClippedSurfaces } from './createAndAddContourSegmentationsFromClippedSurfaces';
 
 const currentViewportNormal = new Map();
 
@@ -34,9 +35,9 @@ export function updateContoursOnCameraModified(
 
     const results = extractContourData(polyDataCache);
 
-    generateContourSegmentationAnnotations(
+    createAndAddContourSegmentationsFromClippedSurfaces(
       results,
-      viewport as Types.IViewport,
+      viewport,
       segmentationRepresentationUID
     );
 
