@@ -16,7 +16,7 @@ export type ContourSegmentationAnnotationData = {
       originalPolyline?: Types.Point3[];
     };
   };
-  handles: {
+  handles?: {
     /**
      * Segmentation contours can be interpolated between slices to produce
      * intermediate data.  The interpolation sources are source data for

@@ -86,4 +86,6 @@ export async function convertSurfaceToVolumeLabelmap(
   };
 }
 
-export async function convertSurfaceToStackLabelmap() {}
+export async function convertSurfaceToStackLabelmap() {
+  // TODO
+}

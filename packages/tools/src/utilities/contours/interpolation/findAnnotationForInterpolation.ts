@@ -30,6 +30,10 @@ function findAnnotationsForInterpolation(
     },
   ]);
   const rangeToInterpolate = getRangeToInterpolate(interpolationData);
+  if (!rangeToInterpolate) {
+    console.warn('No annotations found to interpolate', interpolationData);
+    return;
+  }
   const sliceEdited = _getSlicePositionOfToolData(
     interpolationData,
     toolData.annotationUID

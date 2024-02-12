@@ -1,10 +1,12 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { VoxelManager } from '../utilities';
 import {
   Metadata,
   PixelDataTypedArray,
   Point3,
   IImageLoadObject,
   Mat3,
+  RGB,
 } from '../types';
 
 /**
@@ -68,6 +70,9 @@ interface IImageVolume {
 
   /** return the volume scalar data */
   getScalarData(): PixelDataTypedArray;
+
+  /** A voxel manager to manage the scalar data */
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 
   convertToImageSlicesAndCache(): string[];
 

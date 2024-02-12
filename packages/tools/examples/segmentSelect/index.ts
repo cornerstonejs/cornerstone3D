@@ -110,6 +110,7 @@ function setupTools(toolGroupId, isContour = false) {
 
   if (isContour) {
     toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+    toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
   }
 
   addManipulationBindings(toolGroup);
@@ -223,6 +224,7 @@ async function run() {
 
   const config = segmentation.config.getGlobalConfig();
   config.representations.LABELMAP.activeSegmentOutlineWidthDelta = 3;
+  config.representations.CONTOUR.activeSegmentOutlineWidthDelta = 3;
 }
 
 run();

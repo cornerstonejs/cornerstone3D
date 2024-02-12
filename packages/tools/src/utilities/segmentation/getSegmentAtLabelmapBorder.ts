@@ -84,12 +84,13 @@ export function getSegmentAtLabelmapBorder(
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
   const dimensions = imageData.getDimensions();
-  const voxelManager = utilities.VoxelManager.createVolumeVoxelManager(
-    dimensions,
-    imageData.getPointData().getScalars().getData()
-  );
+  const voxelManager = (imageData.voxelManager ||
+    utilities.VoxelManager.createVolumeVoxelManager(
+      dimensions,
+      imageData.getPointData().getScalars().getData()
+    )) as utilities.VoxelManager<number>;
 
-  const segmentIndex = voxelManager.getAtIJK(...(indexIJK as Types.Point3));
+  const segmentIndex = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
 
   const onEdge = isSegmentOnEdgeIJK(
     indexIJK as Types.Point3,

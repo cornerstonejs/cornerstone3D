@@ -16,9 +16,17 @@ import type CustomEventType from './CustomEventType';
 import type {
   IViewport,
   PublicViewportInput,
-  TargetSpecifier,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewReference,
 } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
+import type {
+  VolumeActor,
+  Actor,
+  ActorEntry,
+  ImageActor,
+  ICanvasActor,
+} from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -151,7 +159,9 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
-  TargetSpecifier,
+  ViewReference,
+  ReferenceCompatibleOptions,
+  ViewReferenceSpecifier as ViewReferenceSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -160,6 +170,7 @@ export type {
   Actor,
   ActorEntry,
   ImageActor,
+  ICanvasActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,
