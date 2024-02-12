@@ -4189,13 +4189,15 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
-    canvasToWorld: (canvasPosition: Point2) => Point3;
+    canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
     customRenderViewportToCanvas: () => void;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getCurrentImageId(): string;
+    // (undocumented)
+    getCurrentImageIdIndex(): number;
     // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
@@ -4230,15 +4232,13 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getPan(): Point2;
-    // (undocumented)
     getProperties: () => WSIViewportProperties;
+    // (undocumented)
+    getReferenceId(): string;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
     protected getScalarData(): any;
-    // (undocumented)
-    getTargetId(): string;
     // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
@@ -4252,11 +4252,15 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     protected indexToCanvas: (indexPos: Point2) => Point2;
     // (undocumented)
+    protected map: any;
+    // (undocumented)
     protected metadata: any;
     // (undocumented)
     protected metadataDicomweb: any;
     // (undocumented)
     modality: any;
+    // (undocumented)
+    postrender: () => void;
     // (undocumented)
     readonly renderingEngineId: string;
     // (undocumented)

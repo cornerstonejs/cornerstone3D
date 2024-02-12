@@ -47,6 +47,12 @@ module.exports = {
         },
         {
           from:
+          '../../../externals/',
+          to: '${destPath.replace(/\\/g, '/')}',
+          noErrorOnMissing: true,
+        },
+        {
+          from:
           '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
           to: '${destPath.replace(/\\/g, '/')}',
           noErrorOnMissing: true,
