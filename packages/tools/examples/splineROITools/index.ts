@@ -188,7 +188,7 @@ addSliderToToolbar({
         'spline'
       );
 
-      splineConfig.configuration[splineType].resolution = value;
+      splineConfig.configuration[splineType].resolution = parseInt(value);
       toolGroup.setToolConfiguration(splineToolName, { spline: splineConfig });
     });
   },
@@ -209,7 +209,7 @@ addSliderToToolbar({
       'spline'
     );
 
-    splineConfig.configuration.CARDINAL.scale = value;
+    splineConfig.configuration.CARDINAL.scale = parseFloat(value);
     toolGroup.setToolConfiguration(splineToolName, { spline: splineConfig });
   },
 });
