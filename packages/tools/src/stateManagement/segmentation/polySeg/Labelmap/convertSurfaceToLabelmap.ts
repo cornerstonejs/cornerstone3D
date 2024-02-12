@@ -70,7 +70,7 @@ export async function convertSurfaceToVolumeLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 100);
+  triggerWorkerProgress(eventTarget, 1);
 
   segmentationVolume.imageData
     .getPointData()

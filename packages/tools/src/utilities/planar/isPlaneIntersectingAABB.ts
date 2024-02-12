@@ -21,7 +21,6 @@ export const isPlaneIntersectingAABB = (
   maxY,
   maxZ
 ) => {
-  // Define the vertices of the AABB
   const vertices = [
     [minX, minY, minZ],
     [maxX, minY, minZ],
