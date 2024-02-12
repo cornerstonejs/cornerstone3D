@@ -2178,66 +2178,21 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 export class FreehandROISculptorTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _activateSculpt(element: HTMLDivElement): void;
-    // (undocumented)
-    _checkSpacing(i: number, points: Array<Types_2.Point3>, indicesToInsertAfter: Array<number>, maxSpacing: number): void;
-    // (undocumented)
-    _configureToolSize(evt: EventTypes_2.InteractionEventType): void;
-    // (undocumented)
-    _deactivateSculpt(element: HTMLDivElement): void;
-    // (undocumented)
-    _distanceFromPoint(viewport: Types_2.IViewport, data: any, coords: Types_2.Point2): number;
-    // (undocumented)
-    _dragCallback(evt: EventTypes_2.InteractionEventType): void;
-    // (undocumented)
-    _endCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
-    _filterInteractableFreehandRoiAnnotationsForElement(element: HTMLDivElement): any[];
-    // (undocumented)
-    _findNewHandleIndices(pushedHandles: {
-        first: number | undefined;
-        last: number | undefined;
-    }): Array<number>;
-    // (undocumented)
-    _getClosestFreehandToolOnElement(eventData: any): number;
-    // (undocumented)
-    _getInsertPosition(previousIndex: number, nextIndex: number): Types_2.Point3;
-    // (undocumented)
-    _getNextHandleIndex(i: number, length: number): number;
-    // (undocumented)
-    _getNextHandleIndexBeforeInsert(insertIndex: number, length: number): number;
-    // (undocumented)
-    _insertHandleRadially(insertIndex: number): void;
-    // (undocumented)
-    _insertNewHandles(pushedHandles: {
-        first: number;
-        last: number | undefined;
-    }): void;
-    // (undocumented)
-    isActive: boolean;
+    protected interpolatePointsWithinMaxSpacing(i: number, points: Array<Types_2.Point3>, indicesToInsertAfter: Array<number>, maxSpacing: number): void;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
-    _pushHandles(viewport: Types_2.IViewport): {
-        first: any;
-        last: any;
-    };
+    registeredShapes: Map<any, any>;
     // (undocumented)
-    _pushOneHandle(i: number, distanceToHandle: number): void;
+    registerShapes(shapeName: string, shapeClass: any): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
-    _sculpt(eventData: any, points: Array<Types_2.Point3>): void;
-    // (undocumented)
-    _selectFreehandTool(eventData: any): void;
+    protected sculpt(eventData: any, points: Array<Types_2.Point3>): void;
     // (undocumented)
     static toolName: string;
-    // (undocumented)
-    toolSize: number;
-    // (undocumented)
-    _updateCursor(evt: EventTypes_2.InteractionEventType): void;
 }
 
 // @public (undocumented)
