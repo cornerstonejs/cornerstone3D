@@ -59,8 +59,11 @@ export default function addManipulationBindings(
   registered = true;
 
   toolGroup.addTool(PanTool.toolName);
-  // We want to consume the event since that will prevent the menu popup
-  toolGroup.addTool(ZoomTool.toolName, { consumeEvent: true });
+  // Allow significant zooming to occur
+  toolGroup.addTool(ZoomTool.toolName, {
+    minZoomScale: 0.01,
+    maxZoomScale: 400,
+  });
   if (is3DViewport) {
     toolGroup.addTool(TrackballRotateTool.toolName);
   } else {

@@ -14,6 +14,7 @@ import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   addDropdownToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -22,11 +23,6 @@ console.warn(
 );
 
 const {
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
-  StackScrollTool,
-
   LengthTool,
   ProbeTool,
   RectangleROITool,
@@ -42,7 +38,8 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
+const toolGroupId = 'default';
 
 const { wadors } = dicomImageLoader;
 
@@ -138,11 +135,6 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 
 function registerTools() {
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
-
-  cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -159,13 +151,9 @@ function createToolGroup(toolGroupId = 'default') {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   // Add tools to the tool group
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
@@ -187,34 +175,6 @@ function createToolGroup(toolGroupId = 'default') {
     ],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
-  });
-
   return toolGroup;
 }
 /**
@@ -225,11 +185,9 @@ async function run() {
   await initDemo();
 
   registerTools();
-  const toolGroupId = 'default';
   const toolGroup = createToolGroup(toolGroupId);
 
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  // TODO - deploy the testdata publically
+  // Get Cornerstone imageIds and fetch metadata
   const wadoRsRoot =
     getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const client = new api.DICOMwebClient({ url: wadoRsRoot });
