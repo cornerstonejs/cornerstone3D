@@ -110,7 +110,7 @@ abstract class ContourBaseTool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
+    const { viewPlaneNormal, viewUp, position: cameraPosition } = camera;
 
     const referencedImageId = this.getReferencedImageId(
       viewport,
@@ -119,19 +119,17 @@ abstract class ContourBaseTool extends AnnotationTool {
       viewUp
     );
 
-    const referencedSliceIndex = viewport.getCurrentImageIdIndex();
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const viewReference = viewport.getViewReference({ points: [worldPos] });
 
     return <ContourAnnotation>{
       highlighted: true,
       invalidated: true,
       metadata: {
         toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
+        ...viewReference,
         referencedImageId,
-        referencedSliceIndex,
+        viewUp,
+        cameraPosition,
       },
       data: {
         handles: {

@@ -138,11 +138,15 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
+    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
-    getTargetId(specifier?: TargetSpecifier): string;
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+    // (undocumented)
+    protected getVolumeId(specifier: ViewReferenceSpecifier): string;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
@@ -151,6 +155,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     protected initialTransferFunctionNodes: any;
     // (undocumented)
     protected initialViewUp: Point3;
+    // (undocumented)
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -2188,19 +2194,23 @@ interface IViewport {
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
+    getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     getRenderer(): void;
     // (undocumented)
     getRenderingEngine(): any;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    getTargetId(forTarget?: TargetSpecifier): string;
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     getZoom(): number;
     // (undocumented)
     id: string;
     // (undocumented)
     isDisabled: boolean;
+    // (undocumented)
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -2678,6 +2688,13 @@ type RangeRetrieveOptions = BaseRetrieveOptions & {
 };
 
 // @public (undocumented)
+type ReferenceCompatibleOptions = {
+    withNavigation?: boolean;
+    asVolume?: boolean;
+    imageURI?: string;
+};
+
+// @public (undocumented)
 function registerColormap(colormap: ColormapRegistration): void;
 
 // @public (undocumented)
@@ -3008,21 +3025,25 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
+    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     getRenderer: () => any;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
     getSliceIndex: () => number;
     // (undocumented)
-    getTargetId(specifier?: TargetSpecifier): string;
-    // (undocumented)
     getTargetImageIdIndex: () => number;
+    // (undocumented)
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     protected imagesLoader: IImagesLoader;
+    // (undocumented)
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     loadImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
@@ -3150,14 +3171,6 @@ class TargetEventListeners {
 }
 
 // @public (undocumented)
-type TargetSpecifier = {
-    sliceIndex?: number;
-    forFrameOfReference?: boolean;
-    points?: Point3[];
-    volumeId?: string;
-};
-
-// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -3229,7 +3242,9 @@ declare namespace Types {
         IRegisterImageLoader,
         IStreamingVolumeProperties,
         IViewport,
-        TargetSpecifier,
+        ViewReference,
+        ReferenceCompatibleOptions,
+        ViewReferenceSpecifier,
         StackViewportProperties,
         VolumeViewportProperties,
         ViewportProperties,
@@ -3487,19 +3502,23 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
+    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     protected getScalarData(): CanvasScalarData;
     // (undocumented)
-    getTargetId(specifier?: TargetSpecifier): string;
-    // (undocumented)
     protected getTransform(): Transform;
+    // (undocumented)
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     hasImageURI(imageURI: string): boolean;
     // (undocumented)
     protected imageId: string;
     // (undocumented)
     protected indexToCanvas: (indexPos: Point2) => Point2;
+    // (undocumented)
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     protected metadata: any;
     // (undocumented)
@@ -3648,13 +3667,15 @@ export class Viewport implements IViewport {
     // (undocumented)
     getProperties: () => void;
     // (undocumented)
+    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     getRenderer(): any;
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    getTargetId(specifier?: TargetSpecifier): string;
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
@@ -3671,6 +3692,8 @@ export class Viewport implements IViewport {
     isDisabled: boolean;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
+    // (undocumented)
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -3813,6 +3836,25 @@ enum ViewportType {
     // (undocumented)
     VOLUME_3D = "volume3d"
 }
+
+// @public (undocumented)
+type ViewReference = {
+    FrameOfReferenceUID: string;
+    referencedImageId?: string;
+    cameraFocalPoint?: Point3;
+    viewPlaneNormal?: Point3;
+    sliceIndex?: number | [number, number];
+    volumeId?: string;
+    bounds?: BoundsLPS;
+};
+
+// @public (undocumented)
+type ViewReferenceSpecifier = {
+    sliceIndex?: number | [number, number];
+    forFrameOfReference?: boolean;
+    points?: Point3[];
+    volumeId?: string;
+};
 
 // @public (undocumented)
 type VOI = {

@@ -43,8 +43,10 @@ export default async function contourSegmentationCompletedListener(
   }
 
   const viewport = getViewport(sourceAnnotation);
-  const contourSegmentationAnnotations =
-    getValidContourSegmentationAnnotations(sourceAnnotation);
+  const contourSegmentationAnnotations = getValidContourSegmentationAnnotations(
+    viewport,
+    sourceAnnotation
+  );
 
   if (!contourSegmentationAnnotations.length) {
     return;
@@ -143,6 +145,7 @@ function convertContourPolylineToCanvasSpace(
 }
 
 function getValidContourSegmentationAnnotations(
+  viewport: Types.IViewport,
   sourceAnnotation: ContourSegmentationAnnotation
 ): ContourSegmentationAnnotation[] {
   const { annotationUID: sourceAnnotationUID } = sourceAnnotation;
@@ -155,10 +158,14 @@ function getValidContourSegmentationAnnotations(
       targetAnnotation.annotationUID !== sourceAnnotationUID &&
       contourSegUtils.isContourSegmentationAnnotation(targetAnnotation) &&
       contourSegUtils.areSameSegment(targetAnnotation, sourceAnnotation) &&
-      contourUtils.areCoplanarContours(targetAnnotation, sourceAnnotation)
+      viewport.isReferenceViewable(targetAnnotation.metadata)
   ) as ContourSegmentationAnnotation[];
 }
 
+/**
+ * Finds other contours on the same slice which intersect the source polyline,
+ * represented as canvas points.
+ */
 function findIntersectingContour(
   viewport: Types.IViewport,
   sourcePolyline: Types.Point2[],

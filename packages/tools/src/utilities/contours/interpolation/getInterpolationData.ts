@@ -43,10 +43,13 @@ export default function getInterpolationData(
     viewport.element
   );
 
+  if (!annotations) {
+    return interpolationDatas;
+  }
+
   for (let i = 0; i < sliceData.numberOfSlices; i++) {
     const imageAnnotations = annotations.filter(
-      (x) =>
-        (x as InterpolationROIAnnotation).metadata.referencedSliceIndex === i
+      (x) => x.metadata.sliceIndex === i
     );
 
     if (!imageAnnotations?.length) {

@@ -15,7 +15,9 @@ import type {
   VOIRange,
   ICanvasActor,
   IImage,
-  TargetSpecifier,
+  ViewReferenceSpecifier,
+  ViewReference,
+  ReferenceCompatibleOptions,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -673,16 +675,88 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return current;
   }
 
-  public getTargetId(specifier: TargetSpecifier = {}): string {
-    const { sliceIndex } = specifier;
+  /**
+   *  Gets a target id that can be used to specify how to show this
+   */
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const { sliceIndex: sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
+    }
+    if (Array.isArray(sliceIndex)) {
+      // Just remove the 1 from the end of the base URL - TODO, handle other types
+      return `videoId:${this.imageId.substring(0, this.imageId.length - 1)}${
+        sliceIndex[0] + 1
+      }-${sliceIndex[1] + 1}`;
     }
     const baseTarget = this.imageId.replace(
       '/frames/1',
       `/frames/${1 + sliceIndex}`
     );
     return `videoId:${baseTarget}`;
+  }
+
+  /**
+   * Figure out if a given view can be shown in the current viewport.
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    let { imageURI } = options;
+    const { referencedImageId, sliceIndex: sliceIndex } = viewRef;
+    if (!super.isReferenceViewable(viewRef)) {
+      return false;
+    }
+
+    const imageId = this.getCurrentImageId();
+    if (!imageURI) {
+      // Remove the dataLoader scheme and frame number
+      // TODO - handle more imageURI types.
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1, imageId.length - 1);
+    }
+
+    if (options.withNavigation) {
+      return true;
+    }
+    const currentIndex = this.getCurrentImageIdIndex();
+    if (Array.isArray(sliceIndex)) {
+      return currentIndex >= sliceIndex[0] && currentIndex <= sliceIndex[1];
+    }
+    if (sliceIndex !== undefined) {
+      return currentIndex === sliceIndex;
+    }
+    if (!referencedImageId) {
+      return false;
+    }
+    const match = referencedImageId.match(VideoViewport.frameRangeExtractor);
+    if (!match || !match[2]) {
+      return true;
+    }
+    const range = match[2].split('-').map((it) => Number(it));
+    const frame = currentIndex + 1;
+    return range[0] <= frame && frame <= (range[1] ?? range[0]);
+  }
+
+  /**
+   * Gets a view target that species what type of view is required to show
+   * the current view, or the one specified in the forTarget modifiers.
+   */
+  public getViewReference(
+    viewRefSpecifier?: ViewReferenceSpecifier
+  ): ViewReference {
+    let sliceIndex = viewRefSpecifier?.sliceIndex;
+    if (!sliceIndex) {
+      sliceIndex = this.isPlaying
+        ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
+        : this.getCurrentImageIdIndex();
+    }
+    return {
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: this.getReferenceId(viewRefSpecifier),
+      sliceIndex: sliceIndex,
+    };
   }
 
   /**
@@ -955,6 +1029,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     // This is stack new image to agree with stack/non-volume viewports
     triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, {
+      element: this.element,
+      viewportId: this.id,
+      viewport: this,
+      renderingEngineId: this.renderingEngineId,
+      time: this.videoElement.currentTime,
+      duration: this.videoElement.duration,
+    });
+    triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
       element: this.element,
       viewportId: this.id,
       viewport: this,

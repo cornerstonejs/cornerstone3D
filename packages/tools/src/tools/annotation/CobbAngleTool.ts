@@ -796,7 +796,7 @@ class CobbAngleTool extends AnnotationTool {
         data.cachedStats[targetId].points.canvas;
       const { arc1Angle, arc2Angle } = data.cachedStats[targetId];
 
-      if (this.configuration.showArcLines){
+      if (this.configuration.showArcLines) {
         lineUID = 'arc1';
 
         drawLineSvg(
@@ -825,7 +825,6 @@ class CobbAngleTool extends AnnotationTool {
           }
         );
       }
-
 
       if (!data.cachedStats[targetId]?.angle) {
         continue;
@@ -880,7 +879,7 @@ class CobbAngleTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
 
-      if (this.configuration.showArcLines){
+      if (this.configuration.showArcLines) {
         const arc1TextBoxUID = 'arcAngle1';
 
         const arc1TextLine = [
