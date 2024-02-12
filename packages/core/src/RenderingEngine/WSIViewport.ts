@@ -502,6 +502,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return transform.transformPoint(indexPos);
   };
 
+  /**
+   * Gets the internal OpenLayers view object being rendered
+   * Note this is not typeds right now, but might add typing later.
+   */
   getView() {
     if (!this.viewer) {
       return;
