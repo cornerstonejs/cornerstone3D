@@ -14,9 +14,10 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
+import { triggerEvent } from '../utilities';
 
 const _map = Symbol.for('map');
-
+const EVENT_POSTRENDER = 'postrender';
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
@@ -36,6 +37,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
   protected metadataDicomweb;
 
   private microscopyElement: HTMLDivElement;
+
+  protected map;
 
   private internalCamera = {
     rotation: 0,
@@ -114,7 +117,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const maxImage = this.metadataDicomweb.reduce((maxImage, image) => {
       return maxImage?.NumberOfFrames < image.NumberOfFrames ? image : maxImage;
     });
-    console.log('maxImage=', maxImage);
     const {
       TotalPixelMatrixColumns: columns,
       TotalPixelMatrixRows: rows,
@@ -162,16 +164,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
       ZOffsetInSlideCoordinateSystem,
     ];
 
-    const pixelSpacing =
-      maxImage.SharedFunctionalGroupsSequence[0].PixelMeasuresSequence[0]
-        .PixelSpacing;
-    console.log(
-      'TODO - figure out pixelSpacing',
-      pixelSpacing,
-      width / columns,
-      height / rows,
-      origin
-    );
     const xSpacing = width / columns;
     const ySpacing = height / rows;
     const xVoxels = columns;
@@ -236,7 +228,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvas(point);
           const pixelCoord = this.canvasToIndex(canvasPoint);
-          console.log('worldToIndex', point, pixelCoord[0], pixelCoord[1]);
           return [pixelCoord[0], pixelCoord[1], 0];
         },
         indexToWorld: (point: Point3) => {
@@ -275,9 +266,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
   }
 
   public setCamera(camera: ICamera): void {
+    const previousCamera = this.getCamera();
     const { parallelScale, focalPoint } = camera;
     const view = this.getView();
-    this.refreshRenderValues();
     const { xSpacing } = this.internalCamera;
 
     if (parallelScale) {
@@ -285,23 +276,15 @@ class WSIViewport extends Viewport implements IWSIViewport {
       const resolution = 1 / xSpacing / worldToCanvasRatio;
 
       view.setResolution(resolution);
-      console.log('Setting resolution', resolution);
     }
 
     if (focalPoint) {
       const newCanvas = this.worldToCanvas(focalPoint);
       const newIndex = this.canvasToIndex(newCanvas);
-      console.log(
-        'Setting new center',
-        JSON.stringify(focalPoint),
-        newCanvas[0],
-        newCanvas[1],
-        newIndex[0],
-        newIndex[1]
-      );
       view.setCenter(newIndex);
     }
-    this.refreshRenderValues();
+    const updatedCamera = this.getCamera();
+    this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }
 
   /**
@@ -383,9 +366,9 @@ class WSIViewport extends Viewport implements IWSIViewport {
     if (!this.metadata) {
       return;
     }
+    const { resolution } = this.internalCamera;
     // compute the pixel coordinate in the image
     const [px, py] = this.canvasToIndex(canvasPos);
-    console.log('canvasToWorld', canvasPos[0], canvasPos[1], px, py);
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
 
@@ -490,10 +473,22 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
     viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
+    this.map = viewer[_map];
+    this.map.on(EVENT_POSTRENDER, this.postrender);
     this.resize();
     this.microscopyElement.style.background = 'green';
     this.microscopyElement.innerText = '';
   }
+
+  public postrender = () => {
+    this.refreshRenderValues();
+    triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
+      element: this.element,
+      viewportId: this.id,
+      viewport: this,
+      renderingEngineId: this.renderingEngineId,
+    });
+  };
 
   public getRotation = () => 0;
 
@@ -530,7 +525,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
   private refreshRenderValues() {
     const view = this.getView();
     if (!view) {
-      console.log("No view yet, can't update render values");
       return;
     }
     const resolution = view.getResolution();
@@ -575,7 +569,6 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   public setZoom(zoom: number) {
     this.getView()?.setZoom(zoom);
-    this.refreshRenderValues();
   }
 
   /**
@@ -589,14 +582,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
    */
   protected getTransform() {
     this.refreshRenderValues();
-    const {
-      centerIndex: center,
-      xSpacing,
-      ySpacing,
-      resolution,
-      zoom,
-      rotation,
-    } = this.internalCamera;
+    const { centerIndex: center, resolution, rotation } = this.internalCamera;
 
     const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
     const transform = new Transform();
@@ -605,22 +591,18 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // to the center of the canvas)
     transform.translate(halfCanvas[0], halfCanvas[1]);
     // Difference in sign for x/y to account for screen coordinates
-    console.log(
-      'getTransform',
-      xSpacing,
-      ySpacing,
-      resolution,
-      zoom,
-      rotation,
-      center
-    );
-    transform.scale(-resolution, resolution);
+    transform.rotate(rotation);
+    transform.scale(1 / resolution, -1 / resolution);
     transform.translate(-center[0], -center[1]);
     return transform;
   }
 
-  public getTargetId(): string {
+  public getReferenceId(): string {
     return `imageId:${this.getCurrentImageId()}`;
+  }
+
+  public getCurrentImageIdIndex() {
+    return 0;
   }
 }
 
