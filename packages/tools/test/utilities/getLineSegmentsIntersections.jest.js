@@ -30,4 +30,15 @@ describe('getLineSegmentsIntersections', function () {
     expect(pTest[0]).toBeCloseTo(1);
     expect(pTest[1]).toBeCloseTo(1);
   });
+
+  it('TODO Should find projected intersection of extended points', () => {
+    const pTest = getLineSegmentsIntersections(
+      p00,
+      p11,
+      [0, -1],
+      [1, 0.000000001]
+    );
+    expect(pTest[0]).toBeCloseTo(999999917.2596358);
+    expect(pTest[1]).toBeCloseTo(999999917.2596358);
+  });
 });
