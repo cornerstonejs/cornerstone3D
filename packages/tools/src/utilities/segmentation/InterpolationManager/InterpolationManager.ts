@@ -122,6 +122,7 @@ export default class InterpolationManager {
     ) {
       return;
     }
+    console.log('Interpolation annotation', annotation.annotationUID);
 
     const viewport = getViewportForAnnotation(annotation);
     if (!viewport) {
@@ -235,6 +236,9 @@ export default class InterpolationManager {
     interpolate(viewportData);
   };
 
+  /**
+   * Delete interpolated annotations when their endpoints are deleted.
+   */
   static handleAnnotationDelete = (evt: AnnotationRemovedEventType) => {
     const annotation = evt.detail.annotation as InterpolationROIAnnotation;
     if (!annotation?.metadata) {

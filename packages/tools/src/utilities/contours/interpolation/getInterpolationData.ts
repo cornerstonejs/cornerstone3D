@@ -1,6 +1,11 @@
-import type { InterpolationViewportData, Annotation } from '../../../types';
+import type {
+  InterpolationViewportData,
+  Annotation,
+  ContourSegmentationAnnotation,
+} from '../../../types';
 import { getAnnotations } from '../../../stateManagement/annotation/annotationState';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+
+const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
 export type FilterParam = {
   /**
@@ -38,12 +43,26 @@ export default function getInterpolationData(
 ): Map<number, Annotation[]> {
   const { viewport, sliceData, annotation } = viewportData;
   const interpolationDatas = new Map<number, Annotation[]>();
-  const annotations = getAnnotations(
-    annotation.metadata.toolName,
+  const { toolName, originalToolName } = annotation.metadata;
+  const testToolName = originalToolName || toolName;
+  const annotations = getAnnotations(testToolName, viewport.element) || [];
+  const modifiedAnnotations = getAnnotations(
+    DEFAULT_CONTOUR_SEG_TOOLNAME,
     viewport.element
   );
+  if (modifiedAnnotations?.length) {
+    modifiedAnnotations.forEach((annotation) => {
+      const { metadata } = annotation as ContourSegmentationAnnotation;
+      if (
+        metadata.originalToolName === testToolName &&
+        !annotations.find((it) => it === annotation)
+      ) {
+        annotations.push(annotation);
+      }
+    });
+  }
 
-  if (!annotations) {
+  if (!annotations?.length) {
     return interpolationDatas;
   }
 

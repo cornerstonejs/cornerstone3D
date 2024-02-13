@@ -68,6 +68,15 @@ const configuration = {
   actions,
 };
 
+interpolationTools.set('SplineInterpolation', {
+  baseTool: SplineContourSegmentationTool.toolName,
+  configuration,
+});
+interpolationTools.set('FreeformInterpolation', {
+  baseTool: PlanarFreehandContourSegmentationTool.toolName,
+  configuration,
+  passive: true,
+});
 interpolationTools.set('LivewireInterpolation', {
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration,
@@ -85,15 +94,6 @@ interpolationTools.set('LivewireInterpolationNearest3RepeatInterpolation', {
     ...configuration,
     interpolation: { enabled: true, nearestEdge: 3, repeatInterpolation: true },
   },
-});
-interpolationTools.set('FreeformInterpolation', {
-  baseTool: PlanarFreehandContourSegmentationTool.toolName,
-  configuration,
-  passive: true,
-});
-interpolationTools.set('SplineInterpolation', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration,
 });
 interpolationTools.set(PlanarFreehandContourSegmentationTool.toolName, {
   passive: true,

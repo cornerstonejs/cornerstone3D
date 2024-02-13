@@ -370,6 +370,7 @@ function combinePolylines(
           polyline: [],
           closed: true,
         },
+        spline: targetAnnotation.data.spline,
         segmentation: {
           ...segmentation,
         },
@@ -398,8 +399,8 @@ function combinePolylines(
     );
 
     addAnnotation(newAnnotation, element);
-    triggerAnnotationModified(newAnnotation, viewport.element);
     contourSegUtils.addContourSegmentationAnnotation(newAnnotation);
+    triggerAnnotationModified(newAnnotation, viewport.element);
 
     reassignedContourHolesMap
       .get(polyline)
