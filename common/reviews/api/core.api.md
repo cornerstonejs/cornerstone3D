@@ -978,6 +978,9 @@ function getMinMax(storedPixelData: number[]): {
 export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement;
 
 // @public (undocumented)
+function getRandomSampleFromArray(array: any, size: any): any[];
+
+// @public (undocumented)
 export function getRenderingEngine(id: string): IRenderingEngine | undefined;
 
 // @public (undocumented)
@@ -3409,7 +3412,8 @@ declare namespace utilities {
         cacheUtils,
         roundNumber,
         roundToPrecision,
-        getViewportImageIds
+        getViewportImageIds,
+        getRandomSampleFromArray
     }
 }
 export { utilities }
