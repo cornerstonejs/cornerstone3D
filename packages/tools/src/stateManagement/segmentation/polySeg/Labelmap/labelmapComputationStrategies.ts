@@ -86,21 +86,15 @@ async function computeLabelmapFromContourSegmentation(
   const segmentation = getSegmentation(segmentationId);
   const representationData = segmentation.representationData.CONTOUR;
 
-  let result;
+  const convertFunction = isVolume
+    ? convertContourToVolumeLabelmap
+    : convertContourToStackLabelmap;
 
-  if (isVolume) {
-    result = await convertContourToVolumeLabelmap(representationData, {
-      segmentIndices,
-      segmentationRepresentationUID: options.segmentationRepresentationUID,
-      viewport: options.viewport,
-    });
-  } else {
-    result = await convertContourToStackLabelmap(representationData, {
-      segmentIndices,
-      segmentationRepresentationUID: options.segmentationRepresentationUID,
-      viewport: options.viewport,
-    });
-  }
+  const result = await convertFunction(representationData, {
+    segmentIndices,
+    segmentationRepresentationUID: options.segmentationRepresentationUID,
+    viewport: options.viewport,
+  });
 
   return result;
 }

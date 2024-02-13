@@ -1,4 +1,4 @@
-import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -28,7 +28,7 @@ setTitleAndDescription(
   'This demonstration showcases the usage of PolySEG WASM module to convert a contour segmentation to a stack labelmap segmentation. Use the left viewport to draw a contour segmentation and then click on the button to convert it to a stack labelmap segmentation. The right viewport shows the stack labelmap segmentation.'
 );
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
@@ -43,16 +43,6 @@ const inlineContainer = document.createElement('div');
 inlineContainer.style.display = 'flex';
 inlineContainer.style.alignItems = 'center';
 inlineContainer.style.height = '40px';
-
-const label = document.createElement('label');
-label.innerHTML = 'Progress: ';
-
-const progressDetailP = document.createElement('p');
-progressDetailP.id = 'progressDetailP';
-progressDetailP.style.marginLeft = '8px';
-
-inlineContainer.appendChild(label);
-inlineContainer.appendChild(progressDetailP);
 
 // Append the container to the main content
 content.appendChild(inlineContainer);
@@ -131,18 +121,6 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  eventTarget.addEventListener(
-    cornerstoneTools.Enums.Events.POLYSEG_CONVERSION,
-    (evt) => {
-      const p = document.getElementById('progressDetailP');
-      const { detail } = evt;
-      const { progress } = detail;
-      if (p) {
-        p.innerHTML = `${progress}%`;
-      }
-    }
-  );
-
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
@@ -167,6 +145,10 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary,
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });

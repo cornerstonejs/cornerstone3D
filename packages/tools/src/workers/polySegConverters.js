@@ -10,7 +10,12 @@ import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 
 import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
 import { pointInShapeCallback } from '../utilities';
-import { getAABB, isPointInsidePolyline3D } from '../utilities/math/polyline';
+import {
+  containsPoint,
+  getAABB,
+  isPointInsidePolyline3D,
+  projectTo2D,
+} from '../utilities/math/polyline';
 import { isPlaneIntersectingAABB } from '../utilities/planar';
 
 /**
@@ -250,14 +255,12 @@ const polySegConverters = {
       const annotations = annotationUIDsInSegmentMap.get(index);
 
       for (const annotation of annotations) {
-        if (!annotation?.data) {
+        if (!annotation.polyline) {
           continue;
         }
-        const bounds = getBoundingBoxAroundShapeWorld(
-          annotation.data.contour.polyline
-        );
 
-        const { referencedImageId } = annotation.metadata;
+        const { polyline, holesPolyline, referencedImageId } = annotation;
+        const bounds = getBoundingBoxAroundShapeWorld(polyline);
 
         const { manager: segmentationVoxelManager, imageData } =
           segmentationVoxelManagers.get(referencedImageId);
@@ -274,15 +277,29 @@ const polySegConverters = {
           bounds[2][1],
         ]);
 
+        const { projectedPolyline, sharedDimensionIndex } =
+          projectTo2D(polyline);
+
+        const holes = holesPolyline.map((hole) => {
+          const { projectedPolyline: projectedHole } = projectTo2D(hole);
+          return projectedHole;
+        });
+
         // Run the pointInShapeCallback for the combined bounding box
         pointInShapeCallback(
           imageData,
           (pointLPS) => {
+            const point2D = [
+              pointLPS[(sharedDimensionIndex + 1) % 3],
+              pointLPS[(sharedDimensionIndex + 2) % 3],
+            ];
+
             // Check if the point is inside any of the polylines for this segment
-            return isPointInsidePolyline3D(
-              pointLPS,
-              annotation.data.contour.polyline
-            );
+            const isInside = containsPoint(projectedPolyline, point2D, {
+              holes,
+            });
+
+            return isInside;
           },
           ({ pointIJK }) => {
             segmentationVoxelManager.setAtIJKPoint(pointIJK, index);

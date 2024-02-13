@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import containsPoint from './containsPoint';
+import { projectTo2D } from './projectTo2D';
 
 /**
  * Determines whether a 3D point is inside a polyline in 3D space.
@@ -9,42 +10,35 @@ import containsPoint from './containsPoint';
  *
  * @param point - The 3D point to test.
  * @param polyline - The polyline represented as an array of 3D points.
+ * @param options.holesPolyline - An array of polylines representing each hole, so it
+ * is an array of arrays of 3D points.
  * @returns A boolean indicating whether the point is inside the polyline.
  * @throws An error if a shared dimension index cannot be found for the polyline points.
  */
 export function isPointInsidePolyline3D(
   point: Types.Point3,
-  polyline: Types.Point3[]
+  polyline: Types.Point3[],
+  options: { holes?: Types.Point3[][] } = {}
 ) {
-  // Todo: handle oblique planes
+  const { sharedDimensionIndex, projectedPolyline } = projectTo2D(polyline);
 
-  // We need to reduce one dimension to 2D, so basically
-  // we need to find the dimension index that is shared by all points
-  // Use the first three points, two is enough but three is more robust
-  let sharedDimensionIndex;
+  const { holes } = options;
+  const projectedHoles = [] as Types.Point2[][];
 
-  const testPoints = polyline.slice(0, 3);
-  for (let i = 0; i < 3; i++) {
-    if (testPoints.every((point, index, array) => point[i] === array[0][i])) {
-      sharedDimensionIndex = i;
-      break;
+  if (holes) {
+    for (let i = 0; i < holes.length; i++) {
+      const hole = holes[i];
+      const hole2D = [] as Types.Point2[];
+
+      for (let j = 0; j < hole.length; j++) {
+        hole2D.push([
+          hole[j][(sharedDimensionIndex + 1) % 3],
+          hole[j][(sharedDimensionIndex + 2) % 3],
+        ]);
+      }
+
+      projectedHoles.push(hole2D);
     }
-  }
-
-  if (sharedDimensionIndex === undefined) {
-    throw new Error(
-      'Cannot find a shared dimension index for polyline, probably oblique plane'
-    );
-  }
-
-  // convert polyline list and point to 2D
-  const points2D = [] as Types.Point2[];
-
-  for (let i = 0; i < polyline.length; i++) {
-    points2D.push([
-      polyline[i][(sharedDimensionIndex + 1) % 3],
-      polyline[i][(sharedDimensionIndex + 2) % 3],
-    ]);
   }
 
   const point2D = [
@@ -52,5 +46,5 @@ export function isPointInsidePolyline3D(
     point[(sharedDimensionIndex + 2) % 3],
   ] as Types.Point2;
 
-  return containsPoint(points2D, point2D);
+  return containsPoint(projectedPolyline, point2D, { holes: projectedHoles });
 }
