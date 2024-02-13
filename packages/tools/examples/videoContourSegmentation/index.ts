@@ -62,7 +62,7 @@ const interpolationConfiguration = {
      * number of points for higher `epsilon` values.
      * Larger values work well for this video example
      */
-    epsilon: 1,
+    epsilon: 0.5,
   },
 };
 
