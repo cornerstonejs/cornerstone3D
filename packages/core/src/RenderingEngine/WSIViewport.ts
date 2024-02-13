@@ -347,6 +347,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
   }
 
+  /**
+   * The FOR for whole slide imaging is the frame of reference in the DICOM
+   * metadata, and should be the same for all slices being viewed.
+   */
   public getFrameOfReferenceUID = (): string => {
     return this.frameOfReferenceUID;
   };
