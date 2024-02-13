@@ -4228,8 +4228,6 @@ export class WSIViewport extends Viewport implements IWSIViewport {
         };
     };
     // (undocumented)
-    getImportPath(): string;
-    // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
     getProperties: () => WSIViewportProperties;
