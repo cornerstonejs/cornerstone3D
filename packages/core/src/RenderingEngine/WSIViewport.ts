@@ -337,7 +337,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
   };
 
   public getImportPath() {
-    return '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
+    return './dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
   }
 
   public getFrameOfReferenceUID = (): string => {
