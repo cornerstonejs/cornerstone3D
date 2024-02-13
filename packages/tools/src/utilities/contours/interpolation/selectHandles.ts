@@ -1,7 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { utilities } from '@cornerstonejs/core';
 import type { PointsArray3 } from './interpolate';
-import { add } from '@kitware/vtk.js/Common/Core/Math';
 
 const { PointsManager } = utilities;
 
@@ -15,18 +14,24 @@ const { PointsManager } = utilities;
  */
 export default function selectHandles(
   polyline: PointsArray3,
-  handleCount = 8
+  handleCount = 12
 ): PointsArray3 {
   const handles = PointsManager.create3(handleCount) as PointsArray3;
   handles.sources = [];
   const { sources: destPoints } = handles;
   const { length, sources: sourcePoints = [] } = polyline;
+  // The distance used for figuring out the local angle of a line
   const distance = 6;
   if (length < distance * 3) {
-    console.log('Adding subselect handles', handleCount, length);
     return polyline.subselect(handleCount);
   }
-  const interval = Math.min(30, Math.floor(length / 3));
+  // Need to make the interval between handles long enough to allow for some
+  // variation between points in terms of the distance of a line angle, but
+  // also not too many handles either.
+  // On average, we get twice the interval between handles, so double the length here.
+  const interval = Math.floor(
+    Math.max((2 * length) / handleCount, distance * 5)
+  );
   sourcePoints.forEach(() =>
     destPoints.push(PointsManager.create3(handleCount))
   );

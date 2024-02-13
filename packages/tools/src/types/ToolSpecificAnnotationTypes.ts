@@ -260,18 +260,25 @@ export type PlanarFreehandROIAnnotation = ContourAnnotation & {
 export type PlanarFreehandContourSegmentationAnnotation =
   PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
 
-export type InterpolationROIAnnotation = ContourAnnotation & {
-  metadata: {
-    annotationUID?: string;
+export type InterpolationROIAnnotation = ContourAnnotation &
+  ContourSegmentationAnnotationData & {
+    metadata: {
+      annotationUID?: string;
+    };
+    /** The interpolationUID links contours which are interpolated together */
+    interpolationUID?: string;
+    /**
+     *  The interpolation completed flag is used to mark interpolations as being done
+     * and no longer elligible for matching.
+     */
+    interpolationCompleted?: boolean;
+    /**
+     * A flag to track updates to annotations caused by things like
+     * spline or livewire regeenration of the data, and which should cause further
+     * updates to occur (or not as the tool decides).
+     */
+    isInterpolationUpdate?: boolean;
   };
-  interpolationUID?: string;
-  /**
-   * A flag to track updates to annotations caused by things like
-   * spline or livewire regeenration of the data, and which should cause further
-   * updates to occur (or not as the tool decides).
-   */
-  isInterpolationUpdate?: boolean;
-};
 
 export interface ArrowAnnotation extends Annotation {
   data: {
