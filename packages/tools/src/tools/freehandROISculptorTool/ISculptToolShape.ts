@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper, EventTypes } from '../../types';
+import { SVGDrawingHelper, EventTypes, Annotation } from '../../types';
 import { PushedHandles } from './CircleSculptCursor';
+import { SculptData } from '../FreehandROISculptorTool';
 
 /**
  * This interface defines a contract for implementing various shapes within sculptor tool.
@@ -24,7 +25,7 @@ export interface ISculptToolShape {
    * @param viewport
    * @param sculptData
    */
-  pushHandles(viewport: Types.IViewport, sculptData: any): PushedHandles;
+  pushHandles(viewport: Types.IViewport, sculptData: SculptData): PushedHandles;
   /**
    * Function configures the tool size
    * @param evt
@@ -39,7 +40,7 @@ export interface ISculptToolShape {
   UpdateToolsize(
     canvasCoords: Types.Point2,
     viewport: Types.IViewport,
-    activeAnnotation: any
+    activeAnnotation: Annotation
   ): void;
   /**
    * Function returns max spacing between two handles
@@ -55,6 +56,6 @@ export interface ISculptToolShape {
   getInsertPosition(
     previousIndex: number,
     nextIndex: number,
-    sculptData
+    sculptData: SculptData
   ): Types.Point3;
 }
