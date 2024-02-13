@@ -60,9 +60,9 @@ export default function getLinesIntersection(
 
     // Three tests are enough to know if the lines overlap
     const overlap =
-      mathLine.containsPoint(p1, q1, p2) ||
-      mathLine.containsPoint(p1, q1, q2) ||
-      mathLine.containsPoint(p2, q2, p1);
+      mathLine.isPointOnLineSegment(p1, q1, p2) ||
+      mathLine.isPointOnLineSegment(p1, q1, q2) ||
+      mathLine.isPointOnLineSegment(p2, q2, p1);
 
     if (!overlap) {
       return;

@@ -9,7 +9,7 @@ const ORIENTATION_TOLERANCE = 1e-2;
  * @param point - Point to test
  * @returns True if the point lies on the line segment or false otherwise
  */
-export default function containsPoint(
+export default function isPointOnLineSegment(
   lineStart: Types.Point2,
   lineEnd: Types.Point2,
   point: Types.Point2
