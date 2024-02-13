@@ -332,12 +332,19 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return true;
   };
 
+  /**
+   * Gets the number of slices -  this will be the number of focal planes,
+   * and not hte actual number of slices in the image sets.
+   */
   public getNumberOfSlices = (): number => {
     return 1;
   };
 
-  public getImportPath() {
-    return './dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
+  /**
+   * Need to return this as a function to prevent webpack from munging it.
+   */
+  private getImportPath() {
+    return '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
   }
 
   public getFrameOfReferenceUID = (): string => {
