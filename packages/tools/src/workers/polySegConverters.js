@@ -166,9 +166,12 @@ const polySegConverters = {
       const annotations = annotationUIDsInSegmentMap.get(index);
 
       for (const annotation of annotations) {
-        const bounds = getBoundingBoxAroundShapeWorld(
-          annotation.data.contour.polyline
-        );
+        if (!annotation.polyline) {
+          continue;
+        }
+
+        const { polyline, holesPolyline } = annotation;
+        const bounds = getBoundingBoxAroundShapeWorld(polyline);
 
         const [iMin, jMin, kMin] = utilities.transformWorldToIndex(imageData, [
           bounds[0][0],
@@ -182,15 +185,29 @@ const polySegConverters = {
           bounds[2][1],
         ]);
 
+        const { projectedPolyline, sharedDimensionIndex } =
+          projectTo2D(polyline);
+
+        const holes = holesPolyline.map((hole) => {
+          const { projectedPolyline: projectedHole } = projectTo2D(hole);
+          return projectedHole;
+        });
+
         // Run the pointInShapeCallback for the combined bounding box
         pointInShapeCallback(
           imageData,
           (pointLPS) => {
+            const point2D = [
+              pointLPS[(sharedDimensionIndex + 1) % 3],
+              pointLPS[(sharedDimensionIndex + 2) % 3],
+            ];
+
             // Check if the point is inside any of the polylines for this segment
-            return isPointInsidePolyline3D(
-              pointLPS,
-              annotation.data.contour.polyline
-            );
+            const isInside = containsPoint(projectedPolyline, point2D, {
+              holes,
+            });
+
+            return isInside;
           },
           ({ pointIJK }) => {
             segmentationVoxelManager.setAtIJKPoint(pointIJK, index);
