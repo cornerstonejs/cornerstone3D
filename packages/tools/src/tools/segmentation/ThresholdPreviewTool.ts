@@ -100,7 +100,6 @@ class ThresholdPreviewTool extends BaseTool {
 
   onSetToolEnabled(event): void {
     const toolGroupId = this.toolGroupId;
-
     const toolGroup = getToolGroup(toolGroupId);
 
     if (!toolGroup) {
@@ -109,28 +108,18 @@ class ThresholdPreviewTool extends BaseTool {
 
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.getViewports();
-
     const viewport = toolGroupViewports[0];
-
     const actors = viewport.getActors();
-
     const firstVolumeActorUID = actors[0].uid;
     const imageVolume = cache.getVolume(firstVolumeActorUID);
-
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-
     const { segmentationId, type } = activeSegmentationRepresentation;
-
     const { representationData } = getSegmentation(segmentationId);
-
     const { volumeId } = representationData[type] as LabelmapSegmentationData;
-
     const segmentation = cache.getVolume(volumeId);
-
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
-
     const operationData = {
       points: [],
       imageVolume,
@@ -166,12 +155,10 @@ class ThresholdPreviewTool extends BaseTool {
       this.toolGroupId
     );
 
-    const animationLength = 750;
+    const animationLength = 1000;
 
     // Animation for the segmentIndex
-
     const { fillAlpha } = this.getConfiguration();
-
     let count = 0;
     const intervalTime = 16;
     const numberOfFrames = Math.ceil(animationLength / intervalTime);
