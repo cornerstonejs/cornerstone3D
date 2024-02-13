@@ -158,7 +158,6 @@ addDropdownToToolbar({
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
     for (const toolGroupId of toolGroupIds) {
-      console.log('Setting tool', newSelectedToolName, 'on', toolGroupId);
       const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
       // Set the new tool active
