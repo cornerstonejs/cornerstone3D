@@ -45,21 +45,37 @@ export default function getInterpolationData(
   const interpolationDatas = new Map<number, Annotation[]>();
   const { toolName, originalToolName } = annotation.metadata;
   const testToolName = originalToolName || toolName;
-  const annotations = getAnnotations(testToolName, viewport.element) || [];
-  const modifiedAnnotations = getAnnotations(
-    DEFAULT_CONTOUR_SEG_TOOLNAME,
-    viewport.element
+  // Get a copy of the annotations list by filtering it for only
+  // items which are originally the right tool name
+  const annotations = (
+    (getAnnotations(
+      testToolName,
+      viewport.element
+    ) as ContourSegmentationAnnotation[]) || []
+  ).filter(
+    (annotation) =>
+      !annotation.metadata.originalToolName ||
+      annotation.metadata.originalToolName === testToolName
   );
-  if (modifiedAnnotations?.length) {
-    modifiedAnnotations.forEach((annotation) => {
-      const { metadata } = annotation as ContourSegmentationAnnotation;
-      if (
-        metadata.originalToolName === testToolName &&
-        !annotations.find((it) => it === annotation)
-      ) {
-        annotations.push(annotation);
-      }
-    });
+
+  // Then add the default contour seg tool name which has the testTool name
+  // to the segmentations list.
+  if (testToolName !== DEFAULT_CONTOUR_SEG_TOOLNAME) {
+    const modifiedAnnotations = getAnnotations(
+      DEFAULT_CONTOUR_SEG_TOOLNAME,
+      viewport.element
+    ) as ContourSegmentationAnnotation[];
+    if (modifiedAnnotations?.length) {
+      modifiedAnnotations.forEach((annotation) => {
+        const { metadata } = annotation;
+        if (
+          metadata.originalToolName === testToolName &&
+          metadata.originalToolName !== metadata.toolName
+        ) {
+          annotations.push(annotation);
+        }
+      });
+    }
   }
 
   if (!annotations?.length) {
