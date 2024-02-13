@@ -158,7 +158,7 @@ if (configuration.examples) {
   //shell.cd(rootPath);
 
   if (options.build == true) {
-    shell.exec(`node --max-old-space-size=8192 node_modules/.bin/webpack --progress --config ${webpackConfigPath}`);
+    shell.exec(`node --max_old_space_size=16384 ../../../node_modules/webpack/bin/webpack.js --progress --config ${webpackConfigPath}`);
   } else {
     shell.exec(
       `webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`

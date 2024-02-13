@@ -273,6 +273,14 @@
       "videoRange": {
         "name": "Video Range Selection",
         "description": "Video range selection"
+      },
+      "wsi": {
+        "name": "Whole Slide Imaging",
+        "description": "Dispaly WSI Series"
+      },
+      "wsiAnnotationTools": {
+        "name": "WSI Annotation Tools",
+        "description": "WSI with length and other annotation tools"
       }
     },
     "tools-segmentation" : {
