@@ -21,11 +21,8 @@
     "adapters": {
       "description": "Adapters"
     },
-    "video": {
-      "description": "Video Viewport"
-    },
-    "wsi": {
-      "description": "Whole Slide Imaging"
+    "viewports": {
+      "description": "Other Viewports (video,wsi)"
     },
     "nifti": {
       "description": "Nifti Volume loader"
@@ -244,17 +241,7 @@
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
-    "wsi" : {
-      "wsi": {
-        "name": "Whole Slide Imaging",
-        "description": "Basic WSI Viewport"
-      },
-      "wsiAnnotationTools": {
-        "name": "WSI Annotation Tools",
-        "description": "WSI Viewport With Length Tool"
-      }
-    },
-    "video" : {
+    "viewports" : {
       "video": {
         "name": "Video Display",
         "description": "Basic video display"
