@@ -10,7 +10,7 @@ export type BidirectionalData = {
   label?: string;
   color?: string | number[];
   referencedImageId: string;
-  FrameOfReferenceUID: string;
+  sliceIndex: number;
 };
 
 /**
@@ -25,7 +25,7 @@ export default function createBidirectionalToolData(
     majorAxis,
     minorAxis,
     label = '',
-    FrameOfReferenceUID,
+    sliceIndex,
     referencedImageId,
   } = bidirectionalData;
   const [major0, major1] = majorAxis;
@@ -38,9 +38,7 @@ export default function createBidirectionalToolData(
     invalidated: true,
     metadata: {
       toolName: 'Bidirectional',
-      viewPlaneNormal,
-      viewUp,
-      FrameOfReferenceUID,
+      ...viewport.getViewReference({ sliceIndex }),
       referencedImageId,
     },
     data: {
