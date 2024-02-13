@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.58.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.58.2...v1.58.3) (2024-02-13)
+
+### Bug Fixes
+
+- bidirectional on segmentation generation ([#1077](https://github.com/cornerstonejs/cornerstone3D/issues/1077)) ([9333d8d](https://github.com/cornerstonejs/cornerstone3D/commit/9333d8df0bec3b5ac040600143fe728827a8ee93))
+
 ## [1.58.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.58.1...v1.58.2) (2024-02-13)
 
 ### Bug Fixes
