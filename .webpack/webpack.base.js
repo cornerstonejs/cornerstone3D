@@ -1,8 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 // Plugins
-const BundleAnalyzerPlugin =
-  require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const PROJECT_ROOT = path.join(__dirname, '../');
 const SRC_PATH = path.join(PROJECT_ROOT, './src');

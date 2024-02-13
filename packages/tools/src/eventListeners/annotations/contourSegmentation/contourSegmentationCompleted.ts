@@ -29,6 +29,7 @@ import { PlanarFreehandContourSegmentationTool } from '../../../tools';
 import type { Annotation } from '../../../types';
 import type { ContourAnnotation } from '../../../types/ContourAnnotation';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
@@ -357,6 +358,7 @@ function combinePolylines(
       metadata: {
         ...metadata,
         toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
+        originalToolName: targetAnnotation.metadata.toolName,
       },
       data: {
         cachedStats: {},
@@ -368,6 +370,7 @@ function combinePolylines(
           polyline: [],
           closed: true,
         },
+        spline: targetAnnotation.data.spline,
         segmentation: {
           ...segmentation,
         },
@@ -377,6 +380,10 @@ function combinePolylines(
       invalidated: true,
       isLocked: false,
       isVisible: undefined,
+      // Allow this object to be interpolated against the original interpolation
+      // data.
+      interpolationUID: targetAnnotation.interpolationUID,
+      interpolationCompleted: targetAnnotation.interpolationCompleted,
     };
 
     // Calling `updateContourPolyline` method instead of setting it locally
@@ -393,6 +400,7 @@ function combinePolylines(
 
     addAnnotation(newAnnotation, element);
     contourSegUtils.addContourSegmentationAnnotation(newAnnotation);
+    triggerAnnotationModified(newAnnotation, viewport.element);
 
     reassignedContourHolesMap
       .get(polyline)

@@ -99,6 +99,10 @@ module.exports = function (config) {
               },
             ],
           },
+          {
+            test: /\.wasm/,
+            type: 'asset/resource',
+          },
           // NOTE: For better debugging you can comment out the
           // istanbul-instrumenter-loader below
           // {

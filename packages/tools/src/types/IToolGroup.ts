@@ -44,7 +44,7 @@ export default interface IToolGroup {
   };
   /** Setting the tool to be Passive by its name*/
   setToolPassive: {
-    (toolName: string): void;
+    (toolName: string, options?: { removeAllBindings?: boolean }): void;
   };
   /** Setting the tool to be Enabled by its name*/
   setToolEnabled: {

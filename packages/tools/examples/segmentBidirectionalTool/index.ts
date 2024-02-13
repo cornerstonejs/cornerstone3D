@@ -16,6 +16,7 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -49,8 +50,7 @@ const viewportId1 = 'volumeViewport';
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const segmentationIdVolume = 'volumeSegmentationId';
-const segmentationIdStack = 'stackSegmentationId';
+const segmentationId = 'volumeSegmentationId';
 const toolGroupIds = ['toolgroupIdVolume'];
 const segmentationRepresentationUIDs = [];
 let stackImageIds;
@@ -141,7 +141,7 @@ addDropdownToToolbar({
     const name = String(nameAsStringOrNumber);
     toolGroupIds.forEach((toolGroupId) => {
       const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
+      addManipulationBindings(toolGroup);
       // Set the currently active tool disabled
       const toolName = toolGroup.getActivePrimaryMouseButtonTool();
 
@@ -166,7 +166,7 @@ addDropdownToToolbar({
 
 addSliderToToolbar({
   title: 'Brush Size',
-  range: [5, 50],
+  range: [5, 100],
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
@@ -182,11 +182,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (segmentIndex) => {
     const indices = String(segmentIndex).split(',');
     segmentation.segmentIndex.setActiveSegmentIndex(
-      segmentationIdVolume,
-      Number(indices[0])
-    );
-    segmentation.segmentIndex.setActiveSegmentIndex(
-      segmentationIdStack,
+      segmentationId,
       Number(indices[0])
     );
   },
@@ -221,46 +217,30 @@ addButtonToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-    volumeId: segmentationIdVolume,
+    volumeId: segmentationId,
   });
-
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(stackImageIds);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
-      segmentationId: segmentationIdVolume,
+      segmentationId,
       representation: {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         // The actual segmentation data, in the case of labelmap this is a
         // reference to the source volume of the segmentation.
         data: {
-          volumeId: segmentationIdVolume,
-        },
-      },
-    },
-    {
-      segmentationId: segmentationIdStack,
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIdReferenceMap: new Map(
-            stackImageIds.map((imageId, index) => [
-              imageId,
-              segmentationImageIds[index],
-            ])
-          ),
+          volumeId: segmentationId,
         },
       },
     },
   ]);
+
   // Add the segmentation representation to the toolgroup
   segmentationRepresentationUIDs.push(
     ...(await segmentation.addSegmentationRepresentations(toolGroupIds[0], [
       {
-        segmentationId: segmentationIdVolume,
+        segmentationId: segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]))
@@ -490,8 +470,7 @@ async function run() {
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdVolume, 1);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdStack, 1);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // // Add the segmentation representation to the toolgroup
   // Setup configuration for contour bidirectional action
