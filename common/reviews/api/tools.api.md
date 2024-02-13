@@ -1392,10 +1392,7 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
-function containsPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): boolean;
-
-// @public (undocumented)
-function containsPoint_2(polyline: Types_2.Point2[], point: Types_2.Point2, closed?: boolean): boolean;
+function containsPoint(polyline: Types_2.Point2[], point: Types_2.Point2, closed?: boolean): boolean;
 
 // @public (undocumented)
 function containsPoints(polyline: Types_2.Point2[], points: Types_2.Point2[]): boolean;
@@ -2814,6 +2811,9 @@ interface ISpline {
 function isPointInsidePolyline3D(point: Types_2.Point3, polyline: Types_2.Point3[]): boolean;
 
 // @public (undocumented)
+function isPointOnLineSegment(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): boolean;
+
+// @public (undocumented)
 function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
@@ -3225,7 +3225,7 @@ declare namespace lineSegment {
         distanceToPointSquared_2 as distanceToPointSquared,
         distanceToPointSquaredInfo,
         intersectLine,
-        containsPoint
+        isPointOnLineSegment
     }
 }
 
@@ -3832,7 +3832,7 @@ declare namespace polyDataUtils {
 declare namespace polyline {
     export {
         isClosed,
-        containsPoint_2 as containsPoint,
+        containsPoint,
         containsPoints,
         getAABB,
         getArea,
