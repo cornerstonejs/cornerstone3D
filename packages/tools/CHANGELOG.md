@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.58.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.58.3...v1.58.4) (2024-02-13)
+
+### Bug Fixes
+
+- Stack/volume paired contour segmentations ([#1078](https://github.com/cornerstonejs/cornerstone3D/issues/1078)) ([ead38aa](https://github.com/cornerstonejs/cornerstone3D/commit/ead38aa502d25d18305707f1686a42a635a9ad17))
+
 ## [1.58.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.58.2...v1.58.3) (2024-02-13)
 
 ### Bug Fixes
