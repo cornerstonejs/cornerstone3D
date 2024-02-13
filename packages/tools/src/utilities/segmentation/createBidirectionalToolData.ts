@@ -21,25 +21,19 @@ export default function createBidirectionalToolData(
   bidirectionalData: BidirectionalData,
   viewport
 ): Annotation {
-  const {
-    majorAxis,
-    minorAxis,
-    label = '',
-    sliceIndex,
-    referencedImageId,
-  } = bidirectionalData;
+  const { majorAxis, minorAxis, label = '', sliceIndex } = bidirectionalData;
   const [major0, major1] = majorAxis;
   const [minor0, minor1] = minorAxis;
 
-  const { viewUp, viewPlaneNormal } = viewport.getCamera();
   const points = [major0, major1, minor0, minor1];
   const bidirectionalToolData = {
     highlighted: true,
     invalidated: true,
     metadata: {
       toolName: 'Bidirectional',
+      // Get a view reference for the slice this applies to, not the currently
+      // displayed slice.  This will fill in the remaining data for that slice
       ...viewport.getViewReference({ sliceIndex }),
-      referencedImageId,
     },
     data: {
       handles: {

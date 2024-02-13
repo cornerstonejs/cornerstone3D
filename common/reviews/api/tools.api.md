@@ -713,7 +713,7 @@ type BidirectionalData = {
     label?: string;
     color?: string | number[];
     referencedImageId: string;
-    FrameOfReferenceUID: string;
+    sliceIndex: number;
 };
 
 // @public (undocumented)
