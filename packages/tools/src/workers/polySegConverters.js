@@ -188,7 +188,7 @@ const polySegConverters = {
         const { projectedPolyline, sharedDimensionIndex } =
           projectTo2D(polyline);
 
-        const holes = holesPolyline.map((hole) => {
+        const holes = holesPolyline?.map((hole) => {
           const { projectedPolyline: projectedHole } = projectTo2D(hole);
           return projectedHole;
         });
@@ -297,7 +297,7 @@ const polySegConverters = {
         const { projectedPolyline, sharedDimensionIndex } =
           projectTo2D(polyline);
 
-        const holes = holesPolyline.map((hole) => {
+        const holes = holesPolyline?.map((hole) => {
           const { projectedPolyline: projectedHole } = projectTo2D(hole);
           return projectedHole;
         });
