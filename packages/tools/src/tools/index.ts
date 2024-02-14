@@ -51,7 +51,7 @@ import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
-import ThresholdPreviewTool from './segmentation/ThresholdPreviewTool';
+import LabelmapThresholdPreview from './segmentation/LabelmapThresholdPreview';
 
 export {
   // ~~ BASE
@@ -112,5 +112,5 @@ export {
   ScaleOverlayTool,
   OrientationMarkerTool,
   SegmentSelectTool,
-  ThresholdPreviewTool,
+  LabelmapThresholdPreview,
 };

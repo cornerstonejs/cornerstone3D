@@ -70,7 +70,7 @@ import {
   OverlayGridTool,
   SegmentationIntersectionTool,
   SegmentSelectTool,
-  ThresholdPreviewTool,
+  LabelmapThresholdPreview,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -143,7 +143,7 @@ export {
   BrushTool,
   OrientationMarkerTool,
   SegmentSelectTool,
-  ThresholdPreviewTool,
+  LabelmapThresholdPreview,
 
   // Synchronizers
   synchronizers,

@@ -14,12 +14,13 @@ import { getToolGroup } from '../../store/ToolGroupManager';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import { easeInOutBell } from '../../utilities/animationHelpers';
 
-const LOWER_THRESHOLD = -150;
-const UPPER_THRESHOLD = -70;
-const STRATEGY_NAME = 'FILL_INSIDE_CUBE';
+const DEFAULT_LOWER_THRESHOLD = -150;
+const DEFAULT_UPPER_THRESHOLD = -70;
+const DEFAULT_STRATEGY_NAME = 'FILL_INSIDE_CUBE';
+const DEFAULT_ANIMATION_LENGTH = 1000;
 
-class ThresholdPreviewTool extends BaseTool {
-  static toolName;
+class LabelmapThresholdPreview extends BaseTool {
+  static toolName: string;
 
   editData: {
     annotation: any;
@@ -48,10 +49,10 @@ class ThresholdPreviewTool extends BaseTool {
           FILL_INSIDE_CUBE: fillInsideCube,
         },
         strategySpecificConfiguration: {
-          threshold: [LOWER_THRESHOLD, UPPER_THRESHOLD], // E.g. CT Fat // Only used during threshold strategies.
+          threshold: [DEFAULT_LOWER_THRESHOLD, DEFAULT_UPPER_THRESHOLD], // E.g. CT Fat // Only used during threshold strategies.
         },
-        defaultStrategy: STRATEGY_NAME,
-        activeStrategy: STRATEGY_NAME,
+        defaultStrategy: DEFAULT_STRATEGY_NAME,
+        activeStrategy: DEFAULT_STRATEGY_NAME,
       },
     }
   ) {
@@ -155,18 +156,16 @@ class ThresholdPreviewTool extends BaseTool {
       this.toolGroupId
     );
 
-    const animationLength = 1000;
-
     // Animation for the segmentIndex
     const { fillAlpha } = this.getConfiguration();
     let count = 0;
     const intervalTime = 16;
-    const numberOfFrames = Math.ceil(animationLength / intervalTime);
+    const numberOfFrames = Math.ceil(DEFAULT_ANIMATION_LENGTH / intervalTime);
 
     clearInterval(this.highlightIntervalId);
 
     this.highlightIntervalId = setInterval(() => {
-      const x = (count * intervalTime) / animationLength;
+      const x = (count * intervalTime) / DEFAULT_ANIMATION_LENGTH;
       const easeOutFillAlpha = easeInOutBell(x, fillAlpha);
 
       if (easeOutFillAlpha < 0) {
@@ -197,5 +196,5 @@ class ThresholdPreviewTool extends BaseTool {
   }
 }
 
-ThresholdPreviewTool.toolName = 'LabelmapThresholdPreview';
-export default ThresholdPreviewTool;
+LabelmapThresholdPreview.toolName = 'LabelmapThresholdPreview';
+export default LabelmapThresholdPreview;

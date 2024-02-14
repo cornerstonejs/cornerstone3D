@@ -29,7 +29,7 @@ const {
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
-  ThresholdPreviewTool,
+  LabelmapThresholdPreview,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -44,13 +44,18 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 const THRESHOLD_RANGE = [-2000, 2000];
 const LOWER_THRESHOLD = -150;
 const UPPER_THRESHOLD = -70;
-const thresholdOptions = [
-  'CT Fat: (-150, -70)',
-  'CT Bone: (200, 1000)',
-  'Adipose: (-190, -30)',
-  'Muscle: (-29, 150)',
-];
+const thresholdOptions = {
+  'CT Fat: (-150, -70)': [-150, -70],
+  'CT Bone: (200, 1000)': [200, 1000],
+  'Adipose: (-190, -30)': [-190, -30],
+  'Muscle: (-29, 150)': [-29, 150],
+};
 const debounceWaitTime = 1000;
+const StudyInstanceUID =
+  '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
+const SeriesInstanceUID =
+  '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561';
+const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -170,31 +175,26 @@ const debouncedSetThreshold = debounce(
 ); // Adjust the debounce delay as needed
 
 addDropdownToToolbar({
-  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
+  options: {
+    values: Object.keys(thresholdOptions),
+    defaultValue: Object.keys(thresholdOptions)[0],
+  },
+  onSelectedValueChange: (value) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const thresholdPreviewToolInstance =
-      toolGroup._toolInstances['LabelmapThresholdPreview'];
-    const name = String(nameAsStringOrNumber);
+    const labelmapThresholdPreview = toolGroup.getToolInstance(
+      'LabelmapThresholdPreview'
+    );
+    const name = String(value);
+    const newThreshold = thresholdOptions[name];
 
-    if (name === thresholdOptions[0]) {
-      updateThresholdElementsValue([-150, -70]);
-      thresholdPreviewToolInstance.setThreshold([-150, -70]);
-    } else if (name === thresholdOptions[1]) {
-      updateThresholdElementsValue([200, 1000]);
-      thresholdPreviewToolInstance.setThreshold([200, 1000]);
-    } else if (name === thresholdOptions[2]) {
-      updateThresholdElementsValue([-190, -30]);
-      thresholdPreviewToolInstance.setThreshold([-190, -30]);
-    } else if (name === thresholdOptions[3]) {
-      updateThresholdElementsValue([-29, 150]);
-      thresholdPreviewToolInstance.setThreshold([-29, 150]);
+    if (newThreshold) {
+      updateThresholdElementsValue(newThreshold);
+      labelmapThresholdPreview.setThreshold(newThreshold);
     }
   },
 });
 
 addSliderToToolbar({
-  // title: `Lower Threshold value: ${LOWER_THRESHOLD}`,
   title: `Lower Threshold`,
   range: THRESHOLD_RANGE,
   defaultValue: LOWER_THRESHOLD,
@@ -251,7 +251,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(ThresholdPreviewTool);
+  cornerstoneTools.addTool(LabelmapThresholdPreview);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -263,7 +263,7 @@ async function run() {
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(ThresholdPreviewTool.toolName);
+  toolGroup.addTool(LabelmapThresholdPreview.toolName);
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
@@ -287,11 +287,9 @@ async function run() {
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    StudyInstanceUID,
+    SeriesInstanceUID,
+    wadoRsRoot,
   });
 
   // Define a volume in memory
@@ -347,8 +345,8 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  const callback = (event) => {
-    toolGroup.setToolEnabled(ThresholdPreviewTool.toolName);
+  const callback = () => {
+    toolGroup.setToolEnabled(LabelmapThresholdPreview.toolName);
   };
   // Set the volume to load
   volume.load(callback);
@@ -360,7 +358,7 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
       segmentationId,
@@ -372,4 +370,4 @@ async function run() {
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
 }
 
-run();
+void run();
