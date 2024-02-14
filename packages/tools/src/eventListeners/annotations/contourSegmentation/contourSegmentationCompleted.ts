@@ -358,7 +358,7 @@ function combinePolylines(
       metadata: {
         ...metadata,
         toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
-        originalToolName: targetAnnotation.metadata.toolName,
+        originalToolName: metadata.originalToolName || metadata.toolName,
       },
       data: {
         cachedStats: {},
