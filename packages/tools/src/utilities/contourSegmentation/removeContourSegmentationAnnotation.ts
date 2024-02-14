@@ -3,9 +3,10 @@ import { ContourSegmentationAnnotation } from '../../types';
 
 /**
  * Removes a contour segmentation annotation from the given annotation.
- * If the annotation does not have a segmentation data, an error is thrown.
+ * If the annotation does not have a segmentation data, this method returns
+ * quietly.  This can occur for interpolated segmentations that have not yet
+ * been converted to real segmentations or other in-process segmentations.
  * @param annotation - The contour segmentation annotation to remove.
- * @throws Error if the annotation does not have a segmentation data.
  */
 export function removeContourSegmentationAnnotation(
   annotation: ContourSegmentationAnnotation
@@ -18,8 +19,8 @@ export function removeContourSegmentationAnnotation(
 
   const { segmentationId, segmentIndex } = annotation.data.segmentation;
   const segmentation = state.getSegmentation(segmentationId);
-  const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
-  const annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);
+  const { annotationUIDsMap } = segmentation?.representationData.CONTOUR || {};
+  const annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
 
   if (!annotationsUIDsSet) {
     return;

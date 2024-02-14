@@ -122,7 +122,6 @@ export default class InterpolationManager {
     ) {
       return;
     }
-    console.log('Interpolation annotation', annotation.annotationUID);
 
     const viewport = getViewportForAnnotation(annotation);
     if (!viewport) {
