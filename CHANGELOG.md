@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.58.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.58.4...v1.58.5) (2024-02-14)
+
+### Bug Fixes
+
+- **annotations:** Ensure viewports re-render for annotation drawing ([#1083](https://github.com/cornerstonejs/cornerstone3D/issues/1083)) ([dd5e81d](https://github.com/cornerstonejs/cornerstone3D/commit/dd5e81d6f2491aac94593c2605f645ebb5319aed))
+
 ## [1.58.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.58.3...v1.58.4) (2024-02-13)
 
 ### Bug Fixes
