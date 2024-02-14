@@ -75,7 +75,7 @@ export async function convertLabelmapToSurface(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 100);
+  triggerWorkerProgress(eventTarget, 1);
 
   return results;
 }

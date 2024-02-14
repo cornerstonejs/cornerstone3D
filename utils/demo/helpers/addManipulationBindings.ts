@@ -86,7 +86,7 @@ export default function addManipulationBindings(
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
+        mouseButton: MouseBindings.Primary,
         modifierKey: KeyboardBindings.Alt,
       },
       {
@@ -98,18 +98,18 @@ export default function addManipulationBindings(
   // Add a length tool binding to allow testing annotations on examples targetting
   // other use cases.  Use a primary button with shift+ctrl as that is relatively
   // unlikely to be otherwise used.
-  toolGroup.setToolActive(LengthTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.ShiftCtrl,
-      },
-      {
-        numTouchPoints: 1,
-        modifierKey: KeyboardBindings.ShiftCtrl,
-      },
-    ],
-  });
+   toolGroup.setToolActive(LengthTool.toolName, {
+     bindings: [
+       {
+         mouseButton: MouseBindings.Primary,
+         modifierKey: KeyboardBindings.ShiftCtrl,
+       },
+       {
+         numTouchPoints: 1,
+         modifierKey: KeyboardBindings.ShiftCtrl,
+       },
+     ],
+   });
 
   if (is3DViewport) {
     toolGroup.setToolActive(TrackballRotateTool.toolName, {

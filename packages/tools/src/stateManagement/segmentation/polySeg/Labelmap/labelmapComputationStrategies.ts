@@ -1,9 +1,5 @@
-import {
-  Types,
-  VolumeViewport,
-  volumeLoader,
-  utilities,
-} from '@cornerstonejs/core';
+import { VolumeViewport, volumeLoader, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
 import {
@@ -16,7 +12,6 @@ import {
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
-import { PixelDataTypedArray } from '@cornerstonejs/core/dist/types/types';
 import { PolySegConversionOptions } from '../../../../types';
 
 export type RawLabelmapData =
@@ -166,7 +161,7 @@ async function computeLabelmapFromSurfaceSegmentation(
     segmentationVolume = await volumeLoader.createLocalSegmentationVolume(
       {
         ...volumeProps,
-        scalarData: volumeProps.scalarData as PixelDataTypedArray,
+        scalarData: volumeProps.scalarData as Types.PixelDataTypedArray,
         referencedImageIds: imageIds,
       },
       volumeId

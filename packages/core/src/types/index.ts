@@ -35,6 +35,7 @@ import type {
 import type Metadata from './Metadata';
 import type OrientationVectors from './OrientationVectors';
 import type AABB2 from './AABB2';
+import type AABB3 from './AABB3';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
@@ -161,7 +162,7 @@ export type {
   IViewport,
   ViewReference,
   ReferenceCompatibleOptions,
-  ViewReferenceSpecifier as ViewReferenceSpecifier,
+  ViewReferenceSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -182,6 +183,7 @@ export type {
   Metadata,
   OrientationVectors,
   AABB2,
+  AABB3,
   Point2,
   Point3,
   PointsXYZ,

@@ -41,7 +41,7 @@ const {
   Enums: csToolsEnums,
   segmentation,
 } = cornerstoneTools;
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define various constants for the tool definition
@@ -55,6 +55,15 @@ const segmentVisibilityMap = new Map();
 const configuredTools = new Map<string, any>();
 const interpolationConfiguration = {
   interpolation: { enabled: true },
+  decimate: {
+    enabled: true,
+    /** A maximum given distance 'epsilon' to decide if a point should or
+     * shouldn't be added the resulting polyline which will have a lower
+     * number of points for higher `epsilon` values.
+     * Larger values work well for this video example
+     */
+    epsilon: 0.5,
+  },
 };
 
 configuredTools.set('CatmullRomSplineROI', {
@@ -219,13 +228,17 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
+    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary, // Left Click
+        },
+        {
+          mouseButton: MouseBindings.Primary, // Shift + Left Click
+          modifierKey: KeyboardBindings.Shift,
         },
       ],
     });

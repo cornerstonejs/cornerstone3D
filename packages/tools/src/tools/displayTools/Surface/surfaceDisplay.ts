@@ -1,42 +1,18 @@
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import {
   cache,
   getEnabledElementByIds,
   Types,
-  Enums,
-  getWebWorkerManager,
-  eventTarget,
-  triggerEvent,
-  utilities,
   VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../../store/ToolGroupManager';
-import {
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
-import { registerDisplayToolsWorker } from '../registerDisplayToolsWorker';
+import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { polySeg } from '../../../stateManagement/segmentation';
-import { pointToString } from '../../../utilities';
-import { WorkerTypes } from '../../../enums';
-const workerManager = getWebWorkerManager();
-
-const polyDataCache = new Map();
-const currentViewportNormal = new Map();
-
-const triggerWorkerProgress = (eventTarget, progress) => {
-  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
-    progress,
-    type: WorkerTypes.DISPLAY_TOOL_CLIP_SURFACE,
-  });
-};
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -82,21 +58,21 @@ function removeSegmentationRepresentation(
  */
 async function render(
   viewport: Types.IVolumeViewport,
-  representation: ToolGroupSpecificRepresentation,
-  toolGroupConfig: SegmentationRepresentationConfig
+  representation: ToolGroupSpecificRepresentation
 ): Promise<void> {
-  const {
-    colorLUTIndex,
-    active,
-    segmentationId,
-    segmentationRepresentationUID,
-    segmentsHidden,
-  } = representation;
+  const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
+    representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   if (!segmentation) {
     return;
+  }
+
+  if (!(viewport instanceof VolumeViewport3D)) {
+    throw new Error(
+      'Surface rendering is only supported in 3D viewports, if you need to visualize the surface cuts in 2D viewports, you can use the Contour representation, see polySeg converters'
+    );
   }
 
   let SurfaceData = segmentation.representationData[Representations.Surface];
@@ -134,18 +110,7 @@ async function render(
   const surfaces = [];
   geometryIds.forEach((geometryId, segmentIndex) => {
     const geometry = cache.getGeometry(geometryId);
-    if (!geometry) {
-      throw new Error(`No Surfaces found for geometryId ${geometryId}`);
-    }
-
-    if (geometry.type !== Enums.GeometryType.SURFACE) {
-      // Todo: later we can support converting other geometries to Surfaces
-      throw new Error(
-        `Geometry type ${geometry.type} not supported for rendering.`
-      );
-    }
-
-    if (!geometry.data) {
+    if (!geometry?.data) {
       console.warn(
         `No Surfaces found for geometryId ${geometryId}. Skipping render.`
       );
@@ -165,18 +130,6 @@ async function render(
 
     surfaces.push(surface);
   });
-
-  if (!(viewport instanceof VolumeViewport3D)) {
-    // const { viewPlaneNormal } = viewport.getCamera();
-    // currentViewportNormal.set(surface.id, structuredClone(viewPlaneNormal));
-    // if the viewport is not 3D means we should calculate
-    // the clipping planes for the surface and cache the results
-    generateAndCacheClippedSurfaces(
-      surfaces,
-      viewport,
-      segmentationRepresentationUID
-    );
-  }
 
   viewport.render();
 }
@@ -206,197 +159,9 @@ function _removeSurfaceFromToolGroupViewports(
   }
 }
 
-async function generateAndCacheClippedSurfaces(
-  surfaces: Types.ISurface[],
-  viewport: Types.IVolumeViewport | Types.IStackViewport,
-  segmentationRepresentationUID: string
-) {
-  registerDisplayToolsWorker();
-
-  // All planes is an array of planes pairs for each slice, so we should loop over them and
-  // add the planes to the clipping filter and cache the results for that slice
-
-  // Fix these ts ignores
-  // @ts-ignore
-  const planesInfo = viewport.getSlicesClippingPlanes?.();
-
-  if (!planesInfo) {
-    // this means it is probably the stack viewport not being ready
-    // in terms of planes which we should wait for the first render to
-    // get the planes
-    return;
-  }
-
-  // @ts-ignore
-  const currentSliceIndex = viewport.getSliceIndex();
-
-  // Reorder planesInfo based on proximity to currentSliceIndex
-  planesInfo.sort((a, b) => {
-    const diffA = Math.abs(a.sliceIndex - currentSliceIndex);
-    const diffB = Math.abs(b.sliceIndex - currentSliceIndex);
-    return diffA - diffB;
-  });
-
-  const pointsAndPolys = surfaces.map((surface) => {
-    const id = surface.id;
-    const points = surface.getPoints();
-    const polys = surface.getPolys();
-
-    return { id, points, polys };
-  });
-
-  const camera = viewport.getCamera();
-
-  function cameraModifiedCallback(evt: Types.EventTypes.CameraModifiedEvent) {
-    const { camera } = evt.detail;
-    const { viewPlaneNormal } = camera;
-
-    // Note: I think choosing one of the surfaces to see
-    // if the viewPlaneNormal is the same for all surfaces is ok enough
-    // to decide if we should recompute the clipping planes
-    const surface1 = surfaces[0];
-
-    if (
-      utilities.isEqual(viewPlaneNormal, currentViewportNormal.get(surface1.id))
-    ) {
-      return;
-    }
-
-    currentViewportNormal.set(surface1.id, viewPlaneNormal);
-
-    workerManager.terminate('displayTools');
-
-    setTimeout(() => {
-      generateAndCacheClippedSurfaces(
-        surfaces,
-        viewport,
-        segmentationRepresentationUID
-      );
-    }, 0);
-
-    viewport.render();
-  }
-
-  // Remove the existing event listener
-  viewport.element.removeEventListener(
-    Enums.Events.CAMERA_MODIFIED,
-    cameraModifiedCallback as EventListener
-  );
-
-  // Add the event listener
-  viewport.element.addEventListener(
-    Enums.Events.CAMERA_MODIFIED,
-    cameraModifiedCallback as EventListener
-  );
-
-  triggerWorkerProgress(eventTarget, 0);
-
-  await workerManager
-    .executeTask(
-      'displayTools',
-      'clipSurfaceWithPlanes',
-      {
-        planesInfo,
-        pointsAndPolys,
-      },
-      {
-        callbacks: [
-          // progress callback
-          ({ progress }) => {
-            triggerWorkerProgress(eventTarget, progress);
-          },
-          // update cache callback
-          ({ sliceIndex, polyDataResults }) => {
-            polyDataResults.forEach((polyDataResult, surfaceId) => {
-              const actorUID = `${segmentationRepresentationUID}_${surfaceId}`;
-              const cacheId = generateCacheId(
-                viewport,
-                camera.viewPlaneNormal,
-                sliceIndex
-              );
-              updatePolyDataCache(actorUID, cacheId, polyDataResult);
-            });
-          },
-        ],
-      }
-    )
-    .catch((error) => {
-      console.error(error);
-    });
-
-  triggerWorkerProgress(eventTarget, 100);
-}
-
-export function getSurfaceActorUID(
-  segmentationRepresentationUID: string,
-  surfaceId: string
-) {
-  return `${segmentationRepresentationUID}_${surfaceId}`;
-}
-
-// Helper function to generate a cache ID
-export function generateCacheId(viewport, viewPlaneNormal, sliceIndex) {
-  return `${viewport.id}-${pointToString(viewPlaneNormal)}-${sliceIndex}`;
-}
-
-// Helper function to get or create PolyData
-export function getOrCreatePolyData(actorEntry, cacheId, vtkPlanes) {
-  let actorCache = polyDataCache.get(actorEntry.uid);
-  if (!actorCache) {
-    actorCache = new Map();
-    polyDataCache.set(actorEntry.uid, actorCache);
-  }
-
-  let polyData = actorCache.get(cacheId);
-  if (!polyData) {
-    const clippingFilter = actorEntry.clippingFilter;
-    clippingFilter.setClippingPlanes(vtkPlanes);
-    try {
-      clippingFilter.update();
-      polyData = clippingFilter.getOutputData();
-      actorCache.set(cacheId, polyData);
-    } catch (e) {
-      console.error('Error clipping surface', e);
-    }
-  }
-  return polyData;
-}
-
-// Helper function to update PolyData cache
-export function updatePolyDataCache(actorUID, cacheId, polyDataResult) {
-  const { points, lines } = polyDataResult;
-  const polyData = vtkPolyData.newInstance();
-  polyData.getPoints().setData(points, 3);
-  const linesArray = vtkCellArray.newInstance({
-    values: Int16Array.from(lines),
-  });
-  polyData.setLines(linesArray);
-
-  let actorCache = polyDataCache.get(actorUID);
-  if (!actorCache) {
-    actorCache = new Map();
-    polyDataCache.set(actorUID, actorCache);
-  }
-  actorCache.set(cacheId, polyData);
-}
-
-// Helper function to get and sort planes info based on slice index
-export function getSortedPlanesInfo(viewport) {
-  const planesInfo = viewport.getSlicesClippingPlanes?.();
-  const currentSliceIndex = viewport.getSliceIndex();
-
-  // Sort planesInfo based on proximity to currentSliceIndex
-  planesInfo.sort((a, b) => {
-    const diffA = Math.abs(a.sliceIndex - currentSliceIndex);
-    const diffB = Math.abs(b.sliceIndex - currentSliceIndex);
-    return diffA - diffB;
-  });
-  return planesInfo;
-}
-
 export default {
   render,
   removeSegmentationRepresentation,
 };
 
-export { render, removeSegmentationRepresentation, polyDataCache };
+export { render, removeSegmentationRepresentation };

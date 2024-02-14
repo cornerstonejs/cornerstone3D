@@ -196,6 +196,11 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
     const annotationLocked = segmentsLocked.includes(segmentIndex as never);
 
+    // Todo: we should really get styles every time we render, since it is getting
+    // the style for the visibility and that goes through the segment indices
+    // calculation which is expensive. We should cache the styles and only update
+    // them if the segmentation representation modified event is triggered.
+
     const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
