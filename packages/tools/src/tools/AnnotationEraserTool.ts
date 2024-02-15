@@ -7,7 +7,7 @@ import {
 } from '../stateManagement/annotation/annotationState';
 import { setAnnotationSelected } from '../stateManagement/annotation/annotationSelection';
 
-class EraserTool extends BaseTool {
+class AnnotationEraserTool extends BaseTool {
   static toolName;
   constructor(
     toolProps: PublicToolProps = {},
@@ -92,5 +92,5 @@ class EraserTool extends BaseTool {
   }
 }
 
-EraserTool.toolName = 'Eraser';
-export default EraserTool;
+AnnotationEraserTool.toolName = 'Eraser';
+export default AnnotationEraserTool;
