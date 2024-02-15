@@ -54,6 +54,8 @@ type ColormapModifiedEventDetail = {
   viewportId: string;
   /** The new colormap */
   colormap: ColormapPublic;
+  /** Unique ID for the volume in the cache */
+  volumeId?: string;
 }
 
 /**

@@ -284,6 +284,7 @@ type ColormapModifiedEvent = CustomEvent_2<ColormapModifiedEventDetail>;
 type ColormapModifiedEventDetail = {
     viewportId: string;
     colormap: ColormapPublic;
+    volumeId?: string;
 };
 
 // @public (undocumented)

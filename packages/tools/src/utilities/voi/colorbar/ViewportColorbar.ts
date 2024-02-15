@@ -174,10 +174,10 @@ class ViewportColorbar extends Colorbar {
   private _viewportColormapModifiedCallback = (
     evt: Types.EventTypes.ColormapModifiedEvent
   ) => {
-    const { viewportId, colormap } = evt.detail;
+    const { viewportId, colormap, volumeId  } = evt.detail;
     const { viewport } = this.enabledElement;
 
-    if (viewportId !== viewport.id) {
+    if (viewportId !== viewport.id || volumeId !== this._volumeId) {
       return;
     }
 
