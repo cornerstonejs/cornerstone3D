@@ -978,7 +978,7 @@ function getMinMax(storedPixelData: number[]): {
 export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement;
 
 // @public (undocumented)
-function getRandomSampleFromArray(array: any, size: any): any[];
+function getRandomSampleFromArray<T>(array: T[], size: number): T[];
 
 // @public (undocumented)
 export function getRenderingEngine(id: string): IRenderingEngine | undefined;
