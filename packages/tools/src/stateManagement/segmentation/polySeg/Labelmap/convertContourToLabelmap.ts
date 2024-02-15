@@ -12,6 +12,7 @@ import {
   eventTarget,
 } from '@cornerstonejs/core';
 import {
+  Annotation,
   ContourAnnotation,
   ContourSegmentationData,
   PolySegConversionOptions,
@@ -266,15 +267,9 @@ function _getAnnotationMapFromSegmentation(
 
     let uids = Array.from(annotationUIDsInSegment);
 
-    uids = uids.filter((uid) => {
-      const annotation = getAnnotation(uid) as ContourAnnotation;
-      return !uids.some((otherUid) => {
-        const parentAnnotation = getAnnotation(otherUid) as ContourAnnotation;
-        return parentAnnotation.childAnnotationUIDs?.includes(
-          annotation.annotationUID
-        );
-      });
-    });
+    uids = uids.filter(
+      (uid) => !(getAnnotation(uid) as Annotation).parentAnnotationUID
+    );
 
     const annotations = uids.map((uid) => {
       const annotation = getAnnotation(uid) as ContourAnnotation;
