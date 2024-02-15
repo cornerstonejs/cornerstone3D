@@ -11,6 +11,7 @@ import VOILUTFunctionType from '../enums/VOILUTFunctionType';
 import ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import IImageCalibration from './IImageCalibration';
+import { ColormapPublic } from './Colormap';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -52,7 +53,7 @@ type ColormapModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** The new colormap */
-  colormap: object;
+  colormap: ColormapPublic;
 }
 
 /**
