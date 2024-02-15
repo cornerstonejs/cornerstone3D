@@ -2024,6 +2024,19 @@ declare namespace Enums_2 {
 }
 
 // @public (undocumented)
+export class EraserTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _deleteNearbyAnnotations(evt: EventTypes_2.InteractionEventType, interactionType: string): boolean;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    preTouchStartCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 enum Events {
     // (undocumented)
     ANNOTATION_ADDED = "CORNERSTONE_TOOLS_ANNOTATION_ADDED",
