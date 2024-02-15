@@ -232,6 +232,13 @@ enum Events {
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+
+  /**
+   * Triggers on the HTML element when viewport modifies its colormap
+   * Make use of {@link EventTypes.ColormapModifiedEvent | ColormapModified Event Type } for typing your event listeners for COLORMAP_MODIFIED event,
+   * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
+   */
+  COLORMAP_MODIFIED = "CORNERSTONE_COLORMAP_MODIFIED"
 }
 
 export default Events;

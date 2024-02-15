@@ -48,6 +48,13 @@ type VoiModifiedEventDetail = {
   invertStateChanged?: boolean;
 };
 
+type ColormapModifiedEventDetail = {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** The new colormap */
+  colormap: object;
+}
+
 /**
  * DISPLAY_AREA_MODIFIED Event's data
  */
@@ -288,6 +295,11 @@ type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
 type VoiModifiedEvent = CustomEventType<VoiModifiedEventDetail>;
 
 /**
+ * COLORMAP_MODIFIED Event type
+ */
+type ColormapModifiedEvent = CustomEventType<ColormapModifiedEventDetail>;
+
+/**
  * DISPLAY_AREA_MODIFIED Event type
  */
 type DisplayAreaModifiedEvent = CustomEventType<DisplayAreaModifiedEventDetail>;
@@ -398,6 +410,8 @@ export type {
   CameraModifiedEvent,
   VoiModifiedEvent,
   VoiModifiedEventDetail,
+  ColormapModifiedEvent,
+  ColormapModifiedEventDetail,
   DisplayAreaModifiedEvent,
   DisplayAreaModifiedEventDetail,
   ElementDisabledEvent,

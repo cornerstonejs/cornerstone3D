@@ -3006,6 +3006,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.cpuRenderingInvalidated = true;
 
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: colormapData,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   private setColormapGPU(colormap: ColormapPublic) {
@@ -3034,6 +3040,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.colormap = colormap;
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap,
+    };
+
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+
   }
 
   private unsetColormapGPU() {
