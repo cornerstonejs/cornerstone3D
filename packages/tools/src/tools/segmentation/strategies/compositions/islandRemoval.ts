@@ -89,8 +89,7 @@ export default {
       floodedSet.add(index);
       floodedCount++;
     };
-
-    clickedPoints.forEach((clickedPoint, index) => {
+    clickedPoints.forEach((clickedPoint) => {
       // @ts-ignore - need to ignore the spread appication to array params
       if (getter(...clickedPoint) === 1) {
         floodFill(getter, clickedPoint, {

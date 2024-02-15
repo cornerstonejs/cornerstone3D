@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
@@ -10,11 +12,8 @@ export default {
   [StrategyCallbacks.CreateIsInThreshold]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      imageVoxelManager: imageVoxelManager,
-      strategySpecificConfiguration,
-      segmentIndex,
-    } = operationData;
+    const { imageVoxelManager, strategySpecificConfiguration, segmentIndex } =
+      operationData;
     if (!strategySpecificConfiguration || !segmentIndex) {
       return;
     }
@@ -23,13 +22,16 @@ export default {
         strategySpecificConfiguration;
 
       const voxelValue = imageVoxelManager.getAtIndex(index);
+      const gray = Array.isArray(voxelValue)
+        ? vec3.length(voxelValue as Types.Point3)
+        : voxelValue;
       // Prefer the generic version of the THRESHOLD configuration, but fallback
       // to the older THRESHOLD_INSIDE_CIRCLE version.
       const { threshold } = THRESHOLD || THRESHOLD_INSIDE_CIRCLE || {};
       if (!threshold?.length) {
         return true;
       }
-      return threshold[0] <= voxelValue && voxelValue <= threshold[1];
+      return threshold[0] <= gray && gray <= threshold[1];
     };
   },
 };

@@ -2,19 +2,17 @@ import {
   cache,
   getEnabledElementByIds,
   Types,
-  Enums,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../../store/ToolGroupManager';
-import {
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
+import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
-import addSurfaceToElement from './addSurfaceToElement';
+import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
+import { polySeg } from '../../../stateManagement/segmentation';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -60,68 +58,80 @@ function removeSegmentationRepresentation(
  */
 async function render(
   viewport: Types.IVolumeViewport,
-  representation: ToolGroupSpecificRepresentation,
-  toolGroupConfig: SegmentationRepresentationConfig
+  representation: ToolGroupSpecificRepresentation
 ): Promise<void> {
-  const {
-    colorLUTIndex,
-    active,
-    segmentationId,
-    segmentationRepresentationUID,
-    segmentsHidden,
-  } = representation;
+  const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
+    representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
-  const SurfaceData = segmentation.representationData[Representations.Surface];
-  const { geometryId } = SurfaceData;
 
-  if (!geometryId) {
+  if (!segmentation) {
+    return;
+  }
+
+  if (!(viewport instanceof VolumeViewport3D)) {
+    throw new Error(
+      'Surface rendering is only supported in 3D viewports, if you need to visualize the surface cuts in 2D viewports, you can use the Contour representation, see polySeg converters'
+    );
+  }
+
+  let SurfaceData = segmentation.representationData[Representations.Surface];
+
+  if (
+    !SurfaceData &&
+    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID)
+  ) {
+    // we need to check if we can request polySEG to convert the other
+    // underlying representations to Surface
+    SurfaceData = await polySeg.computeAndAddSurfaceRepresentation(
+      segmentationId,
+      {
+        segmentationRepresentationUID,
+      }
+    );
+
+    if (!SurfaceData) {
+      throw new Error(
+        `No Surface data found for segmentationId ${segmentationId}.`
+      );
+    }
+  }
+
+  const { geometryIds } = SurfaceData;
+
+  if (!geometryIds?.size) {
     console.warn(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );
   }
 
-  const geometry = cache.getGeometry(geometryId);
-  if (!geometry) {
-    throw new Error(`No Surfaces found for geometryId ${geometryId}`);
-  }
+  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
 
-  if (geometry.type !== Enums.GeometryType.SURFACE) {
-    // Todo: later we can support converting other geometries to Surfaces
-    throw new Error(
-      `Geometry type ${geometry.type} not supported for rendering.`
+  const surfaces = [];
+  geometryIds.forEach((geometryId, segmentIndex) => {
+    const geometry = cache.getGeometry(geometryId);
+    if (!geometry?.data) {
+      console.warn(
+        `No Surfaces found for geometryId ${geometryId}. Skipping render.`
+      );
+      return;
+    }
+
+    const surface = geometry.data as Types.ISurface;
+
+    const color = colorLUT[segmentIndex];
+    surface.setColor(color.slice(0, 3) as Types.Point3);
+
+    addOrUpdateSurfaceToElement(
+      viewport.element,
+      surface as Types.ISurface,
+      segmentationRepresentationUID
     );
-  }
 
-  if (!geometry.data) {
-    console.warn(
-      `No Surfaces found for geometryId ${geometryId}. Skipping render.`
-    );
-    return;
-  }
+    surfaces.push(surface);
+  });
 
-  const surface = geometry.data;
-
-  const surfaceUID = `${segmentationRepresentationUID}_${surface.id}}`;
-  _renderSurface(viewport, surface, surfaceUID);
-
-  viewport.resetCamera();
   viewport.render();
-}
-
-function _renderSurface(
-  viewport: Types.IVolumeViewport,
-  surface: any,
-  surfaceUID: string
-): void {
-  const actorUID = surfaceUID;
-  const actorEntry = viewport.getActor(actorUID);
-
-  if (!actorEntry) {
-    addSurfaceToElement(viewport.element, surface, actorUID);
-  } else {
-    throw new Error('Not implemented yet. (Update surface)');
-  }
 }
 
 function _removeSurfaceFromToolGroupViewports(
@@ -153,3 +163,5 @@ export default {
   render,
   removeSegmentationRepresentation,
 };
+
+export { render, removeSegmentationRepresentation };

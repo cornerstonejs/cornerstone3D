@@ -1,9 +1,6 @@
 import {
   CONSTANTS,
   getEnabledElement,
-  triggerEvent,
-  eventTarget,
-  StackViewport,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -14,13 +11,7 @@ import {
   getCalibratedAreaUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
-import { Events } from '../../enums';
-import { AnnotationTool } from '../base';
-import {
-  addAnnotation,
-  getAnnotations,
-} from '../../stateManagement/annotation/annotationState';
+import { roundNumber } from '../../utilities';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -32,11 +23,7 @@ import registerClosedContourEditLoop from './planarFreehandROITool/closedContour
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
-import {
+import type {
   EventTypes,
   ToolHandle,
   Annotation,
@@ -45,20 +32,21 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
+import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { KeyboardBindings, ChangeTypes } from '../../enums';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -76,23 +64,23 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  * or similar methods.
  *
  * PlanarFreehandROITool annotation can be smoothed on drawing completion. This is a configured based approach.
- * The interpolation process uses b-spline algorithm and consider 4 configurations properties:
- * - interpolation.interpolateOnAdd: to tell whether it should be interpolated or not (for editing it is considered the property interpolateOnEdit) (default: false)
- * - interpolation.interpolateOnEdit: to tell whether it should be interpolated or not when editing (default: false)
- * - interpolation.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during interpolation (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
- * - interpolation.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
+ * The smoothing process uses b-spline algorithm and consider 4 configurations properties:
+ * - smoothing.smoothOnAdd: to tell whether it should be smoothed or not (for editing it is considered the property smoothOnEdit) (default: false)
+ * - smoothing.smoothOnEdit: to tell whether it should be smoothed or not when editing (default: false)
+ * - smoothing.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during smoothing (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
+ * - smoothing.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
  *
- * So, with that said the interpolation might occur when:
- * - drawing is done (i.e mouse is released) and interpolation.interpolateOnAdd is true. Interpolation algorithm uses knotsRatioPercentageOnAdd
- * - edit drawing is done (i.e mouse is released) and interpolation.interpolateOnEdit is true. Interpolation algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
- * Interpolation does not occur when:
- * - interpolation.interpolateOnAdd is false and drawing is completed
- * - interpolation.interpolateOnEdit is false and edit is completed
+ * So, with that said the smoothing might occur when:
+ * - drawing is done (i.e mouse is released) and smoothing.smoothOnAdd is true. smoothing algorithm uses knotsRatioPercentageOnAdd
+ * - edit drawing is done (i.e mouse is released) and smoothing.smoothOnEdit is true. smoothing algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
+ * smoothing does not occur when:
+ * - smoothing.smoothOnAdd is false and drawing is completed
+ * - smoothing.smoothOnEdit is false and edit is completed
  * - drawing still happening (editing or not)
  *
- * The result of interpolation will be a smoother set of segments.
- * Changing tool configuration (see below) you can fine-tune the interpolation process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive interpolation.
- * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more agressive interpolation.
+ * The result of smoothing will be removal of some of the outliers
+ * Changing tool configuration (see below) you can fine-tune the smoothing process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive smoothing.
+ * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more aggressive smoothing.
  *
  * ```js
  * cornerstoneTools.addTool(PlanarFreehandROITool)
@@ -111,21 +99,22 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *   ],
  * })
  *
- * // set interpolation agressiveness while adding new annotation (ps: this does not change if interpolation is ON or OFF)
+ * // set smoothing aggressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { knotsRatioPercentageOnAdd: 30 },
+ *   smoothing: { knotsRatioPercentageOnAdd: 30 },
  * });
  *
- * // set interpolation to be ON while editing only
+ * // set smoothing to be ON while editing only
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { interpolateOnAdd: false, interpolateOnEdit: true  },
+ *   smoothing: { smoothOnAdd: false, smoothOnEdit: true  },
  * });
  * ```
+ *
  *
  * Read more in the Docs section of the website.
  */
 
-class PlanarFreehandROITool extends AnnotationTool {
+class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   static toolName;
 
   public touchDragCallback: any;
@@ -136,7 +125,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   isEditingClosed = false;
   isEditingOpen = false;
 
-  private activateDraw: (
+  protected activateDraw: (
     evt: EventTypes.InteractionEventType,
     annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
@@ -189,6 +178,11 @@ class PlanarFreehandROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        /**
+         * Specify which modifier key is used to add a hole to a contour. The
+         * modifier must be pressed when the first point of a new contour is added.
+         */
+        contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather
           // than just rendering a line.
@@ -202,18 +196,52 @@ class PlanarFreehandROITool extends AnnotationTool {
         // The proximity at which we fallback to the simplest grabbing logic for
         // determining what index of the contour to start editing.
         checkCanvasEditFallbackProximity: 6,
+        // For closed contours, make them clockwise
+        // This can be useful if contours are compared between slices, eg for
+        // interpolation, and does not cause problems otherwise so defaulting to true.
+        makeClockWise: true,
         // The relative distance that points should be dropped along the polyline
         // in units of the image pixel spacing. A value of 1 means that nodes must
         // be placed no closed than the image spacing apart. A value of 4 means that 4
         // nodes should be placed within the space of one image pixel size. A higher
-        // value gives more finese to the tool/smoother lines, but the value cannot
+        // value gives more finesse to the tool/smoother lines, but the value cannot
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
-        interpolation: {
-          interpolateOnAdd: false,
-          interpolateOnEdit: false, // used for edit only
+        /**
+         * Smoothing is used to remove jagged irregularities in the polyline,
+         * as opposed to interpolation, which is used to create new polylines
+         * between existing polylines.
+         */
+        smoothing: {
+          smoothOnAdd: false,
+          smoothOnEdit: false, // used for edit only
           knotsRatioPercentageOnAdd: 40,
           knotsRatioPercentageOnEdit: 40,
+        },
+        /**
+         * Interpolation is the creation of new segmentations in between the
+         * existing segmentations/indices.  Note that this does not apply to
+         * ROI values, since those annotations are individual annotations, not
+         * connected in any way to each other, whereas segmentations are intended
+         * to be connected 2d + 1 dimension (time or space or other) volumes.
+         */
+        interpolation: {
+          enabled: false,
+          // Callback to update the annotation or perform other action when the
+          // interpolation is complete.
+          onInterpolationComplete: null,
+        },
+        /**
+         * The polyline may get processed in order to reduce the number of points
+         * for better performance and storage.
+         */
+        decimate: {
+          enabled: false,
+          /** A maximum given distance 'epsilon' to decide if a point should or
+           * shouldn't be added the resulting polyline which will have a lower
+           * number of points for higher `epsilon` values.
+           */
+          epsilon: 0.1,
         },
         calculateStats: false,
         getTextLines: defaultGetTextLines,
@@ -250,63 +278,23 @@ class PlanarFreehandROITool extends AnnotationTool {
     evt: EventTypes.InteractionEventType
   ): PlanarFreehandROIAnnotation => {
     const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+    const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
+    const { renderingEngine } = enabledElement;
 
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
+    const annotation = this.createAnnotation(
+      evt
+    ) as PlanarFreehandROIAnnotation;
+
+    this.addAnnotation(annotation, element);
+
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
     );
 
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation: PlanarFreehandROIAnnotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        toolName: this.getToolName(),
-      },
-      data: {
-        handles: {
-          points: [], // Handle points for open contours
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        polyline: [<Types.Point3>[...worldPos]], // Polyline coordinates
-        label: '',
-        cachedStats: {},
-      },
-    };
-
-    addAnnotation(annotation, element);
-
     this.activateDraw(evt, annotation, viewportIdsToRender);
-
     evt.preventDefault();
-
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
@@ -357,10 +345,10 @@ class PlanarFreehandROITool extends AnnotationTool {
       this.getToolName()
     );
 
-    if (annotation.data.isOpenContour) {
-      this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
-    } else {
+    if (annotation.data.contour.closed) {
       this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
+    } else {
+      this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     }
   };
 
@@ -384,7 +372,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const points = annotation.data.polyline;
+    const points = annotation.data.contour.polyline;
 
     // NOTE: It is implemented this way so that we do not double calculate
     // points when number crunching adjacent line segments.
@@ -393,17 +381,16 @@ class PlanarFreehandROITool extends AnnotationTool {
     for (let i = 1; i < points.length; i++) {
       const p1 = previousPoint;
       const p2 = viewport.worldToCanvas(points[i]);
+      const canProject = pointCanProjectOnLine(canvasCoords, p1, p2, proximity);
 
-      const distance = pointCanProjectOnLine(canvasCoords, p1, p2, proximity);
-
-      if (distance === true) {
+      if (canProject) {
         return true;
       }
 
       previousPoint = p2;
     }
 
-    if (annotation.data.isOpenContour) {
+    if (!annotation.data.contour.closed) {
       // Contour is open, don't check last point to first point.
       return false;
     }
@@ -412,18 +399,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     const pStart = viewport.worldToCanvas(points[0]);
     const pEnd = viewport.worldToCanvas(points[points.length - 1]);
 
-    const distance = pointCanProjectOnLine(
-      canvasCoords,
-      pStart,
-      pEnd,
-      proximity
-    );
-
-    if (distance === true) {
-      return true;
-    }
-
-    return false;
+    return pointCanProjectOnLine(canvasCoords, pStart, pEnd, proximity);
   };
 
   cancel = (element: HTMLDivElement): void => {
@@ -438,40 +414,6 @@ class PlanarFreehandROITool extends AnnotationTool {
     } else if (isEditingClosed) {
       this.cancelClosedContourEdit(element);
     }
-  };
-
-  /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: PlanarFreehandROIAnnotation,
-    enabledElement: Types.IEnabledElement
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
-   * Triggers an annotation completed event.
-   */
-  triggerAnnotationCompleted = (
-    annotation: PlanarFreehandROIAnnotation
-  ): void => {
-    const eventType = Events.ANNOTATION_COMPLETED;
-
-    const eventDetail: AnnotationCompletedEventDetail = {
-      annotation,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
   };
 
   /**
@@ -535,7 +477,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
         return annotationViewPlaneNormal && isParallel;
       }
-    );
+    ) as PlanarFreehandROIAnnotation[];
 
     // No in plane annotations.
     if (!annotationsWithParallelNormals.length) {
@@ -552,7 +494,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     for (const annotation of annotationsWithParallelNormals) {
       const data = annotation.data;
-      const point = data.polyline[0];
+      const point = data.contour.polyline[0];
 
       if (!annotation.isVisible) {
         continue;
@@ -579,39 +521,47 @@ class PlanarFreehandROITool extends AnnotationTool {
     return annotationsWithinSlice;
   }
 
-  /**
-   * Draws the `PlanarFreehandROIAnnotation`s at each request animation frame.
-   *
-   * @param enabledElement - The Cornerstone's enabledElement.
-   * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
-   */
-  renderAnnotation = (
-    enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: SVGDrawingHelper
-  ): boolean => {
+  protected isContourSegmentationTool(): boolean {
+    // Disable contour segmentation behavior because it shall be activated only
+    // for PlanarFreehandContourSegmentationTool
+    return false;
+  }
+
+  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+    const worldPos = evt.detail.currentPoints.world;
+    const contourAnnotation = super.createAnnotation(evt);
+
+    const onInterpolationComplete = (annotation) => {
+      // Clear out the handles because they aren't used for straight freeform
+      annotation.data.handles.points.length = 0;
+    };
+
+    return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
+      data: {
+        contour: {
+          polyline: [<Types.Point3>[...worldPos]],
+        },
+        label: '',
+        cachedStats: {},
+      },
+      onInterpolationComplete,
+    });
+  }
+
+  protected getAnnotationStyle(context) {
+    // This method exists only because `super` cannot be called from
+    // _getRenderingOptions() which is in an external file.
+    return super.getAnnotationStyle(context);
+  }
+
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
+    const { enabledElement, targetId, svgDrawingHelper } = renderContext;
+    const annotation = renderContext.annotation as PlanarFreehandROIAnnotation;
+
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
-    const { element } = viewport;
-
-    const targetId = this.getTargetId(viewport);
-
-    let annotations = <PlanarFreehandROIAnnotation[]>(
-      getAnnotations(this.getToolName(), element)
-    );
-
-    // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
-    if (!annotations?.length) {
-      return renderStatus;
-    }
-
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
-      annotations
-    ) as PlanarFreehandROIAnnotation[];
-
-    if (!annotations?.length) {
-      return renderStatus;
-    }
 
     const isDrawing = this.isDrawing;
     const isEditingOpen = this.isEditingOpen;
@@ -620,44 +570,40 @@ class PlanarFreehandROITool extends AnnotationTool {
     if (!(isDrawing || isEditingOpen || isEditingClosed)) {
       // No annotations are currently being modified, so we can just use the
       // render contour method to render all of them
-      annotations.forEach((annotation) => {
-        this.renderContour(enabledElement, svgDrawingHelper, annotation);
-      });
+      this.renderContour(enabledElement, svgDrawingHelper, annotation);
     } else {
-      // One of the annotations will need special rendering treatment, render all
+      // The active annotation will need special rendering treatment. Render all
       // other annotations not being interacted with using the standard renderContour
       // rendering path.
       const activeAnnotationUID = this.commonData.annotation.annotationUID;
 
-      annotations.forEach((annotation) => {
-        if (annotation.annotationUID === activeAnnotationUID) {
-          if (isDrawing) {
-            this.renderContourBeingDrawn(
-              enabledElement,
-              svgDrawingHelper,
-              annotation
-            );
-          } else if (isEditingClosed) {
-            this.renderClosedContourBeingEdited(
-              enabledElement,
-              svgDrawingHelper,
-              annotation
-            );
-          } else if (isEditingOpen) {
-            this.renderOpenContourBeingEdited(
-              enabledElement,
-              svgDrawingHelper,
-              annotation
-            );
-          } else {
-            throw new Error(
-              `Unknown ${this.getToolName()} annotation rendering state`
-            );
-          }
+      if (annotation.annotationUID === activeAnnotationUID) {
+        if (isDrawing) {
+          this.renderContourBeingDrawn(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
+        } else if (isEditingClosed) {
+          this.renderClosedContourBeingEdited(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
+        } else if (isEditingOpen) {
+          this.renderOpenContourBeingEdited(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
         } else {
-          this.renderContour(enabledElement, svgDrawingHelper, annotation);
+          throw new Error(
+            `Unknown ${this.getToolName()} annotation rendering state`
+          );
         }
-      });
+      } else {
+        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      }
 
       // Todo: return boolean flag for each rendering route in the planar tool.
       renderStatus = true;
@@ -667,60 +613,76 @@ class PlanarFreehandROITool extends AnnotationTool {
       return;
     }
 
-    annotations.forEach((annotation) => {
-      const activeAnnotationUID = this.commonData?.annotation.annotationUID;
-      if (
-        annotation.annotationUID === activeAnnotationUID &&
-        !this.commonData?.movingTextBox
-      ) {
-        return;
-      }
+    this._calculateStatsIfActive(
+      annotation,
+      targetId,
+      viewport,
+      renderingEngine,
+      enabledElement
+    );
 
-      if (!this.commonData?.movingTextBox) {
-        const { data } = annotation;
-        if (
-          !data.cachedStats[targetId] ||
-          data.cachedStats[targetId].areaUnit == null
-        ) {
-          data.cachedStats[targetId] = {
-            Modality: null,
-            area: null,
-            max: null,
-            mean: null,
-            stdDev: null,
-            areaUnit: null,
-          };
-
-          this._calculateCachedStats(
-            annotation,
-            viewport,
-            renderingEngine,
-            enabledElement
-          );
-        } else if (annotation.invalidated) {
-          this._throttledCalculateCachedStats(
-            annotation,
-            viewport,
-            renderingEngine,
-            enabledElement
-          );
-        }
-      }
-
-      this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
-    });
+    this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
 
     return renderStatus;
-  };
+  }
 
-  _calculateCachedStats = (
+  _calculateStatsIfActive(
+    annotation: PlanarFreehandROIAnnotation,
+    targetId: string,
+    viewport,
+    renderingEngine,
+    enabledElement
+  ) {
+    const activeAnnotationUID = this.commonData?.annotation.annotationUID;
+
+    if (
+      annotation.annotationUID === activeAnnotationUID &&
+      !this.commonData?.movingTextBox
+    ) {
+      return;
+    }
+
+    if (!this.commonData?.movingTextBox) {
+      const { data } = annotation;
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].areaUnit == null
+      ) {
+        data.cachedStats[targetId] = {
+          Modality: null,
+          area: null,
+          max: null,
+          mean: null,
+          stdDev: null,
+          areaUnit: null,
+        };
+
+        this._calculateCachedStats(
+          annotation,
+          viewport,
+          renderingEngine,
+          enabledElement
+        );
+      } else if (annotation.invalidated) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          viewport,
+          renderingEngine,
+          enabledElement
+        );
+      }
+    }
+  }
+
+  private _calculateCachedStats = (
     annotation,
     viewport,
     renderingEngine,
     enabledElement
   ) => {
-    const data = annotation.data;
-    const { cachedStats, polyline: points } = data;
+    const { data } = annotation;
+    const { cachedStats } = data;
+    const { polyline: points } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
 
@@ -755,8 +717,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const scale = getCalibratedScale(image);
-      let area =
-        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      let area = polyline.getArea(canvasCoordinates) / scale / scale;
       // Convert from canvas_pixels ^2 to mm^2
       area *= deltaInX * deltaInY;
 
@@ -824,7 +785,7 @@ class PlanarFreehandROITool extends AnnotationTool {
           if (point[1] != curRow) {
             intersectionCounter = 0;
             curRow = point[1];
-            intersections = getIntersectionCoordinatesWithPolyline(
+            intersections = getLineSegmentIntersectionsCoordinates(
               canvasCoordinates,
               point,
               [canvasPosEnd[0], point[1]]
@@ -884,15 +845,24 @@ class PlanarFreehandROITool extends AnnotationTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(
+      annotation,
+      enabledElement.element,
+      ChangeTypes.StatsUpdated
+    );
 
     annotation.invalidated = false;
 
     return cachedStats;
   };
 
-  _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
-    const data = annotation.data;
+  private _renderStats = (
+    annotation,
+    viewport,
+    enabledElement,
+    svgDrawingHelper
+  ) => {
+    const { data } = <PlanarFreehandROIAnnotation>annotation;
     const targetId = this.getTargetId(viewport);
 
     const styleSpecifier: AnnotationStyle.StyleSpecifier = {
@@ -911,7 +881,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       return;
     }
 
-    const canvasCoordinates = data.polyline.map((p) =>
+    const canvasCoordinates = data.contour.polyline.map((p) =>
       viewport.worldToCanvas(p)
     );
     if (!data.handles.textBox.hasMoved) {
@@ -951,7 +921,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats;
+    cachedVolumeStats || {};
 
   const textLines: string[] = [];
 

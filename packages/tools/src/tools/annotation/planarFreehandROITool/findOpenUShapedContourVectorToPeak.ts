@@ -68,7 +68,9 @@ export function findOpenUShapedContourVectorToPeakOnRender(
   annotation: PlanarFreehandROIAnnotation
 ): Types.Point3[] {
   const { viewport } = enabledElement;
-  const canvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
+  const canvasPoints = annotation.data.contour.polyline.map(
+    viewport.worldToCanvas
+  );
 
   return findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
 }

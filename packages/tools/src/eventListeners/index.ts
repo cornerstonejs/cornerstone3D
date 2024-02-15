@@ -10,8 +10,10 @@ import {
   imageChangeEventListener,
 } from './segmentation';
 import {
+  annotationCompletedListener,
   annotationSelectionListener,
   annotationModifiedListener,
+  annotationRemovedListener,
 } from './annotations';
 //import touchEventListeners from './touchEventListeners';
 
@@ -25,6 +27,8 @@ export {
   segmentationRepresentationRemovedEventListener,
   segmentationDataModifiedEventListener,
   imageChangeEventListener,
+  annotationCompletedListener,
   annotationSelectionListener,
   annotationModifiedListener,
+  annotationRemovedListener,
 };

@@ -1,95 +1,101 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import _cloneDeep from 'lodash.clonedeep';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import { vec2, vec3, mat4 } from 'gl-matrix';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import * as metaData from '../metaData';
-import Viewport from './Viewport';
+import { mat4, vec2, vec3 } from 'gl-matrix';
+import _cloneDeep from 'lodash.clonedeep';
 import eventTarget from '../eventTarget';
-import {
-  triggerEvent,
-  isEqual,
-  invertRgbTransferFunction,
-  createSigmoidRGBTransferFunction,
-  windowLevel as windowLevelUtil,
-  imageIdToURI,
-  isImageActor,
-  actorIsA,
-  colormap as colormapUtils,
-  updateVTKImageDataWithCornerstoneImage,
-  imageRetrieveMetadataProvider,
-} from '../utilities';
+import * as metaData from '../metaData';
 import type {
-  Point2,
-  Point3,
-  VOIRange,
+  ActorEntry,
+  CPUFallbackColormapData,
+  CPUFallbackEnabledElement,
+  CPUIImageData,
+  ColormapPublic,
+  EventTypes,
+  FlipDirection,
   ICamera,
   IImage,
+  IImageCalibration,
   IImageData,
-  CPUIImageData,
+  IImagesLoader,
+  IStackInput,
+  IStackViewport,
+  ImageLoadListener,
+  Mat3,
   PTScaling,
+  Point2,
+  Point3,
   Scaling,
   StackViewportProperties,
-  FlipDirection,
-  ActorEntry,
-  CPUFallbackEnabledElement,
-  CPUFallbackColormapData,
-  EventTypes,
-  IStackViewport,
+  VOIRange,
+  ViewReference,
   VolumeActor,
-  Mat3,
-  ColormapPublic,
-  IImageCalibration,
-  IStackInput,
-  IImagesLoader,
-  ImageLoadListener,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
-import drawImageSync from './helpers/cpuFallback/drawImageSync';
-import { getColormap } from './helpers/cpuFallback/colors/index';
-
-import { loadAndCacheImage, ImageLoaderOptions } from '../loaders/imageLoader';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import {
-  InterpolationType,
-  RequestType,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
+import {
+  actorIsA,
+  colormap as colormapUtils,
+  createSigmoidRGBTransferFunction,
+  imageIdToURI,
+  imageRetrieveMetadataProvider,
+  invertRgbTransferFunction,
+  isEqual,
+  isImageActor,
+  triggerEvent,
+  updateVTKImageDataWithCornerstoneImage,
+  windowLevel as windowLevelUtil,
+} from '../utilities';
+import Viewport from './Viewport';
+import { getColormap } from './helpers/cpuFallback/colors/index';
+import drawImageSync from './helpers/cpuFallback/drawImageSync';
+
+import {
   Events,
+  InterpolationType,
+  MetadataModules,
+  RequestType,
   VOILUTFunctionType,
   ViewportStatus,
 } from '../enums';
-import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
-import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
-import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
+import { ImageLoaderOptions, loadAndCacheImage } from '../loaders/imageLoader';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
+import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
+import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
+import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
-import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
+import cache from '../cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
+import {
+  ImagePixelModule,
+  ImagePlaneModule,
+  PixelDataTypedArray,
+} from '../types';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import cache from '../cache';
-import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
-import {
-  PixelDataTypedArray,
-  ImagePixelModule,
-  ImagePlaneModule,
-} from '../types';
-import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import {
   getTransferFunctionNodes,
   setTransferFunctionNodes,
 } from '../utilities/transferFunctionUtils';
+import correctShift from './helpers/cpuFallback/rendering/correctShift';
+import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
+import { Transform } from './helpers/cpuFallback/rendering/transform';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -442,7 +448,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -484,7 +490,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -587,6 +593,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     const { modality } = metaData.get('generalSeriesModule', imageId);
     const imageIdScalingFactor = metaData.get('scalingModule', imageId);
+    const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
     if (modality === 'PT' && imageIdScalingFactor) {
       this._addScalingToViewport(imageIdScalingFactor);
@@ -596,7 +603,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
-    this.calibration = null;
+    this.calibration = calibration;
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     if (!this.useCPURendering) {
@@ -840,18 +847,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
+    this.setInvertColor(this.initialInvert);
+
+    this.setInterpolationType(InterpolationType.LINEAR);
+
     if (this.getRotation() !== 0) {
       this.setRotation(0);
     }
-    this.setInterpolationType(InterpolationType.LINEAR);
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
       transferFunction,
       this.initialTransferFunctionNodes
     );
-
-    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {
@@ -1959,18 +1967,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     // If Photometric Interpretation is not the same for the next image we are trying to load
-    // invalidate the stack to recreate the VTK imageData
+    // invalidate the stack to recreate the VTK imageData.  Get the PMI from
+    // the base csImage if imageFrame isn't defined, which happens when the images
+    // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const csImgFrame = (<any>this.csImage)?.imageFrame;
     const imgFrame = image?.imageFrame;
+    const photometricInterpretation =
+      csImgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation;
+    const newPhotometricInterpretation =
+      imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
-    // if a volume is decached into images then the imageFrame will be undefined
-    if (
-      csImgFrame?.photometricInterpretation !==
-        imgFrame?.photometricInterpretation ||
-      this.csImage?.photometricInterpretation !==
-        image?.photometricInterpretation
-    ) {
+    if (photometricInterpretation !== newPhotometricInterpretation) {
       this.stackInvalidated = true;
     }
 
@@ -2038,11 +2047,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return options;
   }
 
-  public loadImages(
+  public async loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
-    return Promise.allSettled(
+    const resultList = await Promise.allSettled(
       imageIds.map((imageId) => {
         const options = this.getLoaderImageOptions(
           imageId
@@ -2060,6 +2069,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         );
       })
     );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList && errorList.length) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
@@ -2277,13 +2295,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
+
+    const pixelArray = image.getPixelData();
     this._createVTKImageData({
       origin,
       direction,
       dimensions,
       spacing,
       numComps,
-      pixelArray: image.getPixelData(),
+      pixelArray,
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
@@ -2808,6 +2828,67 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  /**
+   * Checks to see if this target is or could be shown in this viewport
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+
+    let { imageURI } = options;
+    const { referencedImageId, sliceIndex } = viewRef;
+
+    if (viewRef.volumeId && !referencedImageId) {
+      return options.asVolume === true;
+    }
+
+    let testIndex = this.getCurrentImageIdIndex();
+    if (options.withNavigation && typeof sliceIndex === 'number') {
+      testIndex = sliceIndex;
+    }
+    const imageId = this.imageIds[testIndex];
+    if (!imageId) {
+      return false;
+    }
+    if (!imageURI) {
+      // Remove the dataLoader scheme since that can change
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1);
+    }
+    return referencedImageId.endsWith(imageURI);
+  }
+
+  /**
+   * Gets a standard target to show this image instance.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
+      viewRefSpecifier;
+    return {
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
+      sliceIndex: sliceIndex,
+    };
+  }
+
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
+    if (Array.isArray(sliceIndex)) {
+      throw new Error('Use of slice ranges for stacks not supported');
+    }
+    return `imageId:${this.imageIds[sliceIndex]}`;
+  }
+
   /**
    *
    * Returns the imageIdIndex that is targeted to be loaded, in case of debounced
@@ -2925,6 +3006,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.cpuRenderingInvalidated = true;
 
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: colormapData,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   private setColormapGPU(colormap: ColormapPublic) {
@@ -2953,6 +3040,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.colormap = colormap;
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap,
+    };
+
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+
   }
 
   private unsetColormapGPU() {
@@ -2963,15 +3058,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   // create default values for imagePlaneModule if values are undefined
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
     this.calibration ||= imagePlaneModule.calibration;
-
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };

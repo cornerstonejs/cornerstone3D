@@ -19,6 +19,7 @@ import {
   InteractionTypes,
   ToolProps,
   PublicToolProps,
+  IToolBinding,
 } from '../../types';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
@@ -223,7 +224,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       }
     }
 
-    for (let i = 0; i < points.length; i++) {
+    for (let i = 0; i < points?.length; i++) {
       const point = points[i];
       const annotationCanvasCoordinate = viewport.worldToCanvas(point);
 
@@ -301,13 +302,48 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = targetId.split(/volumeId:|\?/)[1];
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }
     const scalingModule: Types.ScalingParameters | undefined =
       imageId && metaData.get('scalingModule', imageId);
     return typeof scalingModule?.suvbw === 'number';
+  }
+
+  /**
+   * Get the style that will be applied to all annotations such as length, cobb
+   * angle, arrow annotate, etc. when rendered on a canvas or svg layer
+   */
+  protected getAnnotationStyle(context: {
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+  }) {
+    const { annotation, styleSpecifier } = context;
+    const getStyle = (property) =>
+      this.getStyle(property, styleSpecifier, annotation);
+    const { annotationUID } = annotation;
+    const visibility = isAnnotationVisible(annotationUID);
+    const locked = isAnnotationLocked(annotation);
+
+    const lineWidth = getStyle('lineWidth') as number;
+    const lineDash = getStyle('lineDash') as string;
+    const color = getStyle('color') as string;
+    const shadow = getStyle('shadow') as boolean;
+    const textboxStyle = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+
+    return {
+      visibility,
+      locked,
+      color,
+      lineWidth,
+      lineDash,
+      lineOpacity: 1,
+      fillColor: color,
+      fillOpacity: 0,
+      shadow,
+      textbox: textboxStyle,
+    };
   }
 
   /**

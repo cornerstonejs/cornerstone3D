@@ -511,16 +511,17 @@ function setUpSynchronizers() {
     });
   });
 }
-async function getPtImageIds() {
-  return await createImageIdsAndCacheMetaData({
+
+function getPtImageIds() {
+  return createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
   });
 }
-async function getCtImageIds() {
-  return await createImageIdsAndCacheMetaData({
+function getCtImageIds() {
+  return createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',

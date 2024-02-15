@@ -76,6 +76,21 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Reset Zoom',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.resetCamera(false, true, false);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Reset Original',
   onClick: () => {
     // Get the rendering engine
@@ -117,7 +132,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [0, 0.5],
         canvasPoint: [0, 0.5],
@@ -139,7 +154,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [1, 0.5],
         canvasPoint: [1, 0.5],
@@ -161,7 +176,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [0.5, 0],
         canvasPoint: [0.5, 0],
@@ -183,7 +198,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setDisplayArea({
-      imageArea: [1, 1],
+      imageArea: [1.1, 1.1],
       imageCanvasPoint: {
         imagePoint: [0.5, 1],
         canvasPoint: [0.5, 1],
@@ -229,7 +244,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

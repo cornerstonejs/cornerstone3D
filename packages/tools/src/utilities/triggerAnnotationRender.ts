@@ -98,12 +98,20 @@ class AnnotationRenderingEngine {
         // If there is nothing left that is flagged for rendering, stop here
         // and allow RAF to be called again
         if (this._needsRender.size === 0) {
-          this._animationFrameSet = false;
-          this._animationFrameHandle = null;
-          return;
+          break;
         }
       }
     }
+
+    this._animationFrameSet = false;
+    this._animationFrameHandle = null;
+
+    // Call render again which will use RAF to call this function asynchronously
+    // if there is any viewport that needs to be rendered because when
+    // `triggerRender` is called inside the render loop a listener can flag new
+    // viewports that need to be rendered and some of the viewports that were
+    // already rendered can be added back to `_needsRender`.
+    this._render();
   };
 
   private _setAllViewportsToBeRenderedNextFrame() {

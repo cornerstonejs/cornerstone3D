@@ -30,6 +30,8 @@ function removeContourFromElement(
 
   // @ts-ignore
   viewport.removeActors(actorUIDsToRemove);
+
+  // Todo: add the logic to remove the svg contour segmentation representations as well
 }
 
 export default removeContourFromElement;

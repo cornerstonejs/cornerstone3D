@@ -9,8 +9,8 @@ type ListenersMap = Map<EventListener, EventListenerPhases>;
 /**
  * TargetEventListeners adds support for event types with namespace, allow
  * removing events without having to pass a callback and makes it possible to
- * remove all event listeners in a much simpler avoiding leaving listeners behind
- * which would result in memory leaks.
+ * remove all event listeners in a much simpler way avoiding leaving listeners
+ * behind which would result in memory leaks.
  *
  * @example
  * Creating a new TargetEventListeners instance

@@ -30,7 +30,7 @@ export default function addToggleButtonToToolbar({
   button.onclick = () => {
     toggle = !toggle;
     setBackgroundColor();
-    onClick(toggle);
+    onClick.call(button, toggle);
   };
 
   toolbar.append(button);

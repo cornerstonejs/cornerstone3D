@@ -66,6 +66,11 @@ export default interface IVideoViewport extends IViewport {
   setFrameNumber(frameNo: number);
 
   /**
+   * Sets the current video time, in seconds
+   */
+  setTime(time: number);
+
+  /**
    * Sets the range of frames for displaying.  This is the range of frames
    * that are shown/looped over when the video is playing.
    * Note that ability to playback a frame range depends on the server
