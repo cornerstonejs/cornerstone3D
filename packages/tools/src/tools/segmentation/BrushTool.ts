@@ -75,6 +75,7 @@ class BrushTool extends BaseTool {
   } | null;
   private _hoverData?: {
     brushCursor: any;
+    innerCircleSize: number;
     segmentationId: string;
     segmentIndex: number;
     segmentationRepresentationUID: string;
@@ -108,6 +109,7 @@ class BrushTool extends BaseTool {
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
+            dynamicRadius: 0, // in voxel counts in each direction, only used during dynamic threshold strategies.
           },
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
@@ -126,8 +128,6 @@ class BrushTool extends BaseTool {
           // The time to consider a mouse click a drag when moved less than dragMoveDistance
           dragTimeMs: 500,
         },
-        // Whether to show a center circle/position.  Set to null to not show
-        centerRadius: 2,
         actions: {
           [StrategyCallbacks.AcceptPreview]: {
             method: StrategyCallbacks.AcceptPreview,
@@ -584,6 +584,33 @@ class BrushTool extends BaseTool {
       rightCursorInWorld,
     ];
 
+    const activeStrategy = this.configuration.activeStrategy;
+
+    // Note: i don't think this is the best way to implement this
+    // but don't think we have a better way to do it for now
+    if (activeStrategy.startsWith('THRESHOLD')) {
+      const { THRESHOLD: { dynamicRadius = 0 } = {} } =
+        this.configuration.strategySpecificConfiguration || {};
+      const { spacing } = viewport.getImageData();
+      const centerCanvas = [
+        viewport.element.clientWidth / 2,
+        viewport.element.clientHeight / 2,
+      ] as Types.Point2;
+      const radiusInWorld = dynamicRadius * spacing[0];
+      const centerCursorInWorld = viewport.canvasToWorld(centerCanvas);
+
+      const offSetCenterInWorld = centerCursorInWorld.map(
+        (coord) => coord + radiusInWorld
+      ) as Types.Point3;
+
+      const offSetCenterCanvas = viewport.worldToCanvas(offSetCenterInWorld);
+      const dynamicRadiusInCanvas = Math.abs(
+        centerCanvas[0] - offSetCenterCanvas[0]
+      );
+
+      this._hoverData.innerCircleSize = dynamicRadiusInCanvas;
+    }
+
     data.invalidated = false;
   }
 
@@ -776,15 +803,14 @@ class BrushTool extends BaseTool {
       }
     );
 
-    const { centerRadius } = this.configuration;
-    if (centerRadius >= 0) {
+    if (this._hoverData.innerCircleSize) {
       const circleUID1 = '1';
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
         circleUID1,
         center as Types.Point2,
-        2,
+        this._hoverData.innerCircleSize,
         {
           color,
         }
