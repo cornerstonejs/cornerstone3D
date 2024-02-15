@@ -446,4 +446,24 @@ export interface VideoRedactionAnnotation extends Annotation {
   };
 }
 
+//Identical to VideoRedaction Tool for now
+export interface RedactionAnnotation extends Annotation {
+  metadata: {
+    viewPlaneNormal: Types.Point3;
+    viewUp: Types.Point3;
+    FrameOfReferenceUID: string;
+    referencedImageId: string;
+    toolName: string;
+  };
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+    };
+    cachedStats: {
+      [key: string]: any; // Can be more specific if the structure is known
+    };
+  };
+}
+
 export type { ContourAnnotation };

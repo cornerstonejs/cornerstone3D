@@ -1,7 +1,7 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 import Events from '../enums/Events';
 import { Annotation } from '../types';
-
+import type { Types } from '@cornerstonejs/core';
 export type FramesRange = [number, number] | number;
 
 /**
@@ -74,5 +74,49 @@ export default class AnnotationFrameRange {
     annotation: Annotation
   ): number | [number, number] {
     return this.imageIdToFrames(annotation.metadata.referencedImageId);
+  }
+
+  /**
+   * Sets the range of frames associated with the given annotation for Stack and Volume Viewport.
+   * The range can be a range of values in the format `min-max` where min, max are inclusive
+   * Updates the frameRange in annotation to specify updated range.
+   * */
+  public static setStackFrameRange(
+    annotation: Annotation,
+    range: Types.Point2,
+    eventBase?: { viewportId; renderingEngineId }
+  ) {
+    annotation.frameRange = range;
+    const eventDetail = {
+      ...eventBase,
+      annotation
+    };
+    triggerEvent(eventTarget, Events.ANNOTATION_MODIFIED, eventDetail);
+  }
+
+  public static getStackFrameRange(
+    annotation: Annotation
+  ): Types.Point2 | null {
+    if (annotation.frameRange) {
+      return annotation.frameRange;
+    }
+    return null;
+  }
+
+  /**
+   * Deletes the frameRange from annotation if exists.
+   */
+  public static removeStackFrameRange(
+    annotation: Annotation,
+    eventBase?: { viewportId; renderingEngineId }
+  ) {
+    if (annotation.frameRange) {
+      delete annotation.frameRange;
+    }
+    const eventDetail = {
+      ...eventBase,
+      annotation
+    };
+    triggerEvent(eventTarget, Events.ANNOTATION_MODIFIED, eventDetail);
   }
 }

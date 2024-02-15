@@ -37,6 +37,7 @@ import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
 import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
+import RedactionTool from './annotation/RedactionTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -90,6 +91,7 @@ export {
   CobbAngleTool,
   UltrasoundDirectionalTool,
   KeyImageTool,
+  RedactionTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools
