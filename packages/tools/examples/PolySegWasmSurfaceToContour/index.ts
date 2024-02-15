@@ -14,7 +14,6 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
-  createInfoSection,
   downloadSurfacesData,
   addManipulationBindings,
   addLabelToToolbar,
@@ -35,7 +34,7 @@ const {
 
 setTitleAndDescription(
   'Surface to Contour Segmentations',
-  'This demonstration showcases the usage of PolySEG WASM module to convert a surface to contour segmentations'
+  'Wait for the surface to load. This demonstration showcases the usage of our PolySEG converters to compute a contour representation from a surface. After adding the contour, you can edit it'
 );
 
 const { ViewportType } = Enums;
@@ -76,15 +75,6 @@ viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
-
-createInfoSection(content, { ordered: true })
-  .addInstruction('Use the Brush Tool for segmentation in MPR viewports')
-  .addInstruction(
-    'Toggle between different segmentation tools like Sphere Brush and Eraser'
-  )
-  .addInstruction('Convert the labelmap to a 3D surface representation')
-  .addInstruction('Manipulate the 3D view using the Trackball Rotate Tool')
-  .addInstruction('Toggle the visibility of the 3D anatomy model');
 
 // ============================= //
 const toolGroupId = 'ToolGroup_3D';

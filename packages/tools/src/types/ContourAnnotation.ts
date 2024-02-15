@@ -21,6 +21,7 @@ export type ContourAnnotationData = {
       windingDirection?: ContourWindingDirection;
     };
   };
+  onInterpolationComplete?: () => void;
 };
 
 export type ContourAnnotation = Annotation & ContourAnnotationData;

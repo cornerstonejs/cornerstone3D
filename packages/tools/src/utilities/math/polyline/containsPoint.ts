@@ -17,7 +17,12 @@ import isClosed from './isClosed';
 export default function containsPoint(
   polyline: Types.Point2[],
   point: Types.Point2,
-  closed?: boolean
+  options: {
+    closed?: boolean;
+    holes?: Types.Point2[][];
+  } = {
+    closed: undefined,
+  }
 ): boolean {
   if (polyline.length < 3) {
     return false;
@@ -25,6 +30,16 @@ export default function containsPoint(
 
   const numPolylinePoints = polyline.length;
   let numIntersections = 0;
+
+  const { closed, holes } = options;
+
+  if (holes?.length) {
+    for (const hole of holes) {
+      if (containsPoint(hole, point)) {
+        return false;
+      }
+    }
+  }
 
   // Test intersection against [end, start] line segment if it should be closed
   const shouldClose = !(closed === undefined ? isClosed(polyline) : closed);
