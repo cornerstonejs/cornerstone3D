@@ -6,6 +6,10 @@ function updateVTKImageDataWithCornerstoneImage(
   image: IImage
 ) {
   const pixelData = image.getPixelData();
+  if (!sourceImageData.getPointData) {
+    // This happens for a CanvasActor, that doesn't have the getPointData
+    return;
+  }
   const scalarData = sourceImageData
     .getPointData()
     .getScalars()

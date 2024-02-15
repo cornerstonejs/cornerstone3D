@@ -1,7 +1,7 @@
-import interpolateAnnotation from './interpolateAnnotation';
+import smoothAnnotation from './smoothAnnotation';
 
 export default {
-  interpolateAnnotation,
+  smoothAnnotation,
 };
 
-export { interpolateAnnotation };
+export { smoothAnnotation };

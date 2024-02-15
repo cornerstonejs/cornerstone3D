@@ -13,8 +13,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import assetsURL from '../../../../utils/assets/assetsURL.json';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import contour from './Contour.json';
 
 // This is for debugging purposes
 console.warn(
@@ -45,7 +45,7 @@ const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Contour Segmentation Representation for Volume Viewports',
-  'Here we demonstrate how you can add a contour as a segmentation to a volume viewport. Please note that the contour in this example (for segmentation), is different our annotation tools (including freehandROI). Here, the contour is represented in the 3d space, while our annotation tools are represented via SVG in the 2d space. So you can render the contour segmentation in the 3d viewport (as seen below) but you cannot render e.g,., freehandROI tool contour in the 3d viewport.'
+  'Here we demonstrate how you can add a contour as a segmentation to a volume viewport. Please note that the contour in this example (for segmentation), is different our annotation tools (including freehandROI). Here, the contour is represented in the 3d space, while our annotation tools are represented via SVG in the 2d space. So you can render the contour segmentation in the 3d viewport (as seen below) but you cannot render e.g,., freehandROI tool contour in the 3d viewport. This example downloads the contour data from the server'
 );
 
 const size = '500px';
@@ -74,37 +74,6 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 content.append(instructions);
 // ============================= //
-
-async function addSegmentationsToState() {
-  // load the contour data
-  const geometryIds = [];
-  const promises = contour.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-        // The actual segmentation data, in the case of contour geometry
-        // this is a reference to the geometry data
-        data: {
-          geometryIds,
-        },
-      },
-    },
-  ]);
-}
 
 /**
  * Runs the demo
@@ -197,8 +166,38 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  const contour = await fetch(assetsURL.SampleContour).then((res) =>
+    res.json()
+  );
 
+  // load the contour data
+  const geometryIds = [];
+  const promises = contour.contourSets.map((contourSet) => {
+    const geometryId = contourSet.id;
+    geometryIds.push(geometryId);
+    return geometryLoader.createAndCacheGeometry(geometryId, {
+      type: GeometryType.CONTOUR,
+      geometryData: contourSet as Types.PublicContourSetData,
+    });
+  });
+
+  await Promise.all(promises);
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+        // The actual segmentation data, in the case of contour geometry
+        // this is a reference to the geometry data
+        data: {
+          geometryIds,
+        },
+      },
+    },
+  ]);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);

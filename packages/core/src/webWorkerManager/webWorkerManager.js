@@ -6,11 +6,6 @@ class CentralizedWorkerManager {
   constructor() {
     this.workerRegistry = {};
     this.workerPoolManager = new RequestPoolManager('webworker');
-    this.checkIntervalForIdleWorkers = 1000;
-  }
-
-  setCheckIntervalForIdleWorkers(value) {
-    this.checkIntervalForIdleWorkers = value;
   }
 
   /**
@@ -29,7 +24,10 @@ class CentralizedWorkerManager {
     const {
       maxWorkerInstances = 1,
       overwrite = false,
-      autoTerminateOnIdle = false,
+      autoTerminateOnIdle = {
+        enabled: false,
+        idleTimeThreshold: 3000, // 3 seconds
+      },
     } = options;
 
     if (this.workerRegistry[workerName] && !overwrite) {
@@ -43,24 +41,16 @@ class CentralizedWorkerManager {
 
     const workerProperties = {
       workerFn: null,
-      idleCheckIntervalId: null,
       instances: [],
       loadCounters: [],
       lastActiveTime: [],
       // used for termination
       nativeWorkers: [],
+      // auto termination
+      autoTerminateOnIdle: autoTerminateOnIdle.enabled,
+      idleCheckIntervalId: null,
+      idleTimeThreshold: autoTerminateOnIdle.idleTimeThreshold,
     };
-
-    if (
-      (autoTerminateOnIdle && !workerProperties.idleCheckIntervalId) ||
-      overwrite
-    ) {
-      const idleCheckIntervalId = setInterval(() => {
-        this.terminateIdleWorkers(workerName, autoTerminateOnIdle);
-      }, this.checkIntervalForIdleWorkers);
-
-      workerProperties.idleCheckIntervalId = idleCheckIntervalId;
-    }
 
     workerProperties.loadCounters = Array(maxWorkerInstances).fill(0);
     workerProperties.lastActiveTime = Array(maxWorkerInstances).fill(null);
@@ -90,7 +80,6 @@ class CentralizedWorkerManager {
 
     let minLoadIndex = 0;
     let minLoadValue = workerProperties.loadCounters[0] || 0;
-
     for (let i = 1; i < workerInstances.length; i++) {
       const currentLoadValue = workerProperties.loadCounters[i] || 0;
       if (currentLoadValue < minLoadValue) {
@@ -121,7 +110,10 @@ class CentralizedWorkerManager {
    *
    * @param workerName - The name of the worker to execute the task on.
    * @param methodName - The name of the method to execute on the worker.
-   * @param args - The arguments to pass to the method. Default is an empty object.
+   * @param args - The arguments to pass to the method. Default is an array
+   * You should put your transferable objects in the first argument as object
+   * and from the second argument you can put your non-transferable objects such
+   * as functions, classes, etc.
    * @param options - An object containing options for the request. Default is an empty object.
    * @param options.requestType - The type of the request. Default is RequestType.Compute.
    * @param options.priority - The priority of the request. Default is 0.
@@ -133,7 +125,12 @@ class CentralizedWorkerManager {
     workerName,
     methodName,
     args = {},
-    { requestType = RequestType.Compute, priority = 0, options = {} } = {}
+    {
+      requestType = RequestType.Compute,
+      priority = 0,
+      options = {},
+      callbacks = [],
+    } = {}
   ) {
     return new Promise((resolve, reject) => {
       const requestFn = async () => {
@@ -148,10 +145,33 @@ class CentralizedWorkerManager {
         }
 
         try {
-          const results = await api[methodName](args);
-
+          // fix if any of the args keys are a function then we need to proxy it
+          // for the worker to be able to call it
+          let finalCallbacks;
+          if (callbacks.length) {
+            finalCallbacks = callbacks.map((cb) => {
+              return Comlink.proxy(cb);
+            });
+          }
           const workerProperties = this.workerRegistry[workerName];
+
+          const results = await api[methodName](args, ...finalCallbacks);
+
           workerProperties.lastActiveTime[index] = Date.now();
+
+          // If auto termination is enabled and the interval is not set, set it.
+          if (
+            workerProperties.autoTerminateOnIdle &&
+            !workerProperties.idleCheckIntervalId &&
+            workerProperties.idleTimeThreshold
+          ) {
+            workerProperties.idleCheckIntervalId = setInterval(() => {
+              this.terminateIdleWorkers(
+                workerName,
+                workerProperties.idleTimeThreshold
+              );
+            }, workerProperties.idleTimeThreshold);
+          }
 
           resolve(results);
         } catch (err) {
@@ -165,6 +185,11 @@ class CentralizedWorkerManager {
         }
       };
 
+      // I believe there is a bug right now, where if there are two workers
+      // and one wants to run a compute job 6 times and the limit is just 5, then
+      // the other worker will never get a chance to run its compute job.
+      // we should probably have a separate limit for compute jobs per worker
+      // context as there is another layer of parallelism there.
       this.workerPoolManager.addRequest(
         requestFn,
         requestType,
@@ -176,24 +201,16 @@ class CentralizedWorkerManager {
 
   terminateIdleWorkers(workerName, idleTimeThreshold) {
     const workerProperties = this.workerRegistry[workerName];
-
     const now = Date.now();
 
-    workerProperties.instances.forEach((workerInstance, index) => {
-      // If the worker has not yet executed any task, skip this iteration
-      if (workerProperties.lastActiveTime[index] == null) {
-        return;
-      }
+    workerProperties.instances.forEach((_, index) => {
+      const lastActiveTime = workerProperties.lastActiveTime[index];
+      const isWorkerActive =
+        lastActiveTime !== null && workerProperties.loadCounters[index] > 0;
+      const idleTime = now - lastActiveTime;
 
-      const idleTime = now - workerProperties.lastActiveTime[index];
-
-      // If the worker has been idle for longer than the threshold and it exists
-      if (idleTime > idleTimeThreshold && workerInstance !== null) {
-        workerInstance[Comlink.releaseProxy]();
-        workerProperties.nativeWorkers[index].terminate();
-
-        workerProperties.instances[index] = null;
-        workerProperties.lastActiveTime[index] = null;
+      if (!isWorkerActive && idleTime > idleTimeThreshold) {
+        this.terminateWorkerInstance(workerName, index);
       }
     });
   }
@@ -205,13 +222,24 @@ class CentralizedWorkerManager {
       return;
     }
 
-    workerProperties.instances.forEach((workerInstance) => {
-      workerInstance[Comlink.releaseProxy]();
+    workerProperties.instances.forEach((_, index) => {
+      this.terminateWorkerInstance(workerName, index);
     });
+  }
 
-    workerProperties.nativeWorkers.forEach((worker) => {
-      worker.terminate();
-    });
+  // New method to handle individual worker termination
+  terminateWorkerInstance(workerName, index) {
+    const workerProperties = this.workerRegistry[workerName];
+    const workerInstance = workerProperties.instances[index];
+
+    if (workerInstance !== null) {
+      workerInstance[Comlink.releaseProxy]();
+      workerProperties.nativeWorkers[index].terminate();
+
+      // Set the worker instance to null after termination
+      workerProperties.instances[index] = null;
+      workerProperties.lastActiveTime[index] = null;
+    }
   }
 }
 

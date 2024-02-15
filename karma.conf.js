@@ -65,14 +65,9 @@ module.exports = function (config) {
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
     },
-    coverageIstanbulReporter: {
-      reports: ['html', 'text-summary', 'lcovonly'],
-      dir: path.join(__dirname, 'coverage'),
-      fixWebpackSourcePaths: true,
-      'report-config': {
-        html: { outdir: 'html' },
-        linkMapper: '/',
-      },
+    coverageReporter: {
+      type: 'html',
+      dir: 'coverage/',
     },
     /*webpackMiddleware: {
       noInfo: true
@@ -85,7 +80,12 @@ module.exports = function (config) {
           {
             test: /\.(js|jsx|ts|tsx)$/,
             exclude: /node_modules/,
-            use: ['babel-loader'],
+            use: {
+              loader: 'babel-loader',
+              options: {
+                plugins: [['babel-plugin-istanbul', {}]],
+              },
+            },
           },
           {
             test: /\.png$/i,
@@ -94,6 +94,10 @@ module.exports = function (config) {
                 loader: 'url-loader',
               },
             ],
+          },
+          {
+            test: /\.wasm/,
+            type: 'asset/resource',
           },
           // NOTE: For better debugging you can comment out the
           // istanbul-instrumenter-loader below
@@ -107,6 +111,9 @@ module.exports = function (config) {
           //   },
           // },
         ],
+      },
+      experiments: {
+        asyncWebAssembly: true,
       },
       resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],

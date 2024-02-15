@@ -6,6 +6,7 @@ import drawHandles from './drawHandles';
 import drawHandle from './drawHandle';
 import drawLine from './drawLine';
 import drawPolyline from './drawPolyline';
+import drawPath from './drawPath';
 import drawLinkedTextBox from './drawLinkedTextBox';
 import drawRect from './drawRect';
 import drawTextBox from './drawTextBox';
@@ -23,6 +24,7 @@ export {
   drawHandle,
   drawLine,
   drawPolyline,
+  drawPath,
   drawLinkedTextBox,
   drawRect,
   drawTextBox,

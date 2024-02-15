@@ -6,5 +6,5 @@ export type SurfaceRenderingConfig = {
 };
 
 export type SurfaceSegmentationData = {
-  geometryId: string;
+  geometryIds: Map<number, string>;
 };

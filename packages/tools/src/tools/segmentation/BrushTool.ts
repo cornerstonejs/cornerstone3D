@@ -171,7 +171,7 @@ class BrushTool extends BaseTool {
 
   createEditData(element) {
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     const toolGroupId = this.toolGroupId;
 
@@ -179,7 +179,7 @@ class BrushTool extends BaseTool {
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
     if (!activeSegmentationRepresentation) {
       throw new Error(
-        'No active segmentation detected, create one before using the brush tool'
+        'No active segmentation detected, create a segmentation representation before using the brush tool'
       );
     }
 
@@ -198,9 +198,7 @@ class BrushTool extends BaseTool {
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
 
-    const viewportIdsToRender = [viewport.id];
-
-    if (isVolumeSegmentation(labelmapData)) {
+    if (isVolumeSegmentation(labelmapData, viewport)) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
@@ -235,11 +233,9 @@ class BrushTool extends BaseTool {
       // and should throw an error or maybe simply just allow circle manipulation
       // and not sphere manipulation
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        console.warn(
-          'Sphere manipulation is not supported for this stack of images yet'
+        throw new Error(
+          'Sphere manipulation is not supported for stacks of image segmentations yet'
         );
-        return;
-
         // Todo: add sphere (volumetric) manipulation support for stacks of images
         // we should basically check if the stack constructs a valid volume
         // meaning all the metadata is present and consistent
@@ -275,9 +271,11 @@ class BrushTool extends BaseTool {
     this._previewData.isDrag = false;
     this._previewData.timerStart = Date.now();
 
+    const hoverData = this._hoverData || this.createHoverData(element);
+
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
-      this._hoverData.viewportIdsToRender
+      hoverData.viewportIdsToRender
     );
 
     this.applyActiveStrategyCallback(
@@ -366,32 +364,16 @@ class BrushTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const toolGroupId = this.toolGroupId;
-
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
-      console.warn(
-        'No active segmentation detected, create one before using the brush tool'
-      );
-      return;
-    }
-
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
-    const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId);
-
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
-      segmentIndex
-    );
-
     const viewportIdsToRender = [viewport.id];
 
-    // Center of circle in canvas Coordinates
+    const {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      segmentColor,
+    } = this.getActiveSegmentationData() || {};
 
+    // Center of circle in canvas Coordinates
     const brushCursor = {
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
@@ -415,6 +397,37 @@ class BrushTool extends BaseTool {
     };
   }
 
+  private getActiveSegmentationData() {
+    const toolGroupId = this.toolGroupId;
+
+    const activeSegmentationRepresentation =
+      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
+    if (!activeSegmentationRepresentation) {
+      console.warn(
+        'No active segmentation detected, create one before using the brush tool'
+      );
+      return;
+    }
+
+    const { segmentationRepresentationUID, segmentationId } =
+      activeSegmentationRepresentation;
+    const segmentIndex =
+      segmentIndexController.getActiveSegmentIndex(segmentationId);
+
+    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
+      toolGroupId,
+      segmentationRepresentationUID,
+      segmentIndex
+    );
+
+    return {
+      segmentIndex,
+      segmentationId,
+      segmentationRepresentationUID,
+      segmentColor,
+    };
+  }
+
   /**
    * Updates the cursor position and whether it is showing or not.
    * Can be over-ridden to add more cursor details or a preview.
@@ -427,6 +440,10 @@ class BrushTool extends BaseTool {
     this._hoverData = this.createHoverData(element, centerCanvas);
 
     this._calculateCursor(element, centerCanvas);
+
+    if (!this._hoverData) {
+      return;
+    }
 
     triggerAnnotationRenderForViewportUIDs(
       getEnabledElement(element).renderingEngine,
@@ -467,7 +484,7 @@ class BrushTool extends BaseTool {
 
     this._previewData.preview = this.applyActiveStrategy(
       enabledElement,
-      this.getOperationData()
+      this.getOperationData(element)
     );
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont
@@ -547,6 +564,10 @@ class BrushTool extends BaseTool {
       topCursorInWorld[i] = centerCursorInWorld[i] + viewUp[i] * brushSize;
       leftCursorInWorld[i] = centerCursorInWorld[i] - viewRight[i] * brushSize;
       rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
+    }
+
+    if (!this._hoverData) {
+      return;
     }
 
     const { brushCursor } = this._hoverData;
@@ -674,11 +695,17 @@ class BrushTool extends BaseTool {
   };
 
   public invalidateBrushCursor() {
-    if (this._hoverData !== undefined) {
-      const { data } = this._hoverData.brushCursor;
-
-      data.invalidated = true;
+    if (this._hoverData === undefined) {
+      return;
     }
+    const { data } = this._hoverData.brushCursor;
+
+    data.invalidated = true;
+
+    // Todo: figure out if other brush metadata (other than segment color) should get updated
+    // during the brush cursor invalidation
+    const { segmentColor } = this.getActiveSegmentationData() || {};
+    this._hoverData.brushCursor.metadata.segmentColor = segmentColor;
   }
 
   renderAnnotation(
@@ -709,6 +736,10 @@ class BrushTool extends BaseTool {
     }
 
     const toolMetadata = brushCursor.metadata;
+    if (!toolMetadata) {
+      return;
+    }
+
     const annotationUID = toolMetadata.brushCursorUID;
 
     const data = brushCursor.data;
@@ -725,7 +756,7 @@ class BrushTool extends BaseTool {
 
     const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
-    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
+    const color = `rgb(${toolMetadata.segmentColor?.slice(0, 3) || [0, 0, 0]})`;
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {

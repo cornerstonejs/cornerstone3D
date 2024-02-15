@@ -46,14 +46,6 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return null;
   };
 
-  posProcessNewActors(): void {
-    if (this.newActorAdded) {
-      const renderer = this.getRenderer();
-      renderer.resetCameraClippingRange();
-    }
-    super.posProcessNewActors();
-  }
-
   setSlabThickness(
     slabThickness: number,
     filterActorUIDs?: Array<string>
