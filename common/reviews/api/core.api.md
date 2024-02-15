@@ -278,6 +278,15 @@ declare namespace colormap {
 }
 
 // @public (undocumented)
+type ColormapModifiedEvent = CustomEvent_2<ColormapModifiedEventDetail>;
+
+// @public (undocumented)
+type ColormapModifiedEventDetail = {
+    viewportId: string;
+    colormap: ColormapPublic;
+};
+
+// @public (undocumented)
 type ColormapPublic = {
     name?: string;
     opacity?: OpacityMapping[] | number;
@@ -783,6 +792,8 @@ export enum EVENTS {
     // (undocumented)
     CLIPPING_PLANES_UPDATED = "CORNERSTONE_CLIPPING_PLANES_UPDATED",
     // (undocumented)
+    COLORMAP_MODIFIED = "CORNERSTONE_COLORMAP_MODIFIED",
+    // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
@@ -850,6 +861,8 @@ declare namespace EventTypes {
         CameraModifiedEvent,
         VoiModifiedEvent,
         VoiModifiedEventDetail,
+        ColormapModifiedEvent,
+        ColormapModifiedEventDetail,
         DisplayAreaModifiedEvent,
         DisplayAreaModifiedEventDetail,
         ElementDisabledEvent,
