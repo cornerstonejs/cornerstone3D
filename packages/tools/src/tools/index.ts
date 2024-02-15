@@ -17,6 +17,7 @@ import SegmentationIntersectionTool from './SegmentationIntersectionTool';
 import ReferenceCursors from './ReferenceCursors';
 import ReferenceLines from './ReferenceLinesTool';
 import ScaleOverlayTool from './ScaleOverlayTool';
+import FreehandROISculptorTool from './FreehandROISculptorTool';
 
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
@@ -106,5 +107,6 @@ export {
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
+  FreehandROISculptorTool,
   SegmentSelectTool,
 };

@@ -2275,6 +2275,27 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 }
 
 // @public (undocumented)
+export class FreehandROISculptorTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected interpolatePointsWithinMaxSpacing(i: number, points: Array<Types_2.Point3>, indicesToInsertAfter: Array<number>, maxSpacing: number): void;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    registeredShapes: Map<any, any>;
+    // (undocumented)
+    registerShapes(shapeName: string, shapeClass: any): void;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    protected sculpt(eventData: any, points: Array<Types_2.Point3>): void;
+    // (undocumented)
+    static toolName: string;
+}
+
+// @public (undocumented)
 function generateContourSetsFromLabelmap({ segmentations }: {
     segmentations: any;
 }): any[];

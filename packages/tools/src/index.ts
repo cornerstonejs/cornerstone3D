@@ -69,6 +69,7 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
+  FreehandROISculptorTool,
   SegmentSelectTool,
 } from './tools';
 
@@ -126,6 +127,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  FreehandROISculptorTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
