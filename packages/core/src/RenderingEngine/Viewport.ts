@@ -604,8 +604,10 @@ class Viewport implements IViewport {
   ): void {
     const { storeAsInitialCamera } = displayArea;
 
-    // make calculations relative to the fitToCanvasCamera view
-    this.setCamera(this.fitToCanvasCamera, false);
+    // Setup the current camera as the fit to canvas camera as the one that is
+    // used as the base for calculations, but it isn't final, so don't fire
+    // events because the camera is still changing.
+    this.setCameraNoEvent(this.fitToCanvasCamera);
 
     const { imageArea, imageCanvasPoint } = displayArea;
 
@@ -613,7 +615,10 @@ class Viewport implements IViewport {
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      this.setZoom(this.insetImageMultiplier * zoom, false);
+      // Don't set as initial camera because then the zoom interactions don't
+      // work consistently.
+      // TODO: Add a better method to handle initial camera
+      this.setZoom(this.insetImageMultiplier * zoom);
     }
 
     // getting the image info
@@ -649,9 +654,13 @@ class Viewport implements IViewport {
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
-      this.setPan(deltaPoint2, false); // storeAsInitialCamera);
+      // The pan is part of the display area settings, not the initial camera, so
+      // don't store as initial camera here - that breaks rotation and other changes.
+      this.setPan(deltaPoint2);
     }
 
+    // Instead of storing the camera itself, if initial camera is set,
+    // then store the display area as the baseline display area.
     if (storeAsInitialCamera) {
       this.options.displayArea = displayArea;
     }
