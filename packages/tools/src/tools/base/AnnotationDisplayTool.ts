@@ -132,13 +132,12 @@ abstract class AnnotationDisplayTool extends BaseTool {
 
     let referencedImageId;
 
-    if (
-      viewport instanceof StackViewport ||
-      viewport instanceof VideoViewport
-    ) {
+    if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
+    } else if (viewport instanceof VideoViewport) {
+      referencedImageId = targetId.split('videoId:')[1];
     } else {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = targetId.split(/volumeId:|\?/)[1];
       const imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = utilities.getClosestImageId(

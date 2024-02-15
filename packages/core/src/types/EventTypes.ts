@@ -7,10 +7,11 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
-import type ViewportStatus from '../enums/ViewportStatus';
+import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import IImageCalibration from './IImageCalibration';
+import { ColormapPublic } from './Colormap';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -47,6 +48,13 @@ type VoiModifiedEventDetail = {
   /** Indicates if the 'invert' state has changed from the previous state */
   invertStateChanged?: boolean;
 };
+
+type ColormapModifiedEventDetail = {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** The new colormap */
+  colormap: ColormapPublic;
+}
 
 /**
  * DISPLAY_AREA_MODIFIED Event's data
@@ -127,6 +135,16 @@ type ImageVolumeLoadingCompletedEventDetail = {
 type ImageLoadedEventDetail = {
   /** the loaded image */
   image: IImage;
+};
+
+export type ImageLoadStageEventDetail = {
+  stageId: string;
+  numberOfImages: number;
+  numberOfFailures: number;
+  // The duration of just this stage
+  stageDurationInMS: number;
+  // The overall duration
+  startDurationInMS: number;
 };
 
 /**
@@ -246,22 +264,6 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 /**
- * IMAGE_LOAD_PROGRESS Event's data. Note this is only for one image load and NOT volume load.
- */
-type ImageLoadProgressEventDetail = {
-  /** url we are loading from */
-  url: string;
-  /** loading image image id */
-  imageId: string;
-  /** the bytes browser receive */
-  loaded: number;
-  /** the total bytes settled by the header */
-  total: number;
-  /** loaded divided by total * 100 - shows the percentage of the image loaded */
-  percent: number;
-};
-
-/**
  * The STACK_VIEWPORT_NEW_STACK event's data, when a new stack is set on a StackViewport
  */
 type StackViewportNewStackEventDetail = {
@@ -292,6 +294,11 @@ type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
  * VOI_MODIFIED Event type
  */
 type VoiModifiedEvent = CustomEventType<VoiModifiedEventDetail>;
+
+/**
+ * COLORMAP_MODIFIED Event type
+ */
+type ColormapModifiedEvent = CustomEventType<ColormapModifiedEventDetail>;
 
 /**
  * DISPLAY_AREA_MODIFIED Event type
@@ -392,11 +399,6 @@ type ImageSpacingCalibratedEvent =
   CustomEventType<ImageSpacingCalibratedEventDetail>;
 
 /**
- * IMAGE_LOAD_PROGRESS
- */
-type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventDetail>;
-
-/**
  * STACK_VIEWPORT_NEW_STACK
  */
 type StackViewportNewStackEvent =
@@ -409,6 +411,8 @@ export type {
   CameraModifiedEvent,
   VoiModifiedEvent,
   VoiModifiedEventDetail,
+  ColormapModifiedEvent,
+  ColormapModifiedEventDetail,
   DisplayAreaModifiedEvent,
   DisplayAreaModifiedEventDetail,
   ElementDisabledEvent,
@@ -443,8 +447,6 @@ export type {
   PreStackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
-  ImageLoadProgressEvent,
-  ImageLoadProgressEventDetail,
   VolumeNewImageEvent,
   VolumeNewImageEventDetail,
   StackViewportNewStackEvent,

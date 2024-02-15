@@ -1,6 +1,5 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
-// import type { VolumeViewport } from '../RenderingEngine'
 import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
@@ -30,14 +29,16 @@ const isPrimaryVolume = (volume): boolean =>
  * @param camera - current camera
  * @param targetVolumeId - If a target volumeId is given that volume
  * is forced to be used.
- *
+ * @param useSlabThickness - If true, the number of steps will be calculated
+ * based on the slab thickness instead of the spacing in the normal direction
  * @returns An object containing the imageVolume and spacingInNormalDirection.
  *
  */
 export default function getTargetVolumeAndSpacingInNormalDir(
   viewport: IVolumeViewport,
   camera: ICamera,
-  targetVolumeId?: string
+  targetVolumeId?: string,
+  useSlabThickness = false
 ): {
   imageVolume: IImageVolume;
   spacingInNormalDirection: number;
@@ -75,7 +76,8 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     const spacingInNormalDirection = getSpacingInNormal(
       imageVolume,
       viewPlaneNormal,
-      viewport
+      viewport,
+      useSlabThickness
     );
 
     return { imageVolume, spacingInNormalDirection, actorUID };
@@ -131,11 +133,12 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 function getSpacingInNormal(
   imageVolume: IImageVolume,
   viewPlaneNormal: Point3,
-  viewport: IVolumeViewport
+  viewport: IVolumeViewport,
+  useSlabThickness = false
 ): number {
   const { slabThickness } = viewport.getProperties();
   let spacingInNormalDirection = slabThickness;
-  if (!slabThickness) {
+  if (!slabThickness || useSlabThickness === false) {
     spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal

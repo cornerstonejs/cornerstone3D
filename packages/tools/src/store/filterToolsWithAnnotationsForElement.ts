@@ -2,7 +2,6 @@ import { getAnnotations } from '../stateManagement/annotation/annotationState';
 import { ToolAnnotationsPair } from '../types/InternalToolTypes';
 import type AnnotationTool from '../tools/base/AnnotationTool';
 import BaseTool from '../tools/base/BaseTool';
-import { getEnabledElement } from '@cornerstonejs/core';
 
 /**
  * Filters an array of tools, returning only tools which have annotation.

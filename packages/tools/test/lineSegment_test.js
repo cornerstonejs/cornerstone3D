@@ -1,12 +1,12 @@
 import * as lineSegment from '../src/utilities/math/line';
 
 describe('LineSegment:', function () {
-  beforeEach(() => {
+  beforeEach(function () {
     this.line1Start = [1, 1];
     this.line1End = [2, 2];
   });
 
-  it('should correctly calculate the distance to line', () => {
+  it('should correctly calculate the distance to line', function () {
     // point on the line
     let point1 = [1, 1];
     let distance = lineSegment.distanceToPoint(
@@ -44,7 +44,7 @@ describe('LineSegment:', function () {
     expect(distance).toEqual(Math.sqrt(5));
   });
 
-  it('should correctly calculate the intersection of two lines', () => {
+  it('should correctly calculate the intersection of two lines', function () {
     // Shares one point already
     let line2Start = [1, 2];
     let line2End = [2, 2];

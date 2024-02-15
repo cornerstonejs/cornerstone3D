@@ -11,7 +11,7 @@ const providers = [];
  * @category MetaData
  */
 export function addProvider(
-  provider: (type: string, query: any) => any,
+  provider: (type: string, ...query: string[]) => any,
   priority = 0
 ): void {
   let i;
@@ -66,14 +66,16 @@ export function removeAllProviders(): void {
  *
  * @param type -  The type of metadata requested from the metadata store
  * @param query - The query for the metadata store, often imageId
+ *        Some metadata providers support multi-valued strings, which are interpretted
+ *        as the provider chooses.
  *
  * @returns The metadata retrieved from the metadata store
  * @category MetaData
  */
-function getMetaData(type: string, query: string): any {
+function getMetaData(type: string, ...queries): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, query);
+    const result = providers[i].provider(type, ...queries);
 
     if (result !== undefined) {
       return result;

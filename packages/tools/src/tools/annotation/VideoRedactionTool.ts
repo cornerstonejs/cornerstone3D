@@ -73,6 +73,15 @@ class VideoRedactionTool extends AnnotationTool {
 
     this.isDrawing = true;
 
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
+
     const annotation = {
       metadata: {
         // We probably just want a different type of data here, hacking this
@@ -80,7 +89,7 @@ class VideoRedactionTool extends AnnotationTool {
         viewPlaneNormal: <Types.Point3>[0, 0, 1],
         viewUp: <Types.Point3>[0, 1, 0],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: viewport.getFrameOfReferenceUID(),
+        referencedImageId,
         toolName: this.getToolName(),
       },
       data: {

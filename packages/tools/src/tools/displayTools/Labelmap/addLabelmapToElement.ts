@@ -1,10 +1,15 @@
 import {
   getEnabledElement,
   addVolumesToViewports,
+  addImageSlicesToViewports,
   Types,
   Enums,
 } from '@cornerstonejs/core';
-
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
+} from '../../../types/LabelmapTypes';
+import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
  * NOTE: This function should not be called directly.
@@ -17,7 +22,7 @@ import {
  */
 async function addLabelmapToElement(
   element: HTMLDivElement,
-  volumeId: string,
+  labelMapData: LabelmapSegmentationData,
   segmentationRepresentationUID: string
 ): Promise<void> {
   const enabledElement = getEnabledElement(element);
@@ -31,27 +36,51 @@ async function addLabelmapToElement(
   const immediateRender = false;
   const suppressEvents = true;
 
-  // Todo: Right now we use MIP blend mode for the labelmap, since the
-  // composite blend mode has a non linear behavior regarding fill and line
-  // opacity. This should be changed to a custom labelmap blendMode which does
-  // what composite does, but with a linear behavior.
-  const volumeInputs: Types.IVolumeInput[] = [
-    {
-      volumeId,
-      actorUID: segmentationRepresentationUID,
-      visibility,
-      blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-    },
-  ];
+  if (isVolumeSegmentation(labelMapData, viewport)) {
+    // Todo: Right now we use MIP blend mode for the labelmap, since the
+    // composite blend mode has a non linear behavior regarding fill and line
+    // opacity. This should be changed to a custom labelmap blendMode which does
+    // what composite does, but with a linear behavior.
+    const volumeInputs: Types.IVolumeInput[] = [
+      {
+        volumeId: labelMapData.volumeId,
+        actorUID: segmentationRepresentationUID,
+        visibility,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+      },
+    ];
 
-  // Add labelmap volumes to the viewports to be be rendered, but not force the render
-  await addVolumesToViewports(
-    renderingEngine,
-    volumeInputs,
-    [viewportId],
-    immediateRender,
-    suppressEvents
-  );
+    // Add labelmap volumes to the viewports to be be rendered, but not force the render
+    await addVolumesToViewports(
+      renderingEngine,
+      volumeInputs,
+      [viewportId],
+      immediateRender,
+      suppressEvents
+    );
+  } else {
+    // We can use the current imageId in the viewport to get the segmentation imageId
+    // which later is used to create the actor and mapper.
+    const segmentationImageId = (
+      labelMapData as LabelmapSegmentationDataStack
+    ).imageIdReferenceMap.get(viewport.getCurrentImageId());
+
+    const stackInputs: Types.IStackInput[] = [
+      {
+        imageId: segmentationImageId,
+        actorUID: segmentationRepresentationUID,
+      },
+    ];
+
+    // Add labelmap volumes to the viewports to be be rendered, but not force the render
+    await addImageSlicesToViewports(
+      renderingEngine,
+      stackInputs,
+      [viewportId],
+      immediateRender,
+      suppressEvents
+    );
+  }
 }
 
 export default addLabelmapToElement;

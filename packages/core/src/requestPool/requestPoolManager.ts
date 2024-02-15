@@ -78,12 +78,14 @@ class RequestPoolManager {
     interaction: 0,
     thumbnail: 0,
     prefetch: 0,
+    compute: 0,
   };
   /* maximum number of requests of each type. */
   public maxNumRequests: {
     interaction: number;
     thumbnail: number;
     prefetch: number;
+    compute: number;
   };
   /* A public property that is used to set the delay between requests. */
   public grabDelay: number;
@@ -101,6 +103,7 @@ class RequestPoolManager {
       interaction: { 0: [] },
       thumbnail: { 0: [] },
       prefetch: { 0: [] },
+      compute: { 0: [] },
     };
 
     this.grabDelay = 5;
@@ -110,12 +113,20 @@ class RequestPoolManager {
       interaction: 0,
       thumbnail: 0,
       prefetch: 0,
+      compute: 0,
     };
 
     this.maxNumRequests = {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
+      // I believe there is a bug right now, where if there are two workers
+      // and one wants to run a compute job 6 times and the limit is just 5, then
+      // the other worker will never get a chance to run its compute job.
+      // we should probably have a separate limit for compute jobs per worker
+      // context as there is another layer of parallelism there. For this reason
+      // I'm setting the limit to 1000 for now.
+      compute: 1000,
     };
   }
 
@@ -185,15 +196,7 @@ class RequestPoolManager {
     // Adding the request to the correct priority group of the request type
     this.requestPool[type][priority].push(requestDetails);
 
-    // Wake up
-    if (!this.awake) {
-      this.awake = true;
-      this.startGrabbing();
-    } else if (type === RequestType.Interaction) {
-      // Todo: this is a hack for interaction right now, we should separate
-      // the grabbing from the adding requests
-      this.startGrabbing();
-    }
+    this.startGrabbing();
   }
 
   /**
@@ -233,6 +236,7 @@ class RequestPoolManager {
 
   private sendRequests(type) {
     const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
+    let syncImageCount = 0;
 
     for (let i = 0; i < requestsToSend; i++) {
       const requestDetails = this.getNextRequest(type);
@@ -242,11 +246,27 @@ class RequestPoolManager {
         this.numRequests[type]++;
         this.awake = true;
 
-        requestDetails.requestFn().finally(() => {
+        let requestResult;
+        try {
+          requestResult = requestDetails.requestFn();
+        } catch (e) {
+          // This is the only warning one will get, so need a warn message
+          console.warn('sendRequest failed', e);
+        }
+        if (requestResult?.finally) {
+          requestResult.finally(() => {
+            this.numRequests[type]--;
+            this.startAgain();
+          });
+        } else {
+          // Handle non-async request functions too - typically just short circuit ones
           this.numRequests[type]--;
-          this.startAgain();
-        });
+          syncImageCount++;
+        }
       }
+    }
+    if (syncImageCount) {
+      this.startAgain();
     }
 
     return true;
@@ -273,11 +293,13 @@ class RequestPoolManager {
     const hasRemainingPrefetchRequests = this.sendRequests(
       RequestType.Prefetch
     );
+    const hasRemainingComputeRequests = this.sendRequests(RequestType.Compute);
 
     if (
       !hasRemainingInteractionRequests &&
       !hasRemainingThumbnailRequests &&
-      !hasRemainingPrefetchRequests
+      !hasRemainingPrefetchRequests &&
+      !hasRemainingComputeRequests
     ) {
       this.awake = false;
     }
@@ -323,7 +345,4 @@ class RequestPoolManager {
   }
 }
 
-const requestPoolManager = new RequestPoolManager();
-
 export { RequestPoolManager };
-export default requestPoolManager;

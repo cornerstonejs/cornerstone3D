@@ -59,6 +59,86 @@ function getAnnotations(
   return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
+function getAllAnnotations(): Annotations {
+  const manager = getAnnotationManager();
+  return manager.getAllAnnotations();
+}
+
+/**
+ * Removes the association between the annotation passed as parameter and its
+ * parent in case it has one (eg: contour holes).
+ * @param annotation - Annotation
+ */
+function clearParentAnnotation(annotation: Annotation): void {
+  const { annotationUID: childUID, parentAnnotationUID } = annotation;
+
+  if (!parentAnnotationUID) {
+    return;
+  }
+
+  const parentAnnotation = getAnnotation(parentAnnotationUID);
+  const childUIDIndex = parentAnnotation.childAnnotationUIDs.indexOf(childUID);
+
+  parentAnnotation.childAnnotationUIDs.splice(childUIDIndex, 1);
+  annotation.parentAnnotationUID = undefined;
+}
+
+/**
+ * Creates a parent/child association between annotations.
+ * A annotation may have only one parent and multiple children (eg: a contour
+ * may have multiple holes in it).
+ * @param parentAnnotation - Parent annotation
+ * @param childAnnotation - Child annotation
+ */
+function addChildAnnotation(
+  parentAnnotation: Annotation,
+  childAnnotation: Annotation
+): void {
+  const { annotationUID: parentUID } = parentAnnotation;
+  const { annotationUID: childUID } = childAnnotation;
+
+  // Make sure it is not associated with any other tool
+  clearParentAnnotation(childAnnotation);
+
+  if (!parentAnnotation.childAnnotationUIDs) {
+    parentAnnotation.childAnnotationUIDs = [];
+  }
+
+  // Check if it is already a child
+  if (parentAnnotation.childAnnotationUIDs.includes(childUID)) {
+    return;
+  }
+
+  parentAnnotation.childAnnotationUIDs.push(childUID);
+  childAnnotation.parentAnnotationUID = parentUID;
+}
+
+/**
+ * Returns the parent annotation of a given one since annotations can be
+ * associated in a parent/child way (eg: polyline holes)
+ * @param annotation - Annotation
+ * @returns Parent annotation
+ */
+function getParentAnnotation(annotation: Annotation) {
+  return annotation.parentAnnotationUID
+    ? getAnnotation(annotation.parentAnnotationUID)
+    : undefined;
+}
+
+/**
+ * Returns all children annotation of a given one since annotations can be
+ * associated in a parent/child way (eg: polyline holes)
+ * @param annotation - Annotation
+ * @returns Child annotations
+ */
+function getChildAnnotations(annotation: Annotation) {
+  return (
+    annotation.childAnnotationUIDs?.map((childAnnotationUID) =>
+      getAnnotation(childAnnotationUID)
+    ) ?? []
+  );
+}
+
 /**
  * Add the annotation to the annotation manager along with the options that is
  * used to filter the annotation manager and the annotation group that
@@ -75,23 +155,23 @@ function addAnnotation(
   annotation: Annotation,
   annotationGroupSelector: AnnotationGroupSelector
 ): string {
-  if (annotation.annotationUID === undefined) {
+  if (!annotation.annotationUID) {
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
 
   const manager = getAnnotationManager();
-  const groupKey = manager.getGroupKey(annotationGroupSelector);
-
-  manager.addAnnotation(annotation, groupKey);
 
   // if the annotation manager selector is an element, trigger the
   // annotation added event for that element.
   if (annotationGroupSelector instanceof HTMLDivElement) {
+    const groupKey = manager.getGroupKey(annotationGroupSelector);
+    manager.addAnnotation(annotation, groupKey);
     triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
   } else {
     // if no element is provided, render all viewports that have the
     // same frame of reference.
     // Todo: we should do something else here for other types of annotation managers.
+    manager.addAnnotation(annotation);
     triggerAnnotationAddedForFOR(annotation);
   }
 
@@ -126,6 +206,9 @@ function getNumberOfAnnotations(
  * @param annotationUID - The unique identifier for the annotation.
  */
 function removeAnnotation(annotationUID: string): void {
+  if (!annotationUID) {
+    return;
+  }
   const manager = getAnnotationManager();
   const annotation = manager.getAnnotation(annotationUID);
 
@@ -133,6 +216,11 @@ function removeAnnotation(annotationUID: string): void {
   if (!annotation) {
     return;
   }
+
+  // Remove all child annotations first
+  annotation.childAnnotationUIDs?.forEach((childAnnotationUID) =>
+    removeAnnotation(childAnnotationUID)
+  );
 
   manager.removeAnnotation(annotationUID);
 
@@ -166,8 +254,29 @@ function removeAllAnnotations(): void {
   manager.removeAllAnnotations();
 }
 
+/**
+ * Invalidate current and all parent annotations (eg: contour holes)
+ * @param annotation - Annotation
+ */
+function invalidateAnnotation(annotation: Annotation): void {
+  let currAnnotation = annotation;
+
+  while (currAnnotation) {
+    currAnnotation.invalidated = true;
+
+    currAnnotation = currAnnotation.parentAnnotationUID
+      ? getAnnotation(currAnnotation.parentAnnotationUID)
+      : undefined;
+  }
+}
+
 export {
+  getAllAnnotations,
   getAnnotations,
+  getParentAnnotation,
+  getChildAnnotations,
+  clearParentAnnotation,
+  addChildAnnotation,
   getNumberOfAnnotations,
   addAnnotation,
   getAnnotation,
@@ -177,4 +286,5 @@ export {
   setAnnotationManager,
   getAnnotationManager,
   resetAnnotationManager,
+  invalidateAnnotation,
 };

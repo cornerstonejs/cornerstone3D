@@ -366,6 +366,17 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   };
 
   /**
+   * return all annotations as a single array
+   */
+  getAllAnnotations = (): Annotations => {
+    return Object.values(this.annotations)
+      .map((frameOfReferenceSpecificAnnotations) =>
+        Object.values(frameOfReferenceSpecificAnnotations)
+      )
+      .flat(2);
+  };
+
+  /**
    * A function that returns the number of all annotations in the annotation state
    *
    * @returns The number of all annotations in the state

@@ -11,7 +11,9 @@ import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
 import CalibrationTypes from './CalibrationTypes';
 import ViewportStatus from './ViewportStatus';
-import * as VideoViewport from './VideoViewport';
+import ImageQualityStatus from './ImageQualityStatus';
+import * as VideoEnums from './VideoEnums';
+import MetadataModules from './MetadataModules';
 
 export {
   Events,
@@ -27,5 +29,7 @@ export {
   VOILUTFunctionType,
   DynamicOperatorType,
   ViewportStatus,
-  VideoViewport,
+  VideoEnums,
+  MetadataModules,
+  ImageQualityStatus,
 };

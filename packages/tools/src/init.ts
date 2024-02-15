@@ -5,13 +5,16 @@ import { Events as TOOLS_EVENTS } from './enums';
 import { addEnabledElement, removeEnabledElement } from './store';
 import { resetCornerstoneToolsState } from './store/state';
 import {
+  annotationCompletedListener,
+  annotationRemovedListener,
   annotationSelectionListener,
+  annotationModifiedListener,
   segmentationDataModifiedEventListener,
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
-  annotationModifiedListener,
 } from './eventListeners';
+import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
 
@@ -74,6 +77,7 @@ function _addCornerstoneEventListeners(): void {
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement);
+  annotationInterpolationEventDispatcher.enable();
 }
 
 /**
@@ -87,6 +91,7 @@ function _removeCornerstoneEventListeners(): void {
 
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement);
+  annotationInterpolationEventDispatcher.disable();
 }
 
 /**
@@ -101,6 +106,11 @@ function _addCornerstoneToolsEventListeners() {
    * Annotation
    */
   eventTarget.addEventListener(
+    TOOLS_EVENTS.ANNOTATION_COMPLETED,
+    annotationCompletedListener
+  );
+
+  eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_MODIFIED,
     annotationModifiedListener
   );
@@ -113,6 +123,11 @@ function _addCornerstoneToolsEventListeners() {
   eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
     annotationSelectionListener
+  );
+
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.ANNOTATION_REMOVED,
+    annotationRemovedListener
   );
 
   /**
@@ -145,6 +160,11 @@ function _removeCornerstoneToolsEventListeners() {
   /**
    * Annotation
    */
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.ANNOTATION_COMPLETED,
+    annotationCompletedListener
+  );
+
   eventTarget.removeEventListener(
     TOOLS_EVENTS.ANNOTATION_MODIFIED,
     annotationModifiedListener

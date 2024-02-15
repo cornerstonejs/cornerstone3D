@@ -1,10 +1,12 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { VoxelManager } from '../utilities';
 import {
   Metadata,
-  VolumeScalarData,
+  PixelDataTypedArray,
   Point3,
   IImageLoadObject,
   Mat3,
+  RGB,
 } from '../types';
 
 /**
@@ -49,8 +51,12 @@ interface IImageVolume {
   imageIds: Array<string>;
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
+  /** volume referencedImageIds (if it is derived from set of images in the image cache) */
+  referencedImageIds?: Array<string>;
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
+  /** Property to store additional information */
+  additionalDetails?: Record<string, any>;
   /** return true if it is a 4D volume or false if it is 3D volume */
   isDynamicVolume(): boolean;
   /** method to convert the volume data in the volume cache, to separate images in the image cache */
@@ -63,7 +69,12 @@ interface IImageVolume {
   cancelLoading?: () => void;
 
   /** return the volume scalar data */
-  getScalarData(): VolumeScalarData;
+  getScalarData(): PixelDataTypedArray;
+
+  /** A voxel manager to manage the scalar data */
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+
+  convertToImageSlicesAndCache(): string[];
 
   /** return the index of a given imageId */
   getImageIdIndex(imageId: string): number;
@@ -73,6 +84,20 @@ interface IImageVolume {
 
   /** destroy the volume and make it unusable */
   destroy(): void;
+
+  /** decache */
+  decache?: (completelyRemove?: boolean) => void;
+
+  /** */
+  get imageCacheOffsetMap(): Map<string, any>;
+
+  /**
+   * Mark the volume as having had the pixel data changed externally
+   * which in background will re-configure the volume to use the new
+   * pixel data.
+   *
+   */
+  modified(): void;
 }
 
 export default IImageVolume;

@@ -1,9 +1,7 @@
 import { utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { Color } from '../../../types/SegmentationStateTypes';
-import { ColorLUT } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
-import { SegmentationRepresentations } from '../../../enums';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -13,7 +11,7 @@ import { SegmentationRepresentations } from '../../../enums';
  * @param colorLUT - An array of The colorLUT to set.
  * @returns
  */
-function addColorLUT(colorLUT: ColorLUT, colorLUTIndex: number): void {
+function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex: number): void {
   if (!colorLUT) {
     throw new Error('addColorLUT: colorLUT is required');
   }
@@ -81,7 +79,7 @@ function getColorForSegmentIndex(
   toolGroupId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number
-): Color {
+): Types.Color {
   const segmentationRepresentation =
     SegmentationState.getSegmentationRepresentationByUID(
       toolGroupId,
@@ -98,14 +96,21 @@ function getColorForSegmentIndex(
 
   // get colorLUT
   const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
-  return colorLUT[segmentIndex];
+  let colorValue = colorLUT[segmentIndex];
+  if (!colorValue) {
+    if (typeof segmentIndex !== 'number') {
+      throw new Error(`Can't create colour for LUT index ${segmentIndex}`);
+    }
+    colorValue = colorLUT[segmentIndex] = [0, 0, 0, 0];
+  }
+  return colorValue;
 }
 
 function setColorForSegmentIndex(
   toolGroupId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number,
-  color: Color
+  color: Types.Color
 ): void {
   // Get the reference to the color in the colorLUT.
   const colorReference = getColorForSegmentIndex(

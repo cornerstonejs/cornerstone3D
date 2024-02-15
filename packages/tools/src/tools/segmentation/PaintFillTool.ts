@@ -7,7 +7,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
-
+import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import {
   segmentLocking,
@@ -17,7 +17,11 @@ import {
 import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
+import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -83,12 +87,45 @@ class PaintFillTool extends BaseTool {
       segmentLocking.getLockedSegments(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
 
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
-    const segmentation = cache.getVolume(volumeId);
-    const { dimensions, direction } = segmentation;
-    const scalarData = segmentation.getScalarData();
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
 
-    const index = transformWorldToIndex(segmentation.imageData, worldPos);
+    let dimensions: Types.Point3;
+    let direction: Types.Mat3;
+    let scalarData: Types.PixelDataTypedArray;
+    let index: Types.Point3;
+
+    if (isVolumeSegmentation(labelmapData, viewport)) {
+      const { volumeId } = representationData[
+        type
+      ] as LabelmapSegmentationDataVolume;
+
+      const segmentation = cache.getVolume(volumeId);
+      ({ dimensions, direction } = segmentation);
+      scalarData = segmentation.getScalarData();
+
+      index = transformWorldToIndex(segmentation.imageData, worldPos);
+    } else {
+      const { imageIdReferenceMap } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      const currentImageId = enabledElement.viewport.getCurrentImageId();
+      const currentSegmentationImageId =
+        imageIdReferenceMap.get(currentImageId);
+
+      if (!currentSegmentationImageId) {
+        throw new Error(
+          'No active segmentation imageId detected, create one before using scissors tool'
+        );
+      }
+
+      const segmentationImage = cache.getImage(currentSegmentationImageId);
+      scalarData = segmentationImage.getPixelData();
+      const { imageData } = viewport.getImageData();
+      dimensions = imageData.getDimensions();
+      direction = imageData.getDirection();
+      index = transformWorldToIndex(imageData, worldPos);
+    }
 
     const fixedDimension = this.getFixedDimension(
       viewPlaneNormal,
@@ -190,7 +227,7 @@ class PaintFillTool extends BaseTool {
   };
 
   private generateHelpers = (
-    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array,
+    scalarData: Types.PixelDataTypedArray,
     dimensions: Types.Point3,
     seedIndex3D: Types.Point3,
     fixedDimension = 2

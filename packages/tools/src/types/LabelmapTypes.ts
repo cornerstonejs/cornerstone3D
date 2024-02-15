@@ -7,10 +7,13 @@ import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/Piec
 export type LabelmapConfig = {
   /** whether to render segmentation outline  */
   renderOutline?: boolean;
-  /** thickness of the outline when segmentation is active */
+  /** thickness of the outline when segmentation is active - all segments */
   outlineWidthActive?: number;
-  /** thickness of the outline when segmentation is inactive */
+  /** thickness of the outline when segmentation is inactive - all segments */
   outlineWidthInactive?: number;
+  /** delta thickness of the active segment index outline (0 means same thickness,
+   * 1 means 1px thicker, -1 means 1px thinner) */
+  activeSegmentOutlineWidthDelta?: number;
   /** whether to render segmentation filling */
   renderFill?: boolean;
   /** whether to render segmentation filling when inactive */
@@ -35,7 +38,25 @@ export type LabelmapRenderingConfig = {
   ofun?: vtkPiecewiseFunction;
 };
 
-export type LabelmapSegmentationData = {
+export type LabelmapSegmentationDataVolume = {
   volumeId: string;
   referencedVolumeId?: string;
 };
+
+export type LabelmapSegmentationDataStack = {
+  /**
+   * This is a Map from referenced imageId to the segmentation (Derived) imageIds (can be
+   * multiple) that are associated with it.
+   */
+  imageIdReferenceMap: Map<string, string>;
+};
+
+export type LabelmapSegmentationData =
+  | LabelmapSegmentationDataVolume
+  | LabelmapSegmentationDataStack
+  // PolySeg version that has both
+  | {
+      volumeId?: string;
+      referencedVolumeId?: string;
+      imageIdReferenceMap?: Map<string, string>;
+    };
