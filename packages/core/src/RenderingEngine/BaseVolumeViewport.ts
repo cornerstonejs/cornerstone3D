@@ -287,7 +287,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (!suppressEvents) {
       const eventDetail = {
           viewportId: this.id,
-          colormap
+          colormap,
+          volumeId
       };
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
     }
