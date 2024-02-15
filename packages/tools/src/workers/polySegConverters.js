@@ -193,14 +193,14 @@ const polySegConverters = {
           return projectedHole;
         });
 
+        const firstDim = (sharedDimensionIndex + 1) % 3;
+        const secondDim = (sharedDimensionIndex + 2) % 3;
+
         // Run the pointInShapeCallback for the combined bounding box
         pointInShapeCallback(
           imageData,
           (pointLPS) => {
-            const point2D = [
-              pointLPS[(sharedDimensionIndex + 1) % 3],
-              pointLPS[(sharedDimensionIndex + 2) % 3],
-            ];
+            const point2D = [pointLPS[firstDim], pointLPS[secondDim]];
 
             // Check if the point is inside any of the polylines for this segment
             const isInside = containsPoint(projectedPolyline, point2D, {
