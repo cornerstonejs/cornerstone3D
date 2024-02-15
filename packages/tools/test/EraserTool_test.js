@@ -2,7 +2,7 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { EraserTool } from '@cornerstonejs/tools';
-import { state } from '../src/index';
+import { triggerAnnotationAddedForElement } from '../src/stateManagement/annotation/helpers/state';
 
 const {
   cache,
@@ -75,6 +75,8 @@ describe('EraserTool:', () => {
       this.DOMElements = [];
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
+      this.stackToolGroup.addTool(LengthTool.toolName, {});
+      this.stackToolGroup.setToolEnabled(LengthTool.toolName, {});
       this.stackToolGroup.addTool(EraserTool.toolName, {});
       this.stackToolGroup.setToolActive(EraserTool.toolName, {
         bindings: [{ mouseButton: 1 }],
@@ -116,17 +118,15 @@ describe('EraserTool:', () => {
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
-      const addEventListenerForAnnotationRemoved = () => {
-        eventTarget.addEventListener(csToolsEvents.ANNOTATION_REMOVED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(0);
-          done();
-        });
-      };
+      eventTarget.addEventListener(csToolsEvents.ANNOTATION_REMOVED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(0);
+        done();
+      });
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0];
@@ -180,7 +180,9 @@ describe('EraserTool:', () => {
             cachedStats: {},
           },
         };
+
         annotation.state.addAnnotation(lengthAnnotation, element);
+        triggerAnnotationAddedForElement(lengthAnnotation, element);
 
         let evt = new MouseEvent('mousedown', {
           target: element,
@@ -191,8 +193,7 @@ describe('EraserTool:', () => {
           pageY: pageY1,
         });
 
-        addEventListenerForAnnotationRemoved();
-        document.dispatchEvent(evt);
+        element.dispatchEvent(evt);
       });
 
       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
