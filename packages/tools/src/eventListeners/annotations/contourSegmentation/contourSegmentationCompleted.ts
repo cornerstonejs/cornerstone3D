@@ -220,6 +220,7 @@ function createPolylineHole(
   }
 
   addChildAnnotation(targetAnnotation, holeAnnotation);
+  contourSegUtils.removeContourSegmentationAnnotation(holeAnnotation);
 
   const { element } = viewport;
   const enabledElement = getEnabledElement(element);
