@@ -12,6 +12,9 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
+  addManipulationBindings,
+  getLocalUrl,
+  addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,8 +27,10 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   CrosshairsTool,
-  StackScrollMouseWheelTool,
+  synchronizers,
 } = cornerstoneTools;
+
+const { createPresentationViewSynchronizer } = synchronizers;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
@@ -35,6 +40,15 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_CORONAL';
+const viewportIds = [viewportId1, viewportId2, viewportId3];
+const renderingEngineId = 'myRenderingEngine';
+const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
+const synchronizerOptions = {
+  applySlabThickness: false,
+};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -85,10 +99,6 @@ instructions.innerText = `
 content.append(instructions);
 
 // ============================= //
-
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-const viewportId3 = 'CT_CORONAL';
 
 const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
@@ -190,6 +200,30 @@ addDropdownToToolbar({
   },
 });
 
+addToggleButtonToToolbar({
+  id: 'syncSlabThickness',
+  title: 'Sync Slab Thickness',
+  defaultToggle: synchronizerOptions.applySlabThickness,
+  onClick: (toggle) => {
+    synchronizerOptions.applySlabThickness = toggle;
+  },
+});
+
+function setUpSynchronizers() {
+  const synchronizer = createPresentationViewSynchronizer(
+    synchronizerId,
+    synchronizerOptions
+  );
+
+  // Add viewports to VOI synchronizers
+  [viewportId1, viewportId2, viewportId3].forEach((viewportId) => {
+    synchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+}
+
 /**
  * Runs the demo
  */
@@ -198,7 +232,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
@@ -207,7 +240,8 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -216,7 +250,6 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
@@ -269,6 +302,7 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   // For the crosshairs to operate, the viewports must currently be
   // added ahead of setting the tool active. This will be improved in the future.
@@ -277,7 +311,6 @@ async function run() {
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Manipulation Tools
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   // Add Crosshairs tool and configure it to link the three viewports
   // These viewports could use different tool groups. See the PET-CT example
   // for a more complicated used case.
@@ -299,12 +332,11 @@ async function run() {
   toolGroup.setToolActive(CrosshairsTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  setUpSynchronizers();
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.renderViewports(viewportIds);
 }
 
 run();

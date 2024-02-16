@@ -2881,6 +2881,25 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
   }
 
+  /**
+   * Applies the view reference, which may navigate the slice index and apply
+   * other camera modifications
+   */
+  public setViewReference(viewRef: ViewReference): void {
+    const { viewPlaneNormal, sliceIndex, rotation } = viewRef;
+    const camera = this.getCamera();
+    if (viewPlaneNormal && !isEqual(viewPlaneNormal, camera.viewPlaneNormal)) {
+      return;
+    }
+
+    if (sliceIndex || sliceIndex === 0) {
+      this.setImageIdIndex(sliceIndex as number);
+    }
+    if (rotation || rotation === 0) {
+      this.setRotation(rotation);
+    }
+  }
+
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
     if (Array.isArray(sliceIndex)) {
@@ -3047,7 +3066,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
 
     triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
-
   }
 
   private unsetColormapGPU() {

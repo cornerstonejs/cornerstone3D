@@ -2255,6 +2255,8 @@ interface IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
+    setViewReference(viewRef: ViewReference): any;
+    // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
     sHeight: number;
@@ -3098,6 +3100,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
+    // (undocumented)
     successCallback(imageId: any, image: any): void;
     // (undocumented)
     unsetColormap: () => void;
@@ -3755,6 +3759,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
+    // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     sHeight: number;
@@ -3865,7 +3871,9 @@ type ViewReference = {
     viewPlaneNormal?: Point3;
     sliceIndex?: number | [number, number];
     volumeId?: string;
-    bounds?: BoundsLPS;
+    slabThickness?: number;
+    rotation?: number;
+    displayArea?: DisplayArea;
 };
 
 // @public (undocumented)
@@ -3874,6 +3882,7 @@ type ViewReferenceSpecifier = {
     forFrameOfReference?: boolean;
     points?: Point3[];
     volumeId?: string;
+    extended?: boolean;
 };
 
 // @public (undocumented)
@@ -4057,6 +4066,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     setOrientation(orientation: OrientationAxis | OrientationVectors, immediate?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
+    // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
 }

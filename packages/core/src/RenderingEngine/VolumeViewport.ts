@@ -13,7 +13,7 @@ import type {
   OrientationVectors,
   Point3,
 } from '../types';
-import type { ViewportInput } from '../types/IViewport';
+import type { ViewReference, ViewportInput } from '../types/IViewport';
 import {
   actorIsA,
   getClosestImageId,
@@ -311,6 +311,17 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     return true;
+  }
+
+  /**
+   * Sets the camera to show the given view reference.
+   */
+  public setViewReference(viewRef: ViewReference): void {
+    super.setViewReference(viewRef);
+    const { slabThickness } = viewRef;
+    if (slabThickness) {
+      this.setSlabThickness(slabThickness);
+    }
   }
 
   /**

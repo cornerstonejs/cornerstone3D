@@ -286,9 +286,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (!suppressEvents) {
       const eventDetail = {
-          viewportId: this.id,
-          colormap,
-          volumeId
+        viewportId: this.id,
+        colormap,
+        volumeId,
       };
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
     }
@@ -556,6 +556,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const target = super.getViewReference(viewRefSpecifier);
     if (viewRefSpecifier?.forFrameOfReference !== false) {
       target.volumeId = this.getVolumeId(viewRefSpecifier);
+    }
+    if (viewRefSpecifier?.extended) {
+      target.slabThickness = this.getSlabThickness();
     }
     // TODO - add referencedImageId as a base URL for an image to allow a generic
     // method to specify which volumes this should apply to.

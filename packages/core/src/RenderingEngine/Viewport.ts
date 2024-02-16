@@ -1407,6 +1407,10 @@ class Viewport implements IViewport {
       viewPlaneNormal,
       sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
     };
+    if (viewRefSpecifier.extended) {
+      target.rotation = this.getRotation();
+      target.displayArea = this.getDisplayArea();
+    }
     return target;
   }
 
@@ -1434,6 +1438,17 @@ class Viewport implements IViewport {
       return options?.asVolume === true;
     }
     return true;
+  }
+
+  /**
+   * Sets the view reference.  Only applies properties which are defined and
+   * applicable.
+   */
+  setViewReference(viewRef: ViewReference) {
+    const { displayArea } = viewRef;
+    if (displayArea) {
+      this.setDisplayArea(displayArea);
+    }
   }
 
   protected _shouldUseNativeDataType() {

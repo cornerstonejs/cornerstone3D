@@ -28,6 +28,11 @@ export type ViewReferenceSpecifier = {
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
+  /**
+   * extended allows additional information to be returned in the reference view,
+   * so that a more exact view reference can be returned.
+   */
+  extended?: boolean;
 };
 
 /**
@@ -98,11 +103,25 @@ export type ViewReference = {
    * VolumeId that the referencedImageId was chosen from
    */
   volumeId?: string;
+
+  //////// extended responses - these are not normally included in the response
+
   /**
-   * The bounds that are shown.  Allows specifying whether a view includes
-   * particular bounds or not.  This will be in world coordinates.
+   * The slice thickness
    */
-  bounds?: BoundsLPS;
+  slabThickness?: number;
+
+  /**
+   * The rotation of the view - this is related to cameraViewUp, but is relative
+   * to the viewNormal and the default viewUp for that viewNormal.
+   */
+  rotation?: number;
+
+  /**
+   * The display area being shown.  This is more consistent than applying a set
+   * of boundary areas.
+   */
+  displayArea?: DisplayArea;
 };
 
 /**
@@ -225,6 +244,11 @@ interface IViewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean;
+  /**
+   * Sets the given reference to the current value.  Ignores any values which
+   * are incompatible.
+   */
+  setViewReference(viewRef: ViewReference);
 
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
