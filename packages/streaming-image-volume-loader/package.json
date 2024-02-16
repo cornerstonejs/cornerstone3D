@@ -29,7 +29,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.61.3",
+    "@cornerstonejs/core": "^1.61.4",
     "comlink": "^4.4.1"
   },
   "contributors": [
