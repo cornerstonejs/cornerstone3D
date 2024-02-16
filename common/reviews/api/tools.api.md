@@ -6034,7 +6034,7 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
-    _getImageDynamicRangeFromViewport(viewport: any): any;
+    _getImageDynamicRangeFromViewport(viewport: any): number;
     // (undocumented)
     _getMultiplierFromDynamicRange(viewport: any, volumeId: any): number;
     // (undocumented)
