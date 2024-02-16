@@ -29,7 +29,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.61.2",
+    "@cornerstonejs/core": "^1.61.3",
     "@icr/polyseg-wasm": "0.4.0",
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
