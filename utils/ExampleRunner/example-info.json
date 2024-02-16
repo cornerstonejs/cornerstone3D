@@ -137,6 +137,10 @@
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
+      },
+      "resize": {
+        "name": "Resize with various synchronization settings applied",
+        "description": "Demonstrates resizing viewports and the affect of synchronization settings on different viewports"
       }
     },
     "tools-basic": {
