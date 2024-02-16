@@ -264,34 +264,28 @@ addButtonToToolbar({
   },
 });
 
-let smoothingEnabled = false;
 const toggleSmoothingButtonContainer = document.createElement('span');
 
 // Reserve some space in the toolbar because this input is added later
 toolbar.appendChild(toggleSmoothingButtonContainer);
 
 function addToggleSmoothingButton(toolGroup) {
-  addButtonToToolbar({
+  addToggleButtonToToolbar({
     title: 'Toggle smoothing (disabled)',
     container: toggleSmoothingButtonContainer,
-    onClick: function () {
+    onClick: function (toggle) {
       const { toolName } = PlanarFreehandContourSegmentationTool;
-
-      smoothingEnabled = !smoothingEnabled;
-
       const currentConfig = toolGroup.getToolConfiguration(toolName);
       const { smoothing: currentSmoothingConfig } = currentConfig;
 
-      this.innerText = `Toggle smoothing (${
-        smoothingEnabled ? 'enabled' : 'disabled'
-      })`;
+      this.innerText = `Toggle smoothing (${toggle ? 'enabled' : 'disabled'})`;
 
       toolGroup.setToolConfiguration(toolName, {
         ...currentConfig,
         smoothing: {
           ...currentSmoothingConfig,
-          smoothOnAdd: smoothingEnabled,
-          smoothOnEdit: smoothingEnabled,
+          smoothOnAdd: toggle,
+          smoothOnEdit: toggle,
         },
       });
     },
