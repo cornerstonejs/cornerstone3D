@@ -204,7 +204,8 @@ class WindowLevelTool extends BaseTool {
     const dimensions = imageData.getDimensions();
 
     if (imageData.getRange) {
-      return imageData.getRange();
+      const imageDataRange = imageData.getRange();
+      return imageDataRange[1] - imageDataRange[0];
     }
     let scalarData;
     // if getScalarData is a method on imageData
