@@ -282,6 +282,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
+    // keeping this incase something is already using it (but this is wrong)
     this.viewportProperties.colormap = colormap;
 
     if (!suppressEvents) {
@@ -789,7 +790,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     const {
-      colormap,
+      colormap: defaultColormap,
       VOILUTFunction,
       interpolationType,
       invert,
@@ -816,8 +817,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
 
+    const colormap = this.getColormap(applicableVolumeActorInfo);
+
     return {
-      colormap: colormap,
+      colormap: volumeId ? colormap || defaultColormap : defaultColormap,
       voiRange: voiRange,
       VOILUTFunction: VOILUTFunction,
       interpolationType: interpolationType,
@@ -826,6 +829,61 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       rotation: rotation,
     };
   };
+
+
+  /**
+   *
+   * @param applicableVolumeActorInfo  - The volume actor information for the volume
+   * @returns colormap information for the volume if identified
+   */
+  private getColormap = (applicableVolumeActorInfo) => {
+    const { volumeActor } = applicableVolumeActorInfo;
+    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    const { nodes } = cfun.getState()
+    const RGBPoints = nodes.reduce((acc, node) => {
+      acc.push(node.x, node.r, node.g, node.b);
+      return acc;
+    }
+    , []);
+    const colormaps = vtkColorMaps.rgbPresetNames.map((presetName) =>
+    vtkColorMaps.getPresetByName(presetName)
+    );
+    const matchedColormap = colormaps.find((colormap) => {
+        const { RGBPoints: presetRGBPoints } = colormap;
+        if (presetRGBPoints.length !== RGBPoints.length) {
+            return false;
+        }
+        for (let i = 0; i < presetRGBPoints.length; i += 4) {
+            if (
+                presetRGBPoints[i + 1] !== RGBPoints[i + 1] ||
+                presetRGBPoints[i + 2] !== RGBPoints[i + 2] ||
+                presetRGBPoints[i + 3] !== RGBPoints[i + 3]
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    if (!matchedColormap) {
+        return null;
+    }
+
+    const opacityPoints = volumeActor.getProperty().getScalarOpacity(0).getDataPointer()
+
+    const opacity = []
+    for (let i = 0; i < opacityPoints.length; i += 2) {
+        opacity.push({ value: opacityPoints[i], opacity: opacityPoints[i + 1] })
+    }
+
+    const colormap = {
+        name: matchedColormap.Name,
+        opacity: opacity,
+    }
+
+    return colormap;
+  }
 
   /**
    * Creates volume actors for all volumes defined in the `volumeInputArray`.
