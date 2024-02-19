@@ -4,10 +4,15 @@ import {
   eventTarget,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
-import { Events } from '../../../enums';
+import { Events, ChangeTypes } from '../../../enums';
 import { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
-import { AnnotationAddedEventDetail } from '../../../types/EventTypes';
+import {
+  AnnotationAddedEventDetail,
+  AnnotationModifiedEventDetail,
+  AnnotationCompletedEventDetail,
+  ContourAnnotationCompletedEventDetail,
+} from '../../../types/EventTypes';
 
 /**
  * It triggers an event for the element when an annotation is added
@@ -76,4 +81,69 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
   });
 }
 
-export { triggerAnnotationAddedForElement, triggerAnnotationAddedForFOR };
+/**
+ * Triggers an annotation modified event.
+ */
+function triggerAnnotationModified(
+  annotation: Annotation,
+  element: HTMLDivElement,
+  changeType = ChangeTypes.HandlesUpdated
+): void {
+  const enabledElement = getEnabledElement(element);
+  const { viewportId, renderingEngineId } = enabledElement;
+  const eventType = Events.ANNOTATION_MODIFIED;
+  const eventDetail: AnnotationModifiedEventDetail = {
+    annotation,
+    viewportId,
+    renderingEngineId,
+    changeType,
+  };
+
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event.
+ */
+function triggerAnnotationCompleted(annotation: Annotation): void {
+  const eventDetail: AnnotationCompletedEventDetail = {
+    annotation,
+  };
+
+  _triggerAnnotationCompleted(eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event for contours (same annotation completed
+ * event but with more specific details).
+ */
+function triggerContourAnnotationCompleted(
+  annotation: Annotation,
+  contourHoleProcessingEnabled = false
+): void {
+  const eventDetail: ContourAnnotationCompletedEventDetail = {
+    annotation,
+    contourHoleProcessingEnabled,
+  };
+
+  _triggerAnnotationCompleted(eventDetail);
+}
+
+/**
+ * Triggers an annotation completed event for the `detail` provided
+ * @param eventDetail - Event detail
+ */
+function _triggerAnnotationCompleted(
+  eventDetail: AnnotationCompletedEventDetail
+) {
+  const eventType = Events.ANNOTATION_COMPLETED;
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+export {
+  triggerAnnotationAddedForElement,
+  triggerAnnotationAddedForFOR,
+  triggerAnnotationModified,
+  triggerAnnotationCompleted,
+  triggerContourAnnotationCompleted,
+};

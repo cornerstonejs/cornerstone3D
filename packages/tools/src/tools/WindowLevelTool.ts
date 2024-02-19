@@ -51,7 +51,7 @@ class WindowLevelTool extends BaseTool {
     const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
@@ -96,6 +96,11 @@ class WindowLevelTool extends BaseTool {
         lower,
         upper,
       });
+    }
+
+    // If the range is not valid. Do nothing
+    if (newRange.lower >= newRange.upper) {
+      return;
     }
 
     viewport.setProperties({
@@ -199,7 +204,8 @@ class WindowLevelTool extends BaseTool {
     const dimensions = imageData.getDimensions();
 
     if (imageData.getRange) {
-      return imageData.getRange();
+      const imageDataRange = imageData.getRange();
+      return imageDataRange[1] - imageDataRange[0];
     }
     let scalarData;
     // if getScalarData is a method on imageData

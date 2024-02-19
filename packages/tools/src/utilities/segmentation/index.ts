@@ -20,6 +20,10 @@ import contourAndFindLargestBidirectional from './contourAndFindLargestBidirecti
 import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
+import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
+import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
+import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
+import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 
 export {
   thresholdVolumeByRange,
@@ -40,4 +44,8 @@ export {
   createBidirectionalToolData,
   segmentContourAction,
   invalidateBrushCursor,
+  getUniqueSegmentIndices,
+  getSegmentAtWorldPoint,
+  getSegmentAtLabelmapBorder,
+  getHoveredContourSegmentationAnnotation,
 };

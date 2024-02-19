@@ -30,6 +30,7 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   PlanarFreehandROITool,
+  EraserTool,
   KeyImageTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -119,6 +120,7 @@ const toolsNames = [
   CobbAngleTool.toolName,
   ArrowAnnotateTool.toolName,
   PlanarFreehandROITool.toolName,
+  EraserTool.toolName,
   KeyImageTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
@@ -218,6 +220,7 @@ async function run() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(EraserTool);
   cornerstoneTools.addTool(KeyImageTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -235,6 +238,7 @@ async function run() {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(EraserTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -256,6 +260,7 @@ async function run() {
   toolGroup.setToolPassive(AngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
   toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
+  toolGroup.setToolPassive(EraserTool.toolName);
 
   toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
     calculateStats: true,

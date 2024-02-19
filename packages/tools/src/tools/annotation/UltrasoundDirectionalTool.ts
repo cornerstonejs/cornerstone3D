@@ -1,8 +1,6 @@
 import { Events } from '../../enums';
 import {
   getEnabledElement,
-  triggerEvent,
-  eventTarget,
   utilities as csUtils,
   StackViewport,
 } from '@cornerstonejs/core';
@@ -15,6 +13,10 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
@@ -27,10 +29,6 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { roundNumber } from '../../utilities';
 import { distanceToPoint } from '../../utilities/math/point';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -310,13 +308,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -398,13 +390,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;
@@ -797,7 +783,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { element } = enabledElement.viewport;
 
     // Until we have all two anchors bail out
     if (data.handles.points.length !== 2) {
@@ -873,14 +859,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   }

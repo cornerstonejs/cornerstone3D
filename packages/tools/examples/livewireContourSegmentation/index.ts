@@ -35,8 +35,11 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SegmentationDisplayTool,
+  PlanarFreehandContourSegmentationTool,
   LivewireContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -301,6 +304,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(LivewireContourSegmentationTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -309,16 +313,22 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(SegmentationDisplayTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(LivewireContourSegmentationTool.toolName);
   addManipulationBindings(toolGroup);
 
   // Set the initial state of the tools
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
 
   toolGroup.setToolActive(LivewireContourSegmentationTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click+Shift
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });

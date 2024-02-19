@@ -2,7 +2,6 @@ import { generateContourSetsFromLabelmap } from '../contours';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import findLargestBidirectional from './findLargestBidirectional';
 
-const EPSILON = 1e-2;
 const { Labelmap } = SegmentationRepresentations;
 
 /**

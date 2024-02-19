@@ -6,6 +6,8 @@ import IDistance from './IDistance';
 import { SetToolBindingsType } from './ISetToolModeOptions';
 import { Swipe } from '../enums/Touch';
 import { ToolModes } from '../enums';
+import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
+import { ChangeTypes } from '../enums';
 
 /**
  * The normalized interaction event detail
@@ -118,6 +120,7 @@ type AnnotationAddedEventDetail = {
 type AnnotationCompletedEventDetail = {
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
+  changeType?: ChangeTypes.Completed;
 };
 
 /**
@@ -130,6 +133,8 @@ type AnnotationModifiedEventDetail = {
   renderingEngineId: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
+  /** The type of this change */
+  changeType?: ChangeTypes;
 };
 
 /**
@@ -185,6 +190,36 @@ type AnnotationRenderedEventDetail = {
   viewportId: string;
   /** unique id of the rendering engine */
   renderingEngineId: string;
+};
+
+type AnnotationInterpolationCompletedEventDetail = {
+  /** The annotation that is being updated with a change in label. */
+  annotation: InterpolationROIAnnotation;
+  /** The HTML element that the annotation was rendered on. */
+  element: HTMLDivElement;
+  /** unique id of the viewport */
+  viewportId: string;
+  /** unique id of the rendering engine */
+  renderingEngineId: string;
+};
+
+type AnnotationInterpolationRemovedEventDetail = {
+  /** The annotations that is being removed . */
+  annotations: Array<InterpolationROIAnnotation>;
+  /** The HTML element that the annotation was rendered on. */
+  element: HTMLDivElement;
+  /** unique id of the viewport */
+  viewportId: string;
+  /** unique id of the rendering engine */
+  renderingEngineId: string;
+};
+
+/**
+ * The data that is passed to the event handler when a new contour annotation is
+ * completed drawing on the viewport.
+ */
+type ContourAnnotationCompletedEventDetail = AnnotationCompletedEventDetail & {
+  contourHoleProcessingEnabled: boolean;
 };
 
 /**
@@ -499,6 +534,18 @@ type AnnotationVisibilityChangeEventType =
   Types.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 /**
+ * The Annotation interpolation process completed event type
+ */
+type AnnotationInterpolationCompletedEventType =
+  Types.CustomEventType<AnnotationInterpolationCompletedEventDetail>;
+
+/**
+ * The Annotation interpolation removed event type
+ */
+type AnnotationInterpolationRemovedEventType =
+  Types.CustomEventType<AnnotationInterpolationRemovedEventDetail>;
+
+/**
  * Event for when SegmentationData is modified
  */
 type SegmentationDataModifiedEventType =
@@ -670,6 +717,11 @@ export {
   AnnotationVisibilityChangeEventDetail,
   AnnotationLockChangeEventType,
   AnnotationVisibilityChangeEventType,
+  AnnotationInterpolationCompletedEventDetail,
+  AnnotationInterpolationCompletedEventType,
+  AnnotationInterpolationRemovedEventDetail,
+  AnnotationInterpolationRemovedEventType,
+  ContourAnnotationCompletedEventDetail,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
   SegmentationRepresentationModifiedEventType,

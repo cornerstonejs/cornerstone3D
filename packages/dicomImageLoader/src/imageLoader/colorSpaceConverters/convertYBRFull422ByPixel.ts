@@ -9,7 +9,7 @@ export default function (
     throw new Error('decodeRGB: ybrBuffer must not be undefined');
   }
   if (imageFrame.length % 2 !== 0) {
-    throw new Error('decodeRGB: ybrBuffer length must be divisble by 3');
+    throw new Error('decodeRGB: ybrBuffer length must be divisble by 2');
   }
 
   const numPixels = imageFrame.length / 2;

@@ -1,10 +1,5 @@
 import { Events } from '../../enums';
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
@@ -18,6 +13,10 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import * as lineSegment from '../../utilities/math/line';
 
 import {
@@ -29,10 +28,6 @@ import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -143,9 +138,11 @@ class LengthTool extends AnnotationTool {
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
+    const {
+      viewPlaneNormal,
+      viewUp,
+      position: cameraPosition,
+    } = viewport.getCamera();
     const referencedImageId = this.getReferencedImageId(
       viewport,
       worldPos,
@@ -153,17 +150,15 @@ class LengthTool extends AnnotationTool {
       viewUp
     );
 
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
     const annotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
+        ...viewport.getViewReference({ points: [worldPos] }),
         toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
         referencedImageId,
+        viewUp,
+        cameraPosition,
       },
       data: {
         handles: {
@@ -366,13 +361,7 @@ class LengthTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -454,13 +443,7 @@ class LengthTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;
@@ -792,7 +775,7 @@ class LengthTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { element } = enabledElement.viewport;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
@@ -840,14 +823,7 @@ class LengthTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   }

@@ -3,7 +3,7 @@ import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchi
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
-import { removeDuplicatePoints } from './mergePoints';
+import { getDeduplicatedVTKPolyDataPoints } from '../contours';
 import { findContoursFromReducedSet } from './contourFinder';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 
@@ -21,13 +21,6 @@ function generateContourSetsFromLabelmap({ segmentations }) {
   }
 
   const numSlices = vol.dimensions[2];
-
-  // Get image volume segmentation references
-  const imageVol = cornerstoneCache.getVolume(vol.referencedVolumeId);
-  if (!imageVol) {
-    console.warn(`No volume found for ${vol.referencedVolumeId}`);
-    return;
-  }
 
   // NOTE: Workaround for marching squares not finding closed contours at
   // boundary of image volume, clear pixels along x-y border of volume
@@ -47,7 +40,7 @@ function generateContourSetsFromLabelmap({ segmentations }) {
   //
   const ContourSets = [];
 
-  const { FrameOfReferenceUID } = imageVol.metadata;
+  const { FrameOfReferenceUID } = vol.metadata;
   // Iterate through all segments in current segmentation set
   const numSegments = segments.length;
   for (let segIndex = 0; segIndex < numSegments; segIndex++) {
@@ -107,12 +100,11 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         const msOutput = mSquares.getOutputData();
 
         // Clean up output from marching squares
-        const reducedSet = removeDuplicatePoints(msOutput);
+        const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
         if (reducedSet.points?.length) {
           const contours = findContoursFromReducedSet(reducedSet.lines);
 
           sliceContours.push({
-            referencedImageId: imageVol.imageIds[sliceIndex],
             contours,
             polyData: reducedSet,
             FrameNumber: sliceIndex + 1,
@@ -127,7 +119,6 @@ function generateContourSetsFromLabelmap({ segmentations }) {
     }
 
     const metadata = {
-      referencedImageId: imageVol.imageIds[0], // just use 0 for overall
       FrameOfReferenceUID,
     };
 

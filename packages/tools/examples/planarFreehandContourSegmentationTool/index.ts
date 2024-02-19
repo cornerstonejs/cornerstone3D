@@ -3,7 +3,6 @@ import {
   Types,
   Enums,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -34,6 +33,8 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
@@ -42,15 +43,11 @@ const {
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
-  annotation,
   segmentation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-const { selection } = annotation;
-const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getAnnotationManager();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -95,47 +92,46 @@ elements.forEach((element) => {
 
 content.appendChild(viewportGrid);
 
-createInfoSection(content, { title: 'Drawing' })
+// prettier-ignore
+createInfoSection(content)
+  .addInstruction('Select a segment index')
   .addInstruction('Left click and drag to draw a contour')
   .openNestedSection()
+    .addInstruction(
+      'Segmentation contours are closed automatically if the mouse button is released before joining the start and end points'
+    )
+    .addInstruction(
+      'After drawing two contours that overlap for the same segment index they will:'
+    )
+    .openNestedSection()
+      .addInstruction(
+        'be merged if the first point of the second contour is inside the first contour'
+      )
+      .addInstruction(
+        'be subtracted if the first point of the second contour is outside the first contour'
+      )
+      .closeNestedSection()
+    .addInstruction(
+      'Hold "shift" and draw a second contour inside the first contour to create a hole'
+    )
+    .openNestedSection()
+      .addInstruction('You can release the "shift" right after adding the first point.')
+      .closeNestedSection()
+    .closeNestedSection()
   .addInstruction(
-    'If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)'
-  );
-
-createInfoSection(content, { title: 'Editing' })
-  .addInstruction(
-    'Left click and drag on the line of an existing contour to edit it'
+    'Left click and drag on the line of an existing contour or hole to edit them'
   )
   .openNestedSection()
-  .addInstruction('Closed Contours')
-  .openNestedSection()
-  .addInstruction(
-    'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
-  )
+    .addInstruction(
+      'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit.' +
+      'You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
+    )
   .closeNestedSection()
-  .addInstruction('Open Contours')
-  .openNestedSection()
   .addInstruction(
-    'Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).'
+    'Show/hide all or only current segment clicking on the respective buttons on the toolbar'
   )
   .addInstruction(
-    'Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.'
-  )
-  .addInstruction(
-    'If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.'
-  )
-  .closeNestedSection();
-
-createInfoSection(content, {
-  title:
-    'Setting an open annotation to join the endpoints and draw the longest line from the midpoint to the contour (for horseshoe shaped contours, e.g. in Cardiac workflows) (In the future this should likely be pulled out to its own tool)',
-})
-  .addInstruction('Draw an open contour as a horseshow shape.')
-  .addInstruction(
-    'With the open contour selected, click the "Render selected open contour with joined ends and midpoint line" button.'
-  )
-  .addInstruction(
-    'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
+    'Use the sliders to change the contour style before or after drawing contours'
   );
 
 function updateInputsForCurrentSegmentation() {
@@ -228,76 +224,6 @@ elements.forEach((element) => {
 
 const toolbar = document.getElementById('demo-toolbar');
 
-addButtonToToolbar({
-  title: 'Render selected open contour with joined ends and midpoint line',
-  onClick: () => {
-    const annotationUIDs = selection.getAnnotationsSelected();
-
-    if (annotationUIDs && annotationUIDs.length) {
-      const annotationUID = annotationUIDs[0];
-      const annotation =
-        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
-          annotationUID
-        );
-
-      annotation.data.isOpenUShapeContour = true;
-
-      // Render the image to see it was selected
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-
-      renderingEngine.renderViewports(viewportIds);
-    }
-  },
-});
-
-let shouldInterpolate = false;
-const toggleInterpolationButtonContainer = document.createElement('span');
-
-// Reserve some space in the toolbar because this input is added later
-toolbar.appendChild(toggleInterpolationButtonContainer);
-
-function addToggleInterpolationButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'Toggle interpolation',
-    container: toggleInterpolationButtonContainer,
-    onClick: () => {
-      shouldInterpolate = !shouldInterpolate;
-
-      toolGroup.setToolConfiguration(
-        PlanarFreehandContourSegmentationTool.toolName,
-        {
-          interpolation: {
-            enabled: shouldInterpolate,
-          },
-        }
-      );
-    },
-  });
-}
-
-let shouldCalculateStats = false;
-const toggleCalculateStatsButtonContainer = document.createElement('span');
-
-// Reserve some space in the toolbar because this input is added later
-toolbar.appendChild(toggleCalculateStatsButtonContainer);
-
-function addToggleCalculateStatsButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'Toggle calculate stats',
-    container: toggleCalculateStatsButtonContainer,
-    onClick: () => {
-      shouldCalculateStats = !shouldCalculateStats;
-
-      toolGroup.setToolConfiguration(
-        PlanarFreehandContourSegmentationTool.toolName,
-        {
-          calculateStats: shouldCalculateStats,
-        }
-      );
-    },
-  });
-}
-
 addDropdownToToolbar({
   labelText: 'Segment Index',
   options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
@@ -337,6 +263,34 @@ addButtonToToolbar({
     segmentsVisibility[activeSegmentIndex] = visible;
   },
 });
+
+const toggleSmoothingButtonContainer = document.createElement('span');
+
+// Reserve some space in the toolbar because this input is added later
+toolbar.appendChild(toggleSmoothingButtonContainer);
+
+function addToggleSmoothingButton(toolGroup) {
+  addToggleButtonToToolbar({
+    title: 'Toggle smoothing (disabled)',
+    container: toggleSmoothingButtonContainer,
+    onClick: function (toggle) {
+      const { toolName } = PlanarFreehandContourSegmentationTool;
+      const currentConfig = toolGroup.getToolConfiguration(toolName);
+      const { smoothing: currentSmoothingConfig } = currentConfig;
+
+      this.innerText = `Toggle smoothing (${toggle ? 'enabled' : 'disabled'})`;
+
+      toolGroup.setToolConfiguration(toolName, {
+        ...currentConfig,
+        smoothing: {
+          ...currentSmoothingConfig,
+          smoothOnAdd: toggle,
+          smoothOnEdit: toggle,
+        },
+      });
+    },
+  });
+}
 
 addSliderToToolbar({
   id: 'outlineWidthActive',
@@ -431,6 +385,10 @@ async function run() {
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.Shift,
+      },
     ],
   });
 
@@ -456,11 +414,8 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  // set up toggle interpolation tool button.
-  addToggleInterpolationButton(toolGroup);
-
-  // set up toggle calculate stats tool button.
-  addToggleCalculateStatsButton(toolGroup);
+  // set up toggle smoothing tool button.
+  addToggleSmoothingButton(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({

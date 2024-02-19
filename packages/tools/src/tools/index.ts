@@ -37,6 +37,7 @@ import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
 import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
+import AnnotationEraserTool from './AnnotationEraserTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -91,6 +92,7 @@ export {
   CobbAngleTool,
   UltrasoundDirectionalTool,
   KeyImageTool,
+  AnnotationEraserTool as EraserTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools

@@ -3,23 +3,20 @@ import {
   cache,
   StackViewport,
   metaData,
-  triggerEvent,
-  eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
 import { addAnnotation, getAnnotations } from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -106,7 +103,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -342,11 +339,11 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId, viewport } = enabledElement;
+    const { element, viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const volumeId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(volumeId.split('volumeId:')[1]);
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
@@ -359,14 +356,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   }

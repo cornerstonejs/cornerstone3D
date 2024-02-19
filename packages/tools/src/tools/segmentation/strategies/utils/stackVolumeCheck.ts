@@ -1,6 +1,5 @@
 import {
   LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
 import {
@@ -8,26 +7,34 @@ import {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from '../../../../types';
-
-function isStackSegmentation(
-  operationData: LabelmapToolOperationData | LabelmapSegmentationData
-): operationData is
-  | LabelmapToolOperationDataStack
-  | LabelmapSegmentationDataStack {
-  return (
-    (operationData as LabelmapToolOperationDataStack).imageIdReferenceMap !==
-    undefined
-  );
-}
+import { Types, VolumeViewport } from '@cornerstonejs/core';
 
 function isVolumeSegmentation(
-  operationData: LabelmapToolOperationData | LabelmapSegmentationData
+  operationData: LabelmapToolOperationData | LabelmapSegmentationData,
+  viewport?: Types.IViewport
 ): operationData is
   | LabelmapToolOperationDataVolume
   | LabelmapSegmentationDataVolume {
-  return (
-    (operationData as LabelmapToolOperationDataVolume)?.volumeId !== undefined
-  );
+  const { imageIdReferenceMap } =
+    operationData as LabelmapToolOperationDataStack;
+  const { volumeId } = operationData as LabelmapToolOperationDataVolume;
+
+  if (volumeId && !imageIdReferenceMap) {
+    return true;
+  }
+
+  if (imageIdReferenceMap && !volumeId) {
+    return false;
+  }
+
+  if (volumeId && imageIdReferenceMap && !viewport) {
+    throw new Error(
+      'isVolumeSegmentation: viewport is required when both volumeId and imageIdReferenceMap are provided'
+    );
+  }
+
+  // we can get the viewport to decide
+  return viewport instanceof VolumeViewport;
 }
 
-export { isStackSegmentation, isVolumeSegmentation };
+export { isVolumeSegmentation };

@@ -29,13 +29,15 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+const { KeyboardBindings } = cornerstoneTools.Enums;
+
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
+  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
@@ -212,6 +214,10 @@ addDropdownToToolbar({
         {
           mouseButton: MouseBindings.Primary, // Left Click
         },
+        {
+          mouseButton: MouseBindings.Primary, // Left Click+Shift
+          modifierKey: KeyboardBindings.Shift,
+        },
       ],
     });
 
@@ -317,7 +323,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -325,6 +331,7 @@ async function run() {
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
 
   toolGroup.addToolInstance(
     'CatmullRomSplineROI',
@@ -363,8 +370,15 @@ async function run() {
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click+Shift
+        modifierKey: KeyboardBindings.Shift,
+      },
     ],
   });
+
+  // Spline curves may be converted into freehand contours when they overlaps (append/remove)
+  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

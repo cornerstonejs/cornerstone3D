@@ -37,6 +37,7 @@ const DEFAULT_SEGMENT_CONFIG = {
 const {
   SplineContourSegmentationTool,
   SegmentationDisplayTool,
+  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -540,6 +541,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
@@ -552,6 +554,7 @@ async function run() {
 
   [stackToolGroup, volumeToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(SegmentationDisplayTool.toolName);
+    toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
     toolGroup.addTool(SplineContourSegmentationTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
     toolGroup.addTool(PanTool.toolName);
@@ -614,6 +617,7 @@ async function run() {
     });
 
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM

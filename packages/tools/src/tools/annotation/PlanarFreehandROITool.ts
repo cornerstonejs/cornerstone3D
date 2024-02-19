@@ -1,8 +1,6 @@
 import {
   CONSTANTS,
   getEnabledElement,
-  triggerEvent,
-  eventTarget,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -14,7 +12,6 @@ import {
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
 import { roundNumber } from '../../utilities';
-import { Events } from '../../enums';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -26,11 +23,7 @@ import registerClosedContourEditLoop from './planarFreehandROITool/closedContour
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
-import {
+import type {
   EventTypes,
   ToolHandle,
   Annotation,
@@ -39,18 +32,21 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  AnnotationRenderContext,
 } from '../../types';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
+import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { KeyboardBindings, ChangeTypes } from '../../enums';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -68,23 +64,23 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  * or similar methods.
  *
  * PlanarFreehandROITool annotation can be smoothed on drawing completion. This is a configured based approach.
- * The interpolation process uses b-spline algorithm and consider 4 configurations properties:
- * - interpolation.interpolateOnAdd: to tell whether it should be interpolated or not (for editing it is considered the property interpolateOnEdit) (default: false)
- * - interpolation.interpolateOnEdit: to tell whether it should be interpolated or not when editing (default: false)
- * - interpolation.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during interpolation (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
- * - interpolation.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
+ * The smoothing process uses b-spline algorithm and consider 4 configurations properties:
+ * - smoothing.smoothOnAdd: to tell whether it should be smoothed or not (for editing it is considered the property smoothOnEdit) (default: false)
+ * - smoothing.smoothOnEdit: to tell whether it should be smoothed or not when editing (default: false)
+ * - smoothing.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during smoothing (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
+ * - smoothing.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
  *
- * So, with that said the interpolation might occur when:
- * - drawing is done (i.e mouse is released) and interpolation.interpolateOnAdd is true. Interpolation algorithm uses knotsRatioPercentageOnAdd
- * - edit drawing is done (i.e mouse is released) and interpolation.interpolateOnEdit is true. Interpolation algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
- * Interpolation does not occur when:
- * - interpolation.interpolateOnAdd is false and drawing is completed
- * - interpolation.interpolateOnEdit is false and edit is completed
+ * So, with that said the smoothing might occur when:
+ * - drawing is done (i.e mouse is released) and smoothing.smoothOnAdd is true. smoothing algorithm uses knotsRatioPercentageOnAdd
+ * - edit drawing is done (i.e mouse is released) and smoothing.smoothOnEdit is true. smoothing algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
+ * smoothing does not occur when:
+ * - smoothing.smoothOnAdd is false and drawing is completed
+ * - smoothing.smoothOnEdit is false and edit is completed
  * - drawing still happening (editing or not)
  *
- * The result of interpolation will be a smoother set of segments.
- * Changing tool configuration (see below) you can fine-tune the interpolation process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive interpolation.
- * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more agressive interpolation.
+ * The result of smoothing will be removal of some of the outliers
+ * Changing tool configuration (see below) you can fine-tune the smoothing process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive smoothing.
+ * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more aggressive smoothing.
  *
  * ```js
  * cornerstoneTools.addTool(PlanarFreehandROITool)
@@ -103,14 +99,14 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *   ],
  * })
  *
- * // set interpolation agressiveness while adding new annotation (ps: this does not change if interpolation is ON or OFF)
+ * // set smoothing aggressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { knotsRatioPercentageOnAdd: 30 },
+ *   smoothing: { knotsRatioPercentageOnAdd: 30 },
  * });
  *
- * // set interpolation to be ON while editing only
+ * // set smoothing to be ON while editing only
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { interpolateOnAdd: false, interpolateOnEdit: true  },
+ *   smoothing: { smoothOnAdd: false, smoothOnEdit: true  },
  * });
  * ```
  *
@@ -129,7 +125,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   isEditingClosed = false;
   isEditingOpen = false;
 
-  private activateDraw: (
+  protected activateDraw: (
     evt: EventTypes.InteractionEventType,
     annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
@@ -182,6 +178,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        /**
+         * Specify which modifier key is used to add a hole to a contour. The
+         * modifier must be pressed when the first point of a new contour is added.
+         */
+        contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather
           // than just rendering a line.
@@ -195,18 +196,52 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         // The proximity at which we fallback to the simplest grabbing logic for
         // determining what index of the contour to start editing.
         checkCanvasEditFallbackProximity: 6,
+        // For closed contours, make them clockwise
+        // This can be useful if contours are compared between slices, eg for
+        // interpolation, and does not cause problems otherwise so defaulting to true.
+        makeClockWise: true,
         // The relative distance that points should be dropped along the polyline
         // in units of the image pixel spacing. A value of 1 means that nodes must
         // be placed no closed than the image spacing apart. A value of 4 means that 4
         // nodes should be placed within the space of one image pixel size. A higher
-        // value gives more finese to the tool/smoother lines, but the value cannot
+        // value gives more finesse to the tool/smoother lines, but the value cannot
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
-        interpolation: {
-          interpolateOnAdd: false,
-          interpolateOnEdit: false, // used for edit only
+        /**
+         * Smoothing is used to remove jagged irregularities in the polyline,
+         * as opposed to interpolation, which is used to create new polylines
+         * between existing polylines.
+         */
+        smoothing: {
+          smoothOnAdd: false,
+          smoothOnEdit: false, // used for edit only
           knotsRatioPercentageOnAdd: 40,
           knotsRatioPercentageOnEdit: 40,
+        },
+        /**
+         * Interpolation is the creation of new segmentations in between the
+         * existing segmentations/indices.  Note that this does not apply to
+         * ROI values, since those annotations are individual annotations, not
+         * connected in any way to each other, whereas segmentations are intended
+         * to be connected 2d + 1 dimension (time or space or other) volumes.
+         */
+        interpolation: {
+          enabled: false,
+          // Callback to update the annotation or perform other action when the
+          // interpolation is complete.
+          onInterpolationComplete: null,
+        },
+        /**
+         * The polyline may get processed in order to reduce the number of points
+         * for better performance and storage.
+         */
+        decimate: {
+          enabled: false,
+          /** A maximum given distance 'epsilon' to decide if a point should or
+           * shouldn't be added the resulting polyline which will have a lower
+           * number of points for higher `epsilon` values.
+           */
+          epsilon: 0.1,
         },
         calculateStats: false,
         getTextLines: defaultGetTextLines,
@@ -382,40 +417,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   };
 
   /**
-   * Triggers an annotation modified event.
-   */
-  triggerAnnotationModified = (
-    annotation: PlanarFreehandROIAnnotation,
-    enabledElement: Types.IEnabledElement
-  ): void => {
-    const { viewportId, renderingEngineId } = enabledElement;
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
-   * Triggers an annotation completed event.
-   */
-  triggerAnnotationCompleted = (
-    annotation: PlanarFreehandROIAnnotation
-  ): void => {
-    const eventType = Events.ANNOTATION_COMPLETED;
-
-    const eventDetail: AnnotationCompletedEventDetail = {
-      annotation,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
-  };
-
-  /**
    * @override We need to override this method as the tool doesn't always have
    * `handles`, which means `filterAnnotationsForDisplay` fails inside
    * `filterAnnotationsWithinSlice`.
@@ -521,7 +522,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   }
 
   protected isContourSegmentationTool(): boolean {
-    // Disable contour segmenatation behavior because it shall be activated only
+    // Disable contour segmentation behavior because it shall be activated only
     // for PlanarFreehandContourSegmentationTool
     return false;
   }
@@ -529,6 +530,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
     const worldPos = evt.detail.currentPoints.world;
     const contourAnnotation = super.createAnnotation(evt);
+
+    const onInterpolationComplete = (annotation) => {
+      // Clear out the handles because they aren't used for straight freeform
+      annotation.data.handles.points.length = 0;
+    };
 
     return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
       data: {
@@ -538,6 +544,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         label: '',
         cachedStats: {},
       },
+      onInterpolationComplete,
     });
   }
 
@@ -547,15 +554,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return super.getAnnotationStyle(context);
   }
 
-  protected renderAnnotationInstance(renderContext: {
-    enabledElement: Types.IEnabledElement;
-    targetId: string;
-    annotation: Annotation;
-    annotationStyle: Record<string, any>;
-    svgDrawingHelper: SVGDrawingHelper;
-  }): boolean {
-    const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
-      renderContext;
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
+    const { enabledElement, targetId, svgDrawingHelper } = renderContext;
     const annotation = renderContext.annotation as PlanarFreehandROIAnnotation;
 
     let renderStatus = false;
@@ -715,8 +717,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const scale = getCalibratedScale(image);
-      let area =
-        polyline.calculateAreaOfPoints(canvasCoordinates) / scale / scale;
+      let area = polyline.getArea(canvasCoordinates) / scale / scale;
       // Convert from canvas_pixels ^2 to mm^2
       area *= deltaInX * deltaInY;
 
@@ -784,7 +785,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           if (point[1] != curRow) {
             intersectionCounter = 0;
             curRow = point[1];
-            intersections = getIntersectionCoordinatesWithPolyline(
+            intersections = getLineSegmentIntersectionsCoordinates(
               canvasCoordinates,
               point,
               [canvasPosEnd[0], point[1]]
@@ -844,7 +845,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(
+      annotation,
+      enabledElement.element,
+      ChangeTypes.StatsUpdated
+    );
 
     annotation.invalidated = false;
 
@@ -916,7 +921,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats;
+    cachedVolumeStats || {};
 
   const textLines: string[] = [];
 

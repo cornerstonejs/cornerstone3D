@@ -179,7 +179,9 @@ class RectangleScissorsTool extends BaseTool {
       segmentationRepresentationUID,
     } as any;
 
-    if (isVolumeSegmentation(labelmapData as LabelmapSegmentationData)) {
+    if (
+      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
+    ) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 

@@ -1,10 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../base';
@@ -15,6 +11,10 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import * as lineSegment from '../../utilities/math/line';
 import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
 import { midPoint2 } from '../../utilities/math/midPoint';
@@ -29,10 +29,6 @@ import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -79,6 +75,7 @@ class CobbAngleTool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        showArcLines: false,
       },
     }
   ) {
@@ -352,13 +349,7 @@ class CobbAngleTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -513,13 +504,7 @@ class CobbAngleTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -811,33 +796,35 @@ class CobbAngleTool extends AnnotationTool {
         data.cachedStats[targetId].points.canvas;
       const { arc1Angle, arc2Angle } = data.cachedStats[targetId];
 
-      lineUID = 'arc1';
+      if (this.configuration.showArcLines) {
+        lineUID = 'arc1';
 
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        arc1Start as Types.Point2,
-        arc1End as Types.Point2,
-        {
-          color,
-          lineWidth: '1',
-        }
-      );
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          arc1Start as Types.Point2,
+          arc1End as Types.Point2,
+          {
+            color,
+            lineWidth: '1',
+          }
+        );
 
-      lineUID = 'arc2';
+        lineUID = 'arc2';
 
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        arc2Start as Types.Point2,
-        arc2End as Types.Point2,
-        {
-          color,
-          lineWidth: '1',
-        }
-      );
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          arc2Start as Types.Point2,
+          arc2End as Types.Point2,
+          {
+            color,
+            lineWidth: '1',
+          }
+        );
+      }
 
       if (!data.cachedStats[targetId]?.angle) {
         continue;
@@ -892,45 +879,47 @@ class CobbAngleTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
 
-      const arc1TextBoxUID = 'arcAngle1';
+      if (this.configuration.showArcLines) {
+        const arc1TextBoxUID = 'arcAngle1';
 
-      const arc1TextLine = [
-        `${arc1Angle.toFixed(2)} ${String.fromCharCode(176)}`,
-      ];
+        const arc1TextLine = [
+          `${arc1Angle.toFixed(2)} ${String.fromCharCode(176)}`,
+        ];
 
-      const arch1TextPosCanvas = midPoint2(arc1Start, arc1End);
+        const arch1TextPosCanvas = midPoint2(arc1Start, arc1End);
 
-      drawTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        arc1TextBoxUID,
-        arc1TextLine,
-        arch1TextPosCanvas,
-        {
-          ...options,
-          padding: 3,
-        }
-      );
+        drawTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arc1TextBoxUID,
+          arc1TextLine,
+          arch1TextPosCanvas,
+          {
+            ...options,
+            padding: 3,
+          }
+        );
 
-      const arc2TextBoxUID = 'arcAngle2';
+        const arc2TextBoxUID = 'arcAngle2';
 
-      const arc2TextLine = [
-        `${arc2Angle.toFixed(2)} ${String.fromCharCode(176)}`,
-      ];
+        const arc2TextLine = [
+          `${arc2Angle.toFixed(2)} ${String.fromCharCode(176)}`,
+        ];
 
-      const arch2TextPosCanvas = midPoint2(arc2Start, arc2End);
+        const arch2TextPosCanvas = midPoint2(arc2Start, arc2End);
 
-      drawTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        arc2TextBoxUID,
-        arc2TextLine,
-        arch2TextPosCanvas,
-        {
-          ...options,
-          padding: 3,
-        }
-      );
+        drawTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arc2TextBoxUID,
+          arc2TextLine,
+          arch2TextPosCanvas,
+          {
+            ...options,
+            padding: 3,
+          }
+        );
+      }
     }
 
     return renderStatus;
@@ -938,7 +927,6 @@ class CobbAngleTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
 
     // Until we have all four anchors bail out
     if (data.handles.points.length !== 4) {
@@ -973,6 +961,7 @@ class CobbAngleTool extends AnnotationTool {
       }
     }
     const { viewport } = enabledElement;
+    const { element } = viewport;
 
     const canvasPoints = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
@@ -1028,14 +1017,7 @@ class CobbAngleTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   }

@@ -125,15 +125,12 @@ export default function segmentContourAction(
   });
 
   if (newBidirectional) {
-    const { referencedImageId } = newBidirectional;
+    const { sliceIndex } = newBidirectional;
     const imageIds = enabledElement.viewport.getImageIds();
-    const imageIndex = imageIds.findIndex(
-      (imageId) => imageId === referencedImageId
-    );
 
     // TODO - figure out why this is reversed
     jumpToSlice(element, {
-      imageIndex: imageIds.length - 1 - imageIndex,
+      imageIndex: imageIds.length - 1 - sliceIndex,
     });
     enabledElement.viewport.render();
   } else {

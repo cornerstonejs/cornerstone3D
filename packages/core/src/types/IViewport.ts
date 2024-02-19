@@ -6,6 +6,104 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
+import BoundsLPS from './BoundsLPS';
+
+/**
+ * Specifies what view to get a reference for.
+ * This set of options allows a Viewport to return a reference for an image
+ * not currently in view, such as for a different slice, or for a given set of
+ * points.
+ */
+export type ViewReferenceSpecifier = {
+  /** The slice index within the current viewport camera to get a reference for */
+  sliceIndex?: number | [number, number];
+  /**
+   * Specifies to get a view reference that refers to the generic frame of
+   * reference rather than to a specific volume or stack.  Thus, the view
+   * reference would be compatible with any view showing the same frame of
+   * reference UID.
+   */
+  forFrameOfReference?: boolean;
+  /** Set of points to get a reference for, in world space */
+  points?: Point3[];
+  /** The volumeId to reference */
+  volumeId?: string;
+};
+
+/**
+ * These are the options arguments to determine whether a view reference
+ * is compatible with a viewport, that is, could be or is shown in a viewport.
+ * That specifies whether a view could be shown in a given viewport or not.
+ */
+export type ReferenceCompatibleOptions = {
+  /**
+   * Test whether the view could be shown if the viewport were navigated.
+   * That is, test is just changing the slice position and zoom/pan would
+   * allow showing the view.
+   */
+  withNavigation?: boolean;
+  /**
+   * For a stack viewport, return true if this viewport could show the given
+   * view if it were converted into a volume viewport, while for a volume,
+   * could it be shown if the camera/orientation were changed.
+   * That is, is the specified view showing an image in the stack but with a
+   * different orientation than acquisition.
+   */
+  asVolume?: boolean;
+  /**
+   * Use this imageURI for testing - may or may not be the current one.
+   * Should be a straight contains URI for the set of imageIds in any of
+   * the volumes or set of image ids.
+   * This is an optimization setting only that makes the test faster, and does
+   * not need to be provided.
+   */
+  imageURI?: string;
+};
+
+/**
+ * A view reference references the image/location of an image.  It
+ * basically says would this viewport show this view, or can direct a viewport
+ * to show a specific view.
+ */
+export type ViewReference = {
+  /**
+   * The FrameOfReferenceUID
+   */
+  FrameOfReferenceUID: string;
+  /**
+   * An optional property used to specify the particular image that this view includes.
+   * For volumes, that will specify which image is closest to the requested
+   * point(s) in some fashion, or will be undefined when the reference applies
+   * to any volume with the same frame of reference.
+   *
+   * The naming of this particular attribute matches the DICOM SR naming for the
+   * referenced image, as well as historical naming in CS3D.
+   */
+  referencedImageId?: string;
+
+  /**
+   * The focal point of the camera in world space
+   */
+  cameraFocalPoint?: Point3;
+  /**
+   * The normal for the current view
+   */
+  viewPlaneNormal?: Point3;
+  /**
+   * The slice index or range for this view
+   */
+  sliceIndex?: number | [number, number];
+
+  /**
+   * VolumeId that the referencedImageId was chosen from
+   */
+  volumeId?: string;
+  /**
+   * The bounds that are shown.  Allows specifying whether a view includes
+   * particular bounds or not.  This will be in world coordinates.
+   */
+  bounds?: BoundsLPS;
+};
 
 /**
  * Viewport interface for cornerstone viewports
@@ -107,6 +205,27 @@ interface IViewport {
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
   /** Gets the number of slices in the current camera orientation */
   getNumberOfSlices(): number;
+  /** Gets the current slice in the current camera orientation */
+  getCurrentImageIdIndex(): number;
+  /** Gets a referenced image url of some sort - could be a real image id, or could be a URL with parameters */
+  getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   */
+  getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+  /**
+   * Find out if this viewport does or could show this view reference.
+   *
+   * @param options - allows specifying whether the view COULD display this with
+   *                  some modification - either navigation or displaying as volume.
+   * @returns true if the viewport could show this view reference
+   */
+  isReferenceViewable(
+    viewRef: ViewReference,
+    options?: ReferenceCompatibleOptions
+  ): boolean;
+
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];

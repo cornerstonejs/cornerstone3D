@@ -4,7 +4,6 @@
 // Strings should avoid referencing the node_modules directory (prefer require.resolve)
 
 export default {
-  verbose: true,
   // roots: ['<rootDir>/src'],
   testMatch: ['<rootDir>/test/**/*.jest.js'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
@@ -19,20 +18,10 @@ export default {
   // Setup
   // setupFiles: ["jest-canvas-mock/lib/index.js"],
   // Coverage
-  reporters: [
-    'default',
-    // Docs: https://www.npmjs.com/package/jest-junit
-    [
-      'jest-junit',
-      {
-        addFileAttribute: true, // CircleCI Only
-      },
-    ],
-  ],
-  collectCoverage: false,
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{js,jsx}',
     // Not
+    '!<rootDir>/src/RenderingEngine/vtkClasses/**',
     '!<rootDir>/src/**/*.test.js',
     '!**/node_modules/**',
     '!**/__tests__/**',

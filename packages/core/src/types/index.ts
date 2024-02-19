@@ -13,8 +13,20 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
-import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry, ImageActor } from './IActor';
+import type {
+  IViewport,
+  PublicViewportInput,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewReference,
+} from './IViewport';
+import type {
+  VolumeActor,
+  Actor,
+  ActorEntry,
+  ImageActor,
+  ICanvasActor,
+} from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -23,9 +35,11 @@ import type {
 import type Metadata from './Metadata';
 import type OrientationVectors from './OrientationVectors';
 import type AABB2 from './AABB2';
+import type AABB3 from './AABB3';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
+import type { PointsXYZ } from './Point3';
 import type Mat3 from './Mat3';
 import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
@@ -105,10 +119,14 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';
 import type BoundsLPS from './BoundsLPS';
+// Sometimes the type is needed rather than the class, so import
+// the type only here.
+import type PointsManager from '../utilities/PointsManager';
 
 export type {
   // config
@@ -128,6 +146,7 @@ export type {
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
+  PointsManager,
   Scaling,
   IStreamingImageVolume,
   IImage,
@@ -141,6 +160,9 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  ViewReference,
+  ReferenceCompatibleOptions,
+  ViewReferenceSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -149,6 +171,7 @@ export type {
   Actor,
   ActorEntry,
   ImageActor,
+  ICanvasActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,
@@ -160,8 +183,10 @@ export type {
   Metadata,
   OrientationVectors,
   AABB2,
+  AABB3,
   Point2,
   Point3,
+  PointsXYZ,
   Point4,
   Mat3,
   Plane,
@@ -202,6 +227,7 @@ export type {
   // Surface
   PublicSurfaceData,
   SurfaceData,
+  ISurface,
   // Color
   RGB,
   ColormapPublic,

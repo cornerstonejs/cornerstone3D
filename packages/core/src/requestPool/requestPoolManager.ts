@@ -120,7 +120,13 @@ class RequestPoolManager {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
-      compute: 15,
+      // I believe there is a bug right now, where if there are two workers
+      // and one wants to run a compute job 6 times and the limit is just 5, then
+      // the other worker will never get a chance to run its compute job.
+      // we should probably have a separate limit for compute jobs per worker
+      // context as there is another layer of parallelism there. For this reason
+      // I'm setting the limit to 1000 for now.
+      compute: 1000,
     };
   }
 

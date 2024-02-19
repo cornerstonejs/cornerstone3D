@@ -33,9 +33,14 @@ import type {
   Scaling,
   StackViewportProperties,
   VOIRange,
+  ViewReference,
   VolumeActor,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
+import {
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -842,18 +847,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
+    this.setInvertColor(this.initialInvert);
+
+    this.setInterpolationType(InterpolationType.LINEAR);
+
     if (this.getRotation() !== 0) {
       this.setRotation(0);
     }
-    this.setInterpolationType(InterpolationType.LINEAR);
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
       transferFunction,
       this.initialTransferFunctionNodes
     );
-
-    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {
@@ -1961,18 +1967,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     // If Photometric Interpretation is not the same for the next image we are trying to load
-    // invalidate the stack to recreate the VTK imageData
+    // invalidate the stack to recreate the VTK imageData.  Get the PMI from
+    // the base csImage if imageFrame isn't defined, which happens when the images
+    // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const csImgFrame = (<any>this.csImage)?.imageFrame;
     const imgFrame = image?.imageFrame;
+    const photometricInterpretation =
+      csImgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation;
+    const newPhotometricInterpretation =
+      imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
-    // if a volume is decached into images then the imageFrame will be undefined
-    if (
-      csImgFrame?.photometricInterpretation !==
-        imgFrame?.photometricInterpretation ||
-      this.csImage?.photometricInterpretation !==
-        image?.photometricInterpretation
-    ) {
+    if (photometricInterpretation !== newPhotometricInterpretation) {
       this.stackInvalidated = true;
     }
 
@@ -2040,11 +2047,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return options;
   }
 
-  public loadImages(
+  public async loadImages(
     imageIds: string[],
     listener: ImageLoadListener
   ): Promise<unknown> {
-    return Promise.allSettled(
+    const resultList = await Promise.allSettled(
       imageIds.map((imageId) => {
         const options = this.getLoaderImageOptions(
           imageId
@@ -2062,6 +2069,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         );
       })
     );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList && errorList.length) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
@@ -2812,6 +2828,67 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  /**
+   * Checks to see if this target is or could be shown in this viewport
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+
+    let { imageURI } = options;
+    const { referencedImageId, sliceIndex } = viewRef;
+
+    if (viewRef.volumeId && !referencedImageId) {
+      return options.asVolume === true;
+    }
+
+    let testIndex = this.getCurrentImageIdIndex();
+    if (options.withNavigation && typeof sliceIndex === 'number') {
+      testIndex = sliceIndex;
+    }
+    const imageId = this.imageIds[testIndex];
+    if (!imageId) {
+      return false;
+    }
+    if (!imageURI) {
+      // Remove the dataLoader scheme since that can change
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1);
+    }
+    return referencedImageId.endsWith(imageURI);
+  }
+
+  /**
+   * Gets a standard target to show this image instance.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
+      viewRefSpecifier;
+    return {
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
+      sliceIndex: sliceIndex,
+    };
+  }
+
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
+    if (Array.isArray(sliceIndex)) {
+      throw new Error('Use of slice ranges for stacks not supported');
+    }
+    return `imageId:${this.imageIds[sliceIndex]}`;
+  }
+
   /**
    *
    * Returns the imageIdIndex that is targeted to be loaded, in case of debounced
@@ -2929,6 +3006,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.cpuRenderingInvalidated = true;
 
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: colormapData,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   private setColormapGPU(colormap: ColormapPublic) {
@@ -2957,6 +3040,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.colormap = colormap;
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap,
+    };
+
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+
   }
 
   private unsetColormapGPU() {

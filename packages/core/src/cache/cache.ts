@@ -705,6 +705,31 @@ class Cache implements ICache {
   };
 
   /**
+   * Retrieves an array of image volumes from the cache.
+   * @returns An array of image volumes.
+   */
+  public getVolumes = (): Array<IImageVolume> => {
+    const cachedVolumes = Array.from(this._volumeCache.values());
+
+    return cachedVolumes.map((cachedVolume) => cachedVolume.volume);
+  };
+
+  /**
+   * Filters the cached volumes by the specified reference volume ID.
+   * @param volumeId - The ID of the reference volume.
+   * @returns An array of image volumes that have the specified reference volume ID.
+   */
+  public filterVolumesByReferenceId = (
+    volumeId: string
+  ): Array<IImageVolume> => {
+    const cachedVolumes = this.getVolumes();
+
+    return cachedVolumes.filter((volume) => {
+      return volume.referencedVolumeId === volumeId;
+    });
+  };
+
+  /**
    * Removes the image loader associated with a given Id from the cache
    *
    * It increases the cache size after removing the image.
@@ -728,6 +753,7 @@ class Cache implements ICache {
     this.incrementImageCacheSize(-cachedImage.sizeInBytes);
 
     const eventDetails = {
+      image: cachedImage,
       imageId,
     };
 

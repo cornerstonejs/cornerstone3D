@@ -1,3 +1,4 @@
+import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../../../store';
@@ -8,14 +9,15 @@ import {
 } from '../../../cursors/elementCursor';
 import type { EventTypes } from '../../../types';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import {
-  shouldInterpolate,
+  shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { updateContourPolyline } from '../../../utilities/contours';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
@@ -212,12 +214,17 @@ function openContourEditOverwriteEnd(
   const { annotation, viewportIdsToRender } = this.commonData;
   const fusedCanvasPoints = this.fuseEditPointsForOpenContourEndEdit();
 
-  const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+  updateContourPolyline(
+    annotation,
+    {
+      points: fusedCanvasPoints,
+      closed: false,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = false;
+  const worldPoints = annotation.data.contour.polyline;
+
   // Note: Contours generate from fusedCanvasPoints will be in the direction
   // with the last point being the current mouse position
   annotation.data.handles.points = [
@@ -226,7 +233,7 @@ function openContourEditOverwriteEnd(
   ];
   annotation.data.handles.activeHandleIndex = 1;
 
-  this.triggerAnnotationModified(annotation, enabledElement);
+  triggerAnnotationModified(annotation, element);
 
   this.isEditingOpen = false;
   this.editData = undefined;
@@ -494,18 +501,23 @@ function finishEditOpenOnSecondCrossing(
   const { annotation, viewportIdsToRender } = this.commonData;
   const { fusedCanvasPoints, editCanvasPoints } = this.editData;
 
-  const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+  updateContourPolyline(
+    annotation,
+    {
+      points: fusedCanvasPoints,
+      closed: false,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = false;
+  const worldPoints = annotation.data.contour.polyline;
+
   annotation.data.handles.points = [
     worldPoints[0],
     worldPoints[worldPoints.length - 1],
   ];
 
-  this.triggerAnnotationModified(annotation, enabledElement);
+  triggerAnnotationModified(annotation, element);
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
@@ -542,7 +554,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
-    const updatedPoints = shouldInterpolate(this.configuration)
+    const updatedPoints = shouldSmooth(this.configuration)
       ? getInterpolatedPoints(
           this.configuration,
           fusedCanvasPoints,
@@ -550,11 +562,17 @@ function completeOpenContourEdit(element: HTMLDivElement) {
         )
       : fusedCanvasPoints;
 
-    const worldPoints = updatedPoints.map((canvasPoint) =>
-      viewport.canvasToWorld(canvasPoint)
+    updateContourPolyline(
+      annotation,
+      {
+        points: updatedPoints,
+        closed: false,
+      },
+      viewport
     );
-    annotation.data.contour.polyline = worldPoints;
-    annotation.data.contour.closed = false;
+
+    const worldPoints = annotation.data.contour.polyline;
+
     annotation.data.handles.points = [
       worldPoints[0],
       worldPoints[worldPoints.length - 1],
@@ -566,9 +584,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
         findOpenUShapedContourVectorToPeak(fusedCanvasPoints, viewport);
     }
 
-    annotation.invalidated = true;
-
-    this.triggerAnnotationModified(annotation, enabledElement);
+    triggerAnnotationModified(annotation, element);
   }
 
   this.isEditingOpen = false;

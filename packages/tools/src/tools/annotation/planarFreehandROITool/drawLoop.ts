@@ -1,5 +1,4 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -9,19 +8,22 @@ import { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
-  shouldInterpolate,
+  shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/smoothPoints';
+import getMouseModifierKey from '../../../eventDispatchers/shared/getMouseModifier';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
+import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClockwise';
 
 const {
   addCanvasPointsToArray,
   pointsAreWithinCloseContourProximity,
-  getFirstIntersectionWithPolyline,
+  getFirstLineSegmentIntersectionIndexes,
   getSubPixelSpacingAndXYDirections,
 } = polyline;
 
@@ -40,6 +42,9 @@ function activateDraw(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
+  const contourHoleProcessingEnabled =
+    getMouseModifierKey(evt.detail.event) ===
+    this.configuration.contourHoleAdditionModifierKey;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
@@ -49,6 +54,7 @@ function activateDraw(
   this.drawData = {
     canvasPoints: [canvasPos],
     polylineIndex: 0,
+    contourHoleProcessingEnabled,
   };
 
   this.commonData = {
@@ -170,7 +176,7 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints } = this.drawData;
+  const { canvasPoints, contourHoleProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
@@ -184,16 +190,19 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element);
+    this.completeDrawOpenContour(element, contourHoleProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element);
+    this.completeDrawClosedContour(element, contourHoleProcessingEnabled);
   }
 }
 
 /**
  * Completes the contour being drawn, creating a closed contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawClosedContour(element: HTMLDivElement): boolean {
+function completeDrawClosedContour(
+  element: HTMLDivElement,
+  contourHoleProcessingEnabled: boolean
+): boolean {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
 
@@ -216,23 +225,27 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const updatedPoints = shouldInterpolate(this.configuration)
-    ? getInterpolatedPoints(this.configuration, canvasPoints)
+  const clockwise = this.configuration.makeClockWise
+    ? reverseIfAntiClockwise(canvasPoints)
     : canvasPoints;
 
-  // Note: -> This is pretty expensive and may not scale well with hundreds of
-  // contours. A future optimisation if we use this for segmentation is to re-do
-  // this rendering with the GPU rather than SVG.
-  const worldPoints = updatedPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+  const updatedPoints = shouldSmooth(this.configuration, annotation)
+    ? getInterpolatedPoints(this.configuration, clockwise)
+    : clockwise;
+
+  this.updateContourPolyline(
+    annotation,
+    {
+      points: updatedPoints,
+      closed: true,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = true;
   const { textBox } = annotation.data.handles;
 
-  if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+  if (!textBox?.hasMoved) {
+    triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -257,7 +270,7 @@ function removeCrossedLinesOnCompleteDraw(): void {
   const endToStart = [canvasPoints[0], canvasPoints[numPoints - 1]];
   const canvasPointsMinusEnds = canvasPoints.slice(0, -1).slice(1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     canvasPointsMinusEnds,
     endToStart[0],
     endToStart[1],
@@ -274,7 +287,10 @@ function removeCrossedLinesOnCompleteDraw(): void {
 /**
  * Completes the contour being drawn, creating an open contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawOpenContour(element: HTMLDivElement): boolean {
+function completeDrawOpenContour(
+  element: HTMLDivElement,
+  contourHoleProcessingEnabled: boolean
+): boolean {
   const { canvasPoints } = this.drawData;
 
   // check and halt if necessary the drawing process, last chance to complete drawing and fire events.
@@ -286,20 +302,25 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
-  const updatedPoints = shouldInterpolate(this.configuration)
+  const updatedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
 
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
-  const worldPoints = updatedPoints.map((canvasPoint) =>
-    viewport.canvasToWorld(canvasPoint)
+
+  this.updateContourPolyline(
+    annotation,
+    {
+      points: updatedPoints,
+      closed: false,
+    },
+    viewport
   );
 
-  annotation.data.contour.polyline = worldPoints;
-  annotation.data.contour.closed = false;
   const { textBox } = annotation.data.handles;
+  const worldPoints = annotation.data.contour.polyline;
 
   // Add the first and last points to the list of handles. These means they
   // will render handles on mouse hover.
@@ -315,7 +336,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   }
 
   if (!textBox.hasMoved) {
-    this.triggerAnnotationCompleted(annotation);
+    triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
   this.isDrawing = false;
@@ -345,7 +366,7 @@ function findCrossingIndexDuringCreate(
   const { canvasPoints } = this.drawData;
   const pointsLessLastOne = canvasPoints.slice(0, -1);
 
-  const lineSegment = getFirstIntersectionWithPolyline(
+  const lineSegment = getFirstLineSegmentIntersectionIndexes(
     pointsLessLastOne,
     canvasPos,
     lastCanvasPoint,
@@ -400,7 +421,7 @@ function applyCreateOnCross(
  */
 function cancelDrawing(element: HTMLElement) {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints } = this.drawData;
+  const { canvasPoints, contourHoleProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
 
@@ -412,9 +433,9 @@ function cancelDrawing(element: HTMLElement) {
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(element);
+    this.completeDrawOpenContour(element, contourHoleProcessingEnabled);
   } else {
-    this.completeDrawClosedContour(element);
+    this.completeDrawClosedContour(element, contourHoleProcessingEnabled);
   }
 }
 

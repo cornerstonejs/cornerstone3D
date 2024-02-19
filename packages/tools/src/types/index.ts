@@ -63,6 +63,7 @@ import type IToolClassReference from './IToolClassReference';
 import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type AnnotationRenderContext from './AnnotationRenderContext';
 import type { Statistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
@@ -70,6 +71,10 @@ import {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from './LabelmapToolOperationData';
+import type {
+  InterpolationViewportData,
+  ImageInterpolationData,
+} from './InterpolationTypes';
 
 // Splines
 import type { CardinalSplineProps } from './CardinalSplineProps';
@@ -82,6 +87,7 @@ import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
+import type { PolySegConversionOptions } from './PolySeg';
 
 export type {
   // AnnotationState
@@ -94,12 +100,16 @@ export type {
   BidirectionalData,
   CanvasCoordinates,
   IAnnotationManager,
+  InterpolationViewportData,
+  ImageInterpolationData,
   GroupSpecificAnnotations,
   AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
   AnnotationGroupSelector,
+  // Rendering
+  AnnotationRenderContext,
   // Geometry
   PlanarBoundingBox,
   ToolProps,
@@ -165,4 +175,6 @@ export type {
   SplineCurveSegment,
   SplineLineSegment,
   SplineProps,
+  // polySeg
+  PolySegConversionOptions,
 };

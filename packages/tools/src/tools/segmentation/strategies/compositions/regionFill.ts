@@ -35,7 +35,7 @@ export default {
 
     pointInShapeCallback(
       segmentationImageData as unknown,
-      imageVoxelManager.isInObject,
+      imageVoxelManager?.isInObject || segmentationVoxelManager.isInObject,
       callback,
       segmentationVoxelManager.boundsIJK
     );

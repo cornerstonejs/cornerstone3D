@@ -1,9 +1,10 @@
 import { utilities } from '@cornerstonejs/core';
-import {
+import type {
   Annotation,
   EventTypes,
   PublicToolProps,
   ToolProps,
+  AnnotationRenderContext,
 } from '../../types';
 import {
   config as segmentationConfig,
@@ -12,18 +13,30 @@ import {
   segmentIndex as segmentIndexController,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
-import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
+import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { SegmentationRepresentations } from '../../enums';
 import ContourBaseTool from './ContourBaseTool';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { InterpolationManager } from '../../utilities/contours/interpolation';
+import {
+  addContourSegmentationAnnotation,
+  removeContourSegmentationAnnotation,
+} from '../../utilities/contourSegmentation';
+import { getToolGroupIdsWithSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
 
 /**
  * A base contour segmentation class responsible for rendering, registering
- * and unregistering contour segmentation annotations.
+ * and unregister contour segmentation annotations.
  */
 abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
+    if (this.configuration.interpolation?.enabled) {
+      InterpolationManager.addTool(this.getToolName());
+    }
   }
 
   /**
@@ -63,8 +76,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       throw new Error(`A contour segmentation must be active`);
     }
 
-    const { segmentationId, segmentationRepresentationUID } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
 
@@ -75,7 +87,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
           segmentation: {
             segmentationId,
             segmentIndex,
-            segmentationRepresentationUID,
           },
         },
       }
@@ -87,11 +98,10 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     element: HTMLDivElement
   ): string {
     const annotationUID = super.addAnnotation(annotation, element);
-
     if (this.isContourSegmentationTool()) {
-      this._registerContourSegmentationAnnotation(
-        annotation as ContourSegmentationAnnotation
-      );
+      const contourSegAnnotation = annotation as ContourSegmentationAnnotation;
+
+      addContourSegmentationAnnotation(contourSegAnnotation);
     }
 
     return annotationUID;
@@ -103,7 +113,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
    */
   protected cancelAnnotation(annotation: Annotation): void {
     if (this.isContourSegmentationTool()) {
-      this._unregisterContourSegmentationAnnotation(
+      removeContourSegmentationAnnotation(
         annotation as ContourSegmentationAnnotation
       );
     }
@@ -136,6 +146,31 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     return utilities.deepMerge(annotationStyle, contourSegmentationStyle);
   }
 
+  protected renderAnnotationInstance(
+    renderContext: AnnotationRenderContext
+  ): boolean {
+    const { annotation } = renderContext;
+    const { invalidated } = annotation;
+    // Render the annotation before triggering events
+    const renderResult = super.renderAnnotationInstance(renderContext);
+    if (invalidated && this.isContourSegmentationTool()) {
+      const { segmentationId } = (<SplineContourSegmentationAnnotation>(
+        annotation
+      )).data.segmentation;
+      triggerSegmentationDataModified(segmentationId);
+
+      // check which other viewport is rendering the same segmentationId
+      // and trigger the event for them to be able to render the segmentation
+      // annotation as well
+
+      const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
+
+      triggerAnnotationRenderForToolGroupIds(toolGroupIds);
+    }
+
+    return renderResult;
+  }
+
   /**
    * Return the annotation style based on global, toolGroup, segmentation
    * and segment segmentation configurations.
@@ -146,17 +181,25 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   }): Record<string, any> {
     const { toolGroupId } = this;
     const annotation = context.annotation as ContourSegmentationAnnotation;
-    const { segmentationRepresentationUID, segmentationId, segmentIndex } =
-      annotation.data.segmentation;
+    const { segmentationId, segmentIndex } = annotation.data.segmentation;
+    const segmentation = segmentationState.getSegmentation(segmentationId);
     const segmentationRepresentation =
-      segmentationState.getSegmentationRepresentationByUID(
-        toolGroupId,
-        segmentationRepresentationUID
-      );
+      this._getSegmentationRepresentation(segmentationId);
 
+    if (!segmentationRepresentation) {
+      // return defaults if no segmentation representation is found
+      return {};
+    }
+    const { segmentationRepresentationUID } = segmentationRepresentation;
     const { active } = segmentationRepresentation;
+    const { autoGenerated } = annotation;
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
     const annotationLocked = segmentsLocked.includes(segmentIndex as never);
+
+    // Todo: we should really get styles every time we render, since it is getting
+    // the style for the visibility and that goes through the segment indices
+    // calculation which is expensive. We should cache the styles and only update
+    // them if the segmentation representation modified event is triggered.
 
     const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
@@ -207,7 +250,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     let lineOpacity = 1;
     let fillOpacity = 0;
 
-    if (active) {
+    if (autoGenerated) {
+      lineWidth = mergedConfig.outlineWidthAutoGenerated ?? lineWidth;
+      lineDash = mergedConfig.outlineDashAutoGenerated ?? lineDash;
+      lineOpacity = mergedConfig.outlineOpacity ?? lineOpacity;
+      fillOpacity = mergedConfig.fillAlphaAutoGenerated ?? fillOpacity;
+    } else if (active) {
       lineWidth = mergedConfig.outlineWidthActive ?? lineWidth;
       lineDash = mergedConfig.outlineDashActive ?? lineDash;
       lineOpacity = mergedConfig.outlineOpacity ?? lineOpacity;
@@ -217,6 +265,11 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       lineDash = mergedConfig.outlineDashInactive ?? lineDash;
       lineOpacity = mergedConfig.outlineOpacityInactive ?? lineOpacity;
       fillOpacity = mergedConfig.fillAlphaInactive ?? fillOpacity;
+    }
+
+    // Change the line thickness when the mouse is over the contour segment
+    if (segmentation.activeSegmentIndex === segmentIndex) {
+      lineWidth += mergedConfig.activeSegmentOutlineWidthDelta;
     }
 
     lineWidth = mergedConfig.renderOutline ? lineWidth : 0;
@@ -239,37 +292,31 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     };
   }
 
-  private _registerContourSegmentationAnnotation(
-    annotation: ContourSegmentationAnnotation
-  ) {
-    const { segmentationId, segmentIndex } = annotation.data.segmentation;
-    const segmentation = segmentationState.getSegmentation(segmentationId);
-    const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
+  private _getSegmentationRepresentation(segmentationId) {
+    const segmentationRepresentations =
+      segmentationState.getSegmentationRepresentations(this.toolGroupId);
 
-    let annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);
+    const validSegmentationRepresentations = segmentationRepresentations.filter(
+      (representation) => representation.segmentationId === segmentationId
+    );
 
-    if (!annotationsUIDsSet) {
-      annotationsUIDsSet = new Set();
-      annotationUIDsMap.set(segmentIndex, annotationsUIDsSet);
+    if (!validSegmentationRepresentations) {
+      console.warn(
+        `No segmentation representation found for toolGroupId: ${this.toolGroupId}`
+      );
+      return;
     }
 
-    annotationsUIDsSet.add(annotation.annotationUID);
-  }
-
-  private _unregisterContourSegmentationAnnotation(
-    annotation: ContourSegmentationAnnotation
-  ) {
-    const { segmentationId, segmentIndex } = annotation.data.segmentation;
-    const segmentation = segmentationState.getSegmentation(segmentationId);
-    const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
-    const annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);
-
-    annotationsUIDsSet.delete(annotation.annotationUID);
-
-    // Delete segmentIndex Set if there is no more annotations
-    if (!annotationsUIDsSet.size) {
-      annotationUIDsMap.delete(segmentIndex);
+    if (
+      segmentationState.getSegmentationRepresentations(this.toolGroupId)
+        .length > 1
+    ) {
+      console.warn(
+        'Multiple segmentation representations detected for this tool group. The first one will be used.'
+      );
     }
+
+    return validSegmentationRepresentations[0];
   }
 }
 

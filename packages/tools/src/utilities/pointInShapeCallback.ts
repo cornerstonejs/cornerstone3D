@@ -47,6 +47,7 @@ export default function pointInShapeCallback(
   let iMin, iMax, jMin, jMax, kMin, kMax;
 
   let scalarData;
+  const { numComps } = imageData as any;
 
   // if getScalarData is a method on imageData
   if ((imageData as Types.CPUImageData).getScalarData) {
@@ -103,6 +104,7 @@ export default function pointInShapeCallback(
   );
 
   const xMultiple =
+    numComps ||
     scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
   const yMultiple = dimensions[0] * xMultiple;
   const zMultiple = dimensions[1] * yMultiple;

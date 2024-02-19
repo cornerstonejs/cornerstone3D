@@ -239,6 +239,26 @@ export class ImageVolume implements IImageVolume {
   }
 
   /**
+   * Updates the internals of the volume to reflect the changes in the
+   * underlying scalar data. This should be called when the scalar data
+   * is modified externally
+   */
+  public modified() {
+    this.imageData.modified();
+
+    if (this.isDynamicVolume()) {
+      throw new Error('Not implemented');
+    } else {
+      this.scalarData = this.imageData
+        .getPointData()
+        .getScalars()
+        .getData() as PixelDataTypedArray;
+    }
+
+    this.numFrames = this._getNumFrames();
+  }
+
+  /**
    * If completelyRemove is true, remove the volume completely from the cache. Otherwise,
    * convert the volume to cornerstone images (stack images) and store it in the cache
    * @param completelyRemove - If true, the image will be removed from the
@@ -529,10 +549,12 @@ export class ImageVolume implements IImageVolume {
       // check if the referenced volume has imageIds to see how many
       // images we need to generate
       const referencedVolumeId = this.referencedVolumeId;
-      const referencedVolume = cache.getVolume(referencedVolumeId);
 
-      const numSlices =
-        referencedVolume?.imageIds?.length || this.dimensions[2];
+      let numSlices = this.dimensions[2];
+      if (referencedVolumeId) {
+        const referencedVolume = cache.getVolume(referencedVolumeId);
+        numSlices = referencedVolume?.imageIds?.length ?? numSlices;
+      }
 
       this.imageIds = Array.from({ length: numSlices }, (_, i) => {
         return `generated:${this.volumeId}:${i}`;
@@ -667,7 +689,18 @@ export class ImageVolume implements IImageVolume {
       );
     }
     // 5. When as much of the Volume is processed into Images as possible
-    //    without breaching the cache limit, remove the Volume
+    // without breaching the cache limit, remove the Volume
+    // but first check if the volume is referenced as a derived
+    // volume by another volume, then we need to update their referencedVolumeId
+    // to be now the referencedImageIds of this volume
+    const otherVolumes = cache.filterVolumesByReferenceId(this.volumeId);
+
+    if (otherVolumes.length) {
+      otherVolumes.forEach((volume) => {
+        volume.referencedImageIds = this.imageIds;
+      });
+    }
+
     this.removeFromCache();
 
     return this.imageIds;

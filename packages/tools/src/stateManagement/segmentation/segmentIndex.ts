@@ -21,6 +21,11 @@ function setActiveSegmentIndex(
 ): void {
   const segmentation = getSegmentation(segmentationId);
 
+  if (typeof segmentIndex === 'string') {
+    console.warn('segmentIndex is a string, converting to number');
+    segmentIndex = Number(segmentIndex);
+  }
+
   if (segmentation?.activeSegmentIndex !== segmentIndex) {
     segmentation.activeSegmentIndex = segmentIndex;
 
