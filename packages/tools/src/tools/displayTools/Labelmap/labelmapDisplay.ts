@@ -4,12 +4,12 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import {
   cache,
   getEnabledElementByIds,
+  StackViewport,
   Types,
-  utilities,
+  VolumeViewport,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import type {
@@ -18,15 +18,14 @@ import type {
   LabelmapSegmentationData,
 } from '../../../types/LabelmapTypes';
 import {
-  RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 
 import addLabelmapToElement from './addLabelmapToElement';
-
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
+import { polySeg } from '../../../stateManagement/segmentation';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -40,6 +39,8 @@ function getRepresentationRenderingConfig() {
     cfun,
   };
 }
+
+let polySegConversionInProgress = false;
 
 /**
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
@@ -131,11 +132,54 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
-  const labelmapData =
-    segmentation.representationData[Representations.Labelmap];
+
+  if (!segmentation) {
+    console.warn('No segmentation found for segmentationId: ', segmentationId);
+    return;
+  }
+
+  let labelmapData = segmentation.representationData[Representations.Labelmap];
 
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
-  if (isVolumeSegmentation(labelmapData)) {
+
+  if (
+    !labelmapData &&
+    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID) &&
+    !polySegConversionInProgress
+  ) {
+    // meaning the requested segmentation representationUID does not have
+    // labelmap data, BUT we might be able to request a conversion from
+    // another representation to labelmap
+    // we need to check if we can request polySEG to convert the other
+    // underlying representations to Surface
+    polySegConversionInProgress = true;
+
+    labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
+      segmentationId,
+      {
+        segmentationRepresentationUID,
+        viewport,
+      }
+    );
+
+    if (!labelmapData) {
+      throw new Error(
+        `No labelmap data found for segmentationId ${segmentationId}.`
+      );
+    }
+
+    polySegConversionInProgress = false;
+  }
+
+  if (!labelmapData) {
+    return;
+  }
+
+  if (isVolumeSegmentation(labelmapData, viewport)) {
+    if (viewport instanceof StackViewport) {
+      return;
+    }
+
     const { volumeId: labelmapUID } = labelmapData;
 
     const labelmap = cache.getVolume(labelmapUID);
@@ -159,6 +203,10 @@ async function render(
 
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   } else {
+    if (viewport instanceof VolumeViewport) {
+      return;
+    }
+
     // stack segmentation
     const imageId = viewport.getCurrentImageId();
     const { imageIdReferenceMap } = labelmapData;
@@ -288,26 +336,38 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
-  const actor = actorEntry.actor as Types.Actor;
+  const actor = actorEntry.actor as Types.VolumeActor;
 
-  // @ts-ignore
   actor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
 
-  // @ts-ignore
   actor.getProperty().setScalarOpacity(0, ofun);
-  // @ts-ignore
   actor.getProperty().setInterpolationTypeToNearest();
+  actor.getProperty().setUseLabelOutline(renderOutline);
 
-  if (utilities.actorIsA(actorEntry, 'vtkVolume')) {
-    // @ts-ignore
-    actor.getProperty().setUseLabelOutline(renderOutline);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
-    // @ts-ignore
-    actor.getProperty().setLabelOutlineThickness(outlineWidth);
+  // @ts-ignore - fix type in vtk
+  actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+
+  const { activeSegmentIndex } = SegmentationState.getSegmentation(
+    segmentationRepresentation.segmentationId
+  );
+
+  // create an array that contains all the segment indices and for the active
+  // segment index, use the activeSegmentOutlineWidthDelta, otherwise use the
+  // outlineWidth
+  // Pre-allocate the array with the required size to avoid dynamic resizing.
+  const outlineWidths = new Array(numColors - 1);
+
+  for (let i = 1; i < numColors; i++) {
+    // Start from 1 to skip the background segment index.
+    outlineWidths[i - 1] =
+      i === activeSegmentIndex
+        ? outlineWidth + toolGroupLabelmapConfig.activeSegmentOutlineWidthDelta
+        : outlineWidth;
   }
+
+  actor.getProperty().setLabelOutlineThickness(outlineWidths);
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but

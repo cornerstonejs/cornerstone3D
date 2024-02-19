@@ -120,7 +120,13 @@ class RequestPoolManager {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
-      compute: 15,
+      // I believe there is a bug right now, where if there are two workers
+      // and one wants to run a compute job 6 times and the limit is just 5, then
+      // the other worker will never get a chance to run its compute job.
+      // we should probably have a separate limit for compute jobs per worker
+      // context as there is another layer of parallelism there. For this reason
+      // I'm setting the limit to 1000 for now.
+      compute: 1000,
     };
   }
 
@@ -230,6 +236,7 @@ class RequestPoolManager {
 
   private sendRequests(type) {
     const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
+    let syncImageCount = 0;
 
     for (let i = 0; i < requestsToSend; i++) {
       const requestDetails = this.getNextRequest(type);
@@ -239,11 +246,27 @@ class RequestPoolManager {
         this.numRequests[type]++;
         this.awake = true;
 
-        requestDetails.requestFn()?.finally(() => {
+        let requestResult;
+        try {
+          requestResult = requestDetails.requestFn();
+        } catch (e) {
+          // This is the only warning one will get, so need a warn message
+          console.warn('sendRequest failed', e);
+        }
+        if (requestResult?.finally) {
+          requestResult.finally(() => {
+            this.numRequests[type]--;
+            this.startAgain();
+          });
+        } else {
+          // Handle non-async request functions too - typically just short circuit ones
           this.numRequests[type]--;
-          this.startAgain();
-        });
+          syncImageCount++;
+        }
       }
+    }
+    if (syncImageCount) {
+      this.startAgain();
     }
 
     return true;

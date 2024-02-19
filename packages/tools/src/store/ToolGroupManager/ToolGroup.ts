@@ -87,6 +87,16 @@ export default class ToolGroup implements IToolGroup {
 
     return toolInstance;
   }
+
+  /**
+   * Check if a tool is already added to the tool group
+   * @param toolName - Tool name
+   * @returns True if the tool is already added or false otherwise
+   */
+  hasTool(toolName: string): boolean {
+    return !!this._toolInstances[toolName];
+  }
+
   /**
    * Add a tool to the tool group with the given tool name and tool configuration.
    * Note that adding a tool to a tool group will not automatically set the tool
@@ -185,6 +195,10 @@ export default class ToolGroup implements IToolGroup {
    * @param renderingEngineId - The rendering engine to use.
    */
   public addViewport(viewportId: string, renderingEngineId?: string): void {
+    if (typeof viewportId !== 'string') {
+      throw new Error('viewportId must be defined and be a string');
+    }
+
     const renderingEngines = getRenderingEngines();
 
     if (!renderingEngineId && renderingEngines.length > 1) {
@@ -404,8 +418,14 @@ export default class ToolGroup implements IToolGroup {
    * - Renders data if the tool has a `renderAnnotation` method.
    *
    * @param toolName - tool name
+   * @param options - Options used when setting the tool as passive
+   *  - removeAllBindings: only the primary button bindings are removed but
+   *  if this parameter is set to true all bindings are removed.
    */
-  public setToolPassive(toolName: string): void {
+  public setToolPassive(
+    toolName: string,
+    options?: { removeAllBindings?: boolean }
+  ): void {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
@@ -434,7 +454,8 @@ export default class ToolGroup implements IToolGroup {
     // Remove the primary button bindings without modifiers, if they exist
     toolOptions.bindings = toolOptions.bindings.filter(
       (binding) =>
-        binding.mouseButton !== defaultMousePrimary || binding.modifierKey
+        options?.removeAllBindings !== true &&
+        (binding.mouseButton !== defaultMousePrimary || binding.modifierKey)
     );
     // If there are other bindings, set the tool to be active
     let mode = Passive;

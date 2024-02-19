@@ -6,6 +6,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   addCheckboxToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -19,8 +20,6 @@ const DEFAULT_CARDINAL_SCALE = 0.5;
 
 const {
   SplineROITool,
-  PanTool,
-  ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -189,7 +188,7 @@ addSliderToToolbar({
         'spline'
       );
 
-      splineConfig.configuration[splineType].resolution = value;
+      splineConfig.configuration[splineType].resolution = parseInt(value);
       toolGroup.setToolConfiguration(splineToolName, { spline: splineConfig });
     });
   },
@@ -210,7 +209,7 @@ addSliderToToolbar({
       'spline'
     );
 
-    splineConfig.configuration.CARDINAL.scale = value;
+    splineConfig.configuration.CARDINAL.scale = parseFloat(value);
     toolGroup.setToolConfiguration(splineToolName, { spline: splineConfig });
   },
 });
@@ -223,17 +222,11 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(SplineROITool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Add the tools to the tool group
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
 
   toolGroup.addToolInstance('CardinalSplineROI', SplineROITool.toolName, {
     spline: {
@@ -273,22 +266,7 @@ async function run() {
       },
     ],
   });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
+  addManipulationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

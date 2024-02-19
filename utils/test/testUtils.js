@@ -1,8 +1,10 @@
 import resemble from 'resemblejs';
-
 import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader';
 import { fakeVolumeLoader } from './testUtilsVolumeLoader';
 import { createNormalizedMouseEvent } from './testUtilsMouseEvents';
+import { fillStackSegmentationWithMockData } from './fillStackSegmentationWithMockData';
+import { fillVolumeSegmentationWithMockData } from './fillVolumeSegmentationWithMockData';
+import { addMockContourSegmentation } from './addMockContourSegmentation';
 
 /**
  * TestUtils: used for colorizing the image and comparing it to a baseline,
@@ -78,4 +80,7 @@ export {
   createNormalizedMouseEvent,
   // utils
   colors,
+  fillStackSegmentationWithMockData,
+  fillVolumeSegmentationWithMockData,
+  addMockContourSegmentation,
 };

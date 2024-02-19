@@ -67,12 +67,11 @@ Arguments are
   - `maxWorkerInstances(default=1)`: the maximum number of instances of this worker type that can be created. More instance mean if there are multiple calls
     to the same function they can be offloaded to the other instances of the worker type.
   - `overwrite (default=false)`: whether to overwrite an existing worker type if already registered
-  - `autoTerminationOnIdle` (default: false) can be used to terminate a worker after a certain amount of idle time (in milliseconds) has passed. This is useful for workers that are not used frequently, and you want to terminate them after a specific period of time. on the manager.
+  - `autoTerminateOnIdle` (default false) can be used to terminate a worker after a certain amount of idle time (in milliseconds) has passed. This is useful for workers that are not used frequently, and you want to terminate them after a specific period of time. on the manager. The argument for this method is the object of
+    `{enabled: boolean, idleTimeThreshold: number(ms)}`.
 
 :::tip
-In case of `autoTerminationOnIdle` the manager checks every 1 seconds to see if a worker is idle. If you want to change this interval you can use the method `setCheckIntervalForIdleWorkers` on the manager. The default is 1 second.
-
-Note that if a worker is terminated it does not mean the worker is destroyed from the manager. In fact any subsequent call to the worker will create a new instance of the worker.
+Note that if a worker is terminated it does not mean the worker is destroyed from the manager. In fact any subsequent call to the worker will create a new instance of the worker and everything would worker as expected.
 :::
 
 So to register the worker we created above, we would do the following:
@@ -123,12 +122,13 @@ the `executeTask` is used to execute a task on a worker. It takes the following 
 
 - `workerName`: the name of the worker type that we registered earlier
 - `methodName`: the name of the method that we want to execute on the worker (the function name, in the above example `fib` or `inc`)
-- `args` (`default = {}`): the arguments that are passed to the function. The arguments should be serializable.
+- `args` (`default = {}`): the arguments that are passed to the function. The arguments should be serializable which means you cannot pass DOM elements, functions, or any other non-serializable objects as arguments (check below on how to pass non-serializable functions)
 - `options` an object with the following properties:
   - `requestType (default = RequestType.Compute)` : the group of the request. This is used to prioritize the requests. The default is `RequestType.Compute` which is the lowest priority.
     Other groups in order of priority are `RequestType.Interaction` and `RequestType.Thumbnail`, `RequestType.Prefetch`
   - `priority` (`default = 0`): the priority of the request within the specified group. The lower the number the higher the priority.
   - `options` (`default= {}`): the options to the pool manager (you most likely don't need to change this)
+  - `callbacks` (`default = []`): pass in any functions that you want to be called inside the worker.
 
 Now to execute the `fib` function on the worker we would do the following:
 
@@ -165,6 +165,54 @@ try {
 } catch (error) {
   console.error('error', error);
 }
+```
+
+### `eventListeners`
+
+Sometimes, it is necessary to provide a callback function to the worker. For instance, if you wish to update the user interface when the worker makes progress. As mentioned earlier, it is not possible to directly pass a function as an argument to the worker. However, you can overcome this issue by utilizing the `callbacks` property in the options. These `callbacks` are conveniently passed as arguments to the function based on their position.
+
+Real Example from the codebase:
+
+```js
+const results = await workerManager.executeTask(
+  'polySeg',
+  'convertContourToSurface',
+  {
+    polylines,
+    numPointsArray,
+  },
+  {
+    callbacks: [
+      (progress) => {
+        console.debug('progress', progress);
+      },
+    ],
+  }
+);
+```
+
+Above as you can see we pass a function to the worker as a callback. The function is passed as the NEXT argument to the worker after the args.
+
+In the worker we have
+
+```js
+import { expose } from 'comlink';
+
+const obj = {
+  async convertContourToSurface(args, ...callbacks) {
+    const { polylines, numPointsArray } = args;
+    const [progressCallback] = callbacks;
+    await this.initializePolySeg(progressCallback);
+    const results = await this.polySeg.instance.convertContourRoiToSurface(
+      polylines,
+      numPointsArray
+    );
+
+    return results;
+  },
+};
+
+expose(obj);
 ```
 
 ### `terminate`

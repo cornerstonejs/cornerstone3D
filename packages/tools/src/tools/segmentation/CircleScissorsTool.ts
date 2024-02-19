@@ -89,6 +89,13 @@ class CircleScissorsTool extends BaseTool {
    *
    */
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
+    // if we are already drawing, means we have started with a click, and now we
+    // are moving the mouse (not dragging) so the final click should not
+    // be handled by this preMouseDownCallback but rather the endCallback
+    if (this.isDrawing === true) {
+      return;
+    }
+
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -173,7 +180,9 @@ class CircleScissorsTool extends BaseTool {
       segmentationRepresentationUID,
     } as any;
 
-    if (isVolumeSegmentation(labelmapData as LabelmapSegmentationData)) {
+    if (
+      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
+    ) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 
@@ -292,6 +301,7 @@ class CircleScissorsTool extends BaseTool {
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
+    element.addEventListener(Events.MOUSE_MOVE, this._dragCallback);
 
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
     element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
@@ -305,6 +315,7 @@ class CircleScissorsTool extends BaseTool {
     element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
+    element.removeEventListener(Events.MOUSE_MOVE, this._dragCallback);
 
     element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);

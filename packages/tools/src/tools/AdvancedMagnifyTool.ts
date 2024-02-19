@@ -1,11 +1,6 @@
 import { AnnotationTool } from './base';
 
-import {
-  getEnabledElement,
-  eventTarget,
-  triggerEvent,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
@@ -14,6 +9,7 @@ import {
 } from '../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
+import { triggerAnnotationCompleted } from '../stateManagement/annotation/helpers/state';
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
@@ -34,7 +30,6 @@ import {
 } from '../types';
 import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
-import { AnnotationCompletedEventDetail } from '../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
@@ -330,13 +325,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
   };
 
@@ -457,13 +446,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;

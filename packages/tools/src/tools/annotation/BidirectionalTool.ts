@@ -1,17 +1,12 @@
 import { vec2, vec3 } from 'gl-matrix';
-import {
-  getEnabledElement,
-  triggerEvent,
-  eventTarget,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
   getCalibratedLengthUnits,
   getCalibratedScale,
 } from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -21,6 +16,10 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -46,12 +45,6 @@ import {
 } from '../../types';
 import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-  MouseDragEventType,
-  MouseMoveEventType,
-} from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
@@ -416,8 +409,7 @@ class BidirectionalTool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { renderingEngine } = getEnabledElement(element);
 
     if (this.editData.handleIndex !== undefined) {
       const { points } = data.handles;
@@ -489,13 +481,7 @@ class BidirectionalTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
 
     this.editData = null;
@@ -907,8 +893,7 @@ class BidirectionalTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
+      const { renderingEngine } = getEnabledElement(element);
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
@@ -916,13 +901,7 @@ class BidirectionalTool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;
@@ -1064,10 +1043,10 @@ class BidirectionalTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-      const color = this.getStyle('color', styleSpecifier, annotation);
-      const shadow = this.getStyle('shadow', styleSpecifier, annotation);
+      const { color, lineWidth, lineDash, shadow } = this.getAnnotationStyle({
+        annotation,
+        styleSpecifier,
+      });
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -1270,7 +1249,7 @@ class BidirectionalTool extends AnnotationTool {
 
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { element } = enabledElement.viewport;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
@@ -1318,14 +1297,7 @@ class BidirectionalTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   };
@@ -1348,19 +1320,23 @@ class BidirectionalTool extends AnnotationTool {
 }
 
 function defaultGetTextLines(data, targetId): string[] {
-  const { cachedStats } = data;
+  const { cachedStats, label } = data;
   const { length, width, unit } = cachedStats[targetId];
 
+  const textLines = [];
+  if (label) {
+    textLines.push(label);
+  }
   if (length === undefined) {
-    return;
+    return textLines;
   }
 
   // spaceBetweenSlices & pixelSpacing &
   // magnitude in each direction? Otherwise, this is "px"?
-  const textLines = [
+  textLines.push(
     `L: ${roundNumber(length)} ${unit}`,
-    `W: ${roundNumber(width)} ${unit}`,
-  ];
+    `W: ${roundNumber(width)} ${unit}`
+  );
 
   return textLines;
 }

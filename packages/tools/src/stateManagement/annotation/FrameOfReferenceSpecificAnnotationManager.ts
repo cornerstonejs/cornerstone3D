@@ -139,7 +139,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
 
     if (toolName) {
-      return annotations[groupKey][toolName];
+      return annotations[groupKey][toolName]
+        ? annotations[groupKey][toolName]
+        : [];
     }
 
     return annotations[groupKey];
@@ -363,6 +365,17 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       // Set entire annotations
       this.annotations = <AnnotationState>cloneDeep(state);
     }
+  };
+
+  /**
+   * return all annotations as a single array
+   */
+  getAllAnnotations = (): Annotations => {
+    return Object.values(this.annotations)
+      .map((frameOfReferenceSpecificAnnotations) =>
+        Object.values(frameOfReferenceSpecificAnnotations)
+      )
+      .flat(2);
   };
 
   /**

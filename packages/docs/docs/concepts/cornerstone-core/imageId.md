@@ -33,7 +33,7 @@ requestType=WADO&studyUID=1.2.250.1.59.40211.12345678.678910
 [**WADO-RS**](https://dicom.nema.org/dicom/2013/output/chtml/part18/sect_6.5.html)
 
 ```
-https://d1qmxk7r72ysft.cloudfront.net/dicomweb/
+https://d3t6nz73ql33tx.cloudfront.net/dicomweb/
 studies/1.3.6.1.4.1.25403.345050719074.3824.20170126083429.2/
 series/1.3.6.1.4.1.25403.345050719074.3824.20170126083454.5/
 instances/1.3.6.1.4.1.25403.345050719074.3824.20170126083455.3/frames/1

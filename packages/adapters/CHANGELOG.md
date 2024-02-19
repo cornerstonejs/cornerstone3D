@@ -3,6 +3,284 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.61.5](https://github.com/dcmjs-org/dcmjs/compare/v1.61.4...v1.61.5) (2024-02-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.61.4](https://github.com/dcmjs-org/dcmjs/compare/v1.61.3...v1.61.4) (2024-02-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.61.3](https://github.com/dcmjs-org/dcmjs/compare/v1.61.2...v1.61.3) (2024-02-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.61.2](https://github.com/dcmjs-org/dcmjs/compare/v1.61.1...v1.61.2) (2024-02-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.61.1](https://github.com/dcmjs-org/dcmjs/compare/v1.61.0...v1.61.1) (2024-02-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.61.0](https://github.com/dcmjs-org/dcmjs/compare/v1.60.0...v1.61.0) (2024-02-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.60.0](https://github.com/dcmjs-org/dcmjs/compare/v1.59.2...v1.60.0) (2024-02-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.59.2](https://github.com/dcmjs-org/dcmjs/compare/v1.59.1...v1.59.2) (2024-02-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.59.1](https://github.com/dcmjs-org/dcmjs/compare/v1.59.0...v1.59.1) (2024-02-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.59.0](https://github.com/dcmjs-org/dcmjs/compare/v1.58.5...v1.59.0) (2024-02-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.58.5](https://github.com/dcmjs-org/dcmjs/compare/v1.58.4...v1.58.5) (2024-02-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.58.4](https://github.com/dcmjs-org/dcmjs/compare/v1.58.3...v1.58.4) (2024-02-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.58.3](https://github.com/dcmjs-org/dcmjs/compare/v1.58.2...v1.58.3) (2024-02-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.58.2](https://github.com/dcmjs-org/dcmjs/compare/v1.58.1...v1.58.2) (2024-02-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.58.1](https://github.com/dcmjs-org/dcmjs/compare/v1.58.0...v1.58.1) (2024-02-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.58.0](https://github.com/dcmjs-org/dcmjs/compare/v1.57.2...v1.58.0) (2024-02-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.57.2](https://github.com/dcmjs-org/dcmjs/compare/v1.57.1...v1.57.2) (2024-02-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.57.1](https://github.com/dcmjs-org/dcmjs/compare/v1.57.0...v1.57.1) (2024-02-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.57.0](https://github.com/dcmjs-org/dcmjs/compare/v1.56.2...v1.57.0) (2024-02-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.56.2](https://github.com/dcmjs-org/dcmjs/compare/v1.56.1...v1.56.2) (2024-02-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.56.1](https://github.com/dcmjs-org/dcmjs/compare/v1.56.0...v1.56.1) (2024-02-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.56.0](https://github.com/dcmjs-org/dcmjs/compare/v1.55.0...v1.56.0) (2024-02-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.55.0](https://github.com/dcmjs-org/dcmjs/compare/v1.54.2...v1.55.0) (2024-02-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.54.2](https://github.com/dcmjs-org/dcmjs/compare/v1.54.1...v1.54.2) (2024-02-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.54.1](https://github.com/dcmjs-org/dcmjs/compare/v1.54.0...v1.54.1) (2024-02-07)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.54.0](https://github.com/dcmjs-org/dcmjs/compare/v1.53.0...v1.54.0) (2024-02-07)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.53.0](https://github.com/dcmjs-org/dcmjs/compare/v1.52.0...v1.53.0) (2024-02-06)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.52.0](https://github.com/dcmjs-org/dcmjs/compare/v1.51.5...v1.52.0) (2024-02-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.51.5](https://github.com/dcmjs-org/dcmjs/compare/v1.51.4...v1.51.5) (2024-02-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.51.4](https://github.com/dcmjs-org/dcmjs/compare/v1.51.3...v1.51.4) (2024-02-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.51.3](https://github.com/dcmjs-org/dcmjs/compare/v1.51.2...v1.51.3) (2024-02-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.51.2](https://github.com/dcmjs-org/dcmjs/compare/v1.51.1...v1.51.2) (2024-01-31)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.51.1](https://github.com/dcmjs-org/dcmjs/compare/v1.51.0...v1.51.1) (2024-01-31)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.51.0](https://github.com/dcmjs-org/dcmjs/compare/v1.50.3...v1.51.0) (2024-01-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.50.3](https://github.com/dcmjs-org/dcmjs/compare/v1.50.2...v1.50.3) (2024-01-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.50.2](https://github.com/dcmjs-org/dcmjs/compare/v1.50.1...v1.50.2) (2024-01-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.50.1](https://github.com/dcmjs-org/dcmjs/compare/v1.50.0...v1.50.1) (2024-01-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.50.0](https://github.com/dcmjs-org/dcmjs/compare/v1.49.2...v1.50.0) (2024-01-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.49.2](https://github.com/dcmjs-org/dcmjs/compare/v1.49.1...v1.49.2) (2024-01-24)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.49.1](https://github.com/dcmjs-org/dcmjs/compare/v1.49.0...v1.49.1) (2024-01-24)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.49.0](https://github.com/dcmjs-org/dcmjs/compare/v1.48.2...v1.49.0) (2024-01-23)
+
+### Features
+
+-   **interpolation:** Contour segmentation interpolation for freehand and SplineROI ([#1003](https://github.com/dcmjs-org/dcmjs/issues/1003)) ([8434c8e](https://github.com/dcmjs-org/dcmjs/commit/8434c8e7386c1e5980099c325e087c60e8c270a1))
+
+## [1.48.2](https://github.com/dcmjs-org/dcmjs/compare/v1.48.1...v1.48.2) (2024-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.48.1](https://github.com/dcmjs-org/dcmjs/compare/v1.48.0...v1.48.1) (2024-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.48.0](https://github.com/dcmjs-org/dcmjs/compare/v1.47.5...v1.48.0) (2024-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.47.5](https://github.com/dcmjs-org/dcmjs/compare/v1.47.4...v1.47.5) (2024-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.47.4](https://github.com/dcmjs-org/dcmjs/compare/v1.47.3...v1.47.4) (2024-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.47.3](https://github.com/dcmjs-org/dcmjs/compare/v1.47.2...v1.47.3) (2024-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.47.2](https://github.com/dcmjs-org/dcmjs/compare/v1.47.1...v1.47.2) (2024-01-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.47.1](https://github.com/dcmjs-org/dcmjs/compare/v1.47.0...v1.47.1) (2024-01-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.47.0](https://github.com/dcmjs-org/dcmjs/compare/v1.46.0...v1.47.0) (2024-01-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.46.0](https://github.com/dcmjs-org/dcmjs/compare/v1.45.1...v1.46.0) (2024-01-16)
+
+### Features
+
+-   **UltrasoundDirectionalTool:** add us directional adapter ([#999](https://github.com/dcmjs-org/dcmjs/issues/999)) ([1f78fd2](https://github.com/dcmjs-org/dcmjs/commit/1f78fd2859865ad19200096378ff7ce224209fb5))
+
+## [1.45.1](https://github.com/dcmjs-org/dcmjs/compare/v1.45.0...v1.45.1) (2024-01-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.45.0](https://github.com/dcmjs-org/dcmjs/compare/v1.44.3...v1.45.0) (2024-01-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.44.3](https://github.com/dcmjs-org/dcmjs/compare/v1.44.2...v1.44.3) (2024-01-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.44.2](https://github.com/dcmjs-org/dcmjs/compare/v1.44.1...v1.44.2) (2024-01-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.44.1](https://github.com/dcmjs-org/dcmjs/compare/v1.44.0...v1.44.1) (2024-01-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.44.0](https://github.com/dcmjs-org/dcmjs/compare/v1.43.7...v1.44.0) (2024-01-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.43.7](https://github.com/dcmjs-org/dcmjs/compare/v1.43.6...v1.43.7) (2024-01-09)
+
+### Bug Fixes
+
+-   **segmentation:** notify overlapping segments in generateToolState function ([#989](https://github.com/dcmjs-org/dcmjs/issues/989)) ([626cdbc](https://github.com/dcmjs-org/dcmjs/commit/626cdbc94d27c148ecd18ac8032174e2f202afbd))
+
+## [1.43.6](https://github.com/dcmjs-org/dcmjs/compare/v1.43.5...v1.43.6) (2024-01-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.43.5](https://github.com/dcmjs-org/dcmjs/compare/v1.43.4...v1.43.5) (2024-01-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.43.4](https://github.com/dcmjs-org/dcmjs/compare/v1.43.3...v1.43.4) (2024-01-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.43.3](https://github.com/dcmjs-org/dcmjs/compare/v1.43.2...v1.43.3) (2024-01-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.43.2](https://github.com/dcmjs-org/dcmjs/compare/v1.43.1...v1.43.2) (2024-01-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.43.1](https://github.com/dcmjs-org/dcmjs/compare/v1.43.0...v1.43.1) (2024-01-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.43.0](https://github.com/dcmjs-org/dcmjs/compare/v1.42.1...v1.43.0) (2024-01-07)
+
+### Features
+
+-   **vtk.js:** Upgrade version and add Segment Select Tool ([#922](https://github.com/dcmjs-org/dcmjs/issues/922)) ([d5f6abb](https://github.com/dcmjs-org/dcmjs/commit/d5f6abbfd0ca7f868d229696d27f047fb47f99cc))
+
+## [1.42.1](https://github.com/dcmjs-org/dcmjs/compare/v1.42.0...v1.42.1) (2024-01-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.42.0](https://github.com/dcmjs-org/dcmjs/compare/v1.41.0...v1.42.0) (2023-12-27)
+
+### Features
+
+-   **tool:** Bidirectional creation on largest segment slice ([#937](https://github.com/dcmjs-org/dcmjs/issues/937)) ([b4ee6bf](https://github.com/dcmjs-org/dcmjs/commit/b4ee6bfdad64c208e37183a39681ba80c06ffe85))
+
 # [1.41.0](https://github.com/dcmjs-org/dcmjs/compare/v1.40.3...v1.41.0) (2023-12-15)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

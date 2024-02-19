@@ -1,4 +1,5 @@
 import cache from '../cache/cache';
+import { ImageVolume } from '../cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import {
@@ -27,24 +28,37 @@ export interface ImageLoaderOptions {
   additionalDetails?: Record<string, unknown>;
 }
 
-interface DerivedImageOptions {
-  imageId?: string;
-  targetBufferType?: PixelDataTypedArrayString;
-}
-
 interface DerivedImages {
   imageIds: Array<string>;
   promises: Array<Promise<IImage>>;
 }
 
-interface LocalImageOptions {
+type LocalImageOptions = {
   scalarData?: PixelDataTypedArray;
   targetBufferType?: PixelDataTypedArrayString;
   dimensions?: Point2;
   spacing?: Point3;
   origin?: Point3;
   direction?: Mat3;
-}
+  /**
+   * Skip creation of the actual buffer object.
+   * In fact, this creates a very short buffer, as there are lots of places
+   * assuming a buffer exists.
+   * This can be used when there are alternative representations of the image data.
+   */
+  skipCreateBuffer?: boolean;
+  /**
+   * A method to call to update the image object when it gets added to the cache.
+   * This can be used to create alternative representations of the image data,
+   * such as a VoxelManager.
+   */
+  onCacheAdd?: (image: IImage) => void;
+};
+
+type DerivedImageOptions = LocalImageOptions & {
+  imageId?: string;
+  targetBufferType?: PixelDataTypedArrayString;
+};
 
 /**
  * This module deals with ImageLoaders, loading images and caching images
@@ -120,11 +134,14 @@ function loadImageFromCacheOrVolume(
   // 2. Check if there exists a volume in the cache containing the imageId,
   // we copy the pixelData over.
   const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId);
-  if (cachedVolumeInfo && cachedVolumeInfo.volume.loadStatus.loaded) {
+  if (cachedVolumeInfo?.volume?.loadStatus?.loaded) {
     // 2.1 Convert the volume at the specific slice to a cornerstoneImage object.
     // this will copy the pixel data over.
     const { volume, imageIdIndex } = cachedVolumeInfo;
-    imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+
+    if (volume instanceof ImageVolume) {
+      imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+    }
     return imageLoadObject;
   }
   // 3. If no volume found, we search inside the imageCache for the imageId
@@ -244,6 +261,8 @@ export function createAndCacheDerivedImage(
     options.imageId = `derived:${uuidv4()}`;
   }
 
+  const { imageId, skipCreateBuffer, onCacheAdd } = options;
+
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
@@ -253,8 +272,11 @@ export function createAndCacheDerivedImage(
     length
   );
 
-  const imageScalarData = new TypedArrayConstructor(length);
-  const derivedImageId = options.imageId;
+  // Use a buffer of size 1 for no data
+  const imageScalarData = new TypedArrayConstructor(
+    skipCreateBuffer ? 1 : length
+  );
+  const derivedImageId = imageId;
 
   ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
     (type) => {
@@ -266,8 +288,8 @@ export function createAndCacheDerivedImage(
   );
 
   const localImage = createAndCacheLocalImage(
-    { scalarData: imageScalarData },
-    options.imageId,
+    { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },
+    imageId,
     true
   );
 
@@ -285,11 +307,17 @@ export function createAndCacheDerivedImage(
  * Load and cache a list of imageIds
  *
  * @param referencedImageIds - list of imageIds
- * @param getDerivedImageId - optional function to generate derived imageId name however you want
+ * @param options
+ * @param options.getDerivedImageId - function to get the derived imageId
+ * @param options.targetBufferType - target buffer type
+ * @param options.skipBufferCreate - avoid creating the buffer
  */
 export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
-  getDerivedImageId?: (referencedImageId: string) => string
+  options: DerivedImageOptions & {
+    getDerivedImageId?: (referencedImageId: string) => string;
+    targetBufferType?: PixelDataTypedArrayString;
+  } = {}
 ): DerivedImages {
   if (referencedImageIds?.length === 0) {
     throw new Error(
@@ -298,14 +326,14 @@ export function createAndCacheDerivedImages(
   }
 
   const derivedImageIds = [];
-  const allPromises = referencedImageIds.map((referencedImageId, index) => {
-    const options: DerivedImageOptions = {
-      imageId: getDerivedImageId
-        ? getDerivedImageId(referencedImageId)
-        : `derived:${uuidv4()}`,
+  const allPromises = referencedImageIds.map((referencedImageId) => {
+    const newOptions: DerivedImageOptions = {
+      imageId:
+        options.getDerivedImageId?.(referencedImageId) || `derived:${uuidv4()}`,
+      ...options,
     };
-    derivedImageIds.push(options.imageId);
-    return createAndCacheDerivedImage(referencedImageId, options);
+    derivedImageIds.push(newOptions.imageId);
+    return createAndCacheDerivedImage(referencedImageId, newOptions);
   });
 
   return { imageIds: derivedImageIds, promises: allPromises };
@@ -360,7 +388,7 @@ export function createAndCacheLocalImage(
 
     image.sizeInBytes = imageScalarData.byteLength;
     image.getPixelData = () => imageScalarData;
-  } else {
+  } else if (options.skipCreateBuffer !== true) {
     const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
       options.targetBufferType,
       length
@@ -371,6 +399,11 @@ export function createAndCacheLocalImage(
     image.sizeInBytes = numBytes;
     image.getPixelData = () => imageScalarData;
   }
+
+  // The onCacheAdd may modify the size in bytes for this image, which is ok,
+  // as this is used after resolution for cache storage.  It may also do
+  // thinks like adding alternative representations such as VoxelManager
+  options.onCacheAdd?.(image);
 
   const imageLoadObject = {
     promise: Promise.resolve(image),
@@ -496,4 +529,42 @@ export function unregisterAllImageLoaders(): void {
     (imageLoader) => delete imageLoaders[imageLoader]
   );
   unknownImageLoader = undefined;
+}
+
+/**
+ * Creates and caches derived segmentation images based on the referenced imageIds, this
+ * is a helper function, we don't have segmentation concept in the cornerstone core; however,
+ * this helper would make it clear that the segmentation images SHOULD be Uint8Array type
+ * always until we have a better solution.
+ *
+ * @param referencedImageIds - An array of referenced image IDs.
+ * @param options - The options for creating the derived images (default: { targetBufferType: 'Uint8Array' }).
+ * @returns The derived images.
+ */
+export function createAndCacheDerivedSegmentationImages(
+  referencedImageIds: Array<string>,
+  options: DerivedImageOptions = {
+    targetBufferType: 'Uint8Array',
+  }
+): DerivedImages {
+  return createAndCacheDerivedImages(referencedImageIds, options);
+}
+
+/**
+ * Creates and caches a derived segmentation image based on the referenced image ID.
+ * this is a helper function, we don't have segmentation concept in the cornerstone core; however,
+ * this helper would make it clear that the segmentation images SHOULD be Uint8Array type
+ * always until we have a better solution.
+ *
+ * @param referencedImageId The ID of the referenced image.
+ * @param options The options for creating the derived image (default: { targetBufferType: 'Uint8Array' }).
+ * @returns A promise that resolves to the created derived segmentation image.
+ */
+export function createAndCacheDerivedSegmentationImage(
+  referencedImageId: string,
+  options: DerivedImageOptions = {
+    targetBufferType: 'Uint8Array',
+  }
+): Promise<IImage> {
+  return createAndCacheDerivedImage(referencedImageId, options);
 }

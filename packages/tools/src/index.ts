@@ -40,9 +40,12 @@ import {
   EllipticalROITool,
   CircleROITool,
   SplineROITool,
+  SplineContourSegmentationTool,
   BidirectionalTool,
   PlanarFreehandROITool,
+  PlanarFreehandContourSegmentationTool,
   LivewireContourTool,
+  LivewireContourSegmentationTool,
   ArrowAnnotateTool,
   KeyImageTool,
   CrosshairsTool,
@@ -66,6 +69,8 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
+  EraserTool,
+  SegmentSelectTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -106,9 +111,12 @@ export {
   EllipticalROITool,
   CircleROITool,
   SplineROITool,
+  SplineContourSegmentationTool,
   BidirectionalTool,
   PlanarFreehandROITool,
+  PlanarFreehandContourSegmentationTool,
   LivewireContourTool,
+  LivewireContourSegmentationTool,
   ArrowAnnotateTool,
   AngleTool,
   CobbAngleTool,
@@ -119,6 +127,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  EraserTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
@@ -129,6 +138,7 @@ export {
   RectangleROIStartEndThresholdTool,
   BrushTool,
   OrientationMarkerTool,
+  SegmentSelectTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

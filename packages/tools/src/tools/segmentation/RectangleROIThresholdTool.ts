@@ -2,15 +2,12 @@ import {
   getEnabledElement,
   cache,
   StackViewport,
-  triggerEvent,
-  eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { addAnnotation, getAnnotations } from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { Events } from '../../enums';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -20,6 +17,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
   PublicToolProps,
   ToolProps,
@@ -27,7 +25,6 @@ import {
   SVGDrawingHelper,
 } from '../../types';
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
@@ -90,7 +87,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
     } else {
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -172,7 +169,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const { viewport, renderingEngineId } = enabledElement;
+    const { viewport } = enabledElement;
     const { element } = viewport;
     let annotations = getAnnotations(this.getToolName(), element);
 
@@ -216,15 +213,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       // Todo: This is not correct way to add the event trigger,
       // this will trigger on all mouse hover too. Problem is that we don't
       // have a cached stats mechanism for this tool yet?
-      const eventType = Events.ANNOTATION_MODIFIED;
-
-      const eventDetail: AnnotationModifiedEventDetail = {
-        annotation,
-        viewportId: viewport.id,
-        renderingEngineId,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationModified(annotation, element);
 
       let activeHandleCanvasCoords;
 

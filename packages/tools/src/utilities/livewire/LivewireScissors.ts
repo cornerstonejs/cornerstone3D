@@ -1,6 +1,8 @@
-import { Types } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
+
 import { BucketQueue } from '../BucketQueue';
 
+const { isEqual } = utilities;
 const MAX_UINT32 = 4294967295;
 const TWO_THIRD_PI = 2 / (3 * Math.PI);
 
@@ -14,7 +16,7 @@ const TWO_THIRD_PI = 2 / (3 * Math.PI);
  *
  * {@link http://www.sciencedirect.com/science/article/B6WG4-45JB8WN-9/2/6fe59d8089fd1892c2bfb82283065579}
  *
- * Implementation based on
+ * Implementation based on MIT licensed code at:
  * {@link http://code.google.com/p/livewire-javascript/}
  */
 export class LivewireScissors {
@@ -28,7 +30,7 @@ export class LivewireScissors {
   public readonly height: number;
 
   /** Grayscale image */
-  private grayscalePixelData: Float32Array;
+  private grayscalePixelData: Types.PixelDataTypedArray;
 
   // Laplace zero-crossings (either 0 or 1).
   private laplace: Float32Array;
@@ -57,7 +59,11 @@ export class LivewireScissors {
   /** Dijkstra - BucketQueue to sort items by priority */
   private priorityQueueNew: BucketQueue<number>;
 
-  constructor(grayscalePixelData: Float32Array, width: number, height: number) {
+  constructor(
+    grayscalePixelData: Types.PixelDataTypedArray,
+    width: number,
+    height: number
+  ) {
     const numPixels = grayscalePixelData.length;
 
     this.searchGranularityBits = 8; // Bits of resolution for BucketQueue.
@@ -96,6 +102,50 @@ export class LivewireScissors {
     this.startPoint = startPoint;
     this.costs[startPointIndex] = 0;
     this.priorityQueueNew.push(startPointIndex);
+  }
+
+  /**
+   * Finds a nearby point with a minimum cost nearby
+   *
+   * @param testPoint - to look nearby
+   * @param delta - how long a distance to look
+   * @returns A point having the minimum weighted distance from the testPoint
+   */
+  public findMinNearby(testPoint: Types.Point2, delta = 2) {
+    const [x, y] = testPoint;
+    const { costs } = this;
+
+    const xRange = [
+      Math.max(0, x - delta),
+      Math.min(x + delta + 1, this.width),
+    ];
+    const yRange = [
+      Math.max(0, y - delta),
+      Math.min(y + delta + 1, this.height),
+    ];
+    let minValue = costs[this._getPointIndex(y, x)] * 0.8;
+
+    let minPoint = testPoint;
+    for (let xTest = xRange[0]; xTest < xRange[1]; xTest++) {
+      for (let yTest = yRange[0]; yTest < yRange[1]; yTest++) {
+        // Cost values are 0...1, with 1 being a poor choice for the
+        // livewire fitting - thus, we want to minimize our value, so the
+        // distance cost should be low for the center point.
+        const distanceCost =
+          1 -
+          (Math.abs(xTest - testPoint[0]) + Math.abs(yTest - testPoint[1])) /
+            delta /
+            2;
+        const weightCost = costs[this._getPointIndex(yTest, xTest)];
+
+        const weight = weightCost * 0.8 + distanceCost * 0.2;
+        if (weight < minValue) {
+          minPoint = [xTest, yTest];
+          minValue = weight;
+        }
+      }
+    }
+    return minPoint;
   }
 
   /**
@@ -152,20 +202,20 @@ export class LivewireScissors {
       // Update the cost of all neighbors that have higher costs
       for (let i = 0, len = neighborsPoints.length; i < len; i++) {
         const neighborPoint = neighborsPoints[i];
-        const neighbordPointIndex = index(neighborPoint[1], neighborPoint[0]);
+        const neighborPointIndex = index(neighborPoint[1], neighborPoint[0]);
         const dist = this._getWeightedDistance(point, neighborPoint);
         const neighborCost = cost[pointIndex] + dist;
 
-        if (neighborCost < cost[neighbordPointIndex]) {
-          if (cost[neighbordPointIndex] !== Infinity) {
+        if (neighborCost < cost[neighborPointIndex]) {
+          if (cost[neighborPointIndex] !== Infinity) {
             // The item needs to be removed from the priority queue and
             // re-added in order to be moved to the right bucket.
-            priorityQueue.remove(neighbordPointIndex);
+            priorityQueue.remove(neighborPointIndex);
           }
 
-          cost[neighbordPointIndex] = neighborCost;
-          parents[neighbordPointIndex] = pointIndex;
-          priorityQueue.push(neighbordPointIndex);
+          cost[neighborPointIndex] = neighborCost;
+          parents[neighborPointIndex] = pointIndex;
+          priorityQueue.push(neighborPointIndex);
         }
       }
     }
@@ -233,7 +283,7 @@ export class LivewireScissors {
 
     // If it is at the end, back up one
     if (y + 1 === height) {
-      index -= height;
+      index -= width;
     }
 
     return data[index] - data[index + width];
@@ -372,14 +422,9 @@ export class LivewireScissors {
     let pixelIndex = 0;
 
     for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width - 1; x++) {
+      for (let x = 0; x < width; x++) {
         gradX[pixelIndex++] = this._getDeltaX(x, y);
       }
-
-      // Make the last column the same as the previous one because there is
-      // no way to calculate `dx` since x+1 gets out of bounds
-      gradX[pixelIndex] = gradX[pixelIndex - 1];
-      pixelIndex++;
     }
 
     return gradX;
@@ -396,16 +441,10 @@ export class LivewireScissors {
     const gradY = new Float32Array(width * height);
     let pixelIndex = 0;
 
-    for (let y = 0; y < height - 1; y++) {
+    for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         gradY[pixelIndex++] = this._getDeltaY(x, y);
       }
-    }
-
-    // Make the last row the same as the previous one because there is
-    // no way to calculate `dy` since y+1 gets out of bounds
-    for (let len = gradY.length; pixelIndex < len; pixelIndex++) {
-      gradY[pixelIndex] = gradY[pixelIndex - width];
     }
 
     return gradY;
@@ -433,7 +472,7 @@ export class LivewireScissors {
   }
 
   /**
-   * Compute the gradiant direction, in radians, between to points
+   * Compute the gradient direction, in radians, between two points
    *
    * @param px - Point `p` x-coordinate of point p.
    * @param py - Point `p` y-coordinate of point p.
@@ -458,23 +497,44 @@ export class LivewireScissors {
       dp = -dp;
       dq = -dq;
     }
-
     if (px !== qx && py !== qy) {
       // It's going diagonally between pixels
       dp *= Math.SQRT1_2;
       dq *= Math.SQRT1_2;
     }
+    dq = Math.min(Math.max(dq, -1), 1);
 
-    return TWO_THIRD_PI * (Math.acos(dp) + Math.acos(dq));
+    const direction =
+      TWO_THIRD_PI * (Math.acos(Math.min(dp, 1)) + Math.acos(dq));
+    if (isNaN(direction) || !isFinite(direction)) {
+      console.warn('Found non-direction:', px, py, qx, qy, dp, dq, direction);
+      return 1;
+    }
+    return direction;
+  }
+
+  /** Gets the cost to go from A to B */
+  public getCost(pointA, pointB): number {
+    return this._getWeightedDistance(pointA, pointB);
   }
 
   /**
    * Return a weighted distance between two points
    */
   private _getWeightedDistance(pointA: Types.Point2, pointB: Types.Point2) {
-    const { _getPointIndex: index } = this;
+    const { _getPointIndex: index, width, height } = this;
     const [aX, aY] = pointA;
     const [bX, bY] = pointB;
+    // Assign a cost of 1 to any points outside the image, prevents using invalid
+    // points
+    if (bX < 0 || bX >= width || bY < 0 || bY >= height) {
+      return 1;
+    }
+    // Use a cost of 0 if the point was outside and is now going inside
+    if (aX < 0 || aY < 0 || aX >= width || aY >= height) {
+      return 0;
+    }
+
     const bIndex = index(bY, bX);
 
     // Weighted distance function
@@ -545,36 +605,6 @@ export class LivewireScissors {
         0,
         Math.min(1, (pixelData[i] - minPixelValue) / pixelRange)
       );
-    }
-
-    return new LivewireScissors(grayscalePixelData, width, height);
-  }
-
-  /**
-   * Create a livewire scissor instance from a RGBA image
-   * @param rgbaPixelData - RGBA pixel data
-   * @param width - Width of the image
-   * @param height - Height of the image
-   * @returns A LivewireScissors instance
-   */
-  public static createInstanceFromRGBAPixelData(
-    rgbaPixelData: Uint8ClampedArray,
-    width: number,
-    height: number
-  ): LivewireScissors {
-    const numPixels = rgbaPixelData.length / 4;
-    const grayscalePixelData = new Float32Array(numPixels);
-
-    // Multiplier to average an RGB sum and convert it to 0-1 range.
-    // 1/x because multiplication is faster than division.
-    const avgMultiplier = 1 / (3 * 255);
-
-    for (let i = 0, offset = 0; i < numPixels; i++, offset += 4) {
-      const red = rgbaPixelData[offset];
-      const green = rgbaPixelData[offset];
-      const blue = rgbaPixelData[offset];
-
-      grayscalePixelData[i] = (red + green + blue) * avgMultiplier;
     }
 
     return new LivewireScissors(grayscalePixelData, width, height);

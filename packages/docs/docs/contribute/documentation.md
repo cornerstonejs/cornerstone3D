@@ -16,7 +16,7 @@ If the answer is Yes, it is recommended to document it.
 To run documentation you need to execute
 
 ```sh
-cs packages/docs/
+cd packages/docs/
 
 yarn run start
 ```
@@ -32,8 +32,8 @@ to run the documentation server. After the first time, You can just run `yarn do
 to run the documentation server.
 :::
 
-
 ## Potential problems you may encounter
 
 ### Side bar not showing up
+
 There is a bug in your markdown file, likely in the way you are using the markdown syntax.

@@ -34,7 +34,13 @@ export default function keyDown(evt: KeyDownEventType): void {
   if (activeToolsWithEventBinding?.size) {
     const { element } = evt.detail;
     for (const [key, value] of [...activeToolsWithEventBinding.entries()]) {
-      key[value.method](element);
+      // Calls the method that implements the action, which can be a string
+      // in which case it belongs to the tool instance, or a function
+      // Call it on the tool instance, with the element and configuration value
+      // so that the method can depend on the specific configuration in use.
+      const method =
+        typeof value.method === 'function' ? value.method : key[value.method];
+      method.call(key, element, value, evt);
     }
   }
 }
