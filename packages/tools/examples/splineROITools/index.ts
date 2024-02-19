@@ -266,6 +266,17 @@ async function run() {
       },
     ],
   });
+
+  toolGroup.setToolConfiguration(SplineROITool.toolName, {
+    preventHandleOutsideImage: true,
+  });
+
+  toolsNames.forEach((n) => {
+    toolGroup.setToolConfiguration(n, {
+      preventHandleOutsideImage: true,
+    });
+  });
+
   addManipulationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
