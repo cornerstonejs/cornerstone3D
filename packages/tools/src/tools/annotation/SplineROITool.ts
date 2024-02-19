@@ -595,8 +595,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     changeType = ChangeTypes.StatsUpdated,
     contourHoleProcessingEnabled
   ): void => {
-    console.log('triggerChangeEvent: ', changeType);
-
     if (changeType === ChangeTypes.Completed) {
       this.triggerAnnotationCompleted(annotation, contourHoleProcessingEnabled);
     } else {
