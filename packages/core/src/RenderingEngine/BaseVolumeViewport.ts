@@ -62,8 +62,6 @@ import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCam
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import isEqual from '../utilities/isEqual'
-
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
