@@ -657,6 +657,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       ];
     }
 
+    this.canvasContext.fillStyle = 'rgba(0,0,0,1)';
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     if (this.isPlaying === false) {
