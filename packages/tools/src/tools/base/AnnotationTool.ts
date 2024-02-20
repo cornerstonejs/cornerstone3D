@@ -20,12 +20,10 @@ import {
   InteractionTypes,
   ToolProps,
   PublicToolProps,
-  IToolBinding,
 } from '../../types';
 import { addAnnotation } from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { add } from '@kitware/vtk.js/Common/Core/Math';
 
 /**
  * Abstract class for tools which create and display annotations on the
