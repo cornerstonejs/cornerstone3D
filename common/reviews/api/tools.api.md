@@ -1066,6 +1066,8 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
     _getImageIdIndex(imageVolume: Types_2.IImageVolume, pos: vec3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
@@ -4200,6 +4202,8 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
