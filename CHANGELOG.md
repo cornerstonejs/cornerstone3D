@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.63.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.1...v1.63.2) (2024-02-20)
+
+### Bug Fixes
+
+- **freehandROI:** moving mouse 1px back deletes the entire contour ([#1097](https://github.com/cornerstonejs/cornerstone3D/issues/1097)) ([#1110](https://github.com/cornerstonejs/cornerstone3D/issues/1110)) ([5e816d3](https://github.com/cornerstonejs/cornerstone3D/commit/5e816d390c7133af3c00824e1d4588edfd458dbf))
+
 ## [1.63.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.0...v1.63.1) (2024-02-20)
 
 ### Bug Fixes
