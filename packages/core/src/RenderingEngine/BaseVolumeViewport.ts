@@ -282,7 +282,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
-    // keeping this incase something is already using it (but this is wrong)
+    // This configures the viewport to use the most recently applied colormap.
+    // However, this approach is not optimal when dealing with two volumes, as it prevents retrieval of the
+    // colormap for Volume A if Volume B's colormap was the last one applied.
     this.viewportProperties.colormap = colormap;
 
     if (!suppressEvents) {
@@ -790,7 +792,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     const {
-      colormap: defaultColormap,
+      colormap: latestColormap,
       VOILUTFunction,
       interpolationType,
       invert,
@@ -817,10 +819,18 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
 
-    const colormap = this.getColormap(applicableVolumeActorInfo);
+    const volumeColormap = this.getColormap(applicableVolumeActorInfo);
+
+    let colormap;
+    if (volumeId && volumeColormap) {
+      colormap = volumeColormap;
+    } else {
+      colormap = latestColormap;
+    }
+
 
     return {
-      colormap: volumeId ? colormap || defaultColormap : defaultColormap,
+      colormap: colormap,
       voiRange: voiRange,
       VOILUTFunction: VOILUTFunction,
       interpolationType: interpolationType,
@@ -832,7 +842,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
 
   /**
+   * This function extracts the nodes from the RGB Transfer Function, transforming each node's x, r, g, b properties
+   * into a unified array "RGB Points." Then, it compares these RGB Points—specifically the r, g, b values—with
+   * those in the predefined vtk colormap presets. Upon finding a matching set of r, g, b values, the function identifies and selects the
+   * corresponding colormap.
    *
+   * Next, the function extracts an array of opacity points, formatted as a sequence of [x,y] pairs, where 'x' represents a value and
+   * 'y' represents its opacity. It iterates through this array to construct an opacity object that maps each value to its opacity.
+   *
+   * The function returns an object that includes the name of the identified colormap and the constructed opacity object.
    * @param applicableVolumeActorInfo  - The volume actor information for the volume
    * @returns colormap information for the volume if identified
    */
