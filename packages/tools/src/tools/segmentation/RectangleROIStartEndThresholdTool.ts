@@ -8,7 +8,11 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
-import { addAnnotation, getAnnotations } from '../../stateManagement';
+import {
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
@@ -18,8 +22,12 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { hideElementCursor } from '../../cursors/elementCursor';
+import {
+  hideElementCursor,
+  resetElementCursor,
+} from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
 
 import {
   PublicToolProps,
@@ -206,6 +214,54 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     return annotation;
   };
 
+  _endCallback = (evt: EventTypes.InteractionEventType): void => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
+      this.editData;
+    const { data } = annotation;
+
+    if (newAnnotation && !hasMoved) {
+      return;
+    }
+
+    data.handles.activeHandleIndex = null;
+
+    this._deactivateModify(element);
+    this._deactivateDraw(element);
+
+    resetElementCursor(element);
+
+    const enabledElement = getEnabledElement(element);
+
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeAnnotation(annotation.annotationUID);
+    }
+
+    const targetId = this.getTargetId(enabledElement.viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    }
+
+    triggerAnnotationRenderForViewportIds(
+      enabledElement.renderingEngine,
+      viewportIdsToRender
+    );
+
+    if (newAnnotation) {
+      triggerAnnotationCompleted(annotation);
+    }
+  };
+
   // Todo: make it work for planes other than acquisition planes
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
@@ -349,9 +405,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
-    if (this.configuration.computePointsInsideVolume) {
-      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
-    }
 
     annotation.invalidated = false;
 
