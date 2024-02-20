@@ -1392,7 +1392,10 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
-function containsPoint(polyline: Types_2.Point2[], point: Types_2.Point2, closed?: boolean): boolean;
+function containsPoint(polyline: Types_2.Point2[], point: Types_2.Point2, options?: {
+    closed?: boolean;
+    holes?: Types_2.Point2[][];
+}): boolean;
 
 // @public (undocumented)
 function containsPoints(polyline: Types_2.Point2[], points: Types_2.Point2[]): boolean;
@@ -1417,6 +1420,7 @@ type ContourAnnotationData = {
             windingDirection?: ContourWindingDirection;
         };
     };
+    onInterpolationComplete?: () => void;
 };
 
 declare namespace contours {
@@ -2017,6 +2021,19 @@ declare namespace Enums_2 {
     export {
         ColorbarRangeTextPosition
     }
+}
+
+// @public (undocumented)
+export class EraserTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _deleteNearbyAnnotations(evt: EventTypes_2.InteractionEventType, interactionType: string): boolean;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    preTouchStartCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -2808,7 +2825,9 @@ interface ISpline {
 }
 
 // @public (undocumented)
-function isPointInsidePolyline3D(point: Types_2.Point3, polyline: Types_2.Point3[]): boolean;
+function isPointInsidePolyline3D(point: Types_2.Point3, polyline: Types_2.Point3[], options?: {
+    holes?: Types_2.Point3[][];
+}): boolean;
 
 // @public (undocumented)
 function isPointOnLineSegment(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): boolean;
@@ -3852,7 +3871,8 @@ declare namespace polyline {
         pointCanProjectOnLine,
         mergePolylines,
         subtractPolylines,
-        isPointInsidePolyline3D
+        isPointInsidePolyline3D,
+        projectTo2D
     }
 }
 
@@ -3942,6 +3962,12 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     touchDragCallback: any;
 }
+
+// @public (undocumented)
+function projectTo2D(polyline: Types_2.Point3[]): {
+    sharedDimensionIndex: any;
+    projectedPolyline: Types_2.Point2[];
+};
 
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
@@ -6008,7 +6034,7 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
-    _getImageDynamicRangeFromViewport(viewport: any): any;
+    _getImageDynamicRangeFromViewport(viewport: any): number;
     // (undocumented)
     _getMultiplierFromDynamicRange(viewport: any, volumeId: any): number;
     // (undocumented)

@@ -283,6 +283,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
     this.viewportProperties.colormap = colormap;
+
+    if (!suppressEvents) {
+      const eventDetail = {
+          viewportId: this.id,
+          colormap,
+          volumeId
+      };
+      triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+    }
   }
 
   /**

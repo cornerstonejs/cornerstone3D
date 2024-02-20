@@ -278,6 +278,16 @@ declare namespace colormap {
 }
 
 // @public (undocumented)
+type ColormapModifiedEvent = CustomEvent_2<ColormapModifiedEventDetail>;
+
+// @public (undocumented)
+type ColormapModifiedEventDetail = {
+    viewportId: string;
+    colormap: ColormapPublic;
+    volumeId?: string;
+};
+
+// @public (undocumented)
 type ColormapPublic = {
     name?: string;
     opacity?: OpacityMapping[] | number;
@@ -783,6 +793,8 @@ export enum EVENTS {
     // (undocumented)
     CLIPPING_PLANES_UPDATED = "CORNERSTONE_CLIPPING_PLANES_UPDATED",
     // (undocumented)
+    COLORMAP_MODIFIED = "CORNERSTONE_COLORMAP_MODIFIED",
+    // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
@@ -833,9 +845,11 @@ export enum EVENTS {
     // (undocumented)
     VOLUME_NEW_IMAGE = "CORNERSTONE_VOLUME_NEW_IMAGE",
     // (undocumented)
-    VOLUME_SCROLL_OUT_OF_BOUNDS = "CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS",
+    VOLUME_SCROLL_OUT_OF_BOUNDS = "VOLUME_SCROLL_OUT_OF_BOUNDS",
     // (undocumented)
     VOLUME_VIEWPORT_NEW_VOLUME = "CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME",
+    // (undocumented)
+    VOLUME_VIEWPORT_SCROLL = "VOLUME_VIEWPORT_SCROLL",
     // (undocumented)
     WEB_WORKER_PROGRESS = "CORNERSTONE_WEB_WORKER_PROGRESS"
 }
@@ -850,6 +864,8 @@ declare namespace EventTypes {
         CameraModifiedEvent,
         VoiModifiedEvent,
         VoiModifiedEventDetail,
+        ColormapModifiedEvent,
+        ColormapModifiedEventDetail,
         DisplayAreaModifiedEvent,
         DisplayAreaModifiedEventDetail,
         ElementDisabledEvent,
@@ -976,6 +992,9 @@ function getMinMax(storedPixelData: number[]): {
 
 // @public (undocumented)
 export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement;
+
+// @public (undocumented)
+function getRandomSampleFromArray<T>(array: T[], size: number): T[];
 
 // @public (undocumented)
 export function getRenderingEngine(id: string): IRenderingEngine | undefined;
@@ -3432,7 +3451,8 @@ declare namespace utilities {
         cacheUtils,
         roundNumber,
         roundToPrecision,
-        getViewportImageIds
+        getViewportImageIds,
+        getRandomSampleFromArray
     }
 }
 export { utilities }

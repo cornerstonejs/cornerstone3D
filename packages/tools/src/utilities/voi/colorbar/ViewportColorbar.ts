@@ -171,6 +171,19 @@ class ViewportColorbar extends Colorbar {
     this.showAndAutoHideTicks();
   };
 
+  private _viewportColormapModifiedCallback = (
+    evt: Types.EventTypes.ColormapModifiedEvent
+  ) => {
+    const { viewportId, colormap, volumeId  } = evt.detail;
+    const { viewport } = this.enabledElement;
+
+    if (viewportId !== viewport.id || volumeId !== this._volumeId) {
+      return;
+    }
+
+    this.activeColormapName = colormap.name;
+  };
+
   private _addCornerstoneEventListener() {
     const { _element: element } = this;
 
@@ -187,6 +200,11 @@ class ViewportColorbar extends Colorbar {
     element.addEventListener(
       Events.VOI_MODIFIED,
       this._viewportVOIModifiedCallback as EventListener
+    );
+
+    element.addEventListener(
+      Events.COLORMAP_MODIFIED,
+      this._viewportColormapModifiedCallback as EventListener
     );
   }
 }

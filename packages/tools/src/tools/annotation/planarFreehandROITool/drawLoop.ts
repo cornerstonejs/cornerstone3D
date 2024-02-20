@@ -233,10 +233,6 @@ function completeDrawClosedContour(
     ? getInterpolatedPoints(this.configuration, clockwise)
     : clockwise;
 
-  // Note: -> This is pretty expensive and may not scale well with hundreds of
-  // contours. A future optimization if we use this for segmentation is to re-do
-  // this rendering with the GPU rather than SVG.
-
   this.updateContourPolyline(
     annotation,
     {

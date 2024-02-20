@@ -13,6 +13,7 @@ import {
 } from '@cornerstonejs/core';
 import {
   Annotation,
+  ContourAnnotation,
   ContourSegmentationData,
   PolySegConversionOptions,
 } from '../../../../types';
@@ -256,14 +257,36 @@ function _getAnnotationMapFromSegmentation(
     ? options.segmentIndices
     : Array.from(annotationMap.keys());
 
-  const annotationUIDsInSegmentMap = new Map<number, Annotation[]>();
+  const annotationUIDsInSegmentMap = new Map<number, any>();
   segmentIndices.forEach((index) => {
     const annotationUIDsInSegment = annotationMap.get(index);
 
-    const annotations = Array.from(annotationUIDsInSegment).map((uid) => {
-      const annotation = getAnnotation(uid);
+    // Todo: there is a bug right now where the annotationUIDsInSegment has both
+    // children and parent annotations, so we need to filter out the parent
+    // annotations only
 
-      return annotation;
+    let uids = Array.from(annotationUIDsInSegment);
+
+    uids = uids.filter(
+      (uid) => !(getAnnotation(uid) as Annotation).parentAnnotationUID
+    );
+
+    const annotations = uids.map((uid) => {
+      const annotation = getAnnotation(uid) as ContourAnnotation;
+      const hasChildAnnotations = annotation.childAnnotationUIDs?.length;
+
+      return {
+        polyline: annotation.data.contour.polyline,
+        referencedImageId: annotation.metadata.referencedImageId,
+        holesPolyline:
+          hasChildAnnotations &&
+          annotation.childAnnotationUIDs.map((childUID) => {
+            const childAnnotation = getAnnotation(
+              childUID
+            ) as ContourAnnotation;
+            return childAnnotation.data.contour.polyline;
+          }),
+      };
     });
 
     annotationUIDsInSegmentMap.set(index, annotations);

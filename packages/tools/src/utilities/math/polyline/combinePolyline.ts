@@ -74,9 +74,9 @@ function getSourceAndTargetPointsList(
     PolylineIntersectionPoint[]
   >();
 
-  const isFisrtPointInside = containsPoint(sourcePolyline, targetPolyline[0]);
+  const isFirstPointInside = containsPoint(sourcePolyline, targetPolyline[0]);
 
-  let intersectionPointDirection = isFisrtPointInside
+  let intersectionPointDirection = isFirstPointInside
     ? PolylinePointDirection.Exiting
     : PolylinePointDirection.Entering;
 

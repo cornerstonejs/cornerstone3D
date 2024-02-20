@@ -137,8 +137,7 @@ function findMinimumRegions(dotValues, handleCount) {
   const { length } = dotValues;
   // Fallback for very uniform ojects.
   if (deviation < 0.01 || length < handleCount * 3) {
-    // TODO - create handleCount evenly spaced handles
-    return [0, Math.floor(length / 3), Math.floor((length * 2) / 3)];
+    return [];
   }
 
   const inflection = [];
