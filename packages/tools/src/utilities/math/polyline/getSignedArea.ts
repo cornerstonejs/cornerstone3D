@@ -13,6 +13,10 @@ import type { Types } from '@cornerstonejs/core';
  * @returns Area of the polyline (with signal)
  */
 export default function getSignedArea(polyline: Types.Point2[]): number {
+  if (polyline.length < 3) {
+    return 0;
+  }
+
   // Reference point can be any point on the same plane
   const refPoint = polyline[0];
   let area = 0;
