@@ -1,26 +1,29 @@
 import {
-  getEnabledElement,
-  cache,
   StackViewport,
-  metaData,
+  Types,
+  cache,
+  getEnabledElement,
   utilities as csUtils,
+  metaData,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
+import { Events } from '../../enums';
 import {
   addAnnotation,
-  getAnnotations,
   removeAnnotation,
-} from '../../stateManagement';
+  getAnnotations,
+} from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
+  drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
-  drawRect as drawRectSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   hideElementCursor,
@@ -28,51 +31,47 @@ import {
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
-
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import RectangleROITool from '../annotation/RectangleROITool';
+import { CircleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import CircleROITool from '../annotation/CircleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { pointInShapeCallback } from '../../utilities/';
+import {
+  getCanvasCircleCorners,
+  getCanvasCircleRadius,
+} from '../../utilities/math/circle';
+import { pointInEllipse } from '../../utilities/math/ellipse';
+import { pointInShapeCallback } from '../../utilities';
 
 const { transformWorldToIndex } = csUtils;
 
-/**
- * This tool is similar to the RectangleROIThresholdTool which
- * only draws a rectangle on the image, and by using utility functions
- * such as thresholdByRange and thresholdByROIStat it can be used to
- * create a segmentation. The only difference is that it only acts on the
- * acquisition plane and not the 3D volume, and accepts a start and end
- * slice, and renders a dashed rectangle on the image between the start and end
- * but a solid rectangle on start and end slice. Utility functions should be used
- * to modify the start and end slice.
- * // Todo: right now only the first slice has grabbable handles, need to make
- * // it so that the handles are grabbable on all slices.
- */
-class RectangleROIStartEndThresholdTool extends RectangleROITool {
+class CircleROIStartEndThresholdTool extends CircleROITool {
   static toolName;
+
+  touchDragCallback: any;
+  mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
-    viewportIdsToRender: string[];
+    viewportIdsToRender: Array<string>;
     handleIndex?: number;
     newAnnotation?: boolean;
     hasMoved?: boolean;
   } | null;
   isDrawing: boolean;
-  isHandleOutsideImage: boolean;
+  isHandleOutsideImage = false;
 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         numSlicesToPropagate: 10,
-        computePointsInsideVolume: false,
+        calculatePointsInsideVolume: false,
       },
     }
   ) {
@@ -86,8 +85,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   }
 
   /**
-   * Based on the current position of the mouse and the enabledElement it creates
-   * the edit data for the tool.
+   * Based on the current position of the mouse and the current imageId to create
+   * a CircleROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
    * @returns The annotation object.
@@ -97,6 +96,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
+    const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -113,6 +113,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const targetId = this.getTargetId(viewport);
       volumeId = targetId.split(/volumeId:|\?/)[1];
       imageVolume = cache.getVolume(volumeId);
+
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -120,17 +121,23 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       );
     }
 
-    if (!referencedImageId) {
-      throw new Error('This tool does not work on non-acquisition planes');
-    }
+    // if (!referencedImageId) {
+    //   throw new Error('This tool does not work on non-acquisition planes');
+    // }
 
-    const startIndex = viewport.getCurrentImageIdIndex();
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
     );
 
-    // We cannot simply add numSlicesToPropagate to startIndex because
+    const newStartIndex = this._getStartSliceIndex(
+      imageVolume,
+      worldPos,
+      spacingInNormal,
+      viewPlaneNormal
+    );
+
+    // We cannot newStartIndex add numSlicesToPropagate to startIndex because
     // the order of imageIds can be from top to bottom or bottom to top and
     // we want to make sure it is always propagated in the direction of the
     // view and also to make sure we don't go out of bounds.
@@ -147,47 +154,39 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       highlighted: true,
       invalidated: true,
       metadata: {
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        enabledElement,
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
-        toolName: this.getToolName(),
         volumeId,
         spacingInNormal,
+        enabledElement,
       },
       data: {
         label: '',
-        startSlice: startIndex,
+        startSlice: newStartIndex,
         endSlice: endIndex,
-        cachedStats: {
-          pointsInVolume: [],
-          projectionPoints: [],
-          projectionPointsImageIds: [referencedImageId],
-        },
+
         handles: {
-          // No need a textBox
           textBox: {
             hasMoved: false,
             worldPosition: null,
             worldBoundingBox: null,
           },
-          points: [
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
+          points: [[...worldPos], [...worldPos]] as [
+            Types.Point3, // center
+            Types.Point3 // end
           ],
           activeHandleIndex: null,
+        },
+        cachedStats: {
+          pointsInVolume: [],
+          projectionPoints: [],
         },
         labelmapUID: null,
       },
     };
-
-    // update the projection points in 3D space, since we are projecting
-    // the points to the slice plane, we need to make sure the points are
-    // computed for later export
-    this._computeProjectionPoints(annotation, imageVolume);
 
     addAnnotation(annotation, element);
 
@@ -199,12 +198,11 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     this.editData = {
       annotation,
       viewportIdsToRender,
-      handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
     };
-    this._activateDraw(element);
 
+    this._activateDraw(element);
     hideElementCursor(element);
 
     evt.preventDefault();
@@ -226,6 +224,11 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       return;
     }
 
+    // Circle ROI tool should reset its highlight to false on mouse up (as opposed
+    // to other tools that keep it highlighted until the user moves. The reason
+    // is that we use top-left and bottom-right handles to define the circle,
+    // and they are by definition not in the circle on mouse up.
+    annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
@@ -262,161 +265,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   };
 
-  // Todo: make it work for planes other than acquisition planes
-  _computeProjectionPoints(
-    annotation: RectangleROIStartEndThresholdAnnotation,
-    imageVolume: Types.IImageVolume
-  ): void {
-    const { data, metadata } = annotation;
-    const { viewPlaneNormal, spacingInNormal } = metadata;
-    const { imageData } = imageVolume;
-    const { startSlice, endSlice } = data;
-    const { points } = data.handles;
-
-    const startIJK = transformWorldToIndex(imageData, points[0]);
-
-    if (startIJK[2] !== startSlice) {
-      throw new Error('Start slice does not match');
-    }
-
-    // substitute the end slice index 2 with startIJK index 2
-    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
-
-    const startWorld = vec3.create();
-    imageData.indexToWorldVec3(startIJK, startWorld);
-
-    const endWorld = vec3.create();
-    imageData.indexToWorldVec3(endIJK, endWorld);
-
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
-
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
-    const newProjectionPoints = [];
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
-      newProjectionPoints.push(
-        points.map((point) => {
-          const newPoint = vec3.create();
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
-          return Array.from(newPoint);
-        })
-      );
-    }
-
-    data.cachedStats.projectionPoints = newProjectionPoints;
-
-    // Find the imageIds for the projection points
-    const projectionPointsImageIds = [];
-    for (const RectanglePoints of newProjectionPoints) {
-      const imageId = csUtils.getClosestImageId(
-        imageVolume,
-        RectanglePoints[0],
-        viewPlaneNormal
-      );
-      projectionPointsImageIds.push(imageId);
-    }
-
-    data.cachedStats.projectionPointsImageIds = projectionPointsImageIds;
-  }
-
-  //This function return all the points inside the ROI for every slices between startSlice and endSlice
-  _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
-    const { data } = annotation;
-    const projectionPoints = data.cachedStats.projectionPoints;
-
-    const pointsInsideVolume: Types.Point3[][] = [[]];
-
-    for (let i = 0; i < projectionPoints.length; i++) {
-      // If image does not exists for the targetId, skip. This can be due
-      // to various reasons such as if the target was a volumeViewport, and
-      // the volumeViewport has been decached in the meantime.
-      if (!imageVolume) {
-        continue;
-      }
-
-      const projectionPoint = projectionPoints[i][0];
-
-      const worldPos1 = data.handles.points[0];
-      const worldPos2 = data.handles.points[3];
-
-      const { dimensions, imageData } = imageVolume;
-
-      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
-      //We only need to change the Z of our bounds so we are getting the Z from the current projection point
-      const worldProjectionPointIndex = transformWorldToIndex(
-        imageData,
-        projectionPoint
-      );
-
-      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
-      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
-      worldPos1Index[2] = Math.floor(worldProjectionPointIndex[2]);
-
-      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
-
-      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
-      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
-      worldPos2Index[2] = Math.floor(worldProjectionPointIndex[2]);
-
-      // Check if one of the indexes are inside the volume, this then gives us
-      // Some area to do stats over.
-
-      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        this.isHandleOutsideImage = false;
-        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
-        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
-
-        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
-        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
-
-        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
-        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
-
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          () => true,
-          null,
-          boundsIJK
-        );
-
-        //@ts-ignore
-        pointsInsideVolume.push(pointsInShape);
-      }
-    }
-    data.cachedStats.pointsInVolume = pointsInsideVolume;
-  }
-
-  _calculateCachedStatsTool(annotation, enabledElement) {
-    const data = annotation.data;
-    const { element, viewport } = enabledElement;
-
-    const { cachedStats } = data;
-    const targetId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
-
-    // Todo: this shouldn't be here, this is a performance issue
-    // Since we are extending the RectangleROI class, we need to
-    // bring the logic for handle to some cachedStats calculation
-    this._computeProjectionPoints(annotation, imageVolume);
-
-    annotation.invalidated = false;
-
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
-
-    return cachedStats;
-  }
-
   /**
-   * it is used to draw the rectangleROIStartEnd annotation in each
-   * request animation frame.
+   * it is used to draw the circleROI annotation in each
+   * request animation frame. It calculates the updated cached statistics if
+   * data is invalidated and cache it.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -443,20 +295,25 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     };
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[
-        i
-      ] as RectangleROIStartEndThresholdAnnotation;
+      const annotation = annotations[i] as CircleROIStartEndThresholdAnnotation;
       const { annotationUID, data } = annotation;
       const { startSlice, endSlice } = data;
       const { points, activeHandleIndex } = data.handles;
-
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       styleSpecifier.annotationUID = annotationUID;
 
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
+
+      const canvasCoordinates = points.map((p) =>
+        viewport.worldToCanvas(p)
+      ) as [Types.Point2, Types.Point2];
+      const center = canvasCoordinates[0];
+
+      const radius = getCanvasCircleRadius(canvasCoordinates);
+      const { centerPointRadius } = this.configuration;
+
       // range of slices to render based on the start and end slice, like
       // np.arange
 
@@ -474,11 +331,13 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         this._throttledCalculateCachedStats(annotation, enabledElement);
       }
 
+      const middleSlice = Math.round((startSlice + endSlice) / 2);
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
-      let firstOrLastSlice = false;
-      if (sliceIndex === startSlice || sliceIndex === endSlice) {
-        firstOrLastSlice = true;
+
+      let isMiddleSlice = false;
+      if (sliceIndex === middleSlice) {
+        isMiddleSlice = true;
       }
 
       // If rendering engine has been destroyed while rendering
@@ -497,7 +356,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         !isAnnotationLocked(annotation) &&
         !this.editData &&
         activeHandleIndex !== null &&
-        firstOrLastSlice
+        isMiddleSlice
       ) {
         // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
@@ -517,31 +376,241 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         );
       }
 
-      let lineDashToUse = lineDash;
+      let lineWidthToUse = lineWidth;
 
-      if (!firstOrLastSlice) {
-        lineDashToUse = 2;
+      if (isMiddleSlice) {
+        lineWidthToUse = 3;
       }
 
-      const rectangleUID = '0';
-      drawRectSvg(
+      const circleUID = '0';
+      drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
-        rectangleUID,
-        canvasCoordinates[0],
-        canvasCoordinates[3],
+        circleUID,
+        center,
+        radius,
         {
           color,
-          lineDash: lineDashToUse,
-          lineWidth,
+          lineDash,
+          lineWidth: lineWidthToUse,
         }
       );
+
+      // draw center point, if "centerPointRadius" configuration is valid.
+      if (centerPointRadius > 0) {
+        if (radius > 3 * centerPointRadius) {
+          drawCircleSvg(
+            svgDrawingHelper,
+            annotationUID,
+            `${circleUID}-center`,
+            center,
+            centerPointRadius,
+            {
+              color,
+              lineDash,
+              lineWidth,
+            }
+          );
+        }
+      }
 
       renderStatus = true;
     }
 
     return renderStatus;
   };
+
+  // Todo: make it work for planes other than acquisition planes
+  _computeProjectionPoints(
+    annotation: CircleROIStartEndThresholdAnnotation,
+    imageVolume: Types.IImageVolume
+  ): void {
+    const { data, metadata } = annotation;
+    const { viewPlaneNormal, spacingInNormal } = metadata;
+    const { imageData } = imageVolume;
+    const { startSlice, endSlice } = data;
+    const { points } = data.handles;
+
+    const startIJK = transformWorldToIndex(imageData, points[0]);
+    startIJK[2] = startSlice;
+
+    if (startIJK[2] !== startSlice) {
+      throw new Error('Start slice does not match');
+    }
+
+    // substitute the end slice index 2 with startIJK index 2
+    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
+
+    const startWorld = vec3.create();
+    imageData.indexToWorldVec3(startIJK, startWorld);
+
+    const endWorld = vec3.create();
+    imageData.indexToWorldVec3(endIJK, endWorld);
+
+    // distance between start and end slice in the world coordinate
+    const distance = vec3.distance(startWorld, endWorld);
+
+    // for each point inside points, navigate in the direction of the viewPlaneNormal
+    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+    const newProjectionPoints = [];
+    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+      newProjectionPoints.push(
+        points.map((point) => {
+          const newPoint = vec3.create();
+          //@ts-ignore
+          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          return Array.from(newPoint);
+        })
+      );
+    }
+
+    data.cachedStats.projectionPoints = newProjectionPoints;
+  }
+
+  _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
+    const { data } = annotation;
+    const { viewport } = enabledElement;
+    const projectionPoints = data.cachedStats.projectionPoints;
+
+    const pointsInsideVolume: Types.Point3[][] = [[]];
+
+    for (let i = 0; i < projectionPoints.length; i++) {
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!imageVolume) {
+        continue;
+      }
+
+      const centerWorld = projectionPoints[i][0];
+      const canvasCoordinates = projectionPoints[i].map((p) =>
+        viewport.worldToCanvas(p)
+      );
+
+      const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
+        getCanvasCircleCorners(canvasCoordinates)
+      );
+
+      const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
+      const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
+
+      const worldPos1 = topLeftWorld;
+      const worldPos2 = bottomRightWorld;
+
+      const { dimensions, imageData } = imageVolume;
+
+      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
+      const worldCenterIndex = transformWorldToIndex(imageData, centerWorld);
+
+      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
+      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
+      worldPos1Index[2] = Math.floor(worldCenterIndex[2]);
+
+      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
+
+      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
+      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
+      worldPos2Index[2] = Math.floor(worldCenterIndex[2]);
+
+      // Check if one of the indexes are inside the volume, this then gives us
+      // Some area to do stats over.
+
+      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
+        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
+
+        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
+        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
+
+        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
+        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
+
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
+        const center = centerWorld as Types.Point3;
+
+        const ellipseObj = {
+          center,
+          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+        };
+
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          //@ts-ignore
+          (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
+          null,
+          boundsIJK
+        );
+
+        //@ts-ignore
+        pointsInsideVolume.push(pointsInShape);
+      }
+    }
+    data.cachedStats.pointsInVolume = pointsInsideVolume;
+  }
+
+  _calculateCachedStatsTool(annotation, enabledElement) {
+    const data = annotation.data;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
+
+    const { cachedStats } = data;
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+
+    // Todo: this shouldn't be here, this is a performance issue
+    // Since we are extending the RectangleROI class, we need to
+    // bring the logic for handle to some cachedStats calculation
+    this._computeProjectionPoints(annotation, imageVolume);
+
+    annotation.invalidated = false;
+
+    // Dispatching annotation modified
+    const eventType = Events.ANNOTATION_MODIFIED;
+
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+    };
+    triggerEvent(eventTarget, eventType, eventDetail);
+
+    return cachedStats;
+  }
+
+  _getStartSliceIndex(
+    imageVolume: Types.IImageVolume,
+    worldPos: Types.Point3,
+    spacingInNormal: number,
+    viewPlaneNormal: Types.Point3
+  ): number | undefined {
+    const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
+
+    const numSlicesToPropagateFromStart = Math.round(numSlicesToPropagate / 2);
+    // get end position by moving from worldPos in the direction of viewplaneNormal
+    // with amount of numSlicesToPropagate * spacingInNormal
+    const startPos = vec3.create();
+    vec3.scaleAndAdd(
+      startPos,
+      worldPos,
+      viewPlaneNormal,
+      numSlicesToPropagateFromStart * -spacingInNormal
+    );
+
+    const imageIdIndex = this._getImageIdIndex(
+      imageVolume,
+      startPos,
+      spacingInNormal,
+      viewPlaneNormal
+    );
+
+    return imageIdIndex;
+  }
 
   _getEndSliceIndex(
     imageVolume: Types.IImageVolume,
@@ -550,6 +619,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     viewPlaneNormal: Types.Point3
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
+    const numSlicesToPropagateFromStart = Math.round(numSlicesToPropagate / 2);
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
@@ -558,9 +628,25 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       endPos,
       worldPos,
       viewPlaneNormal,
-      numSlicesToPropagate * spacingInNormal
+      numSlicesToPropagateFromStart * spacingInNormal
     );
 
+    const imageIdIndex = this._getImageIdIndex(
+      imageVolume,
+      endPos,
+      spacingInNormal,
+      viewPlaneNormal
+    );
+
+    return imageIdIndex;
+  }
+
+  _getImageIdIndex(
+    imageVolume: Types.IImageVolume,
+    pos: vec3,
+    spacingInNormal: number,
+    viewPlaneNormal: Types.Point3
+  ): number | undefined {
     const halfSpacingInNormalDirection = spacingInNormal / 2;
     // Loop through imageIds of the imageVolume and find the one that is closest to endPos
     const { imageIds } = imageVolume;
@@ -574,7 +660,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       );
 
       const dir = vec3.create();
-      vec3.sub(dir, endPos, imagePositionPatient);
+      vec3.sub(dir, pos, imagePositionPatient);
 
       const dot = vec3.dot(dir, viewPlaneNormal);
 
@@ -587,5 +673,5 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   }
 }
 
-RectangleROIStartEndThresholdTool.toolName = 'RectangleROIStartEndThreshold';
-export default RectangleROIStartEndThresholdTool;
+CircleROIStartEndThresholdTool.toolName = 'CircleROIStartEndThreshold';
+export default CircleROIStartEndThresholdTool;
