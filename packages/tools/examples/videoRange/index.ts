@@ -7,6 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
+  addToggleButtonToToolbar,
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
@@ -68,7 +69,7 @@ instructions.innerText = `Play/Pause button will toggle the playing of video
 Clear Frame Range clears and selected from range on playback
 Click the viewer to apply a key image (range if playing, frame if still).
 Annotation navigation will choose next/previous annotation in the group
-Select start/current/end range to set the start of the range, the current image and the end range
+Select start/remove range/end range to set the start of the range and the end range, as well as to remove the range (make the key image apply to the current frame only)
 `;
 
 content.append(instructions);
@@ -83,10 +84,50 @@ const baseEventDetail = {
 
 let viewport;
 
-const playButton = addButtonToToolbar({
+addToggleButtonToToolbar({
   id: 'play',
-  title: 'Pause',
-  onClick: (evt) => togglePlay(),
+  title: 'Play',
+  onClick: togglePlay,
+  defaultToggle: false,
+});
+
+addButtonToToolbar({
+  id: 'CreateKey',
+  title: 'Create Key Image',
+  onClick: () => {
+    const annotation = {
+      annotationUID: null as string,
+      highlighted: true,
+      invalidated: true,
+      metadata: {
+        toolName: KeyImageTool.toolName,
+        ...viewport.getViewReference(),
+      },
+      data: {
+        text: '',
+        handles: {
+          points: new Array<Types.Point3>(),
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          },
+        },
+        label: 'Demo Key Image',
+      },
+    };
+
+    cornerstoneTools.annotation.state.addAnnotation(annotation, element);
+    triggerEvent(eventTarget, csToolsEnums.Events.ANNOTATION_MODIFIED, {
+      viewportId: viewport.viewportId,
+      annotationUID: annotation.annotationUID,
+    });
+  },
 });
 
 addButtonToToolbar({
@@ -142,12 +183,11 @@ addButtonToToolbar({
 function togglePlay(toggle = undefined) {
   if (toggle === undefined) {
     toggle = viewport.togglePlayPause();
-  } else if (toggle === true) {
+  } else if (toggle) {
     viewport.play();
   } else {
     viewport.pause();
   }
-  playButton.innerText = toggle ? 'Play' : 'Pause';
 }
 
 addButtonToToolbar({
@@ -175,23 +215,6 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
-  id: 'Set Current',
-  title: 'Current Image',
-  onClick() {
-    const annotation = getActiveAnnotation();
-    if (annotation) {
-      togglePlay(false);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        viewport.getFrameNumber(),
-        baseEventDetail
-      );
-      viewport.render();
-    }
-  },
-});
-
-addButtonToToolbar({
   id: 'End Range',
   title: 'End Range',
   onClick() {
@@ -210,6 +233,23 @@ addButtonToToolbar({
         baseEventDetail
       );
       viewport.setFrameRange(range);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Remove Range',
+  title: 'Remove Range',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      togglePlay(false);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        viewport.getFrameNumber(),
+        baseEventDetail
+      );
       viewport.render();
     }
   },
@@ -380,7 +420,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 25);
+  await viewport.setVideo(videoId, 1);
   addVideoTime(element, viewport);
 }
 
