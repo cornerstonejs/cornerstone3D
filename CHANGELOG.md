@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.62.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.61.7...v1.62.0) (2024-02-20)
+
+### Features
+
+- **volumeviewport:** return volume specific colormap information ([#1105](https://github.com/cornerstonejs/cornerstone3D/issues/1105)) ([53d9b97](https://github.com/cornerstonejs/cornerstone3D/commit/53d9b9753f412db5444d718b47e7f0ff0c93f83d))
+
 ## [1.61.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.61.6...v1.61.7) (2024-02-20)
 
 ### Bug Fixes
