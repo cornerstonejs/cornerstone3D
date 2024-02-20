@@ -38,8 +38,8 @@ const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 class LivewireContourTool extends ContourSegmentationBaseTool {
   public static toolName: string;
   protected scissors: LivewireScissors;
-  /** The scissors from the right handle, used for editing */
-  protected scissorsRight: LivewireScissors;
+  /** The scissors from the next handle, used for editing */
+  protected scissorsNext: LivewireScissors;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -53,7 +53,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     confirmedPath?: LivewirePath;
     currentPath?: LivewirePath;
     /** The next path segment, on the other side of the handle */
-    confirmedPathRight?: LivewirePath;
+    confirmedPathNext?: LivewirePath;
     closed?: boolean;
     worldToSlice?: (point: Types.Point3) => Types.Point2;
     sliceToWorld?: (point: Types.Point2) => Types.Point3;
@@ -141,7 +141,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     worldPos,
     element,
     annotation,
-    rightPos?,
+    nextPos?,
     contourHoleProcessingEnabled?
   ) {
     const enabledElement = getEnabledElement(element);
@@ -217,21 +217,21 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       height,
       voiRange
     );
-    if (rightPos) {
-      this.scissorsRight = LivewireScissors.createInstanceFromRawPixelData(
+    if (nextPos) {
+      this.scissorsNext = LivewireScissors.createInstanceFromRawPixelData(
         scalarData as Float32Array,
         width,
         height,
         voiRange
       );
-      this.scissorsRight.startSearch(worldToSlice(rightPos));
+      this.scissorsNext.startSearch(worldToSlice(nextPos));
     }
 
     // Scissors always start at the startPos for both editing handles and
     // for initial rendering
     this.scissors.startSearch(startPos);
 
-    const newAnnotation = !rightPos;
+    const newAnnotation = !nextPos;
 
     const confirmedPath = new LivewirePath();
     const currentPath = new LivewirePath();
@@ -255,7 +255,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       lastCanvasPoint,
       confirmedPath,
       currentPath,
-      confirmedPathRight: currentPathNext,
+      confirmedPathNext: currentPathNext,
       closed: false,
       handleIndex:
         this.editData?.handleIndex ?? annotation.handles?.activeHandleIndex,
@@ -467,7 +467,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   protected clearEditData() {
     this.editData = null;
     this.scissors = null;
-    this.scissorsRight = null;
+    this.scissorsNext = null;
     this.isDrawing = false;
   }
 
@@ -628,7 +628,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   public editHandle(
     worldPos: Types.Point3,
     element,
-    annotation,
+    annotation: LivewireContourAnnotation,
     handleIndex: number
   ) {
     const { data } = annotation;
@@ -638,11 +638,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       handlePoints[(handleIndex - 1 + numHandles) % numHandles];
     const nextHandle = handlePoints[(handleIndex + 1) % numHandles];
 
-    if (!this.editData?.confirmedPathRight) {
+    if (!this.editData?.confirmedPathNext) {
       this.setupBaseEditData(previousHandle, element, annotation, nextHandle);
       const { polyline } = data.contour;
       const confirmedPath = new LivewirePath();
-      const confirmedPathRight = new LivewirePath();
+      const confirmedPathNext = new LivewirePath();
       const { worldToSlice } = this.editData;
       const previousIndex = findHandlePolylineIndex(
         annotation,
@@ -660,23 +660,19 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         // For this case, the next/previous indices are swapped, and the
         // path data gets inserted in between the newly generated data, so
         // handle this case specially
-        confirmedPathRight.addPoints(
+        confirmedPathNext.addPoints(
           polyline.slice(nextIndex + 1, previousIndex).map(worldToSlice)
-        );
-      } else if (nextIndex < previousIndex) {
-        throw new Error(
-          `Expected right index after left index, but were: ${previousIndex} ${nextIndex}`
         );
       } else {
         confirmedPath.addPoints(
           polyline.slice(0, previousIndex + 1).map(worldToSlice)
         );
-        confirmedPathRight.addPoints(
+        confirmedPathNext.addPoints(
           polyline.slice(nextIndex, polyline.length).map(worldToSlice)
         );
       }
       this.editData.confirmedPath = confirmedPath;
-      this.editData.confirmedPathRight = confirmedPathRight;
+      this.editData.confirmedPathNext = confirmedPathNext;
     }
     const { editData, scissors } = this;
     const { worldToSlice, sliceToWorld } = editData;
@@ -702,7 +698,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     handlePoints[handleIndex] = sliceToWorld(slicePos);
 
     const pathPointsLeft = scissors.findPathToPoint(slicePos);
-    const pathPointsRight = this.scissorsRight.findPathToPoint(slicePos);
+    const pathPointsRight = this.scissorsNext.findPathToPoint(slicePos);
     const currentPath = new LivewirePath();
 
     // Merge the "confirmed" path that goes from the first control point to the
@@ -713,7 +709,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       currentPath.addPoints(pathPointsLeft);
     }
     currentPath.addPoints(pathPointsRight.reverse());
-    currentPath.appendPath(editData.confirmedPathRight);
+    currentPath.appendPath(editData.confirmedPathNext);
     if (handleIndex === 0) {
       currentPath.addPoints(pathPointsLeft);
     }
@@ -928,22 +924,29 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       return;
     }
 
-    const { annotation, sliceToWorld } = this.editData;
+    const { annotation, sliceToWorld, worldToSlice, closed, newAnnotation } =
+      this.editData;
     let { pointArray: imagePoints } = livewirePath;
 
     if (imagePoints.length > 1) {
       imagePoints = [...imagePoints, imagePoints[0]];
     }
 
+    // Save the annotation in clockwise winding direction only after closing it
+    // because reversing the handle points may cause some weird issues
+    const targetWindingDirection =
+      newAnnotation && closed ? ContourWindingDirection.Clockwise : undefined;
+
     this.updateContourPolyline(
       annotation,
       {
         points: imagePoints,
-        closed: annotation.data.contour.closed,
-        targetWindingDirection: ContourWindingDirection.Clockwise,
+        closed,
+        targetWindingDirection,
       },
       {
         canvasToWorld: sliceToWorld,
+        worldToCanvas: worldToSlice,
       }
     );
   }
