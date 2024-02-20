@@ -3,6 +3,7 @@ import {
   cache,
   getEnabledElement,
   metaData,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -21,9 +22,12 @@ import {
   PublicToolProps,
   IToolBinding,
 } from '../../types';
+import { addAnnotation } from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { add } from '@kitware/vtk.js/Common/Core/Math';
 
-/**-q
+/**
  * Abstract class for tools which create and display annotations on the
  * cornerstone3D canvas. In addition, it provides a base class for segmentation
  * tools that require drawing an annotation before running the segmentation strategy
@@ -34,6 +38,70 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
  * abstract methods.
  */
 abstract class AnnotationTool extends AnnotationDisplayTool {
+  /**
+   * Creates a base annotation object, adding in any annotation base data provided
+   */
+  public static createAnnotation(...annotationBaseData): Annotation {
+    let annotation: Annotation = {
+      annotationUID: null as string,
+      highlighted: true,
+      invalidated: true,
+      metadata: {
+        toolName: this.toolName,
+      },
+      data: {
+        text: '',
+        handles: {
+          points: new Array<Types.Point3>(),
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          },
+        },
+        label: '',
+      },
+    } as unknown as Annotation;
+    for (const baseData of annotationBaseData) {
+      annotation = csUtils.deepMerge(annotation, baseData);
+    }
+    return annotation;
+  }
+
+  /**
+   * Creates a new annotation for the given viewport.  This just adds the
+   * viewport reference data to the metadata, and otherwise returns the
+   * static class createAnnotation data.
+   */
+  public static createAnnotationForViewport(viewport, ...annotationBaseData) {
+    return this.createAnnotation(
+      { metadata: viewport.getViewReference() },
+      ...annotationBaseData
+    );
+  }
+
+  /**
+   * Creates and adds an annotation of the given type, firing the annotation
+   * modified event on the new annotation.
+   * This implicitly uses the static class when you call it on the correct
+   * base class.  For example, you can call the KeyImageTool.createAnnotation
+   * method on KeyImageTool.toolName by calling KeyImageTool.createAndAddAnnotation
+   *
+   */
+  public static createAndAddAnnotation(viewport, ...annotationBaseData) {
+    const annotation = this.createAnnotationForViewport(
+      viewport,
+      ...annotationBaseData
+    );
+    addAnnotation(annotation, viewport.element);
+    triggerAnnotationModified(annotation, viewport.element);
+  }
+
   static toolName;
   // ===================================================================
   // Abstract Methods - Must be implemented.

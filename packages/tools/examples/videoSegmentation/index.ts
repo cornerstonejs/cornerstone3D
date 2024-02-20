@@ -89,8 +89,8 @@ const brushStrategies = {
 };
 
 const brushValues = [
-  brushInstanceNames.DynamicThreshold,
   brushInstanceNames.CircularBrush,
+  brushInstanceNames.DynamicThreshold,
   brushInstanceNames.CircularEraser,
 ];
 
@@ -178,7 +178,7 @@ function setupTools(toolGroupId) {
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(brushInstanceNames.DynamicThreshold, {
+  toolGroup.setToolActive(optionsValues[0], {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -224,7 +224,7 @@ async function run() {
 
   const imageIdsArray = [videoId];
 
-  await viewport.setVideo(videoId);
+  await viewport.setVideo(videoId, 1);
   addVideoTime(viewportGrid, viewport);
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();

@@ -243,15 +243,18 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
+      // The initial render allows us to set the frame position - rendering needs
+      // to start already playing
+      this.initialRender = () => {
+        this.initialRender = null;
+        this.pause();
+        this.setFrameNumber(frameNumber || 1);
+      };
+
       // This is ugly, but without it, the video often fails to render initially
       // so having a play, followed by a pause fixes things.
       // 25 ms is a tested value that seems to work to prevent exceptions
       return new Promise((resolve) => {
-        this.initialRender = () => {
-          this.initialRender = null;
-          this.pause();
-          this.setFrameNumber(frameNumber || 1);
-        };
         window.setTimeout(() => {
           this.setFrameNumber(frameNumber || 1);
           resolve(this);

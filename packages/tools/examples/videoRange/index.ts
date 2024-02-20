@@ -95,37 +95,8 @@ addButtonToToolbar({
   id: 'CreateKey',
   title: 'Create Key Image',
   onClick: () => {
-    const annotation = {
-      annotationUID: null as string,
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: KeyImageTool.toolName,
-        ...viewport.getViewReference(),
-      },
-      data: {
-        text: '',
-        handles: {
-          points: new Array<Types.Point3>(),
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        label: 'Demo Key Image',
-      },
-    };
-
-    cornerstoneTools.annotation.state.addAnnotation(annotation, element);
-    triggerEvent(eventTarget, csToolsEnums.Events.ANNOTATION_MODIFIED, {
-      viewportId: viewport.viewportId,
-      annotationUID: annotation.annotationUID,
+    KeyImageTool.createAndAddAnnotation(viewport, {
+      data: { label: 'Demo Key Image' },
     });
   },
 });
