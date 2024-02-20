@@ -57,43 +57,11 @@ addButtonToToolbar({
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
+element.oncontextmenu = () => false;
 element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
-
-const info = document.createElement('div');
-content.appendChild(info);
-
-const rotationInfo = document.createElement('div');
-info.appendChild(rotationInfo);
-
-const flipHorizontalInfo = document.createElement('div');
-info.appendChild(flipHorizontalInfo);
-
-const flipVerticalInfo = document.createElement('div');
-info.appendChild(flipVerticalInfo);
-
-element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-
-  if (!viewport) {
-    return;
-  }
-
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
-
-  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
-  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
-  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
-});
 
 function createToolGroup(toolGroupId = 'default') {
   // Define a tool group, which defines how mouse events map to tool commands for

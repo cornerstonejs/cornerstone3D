@@ -34,7 +34,6 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   PlanarFreehandROITool,
-  KeyImageTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -66,7 +65,7 @@ const toolsNames = [
   CobbAngleTool.toolName,
   ArrowAnnotateTool.toolName,
   PlanarFreehandROITool.toolName,
-  KeyImageTool.toolName,
+  // KeyImageTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -95,43 +94,11 @@ addDropdownToToolbar({
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
+element.oncontextmenu = () => false;
 element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
-
-const info = document.createElement('div');
-content.appendChild(info);
-
-const rotationInfo = document.createElement('div');
-info.appendChild(rotationInfo);
-
-const flipHorizontalInfo = document.createElement('div');
-info.appendChild(flipHorizontalInfo);
-
-const flipVerticalInfo = document.createElement('div');
-info.appendChild(flipVerticalInfo);
-
-element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-
-  if (!viewport) {
-    return;
-  }
-
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
-
-  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
-  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
-  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
-});
 
 function registerTools() {
   // Add tools to Cornerstone3D
@@ -144,7 +111,6 @@ function registerTools() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(KeyImageTool);
 }
 
 function createToolGroup(toolGroupId = 'default') {
@@ -163,7 +129,6 @@ function createToolGroup(toolGroupId = 'default') {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
-  toolGroup.addTool(KeyImageTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -210,7 +175,7 @@ async function run() {
     type: ViewportType.WSI,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: <Types.Point3>[0.1, 0.1, 0.1],
     },
   };
 

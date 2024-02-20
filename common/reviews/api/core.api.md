@@ -2061,6 +2061,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     scaling: Scaling;
     // (undocumented)
+    scroll(delta: number, debounce: boolean, loop: boolean): void;
+    // (undocumented)
     setCamera(cameraInterface: ICamera): void;
     // (undocumented)
     setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
@@ -4287,6 +4289,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     resetProperties(): void;
     // (undocumented)
     resize: () => void;
+    // (undocumented)
+    scroll(delta: number): void;
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)

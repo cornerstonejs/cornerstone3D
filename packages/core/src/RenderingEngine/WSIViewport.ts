@@ -486,8 +486,14 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.map = viewer[_map];
     this.map.on(EVENT_POSTRENDER, this.postrender);
     this.resize();
-    this.microscopyElement.style.background = 'green';
     this.microscopyElement.innerText = '';
+    Object.assign(this.microscopyElement.style, {
+      '--ol-partial-background-color': 'rgba(127, 127, 127, 0.7)',
+      '--ol-foreground-color': '#000000',
+      '--ol-subtle-foreground-color': '#000',
+      '--ol-subtle-background-color': 'rgba(78, 78, 78, 0.5)',
+      background: 'none',
+    });
   }
 
   public postrender = () => {
@@ -499,6 +505,18 @@ class WSIViewport extends Viewport implements IWSIViewport {
       renderingEngineId: this.renderingEngineId,
     });
   };
+
+  /**
+   * Scrolls the image - for WSI, this changes the zoom ratio since different
+   * images are used to represent different zoom levels, although this also
+   * allows fractional zoom levels
+   */
+  public scroll(delta: number) {
+    const camera = this.getCamera();
+    this.setCamera({
+      parallelScale: camera.parallelScale * (1 + 0.1 * delta),
+    });
+  }
 
   public getRotation = () => 0;
 
