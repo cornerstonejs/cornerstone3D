@@ -62,6 +62,7 @@ import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCam
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import isEqual from '../utilities/isEqual'
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -871,11 +872,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         if (presetRGBPoints.length !== RGBPoints.length) {
             return false;
         }
+
         for (let i = 0; i < presetRGBPoints.length; i += 4) {
             if (
-                presetRGBPoints[i + 1] !== RGBPoints[i + 1] ||
-                presetRGBPoints[i + 2] !== RGBPoints[i + 2] ||
-                presetRGBPoints[i + 3] !== RGBPoints[i + 3]
+              !isEqual(presetRGBPoints.slice(i + 1, i + 4), RGBPoints.slice(i + 1, i + 4))
             ) {
                 return false;
             }
