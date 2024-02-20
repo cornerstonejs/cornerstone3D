@@ -7,7 +7,7 @@ export type PointInShape = {
   value: number;
   index: number;
   pointIJK: vec3;
-  pointLPS: vec3;
+  pointLPS: vec3 | number[];
 };
 
 export type PointInShapeCallback = ({
@@ -140,7 +140,7 @@ export default function pointInShapeCallback(
             value,
             index,
             pointIJK,
-            pointLPS: [currentPos[0], currentPos[1], currentPos[2]],
+            pointLPS: currentPos.slice(),
           });
           if (callback) {
             callback({ value, index, pointIJK, pointLPS: currentPos });
