@@ -173,6 +173,29 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'log',
+  onClick: () => {
+    const re = getRenderingEngine('myRenderingEngine');
+    const viewport = re.getVolumeViewports();
+
+    const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
+      CircleROIStartEndThresholdTool.toolName
+    ) as Array<string>;
+
+    if (!selectedAnnotationUIDs) {
+      throw new Error('No annotation selected ');
+    }
+
+    const annotationUID = selectedAnnotationUIDs[0];
+    const annotation = cornerstoneTools.annotation.state.getAnnotation(
+      annotationUID
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
+
+    console.debug(annotation);
+  },
+});
+
 /**
  * Runs the demo
  */

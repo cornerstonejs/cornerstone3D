@@ -13,6 +13,7 @@ import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
 import {
   addAnnotation,
+  removeAnnotation,
   getAnnotations,
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
@@ -24,9 +25,12 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import throttle from '../../utilities/throttle';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { hideElementCursor } from '../../cursors/elementCursor';
+import {
+  hideElementCursor,
+  resetElementCursor,
+} from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
 import {
   PublicToolProps,
   ToolProps,
@@ -107,8 +111,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       imageVolume = cache.getVolume(volumeId);
+
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -116,9 +121,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
     }
 
-    if (!referencedImageId) {
-      throw new Error('This tool does not work on non-acquisition planes');
-    }
+    // if (!referencedImageId) {
+    //   throw new Error('This tool does not work on non-acquisition planes');
+    // }
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
@@ -196,8 +201,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       newAnnotation: true,
       hasMoved: false,
     };
-    this._activateDraw(element);
 
+    this._activateDraw(element);
     hideElementCursor(element);
 
     evt.preventDefault();
@@ -205,6 +210,59 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
+  };
+
+  _endCallback = (evt: EventTypes.InteractionEventType): void => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
+      this.editData;
+    const { data } = annotation;
+
+    if (newAnnotation && !hasMoved) {
+      return;
+    }
+
+    // Circle ROI tool should reset its highlight to false on mouse up (as opposed
+    // to other tools that keep it highlighted until the user moves. The reason
+    // is that we use top-left and bottom-right handles to define the circle,
+    // and they are by definition not in the circle on mouse up.
+    annotation.highlighted = false;
+    data.handles.activeHandleIndex = null;
+
+    this._deactivateModify(element);
+    this._deactivateDraw(element);
+
+    resetElementCursor(element);
+
+    const enabledElement = getEnabledElement(element);
+
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeAnnotation(annotation.annotationUID);
+    }
+
+    const targetId = this.getTargetId(enabledElement.viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    }
+
+    triggerAnnotationRenderForViewportIds(
+      enabledElement.renderingEngine,
+      viewportIdsToRender
+    );
+
+    if (newAnnotation) {
+      triggerAnnotationCompleted(annotation);
+    }
   };
 
   /**
@@ -502,16 +560,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const volumeId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(volumeId.split('volumeId:')[1]);
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
-    }
 
     annotation.invalidated = false;
 
