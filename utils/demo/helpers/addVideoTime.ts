@@ -1,5 +1,7 @@
 import { Enums, Types } from '@cornerstonejs/core';
 
+const seconds = (time) => `${(time || 0).toFixed(1)} s`;
+
 /**
  * Adds a video time display after the given element.
  */
@@ -18,8 +20,6 @@ export default function addVideoTime(
   rangeElement.oninput = () => {
     viewport.setTime(Number(rangeElement.value));
   };
-
-  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 
   viewport.element.addEventListener(Enums.Events.STACK_NEW_IMAGE, (evt) => {
     const { time, duration } = evt.detail;

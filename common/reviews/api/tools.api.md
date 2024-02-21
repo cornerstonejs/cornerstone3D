@@ -483,6 +483,12 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
+    static createAndAddAnnotation(viewport: any, ...annotationBaseData: any[]): void;
+    // (undocumented)
+    static createAnnotation(...annotationBaseData: any[]): Annotation;
+    // (undocumented)
+    static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
+    // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
         styleSpecifier: StyleSpecifier;
@@ -3117,35 +3123,7 @@ export class KeyImageTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => {
-        annotationUID: string;
-        highlighted: boolean;
-        invalidated: boolean;
-        metadata: {
-            toolName: string;
-            viewPlaneNormal: Types_2.Point3;
-            viewUp: Types_2.Point3;
-            FrameOfReferenceUID: string;
-            referencedImageId: string;
-        };
-        data: {
-            text: string;
-            handles: {
-                points: Types_2.Point3[];
-                textBox: {
-                    hasMoved: boolean;
-                    worldPosition: Types_2.Point3;
-                    worldBoundingBox: {
-                        topLeft: Types_2.Point3;
-                        topRight: Types_2.Point3;
-                        bottomLeft: Types_2.Point3;
-                        bottomRight: Types_2.Point3;
-                    };
-                };
-            };
-            label: string;
-        };
-    };
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => Annotation;
     // (undocumented)
     cancel(): void;
     // (undocumented)

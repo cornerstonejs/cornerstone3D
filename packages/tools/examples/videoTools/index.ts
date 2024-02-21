@@ -3,16 +3,17 @@ import {
   Types,
   Enums,
   eventTarget,
-  triggerEvent,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
+  addToggleButtonToToolbar,
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   addManipulationBindings,
+  addVideoTime,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -39,8 +40,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
-
-const { annotationFrameRange } = cornerstoneTools.utilities;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -73,18 +72,6 @@ element.style.height = '500px';
 
 content.appendChild(element);
 
-const rangeDiv = document.createElement('div');
-rangeDiv.innerHTML =
-  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
-content.appendChild(rangeDiv);
-const rangeElement = document.getElementById('range') as HTMLInputElement;
-rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-
 const instructions = document.createElement('p');
 instructions.innerText = `Play/Pause button will toggle the playing of video
 Clear Frame Range clears and selected from range on playback
@@ -101,17 +88,14 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
-const baseEventDetail = {
-  viewportId,
-  renderingEngineId,
-};
 
 let viewport;
 
-const playButton = addButtonToToolbar({
+addToggleButtonToToolbar({
   id: 'play',
-  title: 'Pause',
-  onClick: (evt) => togglePlay(),
+  title: 'Play',
+  onClick: togglePlay,
+  defaultToggle: false,
 });
 
 const toolsNames = [
@@ -161,7 +145,6 @@ function togglePlay(toggle = undefined) {
   } else {
     viewport.pause();
   }
-  playButton.innerText = toggle ? 'Play' : 'Pause';
 }
 
 addButtonToToolbar({
@@ -173,6 +156,7 @@ addButtonToToolbar({
       cornerstoneTools.annotation.state.removeAnnotation(
         annotation.annotationUID
       );
+      viewport.render();
     }
   },
 });
@@ -223,6 +207,10 @@ function addAnnotationListeners() {
   );
   eventTarget.addEventListener(
     toolsEvents.ANNOTATION_COMPLETED,
+    annotationModifiedListener
+  );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_REMOVED,
     annotationModifiedListener
   );
 }
@@ -324,19 +312,8 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 25);
-
-  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
-
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
-    const { time, duration } = evt.detail;
-    rangeElement.value = time;
-    rangeElement.max = duration;
-    const timeElement = document.getElementById('time');
-    timeElement.innerText = seconds(time);
-    const remainingElement = document.getElementById('remaining');
-    remainingElement.innerText = seconds(duration - time);
-  });
+  await viewport.setVideo(videoId, 1);
+  addVideoTime(element, viewport);
 }
 
 run();
