@@ -62,7 +62,6 @@ import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCam
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -282,6 +281,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
+    // This configures the viewport to use the most recently applied colormap.
+    // However, this approach is not optimal when dealing with two volumes, as it prevents retrieval of the
+    // colormap for Volume A if Volume B's colormap was the last one applied.
     this.viewportProperties.colormap = colormap;
 
     if (!suppressEvents) {
@@ -792,7 +794,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     const {
-      colormap,
+      colormap: latestColormap,
       VOILUTFunction,
       interpolationType,
       invert,
@@ -819,6 +821,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
 
+    const volumeColormap = this.getColormap(applicableVolumeActorInfo);
+
+    let colormap;
+    if (volumeId && volumeColormap) {
+      colormap = volumeColormap;
+    } else {
+      colormap = latestColormap;
+    }
+
     return {
       colormap: colormap,
       voiRange: voiRange,
@@ -828,6 +839,72 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       slabThickness: slabThickness,
       rotation: rotation,
     };
+  };
+
+  /**
+   * This function extracts the nodes from the RGB Transfer Function, transforming each node's x, r, g, b properties
+   * into a unified array "RGB Points." Then, it compares these RGB Points—specifically the r, g, b values—with
+   * those in the predefined vtk colormap presets. Upon finding a matching set of r, g, b values, the function identifies and selects the
+   * corresponding colormap.
+   *
+   * Next, the function extracts an array of opacity points, formatted as a sequence of [x,y] pairs, where 'x' represents a value and
+   * 'y' represents its opacity. It iterates through this array to construct an opacity object that maps each value to its opacity.
+   *
+   * The function returns an object that includes the name of the identified colormap and the constructed opacity object.
+   * @param applicableVolumeActorInfo  - The volume actor information for the volume
+   * @returns colormap information for the volume if identified
+   */
+  private getColormap = (applicableVolumeActorInfo) => {
+    const { volumeActor } = applicableVolumeActorInfo;
+    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    const { nodes } = cfun.getState();
+    const RGBPoints = nodes.reduce((acc, node) => {
+      acc.push(node.x, node.r, node.g, node.b);
+      return acc;
+    }, []);
+    const colormaps = vtkColorMaps.rgbPresetNames.map((presetName) =>
+      vtkColorMaps.getPresetByName(presetName)
+    );
+    const matchedColormap = colormaps.find((colormap) => {
+      const { RGBPoints: presetRGBPoints } = colormap;
+      if (presetRGBPoints.length !== RGBPoints.length) {
+        return false;
+      }
+
+      for (let i = 0; i < presetRGBPoints.length; i += 4) {
+        if (
+          !isEqual(
+            presetRGBPoints.slice(i + 1, i + 4),
+            RGBPoints.slice(i + 1, i + 4)
+          )
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    if (!matchedColormap) {
+      return null;
+    }
+
+    const opacityPoints = volumeActor
+      .getProperty()
+      .getScalarOpacity(0)
+      .getDataPointer();
+
+    const opacity = [];
+    for (let i = 0; i < opacityPoints.length; i += 2) {
+      opacity.push({ value: opacityPoints[i], opacity: opacityPoints[i + 1] });
+    }
+
+    const colormap = {
+      name: matchedColormap.Name,
+      opacity: opacity,
+    };
+
+    return colormap;
   };
 
   /**

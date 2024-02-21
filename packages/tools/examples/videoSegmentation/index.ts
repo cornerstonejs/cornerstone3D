@@ -48,7 +48,7 @@ setTitleAndDescription(
   'Here we demonstrate how to render a labelmap based segmentation on a VideoViewport'
 );
 
-const size = '500px';
+const size = '1920px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -60,17 +60,9 @@ const element1 = document.createElement('div');
 element1.oncontextmenu = () => false;
 
 element1.style.width = size;
-element1.style.height = size;
+element1.style.height = '500px';
 
 viewportGrid.appendChild(element1);
-
-const element2 = document.createElement('div');
-element2.oncontextmenu = () => false;
-
-element2.style.width = size;
-element2.style.height = size;
-
-viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
@@ -97,8 +89,8 @@ const brushStrategies = {
 };
 
 const brushValues = [
-  brushInstanceNames.DynamicThreshold,
   brushInstanceNames.CircularBrush,
+  brushInstanceNames.DynamicThreshold,
   brushInstanceNames.CircularEraser,
 ];
 
@@ -186,7 +178,7 @@ function setupTools(toolGroupId) {
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(brushInstanceNames.DynamicThreshold, {
+  toolGroup.setToolActive(optionsValues[0], {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -232,7 +224,7 @@ async function run() {
 
   const imageIdsArray = [videoId];
 
-  await viewport.setVideo(videoId);
+  await viewport.setVideo(videoId, 1);
   addVideoTime(viewportGrid, viewport);
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();
