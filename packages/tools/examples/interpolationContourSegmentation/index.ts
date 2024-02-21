@@ -170,7 +170,7 @@ addDropdownToToolbar({
       });
 
       // Set the old tool passive
-      toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
+      toolGroup.setToolPassive(selectedToolName);
     }
     selectedToolName = <string>newSelectedToolName;
   },
@@ -299,10 +299,6 @@ function addBindings(toolGroupId) {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Shift + Left Click
-        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });
