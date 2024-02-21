@@ -5,6 +5,7 @@ import {
   setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  getEnabledElement,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,7 +32,6 @@ const {
 
 const { createPresentationViewSynchronizer } = synchronizers;
 
-const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
@@ -44,6 +44,7 @@ const viewportId2 = 'CT_SAGITTAL';
 const viewportId3 = 'CT_CORONAL';
 const viewportId4 = 'CT_STACK';
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
+let viewport;
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const synchronizerOptions = {
@@ -86,6 +87,12 @@ elements.forEach((element) => {
   // Disable right click context menu so we can have right click tools
   element.oncontextmenu = (e) => e.preventDefault();
   viewportGrid.appendChild(element);
+  element.onclick = (evt) => {
+    const clickViewport = getEnabledElement(element)?.viewport;
+    viewport = clickViewport;
+    console.log('Setting click viewport to', viewport.id);
+    return false;
+  };
 });
 
 content.appendChild(viewportGrid);
@@ -98,6 +105,76 @@ instructions.innerText = `
 
 content.append(instructions);
 
+const rightDisplayArea = {
+  storeAsInitialCamera: true,
+  imageArea: [0.8, 0.8],
+  imageCanvasPoint: {
+    imagePoint: [0, 0.5],
+    canvasPoint: [0, 0.5],
+  },
+};
+
+const leftDisplayArea = {
+  storeAsInitialCamera: true,
+  imageArea: [0.8, 0.8],
+  imageCanvasPoint: {
+    imagePoint: [1, 0.5],
+    canvasPoint: [1, 0.5],
+  },
+};
+
+const centerDisplayArea = {
+  storeAsInitialCamera: true,
+  imageArea: [1, 1],
+  imageCanvasPoint: {
+    imagePoint: [0.5, 0.5],
+    canvasPoint: [0.5, 0.5],
+  },
+};
+
+const centerSmallDisplayArea = {
+  storeAsInitialCamera: true,
+  imageArea: [2, 2],
+  imageCanvasPoint: {
+    imagePoint: [0.5, 0.5],
+    canvasPoint: [0.5, 0.5],
+  },
+};
+
+const centerHeight = {
+  storeAsInitialCamera: true,
+  imageArea: [0.1, 1],
+  imageCanvasPoint: {
+    imagePoint: [0.5, 0.5],
+    canvasPoint: [0.5, 0.5],
+  },
+};
+
+const displayAreaOptions = new Map();
+displayAreaOptions.set('Center', centerDisplayArea);
+displayAreaOptions.set('Left', leftDisplayArea);
+displayAreaOptions.set('Right', rightDisplayArea);
+displayAreaOptions.set('Center Small', centerSmallDisplayArea);
+displayAreaOptions.set('Center Fit Heigth', centerHeight);
+
+addDropdownToToolbar({
+  id: 'displayArea',
+  options: {
+    values: Array.from(displayAreaOptions.keys()),
+    defaultValue: displayAreaOptions.keys().next().value,
+  },
+  onSelectedValueChange: (value) => {
+    const displayArea = displayAreaOptions.get(value);
+    console.log(
+      'Setting display area',
+      viewport.id,
+      value,
+      JSON.stringify(displayArea)
+    );
+    viewport.setDisplayArea(displayArea);
+    viewport.render();
+  },
+});
 // ============================= //
 
 addToggleButtonToToolbar({
@@ -188,7 +265,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>[0, 0, 0.5],
       },
     },
     {
@@ -197,7 +274,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>[0.5, 0.5, 0],
       },
     },
     {
@@ -206,7 +283,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>[0, 0.5, 0],
       },
     },
     {
@@ -240,6 +317,8 @@ async function run() {
     viewportId4
   ) as Types.IStackViewport;
   await stackViewport.setStack(imageIds);
+  // Assign the initial viewport
+  viewport = stackViewport;
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

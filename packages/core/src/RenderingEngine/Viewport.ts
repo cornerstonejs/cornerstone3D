@@ -604,6 +604,12 @@ class Viewport implements IViewport {
   ): void {
     const { storeAsInitialCamera } = displayArea;
 
+    // Instead of storing the camera itself, if initial camera is set,
+    // then store the display area as the baseline display area.
+    if (storeAsInitialCamera) {
+      this.options.displayArea = displayArea;
+    }
+
     // Setup the current camera as the fit to canvas camera as the one that is
     // used as the base for calculations, but it isn't final, so don't fire
     // events because the camera is still changing.
@@ -611,10 +617,37 @@ class Viewport implements IViewport {
 
     const { imageArea, imageCanvasPoint } = displayArea;
 
+    const devicePixelRatio = window?.devicePixelRatio || 1;
+    const imageData = this.getDefaultImageData();
+    const canvasWidth = this.sWidth / devicePixelRatio;
+    const canvasHeight = this.sHeight / devicePixelRatio;
+    const dimensions = imageData.getDimensions();
+    const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+    const canvasEdge = this.worldToCanvas(
+      imageData.indexToWorld([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+      ])
+    );
+
+    const canvasImage = [
+      canvasEdge[0] - canvasZero[0],
+      canvasEdge[1] - canvasZero[1],
+    ];
+    const [imgWidth, imgHeight] = canvasImage;
+
     let zoom = 1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+      const requireX = Math.abs(
+        (areaX * canvasImage[0] * this.insetImageMultiplier) / canvasWidth
+      );
+      const requireY = Math.abs(
+        (areaY * canvasImage[1] * this.insetImageMultiplier) / canvasHeight
+      );
+
+      zoom = Math.min(this.getZoom() / requireX, this.getZoom() / requireY);
       // Don't set as initial camera because then the zoom interactions don't
       // work consistently.
       // TODO: Add a better method to handle initial camera
@@ -622,33 +655,16 @@ class Viewport implements IViewport {
     }
 
     // getting the image info
-    const imageData = this.getDefaultImageData();
     if (imageCanvasPoint && imageData) {
       const { imagePoint, canvasPoint } = imageCanvasPoint;
       const [canvasX, canvasY] = canvasPoint;
-      const devicePixelRatio = window?.devicePixelRatio || 1;
-      const validateCanvasPanX = this.sWidth / devicePixelRatio;
-      const validateCanvasPanY = this.sHeight / devicePixelRatio;
-      const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
-      const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
-      const dimensions = imageData.getDimensions();
-      const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
-      const canvasEdge = this.worldToCanvas(
-        imageData.indexToWorld([
-          dimensions[0] - 1,
-          dimensions[1] - 1,
-          dimensions[2],
-        ])
-      );
-      const canvasImage = [
-        canvasEdge[0] - canvasZero[0],
-        canvasEdge[1] - canvasZero[1],
-      ];
-      const [imgWidth, imgHeight] = canvasImage;
+      const canvasPanX = canvasWidth * (canvasX - 0.5);
+      const canvasPanY = canvasHeight * (canvasY - 0.5);
+
       const [imageX, imageY] = imagePoint;
       const imagePanX =
-        (zoom * imgWidth * (0.5 - imageX) * validateCanvasPanY) / imgHeight;
-      const imagePanY = zoom * validateCanvasPanY * (0.5 - imageY);
+        (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
+      const imagePanY = zoom * canvasHeight * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
@@ -659,17 +675,11 @@ class Viewport implements IViewport {
       this.setPan(deltaPoint2);
     }
 
-    // Instead of storing the camera itself, if initial camera is set,
-    // then store the display area as the baseline display area.
-    if (storeAsInitialCamera) {
-      this.options.displayArea = displayArea;
-    }
-
     if (!suppressEvents) {
       const eventDetail: EventTypes.DisplayAreaModifiedEventDetail = {
         viewportId: this.id,
         displayArea: displayArea,
-        storeAsInitialCamera: storeAsInitialCamera,
+        storeAsInitialCamera,
       };
 
       triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, eventDetail);

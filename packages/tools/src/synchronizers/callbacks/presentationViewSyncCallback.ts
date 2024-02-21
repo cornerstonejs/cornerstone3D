@@ -1,5 +1,4 @@
 import { getRenderingEngine, Types } from '@cornerstonejs/core';
-import { Synchronizer } from '../../store';
 import { PresentationViewSynchronizerOptions } from '../synchronizers/createPresentationViewSynchronizer';
 
 /**
