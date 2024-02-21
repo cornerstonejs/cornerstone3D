@@ -62,6 +62,7 @@ import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCam
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import { getColormap, getColormapNames } from '../utilities/colormap';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -859,9 +860,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       acc.push(node.x, node.r, node.g, node.b);
       return acc;
     }, []);
-    const colormaps = vtkColorMaps.rgbPresetNames.map((presetName) =>
+    const colormapsVTK = vtkColorMaps.rgbPresetNames.map((presetName) =>
       vtkColorMaps.getPresetByName(presetName)
     );
+    const colormapsCS3D = getColormapNames().map((colormapName) => getColormap(colormapName));
+    const colormaps = colormapsVTK.concat(colormapsCS3D);
     const matchedColormap = colormaps.find((colormap) => {
       const { RGBPoints: presetRGBPoints } = colormap;
       if (presetRGBPoints.length !== RGBPoints.length) {
