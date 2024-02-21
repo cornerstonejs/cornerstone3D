@@ -114,6 +114,15 @@ setTitleAndDescription(
 const size = '800px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
+const activeToolBindings = [
+  {
+    mouseButton: MouseBindings.Primary, // Left Click
+  },
+  {
+    mouseButton: MouseBindings.Primary, // Left Click+Shift
+    modifierKey: KeyboardBindings.Shift,
+  },
+];
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
@@ -162,15 +171,13 @@ addDropdownToToolbar({
 
       // Set the new tool active
       toolGroup.setToolActive(newSelectedToolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Primary, // Left Click
-          },
-        ],
+        bindings: activeToolBindings,
       });
 
       // Set the old tool passive
-      toolGroup.setToolPassive(selectedToolName);
+      toolGroup.setToolPassive(selectedToolName, {
+        removeAllBindings: activeToolBindings,
+      });
     }
     selectedToolName = <string>newSelectedToolName;
   },
@@ -296,11 +303,7 @@ function addBindings(toolGroupId) {
 
   // Set the initial state of the tools.
   toolGroup.setToolActive(interpolationToolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+    bindings: activeToolBindings,
   });
 }
 /**
