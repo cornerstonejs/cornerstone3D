@@ -31,6 +31,7 @@ export default function createPolylineToolData(
     annotationUID: undefined,
     cachedStats: {},
     childAnnotationUIDs: [],
+    parentAnnotationUID: undefined,
   });
   Object.assign(annotation.data, {
     handles: {

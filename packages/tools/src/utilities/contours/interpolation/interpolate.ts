@@ -10,6 +10,8 @@ import type { AnnotationInterpolationCompletedEventDetail } from '../../../types
 import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
 import selectHandles from './selectHandles';
+import updateChildInterpolationUID from './updateChildInterpolationUID';
+import { createPolylineHole } from '../../../eventListeners/annotations/contourSegmentation/contourSegmentationCompleted';
 
 const { PointsManager } = utilities;
 
@@ -70,7 +72,8 @@ function interpolate(viewportData: InterpolationViewportData) {
  * @returns null
  */
 function startInterpolation(viewportData: InterpolationViewportData) {
-  const toolData = viewportData.annotation;
+  const { annotation: toolData } = viewportData;
+  updateChildInterpolationUID(toolData);
   const { interpolationData, interpolationList } =
     findAnnotationsForInterpolation(toolData, viewportData) || {};
 
@@ -129,12 +132,10 @@ function _linearlyInterpolateBetween(
   interpolationData,
   eventData
 ) {
-  const c1 = _generateClosedContour(
-    interpolationData.get(annotationPair[0])[0].data.contour.polyline
-  );
-  const c2 = _generateClosedContour(
-    interpolationData.get(annotationPair[1])[0].data.contour.polyline
-  );
+  const annotation0 = interpolationData.get(annotationPair[0])[0];
+  const annotation1 = interpolationData.get(annotationPair[1])[0];
+  const c1 = _generateClosedContour(annotation0.data.contour.polyline);
+  const c2 = _generateClosedContour(annotation1.data.contour.polyline);
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
   c1Interp.kIndex = annotationPair[0];
@@ -189,6 +190,8 @@ function _linearlyInterpolateContour(
 ) {
   const [startIndex, endIndex] = annotationPair;
   const zInterp = (sliceIndex - startIndex) / (endIndex - startIndex);
+  const annotation0 = interpolationData.get(startIndex)[0];
+  const annotation1 = interpolationData.get(endIndex)[0];
   const interpolated3DPoints = _generateInterpolatedOpenContour(
     c1Interp,
     c2Interp,
@@ -196,9 +199,7 @@ function _linearlyInterpolateContour(
     c1HasMoreNodes
   );
 
-  const nearestAnnotation = interpolationData.get(
-    annotationPair[zInterp > 0.5 ? 1 : 0]
-  )[0];
+  const nearestAnnotation = zInterp > 0.5 ? annotation1 : annotation0;
 
   const handlePoints = selectHandles(interpolated3DPoints);
 
@@ -255,8 +256,41 @@ function _addInterpolatedContour(
     interpolatedAnnotation,
     referencedToolData
   );
+
+  const { parentAnnotationUID } = referencedToolData;
+  if (parentAnnotationUID) {
+    const parentReferenced =
+      annotationState.state.getAnnotation(parentAnnotationUID);
+    const parentAnnotation = _findExistingAnnotation(
+      parentReferenced,
+      sliceIndex,
+      eventData
+    );
+    createPolylineHole(viewport, parentAnnotation, interpolatedAnnotation);
+  }
 }
 
+/**
+ * Finds an existing annotation on the given slide, with the interpolation UID as
+ * specified in the referenced tool data.
+ */
+function _findExistingAnnotation(referencedToolData, sliceIndex, eventData) {
+  const { viewport } = eventData;
+  const annotations = annotationState.state.getAnnotations(
+    referencedToolData.metadata.toolName,
+    viewport.element
+  );
+
+  for (let i = 0; i < annotations.length; i++) {
+    const annotation = annotations[i] as InterpolationROIAnnotation;
+    if (
+      annotation.interpolationUID === referencedToolData.interpolationUID &&
+      annotation.metadata.sliceIndex === sliceIndex
+    ) {
+      return annotation;
+    }
+  }
+}
 /**
  * _editInterpolatedContour - Edits an interpolated polygon on the imageId
  * that corresponds to the specified ROIContour.
@@ -266,7 +300,6 @@ function _addInterpolatedContour(
  * @param referencedToolData - type, The toolData of another polygon in the
  * ROIContour, to assign appropriate metadata to the new polygon.
  * @param eventData - object
- * @returns null
  */
 function _editInterpolatedContour(
   interpolated3DPoints: PointsArray3,
@@ -275,46 +308,23 @@ function _editInterpolatedContour(
   referencedToolData,
   eventData
 ) {
-  const { viewport } = eventData;
-  const annotations = annotationState.state.getAnnotations(
-    referencedToolData.metadata.toolName,
-    viewport.element
+  const oldAnnotationData = _findExistingAnnotation(
+    referencedToolData,
+    sliceIndex,
+    eventData
   );
 
-  // Find the index of the polygon on this slice corresponding to
-  // The ROIContour.
-  let toolDataIndex;
-
-  for (let i = 0; i < annotations.length; i++) {
-    const annotation = annotations[i] as InterpolationROIAnnotation;
-    if (
-      annotation.interpolationUID === referencedToolData.interpolationUID &&
-      annotation.metadata.sliceIndex === sliceIndex
-    ) {
-      toolDataIndex = i;
-      break;
-    }
-  }
-  if (toolDataIndex === undefined) {
-    console.warn(
-      'Unable to find referenced slice index in the tool data',
-      sliceIndex,
-      annotations
-    );
-    return;
-  }
-
-  const oldToolData = annotations[toolDataIndex] as InterpolationROIAnnotation;
   const points = interpolated3DPoints.points;
   const interpolatedAnnotation = createPolylineToolData(
     points,
     handlePoints,
-    oldToolData
+    oldAnnotationData
   );
-  // To update existing annotation, not intend to add or remove
-  interpolatedAnnotation.annotationUID = oldToolData.annotationUID;
-  annotationState.state.removeAnnotation(oldToolData.annotationUID);
-  annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
+  // Does a real update here instead of an add/remove, which caused delete issues in child annotations
+  Object.assign(oldAnnotationData, {
+    metadata: interpolatedAnnotation.metadata,
+    data: interpolatedAnnotation.data,
+  });
 }
 
 /**
