@@ -41,7 +41,6 @@ const {
   Enums: csToolsEnums,
   segmentation,
 } = cornerstoneTools;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define various constants for the tool definition
@@ -228,19 +227,14 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
+    toolGroup.setToolPassive(selectedToolName, {
+      removeAllBindings:
+        PlanarFreehandContourSegmentationTool.activeToolBindings,
+    });
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-        {
-          mouseButton: MouseBindings.Primary, // Shift + Left Click
-          modifierKey: KeyboardBindings.Shift,
-        },
-      ],
+      bindings: PlanarFreehandContourSegmentationTool.activeToolBindings,
     });
 
     selectedToolName = <string>newSelectedToolName;
@@ -342,11 +336,7 @@ async function run() {
   }
 
   toolGroup.setToolActive(toolNames[0], {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+    bindings: PlanarFreehandContourSegmentationTool.activeToolBindings,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM

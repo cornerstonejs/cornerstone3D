@@ -210,15 +210,7 @@ addDropdownToToolbar({
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-        {
-          mouseButton: MouseBindings.Primary, // Left Click+Shift
-          modifierKey: KeyboardBindings.Shift,
-        },
-      ],
+      bindings: SplineContourSegmentationTool.activeToolBindings,
     });
 
     selectedToolName = <string>newSelectedToolName;
@@ -366,19 +358,13 @@ async function run() {
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(splineToolsNames[0], {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Left Click+Shift
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
+    bindings: SplineContourSegmentationTool.activeToolBindings,
   });
 
   // Spline curves may be converted into freehand contours when they overlaps (append/remove)
-  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
+  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName, {
+    removeAllBindings: SplineContourSegmentationTool.activeToolBindings,
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

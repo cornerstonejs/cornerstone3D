@@ -33,7 +33,6 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType, InterpolationType } = Enums;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -114,15 +113,8 @@ setTitleAndDescription(
 const size = '800px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
-const activeToolBindings = [
-  {
-    mouseButton: MouseBindings.Primary, // Left Click
-  },
-  {
-    mouseButton: MouseBindings.Primary, // Left Click+Shift
-    modifierKey: KeyboardBindings.Shift,
-  },
-];
+const activeToolBindings =
+  PlanarFreehandContourSegmentationTool.activeToolBindings;
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
