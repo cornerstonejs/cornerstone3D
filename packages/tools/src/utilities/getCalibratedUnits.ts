@@ -173,6 +173,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
+    calibrationType = calibration?.type;
   }
 
   return {
