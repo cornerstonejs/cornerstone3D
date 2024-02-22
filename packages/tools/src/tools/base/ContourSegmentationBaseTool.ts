@@ -26,26 +26,12 @@ import {
 } from '../../utilities/contourSegmentation';
 import { getToolGroupIdsWithSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
-import { MouseBindings, KeyboardBindings } from '../../enums';
 
 /**
  * A base contour segmentation class responsible for rendering, registering
  * and unregister contour segmentation annotations.
  */
 abstract class ContourSegmentationBaseTool extends ContourBaseTool {
-  /**
-   * Defines the bindings to use for contour segmentations when allowing holes
-   */
-  public static activeToolBindings = [
-    {
-      mouseButton: MouseBindings.Primary, // Left Click
-    },
-    {
-      mouseButton: MouseBindings.Primary, // Left Click+Shift
-      modifierKey: KeyboardBindings.Shift,
-    },
-  ];
-
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
     if (this.configuration.interpolation?.enabled) {

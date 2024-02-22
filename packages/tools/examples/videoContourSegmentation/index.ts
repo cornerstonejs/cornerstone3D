@@ -13,6 +13,7 @@ import {
   getLocalUrl,
   addVideoTime,
   addSegmentIndexDropdown,
+  contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -228,13 +229,12 @@ addDropdownToToolbar({
 
     // Set the old tool passive
     toolGroup.setToolPassive(selectedToolName, {
-      removeAllBindings:
-        PlanarFreehandContourSegmentationTool.activeToolBindings,
+      removeAllBindings: contourSegmentationToolBindings,
     });
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
-      bindings: PlanarFreehandContourSegmentationTool.activeToolBindings,
+      bindings: contourSegmentationToolBindings,
     });
 
     selectedToolName = <string>newSelectedToolName;
@@ -336,7 +336,7 @@ async function run() {
   }
 
   toolGroup.setToolActive(toolNames[0], {
-    bindings: PlanarFreehandContourSegmentationTool.activeToolBindings,
+    bindings: contourSegmentationToolBindings,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM

@@ -10,6 +10,7 @@ import {
   initDemo,
   setTitleAndDescription,
   addManipulationBindings,
+  contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -210,7 +211,7 @@ addDropdownToToolbar({
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
-      bindings: SplineContourSegmentationTool.activeToolBindings,
+      bindings: contourSegmentationToolBindings,
     });
 
     selectedToolName = <string>newSelectedToolName;
@@ -358,12 +359,12 @@ async function run() {
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(splineToolsNames[0], {
-    bindings: SplineContourSegmentationTool.activeToolBindings,
+    bindings: contourSegmentationToolBindings,
   });
 
   // Spline curves may be converted into freehand contours when they overlaps (append/remove)
   toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName, {
-    removeAllBindings: SplineContourSegmentationTool.activeToolBindings,
+    removeAllBindings: contourSegmentationToolBindings,
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM

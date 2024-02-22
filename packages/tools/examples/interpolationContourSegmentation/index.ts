@@ -11,6 +11,7 @@ import {
   addButtonToToolbar,
   addDropdownToToolbar,
   addManipulationBindings,
+  contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -113,8 +114,6 @@ setTitleAndDescription(
 const size = '800px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
-const activeToolBindings =
-  PlanarFreehandContourSegmentationTool.activeToolBindings;
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
@@ -163,12 +162,12 @@ addDropdownToToolbar({
 
       // Set the new tool active
       toolGroup.setToolActive(newSelectedToolName, {
-        bindings: activeToolBindings,
+        bindings: contourSegmentationToolBindings,
       });
 
       // Set the old tool passive
       toolGroup.setToolPassive(selectedToolName, {
-        removeAllBindings: activeToolBindings,
+        removeAllBindings: contourSegmentationToolBindings,
       });
     }
     selectedToolName = <string>newSelectedToolName;
@@ -295,7 +294,7 @@ function addBindings(toolGroupId) {
 
   // Set the initial state of the tools.
   toolGroup.setToolActive(interpolationToolName, {
-    bindings: activeToolBindings,
+    bindings: contourSegmentationToolBindings,
   });
 }
 /**
