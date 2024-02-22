@@ -18,7 +18,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
-import reverseIfAntiClockwise from '../../../utilities/contours/reverseIfAntiClockwise';
+import { ContourWindingDirection } from '../../../types/ContourAnnotation';
 
 const {
   addCanvasPointsToArray,
@@ -234,19 +234,16 @@ function completeDrawClosedContour(
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const clockwise = this.configuration.makeClockWise
-    ? reverseIfAntiClockwise(canvasPoints)
-    : canvasPoints;
-
   const updatedPoints = shouldSmooth(this.configuration, annotation)
-    ? getInterpolatedPoints(this.configuration, clockwise)
-    : clockwise;
+    ? getInterpolatedPoints(this.configuration, canvasPoints)
+    : canvasPoints;
 
   this.updateContourPolyline(
     annotation,
     {
       points: updatedPoints,
       closed: true,
+      targetWindingDirection: ContourWindingDirection.Clockwise,
     },
     viewport
   );

@@ -55,8 +55,8 @@ export default function createPolylineToolData(
       },
     },
     contour: {
+      ...referencedToolData.data.contour,
       polyline,
-      closed: true,
     },
   });
 
