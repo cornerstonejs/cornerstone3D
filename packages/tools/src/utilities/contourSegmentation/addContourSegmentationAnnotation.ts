@@ -8,6 +8,10 @@ import { ContourSegmentationAnnotation } from '../../types';
 export function addContourSegmentationAnnotation(
   annotation: ContourSegmentationAnnotation
 ) {
+  if (annotation.parentAnnotationUID) {
+    // Don't add it for parent annotations - this happens during interpolation
+    return;
+  }
   if (!annotation.data.segmentation) {
     throw new Error(
       'addContourSegmentationAnnotation: annotation does not have a segmentation data'

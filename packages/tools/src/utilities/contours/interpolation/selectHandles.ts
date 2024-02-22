@@ -21,7 +21,7 @@ export default function selectHandles(
   const { sources: destPoints } = handles;
   const { length, sources: sourcePoints = [] } = polyline;
   // The distance used for figuring out the local angle of a line
-  const distance = 6;
+  const distance = 5;
   if (length < distance * 3) {
     return polyline.subselect(handleCount);
   }
@@ -29,8 +29,9 @@ export default function selectHandles(
   // variation between points in terms of the distance of a line angle, but
   // also not too many handles either.
   // On average, we get twice the interval between handles, so double the length here.
+  // Or, choose a longer interval if the handle count would have too many handles (too short an interval)
   const interval = Math.floor(
-    Math.max((2 * length) / handleCount, distance * 5)
+    Math.max((2 * length) / handleCount, distance * 2)
   );
   sourcePoints.forEach(() =>
     destPoints.push(PointsManager.create3(handleCount))

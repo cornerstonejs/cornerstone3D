@@ -13,6 +13,7 @@ import {
   getLocalUrl,
   addVideoTime,
   addSegmentIndexDropdown,
+  contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -41,7 +42,6 @@ const {
   Enums: csToolsEnums,
   segmentation,
 } = cornerstoneTools;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define various constants for the tool definition
@@ -228,19 +228,13 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
+    toolGroup.setToolPassive(selectedToolName, {
+      removeAllBindings: contourSegmentationToolBindings,
+    });
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-        {
-          mouseButton: MouseBindings.Primary, // Shift + Left Click
-          modifierKey: KeyboardBindings.Shift,
-        },
-      ],
+      bindings: contourSegmentationToolBindings,
     });
 
     selectedToolName = <string>newSelectedToolName;
@@ -342,11 +336,7 @@ async function run() {
   }
 
   toolGroup.setToolActive(toolNames[0], {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+    bindings: contourSegmentationToolBindings,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
