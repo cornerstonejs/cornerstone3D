@@ -173,7 +173,13 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
-    calibrationType = calibration?.type;
+  }
+
+  // everything except REGION/Uncalibratted
+  const types = [CalibrationTypes.ERMF, CalibrationTypes.USER, CalibrationTypes.ERROR, CalibrationTypes.PROJECTION];
+
+  if (types.includes(calibration?.type)) {
+      calibrationType = calibration.type;
   }
 
   return {
