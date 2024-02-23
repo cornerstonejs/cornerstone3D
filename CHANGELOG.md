@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.64.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.0...v1.64.1) (2024-02-23)
+
+### Bug Fixes
+
+- **calibration tool:** fix calibration type not being rendered on measurements ([#1117](https://github.com/cornerstonejs/cornerstone3D/issues/1117)) ([2ff9dd7](https://github.com/cornerstonejs/cornerstone3D/commit/2ff9dd75ed32a52fb57f147be5de59ec761b51d7))
+
 # [1.64.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.5...v1.64.0) (2024-02-22)
 
 ### Features
