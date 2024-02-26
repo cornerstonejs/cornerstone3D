@@ -51,6 +51,6 @@
     },
     "devDependencies": {
         "@cornerstonejs/core": "^1.64.2",
-        "@cornerstonejs/streaming-image-volume-loader": "^1.64.2",
+        "@cornerstonejs/streaming-image-volume-loader": "^1.64.2"
     }
 }
