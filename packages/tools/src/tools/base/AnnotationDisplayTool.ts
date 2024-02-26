@@ -58,7 +58,8 @@ abstract class AnnotationDisplayTool extends BaseTool {
    */
   filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
-    annotations: Annotations
+    annotations: Annotations,
+    samePlan?: boolean
   ): Annotations | undefined {
     if (!annotations || !annotations.length) {
       return;
@@ -67,7 +68,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    return filterAnnotationsForDisplay(viewport, annotations);
+    return filterAnnotationsForDisplay(viewport, annotations, null, samePlan);
   }
 
   /**

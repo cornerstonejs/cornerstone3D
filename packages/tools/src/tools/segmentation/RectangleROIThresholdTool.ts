@@ -96,6 +96,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       );
     }
 
+    console.debug(referencedImageId)
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
     // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to
     // decide on the active segmentIndex, active segmentationIndex etc.
@@ -182,6 +183,8 @@ class RectangleROIThresholdTool extends RectangleROITool {
       annotations
     );
 
+    console.debug(annotations)
+
     if (!annotations?.length) {
       return renderStatus;
     }
@@ -197,7 +200,6 @@ class RectangleROIThresholdTool extends RectangleROITool {
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
       styleSpecifier.annotationUID = annotationUID;
 
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
