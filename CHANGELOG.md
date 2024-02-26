@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.65.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.3...v1.65.0) (2024-02-26)
+
+### Features
+
+- **colormap:** add colormap to VOI synchronizer ([#1125](https://github.com/cornerstonejs/cornerstone3D/issues/1125)) ([be0d166](https://github.com/cornerstonejs/cornerstone3D/commit/be0d16641aaec5f1cc5aa052ae53148103a17a39))
+
+## [1.64.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.2...v1.64.3) (2024-02-26)
+
+### Bug Fixes
+
+- **bundles:** try to bundle adapters correctly ([#1124](https://github.com/cornerstonejs/cornerstone3D/issues/1124)) ([143e2b5](https://github.com/cornerstonejs/cornerstone3D/commit/143e2b5c8a7e4955f17c4483991ef591f07f452f))
+
 ## [1.64.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.1...v1.64.2) (2024-02-26)
 
 ### Bug Fixes
