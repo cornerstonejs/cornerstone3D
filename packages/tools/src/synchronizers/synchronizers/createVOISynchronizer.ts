@@ -26,7 +26,10 @@ export default function createVOISynchronizer(
     synchronizerName,
     Enums.Events.VOI_MODIFIED,
     voiSyncCallback,
-    options
+    {
+      auxiliaryEventNames: [Enums.Events.COLORMAP_MODIFIED],
+      ...options,
+    }
   );
 
   return VOISynchronizer;

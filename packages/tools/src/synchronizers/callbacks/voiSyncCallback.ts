@@ -23,7 +23,7 @@ export default function voiSyncCallback(
   options?: any
 ): void {
   const eventDetail = voiModifiedEvent.detail;
-  const { volumeId, range, invertStateChanged, invert } = eventDetail;
+  const { volumeId, range, invertStateChanged, invert, colormap } = eventDetail;
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -37,6 +37,7 @@ export default function voiSyncCallback(
     | Types.VolumeViewportProperties
     | Types.StackViewportProperties = {
     voiRange: range,
+    colormap,
   };
 
   if (options?.syncInvertState && invertStateChanged) {
