@@ -356,6 +356,12 @@ class VolumeViewport extends BaseVolumeViewport {
   public getCurrentImageIdIndex = (volumeId?: string): number => {
     const { viewPlaneNormal, focalPoint } = this.getCamera();
 
+    const imageData = this.getImageData(volumeId);
+
+    if (!imageData) {
+      return;
+    }
+
     const { origin, direction, spacing } = this.getImageData(volumeId);
 
     const spacingInNormal = getSpacingInNormalDirection(

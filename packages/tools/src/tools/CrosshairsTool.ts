@@ -311,6 +311,28 @@ class CrosshairsTool extends AnnotationTool {
     });
   }
 
+  resetCrosshairs = () => {
+    const viewportsInfo = this._getViewportsInfo();
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      const { viewport } = enabledElement;
+      const { element } = viewport;
+      let annotations = this._getAnnotations(enabledElement);
+      annotations = this.filterInteractableAnnotationsForElement(
+        element,
+        annotations
+      );
+      if (annotations.length) {
+        removeAnnotation(annotations[0].annotationUID);
+      }
+    });
+
+    this.computeToolCenter(viewportsInfo);
+  };
+
   /**
    * When activated, it initializes the crosshairs. It begins by computing
    * the intersection of viewports associated with the crosshairs instance.
