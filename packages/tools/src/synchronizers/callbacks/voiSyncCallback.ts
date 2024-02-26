@@ -19,7 +19,7 @@ export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
-  voiModifiedEvent: Types.EventTypes.VoiModifiedEvent,
+  voiModifiedEvent: Types.EventTypes.VoiModifiedEvent | Types.EventTypes.ColormapModifiedEvent,
   options?: any
 ): void {
   const eventDetail = voiModifiedEvent.detail;
