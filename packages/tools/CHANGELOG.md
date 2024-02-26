@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.64.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.1...v1.64.2) (2024-02-26)
+
+### Bug Fixes
+
+- **IToolGroup:** ttoolName typo in addToolInstance parameter ([#1118](https://github.com/cornerstonejs/cornerstone3D/issues/1118)) ([d860143](https://github.com/cornerstonejs/cornerstone3D/commit/d86014395cbed39bab45bb7f2431f779cf5cbcc8))
+
 ## [1.64.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.0...v1.64.1) (2024-02-23)
 
 ### Bug Fixes
