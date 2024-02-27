@@ -99,41 +99,7 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const brushInstanceNames = {
-  ThresholdCircle: 'ThresholdCircle',
-  CircularBrush: 'CircularBrush',
-  CircularEraser: 'CircularEraser',
-  SphereBrush: 'SphereBrush',
-  SphereEraser: 'SphereEraser',
-  ScissorsEraser: 'ScissorsEraser',
-};
-
-const brushStrategies = {
-  [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
-  [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
-  [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
-  [brushInstanceNames.ThresholdCircle]: 'THRESHOLD_INSIDE_CIRCLE',
-  [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE',
-};
-
-const brushValues = [
-  brushInstanceNames.ThresholdCircle,
-  brushInstanceNames.CircularBrush,
-  brushInstanceNames.CircularEraser,
-  brushInstanceNames.SphereBrush,
-  brushInstanceNames.SphereEraser,
-];
-
-const optionsValues = [
-  ...brushValues,
-  RectangleScissorsTool.toolName,
-  CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
-  brushInstanceNames.ScissorsEraser,
-  PaintFillTool.toolName,
-];
-
+const interpolationTools = new Map<string, any>();
 const previewColors = {
   0: [255, 255, 255, 128],
   1: [0, 255, 255, 255],
@@ -142,35 +108,12 @@ const preview = {
   enabled: true,
   previewColors,
 };
-
-// ============================= //
-addDropdownToToolbar({
-  options: { values: optionsValues, defaultValue: BrushTool.toolName },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the currently active tool disabled
-    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
-
-    if (toolName) {
-      toolGroup.setToolDisabled(toolName);
-    }
-
-    if (brushValues.includes(name)) {
-      toolGroup.setToolActive(name, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    } else {
-      const toolName = name;
-
-      toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    }
+const configuration = {
+  preview,
+  strategySpecificConfiguration: {
+    useCenterSegmentIndex: true,
   },
-});
-
+};
 const thresholdOptions = new Map<string, any>();
 thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
 thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
@@ -188,8 +131,97 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: [200, 1000],
   isDynamic: false,
 });
-
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
+const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
+
+interpolationTools.set('ThresholdSphere', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
+    strategySpecificConfiguration: {
+      ...configuration.strategySpecificConfiguration,
+      THRESHOLD: { ...thresholdArgs },
+    },
+  },
+});
+interpolationTools.set('ThresholdCircle', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_CIRCLE',
+    strategySpecificConfiguration: {
+      ...configuration.strategySpecificConfiguration,
+      THRESHOLD: { ...thresholdArgs },
+    },
+  },
+});
+
+interpolationTools.set('CircularBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
+  },
+});
+
+interpolationTools.set('CircularEraser', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'ERASE_INSIDE_CIRCLE',
+  },
+});
+
+interpolationTools.set('SphereBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_SPHERE',
+  },
+});
+interpolationTools.set('SphereEraser', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'ERASE_INSIDE_SPHERE',
+  },
+});
+interpolationTools.set('ScissorsEraser', {
+  baseTool: SphereScissorsTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'ERASE_INSIDE',
+  },
+});
+
+const optionsValues = [
+  ...interpolationTools.keys(),
+  RectangleScissorsTool.toolName,
+  CircleScissorsTool.toolName,
+  SphereScissorsTool.toolName,
+  PaintFillTool.toolName,
+];
+
+// ============================= //
+addDropdownToToolbar({
+  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    // Set the currently active tool disabled
+    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
+
+    if (toolName) {
+      toolGroup.setToolDisabled(toolName);
+    }
+
+    toolGroup.setToolActive(name, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  },
+});
 
 addDropdownToToolbar({
   options: {
@@ -303,81 +335,28 @@ async function run() {
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.ScissorsEraser,
-    SphereScissorsTool.toolName,
-    {
-      activeStrategy: brushStrategies.ScissorsEraser,
-    }
-  );
   toolGroup.addTool(PaintFillTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularBrush,
-      preview,
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-      },
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularEraser,
-      preview,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereBrush,
-      preview,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereEraser,
-      previewColors,
-    }
-  );
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-        modifierKey: KeyboardBindings.Alt,
-      },
-      {
-        numTouchPoints: 1,
-        modifierKey: KeyboardBindings.Meta,
-      },
-    ],
-  });
+  toolGroup.addTool(BrushTool.toolName);
 
-  // Setup threshold and the default strategy arguments
-  const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
-  toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdCircle,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.ThresholdCircle,
-      preview,
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { ...thresholdArgs },
-      },
+  for (const [toolName, config] of interpolationTools.entries()) {
+    if (config.baseTool) {
+      toolGroup.addToolInstance(
+        toolName,
+        config.baseTool,
+        config.configuration
+      );
+    } else {
+      toolGroup.addTool(toolName, config.configuration);
     }
-  );
+    if (config.passive) {
+      // This can be applied during add/remove contours
+      toolGroup.setToolPassive(toolName);
+    }
+  }
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(brushInstanceNames.ThresholdCircle, {
+  toolGroup.setToolActive(interpolationTools.keys().next().value, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
