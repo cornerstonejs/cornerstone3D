@@ -2568,6 +2568,8 @@ class PointsManager<T> {
     // (undocumented)
     getPointArray(index: number): T;
     // (undocumented)
+    getTypedArray(): Float32Array;
+    // (undocumented)
     protected grow(additionalSize?: number, growSize?: number): void;
     // (undocumented)
     growSize: number;
@@ -2838,6 +2840,49 @@ export interface RetrieveStage {
 
 // @public (undocumented)
 type RGB = [number, number, number];
+
+// @public (undocumented)
+class RLEVoxelMap<T> {
+    constructor(width: number, height: number, depth?: number);
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    defaultValue: T;
+    // (undocumented)
+    delete(index: number): void;
+    // (undocumented)
+    protected depth: number;
+    // (undocumented)
+    protected findIndex(row: RLERun<T>[], i: number): number;
+    // (undocumented)
+    get: (index: number) => T;
+    // (undocumented)
+    getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;
+    // (undocumented)
+    protected getRLE(i: number, j: number, k?: number): RLERun<T>;
+    // (undocumented)
+    getRun: (j: number, k: number) => RLERun<T>[];
+    // (undocumented)
+    has(index: number): boolean;
+    // (undocumented)
+    protected height: number;
+    // (undocumented)
+    protected jMultiple: number;
+    // (undocumented)
+    keys(): number[];
+    // (undocumented)
+    protected kMultiple: number;
+    // (undocumented)
+    protected numComps: number;
+    // (undocumented)
+    pixelDataConstructor: Uint8ArrayConstructor;
+    // (undocumented)
+    protected rows: Map<number, RLERun<T>[]>;
+    // (undocumented)
+    set: (index: number, value: T) => void;
+    // (undocumented)
+    protected width: number;
+}
 
 // @public (undocumented)
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
@@ -3422,6 +3467,7 @@ declare namespace utilities {
         isVideoTransferSyntax,
         getBufferConfiguration,
         VoxelManager,
+        RLEVoxelMap,
         generateVolumePropsFromImageIds,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
@@ -4111,6 +4157,8 @@ class VoxelManager<T> {
     // (undocumented)
     static createRGBVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents: any): VoxelManager<RGB>;
     // (undocumented)
+    static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
     static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
     // (undocumented)
     static createVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents?: number): VoxelManager<number> | VoxelManager<RGB>;
@@ -4143,11 +4191,15 @@ class VoxelManager<T> {
     // (undocumented)
     map: Map<number, T> | RLEVoxelMap<T>;
     // (undocumented)
+    mapForEach(callback: any, options?: any): void;
+    // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
     numComps: number;
     // (undocumented)
     points: Set<number>;
+    // (undocumented)
+    rleForEach(callback: any, options?: any): void;
     // (undocumented)
     scalarData: PixelDataTypedArray;
     // (undocumented)

@@ -16,7 +16,7 @@ export default {
     const {
       segmentsLocked,
       segmentIndex,
-      previewVoxelManager: previewVoxelManager,
+      previewVoxelManager,
       previewSegmentIndex,
       segmentationVoxelManager: segmentationVoxelManager,
     } = operationData;

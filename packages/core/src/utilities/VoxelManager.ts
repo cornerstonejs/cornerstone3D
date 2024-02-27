@@ -173,28 +173,55 @@ export default class VoxelManager<T> {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const { isWithinObject } = options || {};
     if (this.map) {
-      // Optimize this for only values in the map
-      for (const index of this.map.keys()) {
-        const pointIJK = this.toIJK(index);
-        const value = this._get(index);
-        const callbackArguments = { value, index, pointIJK };
-        if (isWithinObject?.(callbackArguments) === false) {
+      if (this.map instanceof RLEVoxelMap) {
+        return this.rleForEach(callback, options);
+      }
+      return this.mapForEach(callback, options);
+    }
+
+    for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      const kIndex = k * this.frameSize;
+      for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        const jIndex = kIndex + j * this.width;
+        for (
+          let i = boundsIJK[0][0], index = jIndex + i;
+          i <= boundsIJK[0][1];
+          i++, index++
+        ) {
+          const value = this.getAtIndex(index);
+          const callbackArguments = { value, index, pointIJK: [i, j, k] };
+          if (isWithinObject?.(callbackArguments) === false) {
+            continue;
+          }
+          callback(callbackArguments);
+        }
+      }
+    }
+  };
+
+  /**
+   * Foreach callback optimized for RLE testing
+   */
+  public rleForEach(callback, options?) {
+    const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
+    const { isWithinObject } = options || {};
+    const map = this.map as RLEVoxelMap<T>;
+    map.defaultValue = undefined;
+    for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        const row = map.getRun(j, k);
+        if (!row) {
           continue;
         }
-        callback(callbackArguments);
-      }
-    } else {
-      for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
-        const kIndex = k * this.frameSize;
-        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
-          const jIndex = kIndex + j * this.width;
-          for (
-            let i = boundsIJK[0][0], index = jIndex + i;
-            i <= boundsIJK[0][1];
-            i++, index++
-          ) {
-            const value = this.getAtIndex(index);
-            const callbackArguments = { value, index, pointIJK: [i, j, k] };
+        for (const rle of row) {
+          const { start, end, value } = rle;
+          const baseIndex = this.toIndex([0, j, k]);
+          for (let i = start; i < end; i++) {
+            const callbackArguments = {
+              value,
+              index: baseIndex + i,
+              pointIJK: [i, j, k],
+            };
             if (isWithinObject?.(callbackArguments) === false) {
               continue;
             }
@@ -203,7 +230,24 @@ export default class VoxelManager<T> {
         }
       }
     }
-  };
+  }
+
+  /**
+   * Foreach callback optimized for basic map callbacks.
+   */
+  public mapForEach(callback, options?) {
+    const { isWithinObject } = options || {};
+    // Optimize this for only values in the map
+    for (const index of this.map.keys()) {
+      const pointIJK = this.toIJK(index);
+      const value = this._get(index);
+      const callbackArguments = { value, index, pointIJK };
+      if (isWithinObject?.(callbackArguments) === false) {
+        continue;
+      }
+      callback(callbackArguments);
+    }
+  }
 
   /**
    * Clears any map specific data, as wellas the modified slices, points and
@@ -370,6 +414,40 @@ export default class VoxelManager<T> {
   ): VoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelManager;
+    const voxelManager = new VoxelManager(
+      dimensions,
+      (index) => map.get(index),
+      function (index, v) {
+        if (!map.has(index)) {
+          const oldV = this.sourceVoxelManager.getAtIndex(index);
+          if (oldV === v) {
+            // No-op
+            return false;
+          }
+          map.set(index, oldV);
+        } else if (v === map.get(index)) {
+          map.delete(index);
+        }
+        this.sourceVoxelManager.setAtIndex(index, v);
+      }
+    );
+    voxelManager.map = map;
+    voxelManager.scalarData = sourceVoxelManager.scalarData;
+    voxelManager.sourceVoxelManager = sourceVoxelManager;
+    return voxelManager;
+  }
+
+  /**
+   * Creates a history remembering voxel manager, based on the RLE endpoint
+   * rather than a map endpoint.
+   * This will remember the original values in the voxels, and will apply the
+   * update to the underlying source voxel manager.
+   */
+  public static createRLEHistoryVoxelManager<T>(
+    sourceVoxelManager: VoxelManager<T>
+  ): VoxelManager<T> {
+    const { dimensions } = sourceVoxelManager;
+    const map = new RLEVoxelMap<T>(dimensions[0], dimensions[1], dimensions[2]);
     const voxelManager = new VoxelManager(
       dimensions,
       (index) => map.get(index),

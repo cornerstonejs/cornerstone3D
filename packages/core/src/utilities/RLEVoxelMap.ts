@@ -98,6 +98,61 @@ export default class RLEVoxelMap<T> {
   }
 
   /**
+   *  Indicate if the map has the given value
+   */
+  public has(index: number): boolean {
+    const i = index % this.jMultiple;
+    const j = (index - i) / this.jMultiple;
+    const rle = this.getRLE(i, j);
+    return rle?.value !== undefined;
+  }
+
+  /**
+   * Delete any value at the given index;
+   */
+  public delete(index: number) {
+    const i = index % this.width;
+    const j = (index - i) / this.width;
+    const row = this.rows.get(j);
+    if (!row) {
+      return;
+    }
+    const rleIndex = this.findIndex(row, i);
+    const rle = row[rleIndex];
+    if (!rle || rle.start > i) {
+      // Value not in RLE, so no need to delete
+      return;
+    }
+    if (rle.end === i + 1) {
+      // Value at end, so decrease the length.
+      // This also handles hte case of the value at the beginning and deleting
+      // the final value in the RLE
+      rle.end--;
+      if (rle.start >= rle.end) {
+        // Last value in the RLE
+        row.splice(rleIndex, 1);
+        if (!row.length) {
+          this.rows.delete(j);
+        }
+      }
+      return;
+    }
+    if (rle.start === i) {
+      // Not the only value, otherwise this is checked by the previous code
+      rle.start++;
+      return;
+    }
+    // Need to split the rle since the value occurs in the middle.
+    const newRle = {
+      value: rle.value,
+      start: i + 1,
+      end: rle.end,
+    };
+    rle.end = i;
+    row.splice(rleIndex + 1, 0, newRle);
+  }
+
+  /**
    * Finds the index in the row that i is contained in, OR that i would be
    * before.   That is, the rle value for the returned index in that row
    * has `i ε [start,end)` if a direct RLE is found, or `i ε [end_-1,start)` if

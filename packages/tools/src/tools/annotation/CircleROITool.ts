@@ -965,7 +965,7 @@ class CircleROITool extends AnnotationTool {
           modalityUnitOptions
         );
 
-        const pointsInShape = pointInShapeCallback(
+        pointInShapeCallback(
           imageData,
           (pointLPS) =>
             pointInEllipse(ellipseObj, pointLPS, {
@@ -984,7 +984,7 @@ class CircleROITool extends AnnotationTool {
           max: stats[0]?.value,
           stdDev: stats[2]?.value,
           statsArray: stats,
-          pointsInShape: pointsInShape,
+          pointsInShape: stats[3]?.value,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           radius: worldWidth / 2 / scale,

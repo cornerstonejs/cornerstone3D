@@ -777,9 +777,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       let curRow = 0;
       let intersections = [];
       let intersectionCounter = 0;
-      const pointsInShape = pointInShapeCallback(
+      pointInShapeCallback(
         imageData,
-        (pointLPS, pointIJK) => {
+        (pointLPS) => {
           let result = true;
           const point = viewport.worldToCanvas(pointLPS);
           if (point[1] != curRow) {
@@ -839,7 +839,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         max: stats[0]?.value,
         stdDev: stats[3]?.value,
         statsArray: stats,
-        pointsInShape: pointsInShape,
+        pointsInShape: stats[3]?.value,
         areaUnit: getCalibratedAreaUnits(null, image),
         modalityUnit,
       };

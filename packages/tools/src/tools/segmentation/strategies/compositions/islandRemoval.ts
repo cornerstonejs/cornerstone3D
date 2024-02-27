@@ -15,8 +15,8 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
+      previewVoxelManager,
+      segmentationVoxelManager,
       strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,
@@ -35,6 +35,8 @@ export default {
       return;
     }
 
+    console.log('***** start of islandRemoval');
+    console.time('islandRemoval');
     // Ensure the bounds includes the clicked points, otherwise the fill
     // fails.
     const boundsIJK = previewVoxelManager
@@ -170,6 +172,8 @@ export default {
         }
       }
     }
+    console.timeEnd('islandRemoval');
+
     triggerSegmentationDataModified(
       operationData.segmentationId,
       previewVoxelManager.getArrayOfSlices()

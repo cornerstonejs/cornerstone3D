@@ -942,7 +942,7 @@ class RectangleROITool extends AnnotationTool {
           modalityUnitOptions
         );
 
-        const pointsInShape = pointInShapeCallback(
+        pointInShapeCallback(
           imageData,
           () => true,
           this.configuration.statsCalculator.statsCallback,
@@ -958,7 +958,7 @@ class RectangleROITool extends AnnotationTool {
           stdDev: stats[2]?.value,
           max: stats[0]?.value,
           statsArray: stats,
-          pointsInShape: pointsInShape,
+          pointsInShape: stats[3]?.value,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
         };

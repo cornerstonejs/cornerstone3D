@@ -145,11 +145,24 @@ interpolationTools.set('ThresholdSphere', {
     },
   },
 });
+
+interpolationTools.set('ThresholdSphereIsland', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
+    strategySpecificConfiguration: {
+      ...configuration.strategySpecificConfiguration,
+      THRESHOLD: { ...thresholdArgs },
+    },
+  },
+});
+
 interpolationTools.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_CIRCLE',
+    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
@@ -243,7 +256,7 @@ addDropdownToToolbar({
 
 addSliderToToolbar({
   title: 'Brush Size',
-  range: [5, 50],
+  range: [5, 100],
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);

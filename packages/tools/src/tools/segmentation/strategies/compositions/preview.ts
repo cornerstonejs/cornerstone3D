@@ -85,7 +85,7 @@ export default {
   ) => {
     const {
       segmentationVoxelManager: segmentationVoxelManager,
-      previewVoxelManager: previewVoxelManager,
+      previewVoxelManager,
       previewSegmentIndex,
       preview,
     } = operationData;
@@ -116,10 +116,7 @@ export default {
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
-    } = operationData;
+    const { previewVoxelManager, segmentationVoxelManager } = operationData;
     if (previewVoxelManager.modifiedSlices.size === 0) {
       return;
     }

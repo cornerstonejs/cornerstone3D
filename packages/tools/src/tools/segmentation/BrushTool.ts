@@ -12,6 +12,7 @@ import { BaseTool } from '../base';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
+  thresholdInsideSphereIsland,
 } from './strategies/fillSphere';
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
@@ -104,7 +105,9 @@ class BrushTool extends BaseTool {
           ERASE_INSIDE_SPHERE: eraseInsideSphere,
           THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
           THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
+          THRESHOLD_INSIDE_SPHERE_ISLAND: thresholdInsideSphereIsland,
         },
+
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.

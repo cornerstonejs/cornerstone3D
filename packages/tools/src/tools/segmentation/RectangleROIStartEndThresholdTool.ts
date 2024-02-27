@@ -379,15 +379,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const pointsInShape = pointInShapeCallback(
+        const points = [];
+        pointInShapeCallback(
           imageData,
           () => true,
-          null,
+          ({ pointLPS }) => points.push(pointLPS.slice()),
           boundsIJK
         );
 
-        //@ts-ignore
-        pointsInsideVolume.push(pointsInShape);
+        pointsInsideVolume.push(points);
       }
     }
     data.cachedStats.pointsInVolume = pointsInsideVolume;

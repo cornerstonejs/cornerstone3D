@@ -40,7 +40,7 @@ function floodFill(
   const permutations = prunedPermutations();
   const stack = [];
   const flooded = [];
-  const visits = new Set();
+  const visits = new Map();
   const bounds = new Map();
 
   stack.push({ currentArgs: seed });
@@ -86,7 +86,7 @@ function floodFill(
   function markAsVisited(key) {
     const [x, y, z = 0] = key;
     const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
-    visits.add(iKey);
+    visits.set(iKey, true);
   }
 
   function member(getArgs) {
