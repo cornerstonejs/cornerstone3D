@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { getEnabledElement } from '@cornerstonejs/core';
 import { ISculptToolShape } from './ISculptToolShape';
-import { distanceFromPoint, SculptData } from '../FreehandROISculptorTool';
+import { distanceFromPoint, SculptData } from '../SculptorTool';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import { point } from '../../utilities/math';
 import { SVGDrawingHelper, EventTypes, Annotation } from '../../types';
@@ -26,7 +26,7 @@ class CircleSculptCursor implements ISculptToolShape {
     const circleUID = '0';
     drawCircleSvg(
       svgDrawingHelper,
-      'FreehandROISculptorTool',
+      'SculptorTool',
       circleUID,
       canvasLocation,
       this.toolInfo.toolSize,

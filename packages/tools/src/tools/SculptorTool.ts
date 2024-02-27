@@ -12,7 +12,7 @@ import {
 import { point } from '../utilities/math';
 import { Events, ToolModes, AnnotationStyleStates } from '../enums';
 import { ToolGroupManager } from '../store';
-import { triggerAnnotationRenderForViewportIds } from './../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationRenderForViewportIds } from '../utilities/triggerAnnotationRenderForViewportIds';
 import {
   hideElementCursor,
   resetElementCursor,
@@ -20,7 +20,7 @@ import {
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
-import CircleSculptCursor from './freehandROISculptorTool/CircleSculptCursor';
+import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 
 export type SculptData = {
   mousePoint: Types.Point3;
@@ -37,7 +37,7 @@ type CommonData = {
   canvasLocation: Types.Point2 | undefined;
 };
 
-class FreehandROISculptorTool extends BaseTool {
+class SculptorTool extends BaseTool {
   static toolName: string;
   registeredShapes = new Map();
   private isActive = false;
@@ -69,7 +69,7 @@ class FreehandROISculptorTool extends BaseTool {
     this.endCallback = this.endCallback.bind(this);
     this.dragCallback = this.dragCallback.bind(this);
     this.registerShapes(CircleSculptCursor.shapeName, CircleSculptCursor);
-    this.setToolShape();
+    this.setToolShape(this.configuration.toolShape);
   }
 
   /**
@@ -496,8 +496,7 @@ class FreehandROISculptorTool extends BaseTool {
     );
   }
 
-  private setToolShape(): void {
-    const { toolShape } = this.configuration;
+  private setToolShape(toolShape: string): void {
     this.selectedShape =
       this.registeredShapes.get(toolShape) ?? CircleSculptCursor.shapeName;
   }
@@ -587,5 +586,5 @@ export const contourIndex = (i: number, length: number): number => {
   return (i + length) % length;
 };
 
-FreehandROISculptorTool.toolName = 'FreehandROISculptorTool';
-export default FreehandROISculptorTool;
+SculptorTool.toolName = 'SculptorTool';
+export default SculptorTool;

@@ -33,7 +33,7 @@ const {
   SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
   PlanarFreehandROITool,
-  FreehandROISculptorTool,
+  SculptorTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -93,7 +93,7 @@ Drawing:
 
 Editing:
 
-- Select FreehandROISculptorTool from dropdown ,then adjustable cursor will appear.
+- Select SculptorTool from dropdown ,then adjustable cursor will appear.
 - Nearest freehand ROI/Freehand Contour Segmentation will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation.
 - Moving the cursor closer to the active ROI reduces the tool diameter.
 - Moving the cursor away from the active increases the tool diameter.
@@ -106,7 +106,7 @@ content.append(instructions);
 const toolsNames = [
   PlanarFreehandROITool.toolName,
   PlanarFreehandContourSegmentationTool.toolName,
-  FreehandROISculptorTool.toolName,
+  SculptorTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -158,7 +158,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(FreehandROISculptorTool);
+  cornerstoneTools.addTool(SculptorTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
@@ -169,7 +169,7 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
-  toolGroup.addTool(FreehandROISculptorTool.toolName);
+  toolGroup.addTool(SculptorTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   // Set the initial state of the tools.

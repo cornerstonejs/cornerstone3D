@@ -197,7 +197,7 @@
         "name": "Freehand ROI Tool",
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
-      "freehandROISculptorTool": {
+      "SculptorTool": {
         "name": "Freehand ROI Sculptor Tool",
         "description": "Demonstrates sculpting of freehand ROIs on stack and volume viewports"
       },

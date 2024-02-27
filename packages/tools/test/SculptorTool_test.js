@@ -20,7 +20,7 @@ const { Events, ViewportType } = Enums;
 
 const {
   PlanarFreehandROITool,
-  FreehandROISculptorTool,
+  SculptorTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   annotation,
@@ -70,19 +70,19 @@ describe('freeHandROISculptor Tool: ', () => {
   describe('Cornerstone Tools: ', () => {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(FreehandROISculptorTool);
+      csTools3d.addTool(SculptorTool);
       csTools3d.addTool(PlanarFreehandROITool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(FreehandROISculptorTool.toolName, {
+      this.stackToolGroup.addTool(SculptorTool.toolName, {
         configuration: { volumeId: volumeId },
       });
       this.stackToolGroup.addTool(PlanarFreehandROITool.toolName, {
         configuration: { volumeId: volumeId },
       });
-      this.stackToolGroup.setToolActive(FreehandROISculptorTool.toolName, {
+      this.stackToolGroup.setToolActive(SculptorTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       });
 
