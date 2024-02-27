@@ -2855,6 +2855,8 @@ class RLEVoxelMap<T> {
     // (undocumented)
     protected findIndex(row: RLERun<T>[], i: number): number;
     // (undocumented)
+    forEach(callback: any): void;
+    // (undocumented)
     get: (index: number) => T;
     // (undocumented)
     getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;

@@ -958,7 +958,7 @@ class RectangleROITool extends AnnotationTool {
           stdDev: stats[2]?.value,
           max: stats[0]?.value,
           statsArray: stats,
-          pointsInShape: stats[3]?.value,
+          pointsInShape: stats[4]?.value,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
         };

@@ -169,6 +169,14 @@ export default class RLEVoxelMap<T> {
     return row.length;
   }
 
+  public forEach(callback) {
+    for (const [baseIndex, row] of this.rows) {
+      for (const rle of row) {
+        callback(baseIndex * this.width, rle, row);
+      }
+    }
+  }
+
   /**
    * Gets the run for the given j,k indices.  This is used to allow fast access
    * to runs for data for things like rendering entire rows of data.
