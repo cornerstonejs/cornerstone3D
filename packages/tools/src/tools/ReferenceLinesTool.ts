@@ -21,7 +21,6 @@ const { EPSILON } = CONSTANTS;
 /**
  * @public
  */
-
 class ReferenceLines extends AnnotationDisplayTool {
   static toolName;
 
@@ -71,7 +70,7 @@ class ReferenceLines extends AnnotationDisplayTool {
       this.configuration.sourceViewportId
     ) as Types.IVolumeViewport;
 
-    if (!sourceViewport || !sourceViewport.getImageData()) {
+    if (!sourceViewport?.getImageData()) {
       return;
     }
 
@@ -124,6 +123,10 @@ class ReferenceLines extends AnnotationDisplayTool {
   };
 
   onSetToolEnabled = (): void => {
+    this._init();
+  };
+
+  onSetToolConfiguration = (): void => {
     this._init();
   };
 
