@@ -28,7 +28,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  CircleROIStartEndThresholdTool,
+  RectangleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
@@ -56,7 +56,7 @@ let segmentationRepresentationByUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Circle ROI Start End Threshold Tool',
+  'Rectangle ROI Start End Threshold Tool',
   'Here we demonstrate usage of the Start en End ROI tool'
 );
 
@@ -108,7 +108,7 @@ addButtonToToolbar({
   title: 'Set Start Slice',
   onClick: () => {
     const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
-      CircleROIStartEndThresholdTool.toolName
+      RectangleROIStartEndThresholdTool.toolName
     ) as Array<string>;
 
     if (!selectedAnnotationUIDs) {
@@ -118,7 +118,7 @@ addButtonToToolbar({
     const annotationUID = selectedAnnotationUIDs[0];
     const annotation = cornerstoneTools.annotation.state.getAnnotation(
       annotationUID
-    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIStartEndThresholdAnnotation;
 
     if (!annotation) {
       return;
@@ -128,8 +128,6 @@ addButtonToToolbar({
 
     // get the current slice Index
     const sliceIndex = viewport.getCurrentImageIdIndex();
-    console.debug(annotation.data.startSlice)
-    console.debug(sliceIndex)
     annotation.data.startSlice = sliceIndex;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
@@ -143,7 +141,7 @@ addButtonToToolbar({
   title: 'Set End Slice',
   onClick: () => {
     const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
-      CircleROIStartEndThresholdTool.toolName
+      RectangleROIStartEndThresholdTool.toolName
     ) as Array<string>;
 
     if (!selectedAnnotationUIDs) {
@@ -153,7 +151,7 @@ addButtonToToolbar({
     const annotationUID = selectedAnnotationUIDs[0];
     const annotation = cornerstoneTools.annotation.state.getAnnotation(
       annotationUID
-    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIStartEndThresholdAnnotation;
 
     if (!annotation) {
       return;
@@ -185,7 +183,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
+  cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -197,12 +195,12 @@ async function run() {
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
+  toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
   });
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
+  toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 

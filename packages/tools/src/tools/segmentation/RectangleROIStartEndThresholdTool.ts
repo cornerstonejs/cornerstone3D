@@ -2,10 +2,14 @@ import {
   getEnabledElement,
   cache,
   StackViewport,
+  triggerEvent,
+  CONSTANTS,
+  eventTarget,
   metaData,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { Events } from '../../enums';
 
 import { vec3 } from 'gl-matrix';
 import {
@@ -21,6 +25,7 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   hideElementCursor,
@@ -120,14 +125,21 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       );
     }
 
-    if (!referencedImageId) {
+    const checkIfPlaneIsValid = this._checkIfViewPlaneIsValid(viewPlaneNormal);
+    if (!checkIfPlaneIsValid) {
       throw new Error('This tool does not work on non-acquisition planes');
     }
 
-    const startIndex = viewport.getCurrentImageIdIndex();
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
+    );
+
+    const startIndex = this._getStartSliceIndex(
+      imageVolume,
+      worldPos,
+      spacingInNormal,
+      viewPlaneNormal,
     );
 
     // We cannot simply add numSlicesToPropagate to startIndex because
@@ -138,7 +150,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       imageVolume,
       worldPos,
       spacingInNormal,
-      viewPlaneNormal
+      viewPlaneNormal,
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -214,6 +226,23 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     return annotation;
   };
 
+  _arraysEqual = (a: Types.Point3, b: Types.Point3): boolean => {
+    return a.length === b.length && a.every((val, index) => val === b[index]);
+  };
+
+  _checkIfViewPlaneIsValid = (viewPlane: Types.Point3): boolean => {
+    const mprValues = CONSTANTS.MPR_CAMERA_VALUES;
+    for (const key in mprValues) {
+      if (mprValues.hasOwnProperty(key)) {
+        const { viewPlaneNormal, viewUp } = mprValues[key];
+        if (this._arraysEqual(viewPlaneNormal, viewPlane) || this._arraysEqual(viewUp, viewPlane)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -262,63 +291,58 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   };
 
-  // Todo: make it work for planes other than acquisition planes
-  _computeProjectionPoints(
-    annotation: RectangleROIStartEndThresholdAnnotation,
-    imageVolume: Types.IImageVolume
-  ): void {
-    const { data, metadata } = annotation;
-    const { viewPlaneNormal, spacingInNormal } = metadata;
-    const { imageData } = imageVolume;
-    const { startSlice, endSlice } = data;
-    const { points } = data.handles;
+    //Now works for axial, sagitall and coronal
+    _computeProjectionPoints(
+      annotation: RectangleROIStartEndThresholdAnnotation,
+      imageVolume: Types.IImageVolume
+    ): void {
+      const { data, metadata } = annotation;
+      const { viewPlaneNormal, spacingInNormal } = metadata;
+      const { imageData } = imageVolume;
+      const { startSlice, endSlice } = data;
+      const { points } = data.handles;
 
-    const startIJK = transformWorldToIndex(imageData, points[0]);
+      const startIJK = transformWorldToIndex(imageData, points[0]);
+      // substitute the end slice index 2 with startIJK index 2
+      let endIJK;
 
-    if (startIJK[2] !== startSlice) {
-      throw new Error('Start slice does not match');
+      const mprValues = CONSTANTS.MPR_CAMERA_VALUES
+      if (this._arraysEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
+        startIJK[2] = startSlice;
+        endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
+      } else if (this._arraysEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
+        startIJK[0] = startSlice;
+        endIJK = vec3.fromValues(endSlice, startIJK[1], startIJK[2]);
+      } else if (this._arraysEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
+        startIJK[1] = startSlice;
+        endIJK = vec3.fromValues(startIJK[0], endSlice, startIJK[2]);
+      }
+
+      const startWorld = vec3.create();
+      imageData.indexToWorldVec3(startIJK, startWorld);
+
+      const endWorld = vec3.create();
+      imageData.indexToWorldVec3(endIJK, endWorld);
+
+      // distance between start and end slice in the world coordinate
+      const distance = vec3.distance(startWorld, endWorld);
+
+      // for each point inside points, navigate in the direction of the viewPlaneNormal
+      // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+      const newProjectionPoints = [];
+      for (let dist = 0; dist < distance; dist += spacingInNormal) {
+        newProjectionPoints.push(
+          points.map((point) => {
+            const newPoint = vec3.create();
+            //@ts-ignore
+            vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+            return Array.from(newPoint);
+          })
+        );
+      }
+
+      data.cachedStats.projectionPoints = newProjectionPoints;
     }
-
-    // substitute the end slice index 2 with startIJK index 2
-    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
-
-    const startWorld = vec3.create();
-    imageData.indexToWorldVec3(startIJK, startWorld);
-
-    const endWorld = vec3.create();
-    imageData.indexToWorldVec3(endIJK, endWorld);
-
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
-
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
-    const newProjectionPoints = [];
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
-      newProjectionPoints.push(
-        points.map((point) => {
-          const newPoint = vec3.create();
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
-          return Array.from(newPoint);
-        })
-      );
-    }
-
-    data.cachedStats.projectionPoints = newProjectionPoints;
-
-    // Find the imageIds for the projection points
-    const projectionPointsImageIds = [];
-    for (const RectanglePoints of newProjectionPoints) {
-      const imageId = csUtils.getClosestImageId(
-        imageVolume,
-        RectanglePoints[0],
-        viewPlaneNormal
-      );
-      projectionPointsImageIds.push(imageId);
-    }
-
-    data.cachedStats.projectionPointsImageIds = projectionPointsImageIds;
-  }
 
   //This function return all the points inside the ROI for every slices between startSlice and endSlice
   _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
@@ -395,7 +419,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
-    const { element, viewport } = enabledElement;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
 
     const { cachedStats } = data;
     const targetId = this.getTargetId(viewport);
@@ -409,7 +433,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    const eventType = Events.ANNOTATION_MODIFIED;
+
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+    };
+    triggerEvent(eventTarget, eventType, eventDetail);
 
     return cachedStats;
   }
@@ -427,12 +458,18 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;
-
-    const annotations = getAnnotations(this.getToolName(), viewport.element);
+    const { element }  = viewport;
+    let annotations = getAnnotations(this.getToolName(), viewport.element);
 
     if (!annotations?.length) {
       return renderStatus;
     }
+
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations,
+      true
+    );
 
     const sliceIndex = viewport.getCurrentImageIdIndex();
 
@@ -543,11 +580,26 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     return renderStatus;
   };
 
-  _getEndSliceIndex(
+  _getStartSliceIndex(
     imageVolume: Types.IImageVolume,
     worldPos: Types.Point3,
     spacingInNormal: number,
     viewPlaneNormal: Types.Point3
+  ): number | undefined {
+    // get end position by moving from worldPos in the direction of viewplaneNormal
+    // with amount of numSlicesToPropagate * spacingInNormal
+    const startPos = worldPos;
+
+    const imageIdIndex = this._getImageIdIndex(imageVolume,startPos,viewPlaneNormal);
+
+    return imageIdIndex;
+  }
+
+  _getEndSliceIndex(
+    imageVolume: Types.IImageVolume,
+    worldPos: Types.Point3,
+    spacingInNormal: number,
+    viewPlaneNormal: Types.Point3,
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
 
@@ -561,29 +613,29 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       numSlicesToPropagate * spacingInNormal
     );
 
-    const halfSpacingInNormalDirection = spacingInNormal / 2;
-    // Loop through imageIds of the imageVolume and find the one that is closest to endPos
-    const { imageIds } = imageVolume;
-    let imageIdIndex;
-    for (let i = 0; i < imageIds.length; i++) {
-      const imageId = imageIds[i];
-
-      const { imagePositionPatient } = metaData.get(
-        'imagePlaneModule',
-        imageId
-      );
-
-      const dir = vec3.create();
-      vec3.sub(dir, endPos, imagePositionPatient);
-
-      const dot = vec3.dot(dir, viewPlaneNormal);
-
-      if (Math.abs(dot) < halfSpacingInNormalDirection) {
-        imageIdIndex = i;
-      }
-    }
+    const imageIdIndex = this._getImageIdIndex(imageVolume,endPos,viewPlaneNormal);
 
     return imageIdIndex;
+  }
+
+  _getImageIdIndex(
+    imageVolume: Types.IImageVolume,
+    pos: vec3,
+    viewPlaneNormal: Types.Point3,
+  ): number | undefined {
+    const { imageData } = imageVolume;
+    const imageIdIndex = imageData.worldToIndex([pos[0],pos[1],pos[2]])
+
+    const mprValues = CONSTANTS.MPR_CAMERA_VALUES
+    if (this._arraysEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
+      return Math.round(imageIdIndex[2]);
+    } else if (this._arraysEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
+      return Math.round(imageIdIndex[0]);
+    } else if (this._arraysEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
+      return Math.round(imageIdIndex[1]);
+    } else {
+      return undefined;
+    }
   }
 }
 

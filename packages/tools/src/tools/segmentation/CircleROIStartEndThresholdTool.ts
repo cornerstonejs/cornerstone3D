@@ -7,7 +7,8 @@ import {
   metaData,
   triggerEvent,
   eventTarget,
-  CONSTANTS
+  CONSTANTS,
+  utilities
 } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
@@ -97,7 +98,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -189,6 +189,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         labelmapUID: null,
       },
     };
+
+    // update the projection points in 3D space, since we are projecting
+    // the points to the slice plane, we need to make sure the points are
+    // computed for later export
+    this._computeProjectionPoints(annotation, imageVolume);
 
     addAnnotation(annotation, element);
 
@@ -445,7 +450,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     return renderStatus;
   };
 
-  // Todo: make it work for planes other than acquisition planes
+  //Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: CircleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume

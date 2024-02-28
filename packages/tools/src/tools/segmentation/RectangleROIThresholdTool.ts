@@ -96,7 +96,6 @@ class RectangleROIThresholdTool extends RectangleROITool {
       );
     }
 
-    console.debug(referencedImageId)
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
     // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to
     // decide on the active segmentIndex, active segmentationIndex etc.
