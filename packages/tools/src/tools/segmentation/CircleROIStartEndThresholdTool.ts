@@ -124,7 +124,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const checkIfPlaneIsValid = this._checkIfViewPlaneIsValid(viewPlaneNormal);
     if (!checkIfPlaneIsValid) {
-      throw new Error('This tool does not work on non-acquisition planes');
+      throw new Error('This tool does not work on non-mpr planes');
     }
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
@@ -227,8 +227,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const mprValues = CONSTANTS.MPR_CAMERA_VALUES;
     for (const key in mprValues) {
       if (mprValues.hasOwnProperty(key)) {
-        const { viewPlaneNormal, viewUp } = mprValues[key];
-        if (this._arraysEqual(viewPlaneNormal, viewPlane) || this._arraysEqual(viewUp, viewPlane)) {
+        const { viewPlaneNormal } = mprValues[key];
+        if (this._arraysEqual(viewPlaneNormal, viewPlane)) {
           return true;
         }
       }
