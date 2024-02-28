@@ -117,6 +117,7 @@ class LabelmapThresholdPreview extends BaseTool {
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
     const { segmentationId, type } = activeSegmentationRepresentation;
     const { representationData } = getSegmentation(segmentationId);
+    // @ts-ignore
     const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
     const segmentIndex =
