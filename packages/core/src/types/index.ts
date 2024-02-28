@@ -17,6 +17,7 @@ import type {
   IViewport,
   PublicViewportInput,
   ViewReferenceSpecifier,
+  ViewPresentation,
   ReferenceCompatibleOptions,
   ViewReference,
 } from './IViewport';
@@ -161,6 +162,7 @@ export type {
   IStreamingVolumeProperties,
   IViewport,
   ViewReference,
+  ViewPresentation,
   ReferenceCompatibleOptions,
   ViewReferenceSpecifier,
   StackViewportProperties,

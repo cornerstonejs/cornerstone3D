@@ -899,7 +899,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return canvasPos;
   };
 
-  public getPan(): Point2 {
+  public getPan(_panType): Point2 {
     const worldPan = this.videoCamera.panWorld;
     return [worldPan[0], worldPan[1]];
   }

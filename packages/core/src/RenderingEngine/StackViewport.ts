@@ -33,6 +33,7 @@ import type {
   Scaling,
   StackViewportProperties,
   VOIRange,
+  ViewPresentation,
   ViewReference,
   VolumeActor,
 } from '../types';
@@ -2885,18 +2886,20 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Applies the view reference, which may navigate the slice index and apply
    * other camera modifications
    */
-  public setViewReference(viewRef: ViewReference): void {
-    const { viewPlaneNormal, sliceIndex, rotation } = viewRef;
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
     const camera = this.getCamera();
-    if (viewPlaneNormal && !isEqual(viewPlaneNormal, camera.viewPlaneNormal)) {
-      return;
-    }
-
-    if (sliceIndex || sliceIndex === 0) {
-      this.setImageIdIndex(sliceIndex as number);
-    }
-    if (rotation || rotation === 0) {
-      this.setRotation(rotation);
+    super.setView(viewRef, viewPres);
+    if (viewRef) {
+      const { viewPlaneNormal, sliceIndex } = viewRef;
+      if (
+        viewPlaneNormal &&
+        !isEqual(viewPlaneNormal, camera.viewPlaneNormal)
+      ) {
+        return;
+      }
+      if (sliceIndex || sliceIndex === 0) {
+        this.setImageIdIndex(sliceIndex as number);
+      }
     }
   }
 

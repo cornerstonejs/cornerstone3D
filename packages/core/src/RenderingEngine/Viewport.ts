@@ -36,6 +36,7 @@ import type {
   ViewReferenceSpecifier,
   ViewReference,
   ReferenceCompatibleOptions,
+  ViewPresentation,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -903,7 +904,7 @@ class Viewport implements IViewport {
    * computed from the current camera, where the initial pan
    * value is [0,0].
    */
-  public getPan(): Point2 {
+  public getPan(_panType?): Point2 {
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
@@ -966,7 +967,7 @@ class Viewport implements IViewport {
    * originally applied to the image.  That is, on initial display,
    * the zoom level is 1.  Computed as a function of the camera.
    */
-  public getZoom(): number {
+  public getZoom(_zoomType?): number {
     const activeCamera = this.getVtkActiveCamera();
     const { parallelScale: initialParallelScale } = this.initialCamera;
     return initialParallelScale / activeCamera.getParallelScale();
@@ -1417,10 +1418,6 @@ class Viewport implements IViewport {
       viewPlaneNormal,
       sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
     };
-    if (viewRefSpecifier.extended) {
-      target.rotation = this.getRotation();
-      target.displayArea = this.getDisplayArea();
-    }
     return target;
   }
 
@@ -1450,14 +1447,49 @@ class Viewport implements IViewport {
     return true;
   }
 
+  getViewPresentation(viewPres?: ViewPresentation): ViewPresentation {
+    const target: ViewPresentation = {};
+    const {
+      rotationType = true,
+      displayAreaType = true,
+      zoomType = true,
+      panType = true,
+    } = viewPres || {};
+    if (rotationType) {
+      target.rotation = this.getRotation();
+      target.rotationType = rotationType;
+    }
+    if (displayAreaType) {
+      target.displayArea = this.getDisplayArea();
+      target.displayAreaType = displayAreaType;
+    }
+    if (zoomType) {
+      target.zoomType = zoomType;
+      target.zoom = this.getZoom(zoomType);
+    }
+    if (panType) {
+      target.panType = panType;
+      target.pan = this.getPan(panType);
+    }
+    console.log('Got view presentation', target);
+    return target;
+  }
   /**
    * Sets the view reference.  Only applies properties which are defined and
    * applicable.
    */
-  setViewReference(viewRef: ViewReference) {
-    const { displayArea } = viewRef;
-    if (displayArea) {
-      this.setDisplayArea(displayArea);
+  setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
+    if (viewPres) {
+      const { displayArea, zoom, pan } = viewPres;
+      if (displayArea) {
+        this.setDisplayArea(displayArea);
+      }
+      if (zoom) {
+        this.setZoom(zoom);
+      }
+      if (pan) {
+        this.setPan(pan);
+      }
     }
   }
 

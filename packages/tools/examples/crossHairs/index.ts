@@ -47,7 +47,7 @@ const viewportIds = [viewportId1, viewportId2, viewportId3];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const synchronizerOptions = {
-  applySlabThickness: false,
+  slabThicknessType: undefined,
 };
 
 // ======== Set up page ======== //
@@ -203,9 +203,9 @@ addDropdownToToolbar({
 addToggleButtonToToolbar({
   id: 'syncSlabThickness',
   title: 'Sync Slab Thickness',
-  defaultToggle: synchronizerOptions.applySlabThickness,
+  defaultToggle: synchronizerOptions.slabThicknessType,
   onClick: (toggle) => {
-    synchronizerOptions.applySlabThickness = toggle;
+    synchronizerOptions.slabThicknessType = toggle;
   },
 });
 

@@ -144,6 +144,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
+    getViewPresentation(viewPres?: ViewPresentation): ViewPresentation;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     protected getVolumeId(specifier: ViewReferenceSpecifier): string;
@@ -2211,7 +2213,7 @@ interface IViewport {
     // (undocumented)
     getNumberOfSlices(): number;
     // (undocumented)
-    getPan(): Point2;
+    getPan(panType?: any): Point2;
     // (undocumented)
     getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
     // (undocumented)
@@ -2221,9 +2223,11 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getViewPresentation(viewPres: ViewPresentation): any;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
-    getZoom(): number;
+    getZoom(zoomType?: any): number;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -2255,7 +2259,7 @@ interface IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
-    setViewReference(viewRef: ViewReference): any;
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): any;
     // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
@@ -3100,7 +3104,7 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
-    setViewReference(viewRef: ViewReference): void;
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
     successCallback(imageId: any, image: any): void;
     // (undocumented)
@@ -3266,6 +3270,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         ViewReference,
+        ViewPresentation,
         ReferenceCompatibleOptions,
         ViewReferenceSpecifier,
         StackViewportProperties,
@@ -3522,7 +3527,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getPan(): Point2;
+    getPan(_panType: any): Point2;
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
@@ -3687,7 +3692,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getPan(): Point2;
+    getPan(_panType?: any): Point2;
     // (undocumented)
     getProperties: () => void;
     // (undocumented)
@@ -3699,11 +3704,13 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getViewPresentation(viewPres?: ViewPresentation): ViewPresentation;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
-    getZoom(): number;
+    getZoom(_zoomType?: any): number;
     // (undocumented)
     protected hasPixelSpacing: boolean;
     // (undocumented)
@@ -3759,7 +3766,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
-    setViewReference(viewRef: ViewReference): void;
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
@@ -3864,6 +3871,20 @@ enum ViewportType {
 }
 
 // @public (undocumented)
+type ViewPresentation = {
+    slabThicknessType?: true | 'mm';
+    slabThickness?: number;
+    rotationType?: true;
+    rotation?: number;
+    displayAreaType?: true;
+    displayArea?: DisplayArea;
+    zoomType?: true | 'scaleToFit';
+    zoom?: number;
+    panType?: true | 'initialCamera' | 'scaleToFit' | 'zoomRelative';
+    pan?: Point2;
+};
+
+// @public (undocumented)
 type ViewReference = {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
@@ -3871,9 +3892,6 @@ type ViewReference = {
     viewPlaneNormal?: Point3;
     sliceIndex?: number | [number, number];
     volumeId?: string;
-    slabThickness?: number;
-    rotation?: number;
-    displayArea?: DisplayArea;
 };
 
 // @public (undocumented)
@@ -3882,7 +3900,6 @@ type ViewReferenceSpecifier = {
     forFrameOfReference?: boolean;
     points?: Point3[];
     volumeId?: string;
-    extended?: boolean;
 };
 
 // @public (undocumented)
@@ -4067,7 +4084,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
-    setViewReference(viewRef: ViewReference): void;
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
 }

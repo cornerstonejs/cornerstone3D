@@ -45,12 +45,14 @@ const viewportId3 = 'CT_CORONAL';
 const viewportId4 = 'CT_STACK';
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 let viewport;
+const viewports = [];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const synchronizerOptions = {
-  applySlabThickness: false,
-  applyDisplayArea: true,
-  applyRotation: false,
+  displayAreaType: true,
+  rotationType: true,
+  zoomType: true,
+  panType: true,
 };
 
 // ======== Set up page ======== //
@@ -90,7 +92,6 @@ elements.forEach((element) => {
   element.onclick = (evt) => {
     const clickViewport = getEnabledElement(element)?.viewport;
     viewport = clickViewport;
-    console.log('Setting click viewport to', viewport.id);
     return false;
   };
 });
@@ -155,7 +156,7 @@ displayAreaOptions.set('Center', centerDisplayArea);
 displayAreaOptions.set('Left', leftDisplayArea);
 displayAreaOptions.set('Right', rightDisplayArea);
 displayAreaOptions.set('Center Small', centerSmallDisplayArea);
-displayAreaOptions.set('Center Fit Heigth', centerHeight);
+displayAreaOptions.set('Center Fit Height', centerHeight);
 
 addDropdownToToolbar({
   id: 'displayArea',
@@ -175,14 +176,88 @@ addDropdownToToolbar({
     viewport.render();
   },
 });
+
+const rotations = ['0', '45', '90', '135', '180', '270'];
+addDropdownToToolbar({
+  id: 'rotation',
+  options: {
+    values: rotations,
+    defaultValue: rotations[0],
+  },
+  onSelectedValueChange: (value) => {
+    viewport.setProperties({ rotation: value });
+    viewport.render();
+  },
+});
+
 // ============================= //
 
 addToggleButtonToToolbar({
   id: 'syncDisplayArea',
   title: 'Sync Display Area',
-  defaultToggle: synchronizerOptions.applyDisplayArea,
+  defaultToggle: synchronizerOptions.displayAreaType,
   onClick: (toggle) => {
-    synchronizerOptions.applyDisplayArea = toggle;
+    synchronizerOptions.displayAreaType = toggle;
+  },
+});
+
+addToggleButtonToToolbar({
+  id: 'syncZoom',
+  title: 'Sync Zoom',
+  defaultToggle: synchronizerOptions.zoomType,
+  onClick: (toggle) => {
+    synchronizerOptions.zoomType = toggle;
+  },
+});
+
+addToggleButtonToToolbar({
+  id: 'syncPan',
+  title: 'Sync Pan',
+  defaultToggle: synchronizerOptions.panType,
+  onClick: (toggle) => {
+    synchronizerOptions.panType = toggle;
+  },
+});
+
+addToggleButtonToToolbar({
+  id: 'syncRotation',
+  title: 'Sync Rotation',
+  defaultToggle: synchronizerOptions.rotationType,
+  onClick: (toggle) => {
+    synchronizerOptions.rotationType = toggle;
+  },
+});
+
+//////////
+// Sets the sizing options for how the images are displayed
+
+const resizeOptions = new Map();
+resizeOptions.set('Tall', {
+  viewportGridStyle: { width: '100%', height: '50%', flexDirection: 'row' },
+  elementStyle: {},
+});
+resizeOptions.set('Wide', {
+  viewportGridStyle: { width: '100%', height: '50%', flexDirection: 'column' },
+  elementStyle: { width: '512px', height: '128px' },
+});
+resizeOptions.set('1:2', {});
+resizeOptions.set('2:1', {});
+resizeOptions.set('4:5', {});
+resizeOptions.set('5:4', {});
+
+addDropdownToToolbar({
+  id: 'resizeAspect',
+  options: {
+    values: Array.from(resizeOptions.keys()),
+    defaultValue: resizeOptions.keys().next().value,
+  },
+  onSelectedValueChange: (value) => {
+    const aspect = resizeOptions.get(value);
+    console.log('Setting resize aspect', aspect);
+    Object.assign(viewportGrid.style, aspect.viewportGridStyle);
+    viewports.forEach((viewport) => {
+      Object.assign(viewport.element.style, aspect.viewportStyle);
+    });
   },
 });
 
@@ -340,6 +415,7 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+  viewportIds.forEach((id) => viewports.push(renderingEngine.getViewport(id)));
   resizeObserver.observe(viewportGrid);
 }
 

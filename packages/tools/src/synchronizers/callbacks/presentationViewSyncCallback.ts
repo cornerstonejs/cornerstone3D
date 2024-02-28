@@ -1,5 +1,4 @@
 import { getRenderingEngine, Types } from '@cornerstonejs/core';
-import { PresentationViewSynchronizerOptions } from '../synchronizers/createPresentationViewSynchronizer';
 
 /**
  * Synchronizer callback to synchronize the camera. Synchronization
@@ -17,7 +16,7 @@ export default function presentationViewSyncCallback(
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
   _sourceEvent,
-  options?: PresentationViewSynchronizerOptions
+  options?: Types.ViewPresentation
 ): void {
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -29,22 +28,9 @@ export default function presentationViewSyncCallback(
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
   const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
 
-  const presentationView = sViewport.getViewReference({ extended: true });
-  const { FrameOfReferenceUID } = presentationView;
-  const applyView: Types.ViewReference = {
-    FrameOfReferenceUID,
-  };
-  if (options.applySlabThickness) {
-    applyView.slabThickness = presentationView.slabThickness;
-  }
-  if (options.applyDisplayArea) {
-    applyView.displayArea = presentationView.displayArea;
-  }
-  if (options.applyRotation) {
-    applyView.rotation = presentationView.rotation;
-  }
+  const presentationView = sViewport.getViewPresentation(options);
 
-  tViewport.setViewReference(applyView);
+  tViewport.setView(null, presentationView);
 
   tViewport.render();
 }

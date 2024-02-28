@@ -6,7 +6,6 @@ import { ActorEntry } from './IActor';
 import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
-import BoundsLPS from './BoundsLPS';
 
 /**
  * Specifies what view to get a reference for.
@@ -28,11 +27,58 @@ export type ViewReferenceSpecifier = {
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
+};
+
+/**
+ * A view presentation stores information about how the view is presented to the
+ * user, such as rotation, the displayed area, pan/zoom etc.
+ * When used for choosing a presentation to return, set the units to the desired
+ * unit type in order to include that value.  Of course some viewports will not
+ * return some unit values at all, such as Stack and slabThickness.
+ */
+export type ViewPresentation = {
   /**
-   * extended allows additional information to be returned in the reference view,
-   * so that a more exact view reference can be returned.
+   * The slice thickness - in frames(true/default) it will be 1 for a frame distance of
+   * 1 pixel thickness, while for mm will be in mm distance.
    */
-  extended?: boolean;
+  slabThicknessType?: true | 'mm';
+  slabThickness?: number;
+
+  /**
+   * The rotation of the view - this is related to cameraViewUp, but is relative
+   * to the viewNormal and the default viewUp for that viewNormal.
+   */
+  rotationType?: true;
+  rotation?: number;
+
+  /**
+   * The display area being shown.  This is more consistent than applying a set
+   * of boundary areas.
+   */
+  displayAreaType?: true;
+  displayArea?: DisplayArea;
+
+  /**
+   * The zoom value is a zoom factor relative either to fit to canvas or relative
+   * to the display area.
+   * The default true units are relative to the initial camera
+   * scale to fit is used to get units relative to the scale to fit camera.
+   */
+  zoomType?: true | 'scaleToFit';
+  zoom?: number;
+
+  /**
+   * The pan value is how far the pan has moved relative to the fit to canvas
+   * or relative to the display area initial position/sizing.
+   * true is the default units, which is relative to the initial canvas setting,
+   * in zoom relative units.
+   * `initialCamera` is in canvas pixels, relative to the initial canvas setting.
+   * `scaleToFit` is relative to the scale to fit camera, in canvas pixels.
+   * `zoomRelative` (same as true here) is relative to the initialCamera, but scaled
+   *     by zoom numbers.
+   */
+  panType?: true | 'initialCamera' | 'scaleToFit' | 'zoomRelative';
+  pan?: Point2;
 };
 
 /**
@@ -103,25 +149,6 @@ export type ViewReference = {
    * VolumeId that the referencedImageId was chosen from
    */
   volumeId?: string;
-
-  //////// extended responses - these are not normally included in the response
-
-  /**
-   * The slice thickness
-   */
-  slabThickness?: number;
-
-  /**
-   * The rotation of the view - this is related to cameraViewUp, but is relative
-   * to the viewNormal and the default viewUp for that viewNormal.
-   */
-  rotation?: number;
-
-  /**
-   * The display area being shown.  This is more consistent than applying a set
-   * of boundary areas.
-   */
-  displayArea?: DisplayArea;
 };
 
 /**
@@ -213,11 +240,11 @@ interface IViewport {
   /** Sets the rendered state to rendered if the render actually showed image data */
   setRendered(): void;
   /** returns the parallel zoom relative to the default (eg returns 1 after reset) */
-  getZoom(): number;
+  getZoom(zoomType?): number;
   /** Sets the relative zoom - set to 1 to reset it */
   setZoom(zoom: number, storeAsInitialCamera?: boolean);
   /** Gets the canvas pan value */
-  getPan(): Point2;
+  getPan(panType?): Point2;
   /** Sets the canvas pan value */
   setPan(pan: Point2, storeAsInitialCamera?: boolean);
   /** sets the camera */
@@ -245,10 +272,14 @@ interface IViewport {
     options?: ReferenceCompatibleOptions
   ): boolean;
   /**
-   * Sets the given reference to the current value.  Ignores any values which
-   * are incompatible.
+   * Gets a view presentation information for this viewport
    */
-  setViewReference(viewRef: ViewReference);
+  getViewPresentation(viewPres: ViewPresentation);
+  /**
+   * Sets the given view.  This can apply any of the view reference or presentation
+   * information, assuming that is compatible with the current view.
+   */
+  setView(viewRef?: ViewReference, viewPres?: ViewPresentation);
 
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;

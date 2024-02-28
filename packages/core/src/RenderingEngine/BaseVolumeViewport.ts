@@ -39,7 +39,7 @@ import type {
   ReferenceCompatibleOptions,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
-import type { ViewportInput } from '../types/IViewport';
+import type { ViewPresentation, ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import type { ViewReference } from '../types/IViewport';
 import {
@@ -560,15 +560,20 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (viewRefSpecifier?.forFrameOfReference !== false) {
       target.volumeId = this.getVolumeId(viewRefSpecifier);
     }
-    if (viewRefSpecifier?.extended) {
-      target.slabThickness = this.getSlabThickness();
-    }
     // TODO - add referencedImageId as a base URL for an image to allow a generic
     // method to specify which volumes this should apply to.
     return {
       ...target,
       sliceIndex: this.getCurrentImageIdIndex(),
     };
+  }
+
+  getViewPresentation(viewPres?: ViewPresentation): ViewPresentation {
+    const target = super.getViewPresentation(viewPres);
+    if (!viewPres || viewPres.slabThicknessType) {
+      target.slabThickness = this.getSlabThickness();
+    }
+    return target;
   }
 
   /**
@@ -866,7 +871,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const colormapsVTK = vtkColorMaps.rgbPresetNames.map((presetName) =>
       vtkColorMaps.getPresetByName(presetName)
     );
-    const colormapsCS3D = getColormapNames().map((colormapName) => getColormap(colormapName));
+    const colormapsCS3D = getColormapNames().map((colormapName) =>
+      getColormap(colormapName)
+    );
     const colormaps = colormapsVTK.concat(colormapsCS3D);
     const matchedColormap = colormaps.find((colormap) => {
       const { RGBPoints: presetRGBPoints } = colormap;
