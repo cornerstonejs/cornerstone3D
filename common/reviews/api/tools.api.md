@@ -297,7 +297,7 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations, samePlan?: boolean): Annotations | undefined;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
@@ -1058,7 +1058,11 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
         };
     };
     // (undocumented)
+    _arraysEqual: (a: Types_2.Point3, b: Types_2.Point3) => boolean;
+    // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
+    // (undocumented)
+    _checkIfViewPlaneIsValid: (viewPlane: Types_2.Point3) => boolean;
     // (undocumented)
     _computePointsInsideVolume(annotation: any, imageVolume: any, enabledElement: any): void;
     // (undocumented)
@@ -1076,7 +1080,7 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
     // (undocumented)
     _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
-    _getImageIdIndex(imageVolume: Types_2.IImageVolume, pos: vec3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    _getImageIdIndex(imageVolume: Types_2.IImageVolume, pos: vec3, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
     _getStartSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
@@ -2322,7 +2326,7 @@ declare namespace EventTypes_2 {
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
+function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions, samePlan?: boolean): Annotations;
 
 // @public (undocumented)
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
@@ -4167,7 +4171,11 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
         };
     };
     // (undocumented)
+    _arraysEqual: (a: Types_2.Point3, b: Types_2.Point3) => boolean;
+    // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
+    // (undocumented)
+    _checkIfViewPlaneIsValid: (viewPlane: Types_2.Point3) => boolean;
     // (undocumented)
     _computePointsInsideVolume(annotation: any, imageVolume: any, enabledElement: any): void;
     // (undocumented)
@@ -4184,6 +4192,10 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    _getImageIdIndex(imageVolume: Types_2.IImageVolume, pos: vec3, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    _getStartSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
