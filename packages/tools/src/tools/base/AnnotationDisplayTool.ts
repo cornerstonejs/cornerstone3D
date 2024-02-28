@@ -54,12 +54,13 @@ abstract class AnnotationDisplayTool extends BaseTool {
    * imageId as the enabledElement.
    * @param element - The HTML element
    * @param annotations - The annotations to filter (array of annotation)
+   * @param onSamePlan - True if you want the all the annotations on the same plan of the viewport
    * @returns The filtered annotations
    */
   filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
     annotations: Annotations,
-    samePlan?: boolean
+    onSamePlan?: boolean
   ): Annotations | undefined {
     if (!annotations || !annotations.length) {
       return;
@@ -68,7 +69,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    return filterAnnotationsForDisplay(viewport, annotations, null, samePlan);
+    return filterAnnotationsForDisplay(viewport, annotations, null, onSamePlan);
   }
 
   /**
