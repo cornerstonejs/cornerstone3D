@@ -16,6 +16,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
   addButtonToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -34,10 +35,6 @@ const {
   CircleScissorsTool,
   BrushTool,
   PaintFillTool,
-  PanTool,
-  ZoomTool,
-  StackScrollTool,
-  StackScrollMouseWheelTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
@@ -292,6 +289,10 @@ async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
     volumeId: segmentationId,
+    // The following doesn't quite work yet
+    // TODO, allow RLE to be used instead of scalars.
+    // targetBuffer: { type: 'none' },
+    // voxelRepresentation: 'rleVoxelManager',
   });
 
   // Add the segmentations to state
@@ -324,10 +325,6 @@ async function run() {
   );
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
@@ -339,9 +336,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Manipulation Tools
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  addManipulationBindings(toolGroup);
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -372,37 +367,6 @@ async function run() {
   toolGroup.setToolActive(interpolationTools.keys().next().value, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -477,10 +441,6 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 3);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 4);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
-
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
@@ -488,6 +448,7 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

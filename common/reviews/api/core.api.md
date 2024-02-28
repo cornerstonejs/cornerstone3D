@@ -1866,6 +1866,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     readonly volumeId: string;
     // (undocumented)
+    voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+    // (undocumented)
     vtkOpenGLTexture: any;
 }
 
@@ -1893,6 +1895,8 @@ interface ImageVolumeProps extends VolumeProps {
     imageIds: Array<string>;
     // (undocumented)
     referencedImageIds?: Array<string>;
+    // (undocumented)
+    voxelManager?: VoxelManager<number> | VoxelManager<Point3>;
 }
 
 // @public (undocumented)
@@ -2511,7 +2515,7 @@ function performCacheOptimizationForVolume(volume: any): void;
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
 
 // @public (undocumented)
-type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray';
+type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray' | 'none';
 
 declare namespace planar {
     export {
