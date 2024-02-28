@@ -1,5 +1,3 @@
-import { getEnabledElement } from '@cornerstonejs/core';
-
 import InterpolationManager from '../../segmentation/InterpolationManager/InterpolationManager';
 import type { AcceptInterpolationSelector } from '../../../types/InterpolationTypes';
 import type AnnotationGroupSelector from '../../../types/AnnotationGroupSelector';

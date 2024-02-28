@@ -31,6 +31,7 @@ export default function createPolylineToolData(
     annotationUID: undefined,
     cachedStats: {},
     childAnnotationUIDs: [],
+    parentAnnotationUID: undefined,
   });
   Object.assign(annotation.data, {
     handles: {
@@ -54,8 +55,8 @@ export default function createPolylineToolData(
       },
     },
     contour: {
+      ...referencedToolData.data.contour,
       polyline,
-      closed: true,
     },
   });
 

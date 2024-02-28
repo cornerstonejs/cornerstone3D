@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.65.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.3...v1.65.0) (2024-02-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.64.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.2...v1.64.3) (2024-02-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.64.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.1...v1.64.2) (2024-02-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.64.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.0...v1.64.1) (2024-02-23)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [1.64.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.5...v1.64.0) (2024-02-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.63.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.4...v1.63.5) (2024-02-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.63.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.3...v1.63.4) (2024-02-21)
+
+### Bug Fixes
+
+- **volumeviewport:** cs3D colormaps were not being compared in getColormap function ([#1113](https://github.com/cornerstonejs/cornerstone3D/issues/1113)) ([7790cac](https://github.com/cornerstonejs/cornerstone3D/commit/7790cacf27de8839600b24c8b7d5bd7a92ab57ba))
+
 ## [1.63.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.63.2...v1.63.3) (2024-02-21)
 
 ### Bug Fixes

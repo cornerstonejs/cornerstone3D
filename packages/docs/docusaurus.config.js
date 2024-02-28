@@ -193,7 +193,6 @@ module.exports = {
     }),
   },
   plugins: [
-    'plugin-image-zoom',
     require.resolve('./webpackConfigurationPlugin'),
     [
       'docusaurus-plugin-typedoc-api',

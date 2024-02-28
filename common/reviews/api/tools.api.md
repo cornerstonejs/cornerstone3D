@@ -1201,7 +1201,7 @@ export class CircleScissorsTool extends BaseTool {
 function clearParentAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -1677,7 +1677,7 @@ const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: any): Synchronizer;
 
 // @public (undocumented)
-function createToolGroup(toolGroupId: string): IToolGroup | undefined;
+function createToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
 function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
@@ -1741,7 +1741,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _getSlabThicknessHandleNearImagePoint(viewport: any, annotation: any, canvasCoords: any, proximity: any): any;
     // (undocumented)
-    _getViewportsInfo: () => Types_2.IViewportId[];
+    _getViewportsInfo: () => any[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
     // (undocumented)
@@ -2439,7 +2439,7 @@ function getAllSegmentationRepresentations(): Record<string, ToolGroupSpecificRe
 function getAllSynchronizers(): Array<Synchronizer>;
 
 // @public (undocumented)
-function getAllToolGroups(): Array<IToolGroup>;
+function getAllToolGroups(): Array<ToolGroup>;
 
 // @public (undocumented)
 function getAnnotation(annotationUID: string): Annotation;
@@ -2690,10 +2690,10 @@ function getSynchronizersForViewport(viewportId: string, renderingEngineId: stri
 function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): Types_2.Point2;
 
 // @public (undocumented)
-function getToolGroup(toolGroupId: string): IToolGroup | undefined;
+function getToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupForViewport(viewportId: string, renderingEngineId?: string): IToolGroup | undefined;
+function getToolGroupForViewport(viewportId: string, renderingEngineId?: string): ToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[];
@@ -2705,7 +2705,7 @@ function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresenta
 function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresentationConfig;
 
 // @public (undocumented)
-function getToolGroupsWithToolName(toolName: string): IToolGroup[] | [];
+function getToolGroupsWithToolName(toolName: string): ToolGroup[] | [];
 
 // @public (undocumented)
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
@@ -2976,90 +2976,6 @@ type IToolBinding = {
 
 // @public (undocumented)
 type IToolClassReference = new <T extends BaseTool>(config: any) => T;
-
-// @public (undocumented)
-interface IToolGroup {
-    // (undocumented)
-    addTool: {
-        (toolName: string, toolConfiguration?: ToolConfiguration): void;
-    };
-    // (undocumented)
-    addToolInstance: {
-        (ttoolName: string, parentClassName: string, configuration?: any): void;
-    };
-    // (undocumented)
-    addViewport: {
-        (viewportId: string, renderingEngineId?: string): void;
-    };
-    // (undocumented)
-    clone: {
-        (newToolGroupId: string, fnToolFilter: (toolName: string) => boolean): IToolGroup;
-    };
-    // (undocumented)
-    getActivePrimaryMouseButtonTool: {
-        (): undefined | string;
-    };
-    // (undocumented)
-    getDefaultMousePrimary: {
-        (): MouseBindings;
-    };
-    // (undocumented)
-    getToolConfiguration: {
-        (toolName: string, configurationPath?: string): any;
-    };
-    // (undocumented)
-    getToolInstance: {
-        (toolName: string): any;
-    };
-    // (undocumented)
-    getToolOptions: {
-        (toolName: string): ToolOptionsType;
-    };
-    // (undocumented)
-    getViewportIds: () => string[];
-    // (undocumented)
-    getViewportsInfo: () => Array<Types_2.IViewportId>;
-    // (undocumented)
-    hasTool(toolName: string): boolean;
-    // (undocumented)
-    id: string;
-    // (undocumented)
-    removeViewports: {
-        (renderingEngineId: string, viewportId?: string): void;
-    };
-    // (undocumented)
-    setToolActive: {
-        (toolName: string, toolBindingsOption?: SetToolBindingsType): void;
-    };
-    // (undocumented)
-    setToolConfiguration: {
-        (toolName: string, configuration: ToolConfiguration, overwrite?: boolean): void;
-    };
-    // (undocumented)
-    setToolDisabled: {
-        (toolName: string): void;
-    };
-    // (undocumented)
-    setToolEnabled: {
-        (toolName: string): void;
-    };
-    // (undocumented)
-    setToolPassive: {
-        (toolName: string, options?: {
-            removeAllBindings?: boolean;
-        }): void;
-    };
-    // (undocumented)
-    setViewportsCursorByToolName: {
-        (toolName: string, strategyName?: string): void;
-    };
-    // (undocumented)
-    _toolInstances: Record<string, any>;
-    // (undocumented)
-    toolOptions: Record<string, any>;
-    // (undocumented)
-    viewportsInfo: Array<Types_2.IViewportId>;
-}
 
 // @public (undocumented)
 type ITouchPoints = IPoints & {
@@ -5468,6 +5384,69 @@ interface ToolData {
     usingFrameTimeVector: boolean;
 }
 
+// @public (undocumented)
+class ToolGroup implements ToolGroup {
+    constructor(id: string);
+    // (undocumented)
+    addTool(toolName: string, configuration?: ToolConfiguration): void;
+    // (undocumented)
+    addToolInstance(toolName: string, parentClassName: string, configuration?: {}): void;
+    // (undocumented)
+    addViewport(viewportId: string, renderingEngineId?: string): void;
+    // (undocumented)
+    clone(newToolGroupId: any, fnToolFilter?: (toolName: string) => void): ToolGroup;
+    // (undocumented)
+    getActivePrimaryMouseButtonTool(): string;
+    // (undocumented)
+    getDefaultMousePrimary(): MouseBindings;
+    // (undocumented)
+    getDefaultPrimaryBindings(): IToolBinding[];
+    // (undocumented)
+    getToolConfiguration(toolName: string, configurationPath?: string): any;
+    // (undocumented)
+    getToolInstance(toolInstanceName: string): any;
+    // (undocumented)
+    getToolOptions(toolName: string): ToolOptionsType;
+    // (undocumented)
+    getViewportIds(): string[];
+    // (undocumented)
+    getViewportsInfo(): Array<Types_2.IViewportId>;
+    // (undocumented)
+    hasTool(toolName: string): boolean;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    removeViewports(renderingEngineId: string, viewportId?: string): void;
+    // (undocumented)
+    restoreToolOptions: {};
+    // (undocumented)
+    setActiveStrategy(toolName: string, strategyName: string): void;
+    // (undocumented)
+    _setCursorForViewports(cursor: MouseCursor): void;
+    // (undocumented)
+    setToolActive(toolName: string, toolBindingsOptions?: SetToolBindingsType): void;
+    // (undocumented)
+    setToolConfiguration(toolName: string, configuration: ToolConfiguration, overwrite?: boolean): boolean;
+    // (undocumented)
+    setToolDisabled(toolName: string): void;
+    // (undocumented)
+    setToolEnabled(toolName: string): void;
+    // (undocumented)
+    setToolMode(toolName: string, mode: ToolModes, options?: SetToolBindingsType): void;
+    // (undocumented)
+    setToolPassive(toolName: string, options?: {
+        removeAllBindings?: boolean | IToolBinding[];
+    }): void;
+    // (undocumented)
+    setViewportsCursorByToolName(toolName: string, strategyName?: string): void;
+    // (undocumented)
+    _toolInstances: {};
+    // (undocumented)
+    toolOptions: {};
+    // (undocumented)
+    viewportsInfo: any[];
+}
+
 declare namespace ToolGroupManager {
     export {
         createToolGroup,
@@ -5742,7 +5721,7 @@ declare namespace Types {
         ToolOptionsType,
         InteractionTypes,
         ToolAction,
-        IToolGroup,
+        ToolGroup as IToolGroup,
         IToolClassReference,
         ISynchronizerEventHandler,
         ToolHandle,

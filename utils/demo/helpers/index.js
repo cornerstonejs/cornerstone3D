@@ -20,6 +20,7 @@ import addManipulationBindings from './addManipulationBindings';
 import addVideoTime from './addVideoTime';
 import addBrushSizeSlider from './addBrushSizeSlider';
 import addSegmentIndexDropdown from './addSegmentIndexDropdown';
+import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 
 import { addLabelToToolbar } from './addLabelToToolbar';
 
@@ -28,6 +29,7 @@ export {
   addSegmentIndexDropdown,
   addVideoTime,
   createImageIdsAndCacheMetaData,
+  contourSegmentationToolBindings,
   wadoURICreateImageIds,
   initDemo,
   setTitleAndDescription,

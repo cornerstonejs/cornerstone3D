@@ -175,6 +175,13 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     scale = calibration.scale;
   }
 
+  // everything except REGION/Uncalibratted
+  const types = [CalibrationTypes.ERMF, CalibrationTypes.USER, CalibrationTypes.ERROR, CalibrationTypes.PROJECTION];
+
+  if (types.includes(calibration?.type)) {
+      calibrationType = calibration.type;
+  }
+
   return {
     units: units + (calibrationType ? ` ${calibrationType}` : ''),
     areaUnits: areaUnits + (calibrationType ? ` ${calibrationType}` : ''),
