@@ -79,7 +79,7 @@ export default class RLEVoxelMap<T> {
     const i = index % this.jMultiple;
     const j = (index - i) / this.jMultiple;
     const rle = this.getRLE(i, j);
-    return rle?.value || this.defaultValue;
+    return rle?.value ?? this.defaultValue;
   };
 
   /**
@@ -359,6 +359,123 @@ export default class RLEVoxelMap<T> {
       }
     }
     return pixelData;
+  }
+
+  /**
+   * Performs a flood fill on the RLE values at the given position, replacing
+   * the current value with the new value (which must be different)
+   */
+  public floodFill(i: number, j: number, k: number, value: T): number {
+    const rle = this.getRLE(i, j, k);
+    if (!rle) {
+      throw new Error(`Initial point ${i},${j},${k} isn't in the RLE`);
+    }
+    const stack = [[rle, j, k]];
+    const replaceValue = rle.value;
+    if (replaceValue === value) {
+      throw new Error(
+        `source (${replaceValue}) and destination (${value}) are identical`
+      );
+    }
+    return this.flood(stack, replaceValue, value);
+  }
+
+  /**
+   * Performs a flood fill on the stack.
+   */
+  private flood(stack, sourceValue, value) {
+    let sum = 0;
+    while (stack.length) {
+      const top = stack.pop();
+      const [current] = top;
+      if (current.value !== sourceValue) {
+        continue;
+      }
+      current.value = value;
+      sum += current.end - current.start;
+      const adjacents = this.findAdjacents(top).filter(
+        (adjacent) => adjacent && adjacent[0].value === sourceValue
+      );
+      stack.push(...adjacents);
+    }
+    return sum;
+  }
+
+  /**
+   * Fills an RLE from a given getter result, skipping undefined values only.
+   */
+  public fillFrom(getter, boundsIJK) {
+    for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        let rle;
+        let row;
+        for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
+          const value = getter(i, j, k);
+          if (value === undefined) {
+            rle = undefined;
+            continue;
+          }
+          if (!row) {
+            row = [];
+            this.rows.set(j + k * this.height, row);
+          }
+          if (rle && rle.value !== value) {
+            rle = undefined;
+          }
+          if (!rle) {
+            rle = { start: i, end: i, value };
+            row.push(rle);
+          }
+          rle.end++;
+        }
+      }
+    }
+  }
+
+  /**
+   * Finds adjacent RLE runs, in all directions.
+   */
+  public findAdjacents(item, diagonals = true) {
+    const [rle, j, k] = item;
+    const { start, end } = rle;
+    const leftRle = start > 0 && this.getRLE(start - 1, j, k);
+    const rightRle = end < this.width && this.getRLE(end, j, k);
+    const range = diagonals
+      ? [start > 0 ? start - 1 : start, end < this.width ? end + 1 : end]
+      : [start, end];
+    const rangeDeltas = [
+      [0, -1, 0],
+      [0, 1, 0],
+      [0, 0, -1],
+      [0, 0, 1],
+    ];
+    const adjacents = [];
+    if (leftRle) {
+      adjacents.push(leftRle);
+    }
+    if (rightRle) {
+      adjacents.push(rightRle);
+    }
+    for (const delta of rangeDeltas) {
+      const testJ = delta[1] + j;
+      const testK = delta[2] + k;
+      if (testJ < 0 || testJ >= this.height) {
+        continue;
+      }
+      if (testK < 0 || testK >= this.depth) {
+        continue;
+      }
+      const row = this.getRun(testJ, testK);
+      if (!row) {
+        continue;
+      }
+      for (const testRle of row) {
+        if (!(testRle.end <= range[0] || testRle.start >= range[1])) {
+          adjacents.push([testRle, testJ, testK]);
+        }
+      }
+    }
+    return adjacents;
   }
 }
 
