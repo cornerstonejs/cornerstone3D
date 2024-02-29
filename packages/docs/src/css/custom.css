@@ -82,9 +82,6 @@ html[data-theme='dark'] {
   color: rgb(255, 255, 255);
 }
 
-.medium-zoom-overlay {
-  background: var(--ifm-zoom-image-background-color) !important;
-}
 
 .header-github-link:hover {
   opacity: 0.6;

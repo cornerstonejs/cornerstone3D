@@ -12,18 +12,18 @@ import {
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport.
- * @param voiModifiedEvent - The VOI_MODIFIED event.
+ * @param modifiedEvent - The COLORMAP_MODIFIED or VOI_MODIFIED event.
  * @param options - Options for the synchronizer.
  */
 export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
-  voiModifiedEvent: Types.EventTypes.VoiModifiedEvent,
+  modifiedEvent: any,
   options?: any
 ): void {
-  const eventDetail = voiModifiedEvent.detail;
-  const { volumeId, range, invertStateChanged, invert } = eventDetail;
+  const eventDetail = modifiedEvent.detail;
+  const { volumeId, range, invertStateChanged, invert, colormap } = eventDetail;
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -41,6 +41,9 @@ export default function voiSyncCallback(
 
   if (options?.syncInvertState && invertStateChanged) {
     tProperties.invert = invert;
+  }
+  if (options?.syncColormap && colormap) {
+    tProperties.colormap = colormap;
   }
 
   if (tViewport instanceof BaseVolumeViewport) {
