@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.65.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.2...v1.65.3) (2024-02-29)
+
+### Bug Fixes
+
+- **brush cursor:** only show innter circle on dynamic threshold ([#1099](https://github.com/cornerstonejs/cornerstone3D/issues/1099)) ([fe08906](https://github.com/cornerstonejs/cornerstone3D/commit/fe089069cbc8703b1c912363b09defdd3b8be9b7))
+
+## [1.65.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.1...v1.65.2) (2024-02-29)
+
+### Bug Fixes
+
+- **planarFreehand:** fix undefined error ([#1131](https://github.com/cornerstonejs/cornerstone3D/issues/1131)) ([87d95f2](https://github.com/cornerstonejs/cornerstone3D/commit/87d95f2af4dbc3f12514485a3f57d23768cdbfa0))
+
+## [1.65.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.0...v1.65.1) (2024-02-28)
+
+### Bug Fixes
+
+- **colormap:** make syncing colormap optional ([#1129](https://github.com/cornerstonejs/cornerstone3D/issues/1129)) ([abc8575](https://github.com/cornerstonejs/cornerstone3D/commit/abc8575c692ecd5c2e3279ef254c2062e7c71bc4))
+
 # [1.65.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.3...v1.65.0) (2024-02-26)
 
 ### Features
