@@ -57,7 +57,11 @@ export default {
       operationData.previewVoxelManager = preview.previewVoxelManager;
     }
 
-    if (segmentIndex === null || !previewSegmentIndex) {
+    if (
+      segmentIndex === undefined ||
+      segmentIndex === null ||
+      !previewSegmentIndex
+    ) {
       // Null means to reset the value, so we don't change the preview colour
       return;
     }

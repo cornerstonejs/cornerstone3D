@@ -452,15 +452,17 @@ export default class VoxelManager<T> {
       dimensions,
       (index) => map.get(index),
       function (index, v) {
-        if (!map.has(index)) {
+        const originalV = map.get(index);
+        if (originalV === undefined) {
           const oldV = this.sourceVoxelManager.getAtIndex(index);
-          if (oldV === v) {
+          if (oldV === v || v === null) {
             // No-op
             return false;
           }
           map.set(index, oldV);
-        } else if (v === map.get(index)) {
+        } else if (v === originalV || v === null) {
           map.delete(index);
+          v = originalV;
         }
         this.sourceVoxelManager.setAtIndex(index, v);
       }

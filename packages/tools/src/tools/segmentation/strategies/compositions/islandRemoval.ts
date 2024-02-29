@@ -33,6 +33,7 @@ export default {
       strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,
+      viewport,
     } = operationData;
 
     if (!strategySpecificConfiguration.THRESHOLD || segmentIndex === null) {
@@ -80,7 +81,6 @@ export default {
 
     const [width, height, depth] = segmentationVoxelManager.dimensions;
     const floodedSet = new RLEVoxelMap<SegmentationEnum>(width, height, depth);
-    floodedSet.defaultValue = undefined;
     // Returns true for new colour, and false otherwise
     const getter = (i, j, k) => {
       const index = segmentationVoxelManager.toIndex([i, j, k]);
@@ -120,7 +120,8 @@ export default {
       } else {
         // TODO - figure out what value to set to restore this to before preview
         for (let i = rle.start; i < rle.end; i++) {
-          previewVoxelManager.setAtIJK(i, j, k, 0);
+          // preview voxel manager knows to reset on null
+          previewVoxelManager.setAtIJK(i, j, k, null);
         }
       }
     };

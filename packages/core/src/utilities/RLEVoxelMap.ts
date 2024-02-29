@@ -52,7 +52,7 @@ export default class RLEVoxelMap<T> {
    * default value for unset values.
    * Set to 0 by default, but any maps where 0 not in T should update this value.
    */
-  public defaultValue: T = 0 as unknown as T;
+  public defaultValue: T;
 
   /**
    * The constructor for creating pixel data.
