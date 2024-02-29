@@ -5157,6 +5157,8 @@ enum StrategyCallbacks {
     // (undocumented)
     AcceptPreview = "acceptPreview",
     // (undocumented)
+    ComputeInnerCircleRadius = "computeInnerCircleRadius",
+    // (undocumented)
     CreateIsInThreshold = "createIsInThreshold",
     // (undocumented)
     Fill = "fill",

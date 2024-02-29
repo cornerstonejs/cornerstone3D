@@ -47,6 +47,9 @@ enum StrategyCallbacks {
 
   // Internal Details
   INTERNAL_setValue = 'setValue',
+
+  /** inner circle size  */
+  ComputeInnerCircleRadius = 'computeInnerCircleRadius',
 }
 
 export default StrategyCallbacks;
