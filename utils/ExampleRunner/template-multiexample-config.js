@@ -82,6 +82,11 @@ module.exports = {
           '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
         to: '${destPath.replace(/\\/g, '/')}',
       },
+      {
+        from:
+        '../../../externals/',
+        to: '${destPath.replace(/\\/g, '/')}',
+      }
       ],
     }),
   ],

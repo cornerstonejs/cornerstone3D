@@ -31,6 +31,14 @@ class PanTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
 
     const deltaPointsWorld = deltaPoints.world;
+    // This occurs when the mouse event is fired but the mouse hasn't moved a full pixel yet (high resolution mice)
+    if (
+      deltaPointsWorld[0] === 0 &&
+      deltaPointsWorld[1] === 0 &&
+      deltaPointsWorld[2] === 0
+    ) {
+      return;
+    }
     const camera = enabledElement.viewport.getCamera();
     const { focalPoint, position } = camera;
 

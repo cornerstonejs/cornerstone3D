@@ -6,7 +6,6 @@ import {
   EVENTS,
   utilities as csUtils,
   getEnabledElement,
-  VideoViewport,
 } from '@cornerstonejs/core';
 import { ScrollOptions, EventTypes } from '../types';
 
@@ -37,17 +36,16 @@ export default function scroll(
     throw new Error('Scroll::Stack Viewport has no images');
   }
 
-  const { type: viewportType } = viewport;
   const { volumeId, delta, scrollSlabs } = options;
 
-  if (viewport instanceof StackViewport) {
-    viewport.scroll(delta, options.debounceLoading, options.loop);
-  } else if (viewport instanceof VolumeViewport) {
+  if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta, scrollSlabs);
-  } else if (viewport instanceof VideoViewport) {
-    viewport.scroll(delta);
   } else {
-    throw new Error(`Not implemented for Viewport Type: ${viewportType}`);
+    (viewport as Types.IStackViewport).scroll(
+      delta,
+      options.debounceLoading,
+      options.loop
+    );
   }
 }
 

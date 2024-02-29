@@ -174,4 +174,8 @@ export default interface IStackViewport extends IViewport {
    * It sets the colormap to the default colormap.
    */
   unsetColormap(): void;
+  /**
+   * Scrolls the image being viewed by the given number
+   */
+  scroll(delta: number, debounce: boolean, loop: boolean): void;
 }

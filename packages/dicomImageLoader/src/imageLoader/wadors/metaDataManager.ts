@@ -9,8 +9,10 @@ let multiframeMetadataByImageURI = {};
 function add(imageId: string, metadata: WADORSMetaData) {
   const imageURI = imageIdToURI(imageId);
 
-  // @ts-ignore
-  metadata.isMultiframe = multiframeMetadata.isMultiframe(metadata);
+  Object.defineProperty(metadata, 'isMultiframe', {
+    value: multiframeMetadata.isMultiframe(metadata),
+    enumerable: false,
+  });
 
   metadataByImageURI[imageURI] = metadata;
 }

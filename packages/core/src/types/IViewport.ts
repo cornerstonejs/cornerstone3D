@@ -230,6 +230,7 @@ interface IViewport {
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
   updateRenderingPipeline: () => void;
+  getTargetId?: () => string;
 }
 
 /**

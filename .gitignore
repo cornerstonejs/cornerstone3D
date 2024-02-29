@@ -37,6 +37,7 @@ package-lock.json
 packages/docs/dist/
 packages/docs/static/examples
 packages/docs/static/test-coverage
+packages/docs/static/dicom-microscopy-viewer
 packages/docs/docs/examples.md
 dist/
 tsDist/
