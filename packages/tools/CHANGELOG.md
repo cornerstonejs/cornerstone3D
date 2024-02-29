@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.65.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.2...v1.65.3) (2024-02-29)
+
+### Bug Fixes
+
+- **brush cursor:** only show innter circle on dynamic threshold ([#1099](https://github.com/cornerstonejs/cornerstone3D/issues/1099)) ([fe08906](https://github.com/cornerstonejs/cornerstone3D/commit/fe089069cbc8703b1c912363b09defdd3b8be9b7))
+
 ## [1.65.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.1...v1.65.2) (2024-02-29)
 
 ### Bug Fixes
