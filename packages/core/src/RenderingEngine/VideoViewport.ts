@@ -60,6 +60,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private scalarData: CanvasScalarData;
 
   /**
+   * This is used to pause initially so that we get at least one render to allow
+   * navigating frames.  Otherwise the viewport is blank initially until the user
+   * hits play manually.
+   */
+  private initialRender: () => void;
+
+  /**
    * The range is the set of frames to play
    */
   private frameRange: [number, number] = [0, 0];
@@ -119,6 +126,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement = document.createElement('video');
     this.videoElement.muted = this.mute;
     this.videoElement.loop = this.loop;
+    this.videoElement.autoplay = true;
     this.videoElement.crossOrigin = 'anonymous';
 
     this.addEventListeners();
@@ -235,16 +243,22 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
-      this.play();
+      // The initial render allows us to set the frame position - rendering needs
+      // to start already playing
+      this.initialRender = () => {
+        this.initialRender = null;
+        this.pause();
+        this.setFrameNumber(frameNumber || 1);
+      };
+
       // This is ugly, but without it, the video often fails to render initially
       // so having a play, followed by a pause fixes things.
-      // 100 ms is a tested value that seems to work to prevent exceptions
+      // 25 ms is a tested value that seems to work to prevent exceptions
       return new Promise((resolve) => {
         window.setTimeout(() => {
-          this.pause();
           this.setFrameNumber(frameNumber || 1);
           resolve(this);
-        }, 100);
+        }, 25);
       });
     });
   }
@@ -646,6 +660,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       ];
     }
 
+    this.canvasContext.fillStyle = 'rgba(0,0,0,1)';
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     if (this.isPlaying === false) {
@@ -1044,6 +1059,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       time: this.videoElement.currentTime,
       duration: this.videoElement.duration,
     });
+
+    this.initialRender?.();
 
     const frame = this.getFrameNumber();
     if (this.isPlaying) {

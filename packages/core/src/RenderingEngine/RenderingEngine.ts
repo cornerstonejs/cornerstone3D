@@ -627,10 +627,28 @@ class RenderingEngine implements IRenderingEngine {
       canvas.height = rect.height * devicePixelRatio;
 
       const prevCamera = vp.getCamera();
+      const rotation = vp.getRotation();
+      const pan = vp.getPan();
+      const zoom = vp.getZoom();
+      const { flipHorizontal } = prevCamera;
       vp.resetCamera();
 
+      const displayArea = vp.getDisplayArea();
+
+      // TODO - make this use get/set Presentation or in some way preserve the
+      // basic presentation info on this viewport, rather than preserving camera
       if (keepCamera) {
-        vp.setCamera(prevCamera);
+        if (displayArea) {
+          if (flipHorizontal) {
+            vp.setCamera({ flipHorizontal });
+          }
+          if (rotation) {
+            vp.setProperties({ rotation });
+          }
+          console.log('What to do with pan and zoom', pan[0], pan[1], zoom);
+        } else {
+          vp.setCamera(prevCamera);
+        }
       }
     });
 

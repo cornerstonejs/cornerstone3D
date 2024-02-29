@@ -691,12 +691,17 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const splineConfig = this._getSplineConfig(splineType);
     const spline = annotation.data.spline.instance;
 
+    const childAnnotations = getChildAnnotations(annotation);
+    const missingAnnotation = childAnnotations.findIndex((it) => !it);
+    if (missingAnnotation !== -1) {
+      // Child annotations go AWOL for a variety of reasons, so report is specifically here
+      throw new Error(
+        `Can't find annotation for child ${annotation.childAnnotationUIDs.join()}`
+      );
+    }
     // Update current and all child annotations/splines
-    const splineAnnotationsGroup = [
-      annotation,
-      ...getChildAnnotations(annotation),
-    ].filter((annotation) =>
-      this._isSplineROIAnnotation(annotation)
+    const splineAnnotationsGroup = [annotation, ...childAnnotations].filter(
+      (annotation) => this._isSplineROIAnnotation(annotation)
     ) as SplineROIAnnotation[];
 
     splineAnnotationsGroup.forEach((annotation) => {

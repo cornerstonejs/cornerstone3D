@@ -372,7 +372,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const points = annotation.data.contour.polyline;
+    const { polyline: points } = annotation.data.contour;
 
     // NOTE: It is implemented this way so that we do not double calculate
     // points when number crunching adjacent line segments.
@@ -402,7 +402,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return pointCanProjectOnLine(canvasCoords, pStart, pEnd, proximity);
   };
 
-  cancel = (element: HTMLDivElement): void => {
+  public cancel = (element: HTMLDivElement): void => {
     const isDrawing = this.isDrawing;
     const isEditingOpen = this.isEditingOpen;
     const isEditingClosed = this.isEditingClosed;
@@ -421,7 +421,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    * `handles`, which means `filterAnnotationsForDisplay` fails inside
    * `filterAnnotationsWithinSlice`.
    */
-  filterInteractableAnnotationsForElement(
+  public filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
     annotations: Annotations
   ): Annotations | undefined {
