@@ -1,3 +1,4 @@
+import type Point3 from '../types/Point3';
 import { PixelDataTypedArray } from '../types';
 
 /**
@@ -81,6 +82,17 @@ export default class RLEVoxelMap<T> {
     const rle = this.getRLE(i, j);
     return rle?.value ?? this.defaultValue;
   };
+
+  public toIJK(index: number): Point3 {
+    const i = index % this.jMultiple;
+    const j = ((index - i) / this.jMultiple) % this.height;
+    const k = Math.floor(index / this.kMultiple);
+    return [i, j, k];
+  }
+
+  public toIndex([i, j, k]: Point3) {
+    return i + k * this.kMultiple + j * this.jMultiple;
+  }
 
   /**
    * Gets a list of RLERun values which specify the data on the row j
@@ -377,7 +389,16 @@ export default class RLEVoxelMap<T> {
    * Performs a flood fill on the RLE values at the given position, replacing
    * the current value with the new value (which must be different)
    */
-  public floodFill(i: number, j: number, k: number, value: T): number {
+  public floodFill(
+    i: number,
+    j: number,
+    k: number,
+    value: T,
+    options?: { planar?: boolean; diagonals?: boolean }
+  ): number {
+    const planar = options?.planar ?? false;
+    const diagonals = options?.diagonals ?? true;
+
     const rle = this.getRLE(i, j, k);
     if (!rle) {
       throw new Error(`Initial point ${i},${j},${k} isn't in the RLE`);
@@ -389,13 +410,13 @@ export default class RLEVoxelMap<T> {
         `source (${replaceValue}) and destination (${value}) are identical`
       );
     }
-    return this.flood(stack, replaceValue, value);
+    return this.flood(stack, replaceValue, value, { planar, diagonals });
   }
 
   /**
    * Performs a flood fill on the stack.
    */
-  private flood(stack, sourceValue, value) {
+  private flood(stack, sourceValue, value, options) {
     let sum = 0;
     while (stack.length) {
       const top = stack.pop();
@@ -405,7 +426,7 @@ export default class RLEVoxelMap<T> {
       }
       current.value = value;
       sum += current.end - current.start;
-      const adjacents = this.findAdjacents(top).filter(
+      const adjacents = this.findAdjacents(top, options).filter(
         (adjacent) => adjacent && adjacent[0].value === sourceValue
       );
       stack.push(...adjacents);
@@ -447,7 +468,7 @@ export default class RLEVoxelMap<T> {
   /**
    * Finds adjacent RLE runs, in all directions.
    */
-  public findAdjacents(item, diagonals = true) {
+  public findAdjacents(item, { diagonals = true, planar = false }) {
     const [rle, j, k] = item;
     const { start, end } = rle;
     const leftRle = start > 0 && this.getRLE(start - 1, j, k);
@@ -455,12 +476,17 @@ export default class RLEVoxelMap<T> {
     const range = diagonals
       ? [start > 0 ? start - 1 : start, end < this.width ? end + 1 : end]
       : [start, end];
-    const rangeDeltas = [
-      [0, -1, 0],
-      [0, 1, 0],
-      [0, 0, -1],
-      [0, 0, 1],
-    ];
+    const rangeDeltas = planar
+      ? [
+          [0, -1, 0],
+          [0, 1, 0],
+        ]
+      : [
+          [0, -1, 0],
+          [0, 1, 0],
+          [0, 0, -1],
+          [0, 0, 1],
+        ];
     const adjacents = [];
     if (leftRle) {
       adjacents.push([leftRle, j, k]);

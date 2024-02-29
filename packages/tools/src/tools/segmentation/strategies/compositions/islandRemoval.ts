@@ -1,7 +1,9 @@
 import { utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import normalizeViewportPlane from '../utils/normalizeViewportPlane';
 
 const { RLEVoxelMap } = utilities;
 
@@ -58,7 +60,7 @@ export default {
       .map((bound, i) => [
         Math.min(bound[0], ...clickedPoints.map((point) => point[i])),
         Math.max(bound[1], ...clickedPoints.map((point) => point[i])),
-      ]);
+      ]) as Types.BoundsIJK;
 
     if (boundsIJK.find((it) => it[0] < 0 || it[1] > 65535)) {
       // Nothing done, so just skip this
@@ -68,37 +70,40 @@ export default {
     // First get the set of points which are directly connected to the points
     // that the user clicked on/dragged over.
     console.time('floodedSet');
-    const filter = ([i, j, k]) => {
-      return !(
-        i < boundsIJK[0][0] ||
-        i > boundsIJK[0][1] ||
-        j < boundsIJK[1][0] ||
-        j > boundsIJK[1][1] ||
-        k < boundsIJK[2][0] ||
-        k > boundsIJK[2][1]
-      );
-    };
+    const { toIJK, fromIJK, boundsIJKPrime } = normalizeViewportPlane(
+      viewport,
+      boundsIJK
+    );
 
-    const [width, height, depth] = segmentationVoxelManager.dimensions;
+    const [width, height, depth] = fromIJK(segmentationVoxelManager.dimensions);
     const floodedSet = new RLEVoxelMap<SegmentationEnum>(width, height, depth);
     // Returns true for new colour, and false otherwise
     const getter = (i, j, k) => {
-      const index = segmentationVoxelManager.toIndex([i, j, k]);
+      const index = segmentationVoxelManager.toIndex(toIJK([i, j, k]));
       const oldVal = segmentationVoxelManager.getAtIndex(index);
       if (oldVal === previewSegmentIndex || oldVal === segmentIndex) {
         // Values are initially false for indexed values.
         return SegmentationEnum.SEGMENT;
       }
     };
-    floodedSet.fillFrom(getter, boundsIJK);
+    floodedSet.fillFrom(getter, boundsIJKPrime);
 
     let floodedCount = 0;
 
     clickedPoints.forEach((clickedPoint) => {
-      const index = segmentationVoxelManager.toIndex(clickedPoint);
-      const [i, j, k] = segmentationVoxelManager.toIJK(index);
+      const ijkPrime = fromIJK(clickedPoint);
+      const index = floodedSet.toIndex(ijkPrime);
+      const [iPrime, jPrime, kPrime] = ijkPrime;
       if (floodedSet.get(index) === SegmentationEnum.SEGMENT) {
-        floodedCount += floodedSet.floodFill(i, j, k, SegmentationEnum.ISLAND);
+        floodedCount += floodedSet.floodFill(
+          iPrime,
+          jPrime,
+          kPrime,
+          SegmentationEnum.ISLAND,
+          {
+            planar: true,
+          }
+        );
       }
     });
     console.timeEnd('floodedSet');
@@ -114,14 +119,15 @@ export default {
     let previewCount = 0;
 
     const callback = (index, rle, row) => {
-      const [, j, k] = segmentationVoxelManager.toIJK(index);
+      const [, jPrime, kPrime] = floodedSet.toIJK(index);
       if (rle.value === SegmentationEnum.ISLAND) {
         previewCount += rle.end - rle.start;
       } else {
         // TODO - figure out what value to set to restore this to before preview
-        for (let i = rle.start; i < rle.end; i++) {
+        for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
           // preview voxel manager knows to reset on null
-          previewVoxelManager.setAtIJK(i, j, k, null);
+          const clearPoint = toIJK([iPrime, jPrime, kPrime]);
+          previewVoxelManager.setAtIJKPoint(clearPoint, null);
         }
       }
     };
@@ -149,15 +155,15 @@ export default {
     floodedSet.forEachRow((baseIndex, row) => {
       let lastRle;
       for (const rle of row) {
-        if (rle.value === false) {
+        if (rle.value !== SegmentationEnum.ISLAND) {
           continue;
         }
         if (!lastRle) {
           lastRle = rle;
           continue;
         }
-        for (let i = lastRle.end; i < rle.start; i++) {
-          floodedSet.set(baseIndex + i, SegmentationEnum.INTERIOR);
+        for (let iPrime = lastRle.end; iPrime < rle.start; iPrime++) {
+          floodedSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
         }
         lastRle = undefined;
       }
@@ -168,14 +174,20 @@ export default {
         // Already filled/handled
         return;
       }
-      const j = (baseIndex / width) % height;
-      const k = (baseIndex / width - j) / height;
-      const rowPrev = j > 0 ? floodedSet.getRun(j - 1, k) : null;
-      const rowNext = j + 1 < height ? floodedSet.getRun(j + 1, k) : null;
+      const [, jPrime, kPrime] = floodedSet.toIJK(baseIndex);
+      const rowPrev = jPrime > 0 ? floodedSet.getRun(jPrime - 1, kPrime) : null;
+      const rowNext =
+        jPrime + 1 < height ? floodedSet.getRun(jPrime + 1, kPrime) : null;
       const prevCovers = covers(rle, rowPrev);
       const nextCovers = covers(rle, rowNext);
       if (!prevCovers || !nextCovers) {
-        floodedSet.floodFill(rle.start, j, k, SegmentationEnum.EXTERIOR);
+        floodedSet.floodFill(
+          rle.start,
+          jPrime,
+          kPrime,
+          SegmentationEnum.EXTERIOR,
+          { diagonals: false }
+        );
       }
     });
 
@@ -184,11 +196,13 @@ export default {
       if (rle.value !== SegmentationEnum.INTERIOR) {
         return;
       }
-      for (let i = rle.start; i < rle.end; i++) {
+      for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
         if (rle.value === false) {
           continue;
         }
-        previewVoxelManager.setAtIndex(baseIndex + i, previewSegmentIndex);
+        const clearPoint = toIJK(floodedSet.toIJK(baseIndex + iPrime));
+        previewVoxelManager.setAtIJKPoint(clearPoint, previewSegmentIndex);
+        // previewVoxelManager.setAtIJKPoint(clearPoint, 3);
       }
     });
     console.timeEnd('internalIslands');

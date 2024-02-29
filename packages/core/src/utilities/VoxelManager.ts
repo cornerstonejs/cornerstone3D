@@ -455,7 +455,7 @@ export default class VoxelManager<T> {
         const originalV = map.get(index);
         if (originalV === undefined) {
           const oldV = this.sourceVoxelManager.getAtIndex(index);
-          if (oldV === v || v === null) {
+          if (oldV === v || oldV === undefined || v === null) {
             // No-op
             return false;
           }
