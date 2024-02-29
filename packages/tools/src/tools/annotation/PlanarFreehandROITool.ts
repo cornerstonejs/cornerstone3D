@@ -847,7 +847,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     triggerAnnotationModified(
       annotation,
-      enabledElement.element,
+      enabledElement.viewport.element,
       ChangeTypes.StatsUpdated
     );
 
