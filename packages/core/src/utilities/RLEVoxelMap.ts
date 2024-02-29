@@ -169,11 +169,23 @@ export default class RLEVoxelMap<T> {
     return row.length;
   }
 
+  /**
+   * For each RLE element, call the given callback
+   */
   public forEach(callback) {
     for (const [baseIndex, row] of this.rows) {
       for (const rle of row) {
         callback(baseIndex * this.width, rle, row);
       }
+    }
+  }
+
+  /**
+   * For each row, call the callback with the base index and the row data
+   */
+  public forEachRow(callback) {
+    for (const [baseIndex, row] of this.rows) {
+      callback(baseIndex * this.width, row);
     }
   }
 
@@ -451,10 +463,10 @@ export default class RLEVoxelMap<T> {
     ];
     const adjacents = [];
     if (leftRle) {
-      adjacents.push(leftRle);
+      adjacents.push([leftRle, j, k]);
     }
     if (rightRle) {
-      adjacents.push(rightRle);
+      adjacents.push([rightRle, j, k]);
     }
     for (const delta of rangeDeltas) {
       const testJ = delta[1] + j;

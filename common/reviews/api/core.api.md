@@ -2857,9 +2857,17 @@ class RLEVoxelMap<T> {
     // (undocumented)
     protected depth: number;
     // (undocumented)
+    fillFrom(getter: any, boundsIJK: any): void;
+    // (undocumented)
+    findAdjacents(item: any, diagonals?: boolean): any[];
+    // (undocumented)
     protected findIndex(row: RLERun<T>[], i: number): number;
     // (undocumented)
+    floodFill(i: number, j: number, k: number, value: T): number;
+    // (undocumented)
     forEach(callback: any): void;
+    // (undocumented)
+    forEachRow(callback: any): void;
     // (undocumented)
     get: (index: number) => T;
     // (undocumented)

@@ -1,10 +1,20 @@
 import { utilities } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
-import floodFill from '../../../../utilities/segmentation/floodFill';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 const { RLEVoxelMap } = utilities;
+
+export enum SegmentationEnum {
+  // Segment means it is in the segment or preview of interest
+  SEGMENT = 1,
+  // Island means it is connected to a selected point
+  ISLAND = 2,
+  // Interior means it is inside the island, or possibly inside
+  INTERIOR = 4,
+  // Exterior means it is outside the island
+  EXTERIOR = 5,
+}
 
 /**
  * Removes external islands and fills internal islands.
@@ -69,7 +79,7 @@ export default {
     };
 
     const [width, height, depth] = segmentationVoxelManager.dimensions;
-    const floodedSet = new RLEVoxelMap<boolean>(width, height, depth);
+    const floodedSet = new RLEVoxelMap<SegmentationEnum>(width, height, depth);
     floodedSet.defaultValue = undefined;
     // Returns true for new colour, and false otherwise
     const getter = (i, j, k) => {
@@ -77,10 +87,9 @@ export default {
       const oldVal = segmentationVoxelManager.getAtIndex(index);
       if (oldVal === previewSegmentIndex || oldVal === segmentIndex) {
         // Values are initially false for indexed values.
-        return false;
+        return SegmentationEnum.SEGMENT;
       }
     };
-    console.log('About to fill from', boundsIJK);
     floodedSet.fillFrom(getter, boundsIJK);
 
     let floodedCount = 0;
@@ -88,14 +97,12 @@ export default {
     clickedPoints.forEach((clickedPoint) => {
       const index = segmentationVoxelManager.toIndex(clickedPoint);
       const [i, j, k] = segmentationVoxelManager.toIJK(index);
-      if (floodedSet.get(index) === false) {
-        console.log('Flood filling starting at', i, j, k);
-        floodedCount += floodedSet.floodFill(i, j, k, true);
+      if (floodedSet.get(index) === SegmentationEnum.SEGMENT) {
+        floodedCount += floodedSet.floodFill(i, j, k, SegmentationEnum.ISLAND);
       }
     });
     console.timeEnd('floodedSet');
 
-    console.log('floodedCount', floodedCount);
     if (floodedCount === 0) {
       return;
     }
@@ -108,16 +115,17 @@ export default {
 
     const callback = (index, rle, row) => {
       const [, j, k] = segmentationVoxelManager.toIJK(index);
-      if (rle.value === true) {
+      if (rle.value === SegmentationEnum.ISLAND) {
         previewCount += rle.end - rle.start;
       } else {
+        // TODO - figure out what value to set to restore this to before preview
         for (let i = rle.start; i < rle.end; i++) {
           previewVoxelManager.setAtIJK(i, j, k, 0);
         }
       }
     };
 
-    floodedSet.forEach(callback, {});
+    floodedSet.forEach(callback);
     console.timeEnd('clearExternalIslands');
 
     if (floodedCount - previewCount !== 0) {
@@ -132,61 +140,57 @@ export default {
         floodedCount - previewCount
       );
     }
-    // const islandMap = floodedSet;
-    // floodedSet = new RLEVoxelMap<boolean>(width, height, depth);
-    // floodedSet.defaultValue = undefined;
+    // Handle islands which are internal to the flood fill - these are points which
+    // are surrounded entirely by the filled area.
+    console.time('internalIslands');
+    // Start by getting the island map - the set of islands which are between
+    // two rle runs.
+    floodedSet.forEachRow((baseIndex, row) => {
+      let lastRle;
+      for (const rle of row) {
+        if (rle.value === false) {
+          continue;
+        }
+        if (!lastRle) {
+          lastRle = rle;
+          continue;
+        }
+        for (let i = lastRle.end; i < rle.start; i++) {
+          floodedSet.set(baseIndex + i, SegmentationEnum.INTERIOR);
+        }
+        lastRle = undefined;
+      }
+    });
+    // Next, remove the island sets which are adjacent to an opening
+    floodedSet.forEach((baseIndex, rle) => {
+      if (rle.value !== SegmentationEnum.INTERIOR) {
+        // Already filled/handled
+        return;
+      }
+      const j = (baseIndex / width) % height;
+      const k = (baseIndex / width - j) / height;
+      const rowPrev = j > 0 ? floodedSet.getRun(j - 1, k) : null;
+      const rowNext = j + 1 < height ? floodedSet.getRun(j + 1, k) : null;
+      const prevCovers = covers(rle, rowPrev);
+      const nextCovers = covers(rle, rowNext);
+      if (!prevCovers || !nextCovers) {
+        floodedSet.floodFill(rle.start, j, k, SegmentationEnum.EXTERIOR);
+      }
+    });
 
-    // // Handle islands which are internal to the flood fill - these are points which
-    // // are surrounded entirely by the filled area.
-    // // For this, we want to flood starting points within the image area, which
-    // // are NOT within the island being filled.
-    // // Use the flood fill on these points to get surrounding points NOT in the
-    // // image area, and then
-
-    // console.time('internalIslands');
-    // islandMap.forEach((baseIndex, rle) => {
-    //   if (rle.start === 0) {
-    //     return;
-    //   }
-    //   const index = baseIndex + rle.start - 1;
-    //   if (floodedSet.has(index)) {
-    //     return;
-    //   }
-    //   let isInternal = true;
-    //   const internalSet = new Set<number>();
-    //   const onFloodInternal = (i, j, k) => {
-    //     const floodIndex = previewVoxelManager.toIndex([i, j, k]);
-    //     floodedSet.set(floodIndex, true);
-    //     if (
-    //       (boundsIJK[0][0] !== boundsIJK[0][1] &&
-    //         (i === boundsIJK[0][0] || i === boundsIJK[0][1])) ||
-    //       (boundsIJK[1][0] !== boundsIJK[1][1] &&
-    //         (j === boundsIJK[1][0] || j === boundsIJK[1][1])) ||
-    //       (boundsIJK[2][0] !== boundsIJK[2][1] &&
-    //         (k === boundsIJK[2][0] || k === boundsIJK[2][1]))
-    //     ) {
-    //       isInternal = false;
-    //     }
-    //     if (isInternal) {
-    //       internalSet.add(floodIndex);
-    //     }
-    //   };
-    //   const pointIJK = previewVoxelManager.toIJK(index);
-    //   if (getter(...pointIJK) !== 0) {
-    //     return;
-    //   }
-    //   floodFill(getter, pointIJK, {
-    //     onFlood: onFloodInternal,
-    //     diagonals: false,
-    //     filter,
-    //   });
-    //   if (isInternal) {
-    //     for (const index of internalSet) {
-    //       previewVoxelManager.setAtIndex(index, previewSegmentIndex);
-    //     }
-    //   }
-    // });
-    // console.timeEnd('internalIslands');
+    // Finally, for all the islands, fill them in
+    floodedSet.forEach((baseIndex, rle) => {
+      if (rle.value !== SegmentationEnum.INTERIOR) {
+        return;
+      }
+      for (let i = rle.start; i < rle.end; i++) {
+        if (rle.value === false) {
+          continue;
+        }
+        previewVoxelManager.setAtIndex(baseIndex + i, previewSegmentIndex);
+      }
+    });
+    console.timeEnd('internalIslands');
     console.timeEnd('islandRemoval');
 
     triggerSegmentationDataModified(
@@ -195,3 +199,23 @@ export default {
     );
   },
 };
+
+/**
+ * Determine if the rle `[start...end)` is covered by row completely
+ */
+function covers(rle, row) {
+  if (!row) {
+    return false;
+  }
+  let { start } = rle;
+  const { end } = rle;
+  for (const rowRle of row) {
+    if (start >= rowRle.start && start < rowRle.end) {
+      start = rowRle.end;
+      if (start >= end) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
