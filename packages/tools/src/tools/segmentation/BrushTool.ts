@@ -75,7 +75,6 @@ class BrushTool extends BaseTool {
   } | null;
   private _hoverData?: {
     brushCursor: any;
-    innerCircleSize: number;
     segmentationId: string;
     segmentIndex: number;
     segmentationRepresentationUID: string;
@@ -585,30 +584,15 @@ class BrushTool extends BaseTool {
     ];
 
     const activeStrategy = this.configuration.activeStrategy;
+    const strategy = this.configuration.strategies[activeStrategy];
 
     // Note: i don't think this is the best way to implement this
     // but don't think we have a better way to do it for now
-    if (activeStrategy.startsWith('THRESHOLD')) {
-      const { THRESHOLD: { dynamicRadius = 0 } = {} } =
-        this.configuration.strategySpecificConfiguration || {};
-      const { spacing } = viewport.getImageData();
-      const centerCanvas = [
-        viewport.element.clientWidth / 2,
-        viewport.element.clientHeight / 2,
-      ] as Types.Point2;
-      const radiusInWorld = dynamicRadius * spacing[0];
-      const centerCursorInWorld = viewport.canvasToWorld(centerCanvas);
-
-      const offSetCenterInWorld = centerCursorInWorld.map(
-        (coord) => coord + radiusInWorld
-      ) as Types.Point3;
-
-      const offSetCenterCanvas = viewport.worldToCanvas(offSetCenterInWorld);
-      const dynamicRadiusInCanvas = Math.abs(
-        centerCanvas[0] - offSetCenterCanvas[0]
-      );
-
-      this._hoverData.innerCircleSize = dynamicRadiusInCanvas;
+    if (typeof strategy.ComputeInnerCircleRadius === 'function') {
+      strategy.ComputeInnerCircleRadius({
+        configuration: this.configuration,
+        viewport,
+      });
     }
 
     data.invalidated = false;
@@ -803,14 +787,20 @@ class BrushTool extends BaseTool {
       }
     );
 
-    if (this._hoverData.innerCircleSize) {
+    const activeStrategy = this.configuration.activeStrategy;
+    const { dynamicRadiusInCanvas } = this.configuration
+      .strategySpecificConfiguration[activeStrategy] || {
+      dynamicRadiusInCanvas: 0,
+    };
+
+    if (dynamicRadiusInCanvas) {
       const circleUID1 = '1';
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
         circleUID1,
         center as Types.Point2,
-        this._hoverData.innerCircleSize,
+        dynamicRadiusInCanvas,
         {
           color,
         }
