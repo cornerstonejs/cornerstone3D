@@ -37,11 +37,13 @@ export default function voiSyncCallback(
     | Types.VolumeViewportProperties
     | Types.StackViewportProperties = {
     voiRange: range,
-    colormap,
   };
 
   if (options?.syncInvertState && invertStateChanged) {
     tProperties.invert = invert;
+  }
+  if (options?.syncColormap && colormap) {
+    tProperties.colormap = colormap;
   }
 
   if (tViewport instanceof BaseVolumeViewport) {

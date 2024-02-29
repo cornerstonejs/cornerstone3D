@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.65.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.0...v1.65.1) (2024-02-28)
+
+### Bug Fixes
+
+- **colormap:** make syncing colormap optional ([#1129](https://github.com/cornerstonejs/cornerstone3D/issues/1129)) ([abc8575](https://github.com/cornerstonejs/cornerstone3D/commit/abc8575c692ecd5c2e3279ef254c2062e7c71bc4))
+
 # [1.65.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.64.3...v1.65.0) (2024-02-26)
 
 ### Features
