@@ -71,13 +71,15 @@ export default {
    * in the strategySpecificConfiguration. This is used to show the user
    * the area that is used to compute the threshold.
    */
-  [StrategyCallbacks.ComputeInnerCircleRadius]: ({
-    configuration,
-    viewport,
-  }) => {
+  [StrategyCallbacks.ComputeInnerCircleRadius]: (
+    operationData: InitializedOperationData
+  ) => {
+    const { configuration, viewport } = operationData;
     const { THRESHOLD: { dynamicRadius = 0 } = {} } =
       configuration.strategySpecificConfiguration || {};
-    const { spacing } = viewport.getImageData();
+    const { spacing } = (
+      viewport as Types.IStackViewport | Types.IVolumeViewport
+    ).getImageData();
     const centerCanvas = [
       viewport.element.clientWidth / 2,
       viewport.element.clientHeight / 2,

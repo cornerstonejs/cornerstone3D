@@ -34,6 +34,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  configuration?: Record<string, any>;
 };
 
 export type StrategyFunction = (

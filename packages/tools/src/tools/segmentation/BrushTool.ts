@@ -588,8 +588,8 @@ class BrushTool extends BaseTool {
 
     // Note: i don't think this is the best way to implement this
     // but don't think we have a better way to do it for now
-    if (typeof strategy.ComputeInnerCircleRadius === 'function') {
-      strategy.ComputeInnerCircleRadius({
+    if (typeof strategy.computeInnerCircleRadius === 'function') {
+      strategy.computeInnerCircleRadius({
         configuration: this.configuration,
         viewport,
       });
