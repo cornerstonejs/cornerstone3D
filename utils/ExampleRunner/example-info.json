@@ -198,8 +198,8 @@
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
       "SculptorTool": {
-        "name": "Freehand ROI Sculptor Tool",
-        "description": "Demonstrates sculpting of freehand ROIs on stack and volume viewports"
+        "name": "Sculptor Tool",
+        "description": "Demonstrates sculpting of freehand ROIs and FreehandContourSegmentations"
       },
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
@@ -242,7 +242,7 @@
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
-    "video" : {
+    "video": {
       "video": {
         "name": "Video Display",
         "description": "Basic video display"
@@ -276,7 +276,7 @@
         "description": "Video range selection"
       }
     },
-    "tools-segmentation" : {
+    "tools-segmentation": {
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"

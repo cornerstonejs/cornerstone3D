@@ -62,7 +62,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`;
 
-describe('freeHandROISculptor Tool: ', () => {
+describe('Sculptor Tool: ', () => {
   beforeAll(() => {
     cornerstone3D.setUseCPURendering(false);
   });

@@ -55,8 +55,8 @@ let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Freehand ROI Sculptor Tool',
-  'Here we demonstrate how to use the Freehand ROI Sculptor Tool to sculpt freehand ROIs and FreehandContourSegmentations '
+  'Sculptor Tool',
+  'Here we demonstrate how to use the  Sculptor Tool to sculpt planar freehand ROIs and FreehandContourSegmentations '
 );
 
 const size = '500px';
