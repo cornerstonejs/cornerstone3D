@@ -61,19 +61,15 @@ setTitleAndDescription(
   'Here we demonstrate resize, using the display area/relative zoom, pan view reference synchronization.'
 );
 
-let widthValue = Math.floor(window.innerWidth / 4);
-let heightValue = Math.floor((window.innerHeight * 2) / 3);
+const widthValue = Math.floor(window.innerWidth / 4 - 50);
+const heightValue = Math.floor((window.innerHeight * 2) / 3);
 
 const width = `${widthValue}px`;
 const height = `${heightValue}px`;
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex';
-viewportGrid.style.display = 'flex';
 viewportGrid.style.width = '100%';
-viewportGrid.style.height = '50%';
-viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
@@ -85,6 +81,7 @@ elements.forEach((element) => {
     width,
     height,
     background: 'red',
+    display: 'inline-block',
   });
   // Disable right click context menu so we can have right click tools
   element.oncontextmenu = (e) => e.preventDefault();
@@ -151,12 +148,22 @@ const centerHeight = {
   },
 };
 
+const centerWidth = {
+  storeAsInitialCamera: true,
+  imageArea: [1, 0.1],
+  imageCanvasPoint: {
+    imagePoint: [0.5, 0.5],
+    canvasPoint: [0.5, 0.5],
+  },
+};
+
 const displayAreaOptions = new Map();
 displayAreaOptions.set('Center', centerDisplayArea);
 displayAreaOptions.set('Left', leftDisplayArea);
 displayAreaOptions.set('Right', rightDisplayArea);
 displayAreaOptions.set('Center Small', centerSmallDisplayArea);
 displayAreaOptions.set('Center Fit Height', centerHeight);
+displayAreaOptions.set('Center Fit Height', centerWidth);
 
 addDropdownToToolbar({
   id: 'displayArea',
@@ -166,12 +173,6 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const displayArea = displayAreaOptions.get(value);
-    console.log(
-      'Setting display area',
-      viewport.id,
-      value,
-      JSON.stringify(displayArea)
-    );
     viewport.setDisplayArea(displayArea);
     viewport.render();
   },
@@ -232,18 +233,27 @@ addToggleButtonToToolbar({
 // Sets the sizing options for how the images are displayed
 
 const resizeOptions = new Map();
+resizeOptions.set('Original', {
+  viewportStyle: { width, height },
+});
 resizeOptions.set('Tall', {
-  viewportGridStyle: { width: '100%', height: '50%', flexDirection: 'row' },
-  elementStyle: {},
+  viewportStyle: { width: '256px', height: '1024px' },
 });
 resizeOptions.set('Wide', {
-  viewportGridStyle: { width: '100%', height: '50%', flexDirection: 'column' },
-  elementStyle: { width: '512px', height: '128px' },
+  viewportStyle: { width: '1024px', height: '256px' },
 });
-resizeOptions.set('1:2', {});
-resizeOptions.set('2:1', {});
-resizeOptions.set('4:5', {});
-resizeOptions.set('5:4', {});
+resizeOptions.set('1:2', {
+  viewportStyle: { width: '256px', height: '512px' },
+});
+resizeOptions.set('2:1', {
+  viewportStyle: { width: '512px', height: '256px' },
+});
+resizeOptions.set('4:5', {
+  viewportStyle: { width: '400px', height: '500px' },
+});
+resizeOptions.set('5:4', {
+  viewportStyle: { width: '500px', height: '400px' },
+});
 
 addDropdownToToolbar({
   id: 'resizeAspect',
@@ -253,7 +263,6 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const aspect = resizeOptions.get(value);
-    console.log('Setting resize aspect', aspect);
     Object.assign(viewportGrid.style, aspect.viewportGridStyle);
     viewports.forEach((viewport) => {
       Object.assign(viewport.element.style, aspect.viewportStyle);
@@ -285,23 +294,11 @@ const resizeObserver = new ResizeObserver(() => {
 });
 
 function resize() {
-  const newWidthValue = Math.floor(window.innerWidth / 4);
-  const newHeightValue = Math.floor((window.innerHeight * 2) / 3);
   resizeTimeout = null;
-  if (widthValue === newWidthValue && heightValue === newHeightValue) {
-    return;
-  }
-  widthValue = newWidthValue;
-  heightValue = newHeightValue;
-  console.log('Resizing window');
-  elements.forEach((element) => {
-    element.style.width = `${widthValue}px`;
-    element.style.height = `${heightValue}px`;
-  });
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (renderingEngine) {
-    renderingEngine.resize(true, true);
+    renderingEngine.resize(true, false);
   }
 }
 

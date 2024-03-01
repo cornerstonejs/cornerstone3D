@@ -762,7 +762,6 @@ class Viewport implements IViewport {
       this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
 
     const canvasSize = [this.sWidth, this.sHeight];
-
     const boundsAspectRatio = widthWorld / heightWorld;
     const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
@@ -1471,7 +1470,6 @@ class Viewport implements IViewport {
       target.panType = panType;
       target.pan = this.getPan(panType);
     }
-    console.log('Got view presentation', target);
     return target;
   }
   /**
