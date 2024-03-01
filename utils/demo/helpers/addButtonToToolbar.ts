@@ -17,4 +17,6 @@ export default function addButtonToToolbar({
 
   container = container ?? document.getElementById('demo-toolbar');
   container.append(button);
+
+  return button;
 }

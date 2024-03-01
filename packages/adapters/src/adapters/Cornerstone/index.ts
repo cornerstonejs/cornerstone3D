@@ -8,6 +8,7 @@ import ArrowAnnotate from "./ArrowAnnotate";
 import CobbAngle from "./CobbAngle";
 import Angle from "./Angle";
 import RectangleRoi from "./RectangleRoi";
+
 // Segmentation
 import Segmentation from "./Segmentation";
 

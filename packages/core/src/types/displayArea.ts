@@ -4,10 +4,10 @@ type DisplayArea = {
   type?: 'SCALE' | 'FIT';
   scale?: number;
   interpolationType?: InterpolationType;
-  imageArea: [number, number]; // areaX, areaY
-  imageCanvasPoint: {
+  imageArea?: [number, number]; // areaX, areaY
+  imageCanvasPoint?: {
     imagePoint: [number, number]; // imageX, imageY
-    canvasPoint: [number, number]; // canvasX, canvasY
+    canvasPoint?: [number, number]; // canvasX, canvasY
   };
   storeAsInitialCamera: boolean;
 };

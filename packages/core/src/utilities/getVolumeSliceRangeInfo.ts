@@ -11,11 +11,14 @@ import {
  * Calculates the slice range for the given volume based on its orientation
  * @param viewport - Volume viewport
  * @param volumeId - Id of one of the volumes loaded on the given viewport
+ * @param useSlabThickness - If true, the slice range will be calculated
+ * based on the slab thickness instead of the spacing in the normal direction
  * @returns slice range information
  */
 function getVolumeSliceRangeInfo(
   viewport: IVolumeViewport,
-  volumeId: string
+  volumeId: string,
+  useSlabThickness = false
 ): {
   sliceRange: ActorSliceRange;
   spacingInNormalDirection: number;
@@ -24,7 +27,12 @@ function getVolumeSliceRangeInfo(
   const camera = viewport.getCamera();
   const { focalPoint, viewPlaneNormal } = camera;
   const { spacingInNormalDirection, actorUID } =
-    getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
+    getTargetVolumeAndSpacingInNormalDir(
+      viewport,
+      camera,
+      volumeId,
+      useSlabThickness
+    );
 
   if (!actorUID) {
     throw new Error(

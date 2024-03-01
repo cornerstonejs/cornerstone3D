@@ -83,7 +83,7 @@ describe('Volume Viewport SetProperties -- ', () => {
       });
     });
 
-    it('should successfully modify the viewoprt with invert and setVOI', function (done) {
+    it('should successfully modify the viewport with invert and setVOI', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.CORONAL

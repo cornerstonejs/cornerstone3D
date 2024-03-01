@@ -416,7 +416,7 @@ async function generateToolState(
     const labelmapBufferArray = [];
     labelmapBufferArray[0] = new ArrayBuffer(arrayBufferLength);
 
-    // Precompute the indices and metadata so that we don't have to call
+    // Pre-compute the indices and metadata so that we don't have to call
     // a function for each imageId in the for loop.
     const imageIdMaps = imageIds.reduce(
         (acc, curr, index) => {
@@ -433,7 +433,7 @@ async function generateToolState(
     // segment in the labelmapBuffer
     const segmentsPixelIndices = new Map();
 
-    await insertFunction(
+    const overlappingSegments = await insertFunction(
         segmentsOnFrame,
         segmentsOnFrameArray,
         labelmapBufferArray,
@@ -472,7 +472,8 @@ async function generateToolState(
         segMetadata,
         segmentsOnFrame,
         segmentsOnFrameArray,
-        centroids: centroidXYZ
+        centroids: centroidXYZ,
+        overlappingSegments
     };
 }
 
@@ -694,9 +695,7 @@ function findReferenceSourceImageId(
     }
 
     let frameSourceImageSequence = undefined;
-    if (SourceImageSequence && SourceImageSequence.length !== 0) {
-        frameSourceImageSequence = SourceImageSequence[frameSegment];
-    } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
+    if (PerFrameFunctionalGroup.DerivationImageSequence) {
         let DerivationImageSequence =
             PerFrameFunctionalGroup.DerivationImageSequence;
         if (Array.isArray(DerivationImageSequence)) {
@@ -718,6 +717,11 @@ function findReferenceSourceImageId(
                 }
             }
         }
+    } else if (SourceImageSequence && SourceImageSequence.length !== 0) {
+        console.warn(
+            "DerivationImageSequence not present, using SourceImageSequence assuming SEG has the same geometry as the source image."
+        );
+        frameSourceImageSequence = SourceImageSequence[frameSegment];
     }
 
     if (frameSourceImageSequence) {
@@ -1137,6 +1141,7 @@ function insertPixelDataPlanar(
 
     const shouldTriggerEvent = triggerEvent && eventTarget;
 
+    let overlapping = false;
     // Below, we chunk the processing of the frames to avoid blocking the main thread
     // if the segmentation is large. We also use a promise to allow the caller to
     // wait for the processing to finish.
@@ -1240,6 +1245,9 @@ function insertPixelDataPlanar(
                     if (data[j]) {
                         for (let x = j; x < len; ++x) {
                             if (data[x]) {
+                                if (!overlapping && labelmap2DView[x] !== 0) {
+                                    overlapping = true;
+                                }
                                 labelmap2DView[x] = segmentIndex;
                                 indexCache.push(x);
                             }
@@ -1274,7 +1282,7 @@ function insertPixelDataPlanar(
                 setTimeout(processInChunks, 0);
             } else {
                 // resolve the Promise when all chunks have been processed
-                resolve();
+                resolve(overlapping);
             }
         }
 

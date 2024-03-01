@@ -3,7 +3,7 @@ import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
-import type { IVolume, VolumeScalarData } from './IVolume';
+import type { IVolume } from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type DisplayArea from './displayArea';
 import type ImageLoaderFn from './ImageLoaderFn';
@@ -13,8 +13,20 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
-import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, Actor, ActorEntry } from './IActor';
+import type {
+  IViewport,
+  PublicViewportInput,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewReference,
+} from './IViewport';
+import type {
+  VolumeActor,
+  Actor,
+  ActorEntry,
+  ImageActor,
+  ICanvasActor,
+} from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -22,9 +34,12 @@ import type {
 } from './ILoadObject';
 import type Metadata from './Metadata';
 import type OrientationVectors from './OrientationVectors';
+import type AABB2 from './AABB2';
+import type AABB3 from './AABB3';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
+import type { PointsXYZ } from './Point3';
 import type Mat3 from './Mat3';
 import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
@@ -62,6 +77,7 @@ import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
 import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
 import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
+import type { IStackInput, StackInputCallback } from './IStackInput';
 import type * as EventTypes from './EventTypes';
 import type IRenderingEngine from './IRenderingEngine';
 import type ActorSliceRange from './ActorSliceRange';
@@ -72,16 +88,45 @@ import type {
   ContourSetData,
   ContourData,
 } from './ContourData';
+import type { PublicSurfaceData, SurfaceData } from './SurfaceData';
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
 import { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
-import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
+export type {
+  RetrieveStage,
+  RetrieveOptions,
+  RangeRetrieveOptions,
+  StreamingRetrieveOptions,
+  NearbyFrames,
+  IRetrieveConfiguration,
+  IImagesLoader,
+} from './IRetrieveConfiguration';
+import type { ImageLoadListener } from './ImageLoadListener';
+import type { Color, ColorLUT } from './Color';
+import type VideoViewportProperties from './VideoViewportProperties';
+import type IVideoViewport from './IVideoViewport';
+import type {
+  InternalVideoCamera,
+  VideoViewportInput,
+} from './VideoViewportTypes';
+import { ISurface } from './ISurface';
+import type BoundsIJK from './BoundsIJK';
+import type { ImageVolumeProps } from './ImageVolumeProps';
+import type { VolumeProps } from './VolumeProps';
+import type BoundsLPS from './BoundsLPS';
+// Sometimes the type is needed rather than the class, so import
+// the type only here.
+import type PointsManager from '../utilities/PointsManager';
 
 export type {
   // config
@@ -89,17 +134,19 @@ export type {
   //
   ICamera,
   IStackViewport,
+  IVideoViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
   IVolume,
-  VolumeScalarData,
   IViewportId,
   IImageVolume,
+  ImageVolumeProps,
   IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
+  PointsManager,
   Scaling,
   IStreamingImageVolume,
   IImage,
@@ -113,6 +160,9 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  ViewReference,
+  ReferenceCompatibleOptions,
+  ViewReferenceSpecifier,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -120,20 +170,28 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ImageActor,
+  ICanvasActor,
   IImageLoadObject,
   IVolumeLoadObject,
   IVolumeInput,
   VolumeInputCallback,
+  IStackInput,
+  StackInputCallback,
   ViewportPreset,
   //
   Metadata,
   OrientationVectors,
+  AABB2,
+  AABB3,
   Point2,
   Point3,
+  PointsXYZ,
   Point4,
   Mat3,
   Plane,
   ViewportInputOptions,
+  VideoViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -166,13 +224,27 @@ export type {
   ContourData,
   IContourSet,
   IContour,
+  // Surface
+  PublicSurfaceData,
+  SurfaceData,
+  ISurface,
   // Color
   RGB,
   ColormapPublic,
   ColormapRegistration,
   // PixelData
   PixelDataTypedArray,
+  PixelDataTypedArrayString,
   ImagePixelModule,
   ImagePlaneModule,
   AffineMatrix,
+  ImageLoadListener,
+  // video
+  InternalVideoCamera,
+  VideoViewportInput,
+  BoundsIJK,
+  BoundsLPS,
+  Color,
+  ColorLUT,
+  VolumeProps,
 };

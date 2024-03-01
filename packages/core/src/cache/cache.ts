@@ -1,7 +1,6 @@
 import {
   ICache,
   IImage,
-  IImageVolume,
   IGeometry,
   IImageLoadObject,
   IVolumeLoadObject,
@@ -10,10 +9,12 @@ import {
   ICachedVolume,
   ICachedGeometry,
   EventTypes,
+  IImageVolume,
 } from '../types';
 import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import { ImageVolume } from './classes/ImageVolume';
 
 const ONE_GB = 1073741824;
 
@@ -151,6 +152,10 @@ class Cache implements ICache {
     if (volume.imageData) {
       volume.imageData.delete();
     }
+
+    // if we had views for the images of the volume, we need to restore them
+    // to avoid memory leaks
+    this._restoreImagesFromBuffer(volume);
 
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
@@ -377,7 +382,10 @@ class Cache implements ICache {
           return;
         }
 
-        if (Number.isNaN(image.sizeInBytes)) {
+        if (
+          image.sizeInBytes === undefined ||
+          Number.isNaN(image.sizeInBytes)
+        ) {
           throw new Error(
             'putImageLoadObject: image.sizeInBytes must not be undefined'
           );
@@ -399,7 +407,7 @@ class Cache implements ICache {
         cachedImage.loaded = true;
         cachedImage.image = image;
         cachedImage.sizeInBytes = image.sizeInBytes;
-        this._incrementImageCacheSize(cachedImage.sizeInBytes);
+        this.incrementImageCacheSize(cachedImage.sizeInBytes);
         const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
           image: cachedImage,
         };
@@ -595,7 +603,7 @@ class Cache implements ICache {
         // cachedVolume.loaded = true
         cachedVolume.volume = volume;
         cachedVolume.sizeInBytes = volume.sizeInBytes;
-        this._incrementVolumeCacheSize(cachedVolume.sizeInBytes);
+        this.incrementVolumeCacheSize(cachedVolume.sizeInBytes);
 
         const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
           volume: cachedVolume,
@@ -653,6 +661,28 @@ class Cache implements ICache {
   };
 
   /**
+   * Returns the image associated with the imageId
+   *
+   * @param imageId - image ID
+   * @returns Image
+   */
+  public getImage = (imageId: string): IImage => {
+    if (imageId === undefined) {
+      throw new Error('getImage: imageId must not be undefined');
+    }
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (cachedImage === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached volume (not used for anything for now)
+    cachedImage.timeStamp = Date.now();
+
+    return cachedImage.image;
+  };
+
+  /**
    * Returns the volume associated with the volumeId
    *
    * @param volumeId - Volume ID
@@ -672,6 +702,31 @@ class Cache implements ICache {
     cachedVolume.timeStamp = Date.now();
 
     return cachedVolume.volume;
+  };
+
+  /**
+   * Retrieves an array of image volumes from the cache.
+   * @returns An array of image volumes.
+   */
+  public getVolumes = (): Array<IImageVolume> => {
+    const cachedVolumes = Array.from(this._volumeCache.values());
+
+    return cachedVolumes.map((cachedVolume) => cachedVolume.volume);
+  };
+
+  /**
+   * Filters the cached volumes by the specified reference volume ID.
+   * @param volumeId - The ID of the reference volume.
+   * @returns An array of image volumes that have the specified reference volume ID.
+   */
+  public filterVolumesByReferenceId = (
+    volumeId: string
+  ): Array<IImageVolume> => {
+    const cachedVolumes = this.getVolumes();
+
+    return cachedVolumes.filter((volume) => {
+      return volume.referencedVolumeId === volumeId;
+    });
   };
 
   /**
@@ -695,9 +750,10 @@ class Cache implements ICache {
       );
     }
 
-    this._incrementImageCacheSize(-cachedImage.sizeInBytes);
+    this.incrementImageCacheSize(-cachedImage.sizeInBytes);
 
     const eventDetails = {
+      image: cachedImage,
       imageId,
     };
 
@@ -726,7 +782,7 @@ class Cache implements ICache {
       );
     }
 
-    this._incrementVolumeCacheSize(-cachedVolume.sizeInBytes);
+    this.incrementVolumeCacheSize(-cachedVolume.sizeInBytes);
 
     const eventDetails = {
       volume: cachedVolume,
@@ -810,7 +866,7 @@ class Cache implements ICache {
    *
    * @param increment - bytes length
    */
-  private _incrementImageCacheSize = (increment: number) => {
+  public incrementImageCacheSize = (increment: number) => {
     this._imageCacheSize += increment;
   };
 
@@ -819,9 +875,88 @@ class Cache implements ICache {
    *
    * @param increment - bytes length
    */
-  private _incrementVolumeCacheSize = (increment: number) => {
+  public incrementVolumeCacheSize = (increment: number) => {
     this._volumeCacheSize += increment;
   };
+
+  /**
+   * Decreases the image cache size with the provided decrement
+   *
+   * @param decrement - bytes length
+   */
+  public decrementImageCacheSize = (decrement: number) => {
+    this._imageCacheSize -= decrement;
+  };
+
+  /**
+   * Decreases the cache size with the provided decrement
+   *
+   * @param decrement - bytes length
+   */
+  public decrementVolumeCacheSize = (decrement: number) => {
+    this._volumeCacheSize -= decrement;
+  };
+
+  /**
+   * This function will restore the images' pixel data from the shared array buffer
+   * back to the individual images when the volume is purged from cache. It ensures
+   * that each image retrieves its correct portion of data from the buffer based on
+   * the previously stored offset and length information.
+   *
+   * @param volumeId - The volumeId whose images need to be restored.
+   */
+  private _restoreImagesFromBuffer(volume: IImageVolume) {
+    if (!(volume instanceof ImageVolume)) {
+      console.warn(
+        'Volume is not an ImageVolume. Cannot restore images from buffer.'
+      );
+      return;
+    }
+
+    // Retrieve the scalar data and the offset map from the volume
+    const scalarData = volume.getScalarData();
+    const imageCacheOffsetMap = volume.imageCacheOffsetMap;
+
+    if (imageCacheOffsetMap.size === 0) {
+      console.warn('No cached images to restore for this volume.');
+      return;
+    }
+
+    // Iterate over each image and restore its pixel data from the shared buffer
+    for (const [imageId, { offset }] of imageCacheOffsetMap) {
+      const image = this.getImage(imageId);
+
+      if (!image) {
+        console.warn(`Image with id ${imageId} not found in cache.`);
+        continue;
+      }
+
+      const viewPixelData = image.getPixelData();
+      const length = viewPixelData.length;
+
+      // Create a new view of the buffer for this specific image
+      // @ts-ignore
+      const pixelData = new viewPixelData.constructor(
+        scalarData.buffer,
+        offset,
+        length
+      );
+
+      // Restore the original getPixelData function and pixelData
+      image.getPixelData = () => pixelData;
+
+      if (image.imageFrame) {
+        image.imageFrame.pixelData = pixelData;
+      }
+
+      delete image.bufferView;
+
+      // Optionally, increment the image cache size again if needed
+      this.incrementImageCacheSize(image.sizeInBytes);
+    }
+
+    console.log(`Images restored from buffer for volume ${volume.volumeId}.`);
+  }
 }
 
 /**

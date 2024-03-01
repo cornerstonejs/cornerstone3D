@@ -1,4 +1,3 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData';
 import CPUIImageData from './CPUIImageData';
 import ICamera from './ICamera';
 import IImageData from './IImageData';
@@ -7,9 +6,8 @@ import Point2 from './Point2';
 import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
-import { ColormapRegistration } from './Colormap';
-import IImage from './IImage';
-
+import type IImage from './IImage';
+import { IStackInput } from './IStackInput';
 /**
  * Interface for Stack Viewport
  */
@@ -27,14 +25,38 @@ export default interface IStackViewport extends IViewport {
    * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
    */
   getFrameOfReferenceUID: () => string;
+
+  /**
+   * Update the default properties of the viewport and add properties by imageId if specified
+   * setting the VOI, inverting the colors and setting the interpolation type, rotation
+   */
+  setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageId?: string
+  ): void;
+
+  /**
+   * Remove the global default properties of the viewport or remove default properties for an imageId if specified
+   */
+  clearDefaultProperties(imageId?: string): void;
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
    */
   setProperties(
-    { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+    {
+      voiRange,
+      invert,
+      interpolationType,
+      rotation,
+      colormap,
+    }: StackViewportProperties,
     suppressEvents?: boolean
   ): void;
+  /**
+   * Retrieve the viewport default properties
+   */
+  getDefaultProperties: (imageId?: string) => StackViewportProperties;
   /**
    * Retrieve the viewport properties
    */
@@ -69,7 +91,16 @@ export default interface IStackViewport extends IViewport {
    * Returns the currently rendered imageId
    */
   getCurrentImageId: () => string;
+  /**
+   * Add Image Slices actors to the viewport
+   */
+  addImages(
+    stackInputs: Array<IStackInput>,
+    immediateRender: boolean,
+    suppressEvents: boolean
+  );
 
+  getImageDataMetadata(image: IImage): any;
   /**
    * Custom rendering pipeline for the rendering for the CPU fallback
    */
@@ -90,7 +121,11 @@ export default interface IStackViewport extends IViewport {
    */
   getCornerstoneImage: () => IImage;
   /**
-   * Reset the viewport properties to the default values
+   * Reset the viewport properties to the his default values if possible
+   */
+  resetToDefaultProperties(): void;
+  /**
+   * Reset the viewport properties to the default metadata values
    */
   resetProperties(): void;
   /**
@@ -107,6 +142,9 @@ export default interface IStackViewport extends IViewport {
    * list of imageIds, the index of the first imageId to be viewed. It is a
    * asynchronous function that returns a promise resolving to imageId being
    * displayed in the stack viewport.
+   *
+   * @param retrieveConfiguration - Set this to a progressive retriever of your
+   *       choice for progressive retrieval, or leave empty for non-progressive.
    */
   setStack(
     imageIds: Array<string>,
@@ -132,11 +170,6 @@ export default interface IStackViewport extends IViewport {
    * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    */
   getRenderer(): any;
-  /**
-   * Sets the colormap for the current viewport.
-   * @param colormap - The colormap data to use.
-   */
-  setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
   /**
    * It sets the colormap to the default colormap.
    */

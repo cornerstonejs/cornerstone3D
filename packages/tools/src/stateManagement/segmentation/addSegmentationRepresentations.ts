@@ -2,11 +2,9 @@ import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes';
-import Representations from '../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../store/ToolGroupManager';
 
-import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { contourDisplay } from '../../tools/displayTools/Contour';
+import { addSegmentationRepresentation } from './addSegmentationRepresentation';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -31,7 +29,7 @@ async function addSegmentationRepresentations(
   }
 
   const promises = representationInputArray.map((representationInput) => {
-    return _addSegmentationRepresentation(
+    return addSegmentationRepresentation(
       toolGroupId,
       representationInput,
       toolGroupSpecificRepresentationConfig
@@ -41,36 +39,6 @@ async function addSegmentationRepresentations(
   const segmentationRepresentationUIDs = await Promise.all(promises);
 
   return segmentationRepresentationUIDs;
-}
-
-async function _addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  let segmentationRepresentationUID;
-
-  if (representationInput.type === Representations.Labelmap) {
-    segmentationRepresentationUID =
-      await labelmapDisplay.addSegmentationRepresentation(
-        toolGroupId,
-        representationInput,
-        toolGroupSpecificRepresentationConfig
-      );
-  } else if (representationInput.type === Representations.Contour) {
-    segmentationRepresentationUID =
-      await contourDisplay.addSegmentationRepresentation(
-        toolGroupId,
-        representationInput,
-        toolGroupSpecificRepresentationConfig
-      );
-  } else {
-    throw new Error(
-      `The representation type ${representationInput.type} is not supported`
-    );
-  }
-
-  return segmentationRepresentationUID;
 }
 
 export default addSegmentationRepresentations;

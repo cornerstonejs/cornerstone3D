@@ -48,34 +48,37 @@ class WindowLevelTool extends BaseTool {
       viewportsContainingVolumeUID;
     let isPreScaled = false;
 
+    const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
       );
-      const properties = viewport.getProperties();
       ({ lower, upper } = properties.voiRange);
       const volume = cache.getVolume(volumeId);
+      if (!volume) {
+        throw new Error('Volume not found ' + volumeId);
+      }
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
-    } else if (viewport instanceof StackViewport) {
-      const properties = viewport.getProperties();
-      modality = viewport.modality;
+    } else if (properties.voiRange) {
+      modality = (viewport as any).modality;
       ({ lower, upper } = properties.voiRange);
-      const { preScale } = viewport.getImageData();
+      const { preScale = { scaled: false } } = viewport.getImageData?.() || {};
       isPreScaled =
         preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
     } else {
       throw new Error('Viewport is not a valid type');
     }
 
-    // If modality is PT, treat it special to not include the canvas delta in
+    // If modality is PT an the viewport is pre-scaled (SUV),
+    // treat it special to not include the canvas delta in
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT) {
+    if (modality === PT && isPreScaled) {
       newRange = this.getPTScaledNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,
@@ -95,22 +98,22 @@ class WindowLevelTool extends BaseTool {
       });
     }
 
-    if (viewport instanceof StackViewport) {
-      viewport.setProperties({
-        voiRange: newRange,
-      });
-
-      viewport.render();
+    // If the range is not valid. Do nothing
+    if (newRange.lower >= newRange.upper) {
       return;
     }
 
-    if (viewport instanceof VolumeViewport) {
-      viewport.setProperties({
-        voiRange: newRange,
-      });
+    viewport.setProperties({
+      voiRange: newRange,
+    });
 
+    viewport.render();
+
+    if (viewport instanceof VolumeViewport) {
       viewportsContainingVolumeUID.forEach((vp) => {
-        vp.render();
+        if (viewport !== vp) {
+          vp.render();
+        }
       });
       return;
     }
@@ -193,18 +196,17 @@ class WindowLevelTool extends BaseTool {
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
 
-    let multiplier = DEFAULT_MULTIPLIER;
-
-    if (ratio > 1) {
-      multiplier = Math.round(ratio);
-    }
-    return multiplier;
+    return ratio > 1 ? Math.round(ratio) : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
     const { imageData } = viewport.getImageData();
     const dimensions = imageData.getDimensions();
 
+    if (imageData.getRange) {
+      const imageDataRange = imageData.getRange();
+      return imageDataRange[1] - imageDataRange[0];
+    }
     let scalarData;
     // if getScalarData is a method on imageData
     if (imageData.getScalarData) {

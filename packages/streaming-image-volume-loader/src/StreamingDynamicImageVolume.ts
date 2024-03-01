@@ -1,11 +1,12 @@
-import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, type Types } from '@cornerstonejs/core';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
+import { Events as StreamingEvents } from './enums';
 
 type TimePoint = {
   /** imageIds of each timepoint  */
   imageIds: Array<string>;
   /** volume scalar data  */
-  scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+  scalarData: Types.PixelDataTypedArray;
 };
 
 /**
@@ -21,7 +22,7 @@ export default class StreamingDynamicImageVolume
   private _timePointIndex = 0;
 
   constructor(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
     StreamingDynamicImageVolume._ensureValidData(
@@ -30,16 +31,16 @@ export default class StreamingDynamicImageVolume
     );
 
     super(imageVolumeProperties, streamingProperties);
-    this._numTimePoints = (<Types.VolumeScalarData[]>this.scalarData).length;
+    this._numTimePoints = (<Types.PixelDataTypedArray[]>this.scalarData).length;
     this._timePoints = this._getTimePointsData();
   }
 
   private static _ensureValidData(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: Types.IStreamingVolumeProperties
   ): void {
     const imageIds = streamingProperties.imageIds;
-    const scalarDataArrays = <Types.VolumeScalarData[]>(
+    const scalarDataArrays = <Types.PixelDataTypedArray[]>(
       imageVolumeProperties.scalarData
     );
 
@@ -56,7 +57,7 @@ export default class StreamingDynamicImageVolume
    */
   private _getTimePointsData(): TimePoint[] {
     const { imageIds } = this;
-    const scalarData = <Types.VolumeScalarData[]>this.scalarData;
+    const scalarData = <Types.PixelDataTypedArray[]>this.scalarData;
 
     const { numFrames } = this;
     const numTimePoints = scalarData.length;
@@ -97,9 +98,9 @@ export default class StreamingDynamicImageVolume
   }
 
   private _getTimePointRequests = (timePoint, priority: number) => {
-    const { imageIds, scalarData } = timePoint;
+    const { imageIds } = timePoint;
 
-    return this.getImageIdsRequests(imageIds, scalarData, priority);
+    return this.getImageIdsRequests(imageIds, priority);
   };
 
   private _getTimePointsRequests = (priority: number) => {
@@ -113,6 +114,18 @@ export default class StreamingDynamicImageVolume
 
     return timePointsRequests;
   };
+
+  public getImageIdsToLoad(): string[] {
+    const timePoints = this._getTimePointsToLoad();
+    let imageIds = [];
+
+    timePoints.forEach((timePoint) => {
+      const { imageIds: timePointIds } = timePoint;
+      imageIds = imageIds.concat(timePointIds);
+    });
+
+    return imageIds;
+  }
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
@@ -146,6 +159,15 @@ export default class StreamingDynamicImageVolume
     this._timePointIndex = newTimePointIndex;
     imageData.getPointData().setActiveScalars(`timePoint-${newTimePointIndex}`);
     this.invalidateVolume(true);
+
+    triggerEvent(
+      eventTarget,
+      StreamingEvents.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED,
+      {
+        volumeId: this.volumeId,
+        timePointIndex: newTimePointIndex,
+      }
+    );
   }
 
   /**
@@ -160,15 +182,15 @@ export default class StreamingDynamicImageVolume
    * Return the active scalar data (buffer)
    * @returns volume scalar data
    */
-  public getScalarData(): Types.VolumeScalarData {
-    return (<Types.VolumeScalarData[]>this.scalarData)[this._timePointIndex];
+  public getScalarData(): Types.PixelDataTypedArray {
+    return (<Types.PixelDataTypedArray[]>this.scalarData)[this._timePointIndex];
   }
 
   /**
    * It returns the imageLoad requests for the streaming image volume instance.
    * It involves getting all the imageIds of the volume and creating a success callback
    * which would update the texture (when the image has loaded) and the failure callback.
-   * Note that this method does not executes the requests but only returns the requests.
+   * Note that this method does not execute the requests but only returns the requests.
    * It can be used for sorting requests outside of the volume loader itself
    * e.g. loading a single slice of CT, followed by a single slice of PET (interleaved), before
    * moving to the next slice.
@@ -177,8 +199,6 @@ export default class StreamingDynamicImageVolume
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
   public getImageLoadRequests = (priority: number) => {
-    // It returns all requests in reversed order because BaseStreamingImageVolume
-    // reverse all requests again otherwise it would load from last to first time point
-    return this._getTimePointsRequests(priority).reverse();
+    return this._getTimePointsRequests(priority);
   };
 }

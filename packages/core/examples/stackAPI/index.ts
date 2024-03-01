@@ -3,6 +3,7 @@ import {
   Types,
   Enums,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -276,6 +277,22 @@ addButtonToToolbar({
     };
 
     viewport.setCamera(newCamera);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply Colormap',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    viewport.setProperties({ colormap: { name: 'hsv' } });
     viewport.render();
   },
 });

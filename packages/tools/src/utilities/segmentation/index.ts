@@ -15,6 +15,15 @@ import {
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
+import { createImageIdReferenceMap } from './createImageIdReferenceMap';
+import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
+import createBidirectionalToolData from './createBidirectionalToolData';
+import segmentContourAction from './segmentContourAction';
+import { invalidateBrushCursor } from './invalidateBrushCursor';
+import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
+import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
+import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
+import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 
 export {
   thresholdVolumeByRange,
@@ -30,4 +39,13 @@ export {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
   thresholdSegmentationByRange,
+  createImageIdReferenceMap,
+  contourAndFindLargestBidirectional,
+  createBidirectionalToolData,
+  segmentContourAction,
+  invalidateBrushCursor,
+  getUniqueSegmentIndices,
+  getSegmentAtWorldPoint,
+  getSegmentAtLabelmapBorder,
+  getHoveredContourSegmentationAnnotation,
 };

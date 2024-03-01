@@ -13,9 +13,9 @@ const DICTIONARY = Symbol('Dictionary');
 export default class Settings {
   constructor(base?: Settings) {
     const dictionary = Object.create(
-      base instanceof Settings && DICTIONARY in base
-        ? (base[DICTIONARY] as object)
-        : null
+      (base instanceof Settings && DICTIONARY in base
+        ? base[DICTIONARY]
+        : null) as object
     );
     Object.seal(
       Object.defineProperty(this, DICTIONARY, {

@@ -20,6 +20,7 @@ class StackScrollMouseWheelTool extends BaseTool {
         invert: false,
         debounceIfNotLoaded: true,
         loop: false,
+        scrollSlabs: false,
       },
     }
   ) {
@@ -34,13 +35,14 @@ class StackScrollMouseWheelTool extends BaseTool {
     const delta = direction * (invert ? -1 : 1);
 
     const targetId = this.getTargetId(viewport);
-    const volumeId = targetId.split('volumeId:')[1];
+    const volumeId = targetId.split(/volumeId:|\?/)[1];
 
     scroll(viewport, {
       delta,
       debounceLoading: this.configuration.debounceIfNotLoaded,
       loop: this.configuration.loop,
       volumeId,
+      scrollSlabs: this.configuration.scrollSlabs,
     });
   }
 }

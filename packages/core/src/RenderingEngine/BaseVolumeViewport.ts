@@ -3,6 +3,8 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
+import { vec3 } from 'gl-matrix';
+
 import cache from '../cache';
 import {
   MPR_CAMERA_VALUES,
@@ -31,11 +33,15 @@ import type {
   Point2,
   Point3,
   VOIRange,
+  EventTypes,
   VolumeViewportProperties,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
+import type { ViewReference } from '../types/IViewport';
 import {
   actorIsA,
   applyPreset,
@@ -45,6 +51,7 @@ import {
   invertRgbTransferFunction,
   triggerEvent,
   colormap as colormapUtils,
+  isEqual,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
@@ -54,7 +61,8 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
-
+import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import { getColormap, getColormapNames } from '../utilities/colormap';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -66,19 +74,25 @@ import transformWorldToIndex from '../utilities/transformWorldToIndex';
  */
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
-  use16BitTexture = false;
+  useNativeDataType = false;
   private _FrameOfReferenceUID: string;
-  private inverted = false;
 
+  protected initialTransferFunctionNodes: any;
   // Viewport Properties
-  // TODO: similar to setVoi, this is only applicable to first volume
-  private VOILUTFunction: VOILUTFunctionType;
+  private globalDefaultProperties: VolumeViewportProperties;
+  private perVolumeIdDefaultProperties = new Map<
+    string,
+    VolumeViewportProperties
+  >();
+  // Camera properties
+  protected initialViewUp: Point3;
+  protected viewportProperties: VolumeViewportProperties = {};
 
   constructor(props: ViewportInput) {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
-    this.use16BitTexture = this._shouldUseNativeDataType();
+    this.useNativeDataType = this._shouldUseNativeDataType();
 
     if (this.useCPURendering) {
       throw new Error(
@@ -124,6 +138,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       -viewPlaneNormal[2]
     );
     camera.setViewUpFrom(viewUp);
+    this.initialViewUp = viewUp;
 
     this.resetCamera();
   }
@@ -217,8 +232,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       voiLUTFunction = VOILUTFunctionType.LINEAR;
     }
     const { voiRange } = this.getProperties();
-    this.VOILUTFunction = voiLUTFunction;
     this.setVOI(voiRange, volumeId, suppressEvents);
+    this.viewportProperties.VOILUTFunction = voiLUTFunction;
   }
 
   /**
@@ -236,7 +251,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     suppressEvents?: boolean
   ) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
-
     if (!applicableVolumeActorInfo) {
       return;
     }
@@ -267,6 +281,20 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     cfun.applyColorMap(colormapObj);
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+    // This configures the viewport to use the most recently applied colormap.
+    // However, this approach is not optimal when dealing with two volumes, as it prevents retrieval of the
+    // colormap for Volume A if Volume B's colormap was the last one applied.
+    this.viewportProperties.colormap = colormap;
+
+    if (!suppressEvents) {
+      const eventDetail = {
+        viewportId: this.id,
+        colormap,
+        volumeId,
+      };
+      triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+    }
   }
 
   /**
@@ -283,6 +311,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
     const { volumeActor } = applicableVolumeActorInfo;
+
     const ofun = vtkPiecewiseFunction.newInstance();
     if (typeof colormap.opacity === 'number') {
       const range = volumeActor
@@ -298,19 +327,21 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       });
     }
     volumeActor.getProperty().setScalarOpacity(0, ofun);
+
+    this.viewportProperties.colormap.opacity = colormap.opacity;
   }
 
   /**
    * Sets the inversion for the volume transfer function
    *
-   * @param invert - Should the transfer function be inverted?
+   * @param inverted - Should the transfer function be inverted?
    * @param volumeId - volumeId
    * @param suppressEvents - If `true`, events will not be published
    *
    * @returns void
    */
   private setInvert(
-    invert: boolean,
+    inverted: boolean,
     volumeId?: string,
     suppressEvents?: boolean
   ) {
@@ -325,17 +356,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const cfun = this._getOrCreateColorTransferFunction(volumeIdToUse);
     invertRgbTransferFunction(cfun);
 
-    this.inverted = invert;
+    const { voiRange, VOILUTFunction } = this.getProperties(volumeIdToUse);
 
-    const { voiRange } = this.getProperties();
+    this.viewportProperties.invert = inverted;
 
     if (!suppressEvents) {
       const eventDetail: VoiModifiedEventDetail = {
         viewportId: this.id,
         range: voiRange,
         volumeId: volumeIdToUse,
-        VOILUTFunction: this.VOILUTFunction,
-        invert: this.inverted,
+        VOILUTFunction: VOILUTFunction,
+        invert: inverted,
         invertStateChanged: true,
       };
 
@@ -383,6 +414,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     // @ts-ignore
     volumeProperty.setInterpolationType(interpolationType);
+    this.viewportProperties.interpolationType = interpolationType;
   }
 
   /**
@@ -415,9 +447,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       voiRangeToUse = maxVoiRange;
     }
 
+    const { VOILUTFunction } = this.getProperties(volumeIdToUse);
+
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/c6f2e12cddfe5c0386a73f0793eb6d9ab20d573e/Sources/Rendering/OpenGL/VolumeMapper/index.js#L957-L972
-    if (this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
+    if (VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
       const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
       volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     } else {
@@ -433,6 +467,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         .getProperty()
         .getRGBTransferFunction(0)
         .setRange(lower, upper);
+
+      if (!this.initialTransferFunctionNodes) {
+        const transferFunction = volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0);
+        this.initialTransferFunctionNodes =
+          getTransferFunctionNodes(transferFunction);
+      }
     }
 
     if (!suppressEvents) {
@@ -440,15 +482,122 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         viewportId: this.id,
         range: voiRange,
         volumeId: volumeIdToUse,
-        VOILUTFunction: this.VOILUTFunction,
+        VOILUTFunction: VOILUTFunction,
       };
 
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
     }
+
+    this.viewportProperties.voiRange = voiRangeToUse;
+  }
+
+  private setRotation(rotation: number): void {
+    const previousCamera = this.getCamera();
+
+    this.rotateCamera(rotation);
+
+    // New camera after rotation
+    const camera = this.getCamera();
+
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      previousCamera,
+      camera,
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      rotation,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+    this.viewportProperties.rotation = rotation;
+  }
+
+  private rotateCamera(rotation: number): void {
+    const rotationToApply = rotation - this.getRotation();
+    // rotating camera to the new value
+    this.getVtkActiveCamera().roll(-rotationToApply);
+  }
+
+  /**
+   * Update the default properties for the volume viewport on the volume
+   * @param ViewportProperties - The properties to set
+   * @param volumeId - The volume id to set the default properties for (if undefined, we set the global default viewport properties)
+   */
+  public setDefaultProperties(
+    ViewportProperties: VolumeViewportProperties,
+    volumeId?: string
+  ): void {
+    if (volumeId == null) {
+      this.globalDefaultProperties = ViewportProperties;
+    } else {
+      this.perVolumeIdDefaultProperties.set(volumeId, ViewportProperties);
+    }
+  }
+
+  /**
+   * Remove the global default properties of the viewport or remove default properties for a volumeId if specified
+   * @param volumeId If given, we remove the default properties only for this volumeId, if not
+   * the global default properties will be removed
+   */
+  public clearDefaultProperties(volumeId?: string): void {
+    if (volumeId == null) {
+      this.globalDefaultProperties = {};
+      this.resetProperties();
+    } else {
+      this.perVolumeIdDefaultProperties.delete(volumeId);
+      this.resetToDefaultProperties(volumeId);
+    }
+  }
+
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const target = super.getViewReference(viewRefSpecifier);
+    if (viewRefSpecifier?.forFrameOfReference !== false) {
+      target.volumeId = this.getVolumeId(viewRefSpecifier);
+    }
+    // TODO - add referencedImageId as a base URL for an image to allow a generic
+    // method to specify which volumes this should apply to.
+    return {
+      ...target,
+      sliceIndex: this.getCurrentImageIdIndex(),
+    };
+  }
+
+  /**
+   * Find out if this viewport would show this view
+   *
+   * @param options - allows specifying whether the view COULD display this with
+   *                  some modification - either navigation or displaying as volume.
+   * @returns true if the target is compatible with this view
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+    if (options?.withNavigation) {
+      return true;
+    }
+    const currentSliceIndex = this.getCurrentImageIdIndex();
+    const { sliceIndex } = viewRef;
+    if (Array.isArray(sliceIndex)) {
+      return (
+        sliceIndex[0] <= currentSliceIndex && currentSliceIndex <= sliceIndex[1]
+      );
+    }
+    return sliceIndex === undefined || sliceIndex === currentSliceIndex;
   }
 
   /**
    * Sets the properties for the volume viewport on the volume
+   * and if setProperties is called for the first time, the properties will also become the default one.
    * (if fusion, it sets it for the first volume in the fusion)
    *
    * @param VolumeViewportProperties - The properties to set
@@ -456,7 +605,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @param [VolumeViewportProperties.VOILUTFunction] - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
    * @param [VolumeViewportProperties.invert] - Inverts the color transfer function
    * @param [VolumeViewportProperties.colormap] - Sets the colormap
-   * @param [VolumeViewportProperties.preset] - Sets the colormap
+   * @param [VolumeViewportProperties.preset] - Sets the colormap preset
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
@@ -468,10 +617,25 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       colormap,
       preset,
       interpolationType,
+      slabThickness,
+      rotation,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
   ): void {
+    //If the viewport hasn't been initialized, we need to set the default properties
+    if (this.globalDefaultProperties == null) {
+      this.setDefaultProperties({
+        voiRange,
+        VOILUTFunction,
+        invert,
+        colormap,
+        preset,
+        slabThickness,
+        rotation,
+      });
+    }
+
     // Note: colormap should always be done first, since we can then
     // modify the voiRange
 
@@ -494,13 +658,61 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
     }
 
-    if (invert !== undefined && this.inverted !== invert) {
+    if (invert !== undefined && this.viewportProperties.invert !== invert) {
       this.setInvert(invert, volumeId, suppressEvents);
     }
 
     if (preset !== undefined) {
       this.setPreset(preset, volumeId, suppressEvents);
     }
+
+    if (slabThickness !== undefined) {
+      this.setSlabThickness(slabThickness);
+      //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
+      this.viewportProperties.slabThickness = slabThickness;
+    }
+
+    if (rotation !== undefined) {
+      this.setRotation(rotation);
+    }
+  }
+
+  /**
+   * Reset the viewport properties to the default values
+   */
+  public resetToDefaultProperties(volumeId: string): void {
+    const properties = this.globalDefaultProperties;
+
+    if (properties.colormap?.name) {
+      this.setColormap(properties.colormap, volumeId);
+    }
+    if (properties.colormap?.opacity != null) {
+      this.setOpacity(properties.colormap, volumeId);
+    }
+
+    if (properties.voiRange !== undefined) {
+      this.setVOI(properties.voiRange, volumeId);
+    }
+
+    if (properties.VOILUTFunction !== undefined) {
+      this.setVOILUTFunction(properties.VOILUTFunction, volumeId);
+    }
+
+    if (properties.invert !== undefined) {
+      this.setInvert(properties.invert, volumeId);
+    }
+
+    if (properties.slabThickness !== undefined) {
+      this.setSlabThickness(properties.slabThickness);
+      //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
+      this.viewportProperties.slabThickness = properties.slabThickness;
+    }
+
+    if (properties.rotation !== undefined) {
+      this.setRotation(properties.rotation);
+    }
+
+    this.render();
   }
 
   /**
@@ -512,7 +724,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @returns void
    */
-  private setPreset(presetName, volumeId, suppressEvents) {
+  private setPreset(presetNameOrObj, volumeId, suppressEvents) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {
@@ -521,22 +733,73 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const preset = VIEWPORT_PRESETS.find((preset) => {
-      return preset.name === presetName;
-    });
+    let preset = presetNameOrObj;
+
+    if (typeof preset === 'string') {
+      preset = VIEWPORT_PRESETS.find((preset) => {
+        return preset.name === presetNameOrObj;
+      });
+    }
 
     if (!preset) {
       return;
     }
 
     applyPreset(volumeActor, preset);
+
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.PRESET_MODIFIED, {
+        viewportId: this.id,
+        volumeId: applicableVolumeActorInfo.volumeId,
+        actor: volumeActor,
+        presetName: preset.name,
+      });
+    }
   }
 
   /**
+   * Retrieve the viewport default properties
+   * @param volumeId If given, we retrieve the default properties of a volumeId if it exists
+   * If not given,we return the global properties of the viewport
+   * @returns default viewport properties including voi, invert, interpolation type, colormap
+   */
+  public getDefaultProperties = (
+    volumeId?: string
+  ): VolumeViewportProperties => {
+    let volumeProperties;
+    if (volumeId !== undefined) {
+      volumeProperties = this.perVolumeIdDefaultProperties.get(volumeId);
+    }
+
+    if (volumeProperties !== undefined) {
+      return volumeProperties;
+    }
+
+    return {
+      ...this.globalDefaultProperties,
+    };
+  };
+
+  /**
    * Retrieve the viewport properties
+   * @param volumeId - The volume id to get the properties for (if undefined, the first volume)
    * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
    */
-  public getProperties = (): VolumeViewportProperties => {
+  public getProperties = (volumeId?: string): VolumeViewportProperties => {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+
+    const {
+      colormap: latestColormap,
+      VOILUTFunction,
+      interpolationType,
+      invert,
+      slabThickness,
+      rotation,
+    } = this.viewportProperties;
+
     const voiRanges = this.getActors()
       .map((actorEntry) => {
         const volumeActor = actorEntry.actor as vtkVolume;
@@ -547,7 +810,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         }
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
-          this.VOILUTFunction === 'SIGMOID'
+          this.viewportProperties?.VOILUTFunction === 'SIGMOID'
             ? getVoiFromSigmoidRGBTransferFunction(cfun)
             : cfun.getRange();
         return { volumeId, voiRange: { lower, upper } };
@@ -555,9 +818,93 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       .filter(Boolean);
 
     const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
-    const VOILUTFunction = this.VOILUTFunction;
 
-    return { voiRange, VOILUTFunction, invert: this.inverted };
+    const volumeColormap = this.getColormap(applicableVolumeActorInfo);
+
+    let colormap;
+    if (volumeId && volumeColormap) {
+      colormap = volumeColormap;
+    } else {
+      colormap = latestColormap;
+    }
+
+    return {
+      colormap: colormap,
+      voiRange: voiRange,
+      VOILUTFunction: VOILUTFunction,
+      interpolationType: interpolationType,
+      invert: invert,
+      slabThickness: slabThickness,
+      rotation: rotation,
+    };
+  };
+
+  /**
+   * This function extracts the nodes from the RGB Transfer Function, transforming each node's x, r, g, b properties
+   * into a unified array "RGB Points." Then, it compares these RGB Points—specifically the r, g, b values—with
+   * those in the predefined vtk colormap presets. Upon finding a matching set of r, g, b values, the function identifies and selects the
+   * corresponding colormap.
+   *
+   * Next, the function extracts an array of opacity points, formatted as a sequence of [x,y] pairs, where 'x' represents a value and
+   * 'y' represents its opacity. It iterates through this array to construct an opacity object that maps each value to its opacity.
+   *
+   * The function returns an object that includes the name of the identified colormap and the constructed opacity object.
+   * @param applicableVolumeActorInfo  - The volume actor information for the volume
+   * @returns colormap information for the volume if identified
+   */
+  private getColormap = (applicableVolumeActorInfo) => {
+    const { volumeActor } = applicableVolumeActorInfo;
+    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    const { nodes } = cfun.getState();
+    const RGBPoints = nodes.reduce((acc, node) => {
+      acc.push(node.x, node.r, node.g, node.b);
+      return acc;
+    }, []);
+    const colormapsVTK = vtkColorMaps.rgbPresetNames.map((presetName) =>
+      vtkColorMaps.getPresetByName(presetName)
+    );
+    const colormapsCS3D = getColormapNames().map((colormapName) => getColormap(colormapName));
+    const colormaps = colormapsVTK.concat(colormapsCS3D);
+    const matchedColormap = colormaps.find((colormap) => {
+      const { RGBPoints: presetRGBPoints } = colormap;
+      if (presetRGBPoints.length !== RGBPoints.length) {
+        return false;
+      }
+
+      for (let i = 0; i < presetRGBPoints.length; i += 4) {
+        if (
+          !isEqual(
+            presetRGBPoints.slice(i + 1, i + 4),
+            RGBPoints.slice(i + 1, i + 4)
+          )
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    if (!matchedColormap) {
+      return null;
+    }
+
+    const opacityPoints = volumeActor
+      .getProperty()
+      .getScalarOpacity(0)
+      .getDataPointer();
+
+    const opacity = [];
+    for (let i = 0; i < opacityPoints.length; i += 2) {
+      opacity.push({ value: opacityPoints[i], opacity: opacityPoints[i + 1] });
+    }
+
+    const colormap = {
+      name: matchedColormap.Name,
+      opacity: opacity,
+    };
+
+    return colormap;
   };
 
   /**
@@ -599,7 +946,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.element,
         this.id,
         suppressEvents,
-        this.use16BitTexture
+        this.useNativeDataType
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -665,7 +1012,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.element,
         this.id,
         suppressEvents,
-        this.use16BitTexture
+        this.useNativeDataType
       );
 
       if (visibility === false) {
@@ -784,6 +1131,56 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
+   * Gets the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently from the camera provided or the viewport.
+   *
+   * @returns the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently.
+   */
+  public getRotation = (): number => {
+    const {
+      viewUp: currentViewUp,
+      viewPlaneNormal,
+      flipVertical,
+    } = this.getCamera();
+
+    // The initial view up vector without any rotation, but incorporating vertical flip.
+    const initialViewUp = flipVertical
+      ? vec3.negate(vec3.create(), this.initialViewUp)
+      : this.initialViewUp;
+
+    if (!initialViewUp) {
+      return 0;
+    }
+
+    // The angle between the initial and current view up vectors.
+    // TODO: check with VTK about rounding errors here.
+    const initialToCurrentViewUpAngle =
+      (vec3.angle(initialViewUp, currentViewUp) * 180) / Math.PI;
+
+    // Now determine if initialToCurrentViewUpAngle is positive or negative by comparing
+    // the direction of the initial/current view up cross product with the current
+    // viewPlaneNormal.
+
+    const initialToCurrentViewUpCross = vec3.cross(
+      vec3.create(),
+      initialViewUp,
+      currentViewUp
+    );
+
+    // The sign of the dot product of the start/end view up cross product and
+    // the viewPlaneNormal indicates a positive or negative rotation respectively.
+    const normalDot = vec3.dot(initialToCurrentViewUpCross, viewPlaneNormal);
+
+    const value =
+      normalDot >= 0
+        ? initialToCurrentViewUpAngle
+        : (360 - initialToCurrentViewUpAngle) % 360;
+
+    return value;
+  };
+
+  /**
    * gets the visible bounds of the viewport in the world coordinate system
    */
   public getBounds(): number[] {
@@ -873,7 +1270,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    */
   private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
     // New volume actors implies resetting the inverted flag (i.e. like starting from scratch).
-    this.inverted = false;
+
+    for (let i = 0; i < volumeActorEntries.length; i++) {
+      this.viewportProperties.invert = false;
+    }
     this.setActors(volumeActorEntries);
   }
 
@@ -1052,6 +1452,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       typeof orientation === 'string' &&
       MPR_CAMERA_VALUES[orientation]
     ) {
+      this.viewportProperties.orientation = orientation;
       return MPR_CAMERA_VALUES[orientation];
     } else {
       throw new Error(
@@ -1130,9 +1531,42 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return imageVolume.imageIds;
   };
 
-  abstract getCurrentImageIdIndex(): number;
-
   abstract getCurrentImageId(): string;
+
+  /** Gets the volumeId to use for references */
+  protected getVolumeId(specifier: ViewReferenceSpecifier) {
+    if (!specifier?.volumeId) {
+      const actorEntries = this.getActors();
+      if (!actorEntries) {
+        return;
+      }
+      // find the first image actor of instance type vtkVolume
+      return actorEntries.find(
+        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      )?.uid;
+    }
+    return specifier.volumeId;
+  }
+
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    let { volumeId, sliceIndex: sliceIndex } = specifier;
+    if (!volumeId) {
+      const actorEntries = this.getActors();
+      if (!actorEntries) {
+        return;
+      }
+      // find the first image actor of instance type vtkVolume
+      volumeId = actorEntries.find(
+        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      )?.uid;
+    }
+
+    sliceIndex ??= this.getCurrentImageIdIndex();
+    const { viewPlaneNormal, focalPoint } = this.getCamera();
+    return `volumeId:${volumeId}?sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
+      ','
+    )}&focalPoint=${focalPoint.join(',')}`;
+  }
 
   abstract setBlendMode(
     blendMode: BlendModes,

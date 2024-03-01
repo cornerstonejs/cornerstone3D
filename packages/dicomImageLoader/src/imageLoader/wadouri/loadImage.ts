@@ -172,22 +172,22 @@ function loadImage(
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);
-  let loader = options.loader;
+  // The loader isn't transferable, so ensure it is deleted
+  delete options.loader;
+  // The options might have a loader above, but it is a loader into the cache,
+  // so not the scheme loader, which is separate and defined by the scheme here
+  const schemeLoader = getLoaderForScheme(parsedImageId.scheme);
 
-  if (loader === undefined) {
-    loader = getLoaderForScheme(parsedImageId.scheme);
-  } else {
-    delete options.loader;
-  }
-
-  // if the dataset for this url is already loaded, use it
+  // if the dataset for this url is already loaded, use it, in case of multiframe
+  // images, we need to extract the frame pixelData from the dataset although the
+  // image is loaded
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
     /**
      * @todo The arguments to the dataSetCacheManager below are incorrect.
      */
     const dataSet: DataSet = (dataSetCacheManager as any).get(
       parsedImageId.url,
-      loader,
+      schemeLoader,
       imageId
     );
 
@@ -203,7 +203,7 @@ function loadImage(
   // load the dataSet via the dataSetCacheManager
   const dataSetPromise = dataSetCacheManager.load(
     parsedImageId.url,
-    loader,
+    schemeLoader,
     imageId
   );
 

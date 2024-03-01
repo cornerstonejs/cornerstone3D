@@ -1,5 +1,6 @@
 import { Types } from '@cornerstonejs/core';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
+import ImageLoadRequests from './types/ImageLoadRequests';
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -7,9 +8,13 @@ import BaseStreamingImageVolume from './BaseStreamingImageVolume';
  */
 export default class StreamingImageVolume extends BaseStreamingImageVolume {
   constructor(
-    imageVolumeProperties: Types.IVolume,
+    imageVolumeProperties: Types.ImageVolumeProps,
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
+    // Just for fallback to the old API
+    if (!imageVolumeProperties.imageIds) {
+      imageVolumeProperties.imageIds = streamingProperties.imageIds;
+    }
     super(imageVolumeProperties, streamingProperties);
   }
 
@@ -17,8 +22,8 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    * Return the scalar data (buffer)
    * @returns volume scalar data
    */
-  public getScalarData(): Types.VolumeScalarData {
-    return <Types.VolumeScalarData>this.scalarData;
+  public getScalarData(): Types.PixelDataTypedArray {
+    return <Types.PixelDataTypedArray>this.scalarData;
   }
 
   /**
@@ -33,10 +38,15 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests = (priority: number) => {
+  public getImageLoadRequests(priority: number): ImageLoadRequests[] {
     const { imageIds } = this;
-    const scalarData = <Types.VolumeScalarData>this.scalarData;
 
-    return this.getImageIdsRequests(imageIds, scalarData, priority);
+    return this.getImageIdsRequests(imageIds, priority);
+  }
+
+  public getImageIdsToLoad = () => {
+    const { imageIds } = this;
+    this.numFrames = imageIds.length;
+    return imageIds;
   };
 }

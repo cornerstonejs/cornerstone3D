@@ -126,6 +126,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * @param toolName - Optional. The name of the tool to retrieve annotations for.
    * @returns The annotations associated with the specified group (default FrameOfReferenceUID) and tool,
    * or all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
+   * WARNING: The list returned here is internal tool data, not a copy, so do NOT modify it.
    */
   getAnnotations = (
     groupKey: string,
@@ -138,7 +139,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
 
     if (toolName) {
-      return annotations[groupKey][toolName];
+      return annotations[groupKey][toolName]
+        ? annotations[groupKey][toolName]
+        : [];
     }
 
     return annotations[groupKey];
@@ -362,6 +365,17 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       // Set entire annotations
       this.annotations = <AnnotationState>structuredClone(state);
     }
+  };
+
+  /**
+   * return all annotations as a single array
+   */
+  getAllAnnotations = (): Annotations => {
+    return Object.values(this.annotations)
+      .map((frameOfReferenceSpecificAnnotations) =>
+        Object.values(frameOfReferenceSpecificAnnotations)
+      )
+      .flat(2);
   };
 
   /**

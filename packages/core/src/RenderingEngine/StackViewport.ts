@@ -1,83 +1,102 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import { vec2, vec3, mat4 } from 'gl-matrix';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import * as metaData from '../metaData';
-import Viewport from './Viewport';
+import { mat4, vec2, vec3 } from 'gl-matrix';
+import _cloneDeep from 'lodash.clonedeep';
 import eventTarget from '../eventTarget';
-import {
-  triggerEvent,
-  isEqual,
-  invertRgbTransferFunction,
-  createSigmoidRGBTransferFunction,
-  windowLevel as windowLevelUtil,
-  imageIdToURI,
-  isImageActor,
-  actorIsA,
-} from '../utilities';
-import {
-  Point2,
-  Point3,
-  VOIRange,
+import * as metaData from '../metaData';
+import type {
+  ActorEntry,
+  CPUFallbackColormapData,
+  CPUFallbackEnabledElement,
+  CPUIImageData,
+  ColormapPublic,
+  EventTypes,
+  FlipDirection,
   ICamera,
   IImage,
+  IImageCalibration,
   IImageData,
-  CPUIImageData,
+  IImagesLoader,
+  IStackInput,
+  IStackViewport,
+  ImageLoadListener,
+  Mat3,
   PTScaling,
+  Point2,
+  Point3,
   Scaling,
   StackViewportProperties,
-  FlipDirection,
-  ActorEntry,
-  CPUFallbackEnabledElement,
-  CPUFallbackColormapData,
-  EventTypes,
-  IStackViewport,
+  VOIRange,
+  ViewReference,
   VolumeActor,
-  Mat3,
-  ColormapRegistration,
-  IImageCalibration,
 } from '../types';
-import { ViewportInput } from '../types/IViewport';
-import drawImageSync from './helpers/cpuFallback/drawImageSync';
-import { getColormap } from './helpers/cpuFallback/colors/index';
-
-import { loadAndCacheImage } from '../loaders/imageLoader';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import {
-  InterpolationType,
-  RequestType,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
+import {
+  actorIsA,
+  colormap as colormapUtils,
+  createSigmoidRGBTransferFunction,
+  imageIdToURI,
+  imageRetrieveMetadataProvider,
+  invertRgbTransferFunction,
+  isEqual,
+  isImageActor,
+  triggerEvent,
+  updateVTKImageDataWithCornerstoneImage,
+  windowLevel as windowLevelUtil,
+} from '../utilities';
+import Viewport from './Viewport';
+import { getColormap } from './helpers/cpuFallback/colors/index';
+import drawImageSync from './helpers/cpuFallback/drawImageSync';
+
+import {
   Events,
-  CalibrationTypes,
+  InterpolationType,
+  MetadataModules,
+  RequestType,
   VOILUTFunctionType,
+  ViewportStatus,
 } from '../enums';
-import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
-import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
-import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
+import { ImageLoaderOptions, loadAndCacheImage } from '../loaders/imageLoader';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
+import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
+import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
+import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
-import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
+import cache from '../cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
+import {
+  ImagePixelModule,
+  ImagePlaneModule,
+  PixelDataTypedArray,
+} from '../types';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import cache from '../cache';
-import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import {
-  PixelDataTypedArray,
-  ImagePixelModule,
-  ImagePlaneModule,
-} from '../types';
-import ViewportStatus from '../enums/ViewportStatus';
+  getTransferFunctionNodes,
+  setTransferFunctionNodes,
+} from '../utilities/transferFunctionUtils';
+import correctShift from './helpers/cpuFallback/rendering/correctShift';
+import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
+import { Transform } from './helpers/cpuFallback/rendering/transform';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -114,7 +133,7 @@ type SetVOIOptions = {
  * is not available (or low performance). Read more about StackViewports in
  * the documentation section of this website.
  */
-class StackViewport extends Viewport implements IStackViewport {
+class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   private imageIds: Array<string>;
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex: number;
@@ -122,8 +141,19 @@ class StackViewport extends Viewport implements IStackViewport {
   private targetImageIdIndex: number;
   // setTimeout if the image is debounced to be loaded
   private debouncedTimeout: number;
+  /**
+   * The progressive retrieval configuration used for this viewport.
+   */
+  protected imagesLoader: IImagesLoader = this;
 
   // Viewport Properties
+  private globalDefaultProperties: StackViewportProperties;
+  private perImageIdDefaultProperties = new Map<
+    string,
+    StackViewportProperties
+  >();
+
+  private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
   private VOILUTFunction: VOILUTFunctionType;
@@ -131,6 +161,7 @@ class StackViewport extends Viewport implements IStackViewport {
   private invert = false;
   // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
   private initialInvert = false;
+  private initialTransferFunctionNodes = null;
   private interpolationType: InterpolationType;
 
   // Helpers
@@ -186,7 +217,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   public setUseCPURendering(value: boolean) {
     this.useCPURendering = value;
-    this._configureRenderingPipeline();
+    this._configureRenderingPipeline(value);
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -197,9 +228,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this._configureRenderingPipeline();
   };
 
-  private _configureRenderingPipeline() {
+  private _configureRenderingPipeline(value?: boolean) {
     this.useNativeDataType = this._shouldUseNativeDataType();
-    this.useCPURendering = getShouldUseCPURendering();
+    this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const [funcName, functions] of Object.entries(
       this.renderingPipelineFunctions
@@ -248,14 +279,6 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns IImageData: dimensions, direction, scalarData, vtkImageData, metadata, scaling
    */
   public getImageData: () => IImageData | CPUIImageData;
-
-  /**
-   * Sets the colormap for the current viewport.
-   * @param colormap - The colormap data to use.
-   */
-  public setColormap: (
-    colormap: CPUFallbackColormapData | ColormapRegistration
-  ) => void;
 
   /**
    * If the user has selected CPU rendering, return the CPU camera, otherwise
@@ -364,6 +387,14 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private setInvertColor: (invert: boolean) => void;
 
+  /**
+   * Sets the colormap for the current viewport.
+   * @param colormap - The colormap data to use.
+   */
+  private setColormap: (
+    colormap: CPUFallbackColormapData | ColormapPublic
+  ) => void;
+
   private initializeElementDisabledHandler() {
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
@@ -418,7 +449,7 @@ class StackViewport extends Viewport implements IStackViewport {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -460,7 +491,7 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: this.calibration,
+      calibration: { ...this.csImage.calibration, ...this.calibration },
       preScale: {
         ...this.csImage.preScale,
       },
@@ -532,6 +563,11 @@ class StackViewport extends Viewport implements IStackViewport {
     return actor;
   };
 
+  /** Gets the number of slices */
+  public getNumberOfSlices = (): number => {
+    return this.imageIds.length;
+  };
+
   /**
    * Retrieves the metadata from the metadata provider, and optionally adds the
    * scaling to the viewport if modality is PET and scaling metadata is provided.
@@ -558,6 +594,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const { modality } = metaData.get('generalSeriesModule', imageId);
     const imageIdScalingFactor = metaData.get('scalingModule', imageId);
+    const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
     if (modality === 'PT' && imageIdScalingFactor) {
       this._addScalingToViewport(imageIdScalingFactor);
@@ -567,7 +604,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
-    this.calibration = null;
+    this.calibration = calibration;
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     if (!this.useCPURendering) {
@@ -622,15 +659,60 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
-   * Sets the properties for the viewport on the default actor. Properties include
-   * setting the VOI, inverting the colors and setting the interpolation type, rotation
-   * @param voiRange - Sets the lower and upper voi
-   * @param invert - Inverts the colors
-   * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
-   * @param rotation - image rotation in degrees
+   * Update the default properties of the viewport and add properties by imageId if specified
+   * @param ViewportProperties - The properties to set
+   * @param imageId If given, we set the default properties only for this image index, if not
+   * the default properties will be set for all imageIds
+   */
+  public setDefaultProperties(
+    ViewportProperties: StackViewportProperties,
+    imageId?: string
+  ): void {
+    if (imageId == null) {
+      this.globalDefaultProperties = ViewportProperties;
+    } else {
+      this.perImageIdDefaultProperties.set(imageId, ViewportProperties);
+
+      //If the viewport is the same imageIdI, we need to update the viewport
+      if (this.getCurrentImageId() === imageId) {
+        this.setProperties(ViewportProperties);
+      }
+    }
+  }
+
+  /**
+   * Remove the global default properties of the viewport or remove default properties for an imageId if specified
+   * @param imageId If given, we remove the default properties only for this imageID, if not
+   * the global default properties will be removed
+   */
+  public clearDefaultProperties(imageId?: string): void {
+    if (imageId == null) {
+      this.globalDefaultProperties = {};
+      this.resetProperties();
+    } else {
+      this.perImageIdDefaultProperties.delete(imageId);
+      this.resetToDefaultProperties();
+    }
+  }
+
+  /**
+   Configures the properties of the viewport.
+   This method allows customization of the viewport by setting attributes like
+   VOI (Value of Interest), color inversion, interpolation type, and image rotation.
+   If setProperties is called for the first time, the provided properties will
+   become the default settings for all images in the stack in case the resetPropertiese need to be called
+   @param properties - An object containing the properties to be set.
+   @param properties.colormap - Specifies the colormap for the viewport.
+   @param properties.voiRange - Defines the lower and upper Value of Interest (VOI) to be applied.
+   @param properties.VOILUTFunction - Function to handle the application of a lookup table (LUT) to the VOI.
+   @param properties.invert - A boolean value to toggle color inversion (true: inverted, false: not inverted).
+   @param properties.interpolationType - Determines the interpolation method to be used (1: linear, 0: nearest-neighbor).
+   @param properties.rotation - Specifies the image rotation angle in degrees.
+   @param suppressEvents - A boolean value to control event suppression. If true, the related events will not be triggered. Default is false.
    */
   public setProperties(
     {
+      colormap,
       voiRange,
       VOILUTFunction,
       invert,
@@ -642,6 +724,21 @@ class StackViewport extends Viewport implements IStackViewport {
     this.viewportStatus = this.csImage
       ? ViewportStatus.PRE_RENDER
       : ViewportStatus.LOADING;
+
+    if (this.globalDefaultProperties == null) {
+      this.setDefaultProperties({
+        colormap,
+        voiRange,
+        VOILUTFunction,
+        invert,
+        interpolationType,
+        rotation,
+      });
+    }
+
+    if (typeof colormap !== 'undefined') {
+      this.setColormap(colormap);
+    }
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
@@ -670,11 +767,34 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
+   * Retrieve the viewport default properties
+   * @param imageId If given, we retrieve the default properties of an image index if it exists
+   * If not given,we return the global properties of the viewport
+   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
+   */
+  public getDefaultProperties = (imageId?: string): StackViewportProperties => {
+    let imageProperties;
+    if (imageId !== undefined) {
+      imageProperties = this.perImageIdDefaultProperties.get(imageId);
+    }
+
+    if (imageProperties !== undefined) {
+      return imageProperties;
+    }
+
+    return {
+      ...this.globalDefaultProperties,
+      rotation: this.getRotation(),
+    };
+  };
+
+  /**
    * Retrieve the viewport properties
    * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
   public getProperties = (): StackViewportProperties => {
     const {
+      colormap,
       voiRange,
       VOILUTFunction,
       interpolationType,
@@ -684,6 +804,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const rotation = this.getRotation();
 
     return {
+      colormap,
       voiRange,
       VOILUTFunction,
       interpolationType,
@@ -727,11 +848,59 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.setVOI(voiRange);
 
+    this.setInvertColor(this.initialInvert);
+
+    this.setInterpolationType(InterpolationType.LINEAR);
+
+    if (this.getRotation() !== 0) {
+      this.setRotation(0);
+    }
+
+    const transferFunction = this.getTransferFunction();
+    setTransferFunctionNodes(
+      transferFunction,
+      this.initialTransferFunctionNodes
+    );
+  }
+
+  public resetToDefaultProperties(): void {
+    this.cpuRenderingInvalidated = true;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
+
+    this.fillWithBackgroundColor();
+
+    if (this.useCPURendering) {
+      this._cpuFallbackEnabledElement.renderingTools = {};
+    }
+
+    const currentImageId = this.getCurrentImageId();
+    const properties =
+      this.perImageIdDefaultProperties.get(currentImageId) ||
+      this.globalDefaultProperties;
+
+    if (properties.colormap?.name) {
+      this.setColormap(properties.colormap);
+    }
+
+    let voiRange;
+    if (properties.voiRange == undefined) {
+      // if not set via setProperties; if it is not a PT image or is not prescaled,
+      // use the voiRange for the current image from its metadata if found
+      // otherwise, use the cached voiRange
+      voiRange = this._getVOIRangeForCurrentImage();
+    } else {
+      voiRange = properties.voiRange;
+    }
+
+    this.setVOI(voiRange);
+
     if (this.getRotation() !== 0) {
       this.setRotation(0);
     }
     this.setInterpolationType(InterpolationType.LINEAR);
-    this.setInvertColor(this.initialInvert);
+    this.setInvertColor(false);
+
+    this.render();
   }
 
   private _setPropertiesFromCache(): void {
@@ -894,6 +1063,33 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
   }
 
+  private getPanCPU(): Point2 {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    return [viewport.translation.x, viewport.translation.y];
+  }
+
+  private setPanCPU(pan: Point2): void {
+    const camera = this.getCameraCPU();
+
+    this.setCameraCPU({
+      ...camera,
+      focalPoint: [...pan.map((p) => -p), 0] as Point3,
+    });
+  }
+
+  private getZoomCPU(): number {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    return viewport.scale;
+  }
+
+  private setZoomCPU(zoom: number): void {
+    const camera = this.getCameraCPU();
+
+    this.setCameraCPU({ ...camera, scale: zoom });
+  }
+
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
     const { viewport } = this._cpuFallbackEnabledElement;
 
@@ -990,10 +1186,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
-    if (
-      this.VOILUTFunction !== VOILUTFunctionType.LINEAR &&
-      newVOILUTFunction === VOILUTFunctionType.LINEAR
-    ) {
+    if (this.VOILUTFunction !== newVOILUTFunction) {
       forceRecreateLUTFunction = true;
     }
 
@@ -1009,6 +1202,8 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setRotationGPU(rotation: number): void {
+    const pan = this.getPan();
+    this.setPan([0, 0]);
     const { flipVertical } = this.getCamera();
 
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
@@ -1022,6 +1217,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
+    this.setPan(pan);
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
@@ -1039,6 +1235,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // @ts-ignore
     volumeProperty.setInterpolationType(interpolationType);
+
     this.interpolationType = interpolationType;
   }
 
@@ -1090,6 +1287,7 @@ class StackViewport extends Viewport implements IStackViewport {
       if ((!this.invert && invert) || (this.invert && !invert)) {
         invertRgbTransferFunction(tfunc);
       }
+
       this.invert = invert;
     }
   }
@@ -1142,6 +1340,21 @@ class StackViewport extends Viewport implements IStackViewport {
     if (!suppressEvents) {
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
     }
+  }
+
+  private getTransferFunction() {
+    const defaultActor = this.getDefaultActor();
+
+    if (!defaultActor) {
+      return;
+    }
+
+    if (!isImageActor(defaultActor)) {
+      return;
+    }
+    const imageActor = defaultActor.actor as ImageActor;
+
+    return imageActor.getProperty().getRGBTransferFunction(0);
   }
 
   private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
@@ -1203,6 +1416,8 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       imageActor.getProperty().setRGBTransferFunction(0, transferFunction);
+      this.initialTransferFunctionNodes =
+        getTransferFunctionNodes(transferFunction);
     }
 
     if (!isSigmoidTFun) {
@@ -1288,7 +1503,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns image metadata: bitsAllocated, number of components, origin,
    *  direction, dimensions, spacing, number of voxels.
    */
-  private _getImageDataMetadata(image: IImage): ImageDataMetaData {
+  public getImageDataMetadata(image: IImage): ImageDataMetaData {
     // TODO: Creating a single image should probably not require a metadata provider.
     // We should define the minimum we need to display an image and it should live on
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
@@ -1381,9 +1596,36 @@ class StackViewport extends Viewport implements IStackViewport {
     };
   }
 
+  createVTKImageData({
+    origin,
+    direction,
+    dimensions,
+    spacing,
+    numComps,
+    pixelArray,
+  }) {
+    const values = new pixelArray.constructor(pixelArray.length);
+
+    // Todo: I guess nothing should be done for use16bit?
+    const scalarArray = vtkDataArray.newInstance({
+      name: 'Pixels',
+      numberOfComponents: numComps,
+      values: values,
+    });
+
+    const imageData = vtkImageData.newInstance();
+
+    imageData.setDimensions(dimensions);
+    imageData.setSpacing(spacing);
+    imageData.setDirection(direction);
+    imageData.setOrigin(origin);
+    imageData.getPointData().setScalars(scalarArray);
+
+    return imageData;
+  }
   /**
    * Creates vtkImagedata based on the image object, it creates
-   * and empty scalar data for the image based on the metadata
+   * empty scalar data for the image based on the metadata
    * tags (e.g., bitsAllocated)
    *
    * @param image - cornerstone Image object
@@ -1396,22 +1638,14 @@ class StackViewport extends Viewport implements IStackViewport {
     numComps,
     pixelArray,
   }): void {
-    const values = new pixelArray.constructor(pixelArray.length);
-
-    // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numComps,
-      values: values,
+    this._imageData = this.createVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numComps,
+      pixelArray,
     });
-
-    this._imageData = vtkImageData.newInstance();
-
-    this._imageData.setDimensions(dimensions);
-    this._imageData.setSpacing(spacing);
-    this._imageData.setDirection(direction);
-    this._imageData.setOrigin(origin);
-    this._imageData.getPointData().setScalars(scalarArray);
   }
 
   /**
@@ -1433,6 +1667,17 @@ class StackViewport extends Viewport implements IStackViewport {
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
+    const imageRetrieveConfiguration = metaData.get(
+      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+      imageIds[currentImageIdIndex],
+      'stack'
+    );
+
+    this.imagesLoader = imageRetrieveConfiguration
+      ? (imageRetrieveConfiguration.create || createProgressive)(
+          imageRetrieveConfiguration
+        )
+      : this;
 
     // reset the stack
     this.stackInvalidated = true;
@@ -1538,40 +1783,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // Update the pixel data in the vtkImageData object with the pixelData
     // from the loaded Cornerstone image
-    this._updatePixelData(image);
-  }
-
-  private _updatePixelData(image: IImage) {
-    const pixelData = image.getPixelData();
-    const scalars = this._imageData.getPointData().getScalars();
-    const scalarData = scalars.getData() as
-      | Uint8Array
-      | Float32Array
-      | Uint16Array
-      | Int16Array;
-
-    // if the color image is loaded with CPU previously, it loads it
-    // with RGBA, and here we need to remove the A channel from the
-    // pixel data.
-    if (image.color && image.rgba) {
-      const newPixelData = new Uint8Array(image.columns * image.rows * 3);
-      for (let i = 0; i < image.columns * image.rows; i++) {
-        newPixelData[i * 3] = pixelData[i * 4];
-        newPixelData[i * 3 + 1] = pixelData[i * 4 + 1];
-        newPixelData[i * 3 + 2] = pixelData[i * 4 + 2];
-      }
-      // modify the image object to have the correct pixel data for later
-      // use.
-      image.rgba = false;
-      image.getPixelData = () => newPixelData;
-      scalarData.set(newPixelData);
-    } else {
-      scalarData.set(pixelData);
-    }
-
-    // Trigger modified on the VTK Object so the texture is updated
-    // TODO: evaluate directly changing things with texSubImage3D later
-    this._imageData.modified();
+    updateVTKImageDataWithCornerstoneImage(this._imageData, image);
   }
 
   /**
@@ -1582,15 +1794,13 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageId - string representing the imageId
    * @param imageIdIndex - index of the imageId in the imageId list
    */
-  private async _loadAndDisplayImage(
+  private _loadAndDisplayImage(
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
-    await (this.useCPURendering
+    return this.useCPURendering
       ? this._loadAndDisplayImageCPU(imageId, imageIdIndex)
-      : this._loadAndDisplayImageGPU(imageId, imageIdIndex));
-
-    return imageId;
+      : this._loadAndDisplayImageGPU(imageId, imageIdIndex);
   }
 
   private _loadAndDisplayImageCPU(
@@ -1720,12 +1930,13 @@ class StackViewport extends Viewport implements IStackViewport {
 
       const priority = -5;
       const requestType = RequestType.Interaction;
-      const additionalDetails = { imageId };
+      const additionalDetails = { imageId, imageIdIndex };
       const options = {
         preScale: {
           enabled: true,
         },
         useRGBA: true,
+        requestType,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
@@ -1745,10 +1956,8 @@ class StackViewport extends Viewport implements IStackViewport {
     });
   }
 
-  private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
-    return new Promise((resolve, reject) => {
-      // 1. Load the image using the Image Loader
-      function successCallback(image, imageIdIndex, imageId) {
+  public successCallback(imageId, image) {
+    const imageIdIndex = this.imageIds.indexOf(imageId);
         // Todo: trigger an event to allow applications to hook into END of loading state
         // Currently we use loadHandlerManagers for this
         // Perform this check after the image has finished loading
@@ -1759,17 +1968,19 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         // If Photometric Interpretation is not the same for the next image we are trying to load
-        // invalidate the stack to recreate the VTK imageData
-        const csImgFrame = this.csImage?.imageFrame;
+    // invalidate the stack to recreate the VTK imageData.  Get the PMI from
+    // the base csImage if imageFrame isn't defined, which happens when the images
+    // come from the volume
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const csImgFrame = (<any>this.csImage)?.imageFrame;
         const imgFrame = image?.imageFrame;
+    const photometricInterpretation =
+      csImgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation;
+    const newPhotometricInterpretation =
+      imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
-        // if a volume is decached into images then the imageFrame will be undefined
-        if (
-          csImgFrame?.photometricInterpretation !==
-            imgFrame?.photometricInterpretation ||
-          this.csImage?.photometricInterpretation !==
-            image?.photometricInterpretation
-        ) {
+    if (photometricInterpretation !== newPhotometricInterpretation) {
           this.stackInvalidated = true;
         }
 
@@ -1792,10 +2003,13 @@ class StackViewport extends Viewport implements IStackViewport {
         // Update the viewport's currentImageIdIndex to reflect the newly
         // rendered image
         this.currentImageIdIndex = imageIdIndex;
-        resolve(imageId);
       }
 
-      function errorCallback(error, imageIdIndex, imageId) {
+  public errorCallback(imageId, permanent, error) {
+    if (!permanent) {
+      return;
+    }
+    const imageIdIndex = this.imageIds.indexOf(imageId);
         const eventDetail = {
           error,
           imageIdIndex,
@@ -1803,19 +2017,11 @@ class StackViewport extends Viewport implements IStackViewport {
         };
 
         triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
-        reject(error);
       }
 
-      function sendRequest(imageId, imageIdIndex, options) {
-        return loadAndCacheImage(imageId, options).then(
-          (image) => {
-            successCallback.call(this, image, imageIdIndex, imageId);
-          },
-          (error) => {
-            errorCallback.call(this, error, imageIdIndex, imageId);
-          }
-        );
-      }
+  public getLoaderImageOptions(imageId: string) {
+    const imageIdIndex = this.imageIds.indexOf(imageId);
+    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
       /**
        * If use16bittexture is specified, the CSWIL will automatically choose the
@@ -1825,9 +2031,7 @@ class StackViewport extends Viewport implements IStackViewport {
        *
        * If use16bittexture is not specified, we force the Float32Array for now
        */
-      const priority = -5;
-      const requestType = RequestType.Interaction;
-      const additionalDetails = { imageId };
+    const additionalDetails = { imageId, imageIdIndex };
       const options = {
         targetBuffer: {
           type: this.useNativeDataType ? undefined : 'Float32Array',
@@ -1836,8 +2040,48 @@ class StackViewport extends Viewport implements IStackViewport {
           enabled: true,
         },
         useRGBA: false,
+      transferSyntaxUID,
+      priority: 5,
+      requestType: RequestType.Interaction,
+      additionalDetails,
       };
+    return options;
+  }
 
+  public async loadImages(
+    imageIds: string[],
+    listener: ImageLoadListener
+  ): Promise<unknown> {
+    const resultList = await Promise.allSettled(
+      imageIds.map((imageId) => {
+        const options = this.getLoaderImageOptions(
+          imageId
+        ) as ImageLoaderOptions;
+
+        return loadAndCacheImage(imageId, options).then(
+          (image) => {
+            listener.successCallback(imageId, image);
+            return imageId;
+          },
+          (error) => {
+            listener.errorCallback(imageId, true, error);
+            return imageId;
+          }
+        );
+      })
+    );
+    const errorList = resultList.filter((item) => item.status === 'rejected');
+    if (errorList && errorList.length) {
+      const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
+        detail: errorList,
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+    }
+    return resultList;
+  }
+
+  private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
         imageId,
         imageIdIndex,
@@ -1846,12 +2090,8 @@ class StackViewport extends Viewport implements IStackViewport {
       };
       triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-      imageLoadPoolManager.addRequest(
-        sendRequest.bind(this, imageId, imageIdIndex, options),
-        requestType,
-        additionalDetails,
-        priority
-      );
+    return this.imagesLoader.loadImages([imageId], this).then((v) => {
+      return imageId;
     });
   }
 
@@ -1887,7 +2127,7 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   private _updateToDisplayImageCPU(image: IImage) {
-    const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
+    const metadata = this.getImageDataMetadata(image) as ImageDataMetaData;
 
     const viewport = getDefaultViewport(
       this.canvas,
@@ -1927,6 +2167,43 @@ class StackViewport extends Viewport implements IStackViewport {
     this._cpuFallbackEnabledElement.transform = calculateTransform(
       this._cpuFallbackEnabledElement
     );
+  }
+
+  /**
+   * This method is used to add images to the stack viewport.
+   * It takes an array of stack inputs, each containing an imageId and an actor UID.
+   * For each stack input, it retrieves the image from the cache and creates a VTK image data object.
+   * It then creates an actor mapper for the image data and adds it to the list of actors.
+   * Finally, it sets the actors for the stack viewport.
+   *
+   * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
+   */
+  public async addImages(stackInputs: Array<IStackInput>): Promise<void> {
+    const actors = this.getActors();
+    stackInputs.forEach((stackInput) => {
+      const image = cache.getImage(stackInput.imageId);
+
+      const { origin, dimensions, direction, spacing, numComps } =
+        this.getImageDataMetadata(image);
+
+      const imagedata = this.createVTKImageData({
+        origin,
+        dimensions,
+        direction,
+        spacing,
+        numComps,
+        pixelArray: image.getPixelData(),
+      });
+
+      const imageActor = this.createActorMapper(imagedata);
+      if (imageActor) {
+        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        if (stackInput.callback) {
+          stackInput.callback({ imageActor, imageId: stackInput.imageId });
+        }
+      }
+    });
+    this.setActors(actors);
   }
 
   /**
@@ -2015,17 +2292,19 @@ class StackViewport extends Viewport implements IStackViewport {
       spacing,
       numComps,
       imagePixelModule,
-    } = this._getImageDataMetadata(image);
+    } = this.getImageDataMetadata(image);
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
+
+    const pixelArray = image.getPixelData();
     this._createVTKImageData({
       origin,
       direction,
       dimensions,
       spacing,
       numComps,
-      pixelArray: image.getPixelData(),
+      pixelArray,
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
@@ -2034,9 +2313,14 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // Create a VTK Image Slice actor to display the vtkImageData object
     const actor = this.createActorMapper(this._imageData);
-    const actors = [];
-    actors.push({ uid: this.id, actor });
-    this.setActors(actors);
+    const oldActors = this.getActors();
+    if (oldActors.length && oldActors[0].uid === this.id) {
+      oldActors[0].actor = actor;
+    } else {
+      oldActors.unshift({ uid: this.id, actor });
+    }
+    this.setActors(oldActors);
+
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
@@ -2083,7 +2367,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private _getInitialVOIRange(image: IImage) {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
-      return this.voiRange;
+      return this.globalDefaultProperties.voiRange;
     }
     const { windowCenter, windowWidth } = image;
 
@@ -2162,6 +2446,17 @@ class StackViewport extends Viewport implements IStackViewport {
       this.imageIds[imageIdIndex],
       imageIdIndex
     );
+
+    //Check if there is any existing specific options for images if not we don't
+    //want to re-render the viewport to its default properties
+    if (this.perImageIdDefaultProperties.size >= 1) {
+      const defaultProperties = this.perImageIdDefaultProperties.get(imageId);
+      if (defaultProperties !== undefined) {
+        this.setProperties(defaultProperties);
+      } else if (this.globalDefaultProperties !== undefined) {
+        this.setProperties(this.globalDefaultProperties);
+      }
+    }
 
     return imageId;
   }
@@ -2271,18 +2566,18 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageIdIndex - number represents imageId index in the list of
    * provided imageIds in setStack
    */
-  public async setImageIdIndex(imageIdIndex: number): Promise<string> {
+  public setImageIdIndex(imageIdIndex: number): Promise<string> {
     this._throwIfDestroyed();
 
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
-      return this.getCurrentImageId();
+      return Promise.resolve(this.getCurrentImageId());
     }
 
     // Otherwise, get the imageId and attempt to display it
-    const imageId = this._setImageIdIndex(imageIdIndex);
+    const imageIdPromise = this._setImageIdIndex(imageIdIndex);
 
-    return imageId;
+    return imageIdPromise;
   }
 
   /**
@@ -2534,6 +2829,67 @@ class StackViewport extends Viewport implements IStackViewport {
     return this.currentImageIdIndex;
   };
 
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  /**
+   * Checks to see if this target is or could be shown in this viewport
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+
+    let { imageURI } = options;
+    const { referencedImageId, sliceIndex } = viewRef;
+
+    if (viewRef.volumeId && !referencedImageId) {
+      return options.asVolume === true;
+    }
+
+    let testIndex = this.getCurrentImageIdIndex();
+    if (options.withNavigation && typeof sliceIndex === 'number') {
+      testIndex = sliceIndex;
+    }
+    const imageId = this.imageIds[testIndex];
+    if (!imageId) {
+      return false;
+    }
+    if (!imageURI) {
+      // Remove the dataLoader scheme since that can change
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1);
+    }
+    return referencedImageId.endsWith(imageURI);
+  }
+
+  /**
+   * Gets a standard target to show this image instance.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
+      viewRefSpecifier;
+    return {
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
+      sliceIndex: sliceIndex,
+    };
+  }
+
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
+    if (Array.isArray(sliceIndex)) {
+      throw new Error('Use of slice ranges for stacks not supported');
+    }
+    return `imageId:${this.imageIds[sliceIndex]}`;
+  }
+
   /**
    *
    * Returns the imageIdIndex that is targeted to be loaded, in case of debounced
@@ -2641,6 +2997,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setColormapCPU(colormapData: CPUFallbackColormapData) {
+    this.colormap = colormapData;
     const colormap = getColormap(colormapData.name, colormapData);
 
     this._cpuFallbackEnabledElement.viewport.colormap = colormap;
@@ -2650,26 +3007,48 @@ class StackViewport extends Viewport implements IStackViewport {
     this.cpuRenderingInvalidated = true;
 
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: colormapData,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
-  private setColormapGPU(colormap: ColormapRegistration) {
+  private setColormapGPU(colormap: ColormapPublic) {
     const ActorEntry = this.getDefaultActor();
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
 
+    const colormapObj =
+      colormapUtils.getColormap(colormap.name) ||
+      vtkColorMaps.getPresetByName(colormap.name);
+
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();
-      const voiRange = this._getVOIRangeForCurrentImage();
-      cfun.applyColorMap(colormap);
-      cfun.setMappingRange(voiRange.lower, voiRange.upper);
+      cfun.applyColorMap(colormapObj);
+      cfun.setMappingRange(this.voiRange.lower, this.voiRange.upper);
       actorProp.setRGBTransferFunction(0, cfun);
     } else {
-      rgbTransferFunction.applyColorMap(colormap);
+      rgbTransferFunction.applyColorMap(colormapObj);
+      rgbTransferFunction.setMappingRange(
+        this.voiRange.lower,
+        this.voiRange.upper
+      );
       actorProp.setRGBTransferFunction(0, rgbTransferFunction);
     }
 
+    this.colormap = colormap;
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap,
+    };
+
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+
   }
 
   private unsetColormapGPU() {
@@ -2680,15 +3059,9 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // create default values for imagePlaneModule if values are undefined
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    const calibratedPixelSpacing = metaData.get(
-      'calibratedPixelSpacing',
-      imageId
-    );
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
     this.calibration ||= imagePlaneModule.calibration;
-
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };
@@ -2740,6 +3113,22 @@ class StackViewport extends Viewport implements IStackViewport {
     setCamera: {
       cpu: this.setCameraCPU,
       gpu: super.setCamera,
+    },
+    getPan: {
+      cpu: this.getPanCPU,
+      gpu: super.getPan,
+    },
+    setPan: {
+      cpu: this.setPanCPU,
+      gpu: super.setPan,
+    },
+    getZoom: {
+      cpu: this.getZoomCPU,
+      gpu: super.getZoom,
+    },
+    setZoom: {
+      cpu: this.setZoomCPU,
+      gpu: super.setZoom,
     },
     setVOI: {
       cpu: this.setVOICPU,

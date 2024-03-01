@@ -7,7 +7,7 @@ import { SVGDrawingHelper } from '../types';
 /**
  * Draws an SVG polyline with the given points.
  *
- * The `connectLastToFirst` option, if true, draws a closed polyline, with the
+ * The `closePath` option, if true, draws a closed polyline, with the
  * last point connected to the first.
  */
 export default function drawPolyline(
@@ -17,26 +17,27 @@ export default function drawPolyline(
   points: Types.Point2[],
   options: {
     color?: string;
+    fillColor?: string;
+    fillOpacity?: number;
     width?: number;
     lineWidth?: number;
     lineDash?: string;
-    connectLastToFirst?: boolean;
+    closePath?: boolean;
   }
 ): void {
   if (points.length < 2) {
     return;
   }
 
-  const { color, width, lineWidth, lineDash } = Object.assign(
-    {
-      color: 'dodgerblue',
-      width: '2',
-      lineWidth: undefined,
-      lineDash: undefined,
-      connectLastToFirst: false,
-    },
-    options
-  );
+  const {
+    color = 'dodgerblue',
+    width = 10,
+    fillColor = 'none',
+    fillOpacity = 0,
+    lineWidth,
+    lineDash,
+    closePath = false,
+  } = options;
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
@@ -48,10 +49,10 @@ export default function drawPolyline(
   let pointsAttribute = '';
 
   for (const point of points) {
-    pointsAttribute += `${point[0]}, ${point[1]} `;
+    pointsAttribute += `${point[0].toFixed(1)}, ${point[1].toFixed(1)} `;
   }
 
-  if (options.connectLastToFirst) {
+  if (closePath) {
     const firstPoint = points[0];
 
     pointsAttribute += `${firstPoint[0]}, ${firstPoint[1]}`;
@@ -60,7 +61,8 @@ export default function drawPolyline(
   const attributes = {
     points: pointsAttribute,
     stroke: color,
-    fill: 'none',
+    fill: fillColor,
+    'fill-opacity': fillOpacity,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };

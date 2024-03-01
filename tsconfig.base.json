@@ -39,6 +39,7 @@
     "packages/**/lib-esm",
     "packages/adapters/**/*.js",
     "packages/docs",
+    "packages/docs/**/*",
     "snippets",
     "examples"
   ]

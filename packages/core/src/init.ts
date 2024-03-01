@@ -6,6 +6,8 @@ let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
+import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
+
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -19,7 +21,7 @@ const defaultConfig: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
 
 let config: Cornerstone3DConfig = {
@@ -33,8 +35,10 @@ let config: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
+
+let webWorkerManager = null;
 
 function _getGLContext(): RenderingContext {
   // Create canvas element. The canvas is not added to the
@@ -120,7 +124,7 @@ async function init(configuration = config): Promise<boolean> {
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
       config.gpuTier
     );
-    if (config.gpuTier.tier < 1) {
+    if (config.gpuTier?.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );
@@ -133,6 +137,11 @@ async function init(configuration = config): Promise<boolean> {
   setUseSharedArrayBuffer(sharedArrayBufferMode);
 
   csRenderInitialized = true;
+
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager();
+  }
+
   return csRenderInitialized;
 }
 
@@ -256,6 +265,14 @@ function _updateRenderingPipelinesForAllViewports(): void {
   );
 }
 
+function getWebWorkerManager() {
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager();
+  }
+
+  return webWorkerManager;
+}
+
 export {
   init,
   getShouldUseCPURendering,
@@ -268,4 +285,5 @@ export {
   resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
 };

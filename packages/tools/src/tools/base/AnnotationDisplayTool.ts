@@ -1,9 +1,9 @@
 import {
   utilities,
   getEnabledElement,
-  VolumeViewport,
   StackViewport,
   cache,
+  VideoViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -123,7 +123,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
   };
 
   protected getReferencedImageId(
-    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    viewport: Types.IViewport,
     worldPos: Types.Point3,
     viewPlaneNormal: Types.Point3,
     viewUp: Types.Point3
@@ -134,8 +134,10 @@ abstract class AnnotationDisplayTool extends BaseTool {
 
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
+    } else if (viewport instanceof VideoViewport) {
+      referencedImageId = targetId.split('videoId:')[1];
     } else {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = targetId.split(/volumeId:|\?/)[1];
       const imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = utilities.getClosestImageId(

@@ -31,6 +31,7 @@ module.exports = {
         'tutorials/intro',
         'tutorials/basic-stack',
         'tutorials/basic-volume',
+        'tutorials/basic-video',
         'tutorials/basic-manipulation-tool',
         'tutorials/basic-annotation-tool',
         'tutorials/basic-segmentation-tools',
@@ -81,6 +82,7 @@ module.exports = {
             'concepts/cornerstone-core/viewports',
             'concepts/cornerstone-core/renderingEngine',
             'concepts/cornerstone-core/requestPoolManager',
+            'concepts/cornerstone-core/webWorker',
           ],
         },
         {
@@ -91,6 +93,50 @@ module.exports = {
           items: [
             'concepts/streaming-image-volume/streaming',
             'concepts/streaming-image-volume/re-order',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Progressive Loading',
+          collapsed: true,
+          link: { type: 'doc', id: 'concepts/progressive-loading/index' },
+          items: [
+            {
+              type: 'category',
+              label: 'Server Requirements',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/requirements',
+              },
+              items: ['concepts/progressive-loading/encoding'],
+            },
+            {
+              type: 'category',
+              label: 'Retrieve Configuration',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/retrieve-configuration',
+              },
+              items: ['concepts/progressive-loading/advance-retrieve-config'],
+            },
+            'concepts/progressive-loading/usage',
+            {
+              type: 'category',
+              label: 'Examples',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/progressive-loading/stackProgressive',
+              },
+              items: [
+                'concepts/progressive-loading/stackProgressive',
+                'concepts/progressive-loading/volumeProgressive',
+              ],
+            },
+            // 'concepts/progressive-loading/static-wado',
+            'concepts/progressive-loading/non-htj2k-progressive',
           ],
         },
         {
@@ -116,6 +162,7 @@ module.exports = {
                 'concepts/cornerstone-tools/annotation/selection',
                 'concepts/cornerstone-tools/annotation/locking',
                 'concepts/cornerstone-tools/annotation/config',
+                'concepts/cornerstone-tools/annotation/annotationGroups',
               ],
             },
             {

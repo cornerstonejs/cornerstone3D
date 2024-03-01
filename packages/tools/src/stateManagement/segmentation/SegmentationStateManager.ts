@@ -1,12 +1,12 @@
+import cloneDeep from 'lodash.clonedeep';
+import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
-
-import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 
 import { SegmentationRepresentations } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
 import type {
-  ColorLUT,
   RepresentationConfig,
   Segmentation,
   SegmentationRepresentationConfig,
@@ -20,12 +20,14 @@ import type {
 // Note: when we get other representations, we should set their default representations too.
 const defaultLabelmapConfig = getDefaultLabelmapConfig();
 const defaultContourConfig = getDefaultContourConfig();
+const defaultSurfaceConfig = getDefaultSurfaceConfig();
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveSegmentations: true,
   representations: {
     [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
     [SegmentationRepresentations.Contour]: defaultContourConfig,
+    [SegmentationRepresentations.Surface]: defaultSurfaceConfig,
   },
 };
 
@@ -51,7 +53,7 @@ export default class SegmentationStateManager {
     if (!uid) {
       uid = csUtils.uuidv4();
     }
-    this.state = structuredClone(initialDefaultState);
+    this.state = cloneDeep(initialDefaultState);
     this.uid = uid;
   }
 
@@ -76,15 +78,19 @@ export default class SegmentationStateManager {
    * @param lutIndex - The index of the color LUT to retrieve.
    * @returns A ColorLUT object.
    */
-  getColorLUT(lutIndex: number): ColorLUT | undefined {
+  getColorLUT(lutIndex: number): Types.ColorLUT | undefined {
     return this.state.colorLUT[lutIndex];
+  }
+
+  getNextColorLUTIndex(): number {
+    return this.state.colorLUT.length;
   }
 
   /**
    * Reset the state to the default state
    */
   resetState(): void {
-    this.state = structuredClone(initialDefaultState);
+    this.state = cloneDeep(initialDefaultState);
   }
 
   /**
@@ -103,8 +109,6 @@ export default class SegmentationStateManager {
    * @param segmentation - Segmentation
    */
   addSegmentation(segmentation: Segmentation): void {
-    this._initDefaultColorLUTIfNecessary();
-
     // Check if the segmentation already exists with the segmentationId
     if (this.getSegmentation(segmentation.segmentationId)) {
       throw new Error(
@@ -209,7 +213,7 @@ export default class SegmentationStateManager {
     const toolGroupSegRepresentations =
       this.getSegmentationRepresentations(toolGroupId);
 
-    const segmentationData = toolGroupSegRepresentations.find(
+    const segmentationData = toolGroupSegRepresentations?.find(
       (representation) =>
         representation.segmentationRepresentationUID ===
         segmentationRepresentationUID
@@ -381,7 +385,10 @@ export default class SegmentationStateManager {
   setSegmentSpecificConfig(
     toolGroupId: string,
     segmentationRepresentationUID: string,
-    config: SegmentSpecificRepresentationConfig
+    config: SegmentSpecificRepresentationConfig,
+    options?: {
+      clear: false;
+    }
   ): void {
     const segmentationRepresentation = this.getSegmentationRepresentationByUID(
       toolGroupId,
@@ -392,7 +399,13 @@ export default class SegmentationStateManager {
       return;
     }
 
-    segmentationRepresentation.segmentSpecificConfig = config;
+    if (!segmentationRepresentation.segmentSpecificConfig || options?.clear) {
+      segmentationRepresentation.segmentSpecificConfig = {};
+    }
+
+    Object.keys(config).forEach((key) => {
+      segmentationRepresentation.segmentSpecificConfig[key] = config[key];
+    });
   }
 
   /**
@@ -432,12 +445,12 @@ export default class SegmentationStateManager {
    * @param colorLUT - ColorLUT
    * @param lutIndex - The index of the color LUT table to add.
    */
-  addColorLUT(colorLUT: ColorLUT, lutIndex: number): void {
+  addColorLUT(colorLUT: Types.ColorLUT, lutIndex: number): void {
     if (this.state.colorLUT[lutIndex]) {
-      console.log('Color LUT table already exists, overwriting');
+      console.warn('Color LUT table already exists, overwriting');
     }
 
-    this.state.colorLUT[lutIndex] = colorLUT;
+    this.state.colorLUT[lutIndex] = structuredClone(colorLUT);
   }
 
   /**
@@ -498,13 +511,6 @@ export default class SegmentationStateManager {
     }
 
     // 5. if added/removed segmentation is is inactive, do nothing
-  }
-
-  _initDefaultColorLUTIfNecessary() {
-    // if colorLUTTable is not specified or the default one is not found
-    if (this.state.colorLUT.length === 0 || !this.state.colorLUT[0]) {
-      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLUT, 0);
-    }
   }
 }
 

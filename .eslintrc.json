@@ -52,11 +52,13 @@
     "project": "./tsconfig.json",
     "tsconfigRootDir": "./"
   },
+  "ignorePatterns": ["packages/docs"],
   "rules": {
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
     "tsdoc/syntax": "warn",
     "@typescript-eslint/ban-ts-comment": "off",
+    "import/no-cycle": "error",
     "no-console": [
       "warn",
       {
