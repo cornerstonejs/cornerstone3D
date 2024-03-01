@@ -99,7 +99,8 @@ content.append(instructions);
 const interpolationTools = new Map<string, any>();
 const previewColors = {
   0: [255, 255, 255, 128],
-  1: [0, 255, 255, 255],
+  1: [255, 64, 64, 64],
+  2: [255, 0, 255, 255],
 };
 const preview = {
   enabled: true,
@@ -131,6 +132,18 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
+interpolationTools.set('ThresholdSphereIsland', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
+    strategySpecificConfiguration: {
+      ...configuration.strategySpecificConfiguration,
+      THRESHOLD: { ...thresholdArgs },
+    },
+  },
+});
+
 interpolationTools.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
@@ -148,18 +161,6 @@ interpolationTools.set('ThresholdSphere', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
-interpolationTools.set('ThresholdSphereIsland', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },

@@ -13,9 +13,9 @@ export enum SegmentationEnum {
   // Island means it is connected to a selected point
   ISLAND = 2,
   // Interior means it is inside the island, or possibly inside
-  INTERIOR = 4,
+  INTERIOR = 3,
   // Exterior means it is outside the island
-  EXTERIOR = 5,
+  EXTERIOR = 4,
 }
 
 /**
@@ -99,10 +99,7 @@ export default {
           iPrime,
           jPrime,
           kPrime,
-          SegmentationEnum.ISLAND,
-          {
-            planar: true,
-          }
+          SegmentationEnum.ISLAND
         );
       }
     });

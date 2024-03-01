@@ -75,7 +75,9 @@ export default {
     if (!configColor && !segmentColor) {
       return;
     }
-    const previewColor = configColor || segmentColor.map((it) => it * 0.9);
+    const previewColor =
+      configColor ||
+      segmentColor.map((it, idx) => (idx === 3 ? 64 : Math.round(it * 0.9)));
     segmentationConfig.color.setColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
