@@ -34,6 +34,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  configuration?: Record<string, any>;
 };
 
 export type StrategyFunction = (
@@ -109,6 +110,9 @@ export default class BrushStrategy {
     [StrategyCallbacks.Preview]: addSingletonMethod(
       StrategyCallbacks.Preview,
       false
+    ),
+    [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
+      StrategyCallbacks.ComputeInnerCircleRadius
     ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object

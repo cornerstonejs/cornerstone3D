@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
@@ -64,5 +65,47 @@ export default {
       return;
     }
     strategySpecificConfiguration.THRESHOLD.threshold = null;
+  },
+  /**
+   * It computes the inner circle radius in canvas coordinates and stores it
+   * in the strategySpecificConfiguration. This is used to show the user
+   * the area that is used to compute the threshold.
+   */
+  [StrategyCallbacks.ComputeInnerCircleRadius]: (
+    operationData: InitializedOperationData
+  ) => {
+    const { configuration, viewport } = operationData;
+    const { THRESHOLD: { dynamicRadius = 0 } = {} } =
+      configuration.strategySpecificConfiguration || {};
+    const { spacing } = (
+      viewport as Types.IStackViewport | Types.IVolumeViewport
+    ).getImageData();
+    const centerCanvas = [
+      viewport.element.clientWidth / 2,
+      viewport.element.clientHeight / 2,
+    ] as Types.Point2;
+    const radiusInWorld = dynamicRadius * spacing[0];
+    const centerCursorInWorld = viewport.canvasToWorld(centerCanvas);
+
+    const offSetCenterInWorld = centerCursorInWorld.map(
+      (coord) => coord + radiusInWorld
+    ) as Types.Point3;
+
+    const offSetCenterCanvas = viewport.worldToCanvas(offSetCenterInWorld);
+    const dynamicRadiusInCanvas = Math.abs(
+      centerCanvas[0] - offSetCenterCanvas[0]
+    );
+
+    // this is a bit of a hack, since we have switched to using THRESHOLD
+    // as strategy but really strategy names are CIRCLE_THRESHOLD and SPHERE_THRESHOLD
+    // and we can't really change the name of the strategy in the configuration
+    const { strategySpecificConfiguration, activeStrategy } = configuration;
+
+    if (!strategySpecificConfiguration[activeStrategy]) {
+      strategySpecificConfiguration[activeStrategy] = {};
+    }
+
+    strategySpecificConfiguration[activeStrategy].dynamicRadiusInCanvas =
+      dynamicRadiusInCanvas;
   },
 };
