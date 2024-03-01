@@ -701,12 +701,15 @@ const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
 type DisplayArea = {
+    type?: 'SCALE' | 'FIT';
+    scale?: number;
+    interpolationType?: InterpolationType;
     imageArea?: [number, number];
     imageCanvasPoint?: {
         imagePoint: [number, number];
-        canvasPoint: [number, number];
+        canvasPoint?: [number, number];
     };
-    storeAsInitialCamera?: boolean;
+    storeAsInitialCamera: boolean;
 };
 
 // @public (undocumented)
@@ -3742,6 +3745,10 @@ export class Viewport implements IViewport {
     protected setCameraNoEvent(camera: ICamera): void;
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
+    // (undocumented)
+    protected setDisplayAreaFit(displayArea: DisplayArea): void;
+    // (undocumented)
+    protected setDisplayAreaScale(displayArea: DisplayArea): void;
     // (undocumented)
     protected setFitToCanvasCamera(camera: ICamera): void;
     // (undocumented)

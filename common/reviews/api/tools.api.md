@@ -1650,16 +1650,16 @@ function createLabelmapVolumeForViewport(input: {
     renderingEngineId: string;
     segmentationId?: string;
     options?: {
-        volumeId?: string;
-        scalarData?: Float32Array | Uint8Array | Uint16Array | Int16Array;
-        targetBuffer?: {
+        volumeId: string;
+        scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+        targetBuffer: {
             type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int8Array';
         };
-        metadata?: any;
-        dimensions?: Types_2.Point3;
-        spacing?: Types_2.Point3;
-        origin?: Types_2.Point3;
-        direction?: Float32Array;
+        metadata: Types_2.Metadata;
+        dimensions: Types_2.Point3;
+        spacing: Types_2.Point3;
+        origin: Types_2.Point3;
+        direction: Types_2.Mat3;
     };
 }): Promise<string>;
 

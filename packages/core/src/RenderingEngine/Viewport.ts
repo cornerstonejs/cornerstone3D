@@ -710,6 +710,7 @@ class Viewport implements IViewport {
   protected setDisplayAreaFit(displayArea: DisplayArea) {
     const { storeAsInitialCamera, imageArea, imageCanvasPoint } = displayArea;
 
+    let zoom = 1.1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
@@ -756,16 +757,8 @@ class Viewport implements IViewport {
       // don't store as initial camera here - that breaks rotation and other changes.
       this.setPan(deltaPoint2);
     }
+  }
 
-    // Instead of storing the camera itself, if initial camera is set,
-    // then store the display area as the baseline display area.
-    if (storeAsInitialCamera) {
-      this.options.displayArea = displayArea;
-    }
-
-    if (!suppressEvents) {
-      const eventDetail: EventTypes.DisplayAreaModifiedEventDetail = {
-        viewportId: this.id,
   public getDisplayArea(): DisplayArea | undefined {
     return this.options?.displayArea;
   }
@@ -852,11 +845,12 @@ class Viewport implements IViewport {
 
     // If we have just a single point, pick a radius of 1.0
     // compute the radius of the enclosing sphere
-    const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
-
     // For 3D viewport, we should increase the radius to make sure the whole
     // volume is visible and we don't get clipping artifacts.
-    radius = this.type === ViewportType.VOLUME_3D ? radius * 10 : radius;
+    const radius =
+      Math.sqrt(w1 + w2 + w3 || 1) *
+      0.5 *
+      (this.type === ViewportType.VOLUME_3D ? 10 : 1);
 
     const distance = this.insetImageMultiplier * radius;
 
@@ -1246,10 +1240,10 @@ class Viewport implements IViewport {
       // only modify the clipping planes if the camera is modified out of plane
       // or a new actor is added and we need to update the clipping planes
       if (cameraModifiedOutOfPlane || viewUpHasChanged) {
-    const actorEntry = this.getDefaultActor();
+        const actorEntry = this.getDefaultActor();
         if (!actorEntry?.actor) {
-      return;
-    }
+          return;
+        }
 
         if (!actorIsA(actorEntry, 'vtkActor')) {
           this.updateClippingPlanesForActors(updatedCamera);
@@ -1259,9 +1253,9 @@ class Viewport implements IViewport {
           actorIsA(actorEntry, 'vtkImageSlice') ||
           this.type === ViewportType.VOLUME_3D
         ) {
-      const renderer = this.getRenderer();
-      renderer.resetCameraClippingRange();
-    }
+          const renderer = this.getRenderer();
+          renderer.resetCameraClippingRange();
+        }
       }
     }
 
@@ -1354,7 +1348,7 @@ class Viewport implements IViewport {
         focalPoint,
         vtkPlanes,
         viewport: this,
-    });
+      });
     });
   }
 

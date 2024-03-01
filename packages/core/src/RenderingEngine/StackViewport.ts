@@ -1,14 +1,12 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
-import _cloneDeep from 'lodash.clonedeep';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
 import type {
@@ -1958,22 +1956,22 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   public successCallback(imageId, image) {
     const imageIdIndex = this.imageIds.indexOf(imageId);
-        // Todo: trigger an event to allow applications to hook into END of loading state
-        // Currently we use loadHandlerManagers for this
-        // Perform this check after the image has finished loading
-        // in case the user has already scrolled away to another image.
-        // In that case, do not render this image.
-        if (this.currentImageIdIndex !== imageIdIndex) {
-          return;
-        }
+    // Todo: trigger an event to allow applications to hook into END of loading state
+    // Currently we use loadHandlerManagers for this
+    // Perform this check after the image has finished loading
+    // in case the user has already scrolled away to another image.
+    // In that case, do not render this image.
+    if (this.currentImageIdIndex !== imageIdIndex) {
+      return;
+    }
 
-        // If Photometric Interpretation is not the same for the next image we are trying to load
+    // If Photometric Interpretation is not the same for the next image we are trying to load
     // invalidate the stack to recreate the VTK imageData.  Get the PMI from
     // the base csImage if imageFrame isn't defined, which happens when the images
     // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const csImgFrame = (<any>this.csImage)?.imageFrame;
-        const imgFrame = image?.imageFrame;
+    const imgFrame = image?.imageFrame;
     const photometricInterpretation =
       csImgFrame?.photometricInterpretation ||
       this.csImage?.photometricInterpretation;
@@ -1981,70 +1979,70 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
     if (photometricInterpretation !== newPhotometricInterpretation) {
-          this.stackInvalidated = true;
-        }
+      this.stackInvalidated = true;
+    }
 
-        this._setCSImage(image);
+    this._setCSImage(image);
 
-        const eventDetail: EventTypes.StackNewImageEventDetail = {
-          image,
-          imageId,
-          imageIdIndex,
-          viewportId: this.id,
-          renderingEngineId: this.renderingEngineId,
-        };
+    const eventDetail: EventTypes.StackNewImageEventDetail = {
+      image,
+      imageId,
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
 
-        triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
-        this._updateActorToDisplayImageId(image);
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
+    this._updateActorToDisplayImageId(image);
 
-        // Trigger the image to be drawn on the next animation frame
-        this.render();
+    // Trigger the image to be drawn on the next animation frame
+    this.render();
 
-        // Update the viewport's currentImageIdIndex to reflect the newly
-        // rendered image
-        this.currentImageIdIndex = imageIdIndex;
-      }
+    // Update the viewport's currentImageIdIndex to reflect the newly
+    // rendered image
+    this.currentImageIdIndex = imageIdIndex;
+  }
 
   public errorCallback(imageId, permanent, error) {
     if (!permanent) {
       return;
     }
     const imageIdIndex = this.imageIds.indexOf(imageId);
-        const eventDetail = {
-          error,
-          imageIdIndex,
-          imageId,
-        };
+    const eventDetail = {
+      error,
+      imageIdIndex,
+      imageId,
+    };
 
-        triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
-      }
+    triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
+  }
 
   public getLoaderImageOptions(imageId: string) {
     const imageIdIndex = this.imageIds.indexOf(imageId);
     const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
-      /**
-       * If use16bittexture is specified, the CSWIL will automatically choose the
-       * array type when no targetBuffer is provided. When CSWIL is initialized,
-       * the use16bit should match the settings of cornerstone3D (either preferSizeOverAccuracy
-       * or norm16 textures need to be enabled)
-       *
-       * If use16bittexture is not specified, we force the Float32Array for now
-       */
+    /**
+     * If use16bittexture is specified, the CSWIL will automatically choose the
+     * array type when no targetBuffer is provided. When CSWIL is initialized,
+     * the use16bit should match the settings of cornerstone3D (either preferSizeOverAccuracy
+     * or norm16 textures need to be enabled)
+     *
+     * If use16bittexture is not specified, we force the Float32Array for now
+     */
     const additionalDetails = { imageId, imageIdIndex };
-      const options = {
-        targetBuffer: {
-          type: this.useNativeDataType ? undefined : 'Float32Array',
-        },
-        preScale: {
-          enabled: true,
-        },
-        useRGBA: false,
+    const options = {
+      targetBuffer: {
+        type: this.useNativeDataType ? undefined : 'Float32Array',
+      },
+      preScale: {
+        enabled: true,
+      },
+      useRGBA: false,
       transferSyntaxUID,
       priority: 5,
       requestType: RequestType.Interaction,
       additionalDetails,
-      };
+    };
     return options;
   }
 
@@ -2082,13 +2080,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
-      const eventDetail: EventTypes.PreStackNewImageEventDetail = {
-        imageId,
-        imageIdIndex,
-        viewportId: this.id,
-        renderingEngineId: this.renderingEngineId,
-      };
-      triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
+    const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+      imageId,
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+    triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
     return this.imagesLoader.loadImages([imageId], this).then((v) => {
       return imageId;
@@ -3048,7 +3046,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
 
     triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
-
   }
 
   private unsetColormapGPU() {
