@@ -22,6 +22,11 @@ const ADJACENT_ALL = [
   [0, 0, 1],
 ];
 
+const ADJACENT_SINGLE_PLANE = [
+  [0, -1, 0],
+  [0, 1, 0],
+];
+
 /**
  * Adjacent in and out do a flood fill in only one of depth (in or out) directions.
  * That improves the performance, as well as looks much nicer for many flood operations.
@@ -209,9 +214,11 @@ export default class RLEVoxelMap<T> {
   /**
    * For each RLE element, call the given callback
    */
-  public forEach(callback) {
+  public forEach(callback, options?: { rowModified?: boolean }) {
+    const rowModified = options?.rowModified;
     for (const [baseIndex, row] of this.rows) {
-      for (const rle of row) {
+      const rowToUse = rowModified ? [...row] : row;
+      for (const rle of rowToUse) {
         callback(baseIndex * this.width, rle, row);
       }
     }
@@ -422,7 +429,7 @@ export default class RLEVoxelMap<T> {
     j: number,
     k: number,
     value: T,
-    options?: { planar?: boolean; diagonals?: boolean }
+    options?: { planar?: boolean; diagonals?: boolean; singlePlane?: boolean }
   ): number {
     const rle = this.getRLE(i, j, k);
     if (!rle) {
@@ -443,8 +450,12 @@ export default class RLEVoxelMap<T> {
    */
   private flood(stack, sourceValue, value, options) {
     let sum = 0;
-    const { planar = true, diagonals = true } = options || {};
-    const childOptions = { planar, diagonals };
+    const {
+      planar = true,
+      diagonals = true,
+      singlePlane = false,
+    } = options || {};
+    const childOptions = { planar, diagonals, singlePlane };
     while (stack.length) {
       const top = stack.pop();
       const [current] = top;
@@ -496,7 +507,10 @@ export default class RLEVoxelMap<T> {
    * Finds adjacent RLE runs, in all directions.
    * The planar value (true by default) does plane at a time fills.
    */
-  public findAdjacents(item, { diagonals = true, planar = true }) {
+  public findAdjacents(
+    item,
+    { diagonals = true, planar = true, singlePlane = false }
+  ) {
     const [rle, j, k, adjacentsDelta] = item;
     const { start, end } = rle;
     const leftRle = start > 0 && this.getRLE(start - 1, j, k);
@@ -511,7 +525,8 @@ export default class RLEVoxelMap<T> {
     if (rightRle) {
       adjacents.push([rightRle, j, k]);
     }
-    for (const delta of adjacentsDelta || ADJACENT_ALL) {
+    for (const delta of adjacentsDelta ||
+      (singlePlane ? ADJACENT_SINGLE_PLANE : ADJACENT_ALL)) {
       const [, delta1, delta2] = delta;
       const testJ = delta1 + j;
       const testK = delta2 + k;
@@ -528,6 +543,7 @@ export default class RLEVoxelMap<T> {
       for (const testRle of row) {
         const newAdjacentDelta =
           adjacentsDelta ||
+          (singlePlane && ADJACENT_SINGLE_PLANE) ||
           (planar && delta2 > 0 && ADJACENT_OUT) ||
           (planar && delta2 < 0 && ADJACENT_IN) ||
           ADJACENT_ALL;

@@ -18,6 +18,8 @@ export enum SegmentationEnum {
   EXTERIOR = 4,
 }
 
+const showFillColors = true;
+
 /**
  * Removes external islands and fills internal islands.
  * External islands are areas of preview which are not connected via fill or
@@ -51,8 +53,6 @@ export default {
       return;
     }
 
-    console.log('***** start of islandRemoval');
-    console.time('islandRemoval');
     // Ensure the bounds includes the clicked points, otherwise the fill
     // fails.
     const boundsIJK = previewVoxelManager
@@ -69,7 +69,6 @@ export default {
 
     // First get the set of points which are directly connected to the points
     // that the user clicked on/dragged over.
-    console.time('floodedSet');
     const { toIJK, fromIJK, boundsIJKPrime } = normalizeViewportPlane(
       viewport,
       boundsIJK
@@ -103,7 +102,6 @@ export default {
         );
       }
     });
-    console.timeEnd('floodedSet');
 
     if (floodedCount === 0) {
       return;
@@ -111,7 +109,6 @@ export default {
     // Next, iterate over all points which were set to a new value in the preview
     // For everything NOT connected to something in set of clicked points,
     // remove it from the preview.
-    console.time('clearExternalIslands');
     const clearedCount = 0;
     let previewCount = 0;
 
@@ -125,12 +122,12 @@ export default {
           // preview voxel manager knows to reset on null
           const clearPoint = toIJK([iPrime, jPrime, kPrime]);
           previewVoxelManager.setAtIJKPoint(clearPoint, null);
+          // previewVoxelManager.setAtIJKPoint(clearPoint, 2);
         }
       }
     };
 
-    floodedSet.forEach(callback);
-    console.timeEnd('clearExternalIslands');
+    floodedSet.forEach(callback, { rowModified: true });
 
     if (floodedCount - previewCount !== 0) {
       console.warn(
@@ -146,12 +143,11 @@ export default {
     }
     // Handle islands which are internal to the flood fill - these are points which
     // are surrounded entirely by the filled area.
-    console.time('internalIslands');
     // Start by getting the island map - the set of islands which are between
     // two rle runs.
     floodedSet.forEachRow((baseIndex, row) => {
       let lastRle;
-      for (const rle of row) {
+      for (const rle of [...row]) {
         if (rle.value !== SegmentationEnum.ISLAND) {
           continue;
         }
@@ -162,7 +158,7 @@ export default {
         for (let iPrime = lastRle.end; iPrime < rle.start; iPrime++) {
           floodedSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
         }
-        lastRle = undefined;
+        lastRle = rle;
       }
     });
     // Next, remove the island sets which are adjacent to an opening
@@ -177,13 +173,13 @@ export default {
         jPrime + 1 < height ? floodedSet.getRun(jPrime + 1, kPrime) : null;
       const prevCovers = covers(rle, rowPrev);
       const nextCovers = covers(rle, rowNext);
-      if (!prevCovers || !nextCovers) {
+      if (rle.end - rle.start > 2 && (!prevCovers || !nextCovers)) {
         floodedSet.floodFill(
           rle.start,
           jPrime,
           kPrime,
           SegmentationEnum.EXTERIOR,
-          { diagonals: false }
+          { singlePlane: true }
         );
       }
     });
@@ -194,16 +190,10 @@ export default {
         return;
       }
       for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
-        if (rle.value === false) {
-          continue;
-        }
         const clearPoint = toIJK(floodedSet.toIJK(baseIndex + iPrime));
         previewVoxelManager.setAtIJKPoint(clearPoint, previewSegmentIndex);
-        // previewVoxelManager.setAtIJKPoint(clearPoint, 3);
       }
     });
-    console.timeEnd('internalIslands');
-    console.timeEnd('islandRemoval');
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
@@ -229,5 +219,6 @@ function covers(rle, row) {
       }
     }
   }
+  console.log('Not covered', rle, row, start, end);
   return false;
 }

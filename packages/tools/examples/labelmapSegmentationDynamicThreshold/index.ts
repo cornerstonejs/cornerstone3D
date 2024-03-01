@@ -99,7 +99,7 @@ content.append(instructions);
 const interpolationTools = new Map<string, any>();
 const previewColors = {
   0: [255, 255, 255, 128],
-  1: [255, 64, 64, 64],
+  1: [0, 255, 255, 192],
   2: [255, 0, 255, 255],
 };
 const preview = {

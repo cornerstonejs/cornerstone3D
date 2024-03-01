@@ -2859,9 +2859,10 @@ class RLEVoxelMap<T> {
     // (undocumented)
     fillFrom(getter: any, boundsIJK: any): void;
     // (undocumented)
-    findAdjacents(item: any, { diagonals, planar }: {
+    findAdjacents(item: any, { diagonals, planar, singlePlane }: {
         diagonals?: boolean;
         planar?: boolean;
+        singlePlane?: boolean;
     }): any[];
     // (undocumented)
     protected findIndex(row: RLERun<T>[], i: number): number;
@@ -2869,9 +2870,12 @@ class RLEVoxelMap<T> {
     floodFill(i: number, j: number, k: number, value: T, options?: {
         planar?: boolean;
         diagonals?: boolean;
+        singlePlane?: boolean;
     }): number;
     // (undocumented)
-    forEach(callback: any): void;
+    forEach(callback: any, options?: {
+        rowModified?: boolean;
+    }): void;
     // (undocumented)
     forEachRow(callback: any): void;
     // (undocumented)
