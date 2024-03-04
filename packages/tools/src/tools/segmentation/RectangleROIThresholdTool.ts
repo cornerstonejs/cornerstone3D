@@ -182,8 +182,6 @@ class RectangleROIThresholdTool extends RectangleROITool {
       annotations
     );
 
-    console.debug(annotations)
-
     if (!annotations?.length) {
       return renderStatus;
     }
