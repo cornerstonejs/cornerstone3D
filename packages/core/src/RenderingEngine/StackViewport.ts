@@ -33,6 +33,7 @@ import type {
   StackViewportProperties,
   VOIRange,
   ViewReference,
+  ViewPresentation,
   VolumeActor,
 } from '../types';
 import {
@@ -2878,6 +2879,27 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       referencedImageId: `${this.imageIds[sliceIndex as number]}`,
       sliceIndex: sliceIndex,
     };
+  }
+
+  /**
+   * Applies the view reference, which may navigate the slice index and apply
+   * other camera modifications
+   */
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
+    const camera = this.getCamera();
+    super.setView(viewRef, viewPres);
+    if (viewRef) {
+      const { viewPlaneNormal, sliceIndex } = viewRef;
+      if (
+        viewPlaneNormal &&
+        !isEqual(viewPlaneNormal, camera.viewPlaneNormal)
+      ) {
+        return;
+      }
+      if (sliceIndex || sliceIndex === 0) {
+        this.setImageIdIndex(sliceIndex as number);
+      }
+    }
   }
 
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {

@@ -106,6 +106,58 @@ export type ViewReference = {
 };
 
 /**
+ * A view presentation stores information about how the view is presented to the
+ * user, such as rotation, the displayed area, pan/zoom etc.
+ * When used for choosing a presentation to return, set the units to the desired
+ * unit type in order to include that value.  Of course some viewports will not
+ * return some unit values at all, such as Stack and slabThickness.
+ */
+export type ViewPresentation = {
+  /**
+   * The slice thickness - in frames(true/default) it will be 1 for a frame distance of
+   * 1 pixel thickness, while for mm will be in mm distance.
+   */
+  slabThicknessType?: true | 'mm';
+  slabThickness?: number;
+
+  /**
+   * The rotation of the view - this is related to cameraViewUp, but is relative
+   * to the viewNormal and the default viewUp for that viewNormal.
+   */
+  rotationType?: true;
+  rotation?: number;
+
+  /**
+   * The display area being shown.  This is more consistent than applying a set
+   * of boundary areas.
+   */
+  displayAreaType?: true;
+  displayArea?: DisplayArea;
+
+  /**
+   * The zoom value is a zoom factor relative either to fit to canvas or relative
+   * to the display area.
+   * The default true units are relative to the initial camera
+   * scale to fit is used to get units relative to the scale to fit camera.
+   */
+  zoomType?: true | 'scaleToFit';
+  zoom?: number;
+
+  /**
+   * The pan value is how far the pan has moved relative to the fit to canvas
+   * or relative to the display area initial position/sizing.
+   * true is the default units, which is relative to the initial canvas setting,
+   * in zoom relative units.
+   * `initialCamera` is in canvas pixels, relative to the initial canvas setting.
+   * `scaleToFit` is relative to the scale to fit camera, in canvas pixels.
+   * `zoomRelative` (same as true here) is relative to the initialCamera, but scaled
+   *     by zoom numbers.
+   */
+  panType?: true | 'initialCamera' | 'scaleToFit' | 'zoomRelative';
+  pan?: Point2;
+};
+
+/**
  * Viewport interface for cornerstone viewports
  */
 interface IViewport {
@@ -225,6 +277,15 @@ interface IViewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean;
+  /**
+   * Gets a view presentation information for this viewport
+   */
+  getViewPresentation(viewPres: ViewPresentation);
+  /**
+   * Sets the given view.  This can apply any of the view reference or presentation
+   * information, assuming that is compatible with the current view.
+   */
+  setView(viewRef?: ViewReference, viewPres?: ViewPresentation);
 
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;

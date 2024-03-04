@@ -2224,6 +2224,8 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getViewPresentation(viewPres: ViewPresentation): any;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     getZoom(): number;
@@ -2257,6 +2259,8 @@ interface IViewport {
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
     // (undocumented)
     setRendered(): void;
+    // (undocumented)
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): any;
     // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
@@ -3101,6 +3105,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    // (undocumented)
     successCallback(imageId: any, image: any): void;
     // (undocumented)
     unsetColormap: () => void;
@@ -3265,6 +3271,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         ViewReference,
+        ViewPresentation,
         ReferenceCompatibleOptions,
         ViewReferenceSpecifier,
         StackViewportProperties,
@@ -3698,6 +3705,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getViewPresentation(viewPres?: ViewPresentation): ViewPresentation;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
@@ -3761,6 +3770,8 @@ export class Viewport implements IViewport {
     setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     setRendered(): void;
+    // (undocumented)
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
@@ -3863,6 +3874,20 @@ enum ViewportType {
     // (undocumented)
     VOLUME_3D = "volume3d"
 }
+
+// @public (undocumented)
+type ViewPresentation = {
+    slabThicknessType?: true | 'mm';
+    slabThickness?: number;
+    rotationType?: true;
+    rotation?: number;
+    displayAreaType?: true;
+    displayArea?: DisplayArea;
+    zoomType?: true | 'scaleToFit';
+    zoom?: number;
+    panType?: true | 'initialCamera' | 'scaleToFit' | 'zoomRelative';
+    pan?: Point2;
+};
 
 // @public (undocumented)
 type ViewReference = {

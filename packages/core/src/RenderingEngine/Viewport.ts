@@ -28,12 +28,13 @@ import type {
   FlipDirection,
   EventTypes,
   DisplayArea,
+  ViewPresentation,
+  ViewReference,
 } from '../types';
 import type {
   ViewportInput,
   IViewport,
   ViewReferenceSpecifier,
-  ViewReference,
   ReferenceCompatibleOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
@@ -1499,6 +1500,55 @@ class Viewport implements IViewport {
       return options?.asVolume === true;
     }
     return true;
+  }
+
+  /**
+   * Gets a basic view reference.
+   */
+  public getViewPresentation(viewPres?: ViewPresentation): ViewPresentation {
+    const target: ViewPresentation = {};
+    const {
+      rotationType = true,
+      displayAreaType = true,
+      zoomType = true,
+      panType = true,
+    } = viewPres || {};
+    if (rotationType) {
+      target.rotation = this.getRotation();
+      target.rotationType = rotationType;
+    }
+    if (displayAreaType) {
+      target.displayArea = this.getDisplayArea();
+      target.displayAreaType = displayAreaType;
+    }
+    if (zoomType) {
+      target.zoomType = zoomType;
+      target.zoom = this.getZoom();
+    }
+    if (panType) {
+      target.panType = panType;
+      target.pan = this.getPan();
+    }
+    return target;
+  }
+
+  /**
+   * Sets the view reference.  Only applies properties which are defined and
+   * applicable.
+   */
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
+    if (viewPres) {
+      const { displayArea, zoom, pan } = viewPres;
+      if (displayArea) {
+        this.setDisplayArea(displayArea);
+      }
+      if (zoom) {
+        this.setZoom(zoom);
+      }
+      if (pan) {
+        this.setPan(pan);
+      }
+    }
   }
 
   protected _shouldUseNativeDataType() {
