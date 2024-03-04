@@ -38,7 +38,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -49,10 +49,12 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
+const DEFAULT_BRUSH_SIZE = 10;
+
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Dynamic Threshold',
-  'Here we demonstrate dynamic threshold with preview'
+  'Labelmap Segmentation Statistics',
+  'Here we demonstrate calculating labelmap statistics'
 );
 
 const size = '500px';
@@ -132,6 +134,14 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
+interpolationTools.set('CircularBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
+  },
+});
+
 interpolationTools.set('ThresholdSphereIsland', {
   baseTool: BrushTool.toolName,
   configuration: {
@@ -165,14 +175,6 @@ interpolationTools.set('ThresholdSphere', {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
     },
-  },
-});
-
-interpolationTools.set('CircularBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_CIRCLE',
   },
 });
 
@@ -255,7 +257,7 @@ addDropdownToToolbar({
 addSliderToToolbar({
   title: 'Brush Size',
   range: [5, 100],
-  defaultValue: 25,
+  defaultValue: DEFAULT_BRUSH_SIZE,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
@@ -275,14 +277,21 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Reject Preview',
+  title: 'Statistics',
   onClick: () => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
     const activeName = toolGroup.getActivePrimaryMouseButtonTool();
     const brush = toolGroup.getToolInstance(activeName);
-    brush.rejectPreview?.(element1);
+    brush.acceptPreview?.(element1);
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    calculateStatistics([segmentIndex]);
   },
 });
+
+function calculateStatistics(indices) {
+  console.log('***** Calculating stats on', indices);
+}
 
 // ============================= //
 
@@ -450,6 +459,8 @@ async function run() {
     },
   ]);
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+
+  segmentationUtils.setBrushSizeForToolGroup(toolGroupId, DEFAULT_BRUSH_SIZE);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

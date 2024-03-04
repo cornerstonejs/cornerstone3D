@@ -3527,6 +3527,9 @@ type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
 // @public (undocumented)
 type NamedStatistics = {
+    count: Statistics & {
+        name: 'count';
+    };
     mean: Statistics & {
         name: 'mean';
     };
@@ -3538,6 +3541,12 @@ type NamedStatistics = {
     };
     stdDevWithSumSquare: Statistics & {
         name: 'stdDevWithSumSquare';
+    };
+    volume?: Statistics & {
+        name: 'volume';
+    };
+    area?: Statistics & {
+        name: 'area';
     };
     array: Statistics[];
 };

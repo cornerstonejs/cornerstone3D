@@ -83,13 +83,15 @@ export default class BasicStatsCalculator extends Calculator {
         value: singleArrayAsNumber(stdDevWithSumSquare),
         unit: null,
       },
+      count: { name: 'count', value: this.count, unit: null },
       array: [],
     };
     named.array.push(
       named.max,
       named.mean,
       named.stdDev,
-      named.stdDevWithSumSquare
+      named.stdDevWithSumSquare,
+      named.count
     );
     return named;
   };
