@@ -297,7 +297,7 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations, samePlan?: boolean): Annotations | undefined;
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations, onSamePlan?: boolean): Annotations | undefined;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
@@ -2326,7 +2326,7 @@ declare namespace EventTypes_2 {
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions, samePlan?: boolean): Annotations;
+function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions, onSamePlan?: boolean): Annotations;
 
 // @public (undocumented)
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
