@@ -3539,6 +3539,18 @@ type NamedStatistics = {
     stdDevWithSumSquare: Statistics & {
         name: 'stdDevWithSumSquare';
     };
+    count: Statistics & {
+        name: 'count';
+    };
+    area?: Statistics & {
+        name: 'area';
+    };
+    volume?: Statistics & {
+        name: 'volume';
+    };
+    circumferance?: Statistics & {
+        name: 'circumferance';
+    };
     array: Statistics[];
 };
 
@@ -5162,6 +5174,7 @@ declare namespace state_3 {
 // @public (undocumented)
 type Statistics = {
     name: string;
+    label?: string;
     value: number | number[];
     unit: null | string;
 };
