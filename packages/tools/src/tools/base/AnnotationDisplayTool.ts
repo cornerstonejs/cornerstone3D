@@ -15,6 +15,7 @@ import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotation
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -137,7 +138,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     } else if (viewport instanceof VideoViewport) {
       referencedImageId = targetId.split('videoId:')[1];
     } else {
-      const volumeId = targetId.split(/volumeId:|\?/)[1];
+      const volumeId = getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = utilities.getClosestImageId(
