@@ -27,6 +27,7 @@ import {
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getVolumeId } from 'tools/src/utilities/getVolumeId';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,
@@ -87,7 +88,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
     } else {
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,

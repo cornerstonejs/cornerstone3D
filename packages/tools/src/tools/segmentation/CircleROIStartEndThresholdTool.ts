@@ -46,6 +46,7 @@ import {
 } from '../../utilities/math/circle';
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { pointInShapeCallback } from '../../utilities';
+import { getVolumeId } from 'tools/src/utilities/getVolumeId';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -111,7 +112,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = getVolumeId(targetId);
       imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = csUtils.getClosestImageId(
