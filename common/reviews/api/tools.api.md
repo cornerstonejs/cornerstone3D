@@ -640,7 +640,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string, ...extraArgs: any[]): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -836,6 +836,8 @@ export class BrushTool extends BaseTool {
         volumeId?: string;
         referencedVolumeId?: string;
     };
+    // (undocumented)
+    getStatistics(element?: HTMLDivElement, segmentIndices?: any): any;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -3090,6 +3092,14 @@ type KeyUpEventDetail = KeyDownEventDetail;
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
 
 // @public (undocumented)
+class LabelmapCalculator {
+    // (undocumented)
+    static getStatistics(operationData: LabelmapToolOperationDataAny, viewport: any, options: {
+        indices?: number | number[];
+    }): NamedStatistics;
+}
+
+// @public (undocumented)
 type LabelmapConfig = {
     renderOutline?: boolean;
     outlineWidthActive?: number;
@@ -4610,6 +4620,7 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
+        LabelmapCalculator,
         thresholdSegmentationByRange,
         createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
@@ -5188,6 +5199,8 @@ enum StrategyCallbacks {
     CreateIsInThreshold = "createIsInThreshold",
     // (undocumented)
     Fill = "fill",
+    // (undocumented)
+    GetStatistics = "getStatistics",
     // (undocumented)
     Initialize = "initialize",
     // (undocumented)

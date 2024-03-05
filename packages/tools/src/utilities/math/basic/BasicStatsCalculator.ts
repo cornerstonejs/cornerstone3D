@@ -62,16 +62,9 @@ export default class BasicStatsCalculator extends Calculator {
     const stdDevWithSumSquare = this.sumSquares.map((it, idx) =>
       Math.sqrt(this.sumSquares[idx] / this.count - mean[idx] ** 2)
     );
-    const currentMax = this.max;
-
-    this.max = [-Infinity];
-    this.sum = [0];
-    this.sumSquares = [0];
-    this.squaredDiffSum = [0];
-    this.count = 0;
 
     const named: NamedStatistics = {
-      max: { name: 'max', value: singleArrayAsNumber(currentMax), unit: null },
+      max: { name: 'max', value: singleArrayAsNumber(this.max), unit: null },
       mean: { name: 'mean', value: singleArrayAsNumber(mean), unit: null },
       stdDev: {
         name: 'stdDev',
@@ -93,6 +86,13 @@ export default class BasicStatsCalculator extends Calculator {
       named.stdDevWithSumSquare,
       named.count
     );
+
+    this.max = [-Infinity];
+    this.sum = [0];
+    this.sumSquares = [0];
+    this.squaredDiffSum = [0];
+    this.count = 0;
+
     return named;
   };
 }

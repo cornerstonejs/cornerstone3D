@@ -101,8 +101,9 @@ abstract class BaseTool implements IBaseTool {
   public applyActiveStrategyCallback(
     enabledElement: Types.IEnabledElement,
     operationData: unknown,
-    callbackType: StrategyCallbacks | string
-  ): any {
+    callbackType: StrategyCallbacks | string,
+    ...extraArgs
+  ) {
     const { strategies, activeStrategy } = this.configuration;
 
     if (!strategies[activeStrategy]) {
@@ -114,7 +115,8 @@ abstract class BaseTool implements IBaseTool {
     return strategies[activeStrategy][callbackType]?.call(
       this,
       enabledElement,
-      operationData
+      operationData,
+      ...extraArgs
     );
   }
 

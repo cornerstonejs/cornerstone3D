@@ -40,7 +40,7 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils } = cstUtils;
+const { segmentation: segmentationUtils, roundNumber } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -48,6 +48,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const viewports = [];
 
 const DEFAULT_BRUSH_SIZE = 10;
 
@@ -59,6 +60,31 @@ setTitleAndDescription(
 
 const size = '500px';
 const content = document.getElementById('content');
+
+const statsGrid = document.createElement('div');
+statsGrid.style.display = 'flex';
+statsGrid.style.display = 'flex';
+statsGrid.style.flexDirection = 'row';
+
+const statsIds = ['statsCurrent', 'statsPreview'];
+const statsStyle = {
+  width: '25em',
+  height: '5em',
+};
+const statsCurrent = document.createElement('div');
+statsCurrent.id = statsIds[0];
+statsCurrent.innerText = 'Statistics Current';
+Object.assign(statsCurrent.style, statsStyle);
+statsGrid.appendChild(statsCurrent);
+
+const statsPreview = document.createElement('div');
+statsPreview.id = statsIds[0];
+statsPreview.innerText = 'Statistics Preview';
+Object.assign(statsPreview.style, statsStyle);
+statsGrid.appendChild(statsPreview);
+
+content.appendChild(statsGrid);
+
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
@@ -285,12 +311,29 @@ addButtonToToolbar({
     brush.acceptPreview?.(element1);
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    calculateStatistics([segmentIndex]);
+    calculateStatistics([segmentIndex, 255]);
   },
 });
 
+function displayStat(stat) {
+  return `${stat.name}: ${roundNumber(stat.value)} ${
+    stat.unit ? stat.unit : ''
+  }`;
+}
+
 function calculateStatistics(indices) {
-  console.log('***** Calculating stats on', indices);
+  const [viewport] = viewports;
+  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+  const brush = toolGroup.getToolInstance(activeName);
+  const stats = brush.getStatistics(viewport.element, indices);
+  const items = [`Statistics on ${indices.join(', ')}`];
+  items.push(
+    displayStat(stats.volume),
+    displayStat(stats.mean),
+    displayStat(stats.max)
+  );
+  statsCurrent.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
 }
 
 // ============================= //
@@ -440,6 +483,8 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
+
+  viewports.push(...renderingEngine.getViewports());
 
   // Set the volume to load
   volume.load();

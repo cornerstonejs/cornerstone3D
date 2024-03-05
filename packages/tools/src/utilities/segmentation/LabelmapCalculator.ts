@@ -23,27 +23,35 @@ export default class LabelmapCalculator {
     }
     const indicesArr = indices as number[];
 
-    const { segmentationVoxelManager, imageVoxelManager } = getStrategyData({
+    const {
+      segmentationVoxelManager,
+      imageVoxelManager,
+      segmentationImageData,
+    } = getStrategyData({
       operationData,
       viewport,
     });
+
+    const spacing = segmentationImageData.getSpacing();
 
     segmentationVoxelManager.forEach((voxel) => {
       const { value, pointIJK } = voxel;
       if (indicesArr.indexOf(value) === -1) {
         return;
       }
-      const imageValue = imageVoxelManager.getIJKPoint(pointIJK);
+      const imageValue = imageVoxelManager.getAtIJKPoint(pointIJK);
       BasicStatsCalculator.statsCallback({ value: imageValue });
     });
 
-    // TODO - get pixel spacing for the volume calculation
+    const volumeUnit = spacing ? 'mm\xb3' : 'voxels\xb3';
+    const volumeScale = spacing ? spacing[0] * spacing[1] * spacing[2] : 1;
 
     const stats = BasicStatsCalculator.getStatistics();
     stats.volume = {
-      value: stats.count.value,
-      // TODO - change to mm when multiple by voxel volume
-      unit: 'pixels\xb3',
+      value: Array.isArray(stats.count.value)
+        ? stats.count.value.map((v) => v * volumeScale)
+        : stats.count.value * volumeScale,
+      unit: volumeUnit,
       name: 'volume',
     };
     stats.array.push(stats.volume);
