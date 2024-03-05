@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.65.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.4...v1.65.5) (2024-03-05)
+
+### Bug Fixes
+
+- Change to names for statistics so that other implementations can be added ([#1137](https://github.com/cornerstonejs/cornerstone3D/issues/1137)) ([b5a0005](https://github.com/cornerstonejs/cornerstone3D/commit/b5a000592e954b151883ba1d09e9648c445b636d))
+
 ## [1.65.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.3...v1.65.4) (2024-03-05)
 
 **Note:** Version bump only for package @cornerstonejs/tools
