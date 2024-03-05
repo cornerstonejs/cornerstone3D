@@ -608,7 +608,7 @@ class Viewport implements IViewport {
     const { storeAsInitialCamera, type: areaType } = displayArea;
 
     // make calculations relative to the fitToCanvasCamera view
-    this.setCamera(this.fitToCanvasCamera, false);
+    this.setCameraNoEvent(this.fitToCanvasCamera);
 
     if (storeAsInitialCamera) {
       this.options.displayArea = displayArea;
@@ -677,10 +677,13 @@ class Viewport implements IViewport {
     if (!focalChange[0] && !focalChange[1] && !focalChange[2]) {
       return;
     }
-    this.setCamera({
-      focalPoint: <Point3>vec3.add(vec3.create(), focalPoint, focalChange),
-      position: <Point3>vec3.add(vec3.create(), position, focalChange),
-    });
+    this.setCamera(
+      {
+        focalPoint: <Point3>vec3.add(vec3.create(), focalPoint, focalChange),
+        position: <Point3>vec3.add(vec3.create(), position, focalChange),
+      },
+      true
+    );
   }
 
   /**
@@ -709,46 +712,60 @@ class Viewport implements IViewport {
    * @param displayArea
    */
   protected setDisplayAreaFit(displayArea: DisplayArea) {
-    const { storeAsInitialCamera, imageArea, imageCanvasPoint } = displayArea;
+    const { imageArea, imageCanvasPoint } = displayArea;
 
-    let zoom = 1.1;
+    const devicePixelRatio = window?.devicePixelRatio || 1;
+    const imageData = this.getDefaultImageData();
+    if (!imageData) {
+      return;
+    }
+    const canvasWidth = this.sWidth / devicePixelRatio;
+    const canvasHeight = this.sHeight / devicePixelRatio;
+    const dimensions = imageData.getDimensions();
+    const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+    const canvasEdge = this.worldToCanvas(
+      imageData.indexToWorld([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+      ])
+    );
+
+    const canvasImage = [
+      canvasEdge[0] - canvasZero[0],
+      canvasEdge[1] - canvasZero[1],
+    ];
+    const [imgWidth, imgHeight] = canvasImage;
+
+    let zoom = 1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+      const requireX = Math.abs(
+        (areaX * canvasImage[0] * this.insetImageMultiplier) / canvasWidth
+      );
+      const requireY = Math.abs(
+        (areaY * canvasImage[1] * this.insetImageMultiplier) / canvasHeight
+      );
+
+      zoom = Math.min(this.getZoom() / requireX, this.getZoom() / requireY);
       // Don't set as initial camera because then the zoom interactions don't
       // work consistently.
       // TODO: Add a better method to handle initial camera
-      this.setZoom(this.insetImageMultiplier * zoom);
+      this.setZoom(this.insetImageMultiplier * zoom, false);
     }
 
     // getting the image info
-    const imageData = this.getDefaultImageData();
-    if (imageCanvasPoint && imageData) {
+    // getting the image info
+    if (imageCanvasPoint) {
       const { imagePoint, canvasPoint } = imageCanvasPoint;
       const [canvasX, canvasY] = canvasPoint;
-      const devicePixelRatio = window?.devicePixelRatio || 1;
-      const validateCanvasPanX = this.sWidth / devicePixelRatio;
-      const validateCanvasPanY = this.sHeight / devicePixelRatio;
-      const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
-      const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
-      const dimensions = imageData.getDimensions();
-      const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
-      const canvasEdge = this.worldToCanvas(
-        imageData.indexToWorld([
-          dimensions[0] - 1,
-          dimensions[1] - 1,
-          dimensions[2],
-        ])
-      );
-      const canvasImage = [
-        canvasEdge[0] - canvasZero[0],
-        canvasEdge[1] - canvasZero[1],
-      ];
-      const [imgWidth, imgHeight] = canvasImage;
+      const canvasPanX = canvasWidth * (canvasX - 0.5);
+      const canvasPanY = canvasHeight * (canvasY - 0.5);
+
       const [imageX, imageY] = imagePoint;
       const imagePanX =
-        (zoom * imgWidth * (0.5 - imageX) * validateCanvasPanY) / imgHeight;
-      const imagePanY = zoom * validateCanvasPanY * (0.5 - imageY);
+        (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
+      const imagePanY = zoom * canvasHeight * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
@@ -756,7 +773,7 @@ class Viewport implements IViewport {
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
       // The pan is part of the display area settings, not the initial camera, so
       // don't store as initial camera here - that breaks rotation and other changes.
-      this.setPan(deltaPoint2);
+      this.setPan(deltaPoint2, false);
     }
   }
 
@@ -959,13 +976,13 @@ class Viewport implements IViewport {
    * computed from the current camera, where the initial pan
    * value is [0,0].
    */
-  public getPan(): Point2 {
+  public getPan(initialCamera = this.initialCamera): Point2 {
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
     const zero3 = this.canvasToWorld([0, 0]);
     const initialCanvasFocal = this.worldToCanvas(
-      <Point3>vec3.subtract(vec3.create(), this.initialCamera.focalPoint, zero3)
+      <Point3>vec3.subtract(vec3.create(), initialCamera.focalPoint, zero3)
     );
     const currentCanvasFocal = this.worldToCanvas(
       <Point3>vec3.subtract(vec3.create(), focalPoint, zero3)
@@ -1022,9 +1039,9 @@ class Viewport implements IViewport {
    * originally applied to the image.  That is, on initial display,
    * the zoom level is 1.  Computed as a function of the camera.
    */
-  public getZoom(): number {
+  public getZoom(compareCamera = this.initialCamera): number {
     const activeCamera = this.getVtkActiveCamera();
-    const { parallelScale: initialParallelScale } = this.initialCamera;
+    const { parallelScale: initialParallelScale } = compareCamera;
     return initialParallelScale / activeCamera.getParallelScale();
   }
 
@@ -1507,6 +1524,8 @@ class Viewport implements IViewport {
    */
   public getViewPresentation(viewPres?: ViewPresentation): ViewPresentation {
     const target: ViewPresentation = {};
+    const { initialCamera, fitToCanvasCamera } = this;
+
     const {
       rotationType = true,
       displayAreaType = true,
@@ -1521,13 +1540,36 @@ class Viewport implements IViewport {
       target.displayArea = this.getDisplayArea();
       target.displayAreaType = displayAreaType;
     }
+    const initZoom = this.getZoom(initialCamera);
+    const fitZoom = this.getZoom(fitToCanvasCamera);
+    // console.log(
+    //   'Zooms',
+    //   this.id,
+    //   initZoom,
+    //   fitZoom,
+    //   initZoom / fitZoom,
+    //   fitZoom / initZoom
+    // );
+
     if (zoomType) {
       target.zoomType = zoomType;
-      target.zoom = this.getZoom();
+      target.zoom = initZoom;
     }
     if (panType) {
       target.panType = panType;
-      target.pan = this.getPan();
+      const fitPan = this.getPan(fitToCanvasCamera);
+      const initPan = this.getPan(initialCamera);
+      console.log(
+        'Pans',
+        this.id,
+        fitPan[0],
+        fitPan[1],
+        initPan[0],
+        initPan[1],
+        initZoom,
+        this.getZoom(fitToCanvasCamera)
+      );
+      target.pan = fitPan;
     }
     return target;
   }

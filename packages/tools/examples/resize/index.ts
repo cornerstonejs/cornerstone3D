@@ -320,7 +320,13 @@ function resize() {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (renderingEngine) {
+    const presentations = viewports.map((viewport) =>
+      viewport.getViewPresentation()
+    );
     renderingEngine.resize(true, false);
+    viewports.forEach((viewport, idx) => {
+      viewport.setView(null, presentations[idx]);
+    });
   }
 }
 

@@ -551,7 +551,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const { preferSizeOverAccuracy } = getConfiguration().rendering;
 
     if (preferSizeOverAccuracy) {
-      // @ts-ignore for now until vtk is updated
       mapper.setPreferSizeOverAccuracy(true);
     }
 
