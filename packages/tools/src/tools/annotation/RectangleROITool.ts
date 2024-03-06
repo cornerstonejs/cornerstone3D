@@ -954,11 +954,11 @@ class RectangleROITool extends AnnotationTool {
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[1]?.value,
-          stdDev: stats[2]?.value,
-          max: stats[0]?.value,
-          statsArray: stats,
-          pointsInShape: stats[4]?.value,
+          mean: stats.mean?.value,
+          stdDev: stats.stdDev?.value,
+          max: stats.max?.value,
+          statsArray: stats.array,
+
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,
         };

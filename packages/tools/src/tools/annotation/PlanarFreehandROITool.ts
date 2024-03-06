@@ -835,11 +835,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean: stats[1]?.value,
-        max: stats[0]?.value,
-        stdDev: stats[3]?.value,
-        statsArray: stats,
-        pointsInShape: stats[4]?.value,
+        mean: stats.mean?.value,
+        max: stats.max?.value,
+        stdDev: stats.stdDev?.value,
+        statsArray: stats.array,
+
         areaUnit: getCalibratedAreaUnits(null, image),
         modalityUnit,
       };
@@ -847,7 +847,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     triggerAnnotationModified(
       annotation,
-      enabledElement.element,
+      enabledElement.viewport.element,
       ChangeTypes.StatsUpdated
     );
 

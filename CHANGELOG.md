@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.65.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.4...v1.65.5) (2024-03-05)
+
+### Bug Fixes
+
+- Change to names for statistics so that other implementations can be added ([#1137](https://github.com/cornerstonejs/cornerstone3D/issues/1137)) ([b5a0005](https://github.com/cornerstonejs/cornerstone3D/commit/b5a000592e954b151883ba1d09e9648c445b636d))
+
+## [1.65.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.3...v1.65.4) (2024-03-05)
+
+**Note:** Version bump only for package root
+
+## [1.65.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.2...v1.65.3) (2024-02-29)
+
+### Bug Fixes
+
+- **brush cursor:** only show innter circle on dynamic threshold ([#1099](https://github.com/cornerstonejs/cornerstone3D/issues/1099)) ([fe08906](https://github.com/cornerstonejs/cornerstone3D/commit/fe089069cbc8703b1c912363b09defdd3b8be9b7))
+
+## [1.65.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.1...v1.65.2) (2024-02-29)
+
+### Bug Fixes
+
+- **planarFreehand:** fix undefined error ([#1131](https://github.com/cornerstonejs/cornerstone3D/issues/1131)) ([87d95f2](https://github.com/cornerstonejs/cornerstone3D/commit/87d95f2af4dbc3f12514485a3f57d23768cdbfa0))
+
 ## [1.65.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.0...v1.65.1) (2024-02-28)
 
 ### Bug Fixes

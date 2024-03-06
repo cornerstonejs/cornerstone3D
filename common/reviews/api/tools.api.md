@@ -673,7 +673,7 @@ declare namespace BasicStatsCalculator {
 // @public (undocumented)
 class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
-    static getStatistics: () => Statistics[];
+    static getStatistics: () => NamedStatistics;
     // (undocumented)
     static statsCallback: ({ value: newValue }: {
         value: any;
@@ -863,7 +863,7 @@ export class BrushTool extends BaseTool {
 // @public (undocumented)
 abstract class Calculator {
     // (undocumented)
-    static getStatistics: () => Statistics[];
+    static getStatistics: () => NamedStatistics;
     // (undocumented)
     static run: ({ value }: {
         value: any;
@@ -3527,6 +3527,35 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail & MouseCustomEvent
 type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
 // @public (undocumented)
+type NamedStatistics = {
+    mean: Statistics & {
+        name: 'mean';
+    };
+    max: Statistics & {
+        name: 'max';
+    };
+    stdDev: Statistics & {
+        name: 'stdDev';
+    };
+    stdDevWithSumSquare: Statistics & {
+        name: 'stdDevWithSumSquare';
+    };
+    count: Statistics & {
+        name: 'count';
+    };
+    area?: Statistics & {
+        name: 'area';
+    };
+    volume?: Statistics & {
+        name: 'volume';
+    };
+    circumferance?: Statistics & {
+        name: 'circumferance';
+    };
+    array: Statistics[];
+};
+
+// @public (undocumented)
 type NormalizedInteractionEventDetail = {
     eventName: string;
     renderingEngineId: string;
@@ -5146,6 +5175,7 @@ declare namespace state_3 {
 // @public (undocumented)
 type Statistics = {
     name: string;
+    label?: string;
     value: number | number[];
     unit: null | string;
 };
@@ -5157,6 +5187,8 @@ function stopClip(element: HTMLDivElement): void;
 enum StrategyCallbacks {
     // (undocumented)
     AcceptPreview = "acceptPreview",
+    // (undocumented)
+    ComputeInnerCircleRadius = "computeInnerCircleRadius",
     // (undocumented)
     CreateIsInThreshold = "createIsInThreshold",
     // (undocumented)
@@ -5738,6 +5770,7 @@ declare namespace Types {
         FloodFillOptions,
         ContourSegmentationData,
         Statistics,
+        NamedStatistics,
         LabelmapToolOperationData,
         LabelmapToolOperationDataStack,
         LabelmapToolOperationDataVolume,
