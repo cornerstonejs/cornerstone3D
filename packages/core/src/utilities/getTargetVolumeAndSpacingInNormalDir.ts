@@ -67,7 +67,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   // If a volumeId is defined, set that volume as the target
   if (targetVolumeId) {
     const imageVolumeIndex = imageVolumes.findIndex(
-      (iv) => iv.volumeId === targetVolumeId
+      (iv) => targetVolumeId.startsWith(iv.volumeId)
     );
 
     const imageVolume = imageVolumes[imageVolumeIndex];
