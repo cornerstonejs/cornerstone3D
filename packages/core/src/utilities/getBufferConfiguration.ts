@@ -21,8 +21,9 @@ function getBufferConfiguration(
     length: number | SharedArrayBuffer
   ) => PixelDataTypedArray;
 } {
-  const { use16BitTexture = false, isVolumeBuffer = false } = options;
+  const { use16BitTexture = true, isVolumeBuffer = false } = options;
 
+  console.log('use16BitTexture', use16BitTexture, options);
   switch (targetBufferType) {
     case 'Float32Array':
       return { numBytes: length * 4, TypedArrayConstructor: Float32Array };

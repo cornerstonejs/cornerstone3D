@@ -319,7 +319,7 @@ export async function createAndCacheDerivedVolume(
     numberOfComponents: 1,
     values: volumeScalarData,
     size: numBytes,
-    dataType: !type || type === 'none' ? 'Uint8Array' : type,
+    dataType: !type || type === 'singlePlane' ? 'Uint8Array' : type,
   });
 
   const derivedImageData = vtkImageData.newInstance();
@@ -647,7 +647,7 @@ function generateVolumeScalarData(
 ) {
   const { useNorm16Texture } = getConfiguration().rendering;
 
-  if (targetBuffer?.type === 'none') {
+  if (targetBuffer?.type === 'singlePlane') {
     return { volumeScalarData: null, numBytes: scalarLength };
   }
   const { TypedArrayConstructor, numBytes } = getBufferConfiguration(

@@ -153,7 +153,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const lastBlockHeight = model.height % blockHeight;
     const multiRowLastBlockLength = rowLength * lastBlockHeight;
 
+    let copyData;
+    let { openGLDataType } = model;
+
     // Perform most blocks.
+
     for (let block = 0; block < normalBlocks; block++) {
       const yOffset = block * blockHeight;
 
@@ -164,19 +168,24 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       );
 
       if (
-        model.useHalfFloat &&
-        (TypedArrayConstructor === Uint16Array ||
-          TypedArrayConstructor === Int16Array)
+        // model.useHalfFloat &&
+        TypedArrayConstructor === Uint16Array ||
+        TypedArrayConstructor === Int16Array
       ) {
+        if (!copyData) {
+          console.log(
+            '*** Creating new model width/height - TODO - use pre-allocated single frame chunk for this'
+          );
+          copyData = new Float32Array(model.width * model.height);
+        }
         // in the case we want to use halfFloat rendering (preferSizeOverAccuracy = true),
         // we need to convert uint16 and int16 into fp16 format.
         // This is the step where precision is lost for streaming volume viewport.
-        for (let idx = 0; idx < dataView.length; idx++) {
-          dataView[idx] = HalfFloat.toHalf(dataView[idx]);
-        }
-        if (TypedArrayConstructor === Int16Array) {
-          dataView = new Uint16Array(dataView);
-        }
+        copyData.set(dataView);
+        dataView = copyData;
+        openGLDataType = gl.FLOAT;
+      } else {
+        console.log('Not using single plane buffer');
       }
 
       gl.texSubImage3D(
@@ -189,7 +198,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         blockHeight, //model.height,
         1, // numFramesInBlock,
         model.format,
-        model.openGLDataType,
+        openGLDataType,
         dataView
       );
     }

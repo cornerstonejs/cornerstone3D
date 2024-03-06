@@ -17,7 +17,7 @@ const defaultConfig: Cornerstone3DConfig = {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    useNorm16Texture: true, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
   },
   // cache
@@ -31,7 +31,7 @@ let config: Cornerstone3DConfig = {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    useNorm16Texture: true, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
   },
   // cache
