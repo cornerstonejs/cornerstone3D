@@ -640,7 +640,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string, ...extraArgs: any[]): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -836,8 +836,6 @@ export class BrushTool extends BaseTool {
         volumeId?: string;
         referencedVolumeId?: string;
     };
-    // (undocumented)
-    getStatistics(element?: HTMLDivElement, segmentIndices?: any): any;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -3092,14 +3090,6 @@ type KeyUpEventDetail = KeyDownEventDetail;
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
 
 // @public (undocumented)
-class LabelmapCalculator {
-    // (undocumented)
-    static getStatistics(operationData: LabelmapToolOperationDataAny, viewport: any, options: {
-        indices?: number | number[];
-    }): NamedStatistics;
-}
-
-// @public (undocumented)
 type LabelmapConfig = {
     renderOutline?: boolean;
     outlineWidthActive?: number;
@@ -3537,9 +3527,6 @@ type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
 // @public (undocumented)
 type NamedStatistics = {
-    count: Statistics & {
-        name: 'count';
-    };
     mean: Statistics & {
         name: 'mean';
     };
@@ -3552,11 +3539,17 @@ type NamedStatistics = {
     stdDevWithSumSquare: Statistics & {
         name: 'stdDevWithSumSquare';
     };
-    volume?: Statistics & {
-        name: 'volume';
+    count: Statistics & {
+        name: 'count';
     };
     area?: Statistics & {
         name: 'area';
+    };
+    volume?: Statistics & {
+        name: 'volume';
+    };
+    circumferance?: Statistics & {
+        name: 'circumferance';
     };
     array: Statistics[];
 };
@@ -4620,7 +4613,6 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
-        LabelmapCalculator,
         thresholdSegmentationByRange,
         createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
@@ -5182,6 +5174,7 @@ declare namespace state_3 {
 // @public (undocumented)
 type Statistics = {
     name: string;
+    label?: string;
     value: number | number[];
     unit: null | string;
 };
@@ -5199,8 +5192,6 @@ enum StrategyCallbacks {
     CreateIsInThreshold = "createIsInThreshold",
     // (undocumented)
     Fill = "fill",
-    // (undocumented)
-    GetStatistics = "getStatistics",
     // (undocumented)
     Initialize = "initialize",
     // (undocumented)

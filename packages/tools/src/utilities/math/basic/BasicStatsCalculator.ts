@@ -64,10 +64,21 @@ export default class BasicStatsCalculator extends Calculator {
     );
 
     const named: NamedStatistics = {
-      max: { name: 'max', value: singleArrayAsNumber(this.max), unit: null },
-      mean: { name: 'mean', value: singleArrayAsNumber(mean), unit: null },
+      max: {
+        name: 'max',
+        label: 'Max Pixel',
+        value: singleArrayAsNumber(this.max),
+        unit: null,
+      },
+      mean: {
+        name: 'mean',
+        label: 'Mean Pixel',
+        value: singleArrayAsNumber(mean),
+        unit: null,
+      },
       stdDev: {
         name: 'stdDev',
+        label: 'Standard Deviation',
         value: singleArrayAsNumber(stdDev),
         unit: null,
       },
@@ -76,7 +87,12 @@ export default class BasicStatsCalculator extends Calculator {
         value: singleArrayAsNumber(stdDevWithSumSquare),
         unit: null,
       },
-      count: { name: 'count', value: this.count, unit: null },
+      count: {
+        name: 'count',
+        label: 'Pixel Count',
+        value: this.count,
+        unit: null,
+      },
       array: [],
     };
     named.array.push(
