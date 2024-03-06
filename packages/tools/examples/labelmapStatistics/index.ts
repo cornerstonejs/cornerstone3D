@@ -6,6 +6,7 @@ import {
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -38,7 +39,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, Events } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils, roundNumber } = cstUtils;
 
@@ -65,23 +66,21 @@ const statsGrid = document.createElement('div');
 statsGrid.style.display = 'flex';
 statsGrid.style.display = 'flex';
 statsGrid.style.flexDirection = 'row';
+statsGrid.style.fontSize = 'smaller';
 
-const statsIds = ['statsCurrent', 'statsPreview'];
+const statsIds = ['statsCurrent', 'statsPreview', 'statsCombined'];
 const statsStyle = {
-  width: '25em',
-  height: '5em',
+  width: '20em',
+  height: '10em',
 };
-const statsCurrent = document.createElement('div');
-statsCurrent.id = statsIds[0];
-statsCurrent.innerText = 'Statistics Current';
-Object.assign(statsCurrent.style, statsStyle);
-statsGrid.appendChild(statsCurrent);
 
-const statsPreview = document.createElement('div');
-statsPreview.id = statsIds[0];
-statsPreview.innerText = 'Statistics Preview';
-Object.assign(statsPreview.style, statsStyle);
-statsGrid.appendChild(statsPreview);
+for (const statsId of statsIds) {
+  const statsDiv = document.createElement('div');
+  statsDiv.id = statsId;
+  statsDiv.innerText = statsId;
+  Object.assign(statsDiv.style, statsStyle);
+  statsGrid.appendChild(statsDiv);
+}
 
 content.appendChild(statsGrid);
 
@@ -303,37 +302,68 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Statistics',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.acceptPreview?.(element1);
-    const segmentIndex =
-      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    calculateStatistics([segmentIndex, 255]);
-  },
+  title: 'Statistics 1,2,3',
+  onClick: () => calculateStatistics(statsIds[2], [1, 2, 3]),
 });
 
 function displayStat(stat) {
-  return `${stat.name}: ${roundNumber(stat.value)} ${
+  if (!stat) {
+    return;
+  }
+  return `${stat.label || stat.name}: ${roundNumber(stat.value)} ${
     stat.unit ? stat.unit : ''
   }`;
 }
 
-function calculateStatistics(indices) {
+function calculateStatistics(id, indices) {
   const [viewport] = viewports;
   const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
   const activeName = toolGroup.getActivePrimaryMouseButtonTool();
   const brush = toolGroup.getToolInstance(activeName);
-  const stats = brush.getStatistics(viewport.element, indices);
+  const stats = brush.getStatistics(viewport.element, { indices });
   const items = [`Statistics on ${indices.join(', ')}`];
+  stats.count.label = 'Voxels';
+  const lesionGlycolysis = {
+    name: 'Lesion Glycolysis',
+    value: stats.volume.value * stats.stdDev.value,
+    unit: 'HU \xB7 mm \xb3',
+  };
+  stats.stdDev.label = 'SUV';
   items.push(
     displayStat(stats.volume),
+    displayStat(stats.count),
+    displayStat(stats.stdDev),
+    displayStat(lesionGlycolysis),
     displayStat(stats.mean),
-    displayStat(stats.max)
+    displayStat(stats.max),
+    displayStat(stats.min)
   );
-  statsCurrent.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+  const statsDiv = document.getElementById(id);
+  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+}
+
+let timeoutId;
+
+function segmentationModifiedCallback(evt) {
+  const { detail } = evt;
+  if (!detail) {
+    return;
+  }
+  if (timeoutId) {
+    window.clearTimeout(timeoutId);
+    timeoutId = null;
+  }
+  const { segmentIndex } = detail;
+  if (!segmentIndex) {
+    // Both undefined and 0 segment indices are returns
+    return;
+  }
+  const statsId = statsIds[segmentIndex === 255 ? 1 : 0];
+
+  window.setTimeout(() => {
+    timeoutId = null;
+    calculateStatistics(statsId, [segmentIndex]);
+  }, 100);
 }
 
 // ============================= //
@@ -363,6 +393,11 @@ async function addSegmentationsToState() {
       },
     },
   ]);
+
+  eventTarget.addEventListener(
+    Events.SEGMENTATION_DATA_MODIFIED,
+    segmentationModifiedCallback
+  );
 }
 
 /**

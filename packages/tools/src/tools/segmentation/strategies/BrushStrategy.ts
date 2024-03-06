@@ -190,15 +190,20 @@ export default class BrushStrategy {
       segmentationVoxelManager,
       previewVoxelManager,
       previewSegmentIndex,
+      segmentIndex,
     } = initializedData;
+
+    const isPreview =
+      previewSegmentIndex && previewVoxelManager.modifiedSlices.size;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfSlices()
+      segmentationVoxelManager.getArrayOfSlices(),
+      isPreview ? previewSegmentIndex : segmentIndex
     );
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
-    if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
+    if (!isPreview) {
       return null;
     }
     // Use the original initialized data set to preserve preview info
