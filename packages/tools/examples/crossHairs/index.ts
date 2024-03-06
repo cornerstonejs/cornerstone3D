@@ -218,6 +218,8 @@ function setUpSynchronizers() {
       viewportId,
     });
   });
+  // Normally this would be left on, but here we are starting the demo in the
+  // default state, which is to not have a synchronizer enabled.
   synchronizer.setEnabled(false);
 }
 
