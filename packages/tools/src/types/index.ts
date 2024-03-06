@@ -64,7 +64,7 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type AnnotationRenderContext from './AnnotationRenderContext';
-import type { Statistics } from './CalculatorTypes';
+import type { Statistics, NamedStatistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
@@ -162,6 +162,9 @@ export type {
   ContourSegmentationData,
   //Statistics
   Statistics,
+  NamedStatistics,
+
+  // Labelmap data
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,

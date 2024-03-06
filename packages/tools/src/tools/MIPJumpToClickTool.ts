@@ -5,6 +5,7 @@ import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import jumpToWorld from '../utilities/viewport/jumpToWorld';
 import { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { getVolumeId } from '../utilities/getVolumeId';
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
@@ -54,7 +55,7 @@ class MIPJumpToClickTool extends BaseTool {
       );
     }
 
-    const volumeId = targetId.split(/volumeId:|\?/)[1];
+    const volumeId = getVolumeId(targetId);
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity;
