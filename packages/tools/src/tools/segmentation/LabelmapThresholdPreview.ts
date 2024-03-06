@@ -92,14 +92,14 @@ class LabelmapThresholdPreview extends BaseTool {
       threshold: newThreshold,
     };
 
-    this.onSetToolEnabled(null);
+    this.onSetToolEnabled();
   };
 
   public getThreshold = (): [number, number] => {
     return this.configuration.strategySpecificConfiguration.threshold;
   };
 
-  onSetToolEnabled(event): void {
+  onSetToolEnabled(): void {
     const toolGroupId = this.toolGroupId;
     const toolGroup = getToolGroup(toolGroupId);
 
@@ -135,23 +135,6 @@ class LabelmapThresholdPreview extends BaseTool {
 
     this.applyActiveStrategy(null, operationData);
 
-    function _getSegmentationRepresentation(segmentationId, toolGroupId) {
-      const segmentationRepresentations =
-        segmentationState.getSegmentationRepresentations(toolGroupId);
-
-      if (segmentationRepresentations.length === 0) {
-        return;
-      }
-
-      // Todo: this finds the first segmentation representation that matches the segmentationId
-      // If there are two labelmap representations from the same segmentation, this will not work
-      const representation = segmentationRepresentations.find(
-        (representation) => representation.segmentationId === segmentationId
-      );
-
-      return representation;
-    }
-
     const segmentationRepresentation = _getSegmentationRepresentation(
       segmentationId,
       this.toolGroupId
@@ -159,8 +142,9 @@ class LabelmapThresholdPreview extends BaseTool {
 
     // Animation for the segmentIndex
     const { fillAlpha } = this.getConfiguration();
+
     let count = 0;
-    const intervalTime = 16;
+    const intervalTime = 10;
     const numberOfFrames = Math.ceil(DEFAULT_ANIMATION_LENGTH / intervalTime);
 
     clearInterval(this.highlightIntervalId);
@@ -169,11 +153,8 @@ class LabelmapThresholdPreview extends BaseTool {
       const x = (count * intervalTime) / DEFAULT_ANIMATION_LENGTH;
       const easeOutFillAlpha = easeInOutBell(x, fillAlpha);
 
-      if (easeOutFillAlpha < 0) {
-        count = 0;
-      } else {
-        count++;
-      }
+      easeOutFillAlpha < 0 ? (count = 0) : count++;
+
       segmentationConfig.setSegmentSpecificConfig(
         this.toolGroupId,
         segmentationRepresentation.segmentationRepresentationUID,
@@ -195,6 +176,23 @@ class LabelmapThresholdPreview extends BaseTool {
       }
     }, intervalTime);
   }
+}
+
+function _getSegmentationRepresentation(segmentationId, toolGroupId) {
+  const segmentationRepresentations =
+    segmentationState.getSegmentationRepresentations(toolGroupId);
+
+  if (segmentationRepresentations.length === 0) {
+    return;
+  }
+
+  // Todo: this finds the first segmentation representation that matches the segmentationId
+  // If there are two labelmap representations from the same segmentation, this will not work
+  const representation = segmentationRepresentations.find(
+    (representation) => representation.segmentationId === segmentationId
+  );
+
+  return representation;
 }
 
 LabelmapThresholdPreview.toolName = 'LabelmapThresholdPreview';

@@ -36,12 +36,17 @@ function fillCube(
 
   const pointInShape = () => true;
 
+  console.log('operationData in fillCube:', operationData);
+
   const callback = ({ value, index, pointIJK }) => {
     if (segmentsLocked.includes(value)) {
       return;
     }
 
     const voxelValue = imageVolume.getScalarData()[index];
+    // console.log('filling voxel:', pointIJK);
+    // console.log('segmentIndex:', segmentIndex);
+    // console.log('scalarData[index]:', scalarData[index]);
 
     if (threshold[0] <= voxelValue && voxelValue <= threshold[1]) {
       scalarData[index] = segmentIndex;
