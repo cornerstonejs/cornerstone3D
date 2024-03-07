@@ -139,14 +139,6 @@ class BrushTool extends BaseTool {
               },
             ],
           },
-          [StrategyCallbacks.RejectPreview]: {
-            method: StrategyCallbacks.RejectPreview,
-            bindings: [
-              {
-                key: 'Escape',
-              },
-            ],
-          },
         },
       },
     }
@@ -636,6 +628,21 @@ class BrushTool extends BaseTool {
       this.acceptPreview(element);
     }
   };
+
+  public getStatistics(element, segmentIndices?) {
+    if (!element) {
+      return;
+    }
+    const enabledElement = getEnabledElement(element);
+    const stats = this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.GetStatistics,
+      segmentIndices
+    );
+
+    return stats;
+  }
 
   /**
    * Cancels any preview view being shown, resetting any segments being shown.

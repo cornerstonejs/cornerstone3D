@@ -114,6 +114,9 @@ export default class BrushStrategy {
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
     ),
+    [StrategyCallbacks.GetStatistics]: addSingletonMethod(
+      StrategyCallbacks.GetStatistics
+    ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -187,15 +190,20 @@ export default class BrushStrategy {
       segmentationVoxelManager,
       previewVoxelManager,
       previewSegmentIndex,
+      segmentIndex,
     } = initializedData;
+
+    const isPreview =
+      previewSegmentIndex && previewVoxelManager.modifiedSlices.size;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfSlices()
+      segmentationVoxelManager.getArrayOfSlices(),
+      isPreview ? previewSegmentIndex : segmentIndex
     );
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
-    if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
+    if (!isPreview) {
       return null;
     }
     // Use the original initialized data set to preserve preview info
@@ -383,11 +391,11 @@ function addSingletonMethod(name: string, isInitialized = true) {
     }
     brushStrategy[name] = isInitialized
       ? func
-      : (enabledElement, operationData) => {
+      : (enabledElement, operationData, ...args) => {
           // Store the enabled element in the operation data so we can use single
           // argument calls
           operationData.enabledElement = enabledElement;
-          return func.call(brushStrategy, operationData);
+          return func.call(brushStrategy, operationData, ...args);
         };
   };
 }
