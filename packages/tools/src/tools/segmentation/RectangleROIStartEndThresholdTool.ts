@@ -39,7 +39,7 @@ import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecifi
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { pointInShapeCallback } from '../../utilities/';
-import { getVolumeId } from 'tools/src/utilities/getVolumeId';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
 const { transformWorldToIndex } = csUtils;
 

@@ -27,7 +27,7 @@ import {
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getVolumeId } from 'tools/src/utilities/getVolumeId';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,

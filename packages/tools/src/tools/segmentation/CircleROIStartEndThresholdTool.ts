@@ -46,7 +46,7 @@ import {
 } from '../../utilities/math/circle';
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { pointInShapeCallback } from '../../utilities';
-import { getVolumeId } from 'tools/src/utilities/getVolumeId';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
 const { transformWorldToIndex } = csUtils;
 
