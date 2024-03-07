@@ -634,7 +634,7 @@ class BrushTool extends BaseTool {
     }
   };
 
-  public getStatistics(element = this._previewData.element, segmentIndices?) {
+  public getStatistics(element, segmentIndices?) {
     if (!element) {
       return;
     }

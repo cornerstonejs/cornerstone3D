@@ -839,7 +839,7 @@ export class BrushTool extends BaseTool {
         referencedVolumeId?: string;
     };
     // (undocumented)
-    getStatistics(element?: HTMLDivElement, segmentIndices?: any): any;
+    getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -3097,14 +3097,6 @@ type KeyUpEventDetail = KeyDownEventDetail;
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
 
 // @public (undocumented)
-class LabelmapCalculator {
-    // (undocumented)
-    static getStatistics(operationData: LabelmapToolOperationDataAny, viewport: any, options: {
-        indices?: number | number[];
-    }): NamedStatistics;
-}
-
-// @public (undocumented)
 type LabelmapConfig = {
     renderOutline?: boolean;
     outlineWidthActive?: number;
@@ -4631,7 +4623,7 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
-        LabelmapCalculator,
+        VolumetricCalculator,
         thresholdSegmentationByRange,
         createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
@@ -6158,6 +6150,15 @@ type VolumeScrollOutOfBoundsEventDetail = {
 
 // @public (undocumented)
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+class VolumetricCalculator extends BasicStatsCalculator_2 {
+    // (undocumented)
+    static getStatistics(options: {
+        spacing?: number;
+        unit?: string;
+    }): NamedStatistics;
+}
 
 // @public (undocumented)
 export class WindowLevelTool extends BaseTool {
