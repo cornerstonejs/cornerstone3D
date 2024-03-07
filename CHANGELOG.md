@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.66.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.0...v1.66.1) (2024-03-07)
+
+### Bug Fixes
+
+- **voiSyncCallback:** added VOI Sync Support for Non-Fused Images ([#1134](https://github.com/cornerstonejs/cornerstone3D/issues/1134)) ([f5649ce](https://github.com/cornerstonejs/cornerstone3D/commit/f5649ce7ab0998a6c78a1a7ed1fd54fdd36064d3))
+
 # [1.66.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.5...v1.66.0) (2024-03-06)
 
 ### Features
