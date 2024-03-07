@@ -231,6 +231,11 @@ type SegmentationDataModifiedEventDetail = {
   /** array of slice indices in a labelmap which have been modified */
   // TODO: This is labelmap-specific and needs to be a labelmap-specific event
   modifiedSlicesToUse?: number[];
+  /**
+   * The segment index being modified as a primary action - other segments
+   * indices may also be modified as a side affect of the primary change.
+   */
+  segmentIndex?: number;
 };
 
 /**

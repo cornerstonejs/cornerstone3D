@@ -8,6 +8,7 @@ type Statistics = {
 type NamedStatistics = {
   mean: Statistics & { name: 'mean' };
   max: Statistics & { name: 'max' };
+  min: Statistics & { name: 'min' };
   stdDev: Statistics & { name: 'stdDev' };
   stdDevWithSumSquare: Statistics & { name: 'stdDevWithSumSquare' };
   count: Statistics & { name: 'count' };

@@ -133,15 +133,19 @@ function triggerSegmentationModified(segmentationId?: string): void {
 
 /**
  * Trigger an event that a segmentation data has been modified
- * @param segmentationId - The Id of segmentation
+ * @param segmentIndex - the primary segment index modified.  This can
+ *           be set to a value that the user is actively using - that doesn't
+ *           mean other segments aren't touched, just that the specified one is primary.
  */
 function triggerSegmentationDataModified(
   segmentationId: string,
-  modifiedSlicesToUse?: number[]
+  modifiedSlicesToUse?: number[],
+  segmentIndex?: number
 ): void {
   const eventDetail: SegmentationDataModifiedEventDetail = {
     segmentationId,
     modifiedSlicesToUse,
+    segmentIndex,
   };
 
   // set it to dirty to force the next call to getUniqueSegmentIndices to

@@ -6,6 +6,7 @@ import {
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -38,9 +39,9 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings, Events } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils } = cstUtils;
+const { segmentation: segmentationUtils, roundNumber } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -48,15 +49,41 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const viewports = [];
+
+const DEFAULT_BRUSH_SIZE = 10;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Dynamic Threshold',
-  'Here we demonstrate dynamic threshold with preview'
+  'Labelmap Segmentation Statistics',
+  'Here we demonstrate calculating labelmap statistics'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
+
+const statsGrid = document.createElement('div');
+statsGrid.style.display = 'flex';
+statsGrid.style.display = 'flex';
+statsGrid.style.flexDirection = 'row';
+statsGrid.style.fontSize = 'smaller';
+
+const statsIds = ['statsCurrent', 'statsPreview', 'statsCombined'];
+const statsStyle = {
+  width: '20em',
+  height: '10em',
+};
+
+for (const statsId of statsIds) {
+  const statsDiv = document.createElement('div');
+  statsDiv.id = statsId;
+  statsDiv.innerText = statsId;
+  Object.assign(statsDiv.style, statsStyle);
+  statsGrid.appendChild(statsDiv);
+}
+
+content.appendChild(statsGrid);
+
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
@@ -132,6 +159,14 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
+interpolationTools.set('CircularBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
+  },
+});
+
 interpolationTools.set('ThresholdSphereIsland', {
   baseTool: BrushTool.toolName,
   configuration: {
@@ -165,14 +200,6 @@ interpolationTools.set('ThresholdSphere', {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
     },
-  },
-});
-
-interpolationTools.set('CircularBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_CIRCLE',
   },
 });
 
@@ -255,7 +282,7 @@ addDropdownToToolbar({
 addSliderToToolbar({
   title: 'Brush Size',
   range: [5, 100],
-  defaultValue: 25,
+  defaultValue: DEFAULT_BRUSH_SIZE,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
@@ -275,14 +302,69 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Reject Preview',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.rejectPreview?.(element1);
-  },
+  title: 'Statistics 1,2,3',
+  onClick: () => calculateStatistics(statsIds[2], [1, 2, 3]),
 });
+
+function displayStat(stat) {
+  if (!stat) {
+    return;
+  }
+  return `${stat.label || stat.name}: ${roundNumber(stat.value)} ${
+    stat.unit ? stat.unit : ''
+  }`;
+}
+
+function calculateStatistics(id, indices) {
+  const [viewport] = viewports;
+  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+  const brush = toolGroup.getToolInstance(activeName);
+  const stats = brush.getStatistics(viewport.element, { indices });
+  const items = [`Statistics on ${indices.join(', ')}`];
+  stats.count.label = 'Voxels';
+  const lesionGlycolysis = {
+    name: 'Lesion Glycolysis',
+    value: stats.volume.value * stats.stdDev.value,
+    unit: 'HU \xB7 mm \xb3',
+  };
+  stats.stdDev.label = 'SUV';
+  items.push(
+    displayStat(stats.volume),
+    displayStat(stats.count),
+    displayStat(stats.stdDev),
+    displayStat(lesionGlycolysis),
+    displayStat(stats.mean),
+    displayStat(stats.max),
+    displayStat(stats.min)
+  );
+  const statsDiv = document.getElementById(id);
+  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+}
+
+let timeoutId;
+
+function segmentationModifiedCallback(evt) {
+  const { detail } = evt;
+  if (!detail) {
+    return;
+  }
+  if (timeoutId) {
+    window.clearTimeout(timeoutId);
+    timeoutId = null;
+  }
+  const { segmentIndex } = detail;
+  if (!segmentIndex) {
+    // Both undefined and 0 segment indices are returns
+    return;
+  }
+  const statsId = statsIds[segmentIndex === 255 ? 1 : 0];
+
+  window.setTimeout(() => {
+    timeoutId = null;
+    calculateStatistics(statsId, [segmentIndex]);
+  }, 100);
+}
 
 // ============================= //
 
@@ -311,6 +393,11 @@ async function addSegmentationsToState() {
       },
     },
   ]);
+
+  eventTarget.addEventListener(
+    Events.SEGMENTATION_DATA_MODIFIED,
+    segmentationModifiedCallback
+  );
 }
 
 /**
@@ -432,6 +519,8 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
+  viewports.push(...renderingEngine.getViewports());
+
   // Set the volume to load
   volume.load();
 
@@ -450,6 +539,8 @@ async function run() {
     },
   ]);
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+
+  segmentationUtils.setBrushSizeForToolGroup(toolGroupId, DEFAULT_BRUSH_SIZE);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

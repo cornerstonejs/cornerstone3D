@@ -640,7 +640,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string, ...extraArgs: any[]): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -673,7 +673,9 @@ declare namespace BasicStatsCalculator {
 // @public (undocumented)
 class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
-    static getStatistics: () => NamedStatistics;
+    static getStatistics: (options?: {
+        unit: string;
+    }) => NamedStatistics;
     // (undocumented)
     static statsCallback: ({ value: newValue }: {
         value: any;
@@ -836,6 +838,8 @@ export class BrushTool extends BaseTool {
         volumeId?: string;
         referencedVolumeId?: string;
     };
+    // (undocumented)
+    getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -3536,6 +3540,9 @@ type NamedStatistics = {
     max: Statistics & {
         name: 'max';
     };
+    min: Statistics & {
+        name: 'min';
+    };
     stdDev: Statistics & {
         name: 'stdDev';
     };
@@ -4616,6 +4623,7 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
+        VolumetricCalculator,
         thresholdSegmentationByRange,
         createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
@@ -4633,6 +4641,7 @@ declare namespace segmentation_2 {
 type SegmentationDataModifiedEventDetail = {
     segmentationId: string;
     modifiedSlicesToUse?: number[];
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -5196,6 +5205,8 @@ enum StrategyCallbacks {
     // (undocumented)
     Fill = "fill",
     // (undocumented)
+    GetStatistics = "getStatistics",
+    // (undocumented)
     Initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
@@ -5687,7 +5698,7 @@ function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderi
 function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
 
 // @public (undocumented)
-function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[]): void;
+function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[], segmentIndex?: number): void;
 
 declare namespace triggerSegmentationEvents {
     export {
@@ -6139,6 +6150,15 @@ type VolumeScrollOutOfBoundsEventDetail = {
 
 // @public (undocumented)
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+class VolumetricCalculator extends BasicStatsCalculator_2 {
+    // (undocumented)
+    static getStatistics(options: {
+        spacing?: number;
+        unit?: string;
+    }): NamedStatistics;
+}
 
 // @public (undocumented)
 export class WindowLevelTool extends BaseTool {

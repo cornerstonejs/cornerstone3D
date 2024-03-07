@@ -70,7 +70,8 @@ const SPHERE_STRATEGY = new BrushStrategy(
   compositions.setValue,
   sphereComposition,
   compositions.determineSegmentIndex,
-  compositions.preview
+  compositions.preview,
+  compositions.labelmapStatistics
 );
 
 /**
