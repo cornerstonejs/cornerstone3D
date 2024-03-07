@@ -46,7 +46,7 @@
     "dcmjs": "^0.29.8",
     "detect-gpu": "^5.0.22",
     "dicom-parser": "^1.8.11",
-    "dicomweb-client": "^0.8.4",
+    "dicomweb-client": "0.10.2",
     "docusaurus-plugin-copy": "^0.1.1",
     "docusaurus-plugin-typedoc-api": "^2.5.1",
     "file-loader": "^6.2.0",
