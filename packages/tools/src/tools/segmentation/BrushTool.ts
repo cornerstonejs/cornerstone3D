@@ -136,14 +136,6 @@ class BrushTool extends BaseTool {
               },
             ],
           },
-          [StrategyCallbacks.GetStatistics]: {
-            method: StrategyCallbacks.GetStatistics,
-            bindings: [
-              {
-                key: 's',
-              },
-            ],
-          },
         },
       },
     }
