@@ -2719,6 +2719,9 @@ function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | I
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
 
 // @public (undocumented)
+const getVolumeId: (targetId: string) => string;
+
+// @public (undocumented)
 function getWindingDirection(polyline: Types_2.Point2[]): number;
 
 // @public (undocumented)
@@ -5925,6 +5928,7 @@ declare namespace utilities {
         getCalibratedLengthUnits,
         getCalibratedAreaUnits,
         getCalibratedScale,
+        getVolumeId,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,
