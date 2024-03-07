@@ -105,19 +105,19 @@ content.append(instructions);
 
 const leftDisplayArea = {
   storeAsInitialCamera: true,
-  imageArea: [0.8, 0.8],
+  imageArea: [1.2, 1.2],
   imageCanvasPoint: {
-    imagePoint: [0, 0.5],
-    canvasPoint: [0, 0.5],
+    imagePoint: [0, 0],
+    canvasPoint: [0, 0],
   },
 };
 
 const rightDisplayArea = {
   storeAsInitialCamera: true,
-  imageArea: [0.8, 0.8],
+  imageArea: [1.2, 1.2],
   imageCanvasPoint: {
-    imagePoint: [1, 0.5],
-    canvasPoint: [1, 0.5],
+    imagePoint: [1, 1],
+    canvasPoint: [1, 1],
   },
 };
 
@@ -132,7 +132,7 @@ const centerDisplayArea = {
 
 const centerSmallDisplayArea = {
   storeAsInitialCamera: true,
-  imageArea: [2, 2],
+  imageArea: [1.2, 1.2],
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
     canvasPoint: [0.5, 0.5],
@@ -177,15 +177,37 @@ const scale15 = {
   },
 };
 
+const scaleLeftTop = {
+  type: 'SCALE',
+  storeAsInitialCamera: true,
+  scale: 1.0,
+  imageCanvasPoint: {
+    imagePoint: [0, 0],
+    canvasPoint: [0, 0],
+  },
+};
+
+const scaleRightBottom = {
+  type: 'SCALE',
+  storeAsInitialCamera: true,
+  scale: 1.0,
+  imageCanvasPoint: {
+    imagePoint: [0, 0],
+    canvasPoint: [0, 0],
+  },
+};
+
 const displayAreaOptions = new Map();
 displayAreaOptions.set('Center', centerDisplayArea);
-displayAreaOptions.set('Left', leftDisplayArea);
-displayAreaOptions.set('Right', rightDisplayArea);
+displayAreaOptions.set('Left Top', leftDisplayArea);
+displayAreaOptions.set('Right Bottom', rightDisplayArea);
 displayAreaOptions.set('Center Small', centerSmallDisplayArea);
 displayAreaOptions.set('Center Fit Height', centerHeight);
 displayAreaOptions.set('Center Fit Width', centerWidth);
 displayAreaOptions.set('Scale 1x', scale1);
 displayAreaOptions.set('Scale 15x', scale15);
+displayAreaOptions.set('Scale Left Top', scaleLeftTop);
+displayAreaOptions.set('Scale Right Bottom', scaleRightBottom);
 
 addDropdownToToolbar({
   id: 'displayArea',

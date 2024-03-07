@@ -734,21 +734,18 @@ class Viewport implements IViewport {
     );
 
     const canvasImage = [
-      canvasEdge[0] - canvasZero[0],
-      canvasEdge[1] - canvasZero[1],
+      Math.abs(canvasEdge[0] - canvasZero[0]),
+      Math.abs(canvasEdge[1] - canvasZero[1]),
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
     let zoom = this.getZoom();
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      const requireX = Math.abs((areaX * canvasImage[0]) / canvasWidth);
-      const requireY = Math.abs((areaY * canvasImage[1]) / canvasHeight);
+      const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
+      const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
 
       zoom = Math.min(zoom / requireX, zoom / requireY);
-      // Don't set as initial camera because then the zoom interactions don't
-      // work consistently.
-      // TODO: Add a better method to handle initial camera
       this.setZoom(zoom);
     }
 
@@ -761,9 +758,8 @@ class Viewport implements IViewport {
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
       const [imageX, imageY] = imagePoint;
-      const imagePanX =
-        (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
-      const imagePanY = zoom * canvasHeight * (0.5 - imageY);
+      const imagePanX = zoom * imgWidth * (0.5 - imageX);
+      const imagePanY = zoom * imgHeight * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
