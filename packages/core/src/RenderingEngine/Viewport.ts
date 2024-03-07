@@ -607,12 +607,14 @@ class Viewport implements IViewport {
     }
     const { storeAsInitialCamera, type: areaType } = displayArea;
 
-    // make calculations relative to the fitToCanvasCamera view
-    this.setCameraNoEvent(this.fitToCanvasCamera);
-
+    // Instead of storing the camera itself, if initial camera is set,
+    // then store the display area as the baseline display area.
     if (storeAsInitialCamera) {
       this.options.displayArea = displayArea;
     }
+
+    // make calculations relative to the fitToCanvasCamera view
+    this.setCameraNoEvent(this.fitToCanvasCamera);
 
     if (areaType === 'SCALE') {
       this.setDisplayAreaScale(displayArea);
@@ -737,21 +739,17 @@ class Viewport implements IViewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = 1;
+    let zoom = this.getZoom();
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      const requireX = Math.abs(
-        (areaX * canvasImage[0] * this.insetImageMultiplier) / canvasWidth
-      );
-      const requireY = Math.abs(
-        (areaY * canvasImage[1] * this.insetImageMultiplier) / canvasHeight
-      );
+      const requireX = Math.abs((areaX * canvasImage[0]) / canvasWidth);
+      const requireY = Math.abs((areaY * canvasImage[1]) / canvasHeight);
 
-      zoom = Math.min(this.getZoom() / requireX, this.getZoom() / requireY);
+      zoom = Math.min(zoom / requireX, zoom / requireY);
       // Don't set as initial camera because then the zoom interactions don't
       // work consistently.
       // TODO: Add a better method to handle initial camera
-      this.setZoom(this.insetImageMultiplier * zoom, false);
+      this.setZoom(zoom);
     }
 
     // getting the image info
@@ -1559,16 +1557,6 @@ class Viewport implements IViewport {
       target.panType = panType;
       const fitPan = this.getPan(fitToCanvasCamera);
       const initPan = this.getPan(initialCamera);
-      console.log(
-        'Pans',
-        this.id,
-        fitPan[0],
-        fitPan[1],
-        initPan[0],
-        initPan[1],
-        initZoom,
-        this.getZoom(fitToCanvasCamera)
-      );
       target.pan = fitPan;
     }
     return target;

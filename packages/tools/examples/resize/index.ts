@@ -51,8 +51,8 @@ const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const synchronizerOptions = {
   displayAreaType: true,
   rotationType: true,
-  zoomType: true,
-  panType: true,
+  zoomType: false,
+  panType: false,
 };
 
 // ======== Set up page ======== //
@@ -103,7 +103,7 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const rightDisplayArea = {
+const leftDisplayArea = {
   storeAsInitialCamera: true,
   imageArea: [0.8, 0.8],
   imageCanvasPoint: {
@@ -112,7 +112,7 @@ const rightDisplayArea = {
   },
 };
 
-const leftDisplayArea = {
+const rightDisplayArea = {
   storeAsInitialCamera: true,
   imageArea: [0.8, 0.8],
   imageCanvasPoint: {
@@ -422,7 +422,8 @@ async function run() {
   const stackViewport = renderingEngine.getViewport(
     viewportId4
   ) as Types.IStackViewport;
-  await stackViewport.setStack(stackImageIds);
+  // await stackViewport.setStack(stackImageIds);
+  await stackViewport.setStack(imageIds);
   // Assign the initial viewport
   viewport = stackViewport;
   stackViewport.setProperties({
