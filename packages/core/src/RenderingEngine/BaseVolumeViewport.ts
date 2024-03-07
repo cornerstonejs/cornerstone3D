@@ -1565,8 +1565,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     sliceIndex ??= this.getCurrentImageIdIndex();
     const { viewPlaneNormal, focalPoint } = this.getCamera();
-    // const querySeparator = volumeId.indexOf('?') > -1 ? '&' : '?';
-    return `volumeId:${volumeId}?sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
+    const querySeparator = volumeId.indexOf('?') > -1 ? '&' : '?';
+    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
       ','
     )}&focalPoint=${focalPoint.join(',')}`;
   }
