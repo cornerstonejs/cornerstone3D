@@ -1667,6 +1667,9 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
+function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 
 // @public (undocumented)
@@ -5310,6 +5313,8 @@ export class Synchronizer {
     // (undocumented)
     removeTarget(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
+    setEnabled(enabled: boolean): void;
+    // (undocumented)
     setOptions(viewportId: string, options?: Record<string, unknown>): void;
 }
 
@@ -5331,7 +5336,8 @@ declare namespace synchronizers {
         createVOISynchronizer,
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
-        createStackImageSynchronizer
+        createStackImageSynchronizer,
+        createPresentationViewSynchronizer as createSlabThicknessSynchronizer
     }
 }
 export { synchronizers }

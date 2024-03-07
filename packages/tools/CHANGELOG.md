@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.66.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.5...v1.66.0) (2024-03-06)
+
+### Features
+
+- **slab synchronizer:** Add slab thickness synchronizer ([#1136](https://github.com/cornerstonejs/cornerstone3D/issues/1136)) ([7917ddc](https://github.com/cornerstonejs/cornerstone3D/commit/7917ddc82c509c36d0a4b83f572ea8c9f57cb8c9))
+
 ## [1.65.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.4...v1.65.5) (2024-03-05)
 
 ### Bug Fixes
