@@ -673,7 +673,7 @@ declare namespace BasicStatsCalculator {
 // @public (undocumented)
 class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
-    static getStatistics: () => Statistics[];
+    static getStatistics: () => NamedStatistics;
     // (undocumented)
     static statsCallback: ({ value: newValue }: {
         value: any;
@@ -863,7 +863,7 @@ export class BrushTool extends BaseTool {
 // @public (undocumented)
 abstract class Calculator {
     // (undocumented)
-    static getStatistics: () => Statistics[];
+    static getStatistics: () => NamedStatistics;
     // (undocumented)
     static run: ({ value }: {
         value: any;
@@ -1665,6 +1665,9 @@ function createLabelmapVolumeForViewport(input: {
 
 // @public (undocumented)
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
+
+// @public (undocumented)
+function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -3528,6 +3531,35 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail & MouseCustomEvent
 type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
 // @public (undocumented)
+type NamedStatistics = {
+    mean: Statistics & {
+        name: 'mean';
+    };
+    max: Statistics & {
+        name: 'max';
+    };
+    stdDev: Statistics & {
+        name: 'stdDev';
+    };
+    stdDevWithSumSquare: Statistics & {
+        name: 'stdDevWithSumSquare';
+    };
+    count: Statistics & {
+        name: 'count';
+    };
+    area?: Statistics & {
+        name: 'area';
+    };
+    volume?: Statistics & {
+        name: 'volume';
+    };
+    circumferance?: Statistics & {
+        name: 'circumferance';
+    };
+    array: Statistics[];
+};
+
+// @public (undocumented)
 type NormalizedInteractionEventDetail = {
     eventName: string;
     renderingEngineId: string;
@@ -5149,6 +5181,7 @@ declare namespace state_3 {
 // @public (undocumented)
 type Statistics = {
     name: string;
+    label?: string;
     value: number | number[];
     unit: null | string;
 };
@@ -5283,6 +5316,8 @@ export class Synchronizer {
     // (undocumented)
     removeTarget(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
+    setEnabled(enabled: boolean): void;
+    // (undocumented)
     setOptions(viewportId: string, options?: Record<string, unknown>): void;
 }
 
@@ -5304,7 +5339,8 @@ declare namespace synchronizers {
         createVOISynchronizer,
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
-        createStackImageSynchronizer
+        createStackImageSynchronizer,
+        createPresentationViewSynchronizer as createSlabThicknessSynchronizer
     }
 }
 export { synchronizers }
@@ -5745,6 +5781,7 @@ declare namespace Types {
         FloodFillOptions,
         ContourSegmentationData,
         Statistics,
+        NamedStatistics,
         LabelmapToolOperationData,
         LabelmapToolOperationDataStack,
         LabelmapToolOperationDataVolume,
