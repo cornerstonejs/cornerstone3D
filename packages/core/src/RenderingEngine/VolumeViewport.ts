@@ -362,7 +362,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const { origin, direction, spacing } = this.getImageData(volumeId);
+    const { origin, direction, spacing } = imageData;
 
     const spacingInNormal = getSpacingInNormalDirection(
       { direction, spacing },

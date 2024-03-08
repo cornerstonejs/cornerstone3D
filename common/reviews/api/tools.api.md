@@ -1772,6 +1772,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
+    resetCrosshairs: () => void;
+    // (undocumented)
     setSlabThickness(viewport: any, slabThickness: any): void;
     // (undocumented)
     _subscribeToViewportNewVolumeSet(viewports: any): void;
@@ -4388,6 +4390,8 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
     // (undocumented)
+    onSetToolConfiguration: () => void;
+    // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
@@ -5150,7 +5154,7 @@ type Statistics = {
 };
 
 // @public (undocumented)
-function stopClip(element: HTMLDivElement): void;
+function stopClip(element: HTMLDivElement, viewportId?: string): void;
 
 // @public (undocumented)
 enum StrategyCallbacks {
@@ -5395,6 +5399,8 @@ class ToolGroup implements ToolGroup {
     getToolConfiguration(toolName: string, configurationPath?: string): any;
     // (undocumented)
     getToolInstance(toolInstanceName: string): any;
+    // (undocumented)
+    getToolInstances(): Record<string, any>;
     // (undocumented)
     getToolOptions(toolName: string): ToolOptionsType;
     // (undocumented)

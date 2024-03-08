@@ -83,7 +83,10 @@ function playClip(
     // Make sure the specified clip is not running before any property update.
     // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
     // prevent stopping a 4D CINE in case it is playing on another viewport.
-    _stopClip(element, isDynamicCinePlaying);
+    _stopClip(element, {
+      stopDynamicCine: !isDynamicCinePlaying,
+      viewportId: viewport.id,
+    });
   }
 
   playClipData.dynamicCineEnabled = playClipOptions.dynamicCineEnabled;
@@ -125,7 +128,10 @@ function playClip(
     if (!loop && newStepIndexOutOfRange) {
       // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
       // prevent stopping a 4D CINE in case it is playing on another viewport.
-      _stopClip(element, isDynamicCinePlaying);
+      _stopClip(element, {
+        stopDynamicCine: !isDynamicCinePlaying,
+        viewportId: viewport.id,
+      });
 
       const eventDetail = { element };
 
