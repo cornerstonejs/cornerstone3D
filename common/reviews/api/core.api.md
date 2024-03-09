@@ -3693,7 +3693,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getPan(): Point2;
+    getPan(initialCamera?: ICamera): Point2;
     // (undocumented)
     getProperties: () => void;
     // (undocumented)
@@ -3711,7 +3711,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
-    getZoom(): number;
+    getZoom(compareCamera?: ICamera): number;
     // (undocumented)
     protected hasPixelSpacing: boolean;
     // (undocumented)

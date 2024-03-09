@@ -614,15 +614,30 @@ class Viewport implements IViewport {
     }
 
     // make calculations relative to the fitToCanvasCamera view
-    this.setCameraNoEvent(this.fitToCanvasCamera);
+    const { _suppressCameraModifiedEvents } = this;
+    this._suppressCameraModifiedEvents = true;
 
-    if (areaType === 'SCALE') {
-      this.setDisplayAreaScale(displayArea);
-    } else {
-      this.setDisplayAreaFit(displayArea);
+    const relativeCamera = this.fitToCanvasCamera;
+    this.setCamera(relativeCamera);
+    if (storeAsInitialCamera) {
+      // Need to start with the initial camera set in order to update the initial camera
+      this.initialCamera = relativeCamera;
     }
 
-    if (!suppressEvents) {
+    if (areaType === 'SCALE') {
+      this.setDisplayAreaScale(displayArea, relativeCamera);
+    } else {
+      this.setDisplayAreaFit(displayArea, relativeCamera);
+    }
+
+    // Set the initial camera if appropriate
+    if (storeAsInitialCamera) {
+      this.initialCamera = this.getCamera();
+    }
+
+    // Restore event firing
+    this._suppressCameraModifiedEvents = _suppressCameraModifiedEvents;
+    if (!suppressEvents && !_suppressCameraModifiedEvents) {
       const eventDetail: EventTypes.DisplayAreaModifiedEventDetail = {
         viewportId: this.id,
         displayArea: displayArea,
@@ -630,6 +645,7 @@ class Viewport implements IViewport {
       };
 
       triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, eventDetail);
+      this.setCamera(this.getCamera());
     }
   }
 
@@ -644,7 +660,10 @@ class Viewport implements IViewport {
    *        while values > 1 mean more than one pixel.  Default is 1
    *        Suggest using whole numbers or integer fractions (eg 1/3)
    */
-  protected setDisplayAreaScale(displayArea: DisplayArea): void {
+  protected setDisplayAreaScale(
+    displayArea: DisplayArea,
+    relativeCamera
+  ): void {
     const { scale = 1 } = displayArea;
     const canvas = this.canvas;
     const height = canvas.height;
@@ -656,6 +675,13 @@ class Viewport implements IViewport {
     const spacingWorld = imageData.getSpacing();
     const spacing = spacingWorld[1];
     this.setCamera({ parallelScale: (height * spacing) / (2 * scale) });
+    relativeCamera = this.getCamera();
+
+    // If this is scale, then image area isn't allowed, so just delete it to be safe
+    delete displayArea.imageArea;
+    // Apply the pan values from the display area.
+    this.setDisplayAreaFit(displayArea, relativeCamera);
+
     // Need to ensure the focal point is aligned with the canvas size/position
     // so that we don't get half pixel rendering, which causes additional
     // moire patterns to be displayed.
@@ -679,13 +705,10 @@ class Viewport implements IViewport {
     if (!focalChange[0] && !focalChange[1] && !focalChange[2]) {
       return;
     }
-    this.setCamera(
-      {
-        focalPoint: <Point3>vec3.add(vec3.create(), focalPoint, focalChange),
-        position: <Point3>vec3.add(vec3.create(), position, focalChange),
-      },
-      true
-    );
+    this.setCamera({
+      focalPoint: <Point3>vec3.add(vec3.create(), focalPoint, focalChange),
+      position: <Point3>vec3.add(vec3.create(), position, focalChange),
+    });
   }
 
   /**
@@ -713,7 +736,10 @@ class Viewport implements IViewport {
    *
    * @param displayArea
    */
-  protected setDisplayAreaFit(displayArea: DisplayArea) {
+  protected setDisplayAreaFit(
+    displayArea: DisplayArea,
+    relativeCamera = this.initialCamera
+  ) {
     const { imageArea, imageCanvasPoint } = displayArea;
 
     const devicePixelRatio = window?.devicePixelRatio || 1;
@@ -739,7 +765,7 @@ class Viewport implements IViewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = this.getZoom();
+    let zoom = this.getZoom(relativeCamera);
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
@@ -752,12 +778,13 @@ class Viewport implements IViewport {
     // getting the image info
     // getting the image info
     if (imageCanvasPoint) {
-      const { imagePoint, canvasPoint } = imageCanvasPoint;
+      const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
+        imageCanvasPoint;
       const [canvasX, canvasY] = canvasPoint;
       const canvasPanX = canvasWidth * (canvasX - 0.5);
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
-      const [imageX, imageY] = imagePoint;
+      const [imageX, imageY] = imagePoint || canvasPoint;
       const imagePanX = zoom * imgWidth * (0.5 - imageX);
       const imagePanY = zoom * imgHeight * (0.5 - imageY);
 
@@ -767,7 +794,7 @@ class Viewport implements IViewport {
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
       // The pan is part of the display area settings, not the initial camera, so
       // don't store as initial camera here - that breaks rotation and other changes.
-      this.setPan(deltaPoint2, false);
+      this.setPan(deltaPoint2);
     }
   }
 
@@ -1534,26 +1561,15 @@ class Viewport implements IViewport {
       target.displayArea = this.getDisplayArea();
       target.displayAreaType = displayAreaType;
     }
-    const initZoom = this.getZoom(initialCamera);
-    const fitZoom = this.getZoom(fitToCanvasCamera);
-    // console.log(
-    //   'Zooms',
-    //   this.id,
-    //   initZoom,
-    //   fitZoom,
-    //   initZoom / fitZoom,
-    //   fitZoom / initZoom
-    // );
+    const initZoom = this.getZoom();
 
     if (zoomType) {
       target.zoomType = zoomType;
       target.zoom = initZoom;
     }
     if (panType) {
-      target.panType = panType;
-      const fitPan = this.getPan(fitToCanvasCamera);
-      const initPan = this.getPan(initialCamera);
-      target.pan = fitPan;
+      target.pan = this.getPan();
+      vec2.scale(target.pan, target.pan, 1 / initZoom);
     }
     return target;
   }
@@ -1564,15 +1580,13 @@ class Viewport implements IViewport {
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
     if (viewPres) {
-      const { displayArea, zoom, pan } = viewPres;
-      if (displayArea) {
+      const { displayArea, zoom = this.getZoom(), pan } = viewPres;
+      if (displayArea !== this.getDisplayArea()) {
         this.setDisplayArea(displayArea);
       }
-      if (zoom) {
-        this.setZoom(zoom);
-      }
+      this.setZoom(zoom);
       if (pan) {
-        this.setPan(pan);
+        this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
       }
     }
   }

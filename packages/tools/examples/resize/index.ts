@@ -183,7 +183,6 @@ const scaleLeftTop = {
   scale: 1.0,
   imageCanvasPoint: {
     imagePoint: [0, 0],
-    canvasPoint: [0, 0],
   },
 };
 
@@ -192,8 +191,7 @@ const scaleRightBottom = {
   storeAsInitialCamera: true,
   scale: 1.0,
   imageCanvasPoint: {
-    imagePoint: [0, 0],
-    canvasPoint: [0, 0],
+    imagePoint: [1, 1],
   },
 };
 
@@ -280,23 +278,23 @@ const resizeOptions = new Map();
 resizeOptions.set('Original', {
   viewportStyle: { width, height },
 });
-resizeOptions.set('Tall', {
-  viewportStyle: { width: '256px', height: '1024px' },
-});
-resizeOptions.set('Wide', {
-  viewportStyle: { width: '1024px', height: '256px' },
-});
 resizeOptions.set('1:2', {
   viewportStyle: { width: '256px', height: '512px' },
 });
 resizeOptions.set('2:1', {
   viewportStyle: { width: '512px', height: '256px' },
 });
-resizeOptions.set('4:5', {
-  viewportStyle: { width: '400px', height: '500px' },
+resizeOptions.set('3:2', {
+  viewportStyle: { width: '341px', height: '511px' },
 });
-resizeOptions.set('5:4', {
-  viewportStyle: { width: '500px', height: '400px' },
+resizeOptions.set('3:1', {
+  viewportStyle: { width: '341px', height: '256px' },
+});
+resizeOptions.set('1:4', {
+  viewportStyle: { width: '512px', height: '4096px' },
+});
+resizeOptions.set('4:1', {
+  viewportStyle: { width: '512px', height: '128px' },
 });
 
 addDropdownToToolbar({
