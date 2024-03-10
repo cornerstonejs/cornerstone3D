@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 
-type BoundsIJK = [Types.Point2, Types.Point2, Types.Point2];
+type BoundsIJK = Types.BoundsIJK;
 
 export default BoundsIJK;

@@ -42,6 +42,12 @@ Both `StackViewport` and `VolumeViewport`, `VolumeViewport3D` are created via th
 
 :::
 
+## VideoViewport
+
+- Suitable for rendering video data
+- Video can include MPEG 4 encoded vide streams. In theory, MPEG2 is also supported,
+  but practically the browser doesn't support that.
+
 ## Initial Display Area
 
 All viewports inherit from the Viewport class which has a `displayArea` field which can be provided.

@@ -16,11 +16,16 @@ const addCanvasPointsToArray = (
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
+  if (!canvasPoints.length) {
+    canvasPoints.push(newCanvasPoint);
+    console.log('>>>>> !canvasPoints. :: RETURN');
+    return 1;
+  }
+
   const lastWorldPos = viewport.canvasToWorld(
     canvasPoints[canvasPoints.length - 1]
   );
   const newWorldPos = viewport.canvasToWorld(newCanvasPoint);
-
   const worldPosDiff = vec3.create();
 
   vec3.subtract(worldPosDiff, newWorldPos, lastWorldPos);

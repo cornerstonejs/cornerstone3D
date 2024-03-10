@@ -232,13 +232,11 @@ class RenderingEngine implements IRenderingEngine {
       this._clearAnimationFrame();
     }
 
-    // 8. Resize the offScreen canvas to accommodate for the new size (after removal)
-    // Note: Resize should not reset pan and zoom when disabling an element.
-    // This is because we are only resizing the offscreen canvas to deal with the element
-    // which was removed, and do not wish to alter the current state of any other currently enabled element
-    const immediate = true;
-    const keepCamera = true;
-    this.resize(immediate, keepCamera);
+    // Note: we should not call resize at the end of here, the reason is that
+    // in batch rendering, we might disable a viewport and enable others at the same
+    // time which would interfere with each other. So we just let the enable
+    // to call resize, and also resize getting called by applications on the
+    // DOM resize event.
   }
 
   /**
@@ -307,6 +305,14 @@ class RenderingEngine implements IRenderingEngine {
 
     this.setVtkjsDrivenViewports(vtkDrivenViewportInputEntries);
     this.setCustomViewports(customRenderingViewportInputEntries);
+
+    // Making sure the setViewports api also can fill the canvas
+    // properly
+    viewportInputEntries.forEach((vp) => {
+      const canvas = getOrCreateCanvas(vp.element);
+      const { background } = vp.defaultOptions;
+      this.fillCanvasWithBackgroundColor(canvas, background);
+    });
   }
 
   /**
@@ -621,10 +627,28 @@ class RenderingEngine implements IRenderingEngine {
       canvas.height = rect.height * devicePixelRatio;
 
       const prevCamera = vp.getCamera();
+      const rotation = vp.getRotation();
+      const pan = vp.getPan();
+      const zoom = vp.getZoom();
+      const { flipHorizontal } = prevCamera;
       vp.resetCamera();
 
+      const displayArea = vp.getDisplayArea();
+
+      // TODO - make this use get/set Presentation or in some way preserve the
+      // basic presentation info on this viewport, rather than preserving camera
       if (keepCamera) {
-        vp.setCamera(prevCamera);
+        if (displayArea) {
+          if (flipHorizontal) {
+            vp.setCamera({ flipHorizontal });
+          }
+          if (rotation) {
+            vp.setProperties({ rotation });
+          }
+          console.log('What to do with pan and zoom', pan[0], pan[1], zoom);
+        } else {
+          vp.setCamera(prevCamera);
+        }
       }
     });
 

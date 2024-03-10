@@ -5,7 +5,6 @@ export default function getPixelDataTypeFromMinMax(
   max: number
 ): PixelDataTypedArray {
   let pixelDataType;
-
   if (Number.isInteger(min) && Number.isInteger(max)) {
     if (min >= 0) {
       if (max <= 255) {
@@ -20,9 +19,7 @@ export default function getPixelDataTypeFromMinMax(
         pixelDataType = Int16Array;
       }
     }
-  } else {
-    pixelDataType = Float32Array;
   }
 
-  return pixelDataType;
+  return pixelDataType || Float32Array;
 }

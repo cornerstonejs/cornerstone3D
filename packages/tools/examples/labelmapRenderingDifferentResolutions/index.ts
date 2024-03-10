@@ -5,11 +5,13 @@ import {
   setVolumesForViewports,
   volumeLoader,
 } from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -33,7 +35,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const highResSegmentationId = 'HIGH_RES_SEGMENTATION_ID';
 const lowResSegmentationId = 'LOW_RES_SEGMENTATION_ID';
 
-// The amount we should downsample the second example segementation (should be a factor of 2)
+// The amount we should downsample the second example segmentation (should be a factor of 2)
 const DOWN_SAMPLE_RATE = 8;
 
 // ======== Set up page ======== //
@@ -66,49 +68,16 @@ const instructions = document.createElement('p');
 instructions.innerText = `
   Both viewports contain the same source data, yet they display different segmentations.
   The segmentation on the left viewport is the same resolution as the source data,
-  yet the segmentation on the right viewport is downsampled by a factor of ${DOWN_SAMPLE_RATE}
+  yet the segmentation on the right viewport is downSampled by a factor of ${DOWN_SAMPLE_RATE}
 `;
 
 content.append(instructions);
 // ============================= //
 
-/**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-function fillSegmentationWithCircles(segmentationVolume) {
-  const scalarData = segmentationVolume.scalarData;
-
-  let voxelIndex = 0;
-
-  const { dimensions } = segmentationVolume;
-
-  const center = [dimensions[0] / 2, dimensions[1] / 2];
-  const outerRadius = dimensions[0] / 4;
-  const innerRadius = dimensions[0] / 8;
-
-  for (let z = 0; z < dimensions[2]; z++) {
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
-        );
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
-        }
-
-        voxelIndex++;
-      }
-    }
-  }
-}
-
 async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
   const highResSegmentationVolume =
-    await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
       volumeId: highResSegmentationId,
     });
 
@@ -174,8 +143,14 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(highResSegmentationVolume);
-  fillSegmentationWithCircles(lowResSegmentationVolume);
+  fillVolumeSegmentationWithMockData({
+    volumeId: highResSegmentationVolume.volumeId,
+    cornerstone,
+  });
+  fillVolumeSegmentationWithMockData({
+    volumeId: lowResSegmentationVolume.volumeId,
+    cornerstone,
+  });
 
   // Add segmentation representations to the toolgroups
   segmentation.addSegmentationRepresentations(highResToolGroupId, [

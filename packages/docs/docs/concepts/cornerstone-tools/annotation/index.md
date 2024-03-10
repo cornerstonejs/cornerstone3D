@@ -28,6 +28,9 @@ annotations.locking.XYZ;
 
 // All methods for annotation styling can be accessed via
 annotations.config.XYZ;
+
+// The AnnotationGroup class allows for grouping of annotations
+annotations.AnnotationGroup;
 ```
 
 Let's start by looking deeper into each of these methods.

@@ -1,4 +1,4 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -10,7 +10,8 @@ import {
 } from '../../types';
 
 import { fillInsideSphere } from './strategies/fillSphere';
-import { Events } from '../../enums';
+import { eraseInsideSphere } from './strategies/eraseSphere';
+import { Events, SegmentationRepresentations } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -26,8 +27,12 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-
+import {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
+import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -40,10 +45,14 @@ class SphereScissorsTool extends BaseTool {
   static toolName;
   editData: {
     annotation: any;
-    segmentation: any;
     segmentIndex: number;
     segmentsLocked: number[];
-    segmentationId: string;
+    segmentationRepresentationUID: string;
+    //
+    volumeId: string;
+    referencedVolumeId: string;
+    imageIdReferenceMap: Map<string, string>;
+    //
     toolGroupId: string;
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
@@ -63,6 +72,7 @@ class SphereScissorsTool extends BaseTool {
       configuration: {
         strategies: {
           FILL_INSIDE: fillInsideSphere,
+          ERASE_INSIDE: eraseInsideSphere,
         },
         defaultStrategy: 'FILL_INSIDE',
         activeStrategy: 'FILL_INSIDE',
@@ -81,6 +91,13 @@ class SphereScissorsTool extends BaseTool {
    *
    */
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): true => {
+    // if we are already drawing, means we have started with a click, and now we
+    // are moving the mouse (not dragging) so the final click should not
+    // be handled by this preMouseDownCallback but rather the endCallback
+    if (this.isDrawing === true) {
+      return;
+    }
+
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -103,7 +120,7 @@ class SphereScissorsTool extends BaseTool {
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
+    const { segmentationRepresentationUID, segmentationId } =
       activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
@@ -114,12 +131,6 @@ class SphereScissorsTool extends BaseTool {
       segmentationRepresentationUID,
       segmentIndex
     );
-
-    const { representationData } = getSegmentation(segmentationId);
-
-    // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type] as LabelmapSegmentationData;
-    const segmentation = cache.getVolume(volumeId);
 
     this.isDrawing = true;
 
@@ -148,19 +159,44 @@ class SphereScissorsTool extends BaseTool {
 
     this.editData = {
       annotation,
-      segmentation,
       centerCanvas: canvasPos,
+      segmentationRepresentationUID,
       segmentIndex,
+      segmentationId,
       segmentsLocked,
       segmentColor,
-      segmentationId,
       toolGroupId,
       viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-    };
+    } as any;
+
+    const { representationData } = getSegmentation(segmentationId);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
+
+    if (
+      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
+    ) {
+      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
+      const segmentation = cache.getVolume(volumeId);
+
+      this.editData = {
+        ...this.editData,
+        volumeId,
+        referencedVolumeId: segmentation.referencedVolumeId,
+      };
+    } else {
+      const { imageIdReferenceMap } =
+        labelmapData as LabelmapSegmentationDataStack;
+
+      this.editData = {
+        ...this.editData,
+        imageIdReferenceMap,
+      };
+    }
 
     this._activateDraw(element);
 
@@ -227,10 +263,9 @@ class SphereScissorsTool extends BaseTool {
       annotation,
       newAnnotation,
       hasMoved,
-      segmentation,
       segmentIndex,
+      segmentationRepresentationUID,
       segmentsLocked,
-      segmentationId,
     } = this.editData;
     const { data } = annotation;
     const { viewPlaneNormal, viewUp } = annotation.metadata;
@@ -246,24 +281,19 @@ class SphereScissorsTool extends BaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    this.editData = null;
-    this.isDrawing = false;
-
-    if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet');
-    }
 
     const operationData = {
+      ...this.editData,
       points: data.handles.points,
-      volume: segmentation,
       segmentIndex,
+      segmentationRepresentationUID,
       segmentsLocked,
-      segmentationId,
       viewPlaneNormal,
       viewUp,
     };
+
+    this.editData = null;
+    this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
   };
@@ -275,6 +305,7 @@ class SphereScissorsTool extends BaseTool {
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
+    element.addEventListener(Events.MOUSE_MOVE, this._dragCallback);
 
     element.addEventListener(Events.TOUCH_END, this._endCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
@@ -288,6 +319,7 @@ class SphereScissorsTool extends BaseTool {
     element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
+    element.removeEventListener(Events.MOUSE_MOVE, this._dragCallback);
 
     element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);

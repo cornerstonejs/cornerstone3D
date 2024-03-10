@@ -3,26 +3,31 @@ import {
   cache,
   StackViewport,
   metaData,
-  triggerEvent,
-  eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
-import { addAnnotation, getAnnotations } from '../../stateManagement';
+import {
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { hideElementCursor } from '../../cursors/elementCursor';
+import {
+  hideElementCursor,
+  resetElementCursor,
+} from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
 
 import {
   PublicToolProps,
@@ -33,6 +38,7 @@ import {
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { pointInShapeCallback } from '../../utilities/';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -66,6 +72,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     defaultToolProps: ToolProps = {
       configuration: {
         numSlicesToPropagate: 10,
+        computePointsInsideVolume: false,
       },
     }
   ) {
@@ -104,7 +111,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split(/volumeId:|\?/)[1];
       imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -154,6 +161,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         startSlice: startIndex,
         endSlice: endIndex,
         cachedStats: {
+          pointsInVolume: [],
           projectionPoints: [],
           projectionPointsImageIds: [referencedImageId],
         },
@@ -204,6 +212,54 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
+  };
+
+  _endCallback = (evt: EventTypes.InteractionEventType): void => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
+      this.editData;
+    const { data } = annotation;
+
+    if (newAnnotation && !hasMoved) {
+      return;
+    }
+
+    data.handles.activeHandleIndex = null;
+
+    this._deactivateModify(element);
+    this._deactivateDraw(element);
+
+    resetElementCursor(element);
+
+    const enabledElement = getEnabledElement(element);
+
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeAnnotation(annotation.annotationUID);
+    }
+
+    const targetId = this.getTargetId(enabledElement.viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+    }
+
+    triggerAnnotationRenderForViewportIds(
+      enabledElement.renderingEngine,
+      viewportIdsToRender
+    );
+
+    if (newAnnotation) {
+      triggerAnnotationCompleted(annotation);
+    }
   };
 
   // Todo: make it work for planes other than acquisition planes
@@ -264,13 +320,86 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     data.cachedStats.projectionPointsImageIds = projectionPointsImageIds;
   }
 
+  //This function return all the points inside the ROI for every slices between startSlice and endSlice
+  _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
+    const { data } = annotation;
+    const projectionPoints = data.cachedStats.projectionPoints;
+
+    const pointsInsideVolume: Types.Point3[][] = [[]];
+
+    for (let i = 0; i < projectionPoints.length; i++) {
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!imageVolume) {
+        continue;
+      }
+
+      const projectionPoint = projectionPoints[i][0];
+
+      const worldPos1 = data.handles.points[0];
+      const worldPos2 = data.handles.points[3];
+
+      const { dimensions, imageData } = imageVolume;
+
+      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
+      //We only need to change the Z of our bounds so we are getting the Z from the current projection point
+      const worldProjectionPointIndex = transformWorldToIndex(
+        imageData,
+        projectionPoint
+      );
+
+      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
+      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
+      worldPos1Index[2] = Math.floor(worldProjectionPointIndex[2]);
+
+      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
+
+      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
+      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
+      worldPos2Index[2] = Math.floor(worldProjectionPointIndex[2]);
+
+      // Check if one of the indexes are inside the volume, this then gives us
+      // Some area to do stats over.
+
+      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+        this.isHandleOutsideImage = false;
+        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
+        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
+
+        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
+        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
+
+        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
+        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
+
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
+        const pointsInShape = pointInShapeCallback(
+          imageData,
+          () => true,
+          null,
+          boundsIJK
+        );
+
+        //@ts-ignore
+        pointsInsideVolume.push(pointsInShape);
+      }
+    }
+    data.cachedStats.pointsInVolume = pointsInsideVolume;
+  }
+
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId, viewport } = enabledElement;
+    const { element, viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const volumeId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(volumeId.split('volumeId:')[1]);
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
@@ -280,14 +409,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   }

@@ -2,6 +2,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { MouseWheelEventType } from '../types/EventTypes';
 import scroll from '../utilities/scroll';
+import { getVolumeId } from '../utilities/getVolumeId';
 
 /**
  * The StackScrollMouseWheelTool is a tool that allows the user to scroll through a
@@ -20,6 +21,7 @@ class StackScrollMouseWheelTool extends BaseTool {
         invert: false,
         debounceIfNotLoaded: true,
         loop: false,
+        scrollSlabs: false,
       },
     }
   ) {
@@ -34,13 +36,14 @@ class StackScrollMouseWheelTool extends BaseTool {
     const delta = direction * (invert ? -1 : 1);
 
     const targetId = this.getTargetId(viewport);
-    const volumeId = targetId.split('volumeId:')[1];
+    const volumeId = getVolumeId(targetId);
 
     scroll(viewport, {
       delta,
       debounceLoading: this.configuration.debounceIfNotLoaded,
       loop: this.configuration.loop,
       volumeId,
+      scrollSlabs: this.configuration.scrollSlabs,
     });
   }
 }

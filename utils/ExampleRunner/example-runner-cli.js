@@ -215,9 +215,11 @@ if (configuration.examples) {
 
     // Prompting the user to select a suggested example by number
     console.log('Did you mean any of these?');
-    topClosestNames.forEach((name, index) => {
-      console.log(`\x1b[32m[${index + 1}] ${name}\x1b[0m`); // Display in green color
-    });
+    console.log('\n');
+    for (let i = topClosestNames.length - 1; i >= 0; i--) {
+      console.log(`\x1b[32m[${i + 1}] ${topClosestNames[i]}\x1b[0m`);
+    }
+
     console.log('[Enter "exit" to quit]');
 
     rl.question(
@@ -278,6 +280,8 @@ function run() {
     shell.ShellString(conf).to(webpackConfigPath);
 
     shell.cd(exBasePath);
+    // You can run this with --no-cache after the serve to prevent caching
+    // which can help when doing certain types of development.
     shell.exec(
       `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
     );

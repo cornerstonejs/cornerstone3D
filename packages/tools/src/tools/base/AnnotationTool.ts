@@ -1,9 +1,9 @@
 import {
   BaseVolumeViewport,
-  StackViewport,
   cache,
   getEnabledElement,
   metaData,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -21,9 +21,12 @@ import {
   ToolProps,
   PublicToolProps,
 } from '../../types';
+import { addAnnotation } from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
-/**-q
+/**
  * Abstract class for tools which create and display annotations on the
  * cornerstone3D canvas. In addition, it provides a base class for segmentation
  * tools that require drawing an annotation before running the segmentation strategy
@@ -34,6 +37,70 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
  * abstract methods.
  */
 abstract class AnnotationTool extends AnnotationDisplayTool {
+  /**
+   * Creates a base annotation object, adding in any annotation base data provided
+   */
+  public static createAnnotation(...annotationBaseData): Annotation {
+    let annotation: Annotation = {
+      annotationUID: null as string,
+      highlighted: true,
+      invalidated: true,
+      metadata: {
+        toolName: this.toolName,
+      },
+      data: {
+        text: '',
+        handles: {
+          points: new Array<Types.Point3>(),
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          },
+        },
+        label: '',
+      },
+    } as unknown as Annotation;
+    for (const baseData of annotationBaseData) {
+      annotation = csUtils.deepMerge(annotation, baseData);
+    }
+    return annotation;
+  }
+
+  /**
+   * Creates a new annotation for the given viewport.  This just adds the
+   * viewport reference data to the metadata, and otherwise returns the
+   * static class createAnnotation data.
+   */
+  public static createAnnotationForViewport(viewport, ...annotationBaseData) {
+    return this.createAnnotation(
+      { metadata: viewport.getViewReference() },
+      ...annotationBaseData
+    );
+  }
+
+  /**
+   * Creates and adds an annotation of the given type, firing the annotation
+   * modified event on the new annotation.
+   * This implicitly uses the static class when you call it on the correct
+   * base class.  For example, you can call the KeyImageTool.createAnnotation
+   * method on KeyImageTool.toolName by calling KeyImageTool.createAndAddAnnotation
+   *
+   */
+  public static createAndAddAnnotation(viewport, ...annotationBaseData) {
+    const annotation = this.createAnnotationForViewport(
+      viewport,
+      ...annotationBaseData
+    );
+    addAnnotation(annotation, viewport.element);
+    triggerAnnotationModified(annotation, viewport.element);
+  }
+
   static toolName;
   // ===================================================================
   // Abstract Methods - Must be implemented.
@@ -224,7 +291,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       }
     }
 
-    for (let i = 0; i < points.length; i++) {
+    for (let i = 0; i < points?.length; i++) {
       const point = points[i];
       const annotationCanvasCoordinate = viewport.worldToCanvas(point);
 
@@ -302,16 +369,48 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = getVolumeId(targetId);
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
-    } else if (viewport instanceof StackViewport) {
-      const scalingModule: Types.ScalingParameters | undefined =
-        imageId && metaData.get('scalingModule', imageId);
-      return typeof scalingModule?.suvbw === 'number';
-    } else {
-      throw new Error('Viewport is not a valid type');
     }
+    const scalingModule: Types.ScalingParameters | undefined =
+      imageId && metaData.get('scalingModule', imageId);
+    return typeof scalingModule?.suvbw === 'number';
+  }
+
+  /**
+   * Get the style that will be applied to all annotations such as length, cobb
+   * angle, arrow annotate, etc. when rendered on a canvas or svg layer
+   */
+  protected getAnnotationStyle(context: {
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+  }) {
+    const { annotation, styleSpecifier } = context;
+    const getStyle = (property) =>
+      this.getStyle(property, styleSpecifier, annotation);
+    const { annotationUID } = annotation;
+    const visibility = isAnnotationVisible(annotationUID);
+    const locked = isAnnotationLocked(annotation);
+
+    const lineWidth = getStyle('lineWidth') as number;
+    const lineDash = getStyle('lineDash') as string;
+    const color = getStyle('color') as string;
+    const shadow = getStyle('shadow') as boolean;
+    const textboxStyle = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+
+    return {
+      visibility,
+      locked,
+      color,
+      lineWidth,
+      lineDash,
+      lineOpacity: 1,
+      fillColor: color,
+      fillOpacity: 0,
+      shadow,
+      textbox: textboxStyle,
+    };
   }
 
   /**

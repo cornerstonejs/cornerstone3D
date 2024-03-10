@@ -57,7 +57,9 @@ RenderingEngine will handle creation of the viewports, and we can get the viewpo
 ```js
 const viewport = renderingEngine.getViewport(viewportId);
 
-viewport.setVideoURL('https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4');
+viewport.setVideoURL(
+  'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+);
 
 viewport.render();
 ```
@@ -66,12 +68,11 @@ viewport.render();
 For a compliant DICOMweb server, the video will be available on the rendered endpoint.
 It may require an accept header to force it to be served in MP4 format if it is in MPEG2.
 It may not support either the fast start encoding or the byte range format, absence of
-which will prevent seeking through large videos.  Small videos will likely be buffered
+which will prevent seeking through large videos. Small videos will likely be buffered
 entirely, so they can still seek.
 
 For instance you can look at this example in OHIF which uses the rendered endpoint:
 `https://d33do7qe4w26qo.cloudfront.net/dicomweb/studies/2.25.96975534054447904995905761963464388233/series/2.25.15054212212536476297201250326674987992/instances/2.25.179478223177027022014772769075050874231/rendered`
-
 
 :::
 
@@ -85,3 +86,19 @@ See `examples/video/index.ts`
 - Check how to debug examples in the [Debugging](examples.md#debugging) section.
 
 :::
+
+# Video Annotations
+
+If the video viewport is instantiated with a setVideo call on an imageId
+with associated metadata, then it is possible to use annotations with the video viewport.
+These annotations will be shown on either a range of frames or a single frame,
+with some amount of time range allowed so that the annotation will actually be seen.
+
+The `annotationFrameRange` class supports setting and retrieving time ranges on
+annotations. This is done by modifying the imageID in the `/frames/<number>`
+section or the `frameNumber=<number>` attribute. These become a range when the
+annotation applies to a range of values.
+
+The frame range is automatically set when created to the current range being
+played on the video when the video is playing, or the frame number currently
+being displayed when not playing.
