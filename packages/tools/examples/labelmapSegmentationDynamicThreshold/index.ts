@@ -132,18 +132,6 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
-interpolationTools.set('ThresholdSphereIsland', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
 interpolationTools.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
