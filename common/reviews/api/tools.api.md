@@ -1775,6 +1775,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
+    resetAnnotations: () => void;
+    // (undocumented)
     setSlabThickness(viewport: any, slabThickness: any): void;
     // (undocumented)
     _subscribeToViewportNewVolumeSet(viewports: any): void;
