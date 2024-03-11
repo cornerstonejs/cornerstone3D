@@ -25,6 +25,7 @@ import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 
 import getEnabledElement, {
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   getEnabledElements,
 } from './getEnabledElement';
 import * as metaData from './metaData';
@@ -110,6 +111,7 @@ export {
   getEnabledElement,
   getEnabledElementByIds,
   getEnabledElements,
+  getEnabledElementByViewportId,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,

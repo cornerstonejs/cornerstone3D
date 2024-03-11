@@ -31,10 +31,6 @@ const {
   Enums: csToolsEnums,
   segmentation,
   BrushTool,
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
-  TrackballRotateTool,
 } = cornerstoneTools;
 
 setTitleAndDescription(
