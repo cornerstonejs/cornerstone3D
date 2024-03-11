@@ -4400,7 +4400,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     editData: {
         renderingEngine: any;
-        sourceViewport: any;
+        sourceViewportId: string;
         annotation: ReferenceLineAnnotation;
     } | null;
     // (undocumented)
