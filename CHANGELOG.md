@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.66.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.2...v1.66.3) (2024-03-11)
+
+### Bug Fixes
+
+- **AnnotationTool:** fix NaN verbiage in angle tool on incomplete angle ([#1145](https://github.com/cornerstonejs/cornerstone3D/issues/1145)) ([5268cb9](https://github.com/cornerstonejs/cornerstone3D/commit/5268cb94db0c5f1ddf5a26dea4d288b21eeadcea))
+
 ## [1.66.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.1...v1.66.2) (2024-03-08)
 
 ### Bug Fixes
