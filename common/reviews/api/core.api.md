@@ -700,6 +700,9 @@ function decimate(list: Array<unknown>, interleave: number, offset?: number): nu
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
+const DefaultHistoryMemo: HistoryMemo_2;
+
+// @public (undocumented)
 type DisplayArea = {
     imageArea?: [number, number];
     imageCanvasPoint?: {
@@ -1089,6 +1092,30 @@ export function getWebWorkerManager(): any;
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
+
+declare namespace HistoryMemo {
+    export {
+        Memo,
+        Memoable,
+        HistoryMemo_2 as HistoryMemo,
+        DefaultHistoryMemo
+    }
+}
+
+// @public (undocumented)
+class HistoryMemo_2 {
+    constructor(label?: string, size?: number);
+    // (undocumented)
+    readonly label: any;
+    // (undocumented)
+    push(...items: (Memo | Memoable)[]): number;
+    // (undocumented)
+    redo(items?: number): void;
+    // (undocumented)
+    get size(): any;
+    // (undocumented)
+    undo(items?: number): void;
+}
 
 // @public (undocumented)
 interface ICache {
@@ -1866,6 +1893,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     readonly volumeId: string;
     // (undocumented)
+    voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+    // (undocumented)
     vtkOpenGLTexture: any;
 }
 
@@ -1893,6 +1922,8 @@ interface ImageVolumeProps extends VolumeProps {
     imageIds: Array<string>;
     // (undocumented)
     referencedImageIds?: Array<string>;
+    // (undocumented)
+    voxelManager?: VoxelManager<number> | VoxelManager<Point3>;
 }
 
 // @public (undocumented)
@@ -2396,6 +2427,16 @@ function makeVolumeMetadata(imageIds: Array<string>): Metadata;
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
+type Memo = {
+    restoreMemo: (undo?: boolean) => void;
+};
+
+// @public (undocumented)
+type Memoable = {
+    createMemo: () => Memo;
+};
+
+// @public (undocumented)
 type Metadata = {
     BitsAllocated: number;
     BitsStored: number;
@@ -2511,7 +2552,7 @@ function performCacheOptimizationForVolume(volume: any): void;
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
 
 // @public (undocumented)
-type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray';
+type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray' | 'none';
 
 declare namespace planar {
     export {
@@ -2567,6 +2608,8 @@ class PointsManager<T> {
     getPoint(index: number): T;
     // (undocumented)
     getPointArray(index: number): T;
+    // (undocumented)
+    getTypedArray(): Float32Array;
     // (undocumented)
     protected grow(additionalSize?: number, growSize?: number): void;
     // (undocumented)
@@ -2838,6 +2881,73 @@ export interface RetrieveStage {
 
 // @public (undocumented)
 type RGB = [number, number, number];
+
+// @public (undocumented)
+class RLEVoxelMap<T> {
+    constructor(width: number, height: number, depth?: number);
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    defaultValue: T;
+    // (undocumented)
+    delete(index: number): void;
+    // (undocumented)
+    protected depth: number;
+    // (undocumented)
+    fillFrom(getter: any, boundsIJK: any): void;
+    // (undocumented)
+    findAdjacents(item: any, { diagonals, planar, singlePlane }: {
+        diagonals?: boolean;
+        planar?: boolean;
+        singlePlane?: boolean;
+    }): any[];
+    // (undocumented)
+    protected findIndex(row: RLERun<T>[], i: number): number;
+    // (undocumented)
+    floodFill(i: number, j: number, k: number, value: T, options?: {
+        planar?: boolean;
+        diagonals?: boolean;
+        singlePlane?: boolean;
+    }): number;
+    // (undocumented)
+    forEach(callback: any, options?: {
+        rowModified?: boolean;
+    }): void;
+    // (undocumented)
+    forEachRow(callback: any): void;
+    // (undocumented)
+    get: (index: number) => T;
+    // (undocumented)
+    getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;
+    // (undocumented)
+    protected getRLE(i: number, j: number, k?: number): RLERun<T>;
+    // (undocumented)
+    getRun: (j: number, k: number) => RLERun<T>[];
+    // (undocumented)
+    has(index: number): boolean;
+    // (undocumented)
+    protected height: number;
+    // (undocumented)
+    protected jMultiple: number;
+    // (undocumented)
+    keys(): number[];
+    // (undocumented)
+    protected kMultiple: number;
+    // (undocumented)
+    protected numComps: number;
+    // (undocumented)
+    pixelDataConstructor: Uint8ArrayConstructor;
+    // (undocumented)
+    protected rows: Map<number, RLERun<T>[]>;
+    // (undocumented)
+    set: (index: number, value: T) => void;
+    // (undocumented)
+    toIJK(index: number): Point3;
+    // (undocumented)
+    toIndex([i, j, k]: Point3): number;
+    // (undocumented)
+    protected width: number;
+}
 
 // @public (undocumented)
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
@@ -3422,6 +3532,8 @@ declare namespace utilities {
         isVideoTransferSyntax,
         getBufferConfiguration,
         VoxelManager,
+        RLEVoxelMap,
+        HistoryMemo,
         generateVolumePropsFromImageIds,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
@@ -4111,6 +4223,8 @@ class VoxelManager<T> {
     // (undocumented)
     static createRGBVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents: any): VoxelManager<RGB>;
     // (undocumented)
+    static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
     static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
     // (undocumented)
     static createVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents?: number): VoxelManager<number> | VoxelManager<RGB>;
@@ -4143,11 +4257,15 @@ class VoxelManager<T> {
     // (undocumented)
     map: Map<number, T> | RLEVoxelMap<T>;
     // (undocumented)
+    mapForEach(callback: any, options?: any): void;
+    // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
     numComps: number;
     // (undocumented)
     points: Set<number>;
+    // (undocumented)
+    rleForEach(callback: any, options?: any): void;
     // (undocumented)
     scalarData: PixelDataTypedArray;
     // (undocumented)
