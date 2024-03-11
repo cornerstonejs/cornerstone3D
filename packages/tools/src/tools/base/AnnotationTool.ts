@@ -24,6 +24,7 @@ import {
 import { addAnnotation } from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -368,7 +369,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split(/volumeId:|\?/)[1];
+      const volumeId = getVolumeId(targetId);
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }
