@@ -18,7 +18,6 @@ import {
   removeAnnotation,
 } from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
@@ -32,7 +31,7 @@ import {
   resetElementCursor,
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
+import { triggerAnnotationCompleted,triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 
 import {
   PublicToolProps,
@@ -419,7 +418,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     const { cachedStats } = data;
     const targetId = this.getTargetId(viewport);
@@ -432,15 +431,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, viewport.element);
 
     return cachedStats;
   }
