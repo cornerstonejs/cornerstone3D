@@ -1,5 +1,5 @@
 {
-  "version": "1.66.3",
+  "version": "1.66.4",
   "packages": [
     "packages/adapters",
     "packages/core",
