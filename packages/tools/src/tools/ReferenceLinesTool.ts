@@ -4,7 +4,7 @@ import {
   CONSTANTS,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { type Types, getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
 
@@ -29,7 +29,7 @@ class ReferenceLines extends AnnotationDisplayTool {
   _throttledCalculateCachedStats: any;
   editData: {
     renderingEngine: any;
-    sourceViewport: any;
+    sourceViewportId: string;
     annotation: ReferenceLineAnnotation;
   } | null = {} as any;
   isDrawing: boolean;
@@ -109,7 +109,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     }
 
     this.editData = {
-      sourceViewport,
+      sourceViewportId: sourceViewport.id,
       renderingEngine,
       annotation,
     };
@@ -151,9 +151,14 @@ class ReferenceLines extends AnnotationDisplayTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     const { viewport: targetViewport } = enabledElement;
-    const { annotation, sourceViewport } = this.editData;
+    const { annotation, sourceViewportId } = this.editData;
 
     let renderStatus = false;
+
+    // we need to grab the viewport again since there might have been
+    // a change in the viewport state since the last time we cached it
+    const { viewport: sourceViewport } =
+      getEnabledElementByViewportId(sourceViewportId) || {};
 
     if (!sourceViewport) {
       return renderStatus;
