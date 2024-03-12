@@ -4,9 +4,12 @@ import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import normalizeViewportPlane from '../utils/normalizeViewportPlane';
-import { norm } from '@kitware/vtk.js/Common/Core/Math';
 
 const { RLEVoxelMap } = utilities;
+
+// The maximum size of a dimension on an image in DICOM
+// Note, does not work for whole slide imaging
+const MAX_IMAGE_SIZE = 65535;
 
 export enum SegmentationEnum {
   // Segment means it is in the segment or preview of interest
@@ -18,8 +21,6 @@ export enum SegmentationEnum {
   // Exterior means it is outside the island
   EXTERIOR = 4,
 }
-
-const showFillColors = true;
 
 /**
  * Removes external islands and fills internal islands.
@@ -44,6 +45,9 @@ export default {
     }
 
     const segmentSet = createSegmentSet(operationData);
+    if (!segmentSet) {
+      return;
+    }
     const externalRemoved = removeExternalIslands(operationData, segmentSet);
     if (externalRemoved === undefined) {
       // Nothing to remove
@@ -92,7 +96,7 @@ export function createSegmentSet(operationData: InitializedOperationData) {
       Math.max(bound[1], ...clickedPoints.map((point) => point[i])),
     ]) as Types.BoundsIJK;
 
-  if (boundsIJK.find((it) => it[0] < 0 || it[1] > 65535)) {
+  if (boundsIJK.find((it) => it[0] < 0 || it[1] > MAX_IMAGE_SIZE)) {
     // Nothing done, so just skip this
     return;
   }
@@ -220,6 +224,7 @@ function removeExternalIslands(
   const { toIJK, fromIJK } = floodedSet.normalizer;
   const clickedPoints = previewVoxelManager.getPoints();
 
+  // Just used to count up how many points got filled.
   let floodedCount = 0;
 
   // First mark everything as island that is connected to a start point
@@ -243,14 +248,10 @@ function removeExternalIslands(
   // Next, iterate over all points which were set to a new value in the preview
   // For everything NOT connected to something in set of clicked points,
   // remove it from the preview.
-  const clearedCount = 0;
-  let previewCount = 0;
 
   const callback = (index, rle) => {
     const [, jPrime, kPrime] = floodedSet.toIJK(index);
-    if (rle.value === SegmentationEnum.ISLAND) {
-      previewCount += rle.end - rle.start;
-    } else {
+    if (rle.value !== SegmentationEnum.ISLAND) {
       for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
         const clearPoint = toIJK([iPrime, jPrime, kPrime]);
         // preview voxel manager knows to reset on null
@@ -261,18 +262,6 @@ function removeExternalIslands(
 
   floodedSet.forEach(callback, { rowModified: true });
 
-  if (floodedCount - previewCount !== 0) {
-    console.warn(
-      'There were flooded=',
-      floodedCount,
-      'cleared=',
-      clearedCount,
-      'preview count=',
-      previewCount,
-      'not handled',
-      floodedCount - previewCount
-    );
-  }
   return floodedCount;
 }
 

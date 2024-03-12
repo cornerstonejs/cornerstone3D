@@ -115,8 +115,9 @@ const configuration = {
 const thresholdOptions = new Map<string, any>();
 thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
 thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
+thresholdOptions.set('Dynamic Radius 2', { isDynamic: true, dynamicRadius: 2 });
 thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
-thresholdOptions.set('Dynamic Radius 5', { isDynamic: true, dynamicRadius: 5 });
+thresholdOptions.set('Dynamic Radius 4', { isDynamic: true, dynamicRadius: 4 });
 thresholdOptions.set('Use Existing Threshold', {
   isDynamic: false,
   dynamicRadius: 5,
