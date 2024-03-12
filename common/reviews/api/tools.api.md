@@ -1058,8 +1058,6 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
         };
     };
     // (undocumented)
-    _arraysEqual: (a: Types_2.Point3, b: Types_2.Point3) => boolean;
-    // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
     // (undocumented)
     _checkIfViewPlaneIsValid: (viewPlane: Types_2.Point3) => boolean;
@@ -4120,8 +4118,6 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
             labelmapUID: any;
         };
     };
-    // (undocumented)
-    _arraysEqual: (a: Types_2.Point3, b: Types_2.Point3) => boolean;
     // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
     // (undocumented)
