@@ -2857,9 +2857,9 @@ class RLEVoxelMap<T> {
     // (undocumented)
     protected depth: number;
     // (undocumented)
-    fillFrom(getter: any, boundsIJK: any): void;
+    fillFrom(getter: (i: number, j: number, k: number) => T, boundsIJK: BoundsIJK): void;
     // (undocumented)
-    findAdjacents(item: any, { diagonals, planar, singlePlane }: {
+    findAdjacents(item: [RLERun<T>, number, number, Point3[]?], { diagonals, planar, singlePlane }: {
         diagonals?: boolean;
         planar?: boolean;
         singlePlane?: boolean;

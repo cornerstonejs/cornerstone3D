@@ -677,9 +677,14 @@ class BasicStatsCalculator_2 extends Calculator {
         unit: string;
     }) => NamedStatistics;
     // (undocumented)
-    static statsCallback: ({ value: newValue }: {
+    static statsCallback: ({ value: newValue, pointLPS }: {
         value: any;
+        pointLPS?: any;
     }) => void;
+    // (undocumented)
+    static statsInit(options: {
+        noPointsCollection: boolean;
+    }): void;
 }
 
 // @public (undocumented)
@@ -3563,6 +3568,7 @@ type NamedStatistics = {
         name: 'circumferance';
     };
     array: Statistics[];
+    pointsInShape?: Types_2.PointsManager<Types_2.Point3>;
 };
 
 // @public (undocumented)

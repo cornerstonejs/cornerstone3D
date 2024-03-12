@@ -982,6 +982,7 @@ class CircleROITool extends AnnotationTool {
           area,
           mean: stats.mean?.value,
           max: stats.max?.value,
+          pointsInShape: stats.pointsInShape.points,
           stdDev: stats.stdDev?.value,
           statsArray: stats.array,
           isEmptyArea,

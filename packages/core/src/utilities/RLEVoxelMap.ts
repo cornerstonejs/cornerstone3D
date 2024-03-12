@@ -1,4 +1,5 @@
 import type Point3 from '../types/Point3';
+import type BoundsIJK from '../types/BoundsIJK';
 import { PixelDataTypedArray } from '../types';
 
 /**
@@ -423,6 +424,17 @@ export default class RLEVoxelMap<T> {
    * Note that this is, by default, a planar fill, which will fill each plane
    * given the starting point, in a true flood fill fashion, but then not
    * re-fill the given plane.
+   *
+   * @param i,j,k - starting point to fill from, as integer indices into
+   * the voxel volume.  These are converted internally to RLE indices
+   * @param value - to replace the existing value with.  Must be different from
+   *   the starting value.
+   * @param options - to control the flood.
+   *       * planar means to flood the current k plane entirely, and then use the
+   *         points from the current plane as seed points in the k+1 and k-1 planes,
+   *         but not returning to the current plane
+   *       * singlePlane is just a single k plane, not filling any other planes
+   *       * diagonals means to use the diagonally adjacent points.
    */
   public floodFill(
     i: number,
@@ -447,6 +459,11 @@ export default class RLEVoxelMap<T> {
 
   /**
    * Performs a flood fill on the stack.
+   *
+   * @param stack - list of points/rle runs to try filling
+   * @param sourceValue - the value that is being replaced in the flood
+   * @param value - the destination value for the flood
+   * @param options - see floodFill
    */
   private flood(stack, sourceValue, value, options) {
     let sum = 0;
@@ -474,8 +491,14 @@ export default class RLEVoxelMap<T> {
 
   /**
    * Fills an RLE from a given getter result, skipping undefined values only.
+   * @param getter - a function taking i,j,k values (indices) and returning the new
+   *       value at the given point.
+   * @param boundsIJK - a set of boundary values to flood up to and including both values.
    */
-  public fillFrom(getter, boundsIJK) {
+  public fillFrom(
+    getter: (i: number, j: number, k: number) => T,
+    boundsIJK: BoundsIJK
+  ) {
     for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
       for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
         let rle;
@@ -506,9 +529,11 @@ export default class RLEVoxelMap<T> {
   /**
    * Finds adjacent RLE runs, in all directions.
    * The planar value (true by default) does plane at a time fills.
+   * @param item - an RLE being sepecified to find adjacent values for
+   * @param options - see floodFill
    */
   public findAdjacents(
-    item,
+    item: [RLERun<T>, number, number, Point3[]?],
     { diagonals = true, planar = true, singlePlane = false }
   ) {
     const [rle, j, k, adjacentsDelta] = item;

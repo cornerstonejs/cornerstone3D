@@ -839,6 +839,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         max: stats.max?.value,
         stdDev: stats.stdDev?.value,
         statsArray: stats.array,
+        pointsInShape: stats.pointsInShape.points,
 
         areaUnit: getCalibratedAreaUnits(null, image),
         modalityUnit,

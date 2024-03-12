@@ -34,6 +34,8 @@ export default {
     });
 
     const spacing = segmentationImageData.getSpacing();
+    // Turning this off more than doubles the speed of the stats collection...
+    VolumetricCalculator.statsInit({ noPointsCollection: true });
 
     segmentationVoxelManager.forEach((voxel) => {
       const { value, pointIJK } = voxel;

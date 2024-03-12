@@ -24,6 +24,10 @@ import { Types } from '@cornerstonejs/core';
  * @param options.equals - An optional equality method for your datastructure.
  *                            Default is simply value1 = value2.
  * @param options.diagonals - Whether you allow flooding through diagonals. Defaults to false.
+ * @param options.bounds - An optional min/max value bounds in the form boundsIJK.  Allows controlling
+ *                         the fill to a single plane.
+ * @param options.filter - An optional filter function to include/exclude points.
+ *                         If the filter returns false, then the point is excluded.
  *
  * @returns Flood fill results
  */

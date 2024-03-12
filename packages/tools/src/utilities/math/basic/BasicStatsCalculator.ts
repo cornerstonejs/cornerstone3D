@@ -1,5 +1,8 @@
+import { utilities } from '@cornerstonejs/core';
 import { NamedStatistics } from '../../../types';
 import Calculator from './Calculator';
+
+const { PointsManager } = utilities;
 
 export default class BasicStatsCalculator extends Calculator {
   private static max = [-Infinity];
@@ -8,13 +11,21 @@ export default class BasicStatsCalculator extends Calculator {
   private static sumSquares = [0];
   private static squaredDiffSum = [0];
   private static count = 0;
+  // Collect the points to be returned
+  private static pointsInShape = PointsManager.create3(1024);
+
+  public static statsInit(options: { noPointsCollection: boolean }) {
+    if (options.noPointsCollection) {
+      this.pointsInShape = null;
+    }
+  }
 
   /**
    * This callback is used when we verify if the point is in the annotion drawn so we can get every point
    * in the shape to calculate the statistics
    * @param value of the point in the shape of the annotation
    */
-  static statsCallback = ({ value: newValue }): void => {
+  static statsCallback = ({ value: newValue, pointLPS = null }): void => {
     if (
       Array.isArray(newValue) &&
       newValue.length > 1 &&
@@ -25,6 +36,7 @@ export default class BasicStatsCalculator extends Calculator {
       this.sum.push(this.sum[0], this.sum[0]);
       this.sumSquares.push(this.sumSquares[0], this.sumSquares[0]);
       this.squaredDiffSum.push(this.squaredDiffSum[0], this.squaredDiffSum[0]);
+      this.pointsInShape?.push(pointLPS);
     }
 
     const newArray = Array.isArray(newValue) ? newValue : [newValue];
@@ -47,6 +59,7 @@ export default class BasicStatsCalculator extends Calculator {
           2
         ))
     );
+    this.pointsInShape = PointsManager.create3(1024);
   };
 
   /**
@@ -106,6 +119,7 @@ export default class BasicStatsCalculator extends Calculator {
         value: this.count,
         unit: null,
       },
+      pointsInShape: this.pointsInShape,
       array: [],
     };
     named.array.push(
