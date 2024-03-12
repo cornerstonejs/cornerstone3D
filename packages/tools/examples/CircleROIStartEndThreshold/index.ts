@@ -16,7 +16,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import perfusionColorMap from './preset';
+import perfusionColorMap from '../rectangleROIThreshold/preset';
 
 // This is for debugging purposes
 console.warn(
@@ -128,8 +128,7 @@ addButtonToToolbar({
 
     // get the current slice Index
     const sliceIndex = viewport.getCurrentImageIdIndex();
-    console.debug(annotation.data.startSlice)
-    console.debug(sliceIndex)
+
     annotation.data.startSlice = sliceIndex;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated

@@ -122,6 +122,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
     }
 
+    console.debug(viewport.getCurrentImageIdIndex())
+
     const checkIfPlaneIsValid = this._checkIfViewPlaneIsValid(viewPlaneNormal);
     if (!checkIfPlaneIsValid) {
       throw new Error('This tool does not work on non-mpr planes');
@@ -219,16 +221,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     return annotation;
   };
 
-  _arraysEqual = (a: Types.Point3, b: Types.Point3): boolean => {
-    return a.length === b.length && a.every((val, index) => val === b[index]);
-  };
-
   _checkIfViewPlaneIsValid = (viewPlane: Types.Point3): boolean => {
     const mprValues = CONSTANTS.MPR_CAMERA_VALUES;
     for (const key in mprValues) {
       if (mprValues.hasOwnProperty(key)) {
         const { viewPlaneNormal } = mprValues[key];
-        if (this._arraysEqual(viewPlaneNormal, viewPlane)) {
+        if (csUtils.isEqual(viewPlaneNormal, viewPlane)) {
           return true;
         }
       }
@@ -466,13 +464,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     let endIJK;
 
     const mprValues = CONSTANTS.MPR_CAMERA_VALUES
-    if (this._arraysEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
+    if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
       startIJK[2] = startSlice;
       endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
-    } else if (this._arraysEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
       startIJK[0] = startSlice;
       endIJK = vec3.fromValues(endSlice, startIJK[1], startIJK[2]);
-    } else if (this._arraysEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
       startIJK[1] = startSlice;
       endIJK = vec3.fromValues(startIJK[0], endSlice, startIJK[2]);
     }
@@ -642,7 +640,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     viewPlaneNormal: Types.Point3,
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
-    const numSlicesToPropagateFromStart = Math.round(numSlicesToPropagate / 2);
+    const numSlicesToPropagateToEnd = numSlicesToPropagate - Math.round(numSlicesToPropagate / 2);
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
@@ -651,7 +649,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       endPos,
       worldPos,
       viewPlaneNormal,
-      numSlicesToPropagateFromStart * spacingInNormal
+      numSlicesToPropagateToEnd * spacingInNormal
     );
 
     const imageIdIndex = this._getImageIdIndex(imageVolume,endPos,viewPlaneNormal);
@@ -668,11 +666,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const imageIdIndex = imageData.worldToIndex([pos[0],pos[1],pos[2]])
 
     const mprValues = CONSTANTS.MPR_CAMERA_VALUES
-    if (this._arraysEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
+    if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
       return Math.round(imageIdIndex[2]);
-    } else if (this._arraysEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
       return Math.round(imageIdIndex[0]);
-    } else if (this._arraysEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
       return Math.round(imageIdIndex[1]);
     } else {
       return undefined;
