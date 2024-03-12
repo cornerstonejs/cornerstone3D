@@ -126,7 +126,8 @@ class BrushTool extends BaseTool {
            * The current implementation of this is fairly fast now, but users may
            * see delays when island removal occurs on large sections of the volume.
            */
-          THRESHOLD_INSIDE_SPHERE_ISLAND: thresholdInsideSphereIsland,
+          THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL:
+            thresholdInsideSphereIsland,
         },
 
         strategySpecificConfiguration: {

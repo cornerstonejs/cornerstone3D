@@ -136,7 +136,7 @@ interpolationTools.set('ThresholdSphereIsland', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },

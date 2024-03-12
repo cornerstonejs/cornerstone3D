@@ -767,7 +767,8 @@ declare namespace Enums {
         ViewportStatus,
         VideoEnums,
         MetadataModules,
-        ImageQualityStatus
+        ImageQualityStatus,
+        VoxelManagerEnum
     }
 }
 export { Enums }
@@ -2897,6 +2898,8 @@ class RLEVoxelMap<T> {
     // (undocumented)
     protected kMultiple: number;
     // (undocumented)
+    normalizer: PlaneNormalizer;
+    // (undocumented)
     protected numComps: number;
     // (undocumented)
     pixelDataConstructor: Uint8ArrayConstructor;
@@ -4246,6 +4249,14 @@ class VoxelManager<T> {
     toIndex(ijk: Point3): number;
     // (undocumented)
     width: number;
+}
+
+// @public (undocumented)
+enum VoxelManagerEnum {
+    // (undocumented)
+    RleVoxelManager = "rleVoxelManager",
+    // (undocumented)
+    VolumeVoxelManager = "volumeVoxelManager"
 }
 
 declare namespace windowLevel {

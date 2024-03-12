@@ -1,5 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
-import { BaseVolumeViewport } from '@cornerstonejs/core';
+import { BaseVolumeViewport, utilities } from '@cornerstonejs/core';
+
+const { isEqual } = utilities;
 
 const acquisitionMapping = {
   toIJK: (ijkPrime) => ijkPrime,
@@ -39,9 +41,19 @@ export default function normalizeViewportPlane(
   const { viewPlaneNormal } = viewport.getCamera();
   // This doesn't really handle non-coplanar views, but it sort of works even for those, so leave it for now.
   const mapping =
-    (Math.abs(viewPlaneNormal[0]) >= 0.5 && jkMapping) ||
-    (Math.abs(viewPlaneNormal[1]) >= 0.5 && ikMapping) ||
-    acquisitionMapping;
+    (isEqual(Math.abs(viewPlaneNormal[0]), 1) && jkMapping) ||
+    (isEqual(Math.abs(viewPlaneNormal[1]), 1) && ikMapping) ||
+    (isEqual(Math.abs(viewPlaneNormal[2]), 1) && acquisitionMapping);
+  if (!mapping) {
+    // Non-orthogonal to acquisition plane isn't handled, but doesn't prevent
+    // options from working, so return an error indicator.
+    return {
+      toIJK: null,
+      boundsIJKPrime: null,
+      fromIJK: null,
+      error: `Only mappings orthogonal to acquisition plane are permitted, but requested ${viewPlaneNormal}`,
+    };
+  }
 
   return { ...mapping, boundsIJKPrime: mapping.fromIJK(boundsIJK) };
 }

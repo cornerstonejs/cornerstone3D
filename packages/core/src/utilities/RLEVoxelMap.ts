@@ -44,12 +44,22 @@ const ADJACENT_OUT = [
 ];
 
 /**
+ * A type that has converts to and from an integer plane representation.
+ */
+export type PlaneNormalizer = {
+  toIJK: (ijkPrime: Point3) => Point3;
+  fromIJK: (ijk: Point3) => Point3;
+  boundsIJKPrime: BoundsIJK;
+};
+
+/**
  * RLE based implementation of a voxel map.
  * This can be used as single or multi-plane, as the underlying indexes are
  * mapped to rows and hte rows are indexed started at 0 and continuing
  * incrementing for all rows in the multi-plane voxel.
  */
 export default class RLEVoxelMap<T> {
+  public normalizer: PlaneNormalizer;
   /**
    * The rows for the voxel map is a map from the j index location (or for
    * volumes, `j + k*height`) to a list of RLE runs.  That is, each entry in

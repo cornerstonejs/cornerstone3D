@@ -8,6 +8,7 @@ import cloneDeep from 'lodash.clonedeep';
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
+import VoxelManagerEnum from '../enums/VoxelManagerEnum';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import VoxelManager from '../utilities/VoxelManager';
@@ -46,8 +47,10 @@ interface DerivedVolumeOptions {
   };
   /**
    * Use a voxel representation of the specified type.
+   * This allows efficient representation of the data to be selected and then
+   * treated as though all the representations were equivalent.
    */
-  voxelRepresentation?: 'rleVoxelManager' | 'volumeVoxelManager';
+  voxelRepresentation?: VoxelManagerEnum;
 }
 interface LocalVolumeOptions {
   metadata: Metadata;
