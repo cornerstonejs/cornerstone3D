@@ -838,6 +838,11 @@ function defaultGetTextLines(data, targetId): string[] {
     return;
   }
 
+  if (isNaN(angle)) {
+    // The verbiage for incomplete angle is set in cachedStats
+    return [`${angle}`];
+  }
+
   const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
 
   return textLines;

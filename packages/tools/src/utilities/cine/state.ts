@@ -15,4 +15,10 @@ function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined {
   return state[viewportId];
 }
 
-export { addToolState, getToolState };
+function getToolStateByViewportId(
+  viewportId: string
+): CINETypes.ToolData | undefined {
+  return state[viewportId];
+}
+
+export { addToolState, getToolState, getToolStateByViewportId };

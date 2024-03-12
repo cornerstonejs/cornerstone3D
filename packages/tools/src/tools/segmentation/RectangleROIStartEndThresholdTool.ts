@@ -427,6 +427,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     annotation.invalidated = false;
 
+    // Dispatching annotation modified
     triggerAnnotationModified(annotation, viewport.element);
 
     return cachedStats;
