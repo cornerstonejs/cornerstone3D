@@ -17,7 +17,7 @@ let registered = false;
 
 export type ToolBinding = {
   // A base tool to register.  Should only be defined once per tool
-  tool?: cornerstoneTools.BaseTool;
+  tool?: any;
   // The tool name to base this on
   baseTool?: string;
   // The configuration to register with

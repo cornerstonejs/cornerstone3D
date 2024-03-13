@@ -23,6 +23,7 @@ import addSegmentIndexDropdown from './addSegmentIndexDropdown';
 import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 
 import { addLabelToToolbar } from './addLabelToToolbar';
+import annotationTools from './annotationTools';
 
 export {
   addBrushSizeSlider,
@@ -48,4 +49,5 @@ export {
   camera,
   downloadSurfacesData,
   getLocalUrl,
+  annotationTools,
 };
