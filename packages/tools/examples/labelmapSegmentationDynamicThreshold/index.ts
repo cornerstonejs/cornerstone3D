@@ -96,7 +96,7 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const interpolationTools = new Map<string, any>();
+const toolMap = new Map<string, any>();
 const previewColors = {
   0: [255, 255, 255, 128],
   1: [0, 255, 255, 192],
@@ -132,7 +132,7 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
-interpolationTools.set('ThresholdCircle', {
+toolMap.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
@@ -144,7 +144,7 @@ interpolationTools.set('ThresholdCircle', {
   },
 });
 
-interpolationTools.set('ThresholdSphere', {
+toolMap.set('ThresholdSphere', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
@@ -156,7 +156,7 @@ interpolationTools.set('ThresholdSphere', {
   },
 });
 
-interpolationTools.set('CircularBrush', {
+toolMap.set('CircularBrush', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
@@ -164,7 +164,7 @@ interpolationTools.set('CircularBrush', {
   },
 });
 
-interpolationTools.set('CircularEraser', {
+toolMap.set('CircularEraser', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
@@ -172,21 +172,21 @@ interpolationTools.set('CircularEraser', {
   },
 });
 
-interpolationTools.set('SphereBrush', {
+toolMap.set('SphereBrush', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
     activeStrategy: 'FILL_INSIDE_SPHERE',
   },
 });
-interpolationTools.set('SphereEraser', {
+toolMap.set('SphereEraser', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
     activeStrategy: 'ERASE_INSIDE_SPHERE',
   },
 });
-interpolationTools.set('ScissorsEraser', {
+toolMap.set('ScissorsEraser', {
   baseTool: SphereScissorsTool.toolName,
   configuration: {
     ...configuration,
@@ -195,7 +195,7 @@ interpolationTools.set('ScissorsEraser', {
 });
 
 const optionsValues = [
-  ...interpolationTools.keys(),
+  ...toolMap.keys(),
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
   SphereScissorsTool.toolName,
@@ -204,7 +204,7 @@ const optionsValues = [
 
 // ============================= //
 addDropdownToToolbar({
-  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  options: { values: optionsValues },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -335,7 +335,7 @@ async function run() {
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addTool(BrushTool.toolName);
 
-  for (const [toolName, config] of interpolationTools.entries()) {
+  for (const [toolName, config] of toolMap.entries()) {
     if (config.baseTool) {
       toolGroup.addToolInstance(
         toolName,
@@ -353,7 +353,7 @@ async function run() {
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(interpolationTools.keys().next().value, {
+  toolGroup.setToolActive(toolMap.keys().next().value, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 

@@ -59,31 +59,27 @@ export class HistoryMemo {
   }
 
   /**
-   * Pushes new item(s) onto the ring.  This will remove all redoable items
-   * from the ring when any item gets added.
+   * Pushes a new memo onto the ring.  This will remove all redoable items
+   * from the ring if a memo was pushed.  Ignores undefined or null items.
    */
-  public push(...items: (Memo | Memoable)[]) {
-    let newItems = 0;
-    for (const item of items) {
-      if (!item) {
-        // No-op for not provided items
-        continue;
-      }
-      const memo = (item as Memo).restoreMemo
-        ? (item as Memo)
-        : (item as Memoable).createMemo?.();
-      if (!memo) {
-        continue;
-      }
-      this.redoAvailable = 0;
-      if (this.undoAvailable < this._size) {
-        this.undoAvailable++;
-      }
-      this.position = (this.position + 1) % this._size;
-      this.ring[this.position] = memo;
-      newItems++;
+  public push(item: Memo | Memoable) {
+    if (!item) {
+      // No-op for not provided items
+      return;
     }
-    return newItems;
+    const memo = (item as Memo).restoreMemo
+      ? (item as Memo)
+      : (item as Memoable).createMemo?.();
+    if (!memo) {
+      return;
+    }
+    this.redoAvailable = 0;
+    if (this.undoAvailable < this._size) {
+      this.undoAvailable++;
+    }
+    this.position = (this.position + 1) % this._size;
+    this.ring[this.position] = memo;
+    return memo;
   }
 }
 

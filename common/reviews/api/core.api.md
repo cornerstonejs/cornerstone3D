@@ -1108,7 +1108,7 @@ class HistoryMemo_2 {
     // (undocumented)
     readonly label: any;
     // (undocumented)
-    push(...items: (Memo | Memoable)[]): number;
+    push(item: Memo | Memoable): Memo;
     // (undocumented)
     redo(items?: number): void;
     // (undocumented)
