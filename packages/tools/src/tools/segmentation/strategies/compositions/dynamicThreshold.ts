@@ -21,6 +21,7 @@ export default {
       segmentationVoxelManager: segmentationVoxelManager,
       imageVoxelManager: imageVoxelManager,
       segmentIndex,
+      viewport,
     } = operationData;
     const { THRESHOLD } = strategySpecificConfiguration;
 
@@ -37,6 +38,8 @@ export default {
     const { boundsIJK } = segmentationVoxelManager;
     const { threshold: oldThreshold, dynamicRadius = 0 } = THRESHOLD;
     const useDelta = oldThreshold ? 0 : dynamicRadius;
+    const { viewPlaneNormal } = viewport.getCamera();
+
     const nestedBounds = boundsIJK.map((ijk, idx) => {
       const [min, max] = ijk;
       return [
@@ -44,10 +47,25 @@ export default {
         Math.min(max, centerIJK[idx] + useDelta),
       ];
     }) as BoundsIJK;
+    // Squash the bounds to the plane in view when it is orthogonal, or close
+    // to orthogonal to one of the bounding planes.
+    // Otherwise just use the full area for now.
+    if (Math.abs(viewPlaneNormal[0]) > 0.8) {
+      nestedBounds[0] = [centerIJK[0], centerIJK[0]];
+    } else if (Math.abs(viewPlaneNormal[1]) > 0.8) {
+      nestedBounds[1] = [centerIJK[1], centerIJK[1]];
+    } else if (Math.abs(viewPlaneNormal[2]) > 0.8) {
+      nestedBounds[2] = [centerIJK[2], centerIJK[2]];
+    }
 
     const threshold = oldThreshold || [Infinity, -Infinity];
     // TODO - threshold on all three values separately
-    const callback = ({ value }) => {
+    const useDeltaSqr = useDelta * useDelta;
+    const callback = ({ value, pointIJK }) => {
+      const distance = vec3.sqrDist(centerIJK, pointIJK);
+      if (distance > useDeltaSqr) {
+        return;
+      }
       const gray = Array.isArray(value) ? vec3.len(value as any) : value;
       threshold[0] = Math.min(gray, threshold[0]);
       threshold[1] = Math.max(gray, threshold[1]);
@@ -105,7 +123,9 @@ export default {
       strategySpecificConfiguration[activeStrategy] = {};
     }
 
+    // Add a couple of pixels to the radius to make it more obvious what is
+    // included.
     strategySpecificConfiguration[activeStrategy].dynamicRadiusInCanvas =
-      dynamicRadiusInCanvas;
+      3 + dynamicRadiusInCanvas;
   },
 };

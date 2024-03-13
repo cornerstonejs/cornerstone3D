@@ -7,7 +7,7 @@ import {
   imageIdToURI,
 } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
-import {
+import type {
   Metadata,
   Point3,
   IImageVolume,
@@ -16,9 +16,11 @@ import {
   ImageVolumeProps,
   IImage,
   IImageLoadObject,
+  RGB,
 } from '../../types';
 import cache from '../cache';
 import * as metaData from '../../metaData';
+import type VoxelManager from '../../utilities/VoxelManager';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -80,6 +82,8 @@ export class ImageVolume implements IImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, any>;
+  /** Store a voxel manager to access scalar data */
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 
   constructor(props: ImageVolumeProps) {
     const {
@@ -97,6 +101,7 @@ export class ImageVolume implements IImageVolume {
       metadata,
       referencedImageIds,
       additionalDetails,
+      voxelManager,
     } = props;
 
     this.imageIds = imageIds;
@@ -108,6 +113,7 @@ export class ImageVolume implements IImageVolume {
     this.direction = direction;
     this.scalarData = scalarData;
     this.sizeInBytes = sizeInBytes;
+    this.voxelManager = voxelManager;
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
@@ -190,6 +196,9 @@ export class ImageVolume implements IImageVolume {
   public getScalarData(): PixelDataTypedArray {
     if (isTypedArray(this.scalarData)) {
       return <PixelDataTypedArray>this.scalarData;
+    }
+    if (!this.scalarData) {
+      return null;
     }
 
     throw new Error('Unknown scalar data type');

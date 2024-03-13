@@ -687,9 +687,14 @@ class BasicStatsCalculator_2 extends Calculator {
         unit: string;
     }) => NamedStatistics;
     // (undocumented)
-    static statsCallback: ({ value: newValue }: {
+    static statsCallback: ({ value: newValue, pointLPS }: {
         value: any;
+        pointLPS?: any;
     }) => void;
+    // (undocumented)
+    static statsInit(options: {
+        noPointsCollection: boolean;
+    }): void;
 }
 
 // @public (undocumented)
@@ -2377,12 +2382,13 @@ type FloodFillOptions = {
     onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
+    bounds?: Map<number, Types_2.Point2 | Types_2.Point3>;
+    filter?: (point: any) => boolean;
 };
 
 // @public (undocumented)
 type FloodFillResult = {
     flooded: Types_2.Point2[] | Types_2.Point3[];
-    boundaries: Types_2.Point2[] | Types_2.Point3[];
 };
 
 // @public (undocumented)
@@ -3572,6 +3578,7 @@ type NamedStatistics = {
         name: 'circumferance';
     };
     array: Statistics[];
+    pointsInShape?: Types_2.PointsManager<Types_2.Point3>;
 };
 
 // @public (undocumented)
@@ -3884,7 +3891,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK_2): void;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;

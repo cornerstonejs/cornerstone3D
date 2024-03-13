@@ -194,7 +194,8 @@ class PaintFillTool extends BaseTool {
     fixedDimensionValue: number,
     floodFillResult: FloodFillResult
   ): number[] => {
-    const { boundaries } = floodFillResult;
+    // TODO - call the boundary function as it proceeds
+    const { flooded: boundaries } = floodFillResult;
 
     if (fixedDimension === 2) {
       return [fixedDimensionValue];
