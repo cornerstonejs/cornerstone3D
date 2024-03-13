@@ -24,6 +24,7 @@ import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 
 import { addLabelToToolbar } from './addLabelToToolbar';
 import annotationTools from './annotationTools';
+import labelmapTools from './labelmapTools';
 
 export {
   addBrushSizeSlider,
@@ -50,4 +51,5 @@ export {
   downloadSurfacesData,
   getLocalUrl,
   annotationTools,
+  labelmapTools,
 };

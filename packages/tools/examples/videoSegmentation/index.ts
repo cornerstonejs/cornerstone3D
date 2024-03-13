@@ -16,6 +16,7 @@ import {
   addVideoTime,
   addBrushSizeSlider,
   addSegmentIndexDropdown,
+  labelmapTools,
 } from '../../../../utils/demo/helpers';
 import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
@@ -76,26 +77,6 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const brushInstanceNames = {
-  CircularBrush: 'CircularBrush',
-  CircularEraser: 'CircularEraser',
-  DynamicThreshold: 'DynamicThreshold',
-};
-
-const brushStrategies = {
-  [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
-  [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
-};
-
-const brushValues = [
-  brushInstanceNames.CircularBrush,
-  brushInstanceNames.DynamicThreshold,
-  brushInstanceNames.CircularEraser,
-];
-
-const optionsValues = [...brushValues];
-
 let viewport;
 
 const segmentationId = 'VIDEO_SEGMENTATION';
@@ -103,7 +84,7 @@ const segmentationRepresentationUIDs = [];
 
 // ============================= //
 addDropdownToToolbar({
-  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  options: { map: labelmapTools.toolMap },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -115,17 +96,9 @@ addDropdownToToolbar({
       toolGroup.setToolDisabled(toolName);
     }
 
-    if (brushValues.includes(name)) {
-      toolGroup.setToolActive(name, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    } else {
-      const toolName = name;
-
-      toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    }
+    toolGroup.setToolActive(name, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
   },
 });
 
@@ -138,49 +111,16 @@ addSegmentIndexDropdown(segmentationId);
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularBrush,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularEraser,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.DynamicThreshold,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.DynamicThreshold,
-      preview: {
-        enabled: true,
-      },
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
-      },
-    }
-  );
 
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  toolGroup.setToolActive(optionsValues[0], {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
 
   return toolGroup;
 }
