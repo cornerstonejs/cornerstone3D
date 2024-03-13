@@ -91,6 +91,15 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
+   * Retrieves the tool instances associated with this tool group.
+   *
+   * @returns A record containing the tool instances, where the keys are the tool names and the values are the tool instances.
+   */
+  public getToolInstances(): Record<string, any> {
+    return this._toolInstances;
+  }
+
+  /**
    * Check if a tool is already added to the tool group
    * @param toolName - Tool name
    * @returns True if the tool is already added or false otherwise
@@ -658,7 +667,8 @@ export default class ToolGroup implements IToolGroup {
     configuration: ToolConfiguration,
     overwrite?: boolean
   ): boolean {
-    if (this._toolInstances[toolName] === undefined) {
+    const toolInstance = this._toolInstances[toolName];
+    if (toolInstance === undefined) {
       console.warn(
         `Tool ${toolName} not present, can't set tool configuration.`
       );
@@ -673,13 +683,14 @@ export default class ToolGroup implements IToolGroup {
       // We should not deep copy here, it is the job of the application to
       // deep copy the configuration before passing it to the toolGroup, otherwise
       // some strange appending behaviour happens for the arrays
-      _configuration = Object.assign(
-        this._toolInstances[toolName].configuration,
-        configuration
-      );
+      _configuration = Object.assign(toolInstance.configuration, configuration);
     }
 
-    this._toolInstances[toolName].configuration = _configuration;
+    toolInstance.configuration = _configuration;
+
+    if (typeof toolInstance.onSetToolConfiguration === 'function') {
+      toolInstance.onSetToolConfiguration();
+    }
 
     this._renderViewports();
 

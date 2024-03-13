@@ -1,3 +1,11 @@
+export type optionTypeDefaultValue =
+  | { defaultValue: number | string }
+  | { defaultIndex?: number };
+
+export type optionTypeValues =
+  | { values: number[] | string[] }
+  | { map: Map<string | number, any> };
+
 export default function addDropDownToToolbar({
   id,
   options,
@@ -7,13 +15,18 @@ export default function addDropDownToToolbar({
   labelText,
 }: {
   id?: string;
-  options: { values: number[] | string[]; defaultValue: number | string };
+  options: optionTypeDefaultValue & optionTypeValues;
   container?: HTMLElement;
   style?: Record<string, any>;
-  onSelectedValueChange: (value: number | string) => void;
+  onSelectedValueChange: (key: number | string, value?) => void;
   labelText?: string;
 }) {
-  const { values, defaultValue } = options;
+  const {
+    map,
+    values = [...map.keys()],
+    defaultValue,
+    defaultIndex = defaultValue === undefined && 0,
+  } = options as any;
   container = container ?? document.getElementById('demo-toolbar');
 
   // Create label element if labelText is provided
@@ -31,20 +44,25 @@ export default function addDropDownToToolbar({
     Object.assign(select.style, style);
   }
 
-  values.forEach((value) => {
+  values.forEach((value, index) => {
     const optionElement = document.createElement('option');
-    optionElement.value = String(value);
-    optionElement.innerText = String(value);
-    if (value === defaultValue) {
+    const stringValue = String(value);
+    optionElement.value = stringValue;
+    optionElement.innerText = stringValue;
+    if (value === defaultValue || index === defaultIndex) {
       optionElement.selected = true;
+      if (map) {
+        map.get(value).selected = true;
+      }
     }
     select.append(optionElement);
   });
 
   select.onchange = (evt) => {
     const selectElement = <HTMLSelectElement>evt.target;
+    const { value: key } = selectElement;
     if (selectElement) {
-      onSelectedValueChange(selectElement.value);
+      onSelectedValueChange(key, map?.get(key));
     }
   };
 

@@ -292,7 +292,6 @@ export async function createAndCacheDerivedVolume(
   options: DerivedVolumeOptions
 ): Promise<IImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);
-
   if (!referencedVolume) {
     throw new Error(
       `Cannot created derived volume: Referenced volume with id ${referencedVolumeId} does not exist.`
@@ -358,6 +357,7 @@ export async function createAndCacheDerivedVolume(
     voxelManager,
     sizeInBytes: numBytes,
     imageIds: [],
+    referencedVolumeId,
   });
 
   const volumeLoadObject = {

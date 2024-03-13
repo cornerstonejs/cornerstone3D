@@ -974,6 +974,9 @@ export function getEnabledElement(element: HTMLDivElement | undefined): IEnabled
 export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
 
 // @public (undocumented)
+export function getEnabledElementByViewportId(viewportId: string): IEnabledElement;
+
+// @public (undocumented)
 export function getEnabledElements(): IEnabledElement[];
 
 // @public (undocumented)
