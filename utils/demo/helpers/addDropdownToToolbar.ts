@@ -1,3 +1,7 @@
+import { Enums, ToolGroupManager } from '@cornerstonejs/tools';
+
+const { MouseBindings } = Enums;
+
 export type optionTypeDefaultValue =
   | { defaultValue: number | string }
   | { defaultIndex?: number };
@@ -13,12 +17,14 @@ export default function addDropDownToToolbar({
   style,
   onSelectedValueChange,
   labelText,
+  toolGroupId,
 }: {
   id?: string;
   options: optionTypeDefaultValue & optionTypeValues;
   container?: HTMLElement;
   style?: Record<string, any>;
-  onSelectedValueChange: (key: number | string, value?) => void;
+  onSelectedValueChange?: (key: number | string, value?) => void;
+  toolGroupId?: string | string[];
   labelText?: string;
 }) {
   const {
@@ -28,6 +34,13 @@ export default function addDropDownToToolbar({
     defaultIndex = defaultValue === undefined && 0,
   } = options as any;
   container = container ?? document.getElementById('demo-toolbar');
+
+  if (!onSelectedValueChange && toolGroupId) {
+    onSelectedValueChange = changeActiveTool.bind(
+      null,
+      Array.isArray(toolGroupId) ? toolGroupId : [toolGroupId]
+    );
+  }
 
   // Create label element if labelText is provided
   if (labelText) {
@@ -67,4 +80,25 @@ export default function addDropDownToToolbar({
   };
 
   container.append(select);
+}
+
+function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {
+  for (const toolGroupId of toolGroupIds) {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    // Set the old tool passive
+    const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
+    if (selectedToolName) {
+      toolGroup.setToolPassive(selectedToolName);
+    }
+
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+  }
 }

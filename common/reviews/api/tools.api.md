@@ -489,6 +489,10 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
     // (undocumented)
+    static createAnnotationMemo(element: any, annotation: Annotation): {
+        restoreMemo: () => void;
+    };
+    // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
         styleSpecifier: StyleSpecifier;
@@ -657,6 +661,8 @@ export abstract class BaseTool implements IBaseTool {
     protected memo: utilities_2.HistoryMemo.Memo;
     // (undocumented)
     mode: ToolModes;
+    // (undocumented)
+    preMouseDownCallback: (_evt: any) => boolean;
     // (undocumented)
     redo(): void;
     // (undocumented)
@@ -918,6 +924,8 @@ enum ChangeTypes {
     Completed = "Completed",
     // (undocumented)
     HandlesUpdated = "HandlesUpdated",
+    // (undocumented)
+    History = "History",
     // (undocumented)
     InitialSetup = "InitialSetup",
     // (undocumented)
@@ -3749,8 +3757,6 @@ export class PanTool extends BaseTool {
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
-    // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     static toolName: any;
     // (undocumented)

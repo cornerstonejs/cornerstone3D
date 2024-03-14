@@ -161,15 +161,6 @@ class BrushTool extends BaseTool {
               },
             ],
           },
-          // TODO - bind globally
-          undo: {
-            method: 'undo',
-            bindings: [{ key: 'z' }],
-          },
-          redo: {
-            method: 'redo',
-            bindings: [{ key: 'y' }],
-          },
         },
       },
     }

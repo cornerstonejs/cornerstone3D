@@ -305,6 +305,14 @@ abstract class BaseTool implements IBaseTool {
     DefaultHistoryMemo.push(zoomPanMemo);
     return zoomPanMemo;
   }
+
+  /**
+   * Clear the memo by default.
+   */
+  public preMouseDownCallback = (_evt): boolean => {
+    this.memo = null;
+    return false;
+  };
 }
 
 // Note: this is a workaround since terser plugin does not support static blocks

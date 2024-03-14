@@ -4,6 +4,7 @@ import {
   getEnabledElement,
   metaData,
   utilities as csUtils,
+  Enums,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -21,10 +22,16 @@ import {
   ToolProps,
   PublicToolProps,
 } from '../../types';
-import { addAnnotation } from '../../stateManagement/annotation/annotationState';
+import {
+  addAnnotation,
+  getAnnotation,
+} from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { getVolumeId } from '../../utilities/getVolumeId';
+import ChangeTypes from '../../enums/ChangeTypes';
+
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -453,6 +460,35 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     if (toolNewImagePoint) {
       return true;
     }
+  }
+
+  public static createAnnotationMemo(element, annotation: Annotation) {
+    if (!annotation) {
+      // TODO - remember state without annotation UID
+      return;
+    }
+    const { annotationUID } = annotation;
+    const state = {
+      annotationUID,
+      data: annotation.data ? structuredClone(annotation.data) : null,
+    };
+    const annotationMemo = {
+      restoreMemo: () => {
+        const currentAnnotation = getAnnotation(annotationUID);
+        const currentData = currentAnnotation.data
+          ? structuredClone(currentAnnotation.data)
+          : null;
+        currentAnnotation.data = structuredClone(state.data);
+        state.data = currentData;
+        triggerAnnotationModified(
+          currentAnnotation,
+          element,
+          ChangeTypes.History
+        );
+      },
+    };
+    DefaultHistoryMemo.push(annotationMemo);
+    return annotationMemo;
   }
 }
 

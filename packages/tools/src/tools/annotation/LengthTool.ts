@@ -106,6 +106,17 @@ class LengthTool extends AnnotationTool {
       configuration: {
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        actions: {
+          // TODO - bind globally
+          undo: {
+            method: 'undo',
+            bindings: [{ key: 'z' }],
+          },
+          redo: {
+            method: 'redo',
+            bindings: [{ key: 'y' }],
+          },
+        },
       },
     }
   ) {
@@ -201,6 +212,7 @@ class LengthTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
+    this.memo = null;
     return annotation;
   };
 
@@ -376,6 +388,8 @@ class LengthTool extends AnnotationTool {
     const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
       this.editData;
     const { data } = annotation;
+
+    this.memo ||= LengthTool.createAnnotationMemo(element, annotation);
 
     if (movingTextBox) {
       // Drag mode - moving text box
