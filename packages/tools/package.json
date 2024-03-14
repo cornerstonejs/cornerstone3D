@@ -31,6 +31,7 @@
   "dependencies": {
     "@cornerstonejs/core": "^1.66.5",
     "@icr/polyseg-wasm": "0.4.0",
+    "@itk-wasm/morphological-contour-interpolation": "1.0.1",
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
     "lodash.clonedeep": "4.5.0",

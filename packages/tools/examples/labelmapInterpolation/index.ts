@@ -38,7 +38,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -51,8 +51,8 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Dynamic Threshold',
-  'Here we demonstrate dynamic threshold with preview'
+  'Labelmap Interpolation',
+  'Here we demonstrate interpolation between slices for labelmaps'
 );
 
 const size = '500px';
@@ -86,25 +86,24 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Hover - show preview of segmentation tool
-  Left drag to extend preview
-  Left Click (or enter) to accept preview
-  Reject preview by button (or esc)
-  Hover outside of region to reset to hovered over segment index
-  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
+  Use the labelmap tools in the normal way.  Note preview is turned off for those
+  tools to simplify initial segment creation.
+  <br>Segments are interpolated BETWEEN slices, so you need to create two or more
+  segments of the same segment index on slices in a viewport separated by at least
+  one empty segment.</b>
+  Press e for extended interpolation.  This will interpolate segments which don't
+  overlap (assuming the segments were drawn on the same slice).
+  Press i for interpolation of overlapping segments - that is, the segment must
+  overlap if drawn on the same slice to interpolate between them.  This is a good choice
+  for multiple segments.
+  Accept the interpolation by hitting enter, or reject with escape.
   `;
 
 content.append(instructions);
 
 const interpolationTools = new Map<string, any>();
-const previewColors = {
-  0: [255, 255, 255, 128],
-  1: [0, 255, 255, 192],
-  2: [255, 0, 255, 255],
-};
 const preview = {
-  enabled: true,
-  previewColors,
+  enabled: false,
 };
 const configuration = {
   preview,
@@ -115,9 +114,7 @@ const configuration = {
 const thresholdOptions = new Map<string, any>();
 thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
 thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
-thresholdOptions.set('Dynamic Radius 2', { isDynamic: true, dynamicRadius: 2 });
 thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
-thresholdOptions.set('Dynamic Radius 4', { isDynamic: true, dynamicRadius: 4 });
 thresholdOptions.set('Use Existing Threshold', {
   isDynamic: false,
   dynamicRadius: 5,
@@ -133,15 +130,11 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
-interpolationTools.set('ThresholdSphereIsland', {
+interpolationTools.set('CircularBrush', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
   },
 });
 
@@ -150,6 +143,18 @@ interpolationTools.set('ThresholdCircle', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+    strategySpecificConfiguration: {
+      ...configuration.strategySpecificConfiguration,
+      THRESHOLD: { ...thresholdArgs },
+    },
+  },
+});
+
+interpolationTools.set('ThresholdSphereIsland', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
@@ -166,14 +171,6 @@ interpolationTools.set('ThresholdSphere', {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
     },
-  },
-});
-
-interpolationTools.set('CircularBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_CIRCLE',
   },
 });
 
@@ -276,7 +273,7 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Reject Preview',
+  title: 'Reject Preview/Interpolation',
   onClick: () => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
     const activeName = toolGroup.getActivePrimaryMouseButtonTool();
@@ -294,7 +291,7 @@ async function addSegmentationsToState() {
     // The following doesn't quite work yet
     // TODO, allow RLE to be used instead of scalars.
     // targetBuffer: { type: 'none' },
-    // voxelRepresentation: VoxelManagerEnum.RLE,
+    // voxelRepresentation: 'rleVoxelManager',
   });
 
   // Add the segmentations to state

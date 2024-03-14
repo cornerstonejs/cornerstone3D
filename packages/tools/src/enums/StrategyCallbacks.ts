@@ -48,6 +48,14 @@ enum StrategyCallbacks {
   // Internal Details
   INTERNAL_setValue = 'setValue',
 
+  /**
+   * Interpolation between segments, for example, to fill in a set of segments
+   * between two slices some distance apart one can use the interpolate command.
+   * This will fill in segments on the intervening slices, interpolating between
+   * the two remote segments.
+   */
+  Interpolate = 'interpolate',
+
   /** inner circle size  */
   ComputeInnerCircleRadius = 'computeInnerCircleRadius',
 

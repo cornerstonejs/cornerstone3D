@@ -96,6 +96,10 @@ export default class BrushStrategy {
     [StrategyCallbacks.CreateIsInThreshold]: addSingletonMethod(
       StrategyCallbacks.CreateIsInThreshold
     ),
+    [StrategyCallbacks.Interpolate]: addListMethod(
+      StrategyCallbacks.Interpolate,
+      StrategyCallbacks.Initialize
+    ),
     [StrategyCallbacks.AcceptPreview]: addListMethod(
       StrategyCallbacks.AcceptPreview,
       StrategyCallbacks.Initialize
@@ -252,6 +256,11 @@ export default class BrushStrategy {
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
     const previewEnabled = !!operationData.previewColors;
+    console.log(
+      'previewSegmentIndex assignment based on preview segment index',
+      operationData.previewColors,
+      operationData.preview
+    );
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
     const initializedData: InitializedOperationData = {
@@ -343,6 +352,12 @@ export default class BrushStrategy {
     operationData: LabelmapToolOperationDataAny
   ) => unknown;
 
+  /** Interpolate the labelmaps */
+  public interpolate: (
+    enabledElement: Types.IEnabledElement,
+    operationData: LabelmapToolOperationDataAny
+  ) => unknown;
+
   /**
    * Over-written by the strategy composition.
    */
@@ -363,19 +378,22 @@ function addListMethod(name: string, createInitialized?: string) {
     brushStrategy[listName] ||= [];
     brushStrategy[listName].push(func);
     brushStrategy[name] ||= createInitialized
-      ? (enabledElement, operationData) => {
+      ? (enabledElement, operationData, ...args) => {
           const initializedData = brushStrategy[createInitialized](
             enabledElement,
             operationData,
             name
           );
-          brushStrategy[listName].forEach((func) =>
-            func.call(brushStrategy, initializedData)
-          );
+          let returnValue;
+          brushStrategy[listName].forEach((func) => {
+            const value = func.call(brushStrategy, initializedData, ...args);
+            returnValue ||= value;
+          });
+          return returnValue;
         }
-      : (operationData) => {
+      : (operationData, ...args) => {
           brushStrategy[listName].forEach((func) =>
-            func.call(brushStrategy, operationData)
+            func.call(brushStrategy, operationData, ...args)
           );
         };
   };
