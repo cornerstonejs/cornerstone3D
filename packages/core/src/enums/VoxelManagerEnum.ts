@@ -15,7 +15,7 @@ enum VoxelManagerEnum {
    * segments 1 and 3 for a single run.  Note that such segmentations need to
    * be converted to simple segmentations for actual display.
    */
-  RleVoxelManager = 'rleVoxelManager',
+  RLE = 'RLE',
 
   /**
    * The volume voxel manager represents data in a TypeArray that is pixel selection first,
@@ -23,7 +23,7 @@ enum VoxelManagerEnum {
    * as Image data used in ITK and VTK.
    * This requires a full pixel data TypedArray instance.
    */
-  VolumeVoxelManager = 'volumeVoxelManager',
+  Volume = 'Volume',
 }
 
 export default VoxelManagerEnum;

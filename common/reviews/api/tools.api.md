@@ -489,10 +489,6 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
     // (undocumented)
-    static createAnnotationMemo(element: any, annotation: Annotation): {
-        restoreMemo: () => void;
-    };
-    // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
         styleSpecifier: StyleSpecifier;
@@ -661,8 +657,6 @@ export abstract class BaseTool implements IBaseTool {
     protected memo: utilities_2.HistoryMemo.Memo;
     // (undocumented)
     mode: ToolModes;
-    // (undocumented)
-    preMouseDownCallback: (_evt: any) => boolean;
     // (undocumented)
     redo(): void;
     // (undocumented)
@@ -854,6 +848,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        configuration: Record<string, any>;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -861,6 +856,8 @@ export class BrushTool extends BaseTool {
     };
     // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
+    // (undocumented)
+    interpolate(element: any, config: any): void;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -924,8 +921,6 @@ enum ChangeTypes {
     Completed = "Completed",
     // (undocumented)
     HandlesUpdated = "HandlesUpdated",
-    // (undocumented)
-    History = "History",
     // (undocumented)
     InitialSetup = "InitialSetup",
     // (undocumented)
@@ -2749,6 +2744,9 @@ function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | I
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
 
 // @public (undocumented)
+const getVolumeId: (targetId: string) => string;
+
+// @public (undocumented)
 function getWindingDirection(polyline: Types_2.Point2[]): number;
 
 // @public (undocumented)
@@ -3757,6 +3755,8 @@ export class PanTool extends BaseTool {
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     static toolName: any;
     // (undocumented)
@@ -5240,6 +5240,8 @@ enum StrategyCallbacks {
     // (undocumented)
     INTERNAL_setValue = "setValue",
     // (undocumented)
+    Interpolate = "interpolate",
+    // (undocumented)
     OnInteractionEnd = "onInteractionEnd",
     // (undocumented)
     OnInteractionStart = "onInteractionStart",
@@ -5967,6 +5969,7 @@ declare namespace utilities {
         getCalibratedLengthUnits,
         getCalibratedAreaUnits,
         getCalibratedScale,
+        getVolumeId,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,

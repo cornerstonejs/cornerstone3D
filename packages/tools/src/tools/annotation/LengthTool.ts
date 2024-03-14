@@ -107,7 +107,8 @@ class LengthTool extends AnnotationTool {
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
         actions: {
-          // TODO - bind globally
+          // TODO - bind globally - but here is actually pretty good as it
+          // is almost always active.
           undo: {
             method: 'undo',
             bindings: [{ key: 'z' }],

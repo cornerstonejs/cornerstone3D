@@ -338,7 +338,7 @@ export async function createAndCacheDerivedVolume(
     .getData() as PixelDataTypedArray;
 
   const voxelManager =
-    (voxelRepresentation === 'rleVoxelManager' &&
+    (voxelRepresentation === VoxelManagerEnum.RLE &&
       VoxelManager.createRLEVoxelManager<number>(dimensions)) ||
     (VoxelManager.createVolumeVoxelManager(
       dimensions,

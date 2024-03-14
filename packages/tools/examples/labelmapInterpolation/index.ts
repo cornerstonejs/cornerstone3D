@@ -6,7 +6,6 @@ import {
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
-  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -39,9 +38,9 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, Events } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils, roundNumber } = cstUtils;
+const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -49,41 +48,15 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const viewports = [];
-
-const DEFAULT_BRUSH_SIZE = 10;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Statistics',
-  'Here we demonstrate calculating labelmap statistics'
+  'Labelmap Interpolation',
+  'Here we demonstrate interpolation between slices for labelmaps'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
-
-const statsGrid = document.createElement('div');
-statsGrid.style.display = 'flex';
-statsGrid.style.display = 'flex';
-statsGrid.style.flexDirection = 'row';
-statsGrid.style.fontSize = 'smaller';
-
-const statsIds = ['statsCurrent', 'statsPreview', 'statsCombined'];
-const statsStyle = {
-  width: '20em',
-  height: '10em',
-};
-
-for (const statsId of statsIds) {
-  const statsDiv = document.createElement('div');
-  statsDiv.id = statsId;
-  statsDiv.innerText = statsId;
-  Object.assign(statsDiv.style, statsStyle);
-  statsGrid.appendChild(statsDiv);
-}
-
-content.appendChild(statsGrid);
-
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
@@ -113,25 +86,24 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Hover - show preview of segmentation tool
-  Left drag to extend preview
-  Left Click (or enter) to accept preview
-  Reject preview by button (or esc)
-  Hover outside of region to reset to hovered over segment index
-  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
+  Use the labelmap tools in the normal way.  Note preview is turned off for those
+  tools to simplify initial segment creation.
+  <br>Segments are interpolated BETWEEN slices, so you need to create two or more
+  segments of the same segment index on slices in a viewport separated by at least
+  one empty segment.</b>
+  Press e for extended interpolation.  This will interpolate segments which don't
+  overlap (assuming the segments were drawn on the same slice).
+  Press i for interpolation of overlapping segments - that is, the segment must
+  overlap if drawn on the same slice to interpolate between them.  This is a good choice
+  for multiple segments.
+  Accept the interpolation by hitting enter, or reject with escape.
   `;
 
 content.append(instructions);
 
 const interpolationTools = new Map<string, any>();
-const previewColors = {
-  0: [255, 255, 255, 128],
-  1: [0, 255, 255, 192],
-  2: [255, 0, 255, 255],
-};
 const preview = {
-  enabled: true,
-  previewColors,
+  enabled: false,
 };
 const configuration = {
   preview,
@@ -143,7 +115,6 @@ const thresholdOptions = new Map<string, any>();
 thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
 thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
 thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
-thresholdOptions.set('Dynamic Radius 5', { isDynamic: true, dynamicRadius: 5 });
 thresholdOptions.set('Use Existing Threshold', {
   isDynamic: false,
   dynamicRadius: 5,
@@ -167,11 +138,11 @@ interpolationTools.set('CircularBrush', {
   },
 });
 
-interpolationTools.set('ThresholdSphereIsland', {
+interpolationTools.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
+    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
@@ -179,11 +150,11 @@ interpolationTools.set('ThresholdSphereIsland', {
   },
 });
 
-interpolationTools.set('ThresholdCircle', {
+interpolationTools.set('ThresholdSphereIsland', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_ISLAND',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
@@ -282,7 +253,7 @@ addDropdownToToolbar({
 addSliderToToolbar({
   title: 'Brush Size',
   range: [5, 100],
-  defaultValue: DEFAULT_BRUSH_SIZE,
+  defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
@@ -302,69 +273,14 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Statistics 1,2,3',
-  onClick: () => calculateStatistics(statsIds[2], [1, 2, 3]),
+  title: 'Reject Preview/Interpolation',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+    brush.rejectPreview?.(element1);
+  },
 });
-
-function displayStat(stat) {
-  if (!stat) {
-    return;
-  }
-  return `${stat.label || stat.name}: ${roundNumber(stat.value)} ${
-    stat.unit ? stat.unit : ''
-  }`;
-}
-
-function calculateStatistics(id, indices) {
-  const [viewport] = viewports;
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-  const brush = toolGroup.getToolInstance(activeName);
-  const stats = brush.getStatistics(viewport.element, { indices });
-  const items = [`Statistics on ${indices.join(', ')}`];
-  stats.count.label = 'Voxels';
-  const lesionGlycolysis = {
-    name: 'Lesion Glycolysis',
-    value: stats.volume.value * stats.stdDev.value,
-    unit: 'HU \xB7 mm \xb3',
-  };
-  stats.stdDev.label = 'SUV';
-  items.push(
-    displayStat(stats.volume),
-    displayStat(stats.count),
-    displayStat(stats.stdDev),
-    displayStat(lesionGlycolysis),
-    displayStat(stats.mean),
-    displayStat(stats.max),
-    displayStat(stats.min)
-  );
-  const statsDiv = document.getElementById(id);
-  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
-}
-
-let timeoutId;
-
-function segmentationModifiedCallback(evt) {
-  const { detail } = evt;
-  if (!detail) {
-    return;
-  }
-  if (timeoutId) {
-    window.clearTimeout(timeoutId);
-    timeoutId = null;
-  }
-  const { segmentIndex } = detail;
-  if (!segmentIndex) {
-    // Both undefined and 0 segment indices are returns
-    return;
-  }
-  const statsId = statsIds[segmentIndex === 255 ? 1 : 0];
-
-  window.setTimeout(() => {
-    timeoutId = null;
-    calculateStatistics(statsId, [segmentIndex]);
-  }, 100);
-}
 
 // ============================= //
 
@@ -375,7 +291,7 @@ async function addSegmentationsToState() {
     // The following doesn't quite work yet
     // TODO, allow RLE to be used instead of scalars.
     // targetBuffer: { type: 'none' },
-    // voxelRepresentation: VoxelManagerEnum.RLE,
+    // voxelRepresentation: 'rleVoxelManager',
   });
 
   // Add the segmentations to state
@@ -393,11 +309,6 @@ async function addSegmentationsToState() {
       },
     },
   ]);
-
-  eventTarget.addEventListener(
-    Events.SEGMENTATION_DATA_MODIFIED,
-    segmentationModifiedCallback
-  );
 }
 
 /**
@@ -519,8 +430,6 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  viewports.push(...renderingEngine.getViewports());
-
   // Set the volume to load
   volume.load();
 
@@ -539,8 +448,6 @@ async function run() {
     },
   ]);
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
-
-  segmentationUtils.setBrushSizeForToolGroup(toolGroupId, DEFAULT_BRUSH_SIZE);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

@@ -3536,11 +3536,11 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
+        HistoryMemo,
+        generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,
-        HistoryMemo,
         RLEVoxelMap,
-        generateVolumePropsFromImageIds,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
         cacheUtils,
@@ -4295,9 +4295,9 @@ class VoxelManager<T> {
 // @public (undocumented)
 enum VoxelManagerEnum {
     // (undocumented)
-    RleVoxelManager = "rleVoxelManager",
+    RLE = "RLE",
     // (undocumented)
-    VolumeVoxelManager = "volumeVoxelManager"
+    Volume = "Volume"
 }
 
 declare namespace windowLevel {

@@ -48,6 +48,7 @@ import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
 import * as voi from './voi';
 import * as contourSegmentation from './contourSegmentation';
+import { getVolumeId } from './getVolumeId';
 
 const roundNumber = utilities.roundNumber;
 
@@ -70,6 +71,7 @@ export {
   getCalibratedLengthUnits,
   getCalibratedAreaUnits,
   getCalibratedScale,
+  getVolumeId,
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,
