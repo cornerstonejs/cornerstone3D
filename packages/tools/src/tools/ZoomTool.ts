@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import { getEnabledElement, Types } from '@cornerstonejs/core';
+import { getEnabledElement, Types, utilities } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
 
@@ -52,6 +52,7 @@ class ZoomTool extends BaseTool {
     const { focalPoint } = camera;
 
     this.initialMousePosWorld = worldPos;
+    this.memo = null;
 
     // The direction vector from the clicked location to the focal point
     // which would act as the vector to translate the image (if zoomToCenter is false)
@@ -121,6 +122,8 @@ class ZoomTool extends BaseTool {
     const { viewport } = enabledElement;
 
     const camera = viewport.getCamera();
+
+    this.memo ||= ZoomTool.createZoomPanMemo(viewport);
 
     if (camera.parallelProjection) {
       this._dragParallelProjection(evt, viewport, camera);

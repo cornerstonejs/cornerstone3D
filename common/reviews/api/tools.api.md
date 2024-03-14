@@ -15,7 +15,7 @@ import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
-import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
@@ -644,13 +644,21 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
+    static createZoomPanMemo(viewport: any): {
+        restoreMemo: () => void;
+    };
+    // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
     protected getTargetIdImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): Types_2.IImageData | Types_2.CPUIImageData | Types_2.IImageVolume;
     // (undocumented)
     getToolName(): string;
     // (undocumented)
+    protected memo: utilities_2.HistoryMemo.Memo;
+    // (undocumented)
     mode: ToolModes;
+    // (undocumented)
+    redo(): void;
     // (undocumented)
     setActiveStrategy(strategyName: string): void;
     // (undocumented)
@@ -661,6 +669,8 @@ export abstract class BaseTool implements IBaseTool {
     toolGroupId: string;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    undo(): void;
 }
 
 declare namespace BasicStatsCalculator {
@@ -1827,7 +1837,7 @@ function debounce(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
-function decimate(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
+function decimate_2(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
 
 // @public (undocumented)
 const _default: {
@@ -3296,6 +3306,8 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
+    cancelInProgress(element: any, config: any, evt: any): void;
+    // (undocumented)
     protected clearEditData(): void;
     // (undocumented)
     protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
@@ -3356,8 +3368,6 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     touchDragCallback: any;
     // (undocumented)
     triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourHoleProcessingEnabled?: boolean) => void;
-    // (undocumented)
-    undo(element: any, config: any, evt: any): void;
     // (undocumented)
     protected updateAnnotation(livewirePath: LivewirePath): void;
 }
@@ -3743,12 +3753,14 @@ export class PanTool extends BaseTool {
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
-declare namespace planar {
+declare namespace planar_2 {
     export {
         _default as default,
         filterAnnotationsWithinSlice,
@@ -3915,7 +3927,7 @@ declare namespace polyline {
         getNormal3,
         getNormal2,
         intersectPolyline,
-        decimate,
+        decimate_2 as decimate,
         getFirstLineSegmentIntersectionIndexes,
         getLineSegmentIntersectionsIndexes,
         getLineSegmentIntersectionsCoordinates,
@@ -4508,7 +4520,7 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-const roundNumber: typeof utilities_2.roundNumber;
+const roundNumber_2: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -5938,7 +5950,7 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
 declare namespace utilities {
     export {
         math,
-        planar,
+        planar_2 as planar,
         viewportFilters,
         drawing_2 as drawing,
         debounce,
@@ -5974,7 +5986,7 @@ declare namespace utilities {
         stackPrefetch,
         stackContextPrefetch,
         scroll_2 as scroll,
-        roundNumber,
+        roundNumber_2 as roundNumber,
         pointToString,
         polyDataUtils,
         voi,

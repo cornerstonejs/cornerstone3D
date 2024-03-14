@@ -28,6 +28,7 @@ import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
 import transformIndexToWorld from './transformIndexToWorld';
 import loadImageToCanvas from './loadImageToCanvas';
+import * as HistoryMemo from './historyMemo';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import worldToImageCoords from './worldToImageCoords';
@@ -149,10 +150,11 @@ export {
   isValidVolume,
   genericMetadataProvider,
   isVideoTransferSyntax,
+  HistoryMemo,
+  generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
   RLEVoxelMap,
-  generateVolumePropsFromImageIds,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   cacheUtils,

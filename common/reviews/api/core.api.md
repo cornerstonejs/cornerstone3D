@@ -700,6 +700,9 @@ function decimate(list: Array<unknown>, interleave: number, offset?: number): nu
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
+const DefaultHistoryMemo: HistoryMemo_2;
+
+// @public (undocumented)
 type DisplayArea = {
     imageArea?: [number, number];
     imageCanvasPoint?: {
@@ -1093,6 +1096,30 @@ export function getWebWorkerManager(): any;
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
+
+declare namespace HistoryMemo {
+    export {
+        Memo,
+        Memoable,
+        HistoryMemo_2 as HistoryMemo,
+        DefaultHistoryMemo
+    }
+}
+
+// @public (undocumented)
+class HistoryMemo_2 {
+    constructor(label?: string, size?: number);
+    // (undocumented)
+    readonly label: any;
+    // (undocumented)
+    push(item: Memo | Memoable): Memo;
+    // (undocumented)
+    redo(items?: number): void;
+    // (undocumented)
+    get size(): any;
+    // (undocumented)
+    undo(items?: number): void;
+}
 
 // @public (undocumented)
 interface ICache {
@@ -2404,6 +2431,16 @@ function makeVolumeMetadata(imageIds: Array<string>): Metadata;
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
+type Memo = {
+    restoreMemo: (undo?: boolean) => void;
+};
+
+// @public (undocumented)
+type Memoable = {
+    createMemo: () => Memo;
+};
+
+// @public (undocumented)
 type Metadata = {
     BitsAllocated: number;
     BitsStored: number;
@@ -3499,10 +3536,11 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
+        HistoryMemo,
+        generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,
         RLEVoxelMap,
-        generateVolumePropsFromImageIds,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
         cacheUtils,
