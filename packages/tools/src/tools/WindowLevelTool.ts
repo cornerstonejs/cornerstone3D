@@ -8,6 +8,7 @@ import {
   Types,
 } from '@cornerstonejs/core';
 import { EventTypes } from '../types';
+import { getVolumeId } from '../utilities/getVolumeId';
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4;
@@ -51,7 +52,7 @@ class WindowLevelTool extends BaseTool {
     const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = getVolumeId(targetId);
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id

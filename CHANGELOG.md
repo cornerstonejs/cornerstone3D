@@ -3,6 +3,42 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.66.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.4...v1.66.5) (2024-03-14)
+
+### Bug Fixes
+
+- nifti scroll ([#1143](https://github.com/cornerstonejs/cornerstone3D/issues/1143)) ([d6a9407](https://github.com/cornerstonejs/cornerstone3D/commit/d6a9407a2ed527913aa4d9453dfb3874a1890a32))
+
+## [1.66.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.3...v1.66.4) (2024-03-11)
+
+### Bug Fixes
+
+- **reference lines:** address bugs in reference lines ([#1126](https://github.com/cornerstonejs/cornerstone3D/issues/1126)) ([2cb932f](https://github.com/cornerstonejs/cornerstone3D/commit/2cb932f2174901bc800b77571f710c28fedab4dc))
+
+## [1.66.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.2...v1.66.3) (2024-03-11)
+
+### Bug Fixes
+
+- **AnnotationTool:** fix NaN verbiage in angle tool on incomplete angle ([#1145](https://github.com/cornerstonejs/cornerstone3D/issues/1145)) ([5268cb9](https://github.com/cornerstonejs/cornerstone3D/commit/5268cb94db0c5f1ddf5a26dea4d288b21eeadcea))
+
+## [1.66.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.1...v1.66.2) (2024-03-08)
+
+### Bug Fixes
+
+- modality reference error ([#1147](https://github.com/cornerstonejs/cornerstone3D/issues/1147)) ([7a1661a](https://github.com/cornerstonejs/cornerstone3D/commit/7a1661a5b144277f545347505594db14ac690848))
+
+## [1.66.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.0...v1.66.1) (2024-03-07)
+
+### Bug Fixes
+
+- **voiSyncCallback:** added VOI Sync Support for Non-Fused Images ([#1134](https://github.com/cornerstonejs/cornerstone3D/issues/1134)) ([f5649ce](https://github.com/cornerstonejs/cornerstone3D/commit/f5649ce7ab0998a6c78a1a7ed1fd54fdd36064d3))
+
+# [1.66.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.5...v1.66.0) (2024-03-06)
+
+### Features
+
+- **slab synchronizer:** Add slab thickness synchronizer ([#1136](https://github.com/cornerstonejs/cornerstone3D/issues/1136)) ([7917ddc](https://github.com/cornerstonejs/cornerstone3D/commit/7917ddc82c509c36d0a4b83f572ea8c9f57cb8c9))
+
 ## [1.65.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.65.4...v1.65.5) (2024-03-05)
 
 ### Bug Fixes

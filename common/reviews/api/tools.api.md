@@ -1667,6 +1667,9 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
+function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 
 // @public (undocumented)
@@ -1771,6 +1774,8 @@ export class CrosshairsTool extends AnnotationTool {
     _pointNearTool(element: any, annotation: any, canvasCoords: any, proximity: any): boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    resetCrosshairs: () => void;
     // (undocumented)
     setSlabThickness(viewport: any, slabThickness: any): void;
     // (undocumented)
@@ -2714,6 +2719,9 @@ function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | I
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
+
+// @public (undocumented)
+const getVolumeId: (targetId: string) => string;
 
 // @public (undocumented)
 function getWindingDirection(polyline: Types_2.Point2[]): number;
@@ -4395,7 +4403,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     editData: {
         renderingEngine: any;
-        sourceViewport: any;
+        sourceViewportId: string;
         annotation: ReferenceLineAnnotation;
     } | null;
     // (undocumented)
@@ -4416,6 +4424,8 @@ class ReferenceLines extends AnnotationDisplayTool {
     mouseDragCallback: any;
     // (undocumented)
     onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
+    // (undocumented)
+    onSetToolConfiguration: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
@@ -5180,7 +5190,7 @@ type Statistics = {
 };
 
 // @public (undocumented)
-function stopClip(element: HTMLDivElement): void;
+function stopClip(element: HTMLDivElement, viewportId?: string): void;
 
 // @public (undocumented)
 enum StrategyCallbacks {
@@ -5309,6 +5319,8 @@ export class Synchronizer {
     // (undocumented)
     removeTarget(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
+    setEnabled(enabled: boolean): void;
+    // (undocumented)
     setOptions(viewportId: string, options?: Record<string, unknown>): void;
 }
 
@@ -5330,7 +5342,8 @@ declare namespace synchronizers {
         createVOISynchronizer,
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
-        createStackImageSynchronizer
+        createStackImageSynchronizer,
+        createPresentationViewSynchronizer as createSlabThicknessSynchronizer
     }
 }
 export { synchronizers }
@@ -5425,6 +5438,8 @@ class ToolGroup implements ToolGroup {
     getToolConfiguration(toolName: string, configurationPath?: string): any;
     // (undocumented)
     getToolInstance(toolInstanceName: string): any;
+    // (undocumented)
+    getToolInstances(): Record<string, any>;
     // (undocumented)
     getToolOptions(toolName: string): ToolOptionsType;
     // (undocumented)
@@ -5919,6 +5934,7 @@ declare namespace utilities {
         getCalibratedLengthUnits,
         getCalibratedAreaUnits,
         getCalibratedScale,
+        getVolumeId,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,
