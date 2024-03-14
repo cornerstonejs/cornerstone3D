@@ -39,6 +39,7 @@ import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecifi
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { pointInShapeCallback } from '../../utilities/';
+import { getVolumeId } from '../../utilities/getVolumeId';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -111,7 +112,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = getVolumeId(targetId);
       imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
