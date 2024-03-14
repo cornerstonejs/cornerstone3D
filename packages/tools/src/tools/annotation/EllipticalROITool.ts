@@ -1087,7 +1087,7 @@ class EllipticalROITool extends AnnotationTool {
           modalityUnitOptions
         );
 
-        const pointsInShape = pointInShapeCallback(
+        pointInShapeCallback(
           imageData,
           (pointLPS) => pointInEllipse(ellipseObj, pointLPS, { fast: true }),
           this.configuration.statsCalculator.statsCallback,
@@ -1101,9 +1101,9 @@ class EllipticalROITool extends AnnotationTool {
           area,
           mean: stats.mean?.value,
           max: stats.max?.value,
+          pointsInShape: stats.pointsInShape.points,
           stdDev: stats.stdDev?.value,
           statsArray: stats.array,
-          pointsInShape,
           isEmptyArea,
           areaUnit: getCalibratedAreaUnits(null, image),
           modalityUnit,

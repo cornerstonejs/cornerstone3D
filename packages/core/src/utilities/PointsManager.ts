@@ -154,6 +154,14 @@ export default class PointsManager<T> {
   }
 
   /**
+   * Gets the raw underlying data - note this can change.  Use for fast calculations
+   * on a fully filled array.
+   */
+  public getTypedArray() {
+    return this.data;
+  }
+
+  /**
    * Push a new point onto this arrays object
    */
   public push(point: T) {

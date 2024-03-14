@@ -57,7 +57,11 @@ export default {
       operationData.previewVoxelManager = preview.previewVoxelManager;
     }
 
-    if (segmentIndex === null || !previewSegmentIndex) {
+    if (
+      segmentIndex === undefined ||
+      segmentIndex === null ||
+      !previewSegmentIndex
+    ) {
       // Null means to reset the value, so we don't change the preview colour
       return;
     }
@@ -71,7 +75,9 @@ export default {
     if (!configColor && !segmentColor) {
       return;
     }
-    const previewColor = configColor || segmentColor.map((it) => it * 0.9);
+    const previewColor =
+      configColor ||
+      segmentColor.map((it, idx) => (idx === 3 ? 64 : Math.round(it * 0.9)));
     segmentationConfig.color.setColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
@@ -85,7 +91,7 @@ export default {
   ) => {
     const {
       segmentationVoxelManager: segmentationVoxelManager,
-      previewVoxelManager: previewVoxelManager,
+      previewVoxelManager,
       previewSegmentIndex,
       preview,
     } = operationData;
@@ -108,7 +114,8 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfSlices()
+      tracking.getArrayOfSlices(),
+      preview.segmentIndex
     );
     tracking.clear();
   },
@@ -116,10 +123,7 @@ export default {
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
-    } = operationData;
+    const { previewVoxelManager, segmentationVoxelManager } = operationData;
     if (previewVoxelManager.modifiedSlices.size === 0) {
       return;
     }
@@ -129,9 +133,12 @@ export default {
     };
     previewVoxelManager.forEach(callback);
 
+    // Primarily rejects back to zero, so use 0 as the segment index - even
+    // if somtimes it modifies the data to other values on reject.
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfSlices()
+      previewVoxelManager.getArrayOfSlices(),
+      0
     );
     previewVoxelManager.clear();
   },

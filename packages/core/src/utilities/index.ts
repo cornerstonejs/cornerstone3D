@@ -66,6 +66,7 @@ import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageI
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
+import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import getViewportImageIds from './getViewportImageIds';
@@ -150,6 +151,7 @@ export {
   isVideoTransferSyntax,
   getBufferConfiguration,
   VoxelManager,
+  RLEVoxelMap,
   generateVolumePropsFromImageIds,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,

@@ -24,6 +24,10 @@ import { Types } from '@cornerstonejs/core';
  * @param options.equals - An optional equality method for your datastructure.
  *                            Default is simply value1 = value2.
  * @param options.diagonals - Whether you allow flooding through diagonals. Defaults to false.
+ * @param options.bounds - An optional min/max value bounds in the form boundsIJK.  Allows controlling
+ *                         the fill to a single plane.
+ * @param options.filter - An optional filter function to include/exclude points.
+ *                         If the filter returns false, then the point is excluded.
  *
  * @returns Flood fill results
  */
@@ -35,13 +39,14 @@ function floodFill(
   const onFlood = options.onFlood;
   const onBoundary = options.onBoundary;
   const equals = options.equals;
+  const filter = options.filter;
   const diagonals = options.diagonals || false;
   const startNode = get(seed);
   const permutations = prunedPermutations();
   const stack = [];
   const flooded = [];
   const visits = new Set();
-  const bounds = new Map();
+  const bounds = options.bounds;
 
   stack.push({ currentArgs: seed });
 
@@ -51,7 +56,6 @@ function floodFill(
 
   return {
     flooded,
-    boundaries: boundaries(),
   };
 
   function flood(job) {
@@ -108,7 +112,7 @@ function floodFill(
     // Use an integer key value for checking visited, since JavaScript does not
     // provide a generic hash key indexed hash map.
     const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
-    bounds.set(iKey, prevArgs);
+    bounds?.set(iKey, prevArgs);
     if (onBoundary) {
       //@ts-ignore
       onBoundary(...prevArgs);
@@ -122,6 +126,12 @@ function floodFill(
 
       for (let j = 0; j < getArgs.length; j += 1) {
         nextArgs[j] += perm[j];
+      }
+      if (filter?.(nextArgs) === false) {
+        continue;
+      }
+      if (visited(nextArgs)) {
+        continue;
       }
 
       stack.push({
@@ -174,15 +184,14 @@ function floodFill(
     return perms;
   }
 
-  function boundaries() {
+  function boundaries(): Types.Point2[] | Types.Point3[] {
+    if (!bounds) {
+      throw new Error('bounds not recorded');
+    }
     const array = Array.from(bounds.values());
     array.reverse();
-    return array;
+    return array as Types.Point2[] | Types.Point3[];
   }
-}
-
-function defaultEquals(a, b) {
-  return a === b;
 }
 
 function countNonZeroes(array) {

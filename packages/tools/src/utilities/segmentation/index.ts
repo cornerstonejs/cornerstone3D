@@ -14,6 +14,7 @@ import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
+import VolumetricCalculator from './VolumetricCalculator';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 import { createImageIdReferenceMap } from './createImageIdReferenceMap';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
@@ -38,6 +39,7 @@ export {
   setBrushSizeForToolGroup,
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
+  VolumetricCalculator,
   thresholdSegmentationByRange,
   createImageIdReferenceMap,
   contourAndFindLargestBidirectional,

@@ -541,16 +541,16 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
         };
 
-        const pointsInShape = pointInShapeCallback(
+        const points = [];
+
+        pointInShapeCallback(
           imageData,
           //@ts-ignore
           (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
-          null,
+          ({ pointLPS }) => points.push(pointLPS.slice()),
           boundsIJK
         );
-
-        //@ts-ignore
-        pointsInsideVolume.push(pointsInShape);
+        pointsInsideVolume.push(points);
       }
     }
     data.cachedStats.pointsInVolume = pointsInsideVolume;

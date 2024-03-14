@@ -171,7 +171,7 @@ async function run() {
       Math.floor(evt.clientX - rect.left),
       Math.floor(evt.clientY - rect.top),
     ];
-    // Convert canvas coordiantes to world coordinates
+    // Convert canvas coordinates to world coordinates
     const worldPos = viewport.canvasToWorld(canvasPos);
 
     canvasPosElement.innerText = `canvas: (${canvasPos[0]}, ${canvasPos[1]})`;

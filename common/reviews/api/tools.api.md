@@ -640,7 +640,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string, ...extraArgs: any[]): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -673,11 +673,18 @@ declare namespace BasicStatsCalculator {
 // @public (undocumented)
 class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
-    static getStatistics: () => NamedStatistics;
+    static getStatistics: (options?: {
+        unit: string;
+    }) => NamedStatistics;
     // (undocumented)
-    static statsCallback: ({ value: newValue }: {
+    static statsCallback: ({ value: newValue, pointLPS }: {
         value: any;
+        pointLPS?: any;
     }) => void;
+    // (undocumented)
+    static statsInit(options: {
+        noPointsCollection: boolean;
+    }): void;
 }
 
 // @public (undocumented)
@@ -836,6 +843,8 @@ export class BrushTool extends BaseTool {
         volumeId?: string;
         referencedVolumeId?: string;
     };
+    // (undocumented)
+    getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -2365,12 +2374,13 @@ type FloodFillOptions = {
     onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
+    bounds?: Map<number, Types_2.Point2 | Types_2.Point3>;
+    filter?: (point: any) => boolean;
 };
 
 // @public (undocumented)
 type FloodFillResult = {
     flooded: Types_2.Point2[] | Types_2.Point3[];
-    boundaries: Types_2.Point2[] | Types_2.Point3[];
 };
 
 // @public (undocumented)
@@ -3541,6 +3551,9 @@ type NamedStatistics = {
     max: Statistics & {
         name: 'max';
     };
+    min: Statistics & {
+        name: 'min';
+    };
     stdDev: Statistics & {
         name: 'stdDev';
     };
@@ -3560,6 +3573,7 @@ type NamedStatistics = {
         name: 'circumferance';
     };
     array: Statistics[];
+    pointsInShape?: Types_2.PointsManager<Types_2.Point3>;
 };
 
 // @public (undocumented)
@@ -3870,7 +3884,7 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
+function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK_2): void;
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
@@ -4623,6 +4637,7 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
+        VolumetricCalculator,
         thresholdSegmentationByRange,
         createImageIdReferenceMap,
         contourAndFindLargestBidirectional,
@@ -4640,6 +4655,7 @@ declare namespace segmentation_2 {
 type SegmentationDataModifiedEventDetail = {
     segmentationId: string;
     modifiedSlicesToUse?: number[];
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -5203,6 +5219,8 @@ enum StrategyCallbacks {
     // (undocumented)
     Fill = "fill",
     // (undocumented)
+    GetStatistics = "getStatistics",
+    // (undocumented)
     Initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
@@ -5696,7 +5714,7 @@ function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderi
 function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
 
 // @public (undocumented)
-function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[]): void;
+function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[], segmentIndex?: number): void;
 
 declare namespace triggerSegmentationEvents {
     export {
@@ -6149,6 +6167,15 @@ type VolumeScrollOutOfBoundsEventDetail = {
 
 // @public (undocumented)
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+class VolumetricCalculator extends BasicStatsCalculator_2 {
+    // (undocumented)
+    static getStatistics(options: {
+        spacing?: number;
+        unit?: string;
+    }): NamedStatistics;
+}
 
 // @public (undocumented)
 export class WindowLevelTool extends BaseTool {
