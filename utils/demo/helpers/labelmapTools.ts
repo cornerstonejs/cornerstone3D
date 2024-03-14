@@ -102,14 +102,14 @@ toolMap.set('SphereEraser', {
 toolMap.set(RectangleScissorsTool.toolName, { tool: RectangleScissorsTool });
 toolMap.set(CircleScissorsTool.toolName, { tool: CircleScissorsTool });
 toolMap.set(SphereScissorsTool.toolName, { tool: SphereScissorsTool });
-toolMap.set('ScissorsEraser', {
+toolMap.set('SphereScissorsEraser', {
   baseTool: SphereScissorsTool.toolName,
   configuration: {
     ...configuration,
     activeStrategy: 'ERASE_INSIDE',
   },
 });
-toolMap.set(PaintFillTool.toolName, {});
+toolMap.set(PaintFillTool.toolName, { tool: PaintFillTool });
 
 const labelmapTools = {
   toolMap,

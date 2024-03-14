@@ -3,6 +3,9 @@ import {
   Types,
   Enums,
   getRenderingEngine,
+  volumeLoader,
+  setVolumesForViewports,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -17,6 +20,9 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+const { utilities: cstUtils, segmentation } = cornerstoneTools;
+const { SegmentationDisplayTool } = cornerstoneTools;
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -24,12 +30,21 @@ console.warn(
 
 const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
 
-const { ViewportType, Events } = Enums;
+const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
+const labelmapSegmentationId = 'labelmapSegmentationId';
+const contourSegmentationId = 'contourSegmentationId';
+
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const toolMap = new Map(annotationTools);
 for (const [key, value] of labelmapTools.toolMap) {
+  if (key.indexOf('Sphere') !== -1) {
+    continue;
+  }
   toolMap.set(key, value);
 }
 for (const [key, value] of contourTools.toolMap) {
@@ -81,21 +96,14 @@ addDropdownToToolbar({
   toolGroupId,
 });
 
-addButtonToToolbar({
-  title: 'Flip H',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
+addDropdownToToolbar({
+  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  labelText: 'Segment',
+  onSelectedValueChange: (segmentIndex) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      labelmapSegmentationId,
+      Number(segmentIndex)
     );
-
-    const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
-
-    viewport.render();
   },
 });
 
@@ -117,6 +125,60 @@ addButtonToToolbar({
   },
 });
 
+let segmentationRepresentationUIDs;
+
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    volumeId: labelmapSegmentationId,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId: labelmapSegmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: labelmapSegmentationId,
+        },
+      },
+    },
+  ]);
+
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId: labelmapSegmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+}
+
+const DEFAULT_SEGMENTATION_CONFIG = {
+  fillAlpha: 0.5,
+  fillAlphaInactive: 0.3,
+  outlineOpacity: 1,
+  outlineOpacityInactive: 0.85,
+  outlineWidthActive: 3,
+  outlineWidthInactive: 2,
+  outlineDashActive: undefined,
+  outlineDashInactive: undefined,
+};
+
+function initializeGlobalConfig() {
+  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
+
+  Object.assign(
+    globalSegmentationConfig.representations.CONTOUR,
+    DEFAULT_SEGMENTATION_CONFIG
+  );
+
+  segmentation.config.setGlobalConfig(globalSegmentationConfig);
+}
+
 /**
  * Runs the demo
  */
@@ -128,6 +190,9 @@ async function run() {
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
+  initializeGlobalConfig();
+  cornerstoneTools.addTool(SegmentationDisplayTool);
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -138,13 +203,20 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  await addSegmentationsToState();
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -157,15 +229,15 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
+  const viewport = <Types.IVolumeViewport>(
     renderingEngine.getViewport(viewportId)
   );
+  volume.load();
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0]];
+  // Set volumes on the viewports
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // Set the stack on the viewport
-  viewport.setStack(stack);
+  segmentation.segmentIndex.setActiveSegmentIndex(labelmapSegmentationId, 1);
 
   // Render the image
   viewport.render();
