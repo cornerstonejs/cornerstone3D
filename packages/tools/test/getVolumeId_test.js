@@ -1,4 +1,4 @@
-import { getVolumeId } from '../../tools/src/utilities/getVolumeId';
+import { getVolumeId } from '../../core/src/utilities/getVolumeId';
 
 describe('getVolumeId', () => {
   it('should extract volumeId from target', () => {
