@@ -580,6 +580,7 @@ class BrushTool extends BaseTool {
         this.configuration.strategySpecificConfiguration,
       // Provide the preview information so that data can be used directly
       preview: this._previewData?.preview,
+      configuration: this.configuration,
     };
     return operationData;
   }
