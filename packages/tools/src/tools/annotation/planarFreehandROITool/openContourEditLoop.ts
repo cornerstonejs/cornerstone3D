@@ -37,6 +37,8 @@ function activateOpenContourEdit(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
+  this.memo = null;
+
   const prevCanvasPoints = annotation.data.contour.polyline.map(
     viewport.worldToCanvas
   );
@@ -148,6 +150,11 @@ function mouseDragOpenContourEditCallback(
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
 
   const worldPosDiff = vec3.create();
+
+  this.memo ||= this.constructor.createAnnotationMemo(
+    element,
+    this.commonData.annotation
+  );
 
   vec3.subtract(worldPosDiff, worldPos, lastWorldPoint);
 
@@ -541,6 +548,7 @@ function mouseUpOpenContourEditCallback(
   const { element } = eventDetail;
 
   this.completeOpenContourEdit(element);
+  this.memo = null;
 }
 
 /**

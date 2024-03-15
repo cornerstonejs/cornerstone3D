@@ -310,6 +310,7 @@ abstract class BaseTool implements IBaseTool {
    * Clear the memo by default.
    */
   public preMouseDownCallback = (_evt): boolean => {
+    console.log('***** Clearing memo');
     this.memo = null;
     return false;
   };

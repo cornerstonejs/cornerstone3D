@@ -18,6 +18,7 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import updateContourPolyline from '../../../utilities/contours/updateContourPolyline';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
+import { AnnotationTool } from '../../base';
 
 const { getSubPixelSpacingAndXYDirections, addCanvasPointsToArray, getArea } =
   polyline;
@@ -147,6 +148,11 @@ function mouseDragClosedContourEditCallback(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, viewport } = enabledElement;
+
+  this.memo ||= this.constructor.createAnnotationMemo(
+    element,
+    this.commonData.annotation
+  );
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
   const { editIndex, editCanvasPoints, startCrossingIndex } = this.editData;
@@ -431,6 +437,7 @@ function mouseUpClosedContourEditCallback(
   const { element } = eventDetail;
 
   this.completeClosedContourEdit(element);
+  this.memo = null;
 }
 
 /**

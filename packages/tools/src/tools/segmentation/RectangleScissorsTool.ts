@@ -98,6 +98,7 @@ class RectangleScissorsTool extends BaseTool {
       return;
     }
 
+    this.memo = null;
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;

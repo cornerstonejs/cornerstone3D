@@ -250,19 +250,20 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Clears any map specific data, as wellas the modified slices, points and
-   * bounds.
+   * Clears any map specific data, as well as the modified slices, points and
+   * bounds and sets scalar data to 0
    */
-  public clear() {
-    if (this.map) {
-      this.map.clear();
-    }
+  public clear(clearScalar = false) {
+    this.map?.clear();
     this.boundsIJK.map((bound) => {
       bound[0] = Infinity;
       bound[1] = -Infinity;
     });
     this.modifiedSlices.clear();
     this.points?.clear();
+    if (clearScalar) {
+      this.scalarData?.fill(0);
+    }
   }
 
   /**
@@ -483,7 +484,7 @@ export default class VoxelManager<T> {
     planeFactory: (width: number, height: number) => T
   ): VoxelManager<T> {
     const map = new Map<number, T>();
-    const [width, height, depth] = dimensions;
+    const [width, height, _depth] = dimensions;
     const planeSize = width * height;
 
     const voxelManager = new VoxelManager(

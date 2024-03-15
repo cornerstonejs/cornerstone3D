@@ -5,7 +5,6 @@ import {
   getRenderingEngine,
   volumeLoader,
   setVolumesForViewports,
-  utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -20,8 +19,9 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-const { utilities: cstUtils, segmentation } = cornerstoneTools;
+const { segmentation } = cornerstoneTools;
 const { SegmentationDisplayTool } = cornerstoneTools;
+const { MouseBindings } = cornerstoneTools.Enums;
 
 // This is for debugging purposes
 console.warn(
@@ -42,9 +42,6 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 
 const toolMap = new Map(annotationTools);
 for (const [key, value] of labelmapTools.toolMap) {
-  if (key.indexOf('Sphere') !== -1) {
-    continue;
-  }
   toolMap.set(key, value);
 }
 for (const [key, value] of contourTools.toolMap) {
@@ -93,7 +90,33 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
 
 addDropdownToToolbar({
   options: { map: toolMap },
-  toolGroupId,
+  onSelectedValueChange: (newSelectedToolName, data) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    // Set the old tool passive
+    const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
+    if (selectedToolName) {
+      toolGroup.setToolPassive(selectedToolName);
+    }
+
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName as string, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+    const isContour =
+      data?.segmentationType ===
+      csToolsEnums.SegmentationRepresentations.Contour;
+    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+      toolGroupId,
+      isContour
+        ? segmentationRepresentationUIDs[1]
+        : segmentationRepresentationUIDs[0]
+    );
+  },
 });
 
 addDropdownToToolbar({
@@ -102,6 +125,10 @@ addDropdownToToolbar({
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
       labelmapSegmentationId,
+      Number(segmentIndex)
+    );
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      contourSegmentationId,
       Number(segmentIndex)
     );
   },
@@ -147,14 +174,25 @@ async function addSegmentationsToState() {
         },
       },
     },
-  ]);
-
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
-      segmentationId: labelmapSegmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      segmentationId: contourSegmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
     },
   ]);
+
+  segmentationRepresentationUIDs =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId: labelmapSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        segmentationId: contourSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
 }
 
 const DEFAULT_SEGMENTATION_CONFIG = {

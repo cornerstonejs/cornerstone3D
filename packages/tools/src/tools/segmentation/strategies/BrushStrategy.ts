@@ -256,11 +256,6 @@ export default class BrushStrategy {
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
     const previewEnabled = !!operationData.previewColors;
-    console.log(
-      'previewSegmentIndex assignment based on preview segment index',
-      operationData.previewColors,
-      operationData.preview
-    );
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
     const initializedData: InitializedOperationData = {

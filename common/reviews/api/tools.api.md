@@ -854,6 +854,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        configuration: Record<string, any>;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -861,6 +862,8 @@ export class BrushTool extends BaseTool {
     };
     // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
+    // (undocumented)
+    interpolate(element: any, config: any): void;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -1670,6 +1673,11 @@ function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds
 
 // @public (undocumented)
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createLabelmapMemo(_element: any, activeSegmentationRepresentation: any, data: any): {
+    restoreMemo: () => void;
+};
 
 // @public (undocumented)
 function createLabelmapVolumeForViewport(input: {
@@ -4650,6 +4658,7 @@ declare namespace segmentation_2 {
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
+        createLabelmapMemo,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
         floodFill,

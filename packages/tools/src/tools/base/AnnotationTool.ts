@@ -4,7 +4,6 @@ import {
   getEnabledElement,
   metaData,
   utilities as csUtils,
-  Enums,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -32,6 +31,7 @@ import { getVolumeId } from '../../utilities/getVolumeId';
 import ChangeTypes from '../../enums/ChangeTypes';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
+const { PointsManager } = csUtils;
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -467,19 +467,52 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       // TODO - remember state without annotation UID
       return;
     }
-    const { annotationUID } = annotation;
+    const { annotationUID, data } = annotation;
+    const { contour } = data;
+    const cloneData = { ...data, contour: undefined, cachedStats: {} };
     const state = {
       annotationUID,
-      data: annotation.data ? structuredClone(annotation.data) : null,
+      data: data ? structuredClone(cloneData) : null,
     };
+    if (contour) {
+      state.data.contour = {
+        ...contour,
+        polyline: null,
+        pointsManager: PointsManager.create3(
+          contour.polyline.length,
+          contour.polyline
+        ),
+      };
+    }
     const annotationMemo = {
       restoreMemo: () => {
         const currentAnnotation = getAnnotation(annotationUID);
-        const currentData = currentAnnotation.data
-          ? structuredClone(currentAnnotation.data)
-          : null;
+        if (!currentAnnotation) {
+          console.warn('No current annotation');
+          return;
+        }
+        const { data } = currentAnnotation;
+        const { contour } = data;
+        const cloneData = { ...data, contour: undefined, cachedStats: {} };
+        const currentData = cloneData ? structuredClone(cloneData) : null;
+        if (contour) {
+          currentData.contour = {
+            ...contour,
+            polyline: null,
+            pointsManager: PointsManager.create3(
+              contour.polyline.length,
+              contour.polyline
+            ),
+          };
+        }
         currentAnnotation.data = structuredClone(state.data);
+        if (state.data.contour) {
+          currentAnnotation.data.contour.polyline =
+            state.data.contour.pointsManager.points;
+          delete currentAnnotation.data.contour.pointsManager;
+        }
         state.data = currentData;
+        currentAnnotation.invalidated = true;
         triggerAnnotationModified(
           currentAnnotation,
           element,

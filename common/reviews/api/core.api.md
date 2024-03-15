@@ -2595,7 +2595,7 @@ class PointsManager<T> {
     // (undocumented)
     static create2(initialSize?: number): PointsManager<Point2>;
     // (undocumented)
-    static create3(initialSize?: number): PointsManager<Point3>;
+    static create3(initialSize?: number, points?: Point3[]): PointsManager<Point3>;
     // (undocumented)
     data: Float32Array;
     // (undocumented)
@@ -4217,7 +4217,7 @@ class VoxelManager<T> {
     // (undocumented)
     boundsIJK: BoundsIJK;
     // (undocumented)
-    clear(): void;
+    clear(clearScalar?: boolean): void;
     // (undocumented)
     static createHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
     // (undocumented)

@@ -255,8 +255,13 @@ export default class PointsManager<T> {
   /**
    * Create a PointsManager<Point3> instance with available capacity of initialSize
    */
-  public static create3(initialSize = 128) {
-    return new PointsManager<Point3>({ initialSize, dimensions: 3 });
+  public static create3(initialSize = 128, points?: Point3[]) {
+    initialSize = Math.max(initialSize, points?.length || 0);
+    const newPoints = new PointsManager<Point3>({ initialSize, dimensions: 3 });
+    if (points) {
+      points.forEach((point) => newPoints.push(point));
+    }
+    return newPoints;
   }
 
   /**

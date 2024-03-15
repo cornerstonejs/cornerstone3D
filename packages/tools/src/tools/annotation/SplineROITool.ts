@@ -375,6 +375,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
+    this.memo = null;
     this.editData = null;
     this.isDrawing = false;
   };
@@ -434,6 +435,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
       return;
     }
 
+    this.memo = null;
+
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const { currentPoints } = eventDetail;
@@ -480,6 +483,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
       this.editData;
     const { data } = annotation;
+
+    this.memo = SplineROITool.createAnnotationMemo(element, annotation);
 
     if (movingTextBox) {
       // Drag mode - moving text box
