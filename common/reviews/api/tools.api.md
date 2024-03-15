@@ -1670,6 +1670,9 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 function createPresentationViewSynchronizer(synchronizerName: string, options?: Types_2.ViewPresentation): Synchronizer;
 
 // @public (undocumented)
+function createPresentationViewSynchronizer_2(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 
 // @public (undocumented)
@@ -1774,6 +1777,8 @@ export class CrosshairsTool extends AnnotationTool {
     _pointNearTool(element: any, annotation: any, canvasCoords: any, proximity: any): boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    resetCrosshairs: () => void;
     // (undocumented)
     setSlabThickness(viewport: any, slabThickness: any): void;
     // (undocumented)
@@ -4398,7 +4403,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     editData: {
         renderingEngine: any;
-        sourceViewport: any;
+        sourceViewportId: string;
         annotation: ReferenceLineAnnotation;
     } | null;
     // (undocumented)
@@ -4419,6 +4424,8 @@ class ReferenceLines extends AnnotationDisplayTool {
     mouseDragCallback: any;
     // (undocumented)
     onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
+    // (undocumented)
+    onSetToolConfiguration: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
@@ -5183,7 +5190,7 @@ type Statistics = {
 };
 
 // @public (undocumented)
-function stopClip(element: HTMLDivElement): void;
+function stopClip(element: HTMLDivElement, viewportId?: string): void;
 
 // @public (undocumented)
 enum StrategyCallbacks {
@@ -5312,6 +5319,8 @@ export class Synchronizer {
     // (undocumented)
     removeTarget(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
+    setEnabled(enabled: boolean): void;
+    // (undocumented)
     setOptions(viewportId: string, options?: Record<string, unknown>): void;
 }
 
@@ -5334,7 +5343,8 @@ declare namespace synchronizers {
         createVOISynchronizer,
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
-        createStackImageSynchronizer
+        createStackImageSynchronizer,
+        createPresentationViewSynchronizer_2 as createSlabThicknessSynchronizer
     }
 }
 export { synchronizers }
@@ -5429,6 +5439,8 @@ class ToolGroup implements ToolGroup {
     getToolConfiguration(toolName: string, configurationPath?: string): any;
     // (undocumented)
     getToolInstance(toolInstanceName: string): any;
+    // (undocumented)
+    getToolInstances(): Record<string, any>;
     // (undocumented)
     getToolOptions(toolName: string): ToolOptionsType;
     // (undocumented)

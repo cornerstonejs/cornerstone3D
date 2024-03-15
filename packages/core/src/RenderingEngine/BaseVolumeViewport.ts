@@ -863,7 +863,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const colormapsVTK = vtkColorMaps.rgbPresetNames.map((presetName) =>
       vtkColorMaps.getPresetByName(presetName)
     );
-    const colormapsCS3D = getColormapNames().map((colormapName) => getColormap(colormapName));
+    const colormapsCS3D = getColormapNames().map((colormapName) =>
+      getColormap(colormapName)
+    );
     const colormaps = colormapsVTK.concat(colormapsCS3D);
     const matchedColormap = colormaps.find((colormap) => {
       const { RGBPoints: presetRGBPoints } = colormap;
@@ -1563,7 +1565,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     sliceIndex ??= this.getCurrentImageIdIndex();
     const { viewPlaneNormal, focalPoint } = this.getCamera();
-    return `volumeId:${volumeId}?sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
+    const querySeparator = volumeId.indexOf('?') > -1 ? '&' : '?';
+    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
       ','
     )}&focalPoint=${focalPoint.join(',')}`;
   }

@@ -976,6 +976,9 @@ export function getEnabledElement(element: HTMLDivElement | undefined): IEnabled
 export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
 
 // @public (undocumented)
+export function getEnabledElementByViewportId(viewportId: string): IEnabledElement;
+
+// @public (undocumented)
 export function getEnabledElements(): IEnabledElement[];
 
 // @public (undocumented)
@@ -1030,7 +1033,7 @@ function getSpacingInNormalDirection(imageVolume: IImageVolume | {
 }, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string, useSlabThickness?: boolean): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetId?: string, useSlabThickness?: boolean): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
     actorUID: string;
@@ -1062,6 +1065,9 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 
 // @public (undocumented)
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
+
+// @public (undocumented)
+const getVolumeId: (targetId: string) => string;
 
 // @public (undocumented)
 function getVolumeLoaderSchemes(): string[];
@@ -3439,7 +3445,8 @@ declare namespace utilities {
         roundNumber,
         roundToPrecision,
         getViewportImageIds,
-        getRandomSampleFromArray
+        getRandomSampleFromArray,
+        getVolumeId
     }
 }
 export { utilities }
@@ -3755,9 +3762,9 @@ export class Viewport implements IViewport {
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
     // (undocumented)
-    protected setDisplayAreaFit(displayArea: DisplayArea): void;
+    protected setDisplayAreaFit(displayArea: DisplayArea, relativeCamera?: ICamera): void;
     // (undocumented)
-    protected setDisplayAreaScale(displayArea: DisplayArea): void;
+    protected setDisplayAreaScale(displayArea: DisplayArea, relativeCamera: any): void;
     // (undocumented)
     protected setFitToCanvasCamera(camera: ICamera): void;
     // (undocumented)
