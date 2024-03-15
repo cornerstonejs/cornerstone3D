@@ -13,7 +13,6 @@ import {
   getLocalUrl,
   addVideoTime,
   addSegmentIndexDropdown,
-  contourSegmentationToolBindings,
   contourTools,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
