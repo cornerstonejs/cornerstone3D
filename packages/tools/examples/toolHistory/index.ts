@@ -5,6 +5,7 @@ import {
   getRenderingEngine,
   volumeLoader,
   setVolumesForViewports,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -152,6 +153,53 @@ addButtonToToolbar({
   },
 });
 
+let selectedAnnotationUID;
+
+function annotationModifiedListener(evt) {
+  selectedAnnotationUID =
+    evt.detail.annotation?.annotationUID ||
+    evt.detail.annotationUID ||
+    evt.detail.added?.[0];
+}
+
+function getActiveAnnotation() {
+  return cornerstoneTools.annotation.state.getAnnotation(selectedAnnotationUID);
+}
+
+addButtonToToolbar({
+  id: 'Delete',
+  title: 'Delete Annotation',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      cornerstoneTools.annotation.state.removeAnnotation(
+        annotation.annotationUID
+      );
+      getRenderingEngine(renderingEngineId).render();
+    }
+  },
+});
+
+function addAnnotationListeners() {
+  const { Events: toolsEvents } = csToolsEnums;
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_SELECTION_CHANGE,
+    annotationModifiedListener
+  );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_MODIFIED,
+    annotationModifiedListener
+  );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_COMPLETED,
+    annotationModifiedListener
+  );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_REMOVED,
+    annotationModifiedListener
+  );
+}
+
 let segmentationRepresentationUIDs;
 
 async function addSegmentationsToState() {
@@ -279,6 +327,7 @@ async function run() {
 
   // Render the image
   viewport.render();
+  addAnnotationListeners();
 }
 
 run();
