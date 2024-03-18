@@ -52,6 +52,31 @@ const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
 
 const PARALLEL_THRESHOLD = 1 - EPSILON;
+
+function calculatePerimeter(polyline, closed) {
+  let perimeter = 0;
+
+  for (let i = 0; i < polyline.length - 1; i++) {
+    const point1 = polyline[i];
+    const point2 = polyline[i + 1];
+
+    perimeter += Math.sqrt(
+      Math.pow(point2[0] - point1[0], 2) + Math.pow(point2[1] - point1[1], 2)
+    );
+  }
+
+  if (closed) {
+    const firstPoint = polyline[0];
+    const lastPoint = polyline[polyline.length - 1];
+    perimeter += Math.sqrt(
+      Math.pow(lastPoint[0] - firstPoint[0], 2) +
+        Math.pow(lastPoint[1] - firstPoint[1], 2)
+    );
+  }
+
+  return perimeter;
+}
+
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
  * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
@@ -243,7 +268,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
            */
           epsilon: 0.1,
         },
-        calculateStats: false,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -691,7 +716,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ) => {
     const { data } = annotation;
     const { cachedStats } = data;
-    const { polyline: points } = data.contour;
+    const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
 
@@ -844,6 +869,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
+        perimeter: calculatePerimeter(canvasCoordinates, closed),
         mean: stats.mean?.value,
         max: stats.max?.value,
         stdDev: stats.stdDev?.value,

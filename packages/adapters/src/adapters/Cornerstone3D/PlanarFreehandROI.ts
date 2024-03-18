@@ -97,8 +97,6 @@ class PlanarFreehandROI {
             frameNumber: ReferencedFrameNumber
         };
 
-        console.debug("[PlanarFreehandROI Adapter] getMeasurementData", state);
-
         return state;
     }
 
@@ -128,24 +126,21 @@ class PlanarFreehandROI {
             points.push([firstPoint[0], firstPoint[1]]);
         }
 
-        const { area, perimeter } = data.cachedStats || {};
-
-        console.debug(
-            "[PlanarFreehandROI Adapter] getTID300RepresentationArguments",
-            {
-                points,
-                area,
-                perimeter,
-                trackingIdentifierTextValue,
-                finding,
-                findingSites: findingSites || []
-            }
-        );
+        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
+            data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             points,
             area,
+            modalityUnit,
+            areaUnit,
             perimeter,
+            unit: modalityUnit,
+            /** Present in cachedStats but not being used by TID300 polyline in dcmjs */
+            mean,
+            max,
+            stdDev,
+            /** Other */
             trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
