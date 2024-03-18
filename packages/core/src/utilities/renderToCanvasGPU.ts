@@ -3,7 +3,7 @@ import getOrCreateCanvas, {
 } from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
 import StackViewport from '../RenderingEngine/StackViewport';
-import { IImage } from '../types';
+import { IImage, ViewportInputOptions } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
@@ -31,7 +31,8 @@ export default function renderToCanvasGPU(
   canvas: HTMLCanvasElement,
   image: IImage,
   modality = undefined,
-  renderingEngineId = '_thumbnails'
+  renderingEngineId = '_thumbnails',
+  viewportOptions: ViewportInputOptions = { displayArea: { imageArea: [1, 1] } }
 ): Promise<string> {
   if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
     throw new Error('canvas element is required');
@@ -80,6 +81,7 @@ export default function renderToCanvasGPU(
       type: ViewportType.STACK,
       element,
       defaultOptions: {
+        ...viewportOptions,
         suppressEvents: true,
       },
     };
@@ -141,12 +143,6 @@ export default function renderToCanvasGPU(
 
     // force a reset camera to center the image and undo the small scaling
     viewport.resetCamera();
-    // Update the parallel scale to fill the viewport rather than leaving
-    // space empty.  The 1.04 leaves a tiny border for hte image, and is
-    // based on the 1.10 factor (eg 10%) in Viewport that is divided by 2
-    // eg 5% would be the full amount, but 4% is used to leave a tiny border.
-    const parallelScale = viewport.getCamera().parallelScale / 1.04;
-    viewport.setCamera({ parallelScale });
 
     if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
       viewport.setProperties({

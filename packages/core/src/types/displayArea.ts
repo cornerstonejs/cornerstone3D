@@ -9,7 +9,7 @@ type DisplayArea = {
     imagePoint: [number, number]; // imageX, imageY
     canvasPoint?: [number, number]; // canvasX, canvasY
   };
-  storeAsInitialCamera: boolean;
+  storeAsInitialCamera?: boolean;
 };
 
 export default DisplayArea;

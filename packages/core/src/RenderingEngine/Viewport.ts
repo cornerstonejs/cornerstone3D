@@ -4,6 +4,7 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec2, vec3 } from 'gl-matrix';
+import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
@@ -199,7 +200,7 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = <ViewportInputOptions>structuredClone(options);
+    this.options = <ViewportInputOptions>_cloneDeep(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -217,7 +218,7 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = structuredClone(this.defaultOptions);
+    this.options = _cloneDeep(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -837,6 +838,21 @@ class Viewport implements IViewport {
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
+    // The bounds are used to set the clipping view, which is then used to
+    // figure out the center point of each image.  This needs to be the depth
+    // center, so the bounds need to be extended by the spacing such that the
+    // depth center is in the middle of each image.
+    if (imageData) {
+      const spc = imageData.getSpacing();
+
+      bounds[0] = bounds[0] + spc[0] / 2;
+      bounds[1] = bounds[1] - spc[0] / 2;
+      bounds[2] = bounds[2] + spc[1] / 2;
+      bounds[3] = bounds[3] - spc[1] / 2;
+      bounds[4] = bounds[4] + spc[2] / 2;
+      bounds[5] = bounds[5] - spc[2] / 2;
+    }
+
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const viewUp = <Point3>activeCamera.getViewUp();
@@ -851,9 +867,10 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => (d - 1) / 2);
+      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+      // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
 
@@ -865,30 +882,19 @@ class Viewport implements IViewport {
     const boundsAspectRatio = widthWorld / heightWorld;
     const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
-    let parallelScale;
+    const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
-    if (boundsAspectRatio <= canvasAspectRatio) {
-      // can fit full height exactly
-      parallelScale = heightWorld / 2;
-    } else {
-      // Fitting full height would overflow the width, so scale to width instead
-      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
-
-      // Scale to width exactly - no extra spacing at sides
-      parallelScale = (heightWorld * scaleFactor) / 2;
-    }
-
-    const w1 = (bounds[1] - bounds[0]) ** 2;
-    const w2 = (bounds[3] - bounds[2]) ** 2;
-    const w3 = (bounds[5] - bounds[4]) ** 2;
+    const parallelScale =
+      scaleFactor < 1 // can fit full height, so use it.
+        ? (this.insetImageMultiplier * heightWorld) / 2
+        : (this.insetImageMultiplier * heightWorld * scaleFactor) / 2;
 
     // If we have just a single point, pick a radius of 1.0
     // compute the radius of the enclosing sphere
     // For 3D viewport, we should increase the radius to make sure the whole
     // volume is visible and we don't get clipping artifacts.
     const radius =
-      Math.sqrt(w1 + w2 + w3 || 1) *
-      0.5 *
+      Viewport.boundsRadius(bounds) *
       (this.type === ViewportType.VOLUME_3D ? 10 : 1);
 
     const distance = this.insetImageMultiplier * radius;
@@ -1709,6 +1715,22 @@ class Viewport implements IViewport {
       [p6, p8],
       [p7, p8],
     ];
+  }
+
+  /**
+   * Computes the bounds radius value
+   */
+  static boundsRadius(bounds: number[]) {
+    const w1 = (bounds[1] - bounds[0]) ** 2;
+    const w2 = (bounds[3] - bounds[2]) ** 2;
+    const w3 = (bounds[5] - bounds[4]) ** 2;
+
+    // If we have just a single point, pick a radius of 1.0
+    // compute the radius of the enclosing sphere
+    // For 3D viewport, we should increase the radius to make sure the whole
+    // volume is visible and we don't get clipping artifacts.
+    const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
+    return radius;
   }
 }
 

@@ -1,4 +1,4 @@
-import { IImage } from '../types';
+import type { IImage, ViewportInputOptions } from '../types';
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import * as metaData from '../metaData';
@@ -22,6 +22,8 @@ export interface LoadImageOptions {
   imageAspect?: boolean;
   // Sets the canvas pixel size to the physical pixel size of the image area
   physicalPixels?: boolean;
+  // Sets the viewport input options  Defaults to scale to fit 110%
+  viewportOptions?: ViewportInputOptions;
 }
 
 /**
@@ -60,6 +62,7 @@ export default function loadImageToCanvas(
     thumbnail = false,
     imageAspect = false,
     physicalPixels = false,
+    viewportOptions,
   } = options;
 
   const devicePixelRatio = window.devicePixelRatio || 1;
@@ -83,7 +86,13 @@ export default function loadImageToCanvas(
         canvas.width = (canvas.height * image.width) / image.height;
       }
 
-      renderFn(canvas, image, modality, renderingEngineId).then(() => {
+      renderFn(
+        canvas,
+        image,
+        modality,
+        renderingEngineId,
+        viewportOptions
+      ).then(() => {
         resolve(imageId);
       });
     }

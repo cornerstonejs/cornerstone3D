@@ -480,12 +480,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           );
           return [pixelCoord[0], pixelCoord[1], 0];
         },
-        indexToWorld: (point: Point3) => {
+        indexToWorld: (point: Point3, destPoint?: Point3) => {
           const canvasPoint = pixelToCanvas(this._cpuFallbackEnabledElement, [
             point[0],
             point[1],
           ]);
-          return this.canvasToWorldCPU(canvasPoint);
+          return this.canvasToWorldCPU(canvasPoint, destPoint);
         },
       },
       scalarData: this.cpuImagePixelData,
@@ -2672,7 +2672,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._publishCalibratedEvent = false;
   }
 
-  private canvasToWorldCPU = (canvasPos: Point2): Point3 => {
+  private canvasToWorldCPU = (
+    canvasPos: Point2,
+    worldPos: Point3 = [0, 0, 0]
+  ): Point3 => {
     if (!this._cpuFallbackEnabledElement.image) {
       return;
     }
@@ -2682,8 +2685,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
 
-    const worldPos = vec3.fromValues(0, 0, 0);
-
     // Calculate size of spacing vector in normal direction
     const iVector = direction.slice(0, 3) as Point3;
     const jVector = direction.slice(3, 6) as Point3;
@@ -2692,7 +2693,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
     vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
 
-    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+    return worldPos;
   };
 
   private worldToCanvasCPU = (worldPos: Point3): Point2 => {

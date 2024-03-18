@@ -43,7 +43,14 @@ const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
 const viewportId3 = 'CT_CORONAL';
 const viewportId4 = 'CT_STACK';
-const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
+const viewportId5 = 'TEST_STACK';
+const viewportIds = [
+  viewportId1,
+  viewportId2,
+  viewportId3,
+  viewportId4,
+  viewportId5,
+];
 let viewport;
 const viewports = [];
 const renderingEngineId = 'myRenderingEngine';
@@ -75,7 +82,8 @@ const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 const element4 = document.createElement('div');
-const elements = [element4, element1, element2, element3];
+const element5 = document.createElement('div');
+const elements = [element3, element4, element1, element2, element5];
 elements.forEach((element) => {
   Object.assign(element.style, {
     width,
@@ -420,6 +428,14 @@ async function run() {
         background: <Types.Point3>[0, 0.5, 0.5],
       },
     },
+    {
+      viewportId: viewportId5,
+      type: ViewportType.STACK,
+      element: element5,
+      defaultOptions: {
+        background: <Types.Point3>[0, 0, 0.5],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -439,16 +455,20 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  const stackViewport = renderingEngine.getViewport(
-    viewportId4
+  const stackViewport5 = renderingEngine.getViewport(
+    viewportId5
   ) as Types.IStackViewport;
-  // await stackViewport.setStack(stackImageIds);
-  await stackViewport.setStack(imageIds);
-  // Assign the initial viewport
-  viewport = stackViewport;
-  stackViewport.setProperties({
+  await stackViewport5.setStack(stackImageIds);
+  stackViewport5.setProperties({
     interpolationType: Enums.InterpolationType.NEAREST,
   });
+
+  const stackViewport4 = renderingEngine.getViewport(
+    viewportId4
+  ) as Types.IStackViewport;
+  await stackViewport4.setStack(imageIds);
+  // Assign the initial viewport
+  viewport = stackViewport4;
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -460,6 +480,7 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
   toolGroup.addViewport(viewportId4, renderingEngineId);
+  toolGroup.addViewport(viewportId5, renderingEngineId);
 
   // Manipulation Tools
   // Add Crosshairs tool and configure it to link the three viewports

@@ -709,7 +709,7 @@ type DisplayArea = {
         imagePoint: [number, number];
         canvasPoint?: [number, number];
     };
-    storeAsInitialCamera: boolean;
+    storeAsInitialCamera?: boolean;
 };
 
 // @public (undocumented)
@@ -2803,10 +2803,10 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, renderingEngineId?: string): Promise<string>;
+function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<string>;
 
 // @public (undocumented)
-function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string): Promise<string>;
+function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions): Promise<string>;
 
 // @public (undocumented)
 enum RequestType {
@@ -3470,7 +3470,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
+    canvasToWorld: (canvasPos: Point2, destPos?: Point3) => Point3;
     // (undocumented)
     protected createActorMapper(image: any): CanvasActor;
     // (undocumented)
@@ -3508,7 +3508,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
             getScalarData: () => CanvasScalarData;
             getSpacing: () => any;
             worldToIndex: (point: Point3) => number[];
-            indexToWorld: (point: Point3) => Point3;
+            indexToWorld: (point: Point2, destPoint?: Point3) => Point3;
         };
         hasPixelSpacing: boolean;
         calibration: IImageCalibration;
@@ -3646,6 +3646,8 @@ export class Viewport implements IViewport {
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
+    // (undocumented)
+    static boundsRadius(bounds: number[]): number;
     // (undocumented)
     protected calibration: IImageCalibration;
     // (undocumented)
