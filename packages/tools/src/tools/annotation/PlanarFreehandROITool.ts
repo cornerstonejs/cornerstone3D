@@ -294,7 +294,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     );
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
+
     evt.preventDefault();
+
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
@@ -350,6 +352,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     } else {
       this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     }
+
+    evt.preventDefault();
   };
 
   /**
@@ -536,16 +540,21 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       annotation.data.handles.points.length = 0;
     };
 
-    return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
-      data: {
-        contour: {
-          polyline: [<Types.Point3>[...worldPos]],
+    const annotation = <PlanarFreehandROIAnnotation>csUtils.deepMerge(
+      contourAnnotation,
+      {
+        data: {
+          contour: {
+            polyline: [<Types.Point3>[...worldPos]],
+          },
+          label: '',
+          cachedStats: {},
         },
-        label: '',
-        cachedStats: {},
-      },
-      onInterpolationComplete,
-    });
+        onInterpolationComplete,
+      }
+    );
+
+    return annotation;
   }
 
   protected getAnnotationStyle(context) {

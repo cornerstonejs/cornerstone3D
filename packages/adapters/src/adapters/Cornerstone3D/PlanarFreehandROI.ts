@@ -33,7 +33,7 @@ class PlanarFreehandROI {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
+        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -79,8 +79,7 @@ class PlanarFreehandROI {
         const state = defaultState;
 
         state.annotation.data = {
-            polyline: worldCoords,
-            isOpenContour,
+            contour: { polyline: worldCoords, closed: !isOpenContour },
             handles: {
                 points,
                 activeHandleIndex: null,
@@ -88,15 +87,26 @@ class PlanarFreehandROI {
                     hasMoved: false
                 }
             },
+            cachedStats: {
+                [`imageId:${referencedImageId}`]: {
+                    area: NUMGroup
+                        ? NUMGroup.MeasuredValueSequence.NumericValue
+                        : null
+                }
+            },
             frameNumber: ReferencedFrameNumber
         };
+
+        console.debug("[PlanarFreehandROI Adapter] getMeasurementData", state);
 
         return state;
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
-        const { isOpenContour, polyline } = data;
+
+        const { polyline, closed } = data.contour;
+        const isOpenContour = closed !== true;
 
         const { referencedImageId } = metadata;
 
@@ -118,8 +128,19 @@ class PlanarFreehandROI {
             points.push([firstPoint[0], firstPoint[1]]);
         }
 
-        const area = 0; // TODO -> The tool doesn't have these stats yet.
-        const perimeter = 0;
+        const { area, perimeter } = data.cachedStats || {};
+
+        console.debug(
+            "[PlanarFreehandROI Adapter] getTID300RepresentationArguments",
+            {
+                points,
+                area,
+                perimeter,
+                trackingIdentifierTextValue,
+                finding,
+                findingSites: findingSites || []
+            }
+        );
 
         return {
             points,
