@@ -2437,7 +2437,11 @@ enum MetadataModules {
     // (undocumented)
     CINE = "cineModule",
     // (undocumented)
+    GENERAL_IMAGE = "generalImageModule",
+    // (undocumented)
     GENERAL_SERIES = "generalSeriesModule",
+    // (undocumented)
+    GENERAL_STUDY = "generalStudyModule",
     // (undocumented)
     IMAGE_PIXEL = "imagePixelModule",
     // (undocumented)
@@ -2445,13 +2449,25 @@ enum MetadataModules {
     // (undocumented)
     IMAGE_URL = "imageUrlModule",
     // (undocumented)
+    INSTANCE = "instanceModule",
+    // (undocumented)
     MODALITY_LUT = "modalityLutModule",
     // (undocumented)
     MULTIFRAME = "multiframeModule",
     // (undocumented)
     NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
     // (undocumented)
+    OVERLAY_PLANE = "overlayPlaneModule",
+    // (undocumented)
+    PATIENT = "patientModule",
+    // (undocumented)
     PATIENT_STUDY = "patientStudyModule",
+    // (undocumented)
+    PET_IMAGE = "petImageModule",
+    // (undocumented)
+    PET_ISOTOPE = "petIsotopeModule",
+    // (undocumented)
+    PET_SERIES = "petSeriesModule",
     // (undocumented)
     SOP_COMMON = "sopCommonModule",
     // (undocumented)
