@@ -19,7 +19,6 @@ const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
 
 const debounced = true;
-const loop = true;
 const dynamicVolumesPlayingMap = new Map();
 
 /**
@@ -125,7 +124,7 @@ function playClip(
     const newStepIndexOutOfRange =
       newStepIndex < 0 || newStepIndex >= numScrollSteps;
 
-    if (!loop && newStepIndexOutOfRange) {
+    if (!playClipData.loop && newStepIndexOutOfRange) {
       // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
       // prevent stopping a 4D CINE in case it is playing on another viewport.
       _stopClip(element, {
