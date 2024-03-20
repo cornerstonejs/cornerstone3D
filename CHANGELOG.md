@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.66.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.7...v1.66.8) (2024-03-20)
+
+### Bug Fixes
+
+- **cine:** playclip to allow loop config ([#1163](https://github.com/cornerstonejs/cornerstone3D/issues/1163)) ([1880f38](https://github.com/cornerstonejs/cornerstone3D/commit/1880f385ea27fe1a3fea20ea6eb03bcc950dcb0d))
+
 ## [1.66.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.6...v1.66.7) (2024-03-18)
 
 ### Bug Fixes
