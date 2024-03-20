@@ -399,7 +399,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return newRGBTransferFunction;
   }
 
-  private setInterpolationType(
+  protected setInterpolationType(
     interpolationType: InterpolationType,
     volumeId?: string
   ) {

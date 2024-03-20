@@ -643,7 +643,6 @@ class RenderingEngine implements IRenderingEngine {
           if (rotation) {
             vp.setProperties({ rotation });
           }
-          console.log('What to do with pan and zoom', pan[0], pan[1], zoom);
         } else {
           vp.setCamera(prevCamera);
         }

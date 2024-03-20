@@ -382,7 +382,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   private setVOI: (voiRange: VOIRange, options?: SetVOIOptions) => void;
 
-  private setInterpolationType: (interpolationType: InterpolationType) => void;
+  protected setInterpolationType: (
+    interpolationType: InterpolationType
+  ) => void;
 
   private setInvertColor: (invert: boolean) => void;
 

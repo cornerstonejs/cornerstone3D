@@ -7,6 +7,7 @@ import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
 import BoundsLPS from './BoundsLPS';
+import { InterpolationType } from '../enums';
 
 /**
  * Specifies what view to get a reference for.

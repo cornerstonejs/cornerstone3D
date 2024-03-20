@@ -31,6 +31,7 @@ import type {
   DisplayArea,
   ViewPresentation,
   ViewReference,
+  ViewportProperties,
 } from '../types';
 import type {
   ViewportInput,
@@ -41,6 +42,7 @@ import type {
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
+import { InterpolationType } from '../enums';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -136,7 +138,7 @@ class Viewport implements IViewport {
   worldToCanvas: (worldPos: Point3) => Point2;
   customRenderViewportToCanvas: () => unknown;
   resize: () => void;
-  getProperties: () => void;
+  getProperties: () => ViewportProperties = () => ({});
   updateRenderingPipeline: () => void;
   getNumberOfSlices: () => number;
 
@@ -592,6 +594,13 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Sets the interpolation type.  No-op in the base.
+   */
+  protected setInterpolationType(_interpolationType: InterpolationType, _arg?) {
+    // No-op - just done to allow setting on the base viewport
+  }
+
+  /**
    * Sets the camera to an initial bounds. If
    * resetPan and resetZoom are true it places the focal point at the center of
    * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
@@ -628,6 +637,9 @@ class Viewport implements IViewport {
     if (areaType === 'SCALE') {
       this.setDisplayAreaScale(displayArea, relativeCamera);
     } else {
+      this.setInterpolationType(
+        this.getProperties().interpolationType || InterpolationType.LINEAR
+      );
       this.setDisplayAreaFit(displayArea, relativeCamera);
     }
 
@@ -675,6 +687,8 @@ class Viewport implements IViewport {
     const imageData = this.getDefaultImageData();
     const spacingWorld = imageData.getSpacing();
     const spacing = spacingWorld[1];
+    // Need nearest interpolation for scale
+    this.setInterpolationType(InterpolationType.NEAREST);
     this.setCamera({ parallelScale: (height * spacing) / (2 * scale) });
     relativeCamera = this.getCamera();
 

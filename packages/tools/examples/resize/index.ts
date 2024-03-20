@@ -68,8 +68,10 @@ setTitleAndDescription(
   'Here we demonstrate resize, using the display area/relative zoom, pan view reference synchronization.'
 );
 
-const widthValue = Math.floor(window.innerWidth / 4 - 50);
-const heightValue = Math.floor((window.innerHeight * 2) / 3);
+// const widthValue = Math.floor(window.innerWidth / 4 - 50);
+// const heightValue = Math.floor((window.innerHeight * 2) / 3);
+const widthValue = 899;
+const heightValue = 648;
 
 const width = `${widthValue}px`;
 const height = `${heightValue}px`;
@@ -459,9 +461,9 @@ async function run() {
     viewportId5
   ) as Types.IStackViewport;
   await stackViewport5.setStack(stackImageIds);
-  stackViewport5.setProperties({
-    interpolationType: Enums.InterpolationType.NEAREST,
-  });
+  // stackViewport5.setProperties({
+  //   interpolationType: Enums.InterpolationType.NEAREST,
+  // });
 
   const stackViewport4 = renderingEngine.getViewport(
     viewportId4

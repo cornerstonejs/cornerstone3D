@@ -170,6 +170,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setDefaultProperties(ViewportProperties: VolumeViewportProperties, volumeId?: string): void;
     // (undocumented)
+    protected setInterpolationType(interpolationType: InterpolationType, volumeId?: string): void;
+    // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
@@ -3105,6 +3107,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
+    protected setInterpolationType: (interpolationType: InterpolationType) => void;
+    // (undocumented)
     setProperties({ colormap, voiRange, VOILUTFunction, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
@@ -3704,7 +3708,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getPan(initialCamera?: ICamera): Point2;
     // (undocumented)
-    getProperties: () => void;
+    getProperties: () => ViewportProperties;
     // (undocumented)
     getReferenceId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
@@ -3771,6 +3775,8 @@ export class Viewport implements IViewport {
     protected setFitToCanvasCamera(camera: ICamera): void;
     // (undocumented)
     protected setInitialCamera(camera: ICamera): void;
+    // (undocumented)
+    protected setInterpolationType(_interpolationType: InterpolationType, _arg?: any): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
