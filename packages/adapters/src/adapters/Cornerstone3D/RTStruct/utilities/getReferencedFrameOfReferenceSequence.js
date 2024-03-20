@@ -4,7 +4,7 @@ export default function getReferencedFrameOfReferenceSequence(
     dataset
 ) {
     const { referencedImageId: imageId, FrameOfReferenceUID } = metadata;
-    const instance = metadataProvider.get("instance", imageId);
+    const instance = metadataProvider.get("instanceModule", imageId);
     const { SeriesInstanceUID } = instance;
 
     const { ReferencedSeriesSequence } = dataset;
