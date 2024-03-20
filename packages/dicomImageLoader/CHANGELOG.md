@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.66.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.8...v1.66.9) (2024-03-20)
+
+### Bug Fixes
+
+- **DicomImageLoader:** Returns options.loader ([#1154](https://github.com/cornerstonejs/cornerstone3D/issues/1154)) ([9a6c452](https://github.com/cornerstonejs/cornerstone3D/commit/9a6c452b211d9a55fd49313537e5de8bad2cfde8))
+
 ## [1.66.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.7...v1.66.8) (2024-03-20)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
