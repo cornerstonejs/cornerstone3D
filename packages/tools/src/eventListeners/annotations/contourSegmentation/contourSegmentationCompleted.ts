@@ -216,16 +216,25 @@ export function createPolylineHole(
   const { windingDirection: holeWindingDirection } =
     holeAnnotation.data.contour;
 
-  // Check if both normals are pointing to the same direction because the
-  // polyline for the hole needs to be in a different direction
-  // if (glMatrix.equals(1, dotNormals)) {
-  if (targetWindingDirection === holeWindingDirection) {
-    holeAnnotation.data.contour.polyline.reverse();
-    holeAnnotation.data.contour.windingDirection = targetWindingDirection * -1;
-  }
-
   addChildAnnotation(targetAnnotation, holeAnnotation);
   contourSegUtils.removeContourSegmentationAnnotation(holeAnnotation);
+
+  const { contour: holeContour } = holeAnnotation.data;
+  const holePolyline = convertContourPolylineToCanvasSpace(
+    holeContour.polyline,
+    viewport
+  );
+
+  // Calling `updateContourPolyline` method instead of reversing the polyline
+  // locally because it is also responsible for checking/fixing the winding direction.
+  contourUtils.updateContourPolyline(
+    holeAnnotation,
+    {
+      points: holePolyline,
+      closed: holeContour.closed,
+    },
+    viewport
+  );
 
   const { element } = viewport;
   const enabledElement = getEnabledElement(element);
@@ -393,7 +402,7 @@ function combinePolylines(
     };
 
     // Calling `updateContourPolyline` method instead of setting it locally
-    // because it is also responsible for checking/setting the winding direction.
+    // because it is also responsible for checking/fixing the winding direction.
     contourUtils.updateContourPolyline(
       newAnnotation,
       {
