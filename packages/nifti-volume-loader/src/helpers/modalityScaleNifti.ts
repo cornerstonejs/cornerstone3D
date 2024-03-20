@@ -8,7 +8,15 @@
  * @returns The array being scaled
  */
 export default function modalityScaleNifti(
-  array: Float32Array | Int16Array | Uint8Array,
+  array:
+    | Uint8Array
+    | Int16Array
+    | Int32Array
+    | Float32Array
+    | Float64Array
+    | Int8Array
+    | Uint16Array
+    | Uint32Array,
   niftiHeader
 ): void {
   const arrayLength = array.length;

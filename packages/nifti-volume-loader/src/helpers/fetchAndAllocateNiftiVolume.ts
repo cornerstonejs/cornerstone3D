@@ -71,10 +71,20 @@ export const getTypedNiftiArray = (datatypeCode, niftiImageBuffer) => {
   switch (datatypeCode) {
     case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
       return new Uint8Array(niftiImageBuffer);
-    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT32:
-      return new Float32Array(niftiImageBuffer);
     case NIFTICONSTANTS.NIFTI_TYPE_INT16:
       return new Int16Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_INT32:
+      return new Int32Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT32:
+      return new Float32Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT64:
+      return new Float64Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_INT8:
+      return new Int8Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_UINT16:
+      return new Uint16Array(niftiImageBuffer);
+    case NIFTICONSTANTS.NIFTI_TYPE_UINT32:
+      return new Uint32Array(niftiImageBuffer);
     default:
       throw new Error(`datatypeCode ${datatypeCode} is not yet supported`);
   }
@@ -149,7 +159,6 @@ export default async function fetchAndAllocateNiftiVolume(
 
   const {
     BitsAllocated,
-    PixelRepresentation,
     PhotometricInterpretation,
     ImageOrientationPatient,
     Columns,
@@ -184,7 +193,6 @@ export default async function fetchAndAllocateNiftiVolume(
     scanAxisNormal[1],
     scanAxisNormal[2],
   ]) as Types.Mat3;
-  const signed = PixelRepresentation === 1;
 
   // Check if it fits in the cache before we allocate data
   // TODO Improve this when we have support for more types
@@ -213,22 +221,15 @@ export default async function fetchAndAllocateNiftiVolume(
 
   let scalarData;
 
-  switch (BitsAllocated) {
-    case 8:
-      if (signed) {
-        throw new Error(
-          '8 Bit signed images are not yet supported by this plugin.'
-        );
-      } else {
-        scalarData = createUint8SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        );
-      }
+  switch (niftiHeader.datatypeCode) {
+    case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
+      scalarData = createUint8SharedArray(
+        dimensions[0] * dimensions[1] * dimensions[2]
+      );
 
       break;
 
-    case 16:
-    case 32:
+    default:
       scalarData = createFloat32SharedArray(
         dimensions[0] * dimensions[1] * dimensions[2]
       );

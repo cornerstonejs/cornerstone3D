@@ -18,18 +18,33 @@ const invertDataPerFrame = (dimensions, imageDataArray) => {
   } else if (imageDataArray instanceof Int16Array) {
     TypedArrayConstructor = Int16Array;
     bytesPerVoxel = 2;
+  } else if (imageDataArray instanceof Int32Array) {
+    TypedArrayConstructor = Int32Array;
+    bytesPerVoxel = 4;
   } else if (imageDataArray instanceof Float32Array) {
     TypedArrayConstructor = Float32Array;
     bytesPerVoxel = 4;
+  } else if (imageDataArray instanceof Float64Array) {
+    TypedArrayConstructor = Float64Array;
+    bytesPerVoxel = 8;
+  } else if (imageDataArray instanceof Int8Array) {
+    TypedArrayConstructor = Int8Array;
+    bytesPerVoxel = 1;
+  } else if (imageDataArray instanceof Uint16Array) {
+    TypedArrayConstructor = Uint16Array;
+    bytesPerVoxel = 2;
+  } else if (imageDataArray instanceof Uint32Array) {
+    TypedArrayConstructor = Uint32Array;
+    bytesPerVoxel = 4;
   } else {
     throw new Error(
-      'imageDataArray needs to be a Uint8Array, Int16Array or Float32Array.'
+      'imageDataArray needs to be a Uint8Array, Int16Array, Int32Array, Float32Array, Float64Array, Int8Array, Uint16Array or Uint32Array.'
     );
   }
 
   // Make a copy of the data first using the browser native fast TypedArray.set().
   const newImageDataArray = new TypedArrayConstructor(
-    imageDataArray.byteLength
+    imageDataArray.byteLength / bytesPerVoxel
   );
 
   const view = new TypedArrayConstructor(imageDataArray);
