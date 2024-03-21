@@ -45,6 +45,7 @@ import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes } from '../../enums';
 
@@ -52,30 +53,6 @@ const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
 
 const PARALLEL_THRESHOLD = 1 - EPSILON;
-
-function calculatePerimeter(polyline, closed) {
-  let perimeter = 0;
-
-  for (let i = 0; i < polyline.length - 1; i++) {
-    const point1 = polyline[i];
-    const point2 = polyline[i + 1];
-
-    perimeter += Math.sqrt(
-      Math.pow(point2[0] - point1[0], 2) + Math.pow(point2[1] - point1[1], 2)
-    );
-  }
-
-  if (closed) {
-    const firstPoint = polyline[0];
-    const lastPoint = polyline[polyline.length - 1];
-    perimeter += Math.sqrt(
-      Math.pow(lastPoint[0] - firstPoint[0], 2) +
-        Math.pow(lastPoint[1] - firstPoint[1], 2)
-    );
-  }
-
-  return perimeter;
-}
 
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
