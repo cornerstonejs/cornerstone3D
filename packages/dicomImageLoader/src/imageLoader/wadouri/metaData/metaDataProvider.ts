@@ -95,7 +95,7 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.PATIENT) {
     return {
-      patientId: dataSet.string('x00100020'),
+      patientID: dataSet.string('x00100020'),
       patientName: dataSet.string('x00100010'),
     };
   }

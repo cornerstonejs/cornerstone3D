@@ -108,7 +108,7 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.PATIENT) {
     return {
-      patientId: getValue<string>(metaData['00100020']),
+      patientID: getValue<string>(metaData['00100020']),
       patientName: getValue<string>(metaData['00100010']),
     };
   }
