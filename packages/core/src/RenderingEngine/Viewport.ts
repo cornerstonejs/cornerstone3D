@@ -629,10 +629,6 @@ class Viewport implements IViewport {
 
     const relativeCamera = this.fitToCanvasCamera;
     this.setCamera(relativeCamera);
-    if (storeAsInitialCamera) {
-      // Need to start with the initial camera set in order to update the initial camera
-      this.initialCamera = relativeCamera;
-    }
 
     if (areaType === 'SCALE') {
       this.setDisplayAreaScale(displayArea, relativeCamera);
@@ -780,7 +776,7 @@ class Viewport implements IViewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = this.getZoom(relativeCamera);
+    let zoom = this.getZoom() * this.insetImageMultiplier;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
@@ -789,6 +785,7 @@ class Viewport implements IViewport {
       zoom = Math.min(zoom / requireX, zoom / requireY);
       this.setZoom(zoom);
     }
+    console.log('Using zoom', zoom);
 
     // getting the image info
     // getting the image info
@@ -807,6 +804,8 @@ class Viewport implements IViewport {
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
+      // Use getPan from current for the setting
+      vec2.add(deltaPoint2, deltaPoint2, this.getPan());
       // The pan is part of the display area settings, not the initial camera, so
       // don't store as initial camera here - that breaks rotation and other changes.
       this.setPan(deltaPoint2);
@@ -1023,13 +1022,13 @@ class Viewport implements IViewport {
 
     const zero3 = this.canvasToWorld([0, 0]);
     const initialCanvasFocal = this.worldToCanvas(
-      <Point3>vec3.subtract(vec3.create(), initialCamera.focalPoint, zero3)
+      <Point3>vec3.subtract([0, 0, 0], initialCamera.focalPoint, zero3)
     );
     const currentCanvasFocal = this.worldToCanvas(
-      <Point3>vec3.subtract(vec3.create(), focalPoint, zero3)
+      <Point3>vec3.subtract([0, 0, 0], focalPoint, zero3)
     );
     const result = <Point2>(
-      vec2.subtract(vec2.create(), initialCanvasFocal, currentCanvasFocal)
+      vec2.subtract([0, 0], initialCanvasFocal, currentCanvasFocal)
     );
     return result;
   }
@@ -1050,7 +1049,14 @@ class Viewport implements IViewport {
     const previousCamera = this.getCamera();
     const { focalPoint, position } = previousCamera;
     const zero3 = this.canvasToWorld([0, 0]);
-    const delta2 = vec2.subtract(vec2.create(), pan, this.getPan());
+    const delta2 = vec2.subtract([0, 0], pan, this.getPan());
+    console.log(
+      'setPan',
+      pan,
+      delta2,
+      this.getPan(),
+      this.getPan(this.fitToCanvasCamera)
+    );
     if (
       Math.abs(delta2[0]) < 1 &&
       Math.abs(delta2[1]) < 1 &&
