@@ -68,13 +68,8 @@ setTitleAndDescription(
   'Here we demonstrate resize, using the display area/relative zoom, pan view reference synchronization.'
 );
 
-// const widthValue = Math.floor(window.innerWidth / 4 - 50);
-// const heightValue = Math.floor((window.innerHeight * 2) / 3);
-const widthValue = 899;
-const heightValue = 648;
-
-const width = `${widthValue}px`;
-const height = `${heightValue}px`;
+const width = `18vw`;
+const height = `50vw`;
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -289,22 +284,22 @@ resizeOptions.set('Original', {
   viewportStyle: { width, height },
 });
 resizeOptions.set('1:2', {
-  viewportStyle: { width: '256px', height: '512px' },
+  viewportStyle: { width: '20vw', height: '40vw' },
 });
 resizeOptions.set('2:1', {
-  viewportStyle: { width: '512px', height: '256px' },
+  viewportStyle: { width: '40vw', height: '20vw' },
 });
 resizeOptions.set('3:2', {
-  viewportStyle: { width: '341px', height: '511px' },
+  viewportStyle: { width: '30vw', height: '20vw' },
 });
 resizeOptions.set('3:1', {
-  viewportStyle: { width: '341px', height: '256px' },
+  viewportStyle: { width: '30vw', height: '10vw' },
 });
 resizeOptions.set('1:4', {
-  viewportStyle: { width: '512px', height: '4096px' },
+  viewportStyle: { width: '10vw', height: '40vw' },
 });
 resizeOptions.set('4:1', {
-  viewportStyle: { width: '512px', height: '128px' },
+  viewportStyle: { width: '40vw', height: '10vw' },
 });
 
 addDropdownToToolbar({
