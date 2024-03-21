@@ -6,7 +6,7 @@ export default function getReferencedSeriesSequence(
 ) {
     // grab imageId from toolData
     const { referencedImageId: imageId } = metadata;
-    const instance = metadataProvider.get("instanceModule", imageId);
+    const instance = metadataProvider.get("instance", imageId);
     const { SeriesInstanceUID, StudyInstanceUID } = instance;
 
     const ReferencedSeriesSequence = [];

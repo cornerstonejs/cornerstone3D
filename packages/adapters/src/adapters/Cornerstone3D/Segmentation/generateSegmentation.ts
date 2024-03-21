@@ -36,7 +36,7 @@ function _createMultiframeSegmentationFromReferencedImages(
 ) {
     const datasets = images.map(image => {
         // add the sopClassUID to the dataset
-        const instance = metadata.get("instanceModule", image.imageId);
+        const instance = metadata.get("instance", image.imageId);
         return {
             ...image,
             ...instance,

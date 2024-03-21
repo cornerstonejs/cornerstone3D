@@ -422,7 +422,7 @@ async function generateToolState(
     const imageIdMaps = imageIds.reduce(
         (acc, curr, index) => {
             acc.indices[curr] = index;
-            acc.metadata[curr] = metadataProvider.get("instanceModule", curr);
+            acc.metadata[curr] = metadataProvider.get("instance", curr);
             return acc;
         },
         { indices: {}, metadata: {} }
@@ -1010,7 +1010,7 @@ function insertOverlappingPixelDataPlanar(
             }
 
             const sourceImageMetadata = metadataProvider.get(
-                "instanceModule",
+                "instance",
                 imageId
             );
             if (
@@ -1489,7 +1489,7 @@ function getImageIdOfSourceImagebyGeometry(
         ++imageIdsIndexc
     ) {
         const sourceImageMetadata = metadataProvider.get(
-            "instanceModule",
+            "instance",
             imageIds[imageIdsIndexc]
         );
 
