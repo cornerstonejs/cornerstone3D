@@ -277,7 +277,7 @@ function metaDataProvider(type, imageId) {
   }
 
   // This is used for gathering all the metadata for export
-  if (type === MetadataModules.INSTANCE) {
+  if (type === 'instance' || type === MetadataModules.INSTANCE) {
     return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
 }
