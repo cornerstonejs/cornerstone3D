@@ -2232,7 +2232,7 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    getViewPresentation(viewPres: ViewPresentation): any;
+    getViewPresentation(viewPresSel: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
@@ -3282,6 +3282,7 @@ declare namespace Types {
         IViewport,
         ViewReference,
         ViewPresentation,
+        ViewPresentationSelector,
         ReferenceCompatibleOptions,
         ViewReferenceSpecifier,
         StackViewportProperties,
@@ -3665,6 +3666,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     readonly element: HTMLDivElement;
     // (undocumented)
+    protected fitToCanvasCamera: ICamera;
+    // (undocumented)
     protected flip({ flipHorizontal, flipVertical }: FlipDirection): void;
     // (undocumented)
     protected flipHorizontal: boolean;
@@ -3718,7 +3721,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    getViewPresentation(viewPres?: ViewPresentation): ViewPresentation;
+    getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
@@ -3892,16 +3895,20 @@ enum ViewportType {
 
 // @public (undocumented)
 type ViewPresentation = {
-    slabThicknessType?: true | 'mm';
     slabThickness?: number;
-    rotationType?: true;
     rotation?: number;
-    displayAreaType?: true;
     displayArea?: DisplayArea;
-    zoomType?: true | 'scaleToFit';
     zoom?: number;
-    panType?: true | 'initialCamera' | 'scaleToFit' | 'zoomRelative';
     pan?: Point2;
+};
+
+// @public (undocumented)
+type ViewPresentationSelector = {
+    slabThickness?: boolean;
+    rotation?: boolean;
+    displayArea?: boolean;
+    zoom?: boolean;
+    pan?: boolean;
 };
 
 // @public (undocumented)

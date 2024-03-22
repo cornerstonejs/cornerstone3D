@@ -38,6 +38,7 @@ import type {
   IViewport,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
+  ViewPresentationSelector,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -104,7 +105,7 @@ class Viewport implements IViewport {
   /** The camera that is defined for resetting displayArea to ensure absolute displayArea
    * settings
    */
-  private fitToCanvasCamera: ICamera;
+  protected fitToCanvasCamera: ICamera;
 
   constructor(props: ViewportInput) {
     this.id = props.id;
@@ -776,16 +777,17 @@ class Viewport implements IViewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = this.getZoom() * this.insetImageMultiplier;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
       const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
       const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
 
-      zoom = Math.min(zoom / requireX, zoom / requireY);
-      this.setZoom(zoom);
+      const initZoom = this.getZoom();
+      const fitZoom = this.getZoom(this.fitToCanvasCamera);
+      const absZoom = Math.min(1 / requireX, 1 / requireY);
+      const applyZoom = (absZoom * initZoom) / fitZoom;
+      this.setZoom(applyZoom, false);
     }
-    console.log('Using zoom', zoom);
 
     // getting the image info
     // getting the image info
@@ -797,8 +799,9 @@ class Viewport implements IViewport {
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
       const [imageX, imageY] = imagePoint || canvasPoint;
-      const imagePanX = zoom * imgWidth * (0.5 - imageX);
-      const imagePanY = zoom * imgHeight * (0.5 - imageY);
+      const useZoom = 1;
+      const imagePanX = useZoom * imgWidth * (0.5 - imageX);
+      const imagePanY = useZoom * imgHeight * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
@@ -808,7 +811,7 @@ class Viewport implements IViewport {
       vec2.add(deltaPoint2, deltaPoint2, this.getPan());
       // The pan is part of the display area settings, not the initial camera, so
       // don't store as initial camera here - that breaks rotation and other changes.
-      this.setPan(deltaPoint2);
+      this.setPan(deltaPoint2, false);
     }
   }
 
@@ -1050,13 +1053,6 @@ class Viewport implements IViewport {
     const { focalPoint, position } = previousCamera;
     const zero3 = this.canvasToWorld([0, 0]);
     const delta2 = vec2.subtract([0, 0], pan, this.getPan());
-    console.log(
-      'setPan',
-      pan,
-      delta2,
-      this.getPan(),
-      this.getPan(this.fitToCanvasCamera)
-    );
     if (
       Math.abs(delta2[0]) < 1 &&
       Math.abs(delta2[1]) < 1 &&
@@ -1569,31 +1565,30 @@ class Viewport implements IViewport {
   /**
    * Gets a basic view reference.
    */
-  public getViewPresentation(viewPres?: ViewPresentation): ViewPresentation {
+  public getViewPresentation(
+    viewPresSel?: ViewPresentationSelector
+  ): ViewPresentation {
     const target: ViewPresentation = {};
-    const { initialCamera, fitToCanvasCamera } = this;
 
     const {
-      rotationType = true,
-      displayAreaType = true,
-      zoomType = true,
-      panType = true,
-    } = viewPres || {};
-    if (rotationType) {
+      rotation = true,
+      displayArea = true,
+      zoom = true,
+      pan = true,
+    } = viewPresSel || {};
+    if (rotation) {
       target.rotation = this.getRotation();
-      target.rotationType = rotationType;
+      console.log('***** Getting target rotation', target.rotation, target);
     }
-    if (displayAreaType) {
+    if (displayArea) {
       target.displayArea = this.getDisplayArea();
-      target.displayAreaType = displayAreaType;
     }
     const initZoom = this.getZoom();
 
-    if (zoomType) {
-      target.zoomType = zoomType;
+    if (zoom) {
       target.zoom = initZoom;
     }
-    if (panType) {
+    if (pan) {
       target.pan = this.getPan();
       vec2.scale(target.pan, target.pan, 1 / initZoom);
     }

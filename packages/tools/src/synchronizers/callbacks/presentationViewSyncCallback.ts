@@ -16,7 +16,7 @@ export default function presentationViewSyncCallback(
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
   _sourceEvent,
-  options?: Types.ViewPresentation
+  options?: Types.ViewPresentationSelector
 ): void {
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {

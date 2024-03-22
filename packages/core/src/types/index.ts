@@ -20,6 +20,7 @@ import type {
   ReferenceCompatibleOptions,
   ViewReference,
   ViewPresentation,
+  ViewPresentationSelector,
 } from './IViewport';
 import type {
   VolumeActor,
@@ -163,6 +164,7 @@ export type {
   IViewport,
   ViewReference,
   ViewPresentation,
+  ViewPresentationSelector,
   ReferenceCompatibleOptions,
   ViewReferenceSpecifier,
   StackViewportProperties,

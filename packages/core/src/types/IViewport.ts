@@ -118,21 +118,18 @@ export type ViewPresentation = {
    * The slice thickness - in frames(true/default) it will be 1 for a frame distance of
    * 1 pixel thickness, while for mm will be in mm distance.
    */
-  slabThicknessType?: true | 'mm';
   slabThickness?: number;
 
   /**
    * The rotation of the view - this is related to cameraViewUp, but is relative
    * to the viewNormal and the default viewUp for that viewNormal.
    */
-  rotationType?: true;
   rotation?: number;
 
   /**
    * The display area being shown.  This is more consistent than applying a set
    * of boundary areas.
    */
-  displayAreaType?: true;
   displayArea?: DisplayArea;
 
   /**
@@ -141,7 +138,6 @@ export type ViewPresentation = {
    * The default true units are relative to the initial camera
    * scale to fit is used to get units relative to the scale to fit camera.
    */
-  zoomType?: true | 'scaleToFit';
   zoom?: number;
 
   /**
@@ -149,13 +145,16 @@ export type ViewPresentation = {
    * or relative to the display area initial position/sizing.
    * true is the default units, which is relative to the initial canvas setting,
    * in zoom relative units.
-   * `initialCamera` is in canvas pixels, relative to the initial canvas setting.
-   * `scaleToFit` is relative to the scale to fit camera, in canvas pixels.
-   * `zoomRelative` (same as true here) is relative to the initialCamera, but scaled
-   *     by zoom numbers.
    */
-  panType?: true | 'initialCamera' | 'scaleToFit' | 'zoomRelative';
   pan?: Point2;
+};
+
+export type ViewPresentationSelector = {
+  slabThickness?: boolean;
+  rotation?: boolean;
+  displayArea?: boolean;
+  zoom?: boolean;
+  pan?: boolean;
 };
 
 /**
@@ -281,7 +280,7 @@ interface IViewport {
   /**
    * Gets a view presentation information for this viewport
    */
-  getViewPresentation(viewPres: ViewPresentation);
+  getViewPresentation(viewPresSel: ViewPresentationSelector): ViewPresentation;
   /**
    * Sets the given view.  This can apply any of the view reference or presentation
    * information, assuming that is compatible with the current view.

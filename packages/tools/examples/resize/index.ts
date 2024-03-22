@@ -16,6 +16,7 @@ import {
   addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -56,10 +57,10 @@ const viewports = [];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const synchronizerOptions = {
-  displayAreaType: true,
-  rotationType: true,
-  zoomType: false,
-  panType: false,
+  displayArea: true,
+  rotation: true,
+  zoom: true,
+  pan: true,
 };
 
 // ======== Set up page ======== //
@@ -69,7 +70,7 @@ setTitleAndDescription(
 );
 
 const width = `18vw`;
-const height = `50vw`;
+const height = `25vw`;
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -108,18 +109,27 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const leftDisplayArea = {
+const leftTopDisplayArea = {
   storeAsInitialCamera: true,
-  imageArea: [1.2, 1.2],
+  imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [0, 0],
     canvasPoint: [0, 0],
   },
 };
 
+const leftDisplayArea = {
+  storeAsInitialCamera: true,
+  imageArea: [1.1, 1.1],
+  imageCanvasPoint: {
+    imagePoint: [0, 0.5],
+    canvasPoint: [0, 0.5],
+  },
+};
+
 const rightDisplayArea = {
   storeAsInitialCamera: true,
-  imageArea: [1.2, 1.2],
+  imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [1, 1],
     canvasPoint: [1, 1],
@@ -135,9 +145,18 @@ const centerDisplayArea = {
   },
 };
 
+const defaultDisplayArea = {
+  storeAsInitialCamera: true,
+  // imageArea: [1, 1],
+  // imageCanvasPoint: {
+  //   imagePoint: [0.5, 0.5],
+  //   canvasPoint: [0.5, 0.5],
+  // },
+};
+
 const centerSmallDisplayArea = {
   storeAsInitialCamera: true,
-  imageArea: [1.2, 1.2],
+  imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
     canvasPoint: [0.5, 0.5],
@@ -191,6 +210,15 @@ const scaleLeftTop = {
   },
 };
 
+const scaleLeft = {
+  type: 'SCALE',
+  storeAsInitialCamera: true,
+  scale: 1.0,
+  imageCanvasPoint: {
+    imagePoint: [0, 0.5],
+  },
+};
+
 const scaleRightBottom = {
   type: 'SCALE',
   storeAsInitialCamera: true,
@@ -201,8 +229,11 @@ const scaleRightBottom = {
 };
 
 const displayAreaOptions = new Map();
+displayAreaOptions.set('Default', defaultDisplayArea);
 displayAreaOptions.set('Center', centerDisplayArea);
-displayAreaOptions.set('Left Top', leftDisplayArea);
+displayAreaOptions.set('Left Top', leftTopDisplayArea);
+displayAreaOptions.set('Left', leftDisplayArea);
+displayAreaOptions.set('Left 2', leftDisplayArea);
 displayAreaOptions.set('Right Bottom', rightDisplayArea);
 displayAreaOptions.set('Center Small', centerSmallDisplayArea);
 displayAreaOptions.set('Center Fit Height', centerHeight);
@@ -210,7 +241,19 @@ displayAreaOptions.set('Center Fit Width', centerWidth);
 displayAreaOptions.set('Scale 1x', scale1);
 displayAreaOptions.set('Scale 15x', scale15);
 displayAreaOptions.set('Scale Left Top', scaleLeftTop);
+displayAreaOptions.set('Scale Left', scaleLeft);
+displayAreaOptions.set('Scale Left 2', scaleLeft);
 displayAreaOptions.set('Scale Right Bottom', scaleRightBottom);
+
+let storeAsInitialCamera = true;
+addToggleButtonToToolbar({
+  id: 'storeAsInitialCameraToggle',
+  title: 'Store Display Area',
+  defaultToggle: storeAsInitialCamera,
+  onClick: (toggle) => {
+    storeAsInitialCamera = toggle;
+  },
+});
 
 addDropdownToToolbar({
   id: 'displayArea',
@@ -220,8 +263,16 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const displayArea = displayAreaOptions.get(value);
+    displayArea.storeAsInitialCamera = storeAsInitialCamera;
     viewport.setDisplayArea(displayArea);
     viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reset Camera',
+  onClick: () => {
+    viewport.resetCamera();
   },
 });
 
@@ -243,36 +294,36 @@ addDropdownToToolbar({
 addToggleButtonToToolbar({
   id: 'syncDisplayArea',
   title: 'Sync Display Area',
-  defaultToggle: synchronizerOptions.displayAreaType,
+  defaultToggle: synchronizerOptions.displayArea,
   onClick: (toggle) => {
-    synchronizerOptions.displayAreaType = toggle;
+    synchronizerOptions.displayArea = toggle;
   },
 });
 
 addToggleButtonToToolbar({
   id: 'syncZoom',
   title: 'Sync Zoom',
-  defaultToggle: synchronizerOptions.zoomType,
+  defaultToggle: synchronizerOptions.zoom,
   onClick: (toggle) => {
-    synchronizerOptions.zoomType = toggle;
+    synchronizerOptions.zoom = toggle;
   },
 });
 
 addToggleButtonToToolbar({
   id: 'syncPan',
   title: 'Sync Pan',
-  defaultToggle: synchronizerOptions.panType,
+  defaultToggle: synchronizerOptions.pan,
   onClick: (toggle) => {
-    synchronizerOptions.panType = toggle;
+    synchronizerOptions.pan = toggle;
   },
 });
 
 addToggleButtonToToolbar({
   id: 'syncRotation',
   title: 'Sync Rotation',
-  defaultToggle: synchronizerOptions.rotationType,
+  defaultToggle: synchronizerOptions.rotation,
   onClick: (toggle) => {
-    synchronizerOptions.rotationType = toggle;
+    synchronizerOptions.rotation = toggle;
   },
 });
 
