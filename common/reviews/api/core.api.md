@@ -176,6 +176,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
+    protected setRotation: (rotation: number) => void;
+    // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
@@ -3111,6 +3113,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setProperties({ colormap, voiRange, VOILUTFunction, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
+    protected setRotation: (rotation: number) => void;
+    // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
     setUseCPURendering(value: boolean): void;
@@ -3771,9 +3775,9 @@ export class Viewport implements IViewport {
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
     // (undocumented)
-    protected setDisplayAreaFit(displayArea: DisplayArea, relativeCamera?: ICamera): void;
+    protected setDisplayAreaFit(displayArea: DisplayArea): void;
     // (undocumented)
-    protected setDisplayAreaScale(displayArea: DisplayArea, relativeCamera: any): void;
+    protected setDisplayAreaScale(displayArea: DisplayArea): void;
     // (undocumented)
     protected setFitToCanvasCamera(camera: ICamera): void;
     // (undocumented)
@@ -3789,6 +3793,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
+    protected setRotation: (_rotation: number) => void;
+    // (undocumented)
     setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
@@ -3796,6 +3802,8 @@ export class Viewport implements IViewport {
     sHeight: number;
     // (undocumented)
     protected _shouldUseNativeDataType(): boolean;
+    // (undocumented)
+    _suppressCameraModifiedEvents: boolean;
     // (undocumented)
     readonly suppressEvents: boolean;
     // (undocumented)

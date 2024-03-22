@@ -1152,12 +1152,16 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       : (360 - initialToCurrentViewUpAngle) % 360;
   };
 
-  private setRotation(rotation: number): void {
+  protected setRotation = (rotation: number) => {
     const previousCamera = this.getCamera();
 
     this.useCPURendering
       ? this.setRotationCPU(rotation)
       : this.setRotationGPU(rotation);
+
+    if (this._suppressCameraModifiedEvents) {
+      return;
+    }
 
     // New camera after rotation
     const camera = this.getCamera();
@@ -1172,7 +1176,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-  }
+  };
 
   private setVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType,
@@ -2896,10 +2900,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
     const camera = this.getCamera();
     super.setView(viewRef, viewPres);
-    const { rotation } = viewPres || {};
-    if (rotation >= 0) {
-      this.setRotation(rotation);
-    }
     if (viewRef) {
       const { viewPlaneNormal, sliceIndex } = viewRef;
       if (

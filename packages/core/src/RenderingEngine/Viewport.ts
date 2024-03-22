@@ -93,7 +93,7 @@ class Viewport implements IViewport {
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
   /** informs if a new actor was added before a resetCameraClippingRange phase */
-  private _suppressCameraModifiedEvents = false;
+  _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
@@ -142,6 +142,9 @@ class Viewport implements IViewport {
   getProperties: () => ViewportProperties = () => ({});
   updateRenderingPipeline: () => void;
   getNumberOfSlices: () => number;
+  protected setRotation = (_rotation: number) => {
+    /*empty*/
+  };
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
@@ -628,16 +631,18 @@ class Viewport implements IViewport {
     const { _suppressCameraModifiedEvents } = this;
     this._suppressCameraModifiedEvents = true;
 
-    const relativeCamera = this.fitToCanvasCamera;
-    this.setCamera(relativeCamera);
+    // This should only apply for storeAsInitialCamera, but the calculations
+    // currently don't quite work otherwise.
+    // TODO - fix so that the store works for existing transforms
+    this.setCamera(this.fitToCanvasCamera);
 
     if (areaType === 'SCALE') {
-      this.setDisplayAreaScale(displayArea, relativeCamera);
+      this.setDisplayAreaScale(displayArea);
     } else {
       this.setInterpolationType(
         this.getProperties().interpolationType || InterpolationType.LINEAR
       );
-      this.setDisplayAreaFit(displayArea, relativeCamera);
+      this.setDisplayAreaFit(displayArea);
     }
 
     // Set the initial camera if appropriate
@@ -665,15 +670,13 @@ class Viewport implements IViewport {
    * a 1024x512 image will be displayed with scale=2, as 2048x1024
    * physical image pixels.
    *
-   * @param displayArea.scale - the number of physical pixels to display
-   *        each image pixel in.  Values < 1 mean smaller than physical,
-   *        while values > 1 mean more than one pixel.  Default is 1
-   *        Suggest using whole numbers or integer fractions (eg 1/3)
+   * @param displayArea - display area to set
+   *    * displayArea.scale - the number of physical pixels to display
+   *        each image pixel in.  Values `< 1` mean smaller than physical,
+   *        while values `> 1` mean more than one pixel.  Default is 1
+   *        Suggest using whole numbers or integer fractions (eg `1/3`)
    */
-  protected setDisplayAreaScale(
-    displayArea: DisplayArea,
-    relativeCamera
-  ): void {
+  protected setDisplayAreaScale(displayArea: DisplayArea): void {
     const { scale = 1 } = displayArea;
     const canvas = this.canvas;
     const height = canvas.height;
@@ -687,12 +690,11 @@ class Viewport implements IViewport {
     // Need nearest interpolation for scale
     this.setInterpolationType(InterpolationType.NEAREST);
     this.setCamera({ parallelScale: (height * spacing) / (2 * scale) });
-    relativeCamera = this.getCamera();
 
     // If this is scale, then image area isn't allowed, so just delete it to be safe
     delete displayArea.imageArea;
     // Apply the pan values from the display area.
-    this.setDisplayAreaFit(displayArea, relativeCamera);
+    this.setDisplayAreaFit(displayArea);
 
     // Need to ensure the focal point is aligned with the canvas size/position
     // so that we don't get half pixel rendering, which causes additional
@@ -746,12 +748,8 @@ class Viewport implements IViewport {
    * the right most edge of the image, at the top of the image, will be
    * displayed at the right most edge of the canvas, at the top.
    *
-   * @param displayArea
    */
-  protected setDisplayAreaFit(
-    displayArea: DisplayArea,
-    relativeCamera = this.initialCamera
-  ) {
+  protected setDisplayAreaFit(displayArea: DisplayArea) {
     const { imageArea, imageCanvasPoint } = displayArea;
 
     const devicePixelRatio = window?.devicePixelRatio || 1;
@@ -1578,7 +1576,6 @@ class Viewport implements IViewport {
     } = viewPresSel || {};
     if (rotation) {
       target.rotation = this.getRotation();
-      console.log('***** Getting target rotation', target.rotation, target);
     }
     if (displayArea) {
       target.displayArea = this.getDisplayArea();
@@ -1601,13 +1598,16 @@ class Viewport implements IViewport {
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
     if (viewPres) {
-      const { displayArea, zoom = this.getZoom(), pan } = viewPres;
+      const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
       if (displayArea !== this.getDisplayArea()) {
         this.setDisplayArea(displayArea);
       }
       this.setZoom(zoom);
       if (pan) {
         this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
+      }
+      if (rotation >= 0) {
+        this.setRotation(rotation);
       }
     }
   }
