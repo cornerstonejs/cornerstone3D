@@ -489,9 +489,14 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
     // (undocumented)
-    static createAnnotationMemo(element: any, annotation: Annotation): {
+    static createAnnotationMemo(element: any, annotation: Annotation, options?: {
+        newAnnotation?: boolean;
+        deleting?: boolean;
+    }): {
         restoreMemo: () => void;
     };
+    // (undocumented)
+    protected createMemo(element: any, annotation: any, options?: any): void;
     // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
@@ -651,6 +656,8 @@ export abstract class BaseTool implements IBaseTool {
     static createZoomPanMemo(viewport: any): {
         restoreMemo: () => void;
     };
+    // (undocumented)
+    doneEditMemo(): void;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
@@ -3765,8 +3772,6 @@ export class PanTool extends BaseTool {
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
-    // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     static toolName: any;
     // (undocumented)

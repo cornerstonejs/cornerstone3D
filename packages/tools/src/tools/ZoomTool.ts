@@ -52,7 +52,7 @@ class ZoomTool extends BaseTool {
     const { focalPoint } = camera;
 
     this.initialMousePosWorld = worldPos;
-    this.memo = null;
+    this.doneEditMemo();
 
     // The direction vector from the clicked location to the focal point
     // which would act as the vector to translate the image (if zoomToCenter is false)

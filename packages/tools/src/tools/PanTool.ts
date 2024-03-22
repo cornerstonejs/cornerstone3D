@@ -26,11 +26,6 @@ class PanTool extends BaseTool {
     this._dragCallback(evt);
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
-    this.memo = null;
-    return false;
-  };
-
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);

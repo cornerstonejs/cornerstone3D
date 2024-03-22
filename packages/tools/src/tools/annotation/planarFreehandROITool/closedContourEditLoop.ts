@@ -149,10 +149,7 @@ function mouseDragClosedContourEditCallback(
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, viewport } = enabledElement;
 
-  this.memo ||= this.constructor.createAnnotationMemo(
-    element,
-    this.commonData.annotation
-  );
+  this.createMemo(element, this.commonData.annotation);
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
   const { editIndex, editCanvasPoints, startCrossingIndex } = this.editData;
@@ -437,7 +434,7 @@ function mouseUpClosedContourEditCallback(
   const { element } = eventDetail;
 
   this.completeClosedContourEdit(element);
-  this.memo = null;
+  this.doneEditMemo();
 }
 
 /**

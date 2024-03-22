@@ -29,7 +29,11 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
+const {
+  ToolGroupManager,
+  Enums: csToolsEnums,
+  AnnotationTool,
+} = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
@@ -172,6 +176,9 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
+      AnnotationTool.createAnnotationMemo(element, annotation, {
+        deleting: true,
+      });
       cornerstoneTools.annotation.state.removeAnnotation(
         annotation.annotationUID
       );

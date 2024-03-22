@@ -98,7 +98,7 @@ class SphereScissorsTool extends BaseTool {
       return;
     }
 
-    this.memo = null;
+    this.doneEditMemo();
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;

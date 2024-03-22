@@ -425,7 +425,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     } = this.editData;
     const { data } = annotation;
 
-    this.memo = null;
+    this.doneEditMemo();
 
     data.handles.activeHandleIndex = null;
 
@@ -515,7 +515,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
 
-    this.memo = null;
+    this.doneEditMemo();
 
     // Check if user clicked on the first point to close the curve
     if (controlPoints.length >= 2) {
@@ -739,7 +739,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       // Drag mode - moving object
       console.warn('No drag implemented for livewire');
     } else {
-      this.memo = LivewireContourTool.createAnnotationMemo(element, annotation);
+      this.createMemo(element, annotation);
 
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;

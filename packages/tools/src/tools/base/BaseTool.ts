@@ -274,7 +274,7 @@ abstract class BaseTool implements IBaseTool {
    */
   public undo() {
     DefaultHistoryMemo.undo();
-    this.memo = null;
+    this.doneEditMemo();
   }
 
   /**
@@ -309,10 +309,17 @@ abstract class BaseTool implements IBaseTool {
    * Clear the memo by default.
    */
   public preMouseDownCallback = (_evt): boolean => {
-    console.log('***** Clearing memo');
-    this.memo = null;
+    this.doneEditMemo();
     return false;
   };
+
+  /**
+   * This clears and edit memo storage to allow for further history functions
+   * to be called.
+   */
+  public doneEditMemo() {
+    this.memo = null;
+  }
 }
 
 // Note: this is a workaround since terser plugin does not support static blocks

@@ -213,7 +213,7 @@ class LengthTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    this.memo = null;
+    this.doneEditMemo();
     return annotation;
   };
 
@@ -386,11 +386,16 @@ class LengthTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
 
-    this.memo ||= LengthTool.createAnnotationMemo(element, annotation);
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box

@@ -741,7 +741,7 @@ class BrushTool extends BaseTool {
     if (!element) {
       return;
     }
-    this.memo = null;
+    this.doneEditMemo();
     const enabledElement = getEnabledElement(element);
 
     this.applyActiveStrategyCallback(
