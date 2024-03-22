@@ -31,6 +31,7 @@ toolMap.set(PlanarFreehandContourSegmentationTool.toolName, {
 
 toolMap.set(LivewireContourSegmentationTool.toolName, {
   tool: LivewireContourSegmentationTool,
+  segmentationType: SegmentationRepresentations.Contour,
 });
 
 toolMap.set('CatmullRomSplineROI', {

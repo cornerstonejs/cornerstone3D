@@ -1334,6 +1334,8 @@ export class CobbAngleTool extends AnnotationTool {
         isNearSecondLine: boolean;
     };
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -1344,6 +1346,8 @@ export class CobbAngleTool extends AnnotationTool {
         isNearFirstLine?: boolean;
         isNearSecondLine?: boolean;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     getArcsStartEndPoints: ({ firstLine, secondLine, mid1, mid2, }: {
         firstLine: any;
@@ -1370,10 +1374,6 @@ export class CobbAngleTool extends AnnotationTool {
     _mouseDownCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     mouseDragCallback: any;
-    // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)

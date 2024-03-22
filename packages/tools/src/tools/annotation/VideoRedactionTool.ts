@@ -281,6 +281,7 @@ class VideoRedactionTool extends AnnotationTool {
     if (newAnnotation && !hasMoved) {
       return;
     }
+    this.doneEditMemo();
 
     data.active = false;
     data.handles.activeHandleIndex = null;
@@ -315,7 +316,9 @@ class VideoRedactionTool extends AnnotationTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { annotation, viewportUIDsToRender, handleIndex } = this.editData;
+    const { annotation, viewportUIDsToRender, handleIndex, newAnnotation } =
+      this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
     const { data } = annotation;
 
     if (handleIndex === undefined) {

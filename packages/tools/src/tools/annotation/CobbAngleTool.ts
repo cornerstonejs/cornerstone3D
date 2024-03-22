@@ -303,7 +303,7 @@ class CobbAngleTool extends AnnotationTool {
     evt.preventDefault();
   }
 
-  _mouseUpCallback = (
+  _endCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
     const eventDetail = evt.detail;
@@ -318,6 +318,8 @@ class CobbAngleTool extends AnnotationTool {
       // of click and drag
       return;
     }
+
+    this.doneEditMemo();
 
     // If preventing new measurement means we are in the middle of an existing measurement
     // we shouldn't deactivate modify or draw
@@ -402,7 +404,7 @@ class CobbAngleTool extends AnnotationTool {
     this.editData.handleIndex = data.handles.points.length - 1;
   };
 
-  _mouseDragCallback = (
+  _dragCallback = (
     evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
   ) => {
     this.isDrawing = true;
@@ -416,8 +418,10 @@ class CobbAngleTool extends AnnotationTool {
       movingTextBox,
       isNearFirstLine,
       isNearSecondLine,
+      newAnnotation,
     } = this.editData;
     const { data } = annotation;
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box
@@ -517,15 +521,15 @@ class CobbAngleTool extends AnnotationTool {
 
     element.addEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
@@ -537,15 +541,15 @@ class CobbAngleTool extends AnnotationTool {
 
     element.removeEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
@@ -557,19 +561,19 @@ class CobbAngleTool extends AnnotationTool {
 
     element.addEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_MOVE,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DOWN,
@@ -585,19 +589,19 @@ class CobbAngleTool extends AnnotationTool {
 
     element.removeEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_MOVE,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DOWN,

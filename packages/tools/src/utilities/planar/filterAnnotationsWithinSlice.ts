@@ -97,6 +97,10 @@ export default function filterAnnotationsWithinSlice(
 
     const dir = vec3.create();
 
+    if (!point) {
+      annotationsWithinSlice.push(annotation);
+      return;
+    }
     vec3.sub(dir, focalPoint, point);
 
     const dot = vec3.dot(dir, viewPlaneNormal);

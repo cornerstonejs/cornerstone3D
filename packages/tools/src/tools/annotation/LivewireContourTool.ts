@@ -498,8 +498,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
     const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
-    const { annotation, viewportIdsToRender, worldToSlice, sliceToWorld } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      worldToSlice,
+      sliceToWorld,
+      newAnnotation,
+    } = this.editData;
 
     if (this.editData.closed) {
       return;
@@ -516,6 +521,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     let closePath = controlPoints.length >= 2 && doubleClick;
 
     this.doneEditMemo();
+    this.createMemo(element, annotation, {
+      newAnnotation: newAnnotation && controlPoints.length === 1,
+    });
 
     // Check if user clicked on the first point to close the curve
     if (controlPoints.length >= 2) {
@@ -734,13 +742,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex } = this.editData;
+    const { annotation, viewportIdsToRender, handleIndex, newAnnotation } =
+      this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
     if (handleIndex === undefined) {
       // Drag mode - moving object
       console.warn('No drag implemented for livewire');
     } else {
-      this.createMemo(element, annotation);
-
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
@@ -775,7 +783,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    this.editData = null;
+    this.doneEditMemo();
     this.scissors = null;
     return annotation.annotationUID;
   };

@@ -242,6 +242,7 @@ function openContourEditOverwriteEnd(
   this.isEditingOpen = false;
   this.editData = undefined;
   this.commonData = undefined;
+  this.doneEditMemo();
 
   // Jump to a normal line edit now.
   this.deactivateOpenContourEdit(element);
@@ -545,7 +546,6 @@ function mouseUpOpenContourEditCallback(
   const { element } = eventDetail;
 
   this.completeOpenContourEdit(element);
-  this.doneEditMemo();
 }
 
 /**
@@ -556,6 +556,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
+  this.doneEditMemo();
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {

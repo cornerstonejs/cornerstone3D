@@ -18,7 +18,6 @@ import {
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   triggerAnnotationCompleted,
@@ -36,7 +35,6 @@ import {
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
 import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -332,6 +330,9 @@ class ArrowAnnotateTool extends AnnotationTool {
 
         triggerAnnotationCompleted(annotation);
 
+        // This is only new if it wasn't already memoed
+        this.createMemo(element, annotation, { newAnnotation: !!this.memo });
+
         triggerAnnotationRenderForViewportIds(
           renderingEngine,
           viewportIdsToRender
@@ -341,6 +342,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       triggerAnnotationModified(annotation, element);
     }
 
+    this.doneEditMemo();
     this.editData = null;
     this.isDrawing = false;
   };
@@ -350,8 +352,15 @@ class ArrowAnnotateTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const { data } = annotation;
 
     if (movingTextBox) {
