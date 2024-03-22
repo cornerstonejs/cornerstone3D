@@ -1034,7 +1034,7 @@ function getSpacingInNormalDirection(imageVolume: IImageVolume | {
 }, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string, useSlabThickness?: boolean): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetId?: string, useSlabThickness?: boolean): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
     actorUID: string;
@@ -1066,6 +1066,9 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 
 // @public (undocumented)
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
+
+// @public (undocumented)
+const getVolumeId: (targetId: string) => string;
 
 // @public (undocumented)
 function getVolumeLoaderSchemes(): string[];
@@ -3547,7 +3550,8 @@ declare namespace utilities {
         roundNumber,
         roundToPrecision,
         getViewportImageIds,
-        getRandomSampleFromArray
+        getRandomSampleFromArray,
+        getVolumeId
     }
 }
 export { utilities }

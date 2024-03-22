@@ -1,11 +1,10 @@
 import { BaseTool } from './base';
 import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import jumpToWorld from '../utilities/viewport/jumpToWorld';
 import { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
-import { getVolumeId } from '../utilities/getVolumeId';
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
@@ -55,7 +54,7 @@ class MIPJumpToClickTool extends BaseTool {
       );
     }
 
-    const volumeId = getVolumeId(targetId);
+    const volumeId = utilities.getVolumeId(targetId);
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity;
