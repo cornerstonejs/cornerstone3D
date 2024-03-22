@@ -10,8 +10,6 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addButtonToToolbar,
-  annotationTools,
-  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -20,7 +18,22 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
+const {
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
+  EllipticalROITool,
+  CircleROITool,
+  BidirectionalTool,
+  AngleTool,
+  CobbAngleTool,
+  ToolGroupManager,
+  ArrowAnnotateTool,
+  PlanarFreehandROITool,
+  EraserTool,
+  KeyImageTool,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
 
 const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
@@ -96,17 +109,27 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
   cancelToolDrawing(evt);
 });
 
+const toolsNames = [
+  LengthTool.toolName,
+  ProbeTool.toolName,
+  RectangleROITool.toolName,
+  EllipticalROITool.toolName,
+  CircleROITool.toolName,
+  BidirectionalTool.toolName,
+  AngleTool.toolName,
+  CobbAngleTool.toolName,
+  ArrowAnnotateTool.toolName,
+  PlanarFreehandROITool.toolName,
+  EraserTool.toolName,
+  KeyImageTool.toolName,
+];
+let selectedToolName = toolsNames[0];
+
 addDropdownToToolbar({
-  options: { map: annotationTools },
+  options: { values: toolsNames, defaultValue: selectedToolName },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the old tool passive
-    const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
-    if (selectedToolName) {
-      toolGroup.setToolPassive(selectedToolName);
-    }
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
@@ -116,6 +139,11 @@ addDropdownToToolbar({
         },
       ],
     });
+
+    // Set the old tool passive
+    toolGroup.setToolPassive(selectedToolName);
+
+    selectedToolName = <string>newSelectedToolName;
   },
 });
 
@@ -181,10 +209,62 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(ProbeTool);
+  cornerstoneTools.addTool(RectangleROITool);
+  cornerstoneTools.addTool(EllipticalROITool);
+  cornerstoneTools.addTool(CircleROITool);
+  cornerstoneTools.addTool(BidirectionalTool);
+  cornerstoneTools.addTool(AngleTool);
+  cornerstoneTools.addTool(CobbAngleTool);
+  cornerstoneTools.addTool(ArrowAnnotateTool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(EraserTool);
+  cornerstoneTools.addTool(KeyImageTool);
+
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup, { toolMap: annotationTools });
+
+  // Add the tools to the tool group
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(ProbeTool.toolName);
+  toolGroup.addTool(RectangleROITool.toolName);
+  toolGroup.addTool(EllipticalROITool.toolName);
+  toolGroup.addTool(CircleROITool.toolName);
+  toolGroup.addTool(BidirectionalTool.toolName);
+  toolGroup.addTool(AngleTool.toolName);
+  toolGroup.addTool(CobbAngleTool.toolName);
+  toolGroup.addTool(ArrowAnnotateTool.toolName);
+  toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(EraserTool.toolName);
+  toolGroup.addTool(KeyImageTool.toolName);
+
+  // Set the initial state of the tools, here we set one tool active on left click.
+  // This means left click will draw that tool.
+  toolGroup.setToolActive(toolsNames[0], {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+  // We set all the other tools passive here, this means that any state is rendered, and editable
+  // But aren't actively being drawn (see the toolModes example for information)
+  toolGroup.setToolPassive(ProbeTool.toolName);
+  toolGroup.setToolPassive(RectangleROITool.toolName);
+  toolGroup.setToolPassive(EllipticalROITool.toolName);
+  toolGroup.setToolPassive(CircleROITool.toolName);
+  toolGroup.setToolPassive(BidirectionalTool.toolName);
+  toolGroup.setToolPassive(AngleTool.toolName);
+  toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
+  toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
+  toolGroup.setToolPassive(EraserTool.toolName);
+
+  toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
+    calculateStats: true,
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

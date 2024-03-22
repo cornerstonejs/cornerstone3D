@@ -68,6 +68,7 @@
     // note you must disable the base rule
     // as it can report incorrect errors
     "no-unused-vars": "off",
+    // Allow skipping unused variables in params calls by using _Name
     "@typescript-eslint/no-unused-vars": [
       "warn", // or "error"
       {

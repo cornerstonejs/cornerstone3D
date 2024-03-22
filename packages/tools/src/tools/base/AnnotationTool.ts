@@ -27,7 +27,6 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { getVolumeId } from '../../utilities/getVolumeId';
 import ChangeTypes from '../../enums/ChangeTypes';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
@@ -376,7 +375,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = getVolumeId(targetId);
+      const volumeId = csUtils.getVolumeId(targetId);
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }

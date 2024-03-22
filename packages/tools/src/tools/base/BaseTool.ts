@@ -3,7 +3,6 @@ import { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import StrategyCallbacks from '../../enums/StrategyCallbacks';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
-import { getVolumeId } from '../../utilities/getVolumeId';
 
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -218,7 +217,7 @@ abstract class BaseTool implements IBaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = getVolumeId(targetId);
+      const volumeId = utilities.getVolumeId(targetId);
       const viewports = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id

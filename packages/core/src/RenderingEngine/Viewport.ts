@@ -85,7 +85,7 @@ class Viewport implements IViewport {
   /** a Map containing the actor uid and actors */
   _actors: Map<string, any>;
   /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
-  readonly defaultOptions: any;
+  readonly defaultOptions: Record<string, any>;
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
   /** informs if a new actor was added before a resetCameraClippingRange phase */
@@ -232,8 +232,8 @@ class Viewport implements IViewport {
    * works with vtk-js backed rendering pipeline.
    *
    * @param flipOptions - Flip options specifying the axis of flip
-   * @param flipOptions.flipHorizontal - Flip the viewport on horizontal axis
-   * @param flipOptions.flipVertical - Flip the viewport on vertical axis
+   *    * flipOptions.flipHorizontal - Flip the viewport on horizontal axis
+   *    * flipOptions.flipVertical - Flip the viewport on vertical axis
    */
   protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
     const imageData = this.getDefaultImageData();
@@ -481,9 +481,9 @@ class Viewport implements IViewport {
    * Add an actor to the viewport including its id, its actor and slabThickness
    * if defined
    * @param actorEntry - ActorEntry
-   * @param actorEntry.uid - The unique identifier for the actor.
-   * @param actorEntry.actor - The volume actor.
-   * @param actorEntry.slabThickness - The slab thickness.
+   *    * actorEntry.uid - The unique identifier for the actor.
+   *    * actorEntry.actor - The volume actor.
+   *    * actorEntry.slabThickness - The slab thickness.
    */
   public addActor(actorEntry: ActorEntry): void {
     const { uid: actorUID, actor } = actorEntry;
@@ -914,7 +914,7 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
-  public getReferenceId(specifier?: ViewReferenceSpecifier): string {
+  public getReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return null;
   }
 
@@ -1424,6 +1424,7 @@ class Viewport implements IViewport {
     const { viewPlaneNormal } = viewRef;
     const camera = this.getCamera();
     if (
+      viewPlaneNormal &&
       !isEqual(viewPlaneNormal, camera.viewPlaneNormal) &&
       !isEqual(
         vec3.negate(camera.viewPlaneNormal, camera.viewPlaneNormal),
