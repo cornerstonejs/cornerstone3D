@@ -881,6 +881,10 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
+      // TODO: This should be the line below, but that causes issues with existing
+      // tests.  Not doing that adds significant fuzziness on rendering, so at
+      // some point it should be fixed.
+      // const middleIJK = dimensions.map((d) => Math.floor((d-1) / 2));
       const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
