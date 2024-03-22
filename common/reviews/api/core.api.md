@@ -3660,6 +3660,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected calibration: IImageCalibration;
     // (undocumented)
+    static readonly CameraViewPresentation: ViewPresentationSelector;
+    // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -3813,6 +3815,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     sy: number;
     // (undocumented)
+    static readonly TransferViewPresentation: ViewPresentationSelector;
+    // (undocumented)
     triggerCameraModifiedEventIfNecessary(previousCamera: ICamera, updatedCamera: ICamera): void;
     // (undocumented)
     readonly type: ViewportType;
@@ -3917,6 +3921,8 @@ type ViewPresentationSelector = {
     displayArea?: boolean;
     zoom?: boolean;
     pan?: boolean;
+    windowLevel?: boolean;
+    paletteLut?: boolean;
 };
 
 // @public (undocumented)

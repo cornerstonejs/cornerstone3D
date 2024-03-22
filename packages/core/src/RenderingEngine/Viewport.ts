@@ -55,6 +55,18 @@ import { InterpolationType } from '../enums';
  * logic.
  */
 class Viewport implements IViewport {
+  static readonly CameraViewPresentation: ViewPresentationSelector = {
+    rotation: true,
+    pan: true,
+    zoom: true,
+    displayArea: true,
+  };
+
+  static readonly TransferViewPresentation: ViewPresentationSelector = {
+    windowLevel: true,
+    paletteLut: true,
+  };
+
   /** unique identifier for the viewport */
   readonly id: string;
   /** HTML element in DOM that is used for rendering the viewport */
@@ -1568,16 +1580,16 @@ class Viewport implements IViewport {
    * Gets a basic view reference.
    */
   public getViewPresentation(
-    viewPresSel?: ViewPresentationSelector
+    viewPresSel: ViewPresentationSelector = {
+      rotation: true,
+      displayArea: true,
+      zoom: true,
+      pan: true,
+    }
   ): ViewPresentation {
     const target: ViewPresentation = {};
 
-    const {
-      rotation = true,
-      displayArea = true,
-      zoom = true,
-      pan = true,
-    } = viewPresSel || {};
+    const { rotation, displayArea, zoom, pan } = viewPresSel;
     if (rotation) {
       target.rotation = this.getRotation();
     }

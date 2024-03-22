@@ -151,10 +151,14 @@ export type ViewPresentation = {
 
 export type ViewPresentationSelector = {
   slabThickness?: boolean;
+  // Camera relative parameters
   rotation?: boolean;
   displayArea?: boolean;
   zoom?: boolean;
   pan?: boolean;
+  // Transfer function relative parameters
+  windowLevel?: boolean;
+  paletteLut?: boolean;
 };
 
 /**

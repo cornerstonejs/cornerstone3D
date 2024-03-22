@@ -6,6 +6,7 @@ import {
   volumeLoader,
   getRenderingEngine,
   getEnabledElement,
+  Viewport,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -25,11 +26,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const {
-  ToolGroupManager,
-  Enums: csToolsEnums,
-  synchronizers,
-} = cornerstoneTools;
+const { ToolGroupManager, synchronizers } = cornerstoneTools;
 
 const { createPresentationViewSynchronizer } = synchronizers;
 
@@ -57,10 +54,7 @@ const viewports = [];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const synchronizerOptions = {
-  displayArea: true,
-  rotation: true,
-  zoom: true,
-  pan: true,
+  ...Viewport.CameraViewPresentation,
 };
 
 // ======== Set up page ======== //
@@ -521,6 +515,9 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup);
+  toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
+    bindings: toolGroup.getDefaultPrimaryBindings(),
+  });
 
   // For the crosshairs to operate, the viewports must currently be
   // added ahead of setting the tool active. This will be improved in the future.
