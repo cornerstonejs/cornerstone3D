@@ -70,6 +70,7 @@ import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
+import { getVolumeId } from './getVolumeId';
 
 // name spaces
 import * as planar from './planar';
@@ -158,4 +159,5 @@ export {
   roundToPrecision,
   getViewportImageIds,
   getRandomSampleFromArray,
+  getVolumeId,
 };

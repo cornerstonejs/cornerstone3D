@@ -1424,6 +1424,7 @@ class Viewport implements IViewport {
     const { viewPlaneNormal } = viewRef;
     const camera = this.getCamera();
     if (
+      viewPlaneNormal &&
       !isEqual(viewPlaneNormal, camera.viewPlaneNormal) &&
       !isEqual(
         vec3.negate(camera.viewPlaneNormal, camera.viewPlaneNormal),

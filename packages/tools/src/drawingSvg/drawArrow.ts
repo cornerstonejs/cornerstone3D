@@ -17,7 +17,7 @@ export default function drawArrow(
 
   const { color, width, lineWidth, lineDash } = Object.assign(
     {
-      color: 'dodgerblue',
+      color: 'rgb(0, 255, 0)',
       width: '2',
       lineWidth: undefined,
       lineDash: undefined,

@@ -171,12 +171,15 @@ function loadImage(
 ): Types.IImageLoadObject {
   const parsedImageId = parseImageId(imageId);
 
-  options = Object.assign({}, options);
-  // The loader isn't transferable, so ensure it is deleted
+  options = { ...options };
+
+  let schemeLoader = options.loader;
+
+  if (!(schemeLoader instanceof Function)) {
+    schemeLoader = getLoaderForScheme(parsedImageId.scheme);
+  }
+
   delete options.loader;
-  // The options might have a loader above, but it is a loader into the cache,
-  // so not the scheme loader, which is separate and defined by the scheme here
-  const schemeLoader = getLoaderForScheme(parsedImageId.scheme);
 
   // if the dataset for this url is already loaded, use it, in case of multiframe
   // images, we need to extract the frame pixelData from the dataset although the
