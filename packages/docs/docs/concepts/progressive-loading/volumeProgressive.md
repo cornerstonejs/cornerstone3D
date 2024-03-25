@@ -25,10 +25,10 @@ and capabilities of the DICOMweb server components.
 Note that none of the times include time to load the decoder, but is only seen on first render. These times are similar for
 both types.
 
-| Type             | Size  | Network | First Render | Complete |
-| ---------------- | ----- | ------- | ------------ | -------- |
-| HTJ2K Stream     | 33 M  | 4g      | 2503 ms      | 8817 ms  |
-| HTJ2K Byte Range | 11.1M | 4g      | 1002 ms      | 8813 ms  |
+| Type             | Size | Network | First Render | Complete |
+| ---------------- | ---- | ------- | ------------ | -------- |
+| HTJ2K Stream     | 33 M | 4g      | 2503 ms      | 8817 ms  |
+| HTJ2K Byte Range | 33 M | 4g      | 1002 ms      | 8813 ms  |
 
 The HTJ2K byte range is very slightly slower than straight JLS, but can be
 done against any DICOMweb server supporting HTJ2K and byte range requests.
