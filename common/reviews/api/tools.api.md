@@ -3768,7 +3768,6 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
 type PlanarFreehandROIAnnotation = ContourAnnotation & {
     data: {
         label?: string;
-        isOpenContour?: boolean;
         isOpenUShapeContour?: boolean;
         openUShapeContourVectorToPeak?: Types_2.Point3[];
         cachedStats?: ROICachedStats;
