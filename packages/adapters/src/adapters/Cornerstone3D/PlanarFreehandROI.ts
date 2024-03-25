@@ -130,13 +130,12 @@ class PlanarFreehandROI {
             data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
+            /** From cachedStats */
             points,
             area,
-            modalityUnit,
             areaUnit,
             perimeter,
-            unit: modalityUnit,
-            /** Present in cachedStats but not being used by TID300 polyline in dcmjs */
+            modalityUnit,
             mean,
             max,
             stdDev,

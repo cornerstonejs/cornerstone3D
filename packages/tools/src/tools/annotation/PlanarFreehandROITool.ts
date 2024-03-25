@@ -932,8 +932,16 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats || {};
+  const {
+    area,
+    mean,
+    stdDev,
+    perimeter,
+    max,
+    isEmptyArea,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
 
@@ -954,6 +962,10 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (stdDev) {
     textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  if (perimeter) {
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${modalityUnit}`);
   }
 
   return textLines;
