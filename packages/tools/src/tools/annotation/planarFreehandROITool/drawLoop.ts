@@ -178,8 +178,7 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
  */
 function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const { allowOpenContours } = this.configuration;
-  const { canvasPoints, contourHoleProcessingEnabled, newAnnotation } =
-    this.drawData;
+  const { canvasPoints, contourHoleProcessingEnabled } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;

@@ -57,6 +57,7 @@ function activateClosedContourEdit(
     editCanvasPoints: [canvasPos],
     startCrossingIndex: undefined,
     editIndex: 0,
+    annotation,
   };
 
   this.commonData = {
@@ -253,6 +254,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     startCrossingIndex: undefined,
     editIndex: 0,
     snapIndex: undefined,
+    annotation,
   };
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);

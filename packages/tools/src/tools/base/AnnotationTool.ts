@@ -468,7 +468,6 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     options?: { newAnnotation?: boolean; deleting?: boolean }
   ) {
     if (!annotation) {
-      // TODO - remember state without annotation UID
       return;
     }
     const { newAnnotation, deleting = newAnnotation ? false : undefined } =
