@@ -23,6 +23,9 @@ import addSegmentIndexDropdown from './addSegmentIndexDropdown';
 import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 
 import { addLabelToToolbar } from './addLabelToToolbar';
+import annotationTools from './annotationTools';
+import labelmapTools from './labelmapTools';
+import contourTools from './contourTools';
 
 export {
   addBrushSizeSlider,
@@ -48,4 +51,7 @@ export {
   camera,
   downloadSurfacesData,
   getLocalUrl,
+  annotationTools,
+  labelmapTools,
+  contourTools,
 };
