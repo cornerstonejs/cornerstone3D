@@ -13,7 +13,7 @@ import {
   getLocalUrl,
   addVideoTime,
   addSegmentIndexDropdown,
-  contourSegmentationToolBindings,
+  contourTools,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -34,10 +34,7 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SplineContourSegmentationTool,
   SegmentationDisplayTool,
-  LivewireContourSegmentationTool,
-  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -52,52 +49,7 @@ let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 
-const configuredTools = new Map<string, any>();
-const interpolationConfiguration = {
-  interpolation: { enabled: true },
-  decimate: {
-    enabled: true,
-    /** A maximum given distance 'epsilon' to decide if a point should or
-     * shouldn't be added the resulting polyline which will have a lower
-     * number of points for higher `epsilon` values.
-     * Larger values work well for this video example
-     */
-    epsilon: 0.5,
-  },
-};
-
-configuredTools.set('CatmullRomSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
-  },
-});
-configuredTools.set('LinearSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
-  },
-});
-
-configuredTools.set('BSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
-  },
-});
-
-configuredTools.set('FreeformInterpolation', {
-  baseTool: PlanarFreehandContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
-configuredTools.set('SplineInterpolation', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
-configuredTools.set('LivewireInterpolation', {
-  baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
+const { toolMap } = contourTools;
 
 // ======== Set up page ======== //
 
@@ -214,31 +166,9 @@ element.addEventListener(
 
 addSegmentIndexDropdown(segmentationId);
 
-const toolNames = [
-  PlanarFreehandContourSegmentationTool.toolName,
-  LivewireContourSegmentationTool.toolName,
-  ...configuredTools.keys(),
-];
-let selectedToolName = toolNames[0];
-
 addDropdownToToolbar({
-  options: { values: toolNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName, {
-      removeAllBindings: contourSegmentationToolBindings,
-    });
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: contourSegmentationToolBindings,
-    });
-
-    selectedToolName = <string>newSelectedToolName;
-  },
+  options: { map: toolMap },
+  toolGroupId,
 });
 
 addToggleButtonToToolbar({
@@ -314,30 +244,12 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(SplineContourSegmentationTool);
-  cornerstoneTools.addTool(LivewireContourSegmentationTool);
-  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  addManipulationBindings(toolGroup, { toolMap });
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(SplineContourSegmentationTool.toolName);
-  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  for (const [toolName, config] of configuredTools.entries()) {
-    toolGroup.addToolInstance(toolName, config.baseTool, config.configuration);
-  }
-
-  toolGroup.setToolActive(toolNames[0], {
-    bindings: contourSegmentationToolBindings,
-  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

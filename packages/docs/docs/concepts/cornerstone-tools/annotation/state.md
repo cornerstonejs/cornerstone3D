@@ -67,10 +67,10 @@ cornerstone3DTools.annotations.state.removeAnnotation(
 );
 
 // Returns the full annotations for a given Tool
-cornerstone3DTools.annotations.state.getAnnotations(element, toolName);
+cornerstone3DTools.annotation.state.getAnnotations(toolName, element);
 
 // A helper which returns the single annotation entry matching the UID.
-cornerstone3DTools.annotations.state.getAnnotation(annotationUID);
+cornerstone3DTools.annotation.state.getAnnotation(annotationUID);
 ```
 
 ## Read more
