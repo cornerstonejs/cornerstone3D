@@ -329,7 +329,7 @@ resizeOptions.set('Original', {
   viewportStyle: { width, height },
 });
 resizeOptions.set('1:2', {
-  viewportStyle: { width: '20vw', height: '40vw' },
+  viewportStyle: { width: '19vw', height: '38vw' },
 });
 resizeOptions.set('2:1', {
   viewportStyle: { width: '40vw', height: '20vw' },
