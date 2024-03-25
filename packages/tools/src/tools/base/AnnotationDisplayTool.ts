@@ -61,7 +61,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     annotations: Annotations
   ): Annotations | undefined {
     if (!annotations || !annotations.length) {
-      return;
+      return annotations;
     }
 
     const enabledElement = getEnabledElement(element);
