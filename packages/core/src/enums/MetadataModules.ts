@@ -15,7 +15,6 @@ enum MetadataModules {
   IMAGE_PIXEL = 'imagePixelModule',
   IMAGE_PLANE = 'imagePlaneModule',
   IMAGE_URL = 'imageUrlModule',
-  INSTANCE = 'instanceModule',
   MODALITY_LUT = 'modalityLutModule',
   MULTIFRAME = 'multiframeModule',
   NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',

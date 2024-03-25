@@ -2449,8 +2449,6 @@ enum MetadataModules {
     // (undocumented)
     IMAGE_URL = "imageUrlModule",
     // (undocumented)
-    INSTANCE = "instanceModule",
-    // (undocumented)
     MODALITY_LUT = "modalityLutModule",
     // (undocumented)
     MULTIFRAME = "multiframeModule",
