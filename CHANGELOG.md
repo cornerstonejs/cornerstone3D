@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.66.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.10...v1.66.11) (2024-03-25)
+
+**Note:** Version bump only for package root
+
+## [1.66.10](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.9...v1.66.10) (2024-03-25)
+
+**Note:** Version bump only for package root
+
+## [1.66.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.8...v1.66.9) (2024-03-20)
+
+### Bug Fixes
+
+- **DicomImageLoader:** Returns options.loader ([#1154](https://github.com/cornerstonejs/cornerstone3D/issues/1154)) ([9a6c452](https://github.com/cornerstonejs/cornerstone3D/commit/9a6c452b211d9a55fd49313537e5de8bad2cfde8))
+
+## [1.66.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.7...v1.66.8) (2024-03-20)
+
+### Bug Fixes
+
+- **cine:** playclip to allow loop config ([#1163](https://github.com/cornerstonejs/cornerstone3D/issues/1163)) ([1880f38](https://github.com/cornerstonejs/cornerstone3D/commit/1880f385ea27fe1a3fea20ea6eb03bcc950dcb0d))
+
+## [1.66.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.6...v1.66.7) (2024-03-18)
+
+### Bug Fixes
+
+- render annotations without plane normal on viewports and update default svg colors ([#1159](https://github.com/cornerstonejs/cornerstone3D/issues/1159)) ([2b32e7d](https://github.com/cornerstonejs/cornerstone3D/commit/2b32e7df6aabccec455e1e091b4b7a52a9dea78e))
+
 ## [1.66.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.5...v1.66.6) (2024-03-14)
 
 ### Bug Fixes

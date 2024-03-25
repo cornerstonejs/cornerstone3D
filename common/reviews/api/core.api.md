@@ -3645,7 +3645,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     customRenderViewportToCanvas: () => unknown;
     // (undocumented)
-    readonly defaultOptions: any;
+    readonly defaultOptions: Record<string, any>;
     // (undocumented)
     readonly element: HTMLDivElement;
     // (undocumented)
@@ -3694,7 +3694,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getProperties: () => void;
     // (undocumented)
-    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    getReferenceId(_specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
