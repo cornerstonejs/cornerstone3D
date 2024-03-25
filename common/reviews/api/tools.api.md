@@ -483,6 +483,12 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
+    protected static cloneAnnotationData(annotation: Annotation, deleting?: boolean): {
+        annotationUID: string;
+        data: any;
+        deleting: boolean;
+    };
+    // (undocumented)
     static createAndAddAnnotation(viewport: any, ...annotationBaseData: any[]): void;
     // (undocumented)
     static createAnnotation(...annotationBaseData: any[]): Annotation;
