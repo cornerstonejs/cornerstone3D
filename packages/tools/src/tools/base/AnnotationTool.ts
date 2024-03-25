@@ -29,6 +29,9 @@ import {
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import ChangeTypes from '../../enums/ChangeTypes';
+import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
+import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import type { ContourSegmentationAnnotation } from '../../types';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 const { PointsManager } = csUtils;
@@ -462,25 +465,23 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     }
   }
 
-  public static createAnnotationMemo(
-    element,
+  protected static cloneAnnotationData(
     annotation: Annotation,
-    options?: { newAnnotation?: boolean; deleting?: boolean }
+    deleting?: boolean
   ) {
-    if (!annotation) {
-      return;
-    }
-    const { newAnnotation, deleting = newAnnotation ? false : undefined } =
-      options || {};
-    const { annotationUID, data } = annotation;
-    const { contour } = data;
-    const cloneData = { ...data, contour: undefined, cachedStats: {} };
+    const { data, annotationUID } = annotation;
+    const cloneData: any = {
+      ...data,
+      cachedStats: {},
+    };
+    delete cloneData.contour;
+    delete cloneData.spline;
     const state = {
       annotationUID,
-      data: data ? structuredClone(cloneData) : null,
+      data: structuredClone(cloneData),
       deleting,
     };
-
+    const { contour } = data;
     if (contour) {
       state.data.contour = {
         ...contour,
@@ -491,18 +492,59 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         ),
       };
     }
+
+    return state;
+  }
+
+  public static createAnnotationMemo(
+    element,
+    annotation: Annotation,
+    options?: { newAnnotation?: boolean; deleting?: boolean }
+  ) {
+    if (!annotation) {
+      return;
+    }
+    const { newAnnotation, deleting = newAnnotation ? false : undefined } =
+      options || {};
+    const { annotationUID } = annotation;
+    const state = this.cloneAnnotationData(annotation, deleting);
+
     const annotationMemo = {
       restoreMemo: () => {
+        const newState = AnnotationTool.cloneAnnotationData(
+          annotation,
+          deleting
+        );
         if (state.deleting === true) {
           // Handle undeletion
           state.deleting = false;
+          Object.assign(annotation.data, state.data);
+          if (annotation.data.contour) {
+            annotation.data.contour.polyline =
+              state.data.contour.pointsManager.points;
+            delete annotation.data.contour.pointsManager;
+            console.log(
+              'Annotation contour restore',
+              annotation.data.contour.polyline.length
+            );
+            if (annotation.data.segmentation) {
+              addContourSegmentationAnnotation(
+                annotation as ContourSegmentationAnnotation
+              );
+            }
+          }
+          state.data = newState.data;
           addAnnotation(annotation, element);
+          setAnnotationSelected(annotation.annotationUID, true);
           getEnabledElement(element)?.viewport.render();
           return;
         }
         if (state.deleting === false) {
           // Handle deletion (undo of creation)
           state.deleting = true;
+          // Use the current state as the restore state.
+          state.data = newState.data;
+          setAnnotationSelected(annotation.annotationUID);
           removeAnnotation(annotation.annotationUID);
           getEnabledElement(element)?.viewport.render();
           return;
@@ -512,35 +554,12 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           console.warn('No current annotation');
           return;
         }
-        const { data } = currentAnnotation;
-        const { contour } = data;
-        const cloneData = {
-          ...data,
-          contour: undefined,
-          cachedStats: {},
-          spline: undefined,
-        };
-        const currentData = cloneData ? structuredClone(cloneData) : null;
-        if (contour) {
-          currentData.contour = {
-            ...contour,
-            polyline: null,
-            pointsManager: PointsManager.create3(
-              contour.polyline.length,
-              contour.polyline
-            ),
-          };
-        }
-        currentAnnotation.data = {
-          ...structuredClone(state.data),
-          spline: currentAnnotation.data.spline,
-        };
-        if (state.data.contour) {
+        Object.assign(currentAnnotation.data, state.data);
+        if (currentAnnotation.data.contour) {
           currentAnnotation.data.contour.polyline =
             state.data.contour.pointsManager.points;
-          delete currentAnnotation.data.contour.pointsManager;
         }
-        state.data = currentData;
+        state.data = newState.data;
         currentAnnotation.invalidated = true;
         triggerAnnotationModified(
           currentAnnotation,

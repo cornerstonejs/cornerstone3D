@@ -6,6 +6,7 @@ import {
   volumeLoader,
   setVolumesForViewports,
   eventTarget,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -23,6 +24,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 const { segmentation } = cornerstoneTools;
 const { SegmentationDisplayTool } = cornerstoneTools;
 const { MouseBindings } = cornerstoneTools.Enums;
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 // This is for debugging purposes
 console.warn(
@@ -169,6 +171,22 @@ function annotationModifiedListener(evt) {
 function getActiveAnnotation() {
   return cornerstoneTools.annotation.state.getAnnotation(selectedAnnotationUID);
 }
+
+addButtonToToolbar({
+  id: 'Undo',
+  title: 'Undo',
+  onClick() {
+    DefaultHistoryMemo.undo();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Redo',
+  title: 'Redo',
+  onClick() {
+    DefaultHistoryMemo.redo();
+  },
+});
 
 addButtonToToolbar({
   id: 'Delete',
