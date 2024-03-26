@@ -1,9 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 
-import {
+import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from './LabelmapTypes';
+import type { LabelmapMemo } from '../utilities/segmentation/createLabelmapMemo';
 
 type LabelmapToolOperationData = {
   segmentationId: string;
@@ -26,6 +27,16 @@ type LabelmapToolOperationData = {
    */
   preview: any;
   toolGroupId: string;
+  /**
+   * Creates a labelmap memo, given the preview information and segment voxels.
+   * May return an already existing one when used for extension.
+   */
+  createMemo: (
+    segmentId,
+    segmentVoxels,
+    previewVoxels,
+    previewMemo
+  ) => LabelmapMemo;
 };
 
 type LabelmapToolOperationDataStack = LabelmapToolOperationData &

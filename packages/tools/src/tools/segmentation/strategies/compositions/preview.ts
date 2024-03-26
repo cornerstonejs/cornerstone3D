@@ -48,6 +48,10 @@ export default {
       preview,
     } = operationData;
     if (previewColors === undefined) {
+      console.log(
+        '**** Not preview - just creating a memo instance for changes'
+      );
+
       return;
     }
     if (preview) {

@@ -8,7 +8,6 @@ import type {
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { BaseTool } from '../base';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
@@ -45,6 +44,7 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -65,7 +65,7 @@ export type PreviewData = {
 /**
  * @public
  */
-class BrushTool extends BaseTool {
+class BrushTool extends LabelmapBaseTool {
   static toolName;
   private _editData: {
     segmentsLocked: number[]; //
@@ -581,6 +581,7 @@ class BrushTool extends BaseTool {
       // Provide the preview information so that data can be used directly
       preview: this._previewData?.preview,
       configuration: this.configuration,
+      createMemo: this.createMemo.bind(this),
     };
     return operationData;
   }

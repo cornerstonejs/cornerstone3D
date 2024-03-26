@@ -42,7 +42,7 @@ export function createLabelmapMemo<T>(
  * modified.
  */
 export function restoreMemo(isUndo?: boolean) {
-  this.complete();
+  this.complete?.();
   const { segmentationVoxelManager, voxelManager, redoVoxelManager } = this;
   const useVoxelManager = isUndo === false ? redoVoxelManager : voxelManager;
   useVoxelManager.forEach(({ value, pointIJK }) => {
@@ -53,10 +53,6 @@ export function restoreMemo(isUndo?: boolean) {
   });
   const slices = this.useVoxelManager.getArrayOfSlices();
   triggerSegmentationDataModified(this.segmentationId, slices);
-}
-
-export function createSetValue(voxelManager) {
-  return (pointIJK, value) => null;
 }
 
 /**
@@ -70,14 +66,12 @@ export function createRleMemo<T>(
   const voxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
   );
-  const setValue = createSetValue(voxelManager);
   const state = {
     segmentationId,
     restoreMemo,
     complete,
     segmentationVoxelManager,
     voxelManager,
-    setValue,
   };
   return state;
 }
@@ -90,14 +84,12 @@ export function createPreviewMemo<T>(
 ) {
   previewMemo?.complete();
 
-  const setValue = createSetValue(previewVoxelManager);
   const state = {
     segmentationId,
     restoreMemo,
     complete,
     segmentationVoxelManager,
     voxelManager: previewVoxelManager,
-    setValue,
     memo: previewMemo,
   };
   return state;
@@ -108,14 +100,25 @@ export function createPreviewMemo<T>(
  * storage - that is, it copies the RLE data and creates a reverse RLE map
  */
 function complete() {
-  if (!this.setValue) {
-    return;
-  }
+  this.complete = null;
+  const { segmentationVoxelManager } = this;
   const cloneVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
-    this.segmentationVoxelManager
+    segmentationVoxelManager
   );
   RLEVoxelMap.copyMap(
     cloneVoxelManager.map as Types.RLEVoxelMap<unknown>,
     this.voxelManager.map
   );
+  this.voxelManager = cloneVoxelManager;
+  const reverseVoxelManager = VoxelManager.createRLEVoxelManager(
+    this.segmentationVoxelManager
+  );
+  this.reverseVoxelManager = reverseVoxelManager;
+  cloneVoxelManager.forEach(({ index, pointIJK, value }) => {
+    const currentValue = segmentationVoxelManager.getAtIJKPoint(pointIJK);
+    if (!currentValue || currentValue === value) {
+      return;
+    }
+    reverseVoxelManager.setAtIndex(index, currentValue);
+  });
 }

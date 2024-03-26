@@ -837,7 +837,7 @@ declare namespace boundingBox {
 type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
-export class BrushTool extends BaseTool {
+export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     acceptPreview(element?: HTMLDivElement): void;
@@ -868,6 +868,7 @@ export class BrushTool extends BaseTool {
         strategySpecificConfiguration: any;
         preview: unknown;
         configuration: Record<string, any>;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, previewVoxelManager?: any, previewMemo?: any) => LabelmapMemo_2;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -1694,7 +1695,6 @@ function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager:
     complete: typeof complete;
     segmentationVoxelManager: utilities_2.VoxelManager<T>;
     voxelManager: utilities_2.VoxelManager<T>;
-    setValue: (pointIJK: any, value: any) => any;
 };
 
 // @public (undocumented)
@@ -1729,7 +1729,6 @@ function createPreviewMemo<T>(segmentationId: string, segmentationVoxelManager: 
     complete: typeof complete;
     segmentationVoxelManager: utilities_2.VoxelManager<T>;
     voxelManager: utilities_2.VoxelManager<T>;
-    setValue: (pointIJK: any, value: any) => any;
     memo: any;
 };
 
@@ -1740,11 +1739,7 @@ function createRleMemo<T>(segmentationId: string, segmentationVoxelManager: Type
     complete: typeof complete;
     segmentationVoxelManager: utilities_2.VoxelManager<T>;
     voxelManager: utilities_2.VoxelManager<T>;
-    setValue: (pointIJK: any, value: any) => any;
 };
-
-// @public (undocumented)
-function createSetValue(voxelManager: any): (pointIJK: any, value: any) => any;
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -3190,7 +3185,6 @@ declare namespace LabelmapMemo {
     export {
         createLabelmapMemo,
         restoreMemo,
-        createSetValue,
         createRleMemo,
         createPreviewMemo,
         LabelmapMemo_2 as LabelmapMemo
@@ -3243,6 +3237,7 @@ type LabelmapToolOperationData = {
     points: Types_2.Point3[];
     preview: any;
     toolGroupId: string;
+    createMemo: (segmentId: any, segmentVoxels: any, previewVoxels: any, previewMemo: any) => LabelmapMemo_2;
 };
 
 // @public (undocumented)
