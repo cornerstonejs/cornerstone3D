@@ -1210,9 +1210,10 @@ export class CircleScissorsTool extends LabelmapBaseTool {
     editData: {
         annotation: any;
         segmentIndex: number;
-        volumeId: string;
-        referencedVolumeId: string;
-        imageIdReferenceMap: Map<string, string>;
+        volumeId?: string;
+        segmentationId?: string;
+        referencedVolumeId?: string;
+        imageIdReferenceMap?: Map<string, string>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -1222,6 +1223,7 @@ export class CircleScissorsTool extends LabelmapBaseTool {
         hasMoved?: boolean;
         centerCanvas?: Array<number>;
         segmentationRepresentationUID?: string;
+        memo?: LabelmapMemo_2;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
