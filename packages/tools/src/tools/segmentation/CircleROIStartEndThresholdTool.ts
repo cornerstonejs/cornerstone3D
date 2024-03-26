@@ -7,6 +7,8 @@ import {
   metaData,
   triggerEvent,
   eventTarget,
+  CONSTANTS,
+  utilities
 } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
@@ -30,7 +32,7 @@ import {
   resetElementCursor,
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
+import { triggerAnnotationCompleted, triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import {
   PublicToolProps,
   ToolProps,
@@ -120,9 +122,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
     }
 
-    // if (!referencedImageId) {
-    //   throw new Error('This tool does not work on non-acquisition planes');
-    // }
+    console.debug(viewport.getCurrentImageIdIndex())
+
+    const checkIfPlaneIsValid = this._checkIfViewPlaneIsValid(viewPlaneNormal);
+    if (!checkIfPlaneIsValid) {
+      throw new Error('This tool does not work on non-mpr planes');
+    }
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
@@ -133,7 +138,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       imageVolume,
       worldPos,
       spacingInNormal,
-      viewPlaneNormal
+      viewPlaneNormal,
     );
 
     // We cannot newStartIndex add numSlicesToPropagate to startIndex because
@@ -144,7 +149,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       imageVolume,
       worldPos,
       spacingInNormal,
-      viewPlaneNormal
+      viewPlaneNormal,
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -187,6 +192,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       },
     };
 
+    // update the projection points in 3D space, since we are projecting
+    // the points to the slice plane, we need to make sure the points are
+    // computed for later export
+    this._computeProjectionPoints(annotation, imageVolume);
+
     addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -209,6 +219,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
+  };
+
+  _checkIfViewPlaneIsValid = (viewPlane: Types.Point3): boolean => {
+    const mprValues = CONSTANTS.MPR_CAMERA_VALUES;
+    for (const key in mprValues) {
+      if (mprValues.hasOwnProperty(key)) {
+        const { viewPlaneNormal } = mprValues[key];
+        if (csUtils.isEqual(viewPlaneNormal, viewPlane)) {
+          return true;
+        }
+      }
+    }
+    return false;
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -278,12 +301,18 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;
-
-    const annotations = getAnnotations(this.getToolName(), viewport.element);
+    const { element } = viewport;
+    let annotations = getAnnotations(this.getToolName(), viewport.element);
 
     if (!annotations?.length) {
       return renderStatus;
     }
+
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations,
+      true
+    );
 
     const sliceIndex = viewport.getCurrentImageIdIndex();
 
@@ -419,7 +448,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     return renderStatus;
   };
 
-  // Todo: make it work for planes other than acquisition planes
+  //Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: CircleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -431,14 +460,20 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
-    startIJK[2] = startSlice;
-
-    if (startIJK[2] !== startSlice) {
-      throw new Error('Start slice does not match');
-    }
-
     // substitute the end slice index 2 with startIJK index 2
-    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
+    let endIJK;
+
+    const mprValues = CONSTANTS.MPR_CAMERA_VALUES
+    if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
+      startIJK[2] = startSlice;
+      endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
+      startIJK[0] = startSlice;
+      endIJK = vec3.fromValues(endSlice, startIJK[1], startIJK[2]);
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
+      startIJK[1] = startSlice;
+      endIJK = vec3.fromValues(startIJK[0], endSlice, startIJK[2]);
+    }
 
     const startWorld = vec3.create();
     imageData.indexToWorldVec3(startIJK, startWorld);
@@ -556,7 +591,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
-    const { viewportId, renderingEngineId, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     const { cachedStats } = data;
     const targetId = this.getTargetId(viewport);
@@ -569,15 +604,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, viewport.element);
 
     return cachedStats;
   }
@@ -601,12 +628,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       numSlicesToPropagateFromStart * -spacingInNormal
     );
 
-    const imageIdIndex = this._getImageIdIndex(
-      imageVolume,
-      startPos,
-      spacingInNormal,
-      viewPlaneNormal
-    );
+    const imageIdIndex = this._getImageIdIndex(imageVolume,startPos,viewPlaneNormal);
 
     return imageIdIndex;
   }
@@ -615,10 +637,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     imageVolume: Types.IImageVolume,
     worldPos: Types.Point3,
     spacingInNormal: number,
-    viewPlaneNormal: Types.Point3
+    viewPlaneNormal: Types.Point3,
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
-    const numSlicesToPropagateFromStart = Math.round(numSlicesToPropagate / 2);
+    const numSlicesToPropagateToEnd = numSlicesToPropagate - Math.round(numSlicesToPropagate / 2);
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
@@ -627,15 +649,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       endPos,
       worldPos,
       viewPlaneNormal,
-      numSlicesToPropagateFromStart * spacingInNormal
+      numSlicesToPropagateToEnd * spacingInNormal
     );
 
-    const imageIdIndex = this._getImageIdIndex(
-      imageVolume,
-      endPos,
-      spacingInNormal,
-      viewPlaneNormal
-    );
+    const imageIdIndex = this._getImageIdIndex(imageVolume,endPos,viewPlaneNormal);
 
     return imageIdIndex;
   }
@@ -643,32 +660,21 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   _getImageIdIndex(
     imageVolume: Types.IImageVolume,
     pos: vec3,
-    spacingInNormal: number,
-    viewPlaneNormal: Types.Point3
+    viewPlaneNormal: Types.Point3,
   ): number | undefined {
-    const halfSpacingInNormalDirection = spacingInNormal / 2;
-    // Loop through imageIds of the imageVolume and find the one that is closest to endPos
-    const { imageIds } = imageVolume;
-    let imageIdIndex;
-    for (let i = 0; i < imageIds.length; i++) {
-      const imageId = imageIds[i];
+    const { imageData } = imageVolume;
+    const imageIdIndex = imageData.worldToIndex([pos[0],pos[1],pos[2]])
 
-      const { imagePositionPatient } = metaData.get(
-        'imagePlaneModule',
-        imageId
-      );
-
-      const dir = vec3.create();
-      vec3.sub(dir, pos, imagePositionPatient);
-
-      const dot = vec3.dot(dir, viewPlaneNormal);
-
-      if (Math.abs(dot) < halfSpacingInNormalDirection) {
-        imageIdIndex = i;
-      }
+    const mprValues = CONSTANTS.MPR_CAMERA_VALUES
+    if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
+      return Math.round(imageIdIndex[2]);
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
+      return Math.round(imageIdIndex[0]);
+    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
+      return Math.round(imageIdIndex[1]);
+    } else {
+      return undefined;
     }
-
-    return imageIdIndex;
   }
 }
 
