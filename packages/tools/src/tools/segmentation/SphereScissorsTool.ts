@@ -33,6 +33,7 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import LabelmapBaseTool from './LabelmapBaseTool';
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -41,7 +42,7 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
  * segmentation and segmentIndex. Todo: sphere scissor has some memory problem which
  * lead to ui blocking behavior that needs to be fixed.
  */
-class SphereScissorsTool extends BaseTool {
+class SphereScissorsTool extends LabelmapBaseTool {
   static toolName;
   editData: {
     annotation: any;
@@ -291,6 +292,7 @@ class SphereScissorsTool extends BaseTool {
       segmentsLocked,
       viewPlaneNormal,
       viewUp,
+      createMemo: this.createMemo.bind(this),
     };
 
     this.editData = null;

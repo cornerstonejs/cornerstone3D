@@ -46,12 +46,9 @@ export function restoreMemo(isUndo?: boolean) {
   const { segmentationVoxelManager, voxelManager, redoVoxelManager } = this;
   const useVoxelManager = isUndo === false ? redoVoxelManager : voxelManager;
   useVoxelManager.forEach(({ value, pointIJK }) => {
-    if (!value) {
-      return;
-    }
     segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
   });
-  const slices = this.useVoxelManager.getArrayOfSlices();
+  const slices = useVoxelManager.getArrayOfSlices();
   triggerSegmentationDataModified(this.segmentationId, slices);
 }
 
@@ -109,16 +106,19 @@ function complete() {
     cloneVoxelManager.map as Types.RLEVoxelMap<unknown>,
     this.voxelManager.map
   );
+  for (const key of this.voxelManager.modifiedSlices.keys()) {
+    cloneVoxelManager.modifiedSlices.add(key);
+  }
   this.voxelManager = cloneVoxelManager;
-  const reverseVoxelManager = VoxelManager.createRLEVoxelManager(
-    this.segmentationVoxelManager
+  const redoVoxelManager = VoxelManager.createRLEVoxelManager(
+    this.segmentationVoxelManager.dimensions
   );
-  this.reverseVoxelManager = reverseVoxelManager;
+  this.redoVoxelManager = redoVoxelManager;
   cloneVoxelManager.forEach(({ index, pointIJK, value }) => {
     const currentValue = segmentationVoxelManager.getAtIJKPoint(pointIJK);
     if (!currentValue || currentValue === value) {
       return;
     }
-    reverseVoxelManager.setAtIndex(index, currentValue);
+    redoVoxelManager.setAtIndex(index, currentValue);
   });
 }

@@ -670,6 +670,8 @@ class BrushTool extends LabelmapBaseTool {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
 
+    this.doneEditMemo();
+
     const operationData = this.getOperationData(element);
     // Don't re-fill when the preview is showing and the user clicks again
     // otherwise the new area of hover may get filled, which is unexpected

@@ -1,7 +1,6 @@
 import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
 import {
   PublicToolProps,
   ToolProps,
@@ -32,6 +31,7 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -40,7 +40,7 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-class CircleScissorsTool extends BaseTool {
+class CircleScissorsTool extends LabelmapBaseTool {
   static toolName;
   editData: {
     annotation: any;
@@ -287,6 +287,7 @@ class CircleScissorsTool extends BaseTool {
       viewPlaneNormal,
       viewUp,
       strategySpecificConfiguration: {},
+      createMemo: this.createMemo.bind(this),
     };
 
     this.editData = null;

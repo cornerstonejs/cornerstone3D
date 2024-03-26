@@ -1198,7 +1198,7 @@ export class CircleROITool extends AnnotationTool {
 }
 
 // @public (undocumented)
-export class CircleScissorsTool extends BaseTool {
+export class CircleScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -3237,7 +3237,7 @@ type LabelmapToolOperationData = {
     points: Types_2.Point3[];
     preview: any;
     toolGroupId: string;
-    createMemo: (segmentId: any, segmentVoxels: any, previewVoxels: any, previewMemo: any) => LabelmapMemo_2;
+    createMemo: (segmentId: any, segmentVoxels: any, previewVoxels?: any, previewMemo?: any) => LabelmapMemo_2;
 };
 
 // @public (undocumented)
@@ -5002,7 +5002,7 @@ function showAllAnnotations(): void;
 function smoothAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
 
 // @public (undocumented)
-export class SphereScissorsTool extends BaseTool {
+export class SphereScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;

@@ -46,12 +46,15 @@ export default {
       previewSegmentIndex,
       previewColors,
       preview,
+      segmentationId,
+      segmentationVoxelManager,
+      memo,
     } = operationData;
     if (previewColors === undefined) {
-      console.log(
-        '**** Not preview - just creating a memo instance for changes'
+      operationData.memo = operationData.createMemo(
+        segmentationId,
+        segmentationVoxelManager
       );
-
       return;
     }
     if (preview) {
@@ -60,6 +63,13 @@ export default {
       // And use the preview data associated with this tracking object as needed
       operationData.previewVoxelManager = preview.previewVoxelManager;
     }
+
+    operationData.memo = operationData.createMemo(
+      segmentationId,
+      segmentationVoxelManager,
+      operationData.previewVoxelManager,
+      memo
+    );
 
     if (
       segmentIndex === undefined ||

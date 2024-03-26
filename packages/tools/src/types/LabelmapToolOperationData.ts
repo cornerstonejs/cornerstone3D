@@ -34,8 +34,8 @@ type LabelmapToolOperationData = {
   createMemo: (
     segmentId,
     segmentVoxels,
-    previewVoxels,
-    previewMemo
+    previewVoxels?,
+    previewMemo?
   ) => LabelmapMemo;
 };
 

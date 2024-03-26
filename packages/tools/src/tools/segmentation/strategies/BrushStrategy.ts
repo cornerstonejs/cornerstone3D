@@ -11,6 +11,7 @@ import type {
   LabelmapToolOperationDataVolume,
 } from '../../../types/LabelmapToolOperationData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
 
 const { VoxelManager } = csUtils;
 
@@ -35,6 +36,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
 
   brushStrategy: BrushStrategy;
   configuration?: Record<string, any>;
+  memo?: LabelmapMemo;
 };
 
 export type StrategyFunction = (
