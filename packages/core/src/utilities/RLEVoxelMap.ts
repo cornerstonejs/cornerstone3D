@@ -101,6 +101,18 @@ export default class RLEVoxelMap<T> {
    */
   public pixelDataConstructor = Uint8Array;
 
+  /**
+   * Copies the data in source into the map.
+   */
+  public static copyMap<T>(
+    destination: RLEVoxelMap<T>,
+    source: RLEVoxelMap<T>
+  ) {
+    for (const [index, row] of source.rows) {
+      destination.rows.set(index, structuredClone(row));
+    }
+  }
+
   constructor(width: number, height: number, depth = 1) {
     this.width = width;
     this.height = height;

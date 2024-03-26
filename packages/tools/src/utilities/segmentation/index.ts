@@ -19,7 +19,7 @@ import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 import { createImageIdReferenceMap } from './createImageIdReferenceMap';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
-import createLabelmapMemo from './createLabelmapMemo';
+import * as LabelmapMemo from './createLabelmapMemo';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
 import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
@@ -33,7 +33,7 @@ export {
   isValidRepresentationConfig,
   getDefaultRepresentationConfig,
   createLabelmapVolumeForViewport,
-  createLabelmapMemo,
+  LabelmapMemo,
   rectangleROIThresholdVolumeByRange,
   triggerSegmentationRender,
   floodFill,

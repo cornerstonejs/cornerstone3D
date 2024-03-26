@@ -700,7 +700,7 @@ function decimate(list: Array<unknown>, interleave: number, offset?: number): nu
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
-const DefaultHistoryMemo: HistoryMemo_2;
+const DefaultHistoryMemo: HistoryMemo;
 
 // @public (undocumented)
 type DisplayArea = {
@@ -1100,17 +1100,8 @@ export function getWebWorkerManager(): any;
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
 
-declare namespace HistoryMemo {
-    export {
-        Memo,
-        Memoable,
-        HistoryMemo_2 as HistoryMemo,
-        DefaultHistoryMemo
-    }
-}
-
 // @public (undocumented)
-class HistoryMemo_2 {
+class HistoryMemo {
     constructor(label?: string, size?: number);
     // (undocumented)
     readonly label: any;
@@ -1122,6 +1113,15 @@ class HistoryMemo_2 {
     get size(): any;
     // (undocumented)
     undo(items?: number): void;
+}
+
+declare namespace HistoryMemo_2 {
+    export {
+        Memo,
+        Memoable,
+        HistoryMemo,
+        DefaultHistoryMemo
+    }
 }
 
 // @public (undocumented)
@@ -2436,6 +2436,7 @@ type Mat3 = [number, number, number, number, number, number, number, number, num
 // @public (undocumented)
 type Memo = {
     restoreMemo: (undo?: boolean) => void;
+    complete?: () => void;
 };
 
 // @public (undocumented)
@@ -2894,6 +2895,8 @@ class RLEVoxelMap<T> {
     constructor(width: number, height: number, depth?: number);
     // (undocumented)
     clear(): void;
+    // (undocumented)
+    static copyMap<T>(destination: RLEVoxelMap<T>, source: RLEVoxelMap<T>): void;
     // (undocumented)
     defaultValue: T;
     // (undocumented)
@@ -3372,6 +3375,10 @@ declare namespace Types {
         IImage,
         IImageData,
         IImageCalibration,
+        Memo,
+        HistoryMemo,
+        VoxelManager,
+        RLEVoxelMap,
         CPUIImageData,
         CPUImageData,
         EventTypes,
@@ -3539,7 +3546,7 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        HistoryMemo,
+        HistoryMemo_2 as HistoryMemo,
         generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,

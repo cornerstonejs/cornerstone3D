@@ -1688,8 +1688,13 @@ function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createLabelmapMemo(_element: any, activeSegmentationRepresentation: any, data: any): {
-    restoreMemo: () => void;
+function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, previewVoxelManager?: Types_2.VoxelManager<T>, previewMemo?: LabelmapMemo_2): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    complete: typeof complete;
+    segmentationVoxelManager: utilities_2.VoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+    setValue: (pointIJK: any, value: any) => any;
 };
 
 // @public (undocumented)
@@ -1716,6 +1721,30 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 
 // @public (undocumented)
 function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createPreviewMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, previewVoxelManager: Types_2.VoxelManager<T>, previewMemo: any): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    complete: typeof complete;
+    segmentationVoxelManager: utilities_2.VoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+    setValue: (pointIJK: any, value: any) => any;
+    memo: any;
+};
+
+// @public (undocumented)
+function createRleMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    complete: typeof complete;
+    segmentationVoxelManager: utilities_2.VoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+    setValue: (pointIJK: any, value: any) => any;
+};
+
+// @public (undocumented)
+function createSetValue(voxelManager: any): (pointIJK: any, value: any) => any;
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -3157,6 +3186,26 @@ type LabelmapConfig = {
     outlineOpacityInactive?: number;
 };
 
+declare namespace LabelmapMemo {
+    export {
+        createLabelmapMemo,
+        restoreMemo,
+        createSetValue,
+        createRleMemo,
+        createPreviewMemo,
+        LabelmapMemo_2 as LabelmapMemo
+    }
+}
+
+// @public (undocumented)
+type LabelmapMemo_2 = Types_2.Memo & {
+    setValue: (pointIJK: Types_2.Point3, value: any) => void;
+    segmentationVoxelManager: Types_2.VoxelManager<unknown>;
+    voxelManager: Types_2.VoxelManager<unknown>;
+    complete: () => void;
+    memo?: LabelmapMemo_2;
+};
+
 // @public (undocumented)
 type LabelmapRenderingConfig = {
     cfun?: vtkColorTransferFunction;
@@ -4544,6 +4593,9 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
+function restoreMemo(isUndo?: boolean): void;
+
+// @public (undocumented)
 const roundNumber_2: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
@@ -4666,7 +4718,7 @@ declare namespace segmentation_2 {
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
-        createLabelmapMemo,
+        LabelmapMemo,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
         floodFill,

@@ -42,6 +42,12 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 const labelmapSegmentationId = 'labelmapSegmentationId';
 const contourSegmentationId = 'contourSegmentationId';
+const defaultTool = 'CircularBrush';
+
+labelmapTools.toolMap.get('CircularBrush').configuration.preview.previewColors =
+  null;
+labelmapTools.toolMap.get('CircularBrush').configuration.preview.enabled =
+  false;
 
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
@@ -96,7 +102,7 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
 });
 
 addDropdownToToolbar({
-  options: { map: toolMap },
+  options: { map: toolMap, defaultValue: defaultTool },
   onSelectedValueChange: (newSelectedToolName, data) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
@@ -349,6 +355,12 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   segmentation.segmentIndex.setActiveSegmentIndex(labelmapSegmentationId, 1);
+  // Sets the labelmap as the active segmentation - should really check the default
+  // tool to see which one to select, but for now this is ok
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUIDs[0]
+  );
 
   // Render the image
   viewport.render();

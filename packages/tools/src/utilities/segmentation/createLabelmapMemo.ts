@@ -1,136 +1,121 @@
-import { cache, utilities } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import type { Types } from '@cornerstonejs/core';
 
-const { VoxelManager, HistoryMemo } = utilities;
+const { VoxelManager, RLEVoxelMap } = utilities;
 
-const { DefaultHistoryMemo } = HistoryMemo;
+/**
+ * The labelmap memo state.
+ */
+export type LabelmapMemo = Types.Memo & {
+  setValue: (pointIJK: Types.Point3, value) => void;
+  segmentationVoxelManager: Types.VoxelManager<unknown>;
+  voxelManager: Types.VoxelManager<unknown>;
+  // Copy the data for completion
+  complete: () => void;
+  memo?: LabelmapMemo;
+};
 
-// TODO - get this from a preview supplied to the create
-const previewSegmentIndex = 255;
-
-export default function createLabelmapMemo(
-  _element,
-  activeSegmentationRepresentation,
-  data
+/**
+ * Creates a labelmap memo instance.  Does not push it to the
+ * stack, which is handled externally.
+ */
+export function createLabelmapMemo<T>(
+  segmentationId: string,
+  segmentationVoxelManager: Types.VoxelManager<T>,
+  previewVoxelManager?: Types.VoxelManager<T>,
+  previewMemo?: LabelmapMemo
 ) {
-  console.log('Hello labelmap memo', activeSegmentationRepresentation, data);
-
-  const state = createLabelmapMemoState(
-    activeSegmentationRepresentation,
-    getVoxelsSegmentation(data)
-  );
-
-  // Get the voxel manager for the segmentation representation
-  // Create an RLE copy of the segmentation rep
-  // On restore
-  //  1. Take another RLE copy of the segmentation rep
-  //  2. Set copy the RLE data to the destination data
-  //  3. Fire segmentation modified events on the updated slices
-
-  const labelmapMemo = {
-    restoreMemo: () => {
-      const voxels = getVoxelsSegmentation(data);
-      const currentState = createLabelmapMemoState(
-        activeSegmentationRepresentation,
-        voxels
-      );
-      const { segmentationVoxelManager } = voxels;
-      segmentationVoxelManager.clear(true);
-      state.voxels.forEach(({ value, pointIJK }) => {
-        if (!value) {
-          return;
-        }
-        segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
-      });
-      Object.assign(state, currentState);
-      const slices = segmentationVoxelManager.getArrayOfSlices();
-      if (!slices.length) {
-        const sliceCount = segmentationVoxelManager.dimensions[2];
-        for (let slice = 0; slice < sliceCount; slice++) {
-          slices.push(slice);
-        }
-      }
-      triggerSegmentationDataModified(state.segmentationId, slices);
-    },
-  };
-  DefaultHistoryMemo.push(labelmapMemo);
-  return labelmapMemo;
+  return previewVoxelManager
+    ? createPreviewMemo(
+        segmentationId,
+        segmentationVoxelManager,
+        previewVoxelManager,
+        previewMemo
+      )
+    : createRleMemo(segmentationId, segmentationVoxelManager);
 }
 
 /**
- * Gets the segmentation voxel manager from the segmentation representation data
+ * A restore memo function.  This simply copies either the redo or the base
+ * voxel manager data to the segmentation state and triggers segmentation data
+ * modified.
  */
-function getVoxelsSegmentation(data) {
-  let segmentationVoxelManager;
-  let segmentationScalarData;
-  let segmentationDimensions;
-
-  const { volumeId } = data;
-  if (volumeId) {
-    const segmentationVolume = cache.getVolume(volumeId);
-    if (!segmentationVolume) {
+export function restoreMemo(isUndo?: boolean) {
+  this.complete();
+  const { segmentationVoxelManager, voxelManager, redoVoxelManager } = this;
+  const useVoxelManager = isUndo === false ? redoVoxelManager : voxelManager;
+  useVoxelManager.forEach(({ value, pointIJK }) => {
+    if (!value) {
       return;
     }
-    segmentationScalarData = segmentationVolume.getScalarData();
-    segmentationDimensions = segmentationVolume.dimensions;
+    segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
+  });
+  const slices = this.useVoxelManager.getArrayOfSlices();
+  triggerSegmentationDataModified(this.segmentationId, slices);
+}
 
-    segmentationVoxelManager = segmentationVolume.voxelManager;
-  } else {
-    console.warn('TODO - implement stack segmentation data');
-  }
-
-  segmentationVoxelManager ||= VoxelManager.createVolumeVoxelManager(
-    segmentationDimensions,
-    segmentationDimensions
-  );
-
-  return { segmentationVoxelManager, segmentationScalarData };
+export function createSetValue(voxelManager) {
+  return (pointIJK, value) => null;
 }
 
 /**
- * Creates a memo state for the labelmap data.
- * This state uses an RLE copy of the underlying data, and is basically just
- * the the segmentation id/representation uid with the voxels value.
+ * Creates an RLE memo state that stores additional changes to the voxel
+ * map.
  */
-function createLabelmapMemoState(
-  activeSegmentationRepresentation,
-  segmentationVoxels
+export function createRleMemo<T>(
+  segmentationId: string,
+  segmentationVoxelManager: Types.VoxelManager<T>
 ) {
-  if (!segmentationVoxels || !segmentationVoxels.segmentationVoxelManager) {
-    return;
-  }
-  const { segmentationVoxelManager } = segmentationVoxels;
-  const copiedVoxels = VoxelManager.createRLEVoxelManager(
-    segmentationVoxelManager.dimensions
-  );
-  let setCount = 0;
-  const { dimensions } = segmentationVoxelManager;
-  const boundsIJK = [
-    [0, dimensions[0] - 1],
-    [0, dimensions[1] - 1],
-    [0, dimensions[2] - 1],
-  ];
-  segmentationVoxelManager.forEach(
-    ({ value, pointIJK }) => {
-      // TODO - check for previewSegmentIndex original value in history, and set
-      // that instead - to handle erase preview
-      if (!value || value === previewSegmentIndex) {
-        return;
-      }
-      setCount++;
-      copiedVoxels.setAtIJKPoint(pointIJK, value);
-    },
-    { boundsIJK }
-  );
-  console.log(
-    'rle voxel manager created with',
-    setCount,
-    'from',
+  const voxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
   );
-
-  return {
-    ...activeSegmentationRepresentation,
-    voxels: copiedVoxels,
+  const setValue = createSetValue(voxelManager);
+  const state = {
+    segmentationId,
+    restoreMemo,
+    complete,
+    segmentationVoxelManager,
+    voxelManager,
+    setValue,
   };
+  return state;
+}
+
+export function createPreviewMemo<T>(
+  segmentationId: string,
+  segmentationVoxelManager: Types.VoxelManager<T>,
+  previewVoxelManager: Types.VoxelManager<T>,
+  previewMemo
+) {
+  previewMemo?.complete();
+
+  const setValue = createSetValue(previewVoxelManager);
+  const state = {
+    segmentationId,
+    restoreMemo,
+    complete,
+    segmentationVoxelManager,
+    voxelManager: previewVoxelManager,
+    setValue,
+    memo: previewMemo,
+  };
+  return state;
+}
+
+/**
+ * This is a member function of a memo that causes the completion of the
+ * storage - that is, it copies the RLE data and creates a reverse RLE map
+ */
+function complete() {
+  if (!this.setValue) {
+    return;
+  }
+  const cloneVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
+    this.segmentationVoxelManager
+  );
+  RLEVoxelMap.copyMap(
+    cloneVoxelManager.map as Types.RLEVoxelMap<unknown>,
+    this.voxelManager.map
+  );
 }

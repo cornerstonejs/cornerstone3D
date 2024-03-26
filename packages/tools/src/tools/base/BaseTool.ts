@@ -315,9 +315,14 @@ abstract class BaseTool implements IBaseTool {
 
   /**
    * This clears and edit memo storage to allow for further history functions
-   * to be called.
+   * to be called.  Calls the complete function if present, and pushes the
+   * memo to the history memo stack.
    */
   public doneEditMemo() {
+    if (this.memo?.complete) {
+      this.memo.complete();
+      DefaultHistoryMemo.push(this.memo);
+    }
     this.memo = null;
   }
 }

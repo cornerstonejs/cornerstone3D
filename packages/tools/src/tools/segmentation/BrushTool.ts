@@ -45,7 +45,6 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
-import createLabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -256,12 +255,6 @@ class BrushTool extends BaseTool {
 
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-
-    this.memo ||= createLabelmapMemo(
-      element,
-      activeSegmentationRepresentation,
-      labelmapData
-    );
 
     if (isVolumeSegmentation(labelmapData, viewport)) {
       const { volumeId } = representationData[

@@ -1,5 +1,10 @@
 export type Memo = {
   restoreMemo: (undo?: boolean) => void;
+  /**
+   * An optional function that should be called to complete a memo.  This will
+   * copy any data that is being further modified so as to allow undo/redo
+   */
+  complete?: () => void;
 };
 
 export type Memoable = {
