@@ -98,7 +98,6 @@ class RectangleScissorsTool extends BaseTool {
       return;
     }
 
-    this.doneEditMemo();
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -317,6 +316,8 @@ class RectangleScissorsTool extends BaseTool {
     this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
+
+    this.doneEditMemo();
   };
 
   /**

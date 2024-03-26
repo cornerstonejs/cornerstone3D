@@ -32,6 +32,7 @@ import {
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -46,9 +47,10 @@ class CircleScissorsTool extends LabelmapBaseTool {
     annotation: any;
     segmentIndex: number;
     //
-    volumeId: string;
-    referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
+    volumeId?: string;
+    segmentationId?: string;
+    referencedVolumeId?: string;
+    imageIdReferenceMap?: Map<string, string>;
     //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -59,6 +61,7 @@ class CircleScissorsTool extends LabelmapBaseTool {
     hasMoved?: boolean;
     centerCanvas?: Array<number>;
     segmentationRepresentationUID?: string;
+    memo?: LabelmapMemo;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -96,7 +99,6 @@ class CircleScissorsTool extends LabelmapBaseTool {
       return;
     }
 
-    this.doneEditMemo();
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -168,8 +170,8 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     this.editData = {
       annotation,
-      centerCanvas: canvasPos,
       segmentIndex,
+      centerCanvas: canvasPos,
       segmentationId,
       segmentsLocked,
       segmentColor,
@@ -179,7 +181,7 @@ class CircleScissorsTool extends LabelmapBaseTool {
       newAnnotation: true,
       hasMoved: false,
       segmentationRepresentationUID,
-    } as any;
+    };
 
     if (
       isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
@@ -270,9 +272,9 @@ class CircleScissorsTool extends LabelmapBaseTool {
     const { viewPlaneNormal, viewUp } = annotation.metadata;
 
     if (newAnnotation && !hasMoved) {
+      this.memo = null;
       return;
     }
-
     data.handles.activeHandleIndex = null;
 
     this._deactivateDraw(element);
@@ -294,6 +296,8 @@ class CircleScissorsTool extends LabelmapBaseTool {
     this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
+
+    this.doneEditMemo();
   };
 
   /**

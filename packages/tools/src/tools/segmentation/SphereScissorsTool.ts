@@ -299,6 +299,8 @@ class SphereScissorsTool extends LabelmapBaseTool {
     this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
+
+    this.doneEditMemo();
   };
 
   /**
