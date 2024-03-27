@@ -273,14 +273,15 @@ abstract class BaseTool implements IBaseTool {
    * Undo an action
    */
   public undo() {
-    DefaultHistoryMemo.undo();
     this.doneEditMemo();
+    DefaultHistoryMemo.undo();
   }
 
   /**
    * Redo an action (undo the undo)
    */
   public redo() {
+    this.doneEditMemo();
     DefaultHistoryMemo.redo();
   }
 
@@ -319,8 +320,7 @@ abstract class BaseTool implements IBaseTool {
    * memo to the history memo stack.
    */
   public doneEditMemo() {
-    if (this.memo?.complete) {
-      this.memo.complete();
+    if (this.memo?.complete?.()) {
       DefaultHistoryMemo.push(this.memo);
     }
     this.memo = null;

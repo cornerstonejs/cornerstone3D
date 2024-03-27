@@ -42,12 +42,7 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 const labelmapSegmentationId = 'labelmapSegmentationId';
 const contourSegmentationId = 'contourSegmentationId';
-const defaultTool = 'CircularBrush';
-
-labelmapTools.toolMap.get('CircularBrush').configuration.preview.previewColors =
-  null;
-labelmapTools.toolMap.get('CircularBrush').configuration.preview.enabled =
-  false;
+const defaultTool = 'ThresholdCircle';
 
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use

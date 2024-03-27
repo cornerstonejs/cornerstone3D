@@ -48,9 +48,8 @@ export default {
       preview,
       segmentationId,
       segmentationVoxelManager,
-      memo,
     } = operationData;
-    if (previewColors === undefined) {
+    if (previewColors === undefined || !previewSegmentIndex) {
       operationData.memo = operationData.createMemo(
         segmentationId,
         segmentationVoxelManager
@@ -64,19 +63,15 @@ export default {
       operationData.previewVoxelManager = preview.previewVoxelManager;
     }
 
-    operationData.memo = operationData.createMemo(
-      segmentationId,
-      segmentationVoxelManager,
-      operationData.previewVoxelManager,
-      memo
-    );
+    // TODO - figure out how to use memo combined with preview.
+    // operationData.memo = operationData.createMemo(
+    //   segmentationId,
+    //   segmentationVoxelManager,
+    //   preview || operationData
+    // );
 
-    if (
-      segmentIndex === undefined ||
-      segmentIndex === null ||
-      !previewSegmentIndex
-    ) {
-      // Null means to reset the value, so we don't change the preview colour
+    if (segmentIndex === null) {
+      // Null means to reset the value, so we don't change the preview colour,
       return;
     }
 
@@ -108,30 +103,42 @@ export default {
       previewVoxelManager,
       previewSegmentIndex,
       preview,
+      segmentationId,
     } = operationData;
     if (previewSegmentIndex === undefined) {
       return;
     }
     const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
-    const tracking = previewVoxelManager;
-    if (!tracking || tracking.modifiedSlices.size === 0) {
+    if (!previewVoxelManager || previewVoxelManager.modifiedSlices.size === 0) {
       return;
     }
 
-    const callback = ({ index }) => {
+    // TODO - figure out a better option for undo/redo of preview
+    const memo = operationData.createMemo(
+      segmentationId,
+      segmentationVoxelManager
+    );
+    operationData.memo = memo;
+    const { voxelManager } = memo;
+
+    const callback = ({ index, value }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
       if (oldValue === previewSegmentIndex) {
-        segmentationVoxelManager.setAtIndex(index, segmentIndex);
+        // First restore the segmentation voxel manager
+        segmentationVoxelManager.setAtIndex(index, value);
+        // Then set it to the final value so that the memo voxel manager has
+        // the correct values.
+        voxelManager.setAtIndex(index, segmentIndex);
       }
     };
-    tracking.forEach(callback, {});
+    previewVoxelManager.forEach(callback, {});
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfSlices(),
+      previewVoxelManager.getArrayOfSlices(),
       preview.segmentIndex
     );
-    tracking.clear();
+    previewVoxelManager.clear();
   },
 
   [StrategyCallbacks.RejectPreview]: (

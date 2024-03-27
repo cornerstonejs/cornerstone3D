@@ -5,6 +5,7 @@
 ```ts
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
+import { default as default_2 } from '@itk-wasm/morphological-contour-interpolation/dist/morphological-contour-interpolation-options';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
@@ -868,7 +869,7 @@ export class BrushTool extends LabelmapBaseTool {
         strategySpecificConfiguration: any;
         preview: unknown;
         configuration: Record<string, any>;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, previewVoxelManager?: any, previewMemo?: any) => LabelmapMemo_2;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo_2;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -1691,7 +1692,15 @@ function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, previewVoxelManager?: Types_2.VoxelManager<T>, previewMemo?: LabelmapMemo_2): {
+function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, preview?: InitializedOperationData): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    complete: typeof complete;
+    segmentationVoxelManager: utilities_2.VoxelManager<number>;
+    voxelManager: utilities_2.VoxelManager<number>;
+    memo: LabelmapMemo_2;
+    preview: InitializedOperationData;
+} | {
     segmentationId: string;
     restoreMemo: typeof restoreMemo;
     complete: typeof complete;
@@ -1725,13 +1734,14 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createPreviewMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, previewVoxelManager: Types_2.VoxelManager<T>, previewMemo: any): {
+function createPreviewMemo(segmentationId: string, preview: InitializedOperationData): {
     segmentationId: string;
     restoreMemo: typeof restoreMemo;
     complete: typeof complete;
-    segmentationVoxelManager: utilities_2.VoxelManager<T>;
-    voxelManager: utilities_2.VoxelManager<T>;
-    memo: any;
+    segmentationVoxelManager: utilities_2.VoxelManager<number>;
+    voxelManager: utilities_2.VoxelManager<number>;
+    memo: LabelmapMemo_2;
+    preview: InitializedOperationData;
 };
 
 // @public (undocumented)
@@ -3196,8 +3206,8 @@ declare namespace LabelmapMemo {
 // @public (undocumented)
 type LabelmapMemo_2 = Types_2.Memo & {
     setValue: (pointIJK: Types_2.Point3, value: any) => void;
-    segmentationVoxelManager: Types_2.VoxelManager<unknown>;
-    voxelManager: Types_2.VoxelManager<unknown>;
+    segmentationVoxelManager: Types_2.VoxelManager<number>;
+    voxelManager: Types_2.VoxelManager<number>;
     complete: () => void;
     memo?: LabelmapMemo_2;
 };

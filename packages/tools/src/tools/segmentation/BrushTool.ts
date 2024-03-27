@@ -47,22 +47,6 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
- * A type for preview data/information, used to setup previews on hover, or
- * maintain the preview information.
- */
-export type PreviewData = {
-  /**
-   *  The preview data returned from the strategy
-   */
-  preview: unknown;
-  timer?: number;
-  timerStart: number;
-  startPoint: Types.Point2;
-  element: HTMLDivElement;
-  isDrag: boolean;
-};
-
-/**
  * @public
  */
 class BrushTool extends LabelmapBaseTool {
@@ -82,15 +66,6 @@ class BrushTool extends LabelmapBaseTool {
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
-  };
-
-  private _previewData?: PreviewData = {
-    preview: null,
-    element: null,
-    timerStart: 0,
-    timer: null,
-    startPoint: [NaN, NaN],
-    isDrag: false,
   };
 
   constructor(
@@ -670,14 +645,14 @@ class BrushTool extends LabelmapBaseTool {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
 
-    this.doneEditMemo();
-
     const operationData = this.getOperationData(element);
     // Don't re-fill when the preview is showing and the user clicks again
     // otherwise the new area of hover may get filled, which is unexpected
     if (!this._previewData.preview && !this._previewData.isDrag) {
       this.applyActiveStrategy(enabledElement, operationData);
     }
+
+    this.doneEditMemo();
 
     this._deactivateDraw(element);
 
@@ -734,7 +709,7 @@ class BrushTool extends LabelmapBaseTool {
    * Accepts a preview, marking it as the active segment.
    */
   public acceptPreview(element = this._previewData.element) {
-    if (!element) {
+    if (!element || !this._previewData?.preview) {
       return;
     }
     this.doneEditMemo();
@@ -747,6 +722,8 @@ class BrushTool extends LabelmapBaseTool {
     );
     this._previewData.isDrag = false;
     this._previewData.preview = null;
+    // Store the edit memo too
+    this.doneEditMemo();
   }
 
   /**

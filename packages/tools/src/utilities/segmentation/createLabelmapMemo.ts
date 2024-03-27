@@ -1,6 +1,7 @@
 import { utilities } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
+import { InitializedOperationData } from '../../tools/segmentation/strategies/BrushStrategy';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 
@@ -9,8 +10,8 @@ const { VoxelManager, RLEVoxelMap } = utilities;
  */
 export type LabelmapMemo = Types.Memo & {
   setValue: (pointIJK: Types.Point3, value) => void;
-  segmentationVoxelManager: Types.VoxelManager<unknown>;
-  voxelManager: Types.VoxelManager<unknown>;
+  segmentationVoxelManager: Types.VoxelManager<number>;
+  voxelManager: Types.VoxelManager<number>;
   // Copy the data for completion
   complete: () => void;
   memo?: LabelmapMemo;
@@ -23,16 +24,10 @@ export type LabelmapMemo = Types.Memo & {
 export function createLabelmapMemo<T>(
   segmentationId: string,
   segmentationVoxelManager: Types.VoxelManager<T>,
-  previewVoxelManager?: Types.VoxelManager<T>,
-  previewMemo?: LabelmapMemo
+  preview?: InitializedOperationData
 ) {
-  return previewVoxelManager
-    ? createPreviewMemo(
-        segmentationId,
-        segmentationVoxelManager,
-        previewVoxelManager,
-        previewMemo
-      )
+  return preview
+    ? createPreviewMemo(segmentationId, preview)
     : createRleMemo(segmentationId, segmentationVoxelManager);
 }
 
@@ -42,9 +37,9 @@ export function createLabelmapMemo<T>(
  * modified.
  */
 export function restoreMemo(isUndo?: boolean) {
-  this.complete?.();
-  const { segmentationVoxelManager, voxelManager, redoVoxelManager } = this;
-  const useVoxelManager = isUndo === false ? redoVoxelManager : voxelManager;
+  const { segmentationVoxelManager, undoVoxelManager, redoVoxelManager } = this;
+  const useVoxelManager =
+    isUndo === false ? redoVoxelManager : undoVoxelManager;
   useVoxelManager.forEach(({ value, pointIJK }) => {
     segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
   });
@@ -73,13 +68,19 @@ export function createRleMemo<T>(
   return state;
 }
 
-export function createPreviewMemo<T>(
+/**
+ * Creates a preview memo.
+ */
+export function createPreviewMemo(
   segmentationId: string,
-  segmentationVoxelManager: Types.VoxelManager<T>,
-  previewVoxelManager: Types.VoxelManager<T>,
-  previewMemo
+  preview: InitializedOperationData
 ) {
-  previewMemo?.complete();
+  const {
+    memo: previewMemo,
+    segmentationVoxelManager,
+    previewVoxelManager,
+  } = preview;
+  // previewMemo?.complete?.();
 
   const state = {
     segmentationId,
@@ -88,6 +89,7 @@ export function createPreviewMemo<T>(
     segmentationVoxelManager,
     voxelManager: previewVoxelManager,
     memo: previewMemo,
+    preview,
   };
   return state;
 }
@@ -97,28 +99,34 @@ export function createPreviewMemo<T>(
  * storage - that is, it copies the RLE data and creates a reverse RLE map
  */
 function complete() {
-  this.complete = null;
+  if (this.redoVoxelManager) {
+    return true;
+  }
+  if (!this.voxelManager.modifiedSlices.size) {
+    return false;
+  }
   const { segmentationVoxelManager } = this;
-  const cloneVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
+  const undoVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
   );
   RLEVoxelMap.copyMap(
-    cloneVoxelManager.map as Types.RLEVoxelMap<unknown>,
+    undoVoxelManager.map as Types.RLEVoxelMap<unknown>,
     this.voxelManager.map
   );
   for (const key of this.voxelManager.modifiedSlices.keys()) {
-    cloneVoxelManager.modifiedSlices.add(key);
+    undoVoxelManager.modifiedSlices.add(key);
   }
-  this.voxelManager = cloneVoxelManager;
+  this.undoVoxelManager = undoVoxelManager;
   const redoVoxelManager = VoxelManager.createRLEVoxelManager(
     this.segmentationVoxelManager.dimensions
   );
   this.redoVoxelManager = redoVoxelManager;
-  cloneVoxelManager.forEach(({ index, pointIJK, value }) => {
+  undoVoxelManager.forEach(({ index, pointIJK, value }) => {
     const currentValue = segmentationVoxelManager.getAtIJKPoint(pointIJK);
-    if (!currentValue || currentValue === value) {
+    if (currentValue === value) {
       return;
     }
     redoVoxelManager.setAtIndex(index, currentValue);
   });
+  return true;
 }

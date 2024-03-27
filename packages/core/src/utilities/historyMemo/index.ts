@@ -4,7 +4,7 @@ export type Memo = {
    * An optional function that should be called to complete a memo.  This will
    * copy any data that is being further modified so as to allow undo/redo
    */
-  complete?: () => void;
+  complete?: () => boolean;
 };
 
 export type Memoable = {
