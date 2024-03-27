@@ -322,7 +322,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  // This is used for gathering all the metadata for export
+  // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
     return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
