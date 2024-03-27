@@ -12,4 +12,6 @@ export type PixelDataTypedArrayString =
   | 'Uint16Array'
   | 'Uint8Array'
   | 'Int8Array'
-  | 'Uint8ClampedArray';
+  | 'Uint8ClampedArray'
+  // Used to not create an array object
+  | 'none';

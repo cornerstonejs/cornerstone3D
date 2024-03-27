@@ -1872,6 +1872,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     readonly volumeId: string;
     // (undocumented)
+    voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+    // (undocumented)
     vtkOpenGLTexture: any;
 }
 
@@ -1899,6 +1901,8 @@ interface ImageVolumeProps extends VolumeProps {
     imageIds: Array<string>;
     // (undocumented)
     referencedImageIds?: Array<string>;
+    // (undocumented)
+    voxelManager?: VoxelManager<number> | VoxelManager<Point3>;
 }
 
 // @public (undocumented)
@@ -2517,7 +2521,7 @@ function performCacheOptimizationForVolume(volume: any): void;
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;
 
 // @public (undocumented)
-type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray';
+type PixelDataTypedArrayString = 'Float32Array' | 'Int16Array' | 'Uint16Array' | 'Uint8Array' | 'Int8Array' | 'Uint8ClampedArray' | 'none';
 
 declare namespace planar {
     export {
@@ -2573,6 +2577,8 @@ class PointsManager<T> {
     getPoint(index: number): T;
     // (undocumented)
     getPointArray(index: number): T;
+    // (undocumented)
+    getTypedArray(): Float32Array;
     // (undocumented)
     protected grow(additionalSize?: number, growSize?: number): void;
     // (undocumented)
@@ -4118,6 +4124,8 @@ class VoxelManager<T> {
     // (undocumented)
     static createRGBVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents: any): VoxelManager<RGB>;
     // (undocumented)
+    static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
     static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
     // (undocumented)
     static createVolumeVoxelManager(dimensions: Point3, scalarData: any, numComponents?: number): VoxelManager<number> | VoxelManager<RGB>;
@@ -4150,11 +4158,15 @@ class VoxelManager<T> {
     // (undocumented)
     map: Map<number, T> | RLEVoxelMap<T>;
     // (undocumented)
+    mapForEach(callback: any, options?: any): void;
+    // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
     numComps: number;
     // (undocumented)
     points: Set<number>;
+    // (undocumented)
+    rleForEach(callback: any, options?: any): void;
     // (undocumented)
     scalarData: PixelDataTypedArray;
     // (undocumented)
